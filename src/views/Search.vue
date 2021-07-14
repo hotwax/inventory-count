@@ -5,7 +5,7 @@
         <ion-title>{{ $t("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-   <ion-content :fullscreen="true" :style="{background: scannerActive ? '#00000000' : '#fff'}">
+    <ion-content :fullscreen="true" :style="{'--background': scannerActive ? 'transparent' : '#fff'}">
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProduct()" v-if="!scannerActive"/>
 
       <ion-list v-if="products.length > 0">
@@ -21,6 +21,7 @@
       <ion-grid id="scan-button" v-if="!scannerActive">
         <ion-row>
           <ion-col>
+            <!-- button to start the scanning functionality -->
             <ion-button color="primary" expand="block" @click="scan()">
               <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
                 {{ $t("Start Scan") }}
@@ -28,8 +29,6 @@
           </ion-col>
         </ion-row>
       </ion-grid>
-
-      <p v-show="scanResult && !scannerActive">Result {{ scanResult }}</p>
     </ion-content>
 
     <ion-grid id="scan-button">
@@ -136,27 +135,27 @@ export default defineComponent({
       }
     },
     async presentAlertConfirm() {
-        const alert = await alertController
-        .create({
-          header: 'No permission',
-          message: 'Please allow camera access in your settings',
-          buttons: [
-            {
-              text: 'Cancel',
-              role: 'cancel',
-              handler: () => {
-                console.log('Confirm Cancel')
-              },
+      const alert = await alertController
+      .create({
+        header: 'No permission',
+        message: 'Please allow camera access in your settings',
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => {
+              console.log('Confirm Cancel')
             },
-            {
-              text: 'Okay',
-              handler: () => {
-                BarcodeScanner.openAppSettings();
-              },
+          },
+          {
+            text: 'Okay',
+            handler: () => {
+              BarcodeScanner.openAppSettings();
             },
-          ],
-        });
-        return alert.present();
+          },
+        ],
+      });
+      return alert.present();
     },
     checkPermission() {
       return new Promise((resolve, reject) => {
@@ -171,13 +170,14 @@ export default defineComponent({
       })
     },
     async startScan() {
-        const result = await BarcodeScanner.startScan(); // start scanning and wait for a result
-        
-        // if the result has content
-        if (result.hasContent) {
-          console.log('result', result.content); // log the raw scanned content
-          this.scannerActive = false;
-          this.scanResult = result.content;
+      console.log('scanning');
+      const result = await BarcodeScanner.startScan(); // start scanning and wait for a result
+      // if the result has content
+
+      if (result.hasContent) {
+        console.log('result', result.content); // log the raw scanned content
+        this.scannerActive = false;
+        this.scanResult = result.content;
       }
     },
     async stopScan() {
