@@ -5,8 +5,8 @@
         <ion-title>{{ $t("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()"/>
+   <ion-content :fullscreen="true" :style="{background: scannerActive ? '#00000000' : '#fff'}">
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProduct()" v-if="!scannerActive"/>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -17,6 +17,19 @@
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
       </ion-list>
+    
+      <ion-grid id="scan-button" v-if="!scannerActive">
+        <ion-row>
+          <ion-col>
+            <ion-button color="primary" expand="block" @click="scan()">
+              <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
+                {{ $t("Start Scan") }}
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+      <p v-show="scanResult && !scannerActive">Result {{ scanResult }}</p>
     </ion-content>
 
     <ion-grid id="scan-button">
@@ -48,7 +61,9 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonList,
-  IonListHeader
+  IonListHeader,
+  IonFooter,
+  alertController,
 } from '@ionic/vue'
 import { barcodeOutline } from 'ionicons/icons'
 import { defineComponent } from 'vue'
@@ -56,6 +71,8 @@ import { mapGetters, useStore } from 'vuex'
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
+import { Plugins } from '@capacitor/core';
+const { BarcodeScanner } = Plugins;
 
 export default defineComponent({
   name: "Search",
@@ -79,7 +96,9 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: ''
+      queryString: '',
+      scanResult: '',
+      scannerActive: false
     }
   },
   computed: {
@@ -114,6 +133,65 @@ export default defineComponent({
         await this.store.dispatch("product/findProduct", payload);
       } else {
         showToast(translate("Enter product sku to search"))
+      }
+    },
+    async presentAlertConfirm() {
+        const alert = await alertController
+        .create({
+          header: 'No permission',
+          message: 'Please allow camera access in your settings',
+          buttons: [
+            {
+              text: 'Cancel',
+              role: 'cancel',
+              handler: () => {
+                console.log('Confirm Cancel')
+              },
+            },
+            {
+              text: 'Okay',
+              handler: () => {
+                BarcodeScanner.openAppSettings();
+              },
+            },
+          ],
+        });
+        return alert.present();
+    },
+    checkPermission() {
+      return new Promise((resolve, reject) => {
+        const status = BarcodeScanner.checkPermission({ force: true });
+        if (status.granted) {
+          resolve(true);
+        } else if (status.denied){
+          this.presentAlertConfirm();
+        } else {
+          resolve(false);
+        }
+      })
+    },
+    async startScan() {
+        const result = await BarcodeScanner.startScan(); // start scanning and wait for a result
+        
+        // if the result has content
+        if (result.hasContent) {
+          console.log('result', result.content); // log the raw scanned content
+          this.scannerActive = false;
+          this.scanResult = result.content;
+      }
+    },
+    async stopScan() {
+      this.scannerActive = false;
+      await BarcodeScanner.stopScan();
+    },
+    async scan() {
+      const permissionGranted = await this.checkPermission();
+
+      if(permissionGranted) {
+        this.scannerActive = true;
+        this.startScan();
+      } else {
+        this.stopScan();
       }
     }
   },
