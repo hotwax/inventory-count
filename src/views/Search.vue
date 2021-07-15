@@ -24,7 +24,7 @@
             <!-- button to start the scanning functionality -->
             <ion-button color="primary" expand="block" @click="scan()">
               <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-                {{ $t("Start Scan") }}
+                {{ $t("Scan") }}
             </ion-button>
           </ion-col>
         </ion-row>
@@ -134,40 +134,38 @@ export default defineComponent({
         showToast(translate("Enter product sku to search"))
       }
     },
-    async presentAlertConfirm() {
+    async presentAlertConfirm(header: string, message: string) {
       const alert = await alertController
       .create({
-        header: 'No permission',
-        message: 'Please allow camera access in your settings',
+        header: header,
+        message: message,
         buttons: [
-          {
-            text: 'Cancel',
-            role: 'cancel',
-            handler: () => {
-              console.log('Confirm Cancel')
-            },
-          },
           {
             text: 'Okay',
             handler: () => {
-              BarcodeScanner.openAppSettings();
+              console.log('Alert accepted')
             },
           },
         ],
       });
       return alert.present();
     },
-    checkPermission() {
-      return new Promise((resolve, reject) => {
-        const status = BarcodeScanner.checkPermission({ force: true });
-        if (status.granted) {
-          resolve(true);
-        } else if (status.denied){
-          this.presentAlertConfirm();
-        } else {
-          resolve(false);
-        }
-      })
+    async checkCameraPermission() {
+
+      const status = await BarcodeScanner.checkPermission({ force: true });
+
+      if (status.granted) {
+        // the user granted permission
+        return true;
+      } else if (status.denied) {
+        // the user has not given permission, showing alert message to enable camera permission in settings
+        this.presentAlertConfirm('No permission', 'Please allow camera access in your settings');
+      } else {
+        // showing alert if there is any other error
+        this.presentAlertConfirm('Error', 'Unable to start camera, please try again');
+      }
+
+      return false;
     },
     async startScan() {
       console.log('scanning');
@@ -185,7 +183,7 @@ export default defineComponent({
       await BarcodeScanner.stopScan();
     },
     async scan() {
-      const permissionGranted = await this.checkPermission();
+      const permissionGranted = await this.checkCameraPermission();
 
       if(permissionGranted) {
         this.scannerActive = true;
