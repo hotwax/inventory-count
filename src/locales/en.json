@@ -6,7 +6,6 @@
   "Enter the count of stock on the shelf.": "Enter the count of stock on the shelf.",
   "Logout": "Logout",
   "Product not found": "Product not found",
-  "Remove": "Remove",
   "Save":"Save",
   "Scan": "Scan",
   "Search": "Search",
@@ -22,5 +21,12 @@
   "Ok": "Ok",
   "Cancel": "Cancel",
   "Loading": "Loading",
-  "Item added to upload list": "Item added to upload list"
+  "Item added to upload list": "Item added to upload list",
+  "count": "count",
+  "Remove": "Remove",
+  "Okay": "Okay",
+  "No permission": "No permission",
+  "Error": "Error",
+  "Please allow camera access in your settings": "Please allow camera access in your settings",
+  "Unable to start camera, please try again": "Unable to start camera, please try again"
 }

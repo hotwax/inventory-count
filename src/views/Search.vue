@@ -137,11 +137,11 @@ export default defineComponent({
     async presentAlertConfirm(header: string, message: string) {
       const alert = await alertController
       .create({
-        header: header,
-        message: message,
+        header: this.$t(header),
+        message: this.$t(message),
         buttons: [
           {
-            text: 'Okay',
+            text: this.$t('Okay'),
             handler: () => {
               console.log('Alert accepted')
             },
@@ -201,6 +201,9 @@ export default defineComponent({
       barcodeOutline
     }
   },
+  ionViewDidLeave() {
+    this.stopScan();
+  }
 })
 </script>
 
