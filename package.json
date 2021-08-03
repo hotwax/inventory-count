@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@capacitor-community/barcode-scanner": "^1.2.1",
-    "@capacitor/android": "^2.4.7",
     "@capacitor/core": "^2.4.7",
     "@ionic/vue": "^5.4.0",
     "@ionic/vue-router": "^5.4.0",
