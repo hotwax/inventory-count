@@ -88,6 +88,35 @@ const actions: ActionTree<ProductState, RootState> = {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
     const currentProduct = state.uploadProducts[payload.product.sku]
     commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product })
+  },
+
+  async findScannedProduct ({ commit }, payload) {
+    if (payload.sku) emitter.emit("presentLoader");
+
+    let resp;
+
+    try {
+      resp = await ProductService.fetchProducts({
+        // we are currently only using sku to search for the product
+        "filters": ['sku: ' + payload.queryString]
+      })
+
+      if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
+        const product = resp.data.response.docs[0];
+
+        commit(types.PRODUCT_CURRENT_UPDATED, { product: product });
+      } else {
+        //showing error whenever getting no products in the response or having any other error
+        showToast(translate("Product not found"));
+      }
+      // Remove added loader only when new query and not the infinite scroll
+      if (payload.sku) emitter.emit("dismissLoader");
+    } catch(error){
+      console.log(error)
+      showToast(translate("Something went wrong"));
+    }
+    // TODO Handle specific error
+    return resp;
   }
 }
 

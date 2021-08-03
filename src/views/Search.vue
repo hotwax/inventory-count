@@ -173,9 +173,12 @@ export default defineComponent({
       // if the result has content
 
       if (result.hasContent) {
-        console.log('result', result.content); // log the raw scanned content
+        console.log(result.content); // log the raw scanned content
         this.scannerActive = false;
         this.scanResult = result.content;
+        await this.store.dispatch('product/findScannedProduct', { sku: this.scanResult }).then((resp) => {
+          this.$router.push(`/count/${this.scanResult}`)
+        })
       }
     },
     async stopScan() {
