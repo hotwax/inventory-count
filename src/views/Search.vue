@@ -177,7 +177,9 @@ export default defineComponent({
         this.scannerActive = false;
         this.scanResult = result.content;
         await this.store.dispatch('product/findScannedProduct', { sku: this.scanResult }).then((resp) => {
-          this.$router.push(`/count/${this.scanResult}`)
+          if (resp) {
+            this.$router.push(`/count/${this.scanResult}`);
+          }
         })
       }
     },

@@ -91,14 +91,14 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async findScannedProduct ({ commit }, payload) {
-    if (payload.sku) emitter.emit("presentLoader");
+    emitter.emit("presentLoader");
 
     let resp;
 
     try {
       resp = await ProductService.fetchProducts({
         // we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString]
+        "filters": ['sku: ' + payload.sku]
       })
 
       if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
@@ -110,7 +110,7 @@ const actions: ActionTree<ProductState, RootState> = {
         showToast(translate("Product not found"));
       }
       // Remove added loader only when new query and not the infinite scroll
-      if (payload.sku) emitter.emit("dismissLoader");
+      emitter.emit("dismissLoader");
     } catch(error){
       console.log(error)
       showToast(translate("Something went wrong"));
