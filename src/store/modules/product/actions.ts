@@ -6,6 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
+import store from "@/store";
 
 
 const actions: ActionTree<ProductState, RootState> = {
@@ -91,9 +92,15 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async findScannedProduct ({ commit }, payload) {
-    emitter.emit("presentLoader");
-
     let resp;
+
+    if (store.state.product.uploadProducts[payload.sku]) {
+      resp = store.state.product.uploadProducts[payload.sku];
+      commit(types.PRODUCT_CURRENT_UPDATED, { product: resp });
+      return resp;
+    }
+    
+    emitter.emit("presentLoader");
 
     try {
       resp = await ProductService.fetchProducts({
