@@ -8,7 +8,7 @@
     <ion-content :fullscreen="true" :style="{'--background': scannerActive ? 'transparent' : '#fff'}">
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProduct()" v-if="!scannerActive"/>
 
-      <ion-list v-if="products.length > 0">
+      <ion-list v-if="products.length > 0 && !scannerActive">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
 
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
@@ -177,7 +177,7 @@ export default defineComponent({
         this.scannerActive = false;
         this.scanResult = result.content;
         await this.store.dispatch('product/findScannedProduct', { sku: this.scanResult }).then((resp) => {
-          if (resp) {
+          if (resp.sku) {
             this.$router.push(`/count/${this.scanResult}`);
           }
         })
