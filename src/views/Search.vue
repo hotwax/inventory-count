@@ -141,10 +141,7 @@ export default defineComponent({
         message: this.$t(message),
         buttons: [
           {
-            text: this.$t('Okay'),
-            handler: () => {
-              console.log('Alert accepted')
-            },
+            text: this.$t('Okay')
           },
         ],
       });
@@ -159,21 +156,18 @@ export default defineComponent({
         return true;
       } else if (status.denied) {
         // the user has not given permission, showing alert message to enable camera permission in settings
-        this.presentAlertConfirm('No permission', 'Please allow camera access in your settings');
+        this.presentAlertConfirm(translate('No permission'), translate('Please allow camera access in your settings'));
       } else {
         // showing alert if there is any other error
-        this.presentAlertConfirm('Error', 'Unable to start camera, please try again');
+        this.presentAlertConfirm(translate('Error'), translate('Unable to start camera, please try again'));
       }
 
       return false;
     },
     async startScan() {
-      console.log('scanning');
       const result = await BarcodeScanner.startScan(); // start scanning and wait for a result
       // if the result has content
-
       if (result.hasContent) {
-        console.log(result.content); // log the raw scanned content
         this.scannerActive = false;
         this.scanResult = result.content;
         await this.store.dispatch('product/findScannedProduct', { sku: this.scanResult }).then((resp) => {
