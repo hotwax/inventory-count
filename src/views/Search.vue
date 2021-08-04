@@ -170,7 +170,7 @@ export default defineComponent({
       if (result.hasContent) {
         this.scannerActive = false;
         this.scanResult = result.content;
-        await this.store.dispatch('product/findScannedProduct', { sku: this.scanResult }).then((resp) => {
+        await this.store.dispatch('product/setCurrent', { sku: this.scanResult }).then((resp) => {
           if (resp.sku) {
             this.$router.push(`/count/${this.scanResult}`);
           }
@@ -201,7 +201,10 @@ export default defineComponent({
     }
   },
   ionViewDidLeave() {
-    this.stopScan();
+    // added condition to call stopScan method only when the scanner is active and not always
+    if (this.scannerActive) {
+      this.stopScan();
+    }
   }
 })
 </script>
