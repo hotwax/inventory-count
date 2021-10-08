@@ -74,6 +74,7 @@ import { colorPaletteOutline, resize, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { translate } from "@/i18n";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "Count",
@@ -101,6 +102,7 @@ export default defineComponent({
     updateProductInventoryCount() {
       if (this.product.quantity) {
         this.store.dispatch('product/updateInventoryCount', this.product);
+        this.router.push('/search')
       } else {
         showToast(translate("Enter the stock count for the product"))
       }
@@ -108,9 +110,11 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
 
     return {
       store,
+      router,
       colorPaletteOutline,
       resize,
       saveOutline,
