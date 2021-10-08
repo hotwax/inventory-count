@@ -1,0 +1,10 @@
+<svg width="18" height="18" viewBox="0 0 18 18" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Canvas" fill="none">
+<g id="search-icon">
+<g id="Shape" opacity="0.54">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M 12.502 6.491L 11.708 6.491L 11.432 6.765C 12.407 7.902 13 9.376 13 10.991C 13 14.581 10.09 17.491 6.5 17.491C 2.91 17.491 0 14.581 0 10.991C 0 7.401 2.91 4.491 6.5 4.491C 8.115 4.491 9.588 5.083 10.725 6.057L 11.001 5.783L 11.001 4.991L 15.999 0L 17.49 1.491L 12.502 6.491ZM 6.5 6.491C 4.014 6.491 2 8.505 2 10.991C 2 13.476 4.014 15.491 6.5 15.491C 8.985 15.491 11 13.476 11 10.991C 11 8.505 8.985 6.491 6.5 6.491Z" transform="translate(0 17.491) scale(1 -1)" fill="black"/>
+</g>
+</g>
+</g>
+</svg>
+

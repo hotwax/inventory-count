@@ -1,0 +1,13 @@
+<svg width="30" height="30" viewBox="0 0 30 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Canvas" fill="none">
+<g id="Plus">
+<g id="Rectangle">
+<rect x="0.5" y="0.5" width="29" height="29" rx="14.5" stroke="white"/>
+</g>
+<g id="Shape">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M 5.625 0L 5.625 5.625L 0 5.625L 0 7.5L 5.625 7.5L 5.625 13.125L 7.5 13.125L 7.5 7.5L 13.125 7.5L 13.125 5.625L 7.5 5.625L 7.5 0L 5.625 0Z" transform="translate(8.4375 8.4375)" fill="white"/>
+</g>
+</g>
+</g>
+</svg>
+

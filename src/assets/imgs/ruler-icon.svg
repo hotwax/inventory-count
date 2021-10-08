@@ -1,0 +1,10 @@
+<svg width="12" height="22" viewBox="0 0 12 22" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Canvas" fill="none">
+<g id="ruler-icon" opacity="0.5">
+<g id="Vector">
+<path d="M 20 0L 2 0C 0.9 0 0 0.9 0 2L 0 10C 0 11.1 0.9 12 2 12L 20 12C 21.1 12 22 11.1 22 10L 22 2C 22 0.9 21.1 0 20 0ZM 20 10L 2 10L 2 2L 4 2L 4 6L 6 6L 6 2L 8 2L 8 6L 10 6L 10 2L 12 2L 12 6L 14 6L 14 2L 16 2L 16 6L 18 6L 18 2L 20 2L 20 10Z" transform="matrix(0 1 -1 0 12 0)" fill="black"/>
+</g>
+</g>
+</g>
+</svg>
+

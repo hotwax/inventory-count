@@ -1,0 +1,10 @@
+<svg width="16" height="20" viewBox="0 0 16 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Canvas" fill="none">
+<g id="color-icon" opacity="0.5">
+<g id="Vector">
+<path d="M 13.66 5.66L 8 -1.90735e-08L 2.34 5.66C -0.78 8.78 -0.78 13.85 2.34 16.97C 3.9 18.53 5.95 19.31 8 19.31C 10.05 19.31 12.1 18.53 13.66 16.97C 16.78 13.85 16.78 8.78 13.66 5.66ZM 8 17.32C 6.4 17.32 4.89 16.7 3.76 15.56C 2.62 14.42 2 12.92 2 11.32C 2 9.72 2.62 8.21 3.76 7.08L 8 2.83L 8 17.32Z" transform="translate(0 0.269997)" fill="black"/>
+</g>
+</g>
+</g>
+</svg>
+
