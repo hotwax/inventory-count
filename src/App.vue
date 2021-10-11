@@ -62,7 +62,7 @@ export default defineComponent({
   },
   computed: {
     showFooter () {
-      if (['/settings', '/count', '/search', '/upload'].includes(this.$route.path)) return true
+      if (['/settings', '/search', '/upload'].includes(this.$route.path)) return true
       return false
     }
   }
