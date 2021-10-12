@@ -1,6 +1,6 @@
 ---
 title: 'Improved: code for the count page to redirect the user to search and also
-  updated the showToast function to add custom buttons(#ew3j63)'
+  updated the showToast function to add custom buttons'
 ticket_id: "#ew3j63"
 merge_request: 1
 author: Yash Maheshwari
