@@ -102,6 +102,7 @@ export default defineComponent({
     updateProductInventoryCount() {
       if (this.product.quantity) {
         this.store.dispatch('product/updateInventoryCount', this.product);
+        showToast(translate("Item added to upload list"))
         this.router.push('/search')
       } else {
         showToast(translate("Enter the stock count for the product"))
