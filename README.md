@@ -14,7 +14,7 @@ Inventory Count Mobile App SDK
 - To test the app in browser: ionic serve
 
 https://ionicframework.com/docs/intro/cli
-To install Ionic CLI, follow instructions in the link
+-To install Ionic CLI, follow instructions in the above link
 
 #### Upload instance specific build
 
