@@ -1,0 +1,7 @@
+---
+title: 'Improved: code by removing the redundant usage of ion-footer and declared
+  the footer in the app file, also removed the requested tab'
+ticket_id: "#ew8pb0"
+merge_request: 2
+author: Yash Maheshwari
+type: fixed

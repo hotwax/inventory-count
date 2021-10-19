@@ -29,17 +29,10 @@
         </ion-col>
       </ion-row>
     </ion-grid>
-
-    <ion-footer :translucent="true">
-      <ion-toolbar>
-        <tab-bar />
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>
 
 <script lang="ts">
-import TabBar from '@/components/TabBar.vue'
 import {
   IonPage,
   IonHeader,
@@ -52,7 +45,6 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonFooter,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonList,
@@ -79,12 +71,10 @@ export default defineComponent({
     IonGrid,
     IonRow,
     IonCol,
-    IonFooter,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonList,
     IonListHeader,
-    TabBar,
     ProductListItem
   },
   data (){

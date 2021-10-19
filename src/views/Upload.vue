@@ -30,18 +30,12 @@
         </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
-      <ion-fab vertical="bottom"  horizontal="end" slot="fixed">
+      <ion-fab id="upload-button" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
       </ion-fab>
     </ion-content>
-
-    <ion-footer :translucent="true">
-      <ion-toolbar>
-        <tab-bar />
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -62,12 +56,10 @@ import {
   IonThumbnail,
   IonTitle,
   IonToolbar,
-  IonFooter
 } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
-import TabBar from '@/components/TabBar.vue'
 import { useRouter } from 'vue-router';
 
 export default defineComponent({
@@ -87,9 +79,7 @@ export default defineComponent({
     IonPage,
     IonThumbnail,
     IonTitle,
-    IonToolbar,
-    IonFooter,
-    TabBar
+    IonToolbar
   },
   computed: {
     ...mapGetters({
@@ -129,3 +119,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+  #upload-button {
+    bottom: 70px;
+  }
+</style>

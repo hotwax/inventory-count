@@ -6,10 +6,6 @@
           <ion-icon :icon="search" />
           <ion-label>{{ $t("Search") }}</ion-label>
         </ion-tab-button>
-        <ion-tab-button tab="requested" href="/requested">
-          <ion-icon :icon="list" />
-          <ion-label>{{ $t("Requested") }}</ion-label>
-        </ion-tab-button>
         <ion-tab-button tab="upload" href="/upload">
           <ion-icon :icon="cloudUpload" />
           <ion-label>{{ $t("Upload") }}</ion-label>

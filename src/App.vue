@@ -1,21 +1,35 @@
 <template>
   <ion-app>
-    <ion-router-outlet />
+    <ion-page>
+      <ion-content :fullscreen="true">
+        <ion-router-outlet />
+      </ion-content>
+      <ion-footer v-if="showFooter">
+        <ion-toolbar>
+          <tab-bar />
+        </ion-toolbar>
+      </ion-footer>
+    </ion-page>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonPage, IonFooter, IonToolbar, IonContent } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
-
+import TabBar from "./components/TabBar.vue"
 
 export default defineComponent({
   name: 'App',
   components: {
     IonApp,
-    IonRouterOutlet
+    IonRouterOutlet,
+    IonPage,
+    IonFooter,
+    IonToolbar,
+    TabBar,
+    IonContent
   },
   data() {
     return {
@@ -46,5 +60,11 @@ export default defineComponent({
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
   },
+  computed: {
+    showFooter () {
+      if (['/settings', '/search', '/upload'].includes(this.$route.path)) return true
+      return false
+    }
+  }
 });
 </script>
