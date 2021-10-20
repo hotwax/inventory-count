@@ -18,7 +18,7 @@ https://ionicframework.com/docs/intro/cli
 
 #### Upload instance specific build
 
-- While adding new configuration, make sure to add them in all of three environments file otherwise it will be missing while building the app for prod or qa instance.
+- While adding new configuration, make sure to add them in all of three environments file otherwise it will be missing while building the app for prod or qa instance.    
 - Improve the environment variables as per the instance before building the app.
 - Version must be updated before building the app.
 - For dev build, improve the environment variables in environment.ts file and for prod build, improve the environment variables in environment.prod.ts file.
