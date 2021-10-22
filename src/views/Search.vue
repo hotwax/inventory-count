@@ -22,7 +22,7 @@
     <ion-grid id="scan-button">
       <ion-row>
         <ion-col>
-          <ion-button color="primary" expand="block">
+          <ion-button class="main-btn" color="primary" expand="block">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ $t("Scan") }}
           </ion-button>
@@ -133,5 +133,9 @@ export default defineComponent({
     position: fixed;
     bottom: 55px;
     width: 100%;
+  }
+
+  #scan-button .main-btn {
+    box-shadow: 5px 8px 8px #b4b1b1;
   }
 </style>
