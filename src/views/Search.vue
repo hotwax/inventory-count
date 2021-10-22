@@ -22,7 +22,7 @@
     <ion-grid id="scan-button">
       <ion-row>
         <ion-col>
-          <ion-button color="primary" expand="block">
+          <ion-button class="Boxcolr" color="primary" expand="block">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ $t("Scan") }}
           </ion-button>
@@ -143,5 +143,19 @@ export default defineComponent({
     position: fixed;
     bottom: 55px;
     width: 100%;
+    /* background-color: black; */
+    /* box-shadow: 2px 2px solid black; */
+    
   }
+  
+   
+   #scan-button .Boxcolr:hover{
+    /* box-shadow: 2px 2px 2px 2px  #ebebeb */
+    /* box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px; */
+    box-shadow: rgba(0, 0, 0, 0.16) 3px 3px 6px, rgba(0, 0, 0, 0.23) 3px 3px 6px;
+
+   }
+   
+  
+
 </style>
