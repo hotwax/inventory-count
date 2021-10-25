@@ -10,7 +10,7 @@
     <ion-content :fullscreen="true">
       <div class="header">
         <div class="product-image">
-          <Image :src="product.mainImageUrl"></Image>
+          <Image :src="product.mainImageUrl"/>
         </div>
         <div class="product-info">
           <ion-item lines="none">
