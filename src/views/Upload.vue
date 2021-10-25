@@ -10,7 +10,7 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <img :src="product.mainImageUrl" />
+            <Image :src="product.mainImageUrl"></Image>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>
@@ -61,6 +61,7 @@ import { defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import Image from "@/components/Image.vue";
 
 export default defineComponent({
   name: "Upload",
@@ -79,7 +80,8 @@ export default defineComponent({
     IonPage,
     IonThumbnail,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    Image
   },
   computed: {
     ...mapGetters({
