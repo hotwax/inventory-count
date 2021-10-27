@@ -73,6 +73,7 @@ import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { translate } from "@/i18n";
 import { useRouter } from "vue-router";
+import Image from "@/components/Image.vue";
 
 export default defineComponent({
   name: "Count",
@@ -90,6 +91,7 @@ export default defineComponent({
     IonPage,
     IonTitle,
     IonToolbar,
+    Image
   },
   computed: {
     ...mapGetters({
