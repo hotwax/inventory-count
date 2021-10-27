@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true" :style="{'--background': scannerActive ? 'transparent' : '#fff'}">
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProduct()" v-if="!scannerActive"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()" v-if="!scannerActive"/>
 
       <ion-list v-if="products.length > 0 && !scannerActive">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -17,24 +17,12 @@
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
       </ion-list>
-    
-      <ion-grid id="scan-button" v-if="!scannerActive">
-        <ion-row>
-          <ion-col>
-            <!-- button to start the scanning functionality -->
-            <ion-button color="primary" expand="block" @click="scan()">
-              <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-                {{ $t("Scan") }}
-            </ion-button>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
     </ion-content>
 
-    <ion-grid id="scan-button">
+    <ion-grid id="scan-button" v-if="!scannerActive">
       <ion-row>
         <ion-col>
-          <ion-button color="primary" expand="block">
+          <ion-button color="primary" expand="block" @click="scan()">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ $t("Scan") }}
           </ion-button>
