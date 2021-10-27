@@ -8,11 +8,9 @@
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <div class="header">
-        <div class="product-image">
-          <img :src="product.mainImageUrl" />
-        </div>
-        <div class="product-info">
+      <div>
+        <img :src="product.mainImageUrl" />
+        <div>
           <ion-item lines="none">
             <ion-label>
               <p class="overline">{{ product.productName }}</p>
@@ -131,35 +129,10 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.header {
-  display: grid;
-  grid: 1fr max-content / auto;
-}
 
-.product-image {
-  grid-row: 1 / 3;
-  grid-column: 1 / 2;
-}
-
-.product-image > img {
+img {
   width: 100%;
   height: 25vh;
-  object-fit: cover;
-}
-
-.product-info {
-  grid-row: 2 / 3;
-  grid-column: 1 / 2;
-  backdrop-filter: blur(20px);
-  background: linear-gradient(
-    180deg,
-    rgba(196, 196, 196, 0) 0%,
-    #ffffff 63.02%
-  );
-}
-
-ion-item {
-  --background: transparent;
 }
 
 #stockCount {
