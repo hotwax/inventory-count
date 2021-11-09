@@ -81,10 +81,13 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async setCurrent ({ commit, state }, payload) {
-    const sku = payload.product ? payload.product.sku : payload.sku;
+    const upc = payload.product ? payload.product.upc : payload.upc;
 
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
-    let currentProduct = state.uploadProducts[sku];
+    let currentProduct = Object.values(state.uploadProducts).find((product: any) => {
+      return product.upc === upc;
+    
+    });
 
     // checking whether we are getting a product in payload or we are having a currentProduct
     if ( currentProduct || payload.product) {
@@ -99,7 +102,7 @@ const actions: ActionTree<ProductState, RootState> = {
       try {
         const resp = await ProductService.fetchProducts({
           // using sku to search for the product
-          "filters": ['sku: ' + sku]
+          "filters": ['upc: ' + upc]
         })
   
         if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {

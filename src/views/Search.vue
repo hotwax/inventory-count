@@ -169,8 +169,8 @@ export default defineComponent({
         BarcodeScanner.startScan({ targetedFormats: ['UPC_A'] })
         this.scannerActive = false;
         this.scanResult = result.content;
-        await this.store.dispatch('product/setCurrent', { sku: this.scanResult }).then((resp) => {
-          if (resp.sku) {
+        await this.store.dispatch('product/setCurrent', { upc: this.scanResult }).then((resp) => {
+          if (resp.upc) {
             this.$router.push(`/count/${this.scanResult}`);
           }
         })
