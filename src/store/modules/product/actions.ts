@@ -35,13 +35,17 @@ const actions: ActionTree<ProductState, RootState> = {
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
       } else {
         //showing error whenever getting no products in the response or having any other error
-        showToast(translate("Product not found"));
+        showToast(translate("Product not found"), [{
+          duration: 3000
+        }]);
       }
       // Remove added loader only when new query and not the infinite scroll
       if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     } catch(error){
       console.log(error)
-      showToast(translate("Something went wrong"));
+      showToast(translate("Something went wrong"), [{
+        duration: 3000
+      }]);
     }
     // TODO Handle specific error
     return resp;
@@ -62,15 +66,22 @@ const actions: ActionTree<ProductState, RootState> = {
 
       if (resp.status == 200 && !hasError(resp)) {
         commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
-        showToast(translate("Products inventory updated"))
+        showToast(translate("Products inventory updated"), [{
+          text: 'Dismiss',
+          role: 'cancel'
+        }])
       } else {
-        showToast(translate("Something went wrong"))
+        showToast(translate("Something went wrong"),[{
+          duration: 3000
+        }])
       }
 
       emitter.emit("dismissLoader");
     } catch (error) {
       console.log(error);
-      showToast(translate("Something went wrong"));
+      showToast(translate("Something went wrong"),[{
+        duration: 3000
+      }]);
     }
 
     return resp;
@@ -111,13 +122,17 @@ const actions: ActionTree<ProductState, RootState> = {
           commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct });
         } else {
           //showing error whenever getting no products in the response or having any other error
-          showToast(translate("Product not found"));
+          showToast(translate("Product not found"), [{
+            duration: 3000
+          }]);
         }
         // Remove added loader only when new query and not the infinite scroll
         emitter.emit("dismissLoader");
       } catch(error){
         console.log(error)
-        showToast(translate("Something went wrong"));
+        showToast(translate("Something went wrong"), [{
+          duration: 3000
+        }]);
       }
     }
 
