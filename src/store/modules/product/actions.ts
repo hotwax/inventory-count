@@ -51,10 +51,6 @@ const actions: ActionTree<ProductState, RootState> = {
     commit(types.PRODUCT_REMOVE_FROM_UPLD_PRDTS, {sku: payload});
   },
 
-  async clearUploadProducts ({ commit }) {
-    commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
-  },
-
   async uploadInventoryCount({ commit }, payload) {
     emitter.emit("presentLoader");
     let resp;
@@ -84,10 +80,45 @@ const actions: ActionTree<ProductState, RootState> = {
     commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
   },
 
-  updateCurrentProduct ({ commit, state }, payload) {
+  async setCurrent ({ commit, state }, payload) {
+    const sku = payload.product ? payload.product.sku : payload.sku;
+
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
-    const currentProduct = state.uploadProducts[payload.product.sku]
-    commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product })
+    let currentProduct = state.uploadProducts[sku];
+
+    // checking whether we are getting a product in payload or we are having a currentProduct
+    if ( currentProduct || payload.product) {
+
+      // setting the product either with currentProduct or payload.product;
+      commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product });
+
+      return currentProduct ? currentProduct : payload.product;
+    } else {
+
+      // if we are just getting an sku then making API call to get the product
+      try {
+        const resp = await ProductService.fetchProducts({
+          // using sku to search for the product
+          "filters": ['sku: ' + sku]
+        })
+  
+        if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
+          currentProduct = resp.data.response.docs[0];
+  
+          commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct });
+        } else {
+          //showing error whenever getting no products in the response or having any other error
+          showToast(translate("Product not found"));
+        }
+        // Remove added loader only when new query and not the infinite scroll
+        emitter.emit("dismissLoader");
+      } catch(error){
+        console.log(error)
+        showToast(translate("Something went wrong"));
+      }
+    }
+
+    return currentProduct;
   }
 }
 

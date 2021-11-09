@@ -10,7 +10,7 @@
     <ion-content :fullscreen="true">
       <div class="header">
         <div class="product-image">
-          <img :src="product.mainImageUrl" />
+          <Image :src="product.mainImageUrl" />
         </div>
         <div class="product-info">
           <ion-item lines="none">
@@ -74,7 +74,8 @@ import { colorPaletteOutline, resize, saveOutline } from "ionicons/icons";
 import { mapGetters, useStore } from "vuex";
 import { showToast } from "@/utils";
 import { translate } from "@/i18n";
-
+import { useRouter } from "vue-router";
+import Image from "@/components/Image.vue";
 export default defineComponent({
   name: "Count",
   components: {
@@ -91,6 +92,7 @@ export default defineComponent({
     IonPage,
     IonTitle,
     IonToolbar,
+    Image
   },
   computed: {
     ...mapGetters({
@@ -101,6 +103,14 @@ export default defineComponent({
     updateProductInventoryCount() {
       if (this.product.quantity) {
         this.store.dispatch('product/updateInventoryCount', this.product);
+        showToast(translate("Item added to upload list"), [{
+          text: translate('View'),
+          role: 'view',
+          handler: () => {
+            this.router.push('/upload')
+          }
+        }])
+        this.router.push('/search')
       } else {
         showToast(translate("Enter the stock count for the product"))
       }
@@ -108,9 +118,10 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-
+    const router = useRouter();
     return {
       store,
+      router,
       colorPaletteOutline,
       resize,
       saveOutline,
@@ -120,42 +131,17 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.header {
-  display: grid;
-  grid: 1fr max-content / auto;
-}
-
-.product-image {
-  grid-row: 1 / 3;
-  grid-column: 1 / 2;
-}
-
 .product-image > img {
-  width: 100%;
-  height: 25vh;
-  object-fit: cover;
-}
-
-.product-info {
-  grid-row: 2 / 3;
-  grid-column: 1 / 2;
-  backdrop-filter: blur(20px);
-  background: linear-gradient(
-    180deg,
-    rgba(196, 196, 196, 0) 0%,
-    #ffffff 63.02%
-  );
-}
-
-ion-item {
-  --background: transparent;
-}
-
-#stockCount {
-  margin-top: 8px;
-}
-
-.action {
-  text-align: center;
-}
+    width: 100%;
+    height: 50vh;
+    object-fit: contain;
+  }
+    
+  #stockCount {
+    margin-top: 8px;
+  }
+  
+  .action {
+    text-align: center;
+  }
 </style>

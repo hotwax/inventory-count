@@ -12,8 +12,8 @@
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
           <ion-label>{{$t("store")}}</ion-label>
-          <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.facilityId" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in userProfile.facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityId }}</ion-select-option>
+          <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.name" @ionChange="setFacility($event)">
+            <ion-select-option v-for="facility in userProfile.facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
         </ion-item>
 
@@ -25,15 +25,21 @@
         </ion-item>
       </ion-list>
     </ion-content>
+    <ion-footer :translucent="true">
+      <ion-toolbar>
+        <tab-bar />
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue';
+import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList,IonFooter, } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import TabBar from '@/components/TabBar.vue'
 
 export default defineComponent({
   name: 'Settings',
@@ -48,7 +54,10 @@ export default defineComponent({
     IonSelect,
     IonSelectOption,
     IonTitle, 
-    IonToolbar
+    IonToolbar,
+    IonList,
+    TabBar,
+    IonFooter,
   },
   computed: {
     ...mapGetters({
