@@ -209,9 +209,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
-  #scan-button {
-    position: fixed;
-    bottom: 55px;
-    width: 100%;
-  }
+#scan-button {
+  position: fixed;
+  bottom: 55px;
+  width: 100%;
+}
 </style>

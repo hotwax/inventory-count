@@ -70,8 +70,8 @@ export default defineComponent({
   }
 });
 </script>
-<style scoped>
 
+<style scoped>
 .login-container {
   width: 375px;
 }
@@ -87,5 +87,4 @@ img {
   align-items: center;
   height: 100%;
 }
-
 </style>

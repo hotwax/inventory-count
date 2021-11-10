@@ -30,6 +30,7 @@
         </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
+      
       <ion-fab vertical="bottom"  horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">
           <ion-icon :icon="cloudUploadOutline" />

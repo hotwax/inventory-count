@@ -44,10 +44,9 @@
 
       <div class="action">
         <ion-button size="large" @click="updateProductInventoryCount()">
-          <ion-icon :icon="saveOutline" slot="start" />{{
-            $t("Save")
-          }}</ion-button
-        >
+          <ion-icon :icon="saveOutline" slot="start" />
+          {{ $t("Save") }}
+        </ion-button>
       </div>
     </ion-content>
   </ion-page>
@@ -132,16 +131,16 @@ export default defineComponent({
 
 <style scoped>
 .product-image > img {
-    width: 100%;
-    height: 50vh;
-    object-fit: contain;
-  }
+  width: 100%;
+  height: 50vh;
+  object-fit: contain;
+}
     
-  #stockCount {
-    margin-top: 8px;
-  }
+#stockCount {
+  margin-top: 8px;
+}
   
-  .action {
-    text-align: center;
-  }
+.action {
+  text-align: center;
+}
 </style>
