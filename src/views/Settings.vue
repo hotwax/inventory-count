@@ -81,9 +81,9 @@ export default defineComponent({
           text: this.$t('Cancel')
         }, {
           text: this.$t('Ok'),
-          handler: () => {
+          handler: async() => {
             this.store.dispatch('product/clearUploadProducts');
-            this.store.dispatch('user/logout').then(() => {
+             await this.store.dispatch('user/logout').then(() => {
               this.router.push('/login');
             })
           }
@@ -91,11 +91,11 @@ export default defineComponent({
       });
       await alert.present();
     },
-    logout () {
+    async logout () {
       if (Object.keys(this.uploadProducts).length > 0) {
         this.presentAlert();
       } else {
-        this.store.dispatch('user/logout').then(() => {
+         await this.store.dispatch('user/logout').then(() => {
           this.router.push('/login');
         })
       }
