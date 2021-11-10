@@ -106,16 +106,13 @@ export default defineComponent({
         showToast(translate("Item added to upload list"), [{
           text: translate('View'),
           role: 'view',
-          duration: 3000,
           handler: () => {
             this.router.push('/upload')
           }
-        }])
+        }], 3000)
         this.router.push('/search')
       } else {
-        showToast(translate("Enter the stock count for the product"), [{
-        duration: 3000
-      }])
+        showToast(translate("Enter the stock count for the product"),3000)
       }
     }
   },
