@@ -35,13 +35,13 @@ const actions: ActionTree<ProductState, RootState> = {
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
       } else {
         //showing error whenever getting no products in the response or having any other error
-        showToast(translate("Product not found"), 3000);
+        showToast(translate("Product not found"), null, 3000);
       }
       // Remove added loader only when new query and not the infinite scroll
       if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     } catch(error){
       console.log(error)
-      showToast(translate("Something went wrong"), 3000);
+      showToast(translate("Something went wrong"), null, 3000);
     }
     // TODO Handle specific error
     return resp;
@@ -67,13 +67,13 @@ const actions: ActionTree<ProductState, RootState> = {
           role: 'cancel'
         }])
       } else {
-        showToast(translate("Something went wrong"), 3000)
+        showToast(translate("Something went wrong"), null, 3000)
       }
 
       emitter.emit("dismissLoader");
     } catch (error) {
       console.log(error);
-      showToast(translate("Something went wrong"), 3000);
+      showToast(translate("Something went wrong"), null, 3000);
     }
 
     return resp;
@@ -114,13 +114,13 @@ const actions: ActionTree<ProductState, RootState> = {
           commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct });
         } else {
           //showing error whenever getting no products in the response or having any other error
-          showToast(translate("Product not found"), 3000);
+          showToast(translate("Product not found"), null, 3000);
         }
         // Remove added loader only when new query and not the infinite scroll
         emitter.emit("dismissLoader");
       } catch(error){
         console.log(error)
-        showToast(translate("Something went wrong"), 3000);
+        showToast(translate("Something went wrong"), null, 3000);
       }
     }
 

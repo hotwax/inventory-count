@@ -112,7 +112,7 @@ export default defineComponent({
         }], 3000)
         this.router.push('/search')
       } else {
-        showToast(translate("Enter the stock count for the product"),3000)
+        showToast(translate("Enter the stock count for the product"), null, 3000)
       }
     }
   },

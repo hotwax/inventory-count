@@ -23,17 +23,17 @@ const actions: ActionTree<UserState, RootState> = {
             dispatch('getProfile')
             return resp.data;
         } else if (hasError(resp)) {
-          showToast(translate('Sorry, your username or password is incorrect. Please try again.'), 3000);
+          showToast(translate('Sorry, your username or password is incorrect. Please try again.'), null, 3000);
           console.error("error", resp.data._ERROR_MESSAGE_);
           return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
         }
       } else {
-        showToast(translate('Something went wrong'), 3000);
+        showToast(translate('Something went wrong'), null, 3000);
         console.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
       }
     } catch (err) {
-      showToast(translate('Something went wrong'), 3000);
+      showToast(translate('Something went wrong'), null, 3000);
       console.error("error", err);
       return Promise.reject(new Error(err))
     }
@@ -73,7 +73,7 @@ const actions: ActionTree<UserState, RootState> = {
         const current: any = state.current;
         current.userTimeZone = payload.tzId;
         commit(types.USER_INFO_UPDATED, current);
-        showToast(translate("Time zone updated successfully"),3000);
+        showToast(translate("Time zone updated successfully"), null, 3000);
       }
     },
 
