@@ -39,7 +39,6 @@
 </template>
 
 <script lang="ts">
-import TabBar from '@/components/TabBar.vue'
 import {
   IonPage,
   IonHeader,
@@ -66,6 +65,7 @@ import { Plugins } from '@capacitor/core';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
+import TabBar from '@/components/TabBar.vue'
 
 const { BarcodeScanner } = Plugins;
 

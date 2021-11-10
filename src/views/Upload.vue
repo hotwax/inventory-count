@@ -67,9 +67,9 @@ import {
 import { defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
-import TabBar from '@/components/TabBar.vue'
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
+import TabBar from '@/components/TabBar.vue'
 
 export default defineComponent({
   name: "Upload",
@@ -131,3 +131,9 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+  #upload-button {
+    bottom: 70px;
+  }
+</style>
