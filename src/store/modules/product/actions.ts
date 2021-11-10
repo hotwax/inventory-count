@@ -63,7 +63,7 @@ const actions: ActionTree<ProductState, RootState> = {
       if (resp.status == 200 && !hasError(resp)) {
         commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
         showToast(translate("Products inventory updated"), [{
-          text: 'Dismiss',
+          text: translate('Dismiss'),
           role: 'cancel'
         }])
       } else {
