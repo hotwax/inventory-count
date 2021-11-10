@@ -6,7 +6,7 @@
     <ion-label>
       <p>{{ product.productName }}</p>
       <h3>{{ product.sku }}</h3>
-      <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} | {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
+      <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') ? '|' : '' }} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
     </ion-label>
   </ion-item>
 </template>

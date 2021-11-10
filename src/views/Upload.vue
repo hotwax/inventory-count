@@ -19,11 +19,11 @@
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
         <ion-item lines="full">
-          <ion-chip>
+          <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
             <ion-icon :icon="colorPaletteOutline" />
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
           </ion-chip>
-          <ion-chip>
+          <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
             <ion-icon :icon="resize" />
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
           </ion-chip>
