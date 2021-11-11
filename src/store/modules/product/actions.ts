@@ -78,20 +78,27 @@ const actions: ActionTree<ProductState, RootState> = {
 
     return resp;
   },
+
+  async clearUploadProducts ({ commit }) {
+    commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
+  },
   
   async updateInventoryCount ({ commit }, payload) {
     commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
   },
 
   async setCurrent ({ commit, state }, payload) {
-    const upc = payload.product ? payload.product.upc : payload.upc;
+    let currentProduct;
+    const upc = payload.upc;
+    const sku = payload.product ? payload.product.sku : payload.sku
 
-    // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
-    let currentProduct = Object.values(state.uploadProducts).find((product: any) => {
-      return product.upc === upc;
-    
-    });
-
+    if (upc) {  
+      currentProduct = Object.values(state.uploadProducts).find((product: any) => {
+        return product.upc === upc;
+      });
+    } else {
+      currentProduct = state.uploadProducts[sku];
+    }
     // checking whether we are getting a product in payload or we are having a currentProduct
     if ( currentProduct || payload.product) {
 
@@ -103,10 +110,11 @@ const actions: ActionTree<ProductState, RootState> = {
 
       // if we are just getting an sku then making API call to get the product
       try {
-        const resp = await ProductService.fetchProducts({
-          // using sku to search for the product
-          "filters": ['upc: ' + upc]
-        })
+        const query = {
+          "filters": upc ? ['upc: ' + upc] : ['sku: ' + sku]
+        }
+
+        const resp = await ProductService.fetchProducts(query)
   
         if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
           currentProduct = resp.data.response.docs[0];
@@ -123,7 +131,6 @@ const actions: ActionTree<ProductState, RootState> = {
         showToast(translate("Something went wrong"), null, 3000);
       }
     }
-
     return currentProduct;
   }
 }

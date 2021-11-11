@@ -11,8 +11,8 @@
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
           <ion-label>{{$t("Store")}}</ion-label>
-          <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.name" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in userProfile.facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+          <ion-select interface="popover" :placeholder="$t('store name')" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
         </ion-item>
 
@@ -66,6 +66,8 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
+      //TODO Find a better way
+      if (!this.userProfile || !this.userProfile.facilities) return;
       this.userProfile.facilities.map((fac: any) => {
         if (fac.facilityId == facility['detail'].value) {
           this.store.dispatch('user/setFacility', {'facility': fac});
@@ -95,9 +97,8 @@ export default defineComponent({
       if (Object.keys(this.uploadProducts).length > 0) {
         this.presentAlert();
       } else {
-         await this.store.dispatch('user/logout').then(() => {
-          this.router.push('/login');
-        })
+         await this.store.dispatch('user/logout');
+        this.router.push('/login');
       }
     }
   },

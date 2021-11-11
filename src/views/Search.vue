@@ -129,14 +129,14 @@ export default defineComponent({
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
-        showToast(translate("Enter product sku to search"), null, 3000)
+        showToast(translate("Enter product sku to search"), null, process.env.VUE_APP_TOAST_DURATION)
       }
     },
     async presentAlertConfirm(header: string, message: string) {
       const alert = await alertController
       .create({
-        header: this.$t(header),
-        message: this.$t(message),
+        header: header,
+        message: message,
         buttons: [
           {
             text: this.$t('Okay')
