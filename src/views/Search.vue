@@ -129,7 +129,7 @@ export default defineComponent({
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
-        showToast(translate("Enter product sku to search"), null, process.env.VUE_APP_TOAST_DURATION)
+        showToast(translate("Enter product sku to search"), null, 3000)
       }
     },
     async presentAlertConfirm(header: string, message: string) {
