@@ -136,4 +136,8 @@ export default defineComponent({
   #upload-button {
     bottom: 70px;
   }
+
+  ion-thumbnail > img{
+    object-fit: contain;
+  }
 </style>
