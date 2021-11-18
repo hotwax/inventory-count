@@ -137,7 +137,7 @@ export default defineComponent({
     bottom: 70px;
   }
 
-  ion-thumbnail > img{
+  ion-thumbnail > img {
     object-fit: contain;
   }
 </style>

@@ -50,7 +50,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-ion-thumbnail > img{
+ion-thumbnail > img {
   object-fit: contain;
 }
 </style>
