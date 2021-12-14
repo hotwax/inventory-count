@@ -4,7 +4,6 @@
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "dist",
-  "linuxAndroidStudioPath": "/opt/android-studio/bin/studio.sh",
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 0

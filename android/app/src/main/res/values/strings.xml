@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="title_activity_main">ionic-sdk</string>
+    <string name="title_activity_main">ionic-sdk</string>
+    <string name="package_name">co.hotwax.inv</string>
+    <string name="custom_url_scheme">com.capacitorjs.myapp</string>
+</resources>

@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
-import App from './App.vue'
+import AppVue from './App.vue'
 import router from './router';
 import moment from 'moment'
 import "moment-timezone";
+import { Plugins } from '@capacitor/core';
+const { App } = Plugins;
 
 
 import { IonicVue } from '@ionic/vue';
@@ -29,7 +31,34 @@ import './theme/variables.css';
 import i18n from './i18n'
 import store from './store'
 
-const app = createApp(App)
+  App.addListener('appUrlOpen', function (data) {
+    const slug = data.url.split('.app').pop();
+    console.log("Opened app via universal link", data)
+
+    if (slug) {
+      router.push({
+        path: slug,
+      });
+    }
+  });
+
+  App.getLaunchUrl().then(x => console.log(x))
+  App.getState().then(x => console.log(x))
+  App.openUrl({url: "www.google.com"}).then(x => console.log(x))
+  App.canOpenUrl({url: "www.google.com"}).then(x => console.log(x))
+  App.addListener('appStateChange', (x)=>{
+    console.log(x);
+  })
+  App.addListener('appRestoredResult', (x)=>{
+    console.log(x);
+  })
+  App.addListener('backButton', (x)=>{
+    console.log(x);
+  })
+  
+  // App.exitApp();
+
+const app = createApp(AppVue)
   .use(IonicVue)
   .use(router)
   .use(i18n)
