@@ -243,3 +243,7 @@ http://ionicframework.com/docs/theming/ */
   color: #666;
   text-transform: uppercase !important;
 }
+
+ion-thumbnail > img {
+  object-fit: contain;
+}
