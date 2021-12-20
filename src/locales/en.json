@@ -1,10 +1,17 @@
 {
+  "Cancel": "Cancel",
   "Click the backdrop to dismiss.": "Click the backdrop to dismiss.",
   "Count": "Count",
   "Cycle Count": "Cycle Count",
   "Enter product sku to search": "Enter product sku to search",
   "Enter the count of stock on the shelf.": "Enter the count of stock on the shelf.",
+  "Instance Url": "Instance Url",
+  "Item added to upload list": "Item added to upload list",
+  "Loading": "Loading",
+  "Login": "Login",
   "Logout": "Logout",
+  "Ok": "Ok",
+  "Password": "Password",
   "Product not found": "Product not found",
   "Remove": "Remove",
   "Save":"Save",
@@ -16,11 +23,8 @@
   "Store": "Store",
   "store":"store",
   "store name":"store name",
-  "Upload": "Upload",
   "Results": "Results",
   "The products in the upload list will be removed.": "The products in the upload list will be removed.",
-  "Ok": "Ok",
-  "Cancel": "Cancel",
-  "Loading": "Loading",
-  "Item added to upload list": "Item added to upload list"
+  "Upload": "Upload",
+  "Username": "Username"
 }

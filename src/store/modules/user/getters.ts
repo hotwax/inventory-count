@@ -17,7 +17,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getCurrentFacility (state) {
         return state.currentFacility;
+    },
+    getInstanceUrl (state) {
+        return state.instanceUrl;
     }
-
 }
 export default getters;
