@@ -6,8 +6,11 @@ Inventory Count Mobile App SDK
 - Open a Terminal window
 - Clone app
 - Go to app directory
+- Copy .env.example as .env
+- Change env variables in `.env file`(ask the admin for proper values)
 - Run following command to download dependencies 
     npm i
+
 
 ### Start App
 
