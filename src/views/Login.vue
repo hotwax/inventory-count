@@ -6,7 +6,7 @@
           <img src="../assets/images/hc.png"/>
 
           <ion-item lines="full">
-            <ion-label>{{ $t("Instance Url") }}</ion-label>
+            <ion-label>{{ $t("OMS") }}</ion-label>
             <ion-input name="instanceUrl" v-model="instanceUrl" id="instanceUrl" type="text" required />
           </ion-item>
           <ion-item lines="full">
