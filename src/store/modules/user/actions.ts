@@ -12,8 +12,8 @@ import "moment-timezone";
 const actions: ActionTree<UserState, RootState> = {
 
   /**
- * Login user and return token
- */
+  * Login user and return token
+  */
   async login ({ commit, dispatch }, { username, password }) {
     try {
       const resp = await UserService.login(username, password)
@@ -80,6 +80,11 @@ const actions: ActionTree<UserState, RootState> = {
   // update current facility information
   async setFacility ({ commit }, payload) {
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
+  },
+
+  // Set User Instance Url
+  setUserInstanceUrl ({ state, commit }, payload){
+    commit(types.USER_INSTANCE_URL_UPDATED, payload)
   }
 }
 export default actions;

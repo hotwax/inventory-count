@@ -6,12 +6,16 @@
           <img src="../assets/images/hc.png"/>
 
           <ion-item lines="full">
+            <ion-label>{{ $t("OMS") }}</ion-label>
+            <ion-input name="instanceUrl" v-model="instanceUrl" id="instanceUrl" type="text" required />
+          </ion-item>
+          <ion-item lines="full">
             <ion-label>{{ $t("Username") }}</ion-label>
-            <ion-input name="username" v-model="username" id="username"  type="text" required></ion-input>
+            <ion-input name="username" v-model="username" id="username"  type="text" required />
           </ion-item>
           <ion-item lines="none">
             <ion-label>{{ $t("Password") }}</ion-label>
-            <ion-input name="password" v-model="password" id="password" type="password" required></ion-input>
+            <ion-input name="password" v-model="password" id="password" type="password" required />
           </ion-item>
 
           <div class="ion-padding">
@@ -34,6 +38,7 @@ import {
 import { defineComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
+import { mapGetters } from 'vuex';
 
 export default defineComponent({
   name: "Login",
@@ -48,11 +53,21 @@ export default defineComponent({
   data() {
     return {
       username: "",
-      password: ""
+      password: "",
+      instanceUrl: ""
     };
+  },
+  computed: {
+    ...mapGetters({
+      currentInstanceUrl: 'user/getInstanceUrl'
+    })
+  },
+  mounted() {
+    this.instanceUrl= this.currentInstanceUrl;
   },
   methods: {
     login: function () {
+      this.store.dispatch("user/setUserInstanceUrl", this.instanceUrl)
       const { username, password } = this;
       this.store.dispatch("user/login", { username, password }).then((data: any) => {
         if (data.token) {
