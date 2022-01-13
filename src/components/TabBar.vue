@@ -1,6 +1,7 @@
 <template>
   <ion-page>
     <ion-tabs>
+      <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom" ref="tabs">
         <ion-tab-button tab="search" href="/search">
           <ion-icon :icon="search" />
@@ -27,14 +28,15 @@ import {
   IonTabButton,
   IonIcon,
   IonLabel,
-  IonPage
+  IonPage,
+  IonRouterOutlet
 } from '@ionic/vue'
 import { search, cloudUpload, list, settings } from 'ionicons/icons'
 
 export default defineComponent({
   name: "TabBar",
   components: {
-    IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonPage
+    IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonPage, IonRouterOutlet
   },
   setup() {
     return {
