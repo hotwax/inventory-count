@@ -17,6 +17,13 @@
           </ion-select>
         </ion-item>
 
+        <!-- OMS information -->
+        <ion-item>
+          <ion-icon :icon="codeWorkingOutline" slot="start"/>
+          <ion-label>{{ $t("OMS") }}</ion-label>
+          <ion-note slot="end">{{ instanceUrl }}</ion-note>
+        </ion-item>
+
         <!-- Profile of user logged in -->
         <ion-item>
           <ion-icon :icon="personCircleOutline" slot="start" />
@@ -31,7 +38,7 @@
 <script lang="ts">
 import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
+import { ellipsisVertical, personCircleOutline, storefrontOutline, codeWorkingOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -55,7 +62,8 @@ export default defineComponent({
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
-      uploadProducts: 'product/getUploadProducts'
+      uploadProducts: 'product/getUploadProducts',
+      instanceUrl: 'user/getInstanceUrl'
     })
   },
   methods: {
@@ -103,6 +111,7 @@ export default defineComponent({
       ellipsisVertical,
       personCircleOutline,
       storefrontOutline,
+      codeWorkingOutline,
       store,
       router
     }
