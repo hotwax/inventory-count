@@ -12,7 +12,7 @@
     "i18n:report": "vue-cli-service i18n:report --src \"./src/**/*.?(js|vue)\" --locales \"./src/locales/**/*.json\""
   },
   "dependencies": {
-    "@capacitor/android": "^2.4.7",
+    "@capacitor/android": "^2.5.0",
     "@capacitor/core": "^2.4.7",
     "@ionic/vue": "^5.4.0",
     "@ionic/vue-router": "^5.4.0",
@@ -24,6 +24,7 @@
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
     "vue": "^3.0.0-0",
+    "vue-barcode-reader": "git+https://github.com/adityasharma7/vue-barcode-reader.git",
     "vue-i18n": "^9.0.0",
     "vue-router": "^4.0.0-0",
     "vuex": "^4.0.1",

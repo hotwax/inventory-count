@@ -12,7 +12,6 @@
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
 
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
-
         <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
@@ -22,7 +21,7 @@
     <ion-grid id="scan-button">
       <ion-row>
         <ion-col>
-          <ion-button color="primary" expand="block">
+          <ion-button color="primary" expand="block" @click="scanProduct">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ $t("Scan") }}
           </ion-button>
@@ -48,7 +47,8 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonList,
-  IonListHeader
+  IonListHeader,
+  modalController
 } from '@ionic/vue'
 import { barcodeOutline } from 'ionicons/icons'
 import { defineComponent } from 'vue'
@@ -56,6 +56,7 @@ import { mapGetters, useStore } from 'vuex'
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
+import Scanner from "@/components/Scanner.vue"
 
 export default defineComponent({
   name: "Search",
@@ -75,7 +76,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonList,
     IonListHeader,
-    ProductListItem
+    ProductListItem,
   },
   data (){
     return {
@@ -89,6 +90,30 @@ export default defineComponent({
     })
   },
   methods: {
+    async scanProduct(){
+      const modal = await modalController
+        .create({
+          component: Scanner,
+        });
+        modal.onDidDismiss()
+        .then((result) => {
+          //result : value of the scanned barcode/QRcode
+          const viewSize =  process.env.VUE_APP_VIEW_SIZE;
+          const viewIndex =  0;
+          const payload = {
+            viewSize,
+            viewIndex,
+            queryString: '*' + result.role + '*'
+          }
+          if (result) {
+            this.store.dispatch("product/findProduct", payload);
+          }
+          else {
+            showToast(translate("Enter product sku to search"))
+          }
+        });
+      return modal.present();
+    },
     selectSearchBarText(event: any) {
       event.target.getInputElement().then((element: any) => {
         element.select();
