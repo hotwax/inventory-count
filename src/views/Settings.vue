@@ -58,9 +58,6 @@ export default defineComponent({
       uploadProducts: 'product/getUploadProducts'
     })
   },
-  mounted(){
-    console.log(this.currentFacility)
-  },
   methods: {
     setFacility (facility: any) {
       if (this.userProfile)
