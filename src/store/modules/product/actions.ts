@@ -27,7 +27,7 @@ const actions: ActionTree<ProductState, RootState> = {
       })
 
       // resp.data.response.numFound tells the number of items in the response
-      if (resp.status === 200 && resp.data.response.numFound > 0 && !hasError(resp)) {
+      if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
         let products = resp.data.response.docs;
         const totalProductsCount = resp.data.response.numFound;
 
