@@ -11,9 +11,9 @@
         <!-- Select store -->
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
-          <ion-label>{{$t("store")}}</ion-label>
-          <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.facilityId" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityId }}</ion-select-option>
+          <ion-label>{{$t("Store")}}</ion-label>
+          <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
         </ion-item>
 
@@ -68,12 +68,11 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      this.userProfile.facilities.map((fac: any) => {
-        if (fac.facilityId == facility['detail'].value) {
-          this.store.dispatch('user/setFacility', {'facility': fac});
-          console.log(fac);
-        }
-      })
+      if (this.userProfile) {
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
+      }
     },
     async presentAlert () {
       const alert = await alertController.create({
