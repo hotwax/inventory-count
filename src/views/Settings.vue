@@ -18,11 +18,11 @@
         </ion-item>
 
         <!-- OMS information -->
-      <ion-item>
-        <ion-icon :icon="codeWorkingOutline" slot="start"/>
-        <ion-label>{{ $t("OMS") }}</ion-label>
-        <ion-label slot="end">{{ instanceUrl }}</ion-label>
-      </ion-item>
+        <ion-item>
+          <ion-icon :icon="codeWorkingOutline" slot="start"/>
+          <ion-label>{{ $t("OMS") }}</ion-label>
+          <ion-label slot="end">{{ instanceUrl }}</ion-label>
+        </ion-item>
 
         <!-- Profile of user logged in -->
         <ion-item>
@@ -112,11 +112,14 @@ export default defineComponent({
       ellipsisVertical,
       personCircleOutline,
       storefrontOutline,
-      codeWorkingOutline,
       store,
       router
     }
   }
 });
 </script>
-
+<style scoped>
+ion-label[slot="end"] {
+   text-align: end;
+}
+</style>
