@@ -21,7 +21,7 @@
         <ion-item>
           <ion-icon :icon="codeWorkingOutline" slot="start"/>
           <ion-label>{{ $t("OMS") }}</ion-label>
-          <ion-note slot="end">{{ instanceUrl }}</ion-note>
+          <ion-label slot="end">{{ instanceUrl }}</ion-label>
         </ion-item>
 
         <!-- Profile of user logged in -->
@@ -38,7 +38,7 @@
 <script lang="ts">
 import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { ellipsisVertical, personCircleOutline, storefrontOutline, codeWorkingOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -108,14 +108,18 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      codeWorkingOutline,
       ellipsisVertical,
       personCircleOutline,
       storefrontOutline,
-      codeWorkingOutline,
       store,
       router
     }
   }
 });
 </script>
-
+<style scoped>
+ion-label[slot="end"] {
+  text-align: end;
+}
+</style>
