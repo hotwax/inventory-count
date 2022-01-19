@@ -119,7 +119,7 @@ export default defineComponent({
 });
 </script>
 <style scoped>
-  ion-label[slot="end"] {
-    text-align: end;
-  }
+ion-label[slot="end"] {
+  text-align: end;
+}
 </style>
