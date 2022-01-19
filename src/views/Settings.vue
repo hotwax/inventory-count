@@ -68,10 +68,11 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      if (this.userProfile)
-      this.store.dispatch('user/setFacility', {
-        'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
-      });
+      if (this.userProfile){
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
+      }
     },
     async presentAlert () {
       const alert = await alertController.create({
