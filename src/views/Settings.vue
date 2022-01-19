@@ -68,7 +68,7 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      if (this.userProfile){
+      if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
