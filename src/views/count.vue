@@ -16,7 +16,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2>{{ product.sku }}</h2>
+                <h2>{{ product.sku }} {{ $route.params.sku }}</h2>
               </ion-label>
             </ion-item>
   
@@ -100,6 +100,9 @@
         product: "product/getCurrent"
       })
     },
+    mounted(){
+      this.fetchProduct(this.$route.params.sku)
+    },
     methods: {
       updateProductInventoryCount() {
         if (this.product.quantity) {
@@ -115,6 +118,16 @@
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
+      },
+      fetchProduct(sku: any) {
+        const viewSize =  process.env.VUE_APP_VIEW_SIZE;
+        const viewIndex =  0;
+        const payload = {
+          viewSize,
+          viewIndex,
+          queryString: '*' + sku + '*'
+        }
+        this.store.dispatch("product/findCurrentProduct", payload)
       }
     },
     setup() {

@@ -88,6 +88,18 @@ const actions: ActionTree<ProductState, RootState> = {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
     const currentProduct = state.uploadProducts[payload.product.sku]
     commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product })
+  },
+
+  async findCurrentProduct ({commit,state},payload){
+    const resp = await ProductService.fetchProducts({
+      // used sku as we are currently only using sku to search for the product
+      "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
+      // "viewSize": payload.viewSize,
+      // "viewIndex": payload.viewIndex
+    })
+    // console.log(resp.data.response.docs[0].sku)
+    const currentProduct = state.uploadProducts[resp.data.response.docs[0].sku]
+    commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : resp.data.response.docs[0] })
   }
 }
 
