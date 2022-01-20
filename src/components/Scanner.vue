@@ -16,7 +16,7 @@
 
 <script>
 import { StreamBarcodeReader } from "vue-barcode-reader";
-import { IonButton,IonButtons, IonIcon, IonToolbar, modalController } from '@ionic/vue';
+import { IonButton, IonButtons, IonIcon, IonToolbar, modalController } from '@ionic/vue';
 import { 
   closeOutline
 } from 'ionicons/icons';
@@ -30,10 +30,10 @@ export default {
     StreamBarcodeReader,
   },   
   methods: {
-    onDecode (result) {
+    onDecode(result) {
       modalController.dismiss({dismissed: true}, result);
     },
-    closeScanner(){
+    closeScanner() {
       modalController.dismiss({dismissed: true});
     }
   },
