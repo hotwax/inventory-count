@@ -16,7 +16,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2>{{ product.sku }} {{ $route.params.sku }}</h2>
+                <h2>{{ product.sku }}</h2>
               </ion-label>
             </ion-item>
   
@@ -102,6 +102,7 @@
     },
     mounted(){
       this.fetchProduct(this.$route.params.sku)
+      console.log("mounted", this.$route)
     },
     methods: {
       updateProductInventoryCount() {
@@ -123,11 +124,10 @@
         const viewSize =  process.env.VUE_APP_VIEW_SIZE;
         const viewIndex =  0;
         const payload = {
-          viewSize,
-          viewIndex,
+          currentSku: sku,
           queryString: '*' + sku + '*'
         }
-        this.store.dispatch("product/findCurrentProduct", payload)
+        this.store.dispatch("product/updateCurrentProduct", payload)
       }
     },
     setup() {
