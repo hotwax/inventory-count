@@ -12,6 +12,7 @@
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
 
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
+
         <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
@@ -76,7 +77,7 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonList,
     IonListHeader,
-    ProductListItem,
+    ProductListItem
   },
   data (){
     return {
