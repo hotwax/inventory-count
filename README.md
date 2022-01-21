@@ -10,7 +10,7 @@ Ionic CLI - If you don't have the ionic CLI installed refer [official documentat
 2. Go to the app directory.
 3. Run following command to download dependencies  
     `npm i`
-4. Create a `.env` file by taking reference from the `.env.example` and set the `VUE_APP_BASE_URL` to the instance you want to connect the app.
+4. Create a `.env` file by taking reference from the `.env.example`.
 5. To run the app in browser use the command: `ionic serve`
 
 
@@ -21,7 +21,7 @@ Ionic CLI - If you don't have the ionic CLI installed refer [official documentat
 3. Go to the <repository-name> directory using command: `cd <repository-name>`
 4. Run following command to download dependencies
     `npm i`
-5. Create a `.env` file by taking reference from the `.env.example` and change the `VUE_APP_BASE_URL` to the instance you want to connect the app.
+5. Create a `.env` file by taking reference from the `.env.example`.
 6. To run the app in browser use the command: `ionic serve`
 
 ## Firebase Hosting
@@ -36,8 +36,6 @@ Here are the steps to deploy app on firebase hosting
 - You should have access to firebase project
 
 ### Dev deployment
-
-- Update the DEV instance url at .env.production file
 
 - Build the application using following command
   `ionic build`
