@@ -1,0 +1,7 @@
+---
+title: Removed fab position adjustment and decreased value of bottom position of scan
+  button
+ticket_id: "#2401fr1"
+merge_request: 51
+author: Azkya Khan
+type: changed
