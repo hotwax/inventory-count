@@ -6,15 +6,15 @@
           <img src="../assets/images/hc.png"/>
 
           <ion-item lines="full">
-            <ion-label>{{ $t("OMS") }}</ion-label>
+            <ion-label position="fixed">{{ $t("OMS") }}</ion-label>
             <ion-input name="instanceUrl" v-model="instanceUrl" id="instanceUrl" type="text" required />
           </ion-item>
           <ion-item lines="full">
-            <ion-label>{{ $t("Username") }}</ion-label>
+            <ion-label position="fixed">{{ $t("Username") }}</ion-label>
             <ion-input name="username" v-model="username" id="username"  type="text" required />
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ $t("Password") }}</ion-label>
+            <ion-label position="fixed">{{ $t("Password") }}</ion-label>
             <ion-input name="password" v-model="password" id="password" type="password" required />
           </ion-item>
 
