@@ -87,7 +87,7 @@ const actions: ActionTree<ProductState, RootState> = {
   async updateCurrentProduct ({ commit, state }, payload) {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
     const currentProduct = state.uploadProducts[payload.currentSku]
-    if(currentProduct!==undefined){
+    if(currentProduct){
       commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
     }
     else{
