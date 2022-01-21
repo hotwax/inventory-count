@@ -74,6 +74,9 @@ export default defineComponent({
         const message = this.$t('The products of the upload list and search list will be removed.')
         const flag = this.$t('facility')
         this.presentAlert(header, message, flag);
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
       } else if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
@@ -85,7 +88,8 @@ export default defineComponent({
         header: header,
         message: message,
         buttons: [{
-          text: this.$t('Cancel')
+          text: this.$t('Cancel'),
+          role: 'cancel',
         }, {
           text: this.$t('Ok'),
           handler: () => {
