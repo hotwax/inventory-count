@@ -103,7 +103,7 @@
     mounted(){
       this.fetchProduct(this.$route.params.sku)
     },
-    iionViewWillEnter(){
+    ionViewWillEnter(){
       this.fetchProduct(this.$route.params.sku)
     },
     methods: {
