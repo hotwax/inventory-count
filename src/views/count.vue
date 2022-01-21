@@ -102,7 +102,9 @@
     },
     mounted(){
       this.fetchProduct(this.$route.params.sku)
-      console.log("mounted", this.$route)
+    },
+    iionViewWillEnter(){
+      this.fetchProduct(this.$route.params.sku)
     },
     methods: {
       updateProductInventoryCount() {
@@ -121,8 +123,6 @@
         }
       },
       fetchProduct(sku: any) {
-        const viewSize =  process.env.VUE_APP_VIEW_SIZE;
-        const viewIndex =  0;
         const payload = {
           currentSku: sku,
           queryString: '*' + sku + '*'

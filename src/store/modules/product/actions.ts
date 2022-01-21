@@ -87,7 +87,6 @@ const actions: ActionTree<ProductState, RootState> = {
   async updateCurrentProduct ({ commit, state }, payload) {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
     const currentProduct = state.uploadProducts[payload.currentSku]
-    // console.log(payload.currentSku)
     if(currentProduct!==undefined){
       commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
     }
@@ -98,18 +97,7 @@ const actions: ActionTree<ProductState, RootState> = {
       })
       commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
     }
-  },
-
-  // async findCurrentProduct ({commit,state},payload){
-  //   console.log(payload.currentSku)
-
-  //   const resp = await ProductService.fetchProducts({
-  //     // used sku as we are currently only using sku to search for the product
-  //     "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
-  //   })
-  //   const currentProduct = state.uploadProducts[resp.data.response.docs[0].sku]
-  //   commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : resp.data.response.docs[0] })
-  // }
+  }
 }
 
 export default actions;
