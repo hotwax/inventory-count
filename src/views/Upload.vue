@@ -30,7 +30,7 @@
         </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
-      <ion-fab id="upload-button" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
@@ -121,9 +121,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-  #upload-button {
-    bottom: 70px;
-  }
-</style>
