@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <ion-page>
-      <ion-content :fullscreen="true">
+      <ion-content>
         <ion-router-outlet />
       </ion-content>
       <ion-footer v-if="showFooter">
