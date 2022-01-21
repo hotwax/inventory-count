@@ -100,9 +100,6 @@
         product: "product/getCurrent"
       })
     },
-    mounted(){
-      this.fetchProduct(this.$route.params.sku)
-    },
     ionViewWillEnter(){
       this.fetchProduct(this.$route.params.sku)
     },
@@ -124,8 +121,7 @@
       },
       fetchProduct(sku: any) {
         const payload = {
-          currentSku: sku,
-          queryString: '*' + sku + '*'
+          currentSku: sku
         }
         this.store.dispatch("product/updateCurrentProduct", payload)
       }

@@ -93,7 +93,7 @@ const actions: ActionTree<ProductState, RootState> = {
     else{
       const resp = await ProductService.fetchProducts({
         // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
+        "filters": ['sku: ' + '*' + payload.currentSku + '*', 'isVirtual: false'],
       })
       commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
     }
