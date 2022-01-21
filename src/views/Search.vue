@@ -121,7 +121,7 @@ export default defineComponent({
     async getProducts(vSize: any, vIndex: any, productSKU?: string) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
-      const queryString = '*' + productSKU ? productSKU : this.queryString + '*';
+      const queryString = `*${productSKU ? productSKU : this.queryString}*`;
       const payload = {
         viewSize,
         viewIndex,
