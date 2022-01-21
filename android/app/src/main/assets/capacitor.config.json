@@ -1,0 +1,13 @@
+{
+  "appId": "co.hotwax.ionic.sdk",
+  "appName": "ionic-sdk",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  },
+  "cordova": {}
+}
