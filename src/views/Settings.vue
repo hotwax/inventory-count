@@ -69,7 +69,7 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      if(Object.keys(this.uploadProducts).length > 0 || this.getSearchProducts.length > 0) {
+      if(Object.keys((this.uploadProducts).length > 0 || this.getSearchProducts.length > 0 ) && facility.target.value != this.currentFacility.facilityId) {
         const header = this.$t('Change Store')
         const message = this.$t('The products of the upload list and search list will be removed.')
         const flag = this.$t('facility')
@@ -86,7 +86,6 @@ export default defineComponent({
         message: message,
         buttons: [{
           text: this.$t('Cancel'),
-          role: 'cancel',
         }, {
           text: this.$t('Ok'),
           handler: () => {
