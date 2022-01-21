@@ -1,6 +1,6 @@
 {
-  "appId": "co.hotwax.ionic.sdk",
-  "appName": "ionic-sdk",
+  "appId": "co.hotwax.inventorycount",
+  "appName": "inventory-count",
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "dist",
