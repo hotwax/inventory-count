@@ -127,7 +127,7 @@ export default defineComponent({
         viewIndex,
         queryString
       }
-      if (this.queryString || queryString) {
+      if (queryString) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
         showToast(translate("Enter product sku to search"))
