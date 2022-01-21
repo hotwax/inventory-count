@@ -73,17 +73,14 @@ export default defineComponent({
         const header = this.$t('Change Store')
         const message = this.$t('The products of the upload list and search list will be removed.')
         const flag = this.$t('facility')
-        this.presentAlert(header, message, flag);
-        this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
-        });
+        this.presentAlert(header, message, flag, facility);
       } else if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
       }
     },
-    async presentAlert (header: any, message: any, flag: any) {
+    async presentAlert (header: any, message: any, flag: any, facility?: any) {
       const alert = await alertController.create({
         header: header,
         message: message,
@@ -101,6 +98,9 @@ export default defineComponent({
             } else if(flag == "facility") {
               this.store.dispatch('product/clearUploadProducts');
               this.store.dispatch('product/clearSearchProducts');
+              this.store.dispatch('user/setFacility', {
+                'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+              });
             }
           }
         }]
