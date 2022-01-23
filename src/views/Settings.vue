@@ -69,38 +69,29 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      if(Object.keys((this.uploadProducts).length > 0 || this.getSearchProducts.length > 0 ) && facility.target.value != this.currentFacility.facilityId) {
-        const header = this.$t('Change Store')
-        const message = this.$t('The products of the upload list and search list will be removed.')
-        const flag = this.$t('facility')
-        this.presentAlert(header, message, flag, facility);
+      if(Object.keys(this.uploadProducts).length > 0 || this.getSearchProducts.length > 0) {
+        this.storeChangeAlert(facility);
       } else if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
       }
     },
-    async presentAlert (header: any, message: any, flag: any, facility?: any) {
+    async storeChangeAlert (facility?: any) {
       const alert = await alertController.create({
-        header: header,
-        message: message,
+        header: this.$t('Change Store'),
+        message: this.$t('The products of the upload list and search list will be removed.'),
         buttons: [{
           text: this.$t('Cancel'),
+          // TODO: create a handler to change facility when we click on cancle.
         }, {
           text: this.$t('Ok'),
           handler: () => {
-            if(flag == "logout") {
-              this.store.dispatch('product/clearUploadProducts');
-              this.store.dispatch('user/logout').then(() => {
-                this.router.push('/login');
-              })
-            } else if(flag == "facility") {
               this.store.dispatch('product/clearUploadProducts');
               this.store.dispatch('product/clearSearchProducts');
               this.store.dispatch('user/setFacility', {
                 'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
               });
-            }
           }
         }]
       });
@@ -108,16 +99,29 @@ export default defineComponent({
     },
     logout () {
       if (Object.keys(this.uploadProducts).length > 0) {
-        const header = this.$t('Logout')
-        const message = this.$t('The products in the upload list will be removed.')
-        const flag = this.$t('logout')
-        this.presentAlert(header, message, flag);
+        this.logoutAlert();
       } else {
         this.store.dispatch('user/logout').then(() => {
           this.router.push('/login');
         })
       }
-    }
+    },
+    async logoutAlert () {
+      const alert = await alertController.create({
+        header: this.$t('Logout'),
+        message: this.$t('The products in the upload list will be removed.'),
+        buttons: [{
+          text: this.$t('Cancel')
+        }, {
+          text: this.$t('Ok'),
+          handler: () => {
+            this.store.dispatch('product/clearUploadProducts');
+            this.store.dispatch('user/logout')
+          }
+        }]
+      });
+      await alert.present();
+    },
   },
   setup(){
     const store = useStore();
