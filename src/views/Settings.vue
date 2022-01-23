@@ -69,7 +69,7 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      if(Object.keys(this.uploadProducts).length > 0 || this.getSearchProducts.length > 0) {
+      if(Object.keys((this.uploadProducts).length > 0 || this.getSearchProducts.length > 0) && facility['detail'].value != this.currentFacility.facilityId) {
         this.storeChangeAlert(facility);
       } else if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
@@ -83,7 +83,11 @@ export default defineComponent({
         message: this.$t('The products of the upload list and search list will be removed.'),
         buttons: [{
           text: this.$t('Cancel'),
-          // TODO: create a handler to change facility when we click on cancle.
+          // TODO: Implement this handler to change facility when we click on cancle.
+          handler: () => {
+            facility.target.childNodes[0].nextElementSibling.innerHTML = this.currentFacility.name
+            return true;
+          }
         }, {
           text: this.$t('Ok'),
           handler: () => {
