@@ -1,0 +1,6 @@
+---
+title: Improved Code to prepare loader on app mounted and assign it to null on dismiss
+ticket_id: "#1x68u9"
+merge_request: 34
+author: Yashi Verma
+type: changed
