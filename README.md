@@ -27,7 +27,6 @@ Ionic CLI - If you don't have the ionic CLI installed refer [official documentat
 
 ## Firebase Hosting
 
-We are using firebase hosting for the Pre-order app deployment
 Here are the steps to deploy app on firebase hosting
 
 ### Prerequisite
