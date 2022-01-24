@@ -147,8 +147,6 @@ export default defineComponent({
 
 <style scoped>
   #scan-button {
-    position: fixed;
-    bottom: 55px;
-    width: 100%;
+    display: contents;
   }
 </style>
