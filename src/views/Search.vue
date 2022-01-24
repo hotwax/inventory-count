@@ -58,6 +58,7 @@ import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
 import Scanner from "@/components/Scanner.vue"
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: "Search",
@@ -97,11 +98,13 @@ export default defineComponent({
           component: Scanner,
         });
         modal.onDidDismiss()
-        .then((result) => {
+        .then(async (result) => {
           //result : value of the scanned barcode/QRcode
           if(result.role){
             this.queryString = result.role
-            this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
+            await this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
+            this.store.dispatch('product/updateCurrentProduct', {product: this.products[0]});
+            this.router.push({ path: `/count/${this.products[0].sku}` });
           }
         });
       return modal.present();
@@ -136,8 +139,10 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
 
     return {
+      router,
       store,
       barcodeOutline
     }
