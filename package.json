@@ -1,8 +1,8 @@
 {
-  "name": "ionic-sdk",
-  "version": "0.0.1",
+  "name": "inventory-count",
+  "version": "1.0.0",
   "private": true,
-  "description": "An Ionic project",
+  "description": "HotWax Commece Inventory Count App",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -12,10 +12,11 @@
     "i18n:report": "vue-cli-service i18n:report --src \"./src/**/*.?(js|vue)\" --locales \"./src/locales/**/*.json\""
   },
   "dependencies": {
-    "@capacitor/android": "^2.4.7",
+    "@capacitor/android": "^2.5.0",
     "@capacitor/core": "^2.4.7",
     "@ionic/vue": "^6.0.2",
     "@ionic/vue-router": "^6.0.2",
+    "@capacitor/ios": "^2.4.7",
     "axios": "^0.21.1",
     "axios-cache-adapter": "^2.7.3",
     "core-js": "^3.6.5",
@@ -24,6 +25,7 @@
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
     "vue": "^3.2.26",
+    "vue-barcode-reader": "^1.0.0",
     "vue-i18n": "^9.0.0",
     "vue-router": "^4.0.12",
     "vuex": "^4.0.1",
