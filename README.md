@@ -1,4 +1,5 @@
-Inventory Count app
+![Inventory Count app](https://user-images.githubusercontent.com/15027245/150728116-1677a5d6-223f-4d65-9c45-2582ed7056dd.png)
+
 
 # Prerequisite
 Ionic CLI - If you don't have the ionic CLI installed refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
