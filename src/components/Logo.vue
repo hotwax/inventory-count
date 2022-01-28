@@ -14,7 +14,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
 .dark {
   display: none;
 }
