@@ -146,9 +146,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-  #scan-button {
-    position: fixed;
-    bottom: 10px;
-    width: 100%;
-  }
+ion-content {
+  --padding-bottom : 50px;
+}
+
+#scan-button {
+  position: fixed;
+  bottom: 10px;
+  width: 100%;
+}
 </style>
