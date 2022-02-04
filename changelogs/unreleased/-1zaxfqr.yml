@@ -1,0 +1,7 @@
+---
+title: Added padding bottom to page content to fix scan button and product list overlapping
+  issue
+ticket_id: "#1zaxfqr"
+merge_request: 59
+author: Azkya Khan
+type: changed
