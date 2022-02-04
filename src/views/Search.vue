@@ -151,8 +151,8 @@ ion-content {
 }
 
 #scan-button {
-  position: fixed;
-  bottom: 10px;
+  position: absolute;
+  bottom: 0;
   width: 100%;
 }
 </style>
