@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "hotwax-digital-commerce"
+  },
+  "targets": {
+    "hotwax-digital-commerce": {
+      "hosting": {
+        "commerce-hub-dev": [
+          "dev-commerce-hub"
+        ]
+      }
+    }
+  }
+}
