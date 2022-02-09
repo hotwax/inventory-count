@@ -100,6 +100,9 @@
         product: "product/getCurrent"
       })
     },
+    ionViewWillEnter(){
+      this.fetchProduct(this.$route.params.sku)
+    },
     methods: {
       updateProductInventoryCount() {
         if (this.product.quantity) {
@@ -115,6 +118,12 @@
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
+      },
+      fetchProduct(sku: any) {
+        const payload = {
+          currentSku: sku
+        }
+        this.store.dispatch("product/updateCurrentProduct", payload)
       }
     },
     setup() {
