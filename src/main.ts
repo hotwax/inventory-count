@@ -5,7 +5,6 @@ import moment from 'moment'
 import "moment-timezone";
 import './registerServiceWorker';
 
-
 import { IonicVue } from '@ionic/vue';
 
 /* Core CSS required for Ionic components to work properly */
