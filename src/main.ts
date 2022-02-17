@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router';
 import moment from 'moment'
 import "moment-timezone";
+import './registerServiceWorker';
 
 
 import { IonicVue } from '@ionic/vue';
