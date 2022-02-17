@@ -5,7 +5,7 @@
         <ion-title>{{ $t("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()"/>
 
       <ion-list v-if="products.length > 0">

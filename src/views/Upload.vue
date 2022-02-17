@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
