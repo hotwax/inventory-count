@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="flex">
         <form class="login-container" @keyup.enter="login(form)" @submit.prevent="login(form)">
           <Logo />

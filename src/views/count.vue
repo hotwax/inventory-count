@@ -7,7 +7,7 @@
         </ion-toolbar>
       </ion-header>
   
-      <ion-content :fullscreen="true">
+      <ion-content>
         <div class="header">
           <div class="product-image">
              <Image :src="product.mainImageUrl"/>

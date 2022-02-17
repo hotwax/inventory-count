@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-list>
         <!-- Select store -->
         <ion-item>
