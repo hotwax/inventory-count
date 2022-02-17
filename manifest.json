@@ -1,6 +1,6 @@
 {
-    "name": "HotWax Commerce Receiving App",
-    "short_name": "receiving",
+    "name": "HotWax Commerce Inventory Count App",
+    "short_name": "inventory-count",
     "theme_color": "#4DBA87",
     "icons": [
       {
