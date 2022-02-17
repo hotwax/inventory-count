@@ -96,7 +96,7 @@ export default defineComponent({
     upload () {
       if (Object.keys(this.uploadProducts).length > 0) {
         const inventoryCountRegister = Object.entries(this.uploadProducts).map((product: any) => {
-          return {"locationId": "", "productId": product[1].productId, "quantity": product[1].quantity};
+          return {"locationId": "TLTLTLLL02", "productId": product[1].productId, "quantity": product[1].quantity};
         })
         // TODO handle the case if there is no facilities available
         this.store.dispatch('product/uploadInventoryCount', {inventoryCountRegister: inventoryCountRegister, facilityId: this.currentFacility.facilityId});
