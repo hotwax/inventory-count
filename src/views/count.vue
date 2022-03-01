@@ -43,7 +43,7 @@
         </ion-item>
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
-          <ion-chip @click="openPicker" interface="picker" >
+          <ion-chip @click="openLocationPicker">
             <ion-label>{{ locationId }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
@@ -121,9 +121,9 @@
       this.locationId = await this.facilityLocation.data.docs[0].locationSeqId;
     },
     methods: {
-      async openPicker(){
+      async openLocationPicker() {
         this.pickerOptions.options = await this.facilityLocation.data.docs.map((location: any) => {
-          return {text:location.locationSeqId, value: location.locationSeqId };
+          return { text:location.locationSeqId, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
           columns: [this.pickerOptions],
