@@ -41,6 +41,13 @@
         <ion-item lines="none">
           <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
         </ion-item>
+        <ion-item>
+          <ion-label>{{ $t("Location") }}</ion-label>
+          <ion-chip @click="openPicker" interface="picker" >
+            <ion-label>{{ locationId }}</ion-label>
+            <ion-icon :icon="locationOutline" />
+          </ion-chip>
+        </ion-item>
   
         <div class="action">
           <ion-button size="large" @click="updateProductInventoryCount()">
@@ -68,9 +75,10 @@
     IonPage,
     IonTitle,
     IonToolbar,
+    pickerController
   } from "@ionic/vue";
   import { defineComponent } from "vue";
-  import { colorPaletteOutline, resize, saveOutline } from "ionicons/icons";
+  import { colorPaletteOutline, resize, saveOutline, locationOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
   import { showToast } from "@/utils";
   import { translate } from "@/i18n";
@@ -97,10 +105,44 @@
     },
     computed: {
       ...mapGetters({
-        product: "product/getCurrent"
+        product: "product/getCurrent",
+        facility: 'user/getCurrentFacility',
       })
     },
+    data(){
+      return{
+        facilityLocation: [] as any,
+        pickerOptions: {} as any,
+        locationId: ""
+      }
+    },
+    async mounted(){
+      this.facilityLocation = await this.store.dispatch("user/getFacilityLocation", {facilityId: this.facility.facilityId, productId: this.product.productId});
+      this.locationId = await this.facilityLocation.data.docs[0].locationSeqId;
+    },
     methods: {
+      async openPicker(){
+        this.pickerOptions.options = await this.facilityLocation.data.docs.map((location: any) => {
+          return {text:location.locationSeqId, value: location.locationSeqId };
+        })
+        const picker = await pickerController.create({
+          columns: [this.pickerOptions],
+          buttons: [
+            {
+              text: "Cancel",
+              role: "cancel",
+            },
+            {
+              text: "Confirm",
+              handler: (value) => {
+                this.locationId = value.undefined.value;
+                this.product.locationId = value.undefined.value;
+              },
+            },
+          ],
+        });
+        await picker.present();
+      },
       updateProductInventoryCount() {
         if (this.product.quantity) {
           this.store.dispatch('product/updateInventoryCount', this.product);
@@ -127,6 +169,7 @@
         colorPaletteOutline,
         resize,
         saveOutline,
+        locationOutline
       };
     },
   });
