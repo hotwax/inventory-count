@@ -85,25 +85,6 @@ const actions: ActionTree<UserState, RootState> = {
   // Set User Instance Url
   setUserInstanceUrl ({ state, commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
-  },
-
-  async getFacilityLocation( { commit }, payload) {
-    let resp;
-    try {
-      const params = {
-        "inputFields": {
-          facilityId: payload.facilityId,
-          productId: payload.productId
-        },
-        "entityName": "ProductFacilityLocation",
-        "fieldsToSelect": [ "locationSeqId" ]
-      }
-      resp = await UserService.getFacilityLocation(params)
-    } catch(error) {
-      console.log(error)
-      showToast(translate("Something went wrong"));
-    }
-    return resp;
   }
 }
 export default actions;

@@ -80,10 +80,11 @@
   import { defineComponent } from "vue";
   import { colorPaletteOutline, resize, saveOutline, locationOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
-  import { showToast } from "@/utils";
+  import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
+  import { UserService } from '@/services/UserService';
   
   export default defineComponent({
     name: "Count",
@@ -111,32 +112,36 @@
     },
     data(){
       return{
-        facilityLocation: [] as any,
+        facilityLocations: [] as any,
         pickerOptions: {} as any,
         locationId: ""
       }
     },
     async mounted(){
-      this.facilityLocation = await this.store.dispatch("user/getFacilityLocation", {facilityId: this.facility.facilityId, productId: this.product.productId});
-      this.locationId = await this.facilityLocation.data.docs[0].locationSeqId;
+      this.getFacilityLocation();
     },
     methods: {
       async openLocationPicker() {
-        this.pickerOptions.options = await this.facilityLocation.data.docs.map((location: any) => {
+        this.pickerOptions.options = await this.facilityLocations.data.docs.map((location: any) => {
           return { text:location.locationSeqId, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
-          columns: [this.pickerOptions],
+          columns: [
+            {
+              name: 'Location',
+              options: this.pickerOptions.options
+            }
+          ],
           buttons: [
             {
-              text: "Cancel",
+              text: translate('Cancel'),
               role: "cancel",
             },
             {
-              text: "Confirm",
+              text: translate('Confirm'),
               handler: (value) => {
-                this.locationId = value.undefined.value;
-                this.product.locationId = value.undefined.value;
+                this.locationId = value.Location.value;
+                this.product.locationId = value.Location.value;
               },
             },
           ],
@@ -156,6 +161,26 @@
         this.router.push('/search')
         } else {
           showToast(translate("Enter the stock count for the product"))
+        }
+      },
+      async getFacilityLocation() {
+        let resp;
+        try {
+          const params = {
+            "inputFields": {
+              facilityId: this.facility.facilityId,
+              productId: this.product.productId,
+            },
+            "entityName": "ProductFacilityLocation",
+            "fieldsToSelect": [ "locationSeqId" ]
+          }
+          resp = await UserService.getFacilityLocation(params);
+          if(resp.status === 200 && resp.data.count && resp.data.count > 0 && !hasError(resp)) {
+            this.facilityLocations = resp;
+            this.locationId = await this.facilityLocations.data.docs[0].locationSeqId;
+          }
+        } catch(err) {
+          console.error(err);
         }
       }
     },
