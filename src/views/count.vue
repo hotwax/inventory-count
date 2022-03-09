@@ -118,7 +118,7 @@
       }
     },
     async mounted(){
-      this.getFacilityLocation();
+      this.getFacilityLocations();
     },
     methods: {
       async openLocationPicker() {
@@ -163,7 +163,7 @@
           showToast(translate("Enter the stock count for the product"))
         }
       },
-      async getFacilityLocation() {
+      async getFacilityLocations() {
         let resp;
         try {
           const params = {
@@ -174,7 +174,7 @@
             "entityName": "ProductFacilityLocation",
             "fieldsToSelect": [ "locationSeqId" ]
           }
-          resp = await UserService.getFacilityLocation(params);
+          resp = await UserService.getFacilityLocations(params);
           if(resp.status === 200 && resp.data.count && resp.data.count > 0 && !hasError(resp)) {
             this.facilityLocations = resp;
             this.locationId = await this.facilityLocations.data.docs[0].locationSeqId;

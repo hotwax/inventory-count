@@ -32,7 +32,7 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
   });
 }
 
-const getFacilityLocation = async (payload: any): Promise <any> => {
+const getFacilityLocations = async (payload: any): Promise <any> => {
   return api({
     url: "/performFind",
     method: "POST",
@@ -45,5 +45,5 @@ export const UserService = {
     getAvailableTimeZones,
     getProfile,
     setUserTimeZone,
-    getFacilityLocation
+    getFacilityLocations
 }
