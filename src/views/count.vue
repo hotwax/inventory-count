@@ -150,7 +150,7 @@
       },
       updateProductInventoryCount() {
         if (this.product.quantity) {
-          this.store.dispatch('product/updateInventoryCount', this.product);
+          this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
           role: 'view',
