@@ -43,7 +43,7 @@
         </ion-item>
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
-          <ion-chip @click="openLocationPicker">
+          <ion-chip @click="selectLocation">
             <ion-label>{{ locationId }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
@@ -84,7 +84,7 @@
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
-  import { UserService } from '@/services/UserService';
+  import { ProductService } from '@/services/ProductService';
   
   export default defineComponent({
     name: "Count",
@@ -121,7 +121,7 @@
       this.getFacilityLocations();
     },
     methods: {
-      async openLocationPicker() {
+      async selectLocation() {
         this.pickerOptions.options = await this.facilityLocations.data.docs.map((location: any) => {
           return { text:location.locationSeqId, value: location.locationSeqId };
         })
@@ -139,9 +139,9 @@
             },
             {
               text: translate('Confirm'),
-              handler: (value) => {
-                this.locationId = value.Location.value;
-                this.product.locationId = value.Location.value;
+              handler: (data) => {
+                this.locationId = data.Location.value;
+                this.product.locationId = data.Location.value;
               },
             },
           ],
@@ -174,7 +174,7 @@
             "entityName": "ProductFacilityLocation",
             "fieldsToSelect": [ "locationSeqId" ]
           }
-          resp = await UserService.getFacilityLocations(params);
+          resp = await ProductService.getFacilityLocations(params);
           if(resp.status === 200 && resp.data.count && resp.data.count > 0 && !hasError(resp)) {
             this.facilityLocations = resp;
             this.locationId = await this.facilityLocations.data.docs[0].locationSeqId;
