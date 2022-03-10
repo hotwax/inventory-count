@@ -44,7 +44,7 @@
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
           <ion-chip @click="selectLocation">
-            <ion-label>{{ location?.locationLabel ? location?.locationLabel : facilityLocations[0]?.locationLabel }}</ion-label>
+            <ion-label>{{ location ? location : facilityLocations[0]?.location }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
         </ion-item>
@@ -111,7 +111,7 @@
       }),
       location : function () {
         const location = (this as any).facilityLocations.find((location: any) => location.locationSeqId === this.product.locationId);
-        return location;
+        return location?.location ? location?.location : "";
       }
     },
     data(){
@@ -126,7 +126,7 @@
     methods: {
       async selectLocation() {
         this.pickerOptions = await this.facilityLocations.map((location: any) => {
-          return { text:location.locationLabel, value: location.locationSeqId };
+          return { text:location.location, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
           columns: [
@@ -183,7 +183,7 @@
             this.facilityLocations = this.facilityLocations.map((location: any) => {
               return {
                 locationSeqId: location.locationSeqId,
-                locationLabel: location.areaId + location.aisleId + location.sectionId + location.levelId + location.positionId
+                location: location.areaId + location.aisleId + location.sectionId + location.levelId + location.positionId
               }
             })
           }
