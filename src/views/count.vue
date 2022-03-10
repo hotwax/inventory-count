@@ -44,7 +44,7 @@
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
           <ion-chip @click="selectLocation">
-            <ion-label>{{ locationLabel }}</ion-label>
+            <ion-label>{{ location }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
         </ion-item>
@@ -114,7 +114,7 @@
       return{
         facilityLocations: [] as any,
         pickerOptions: {} as any,
-        locationLabel: ""
+        location: ""
       }
     },
     async mounted(){
@@ -140,7 +140,7 @@
             {
               text: translate('Confirm'),
               handler: (data) => {
-                this.locationLabel = data.Location.text;
+                this.location = data.Location.text;
                 this.product.locationId = data.Location.value;
               },
             },
@@ -185,7 +185,7 @@
               }
             })
 
-            this.locationLabel = await this.facilityLocations[0].locationLabel;
+            this.location = await this.facilityLocations[0].locationLabel;
           }
         } catch(err) {
           console.error(err);
