@@ -44,7 +44,7 @@
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
           <ion-chip @click="selectLocation">
-            <ion-label>{{ location?.locationLabel }}</ion-label>
+            <ion-label>{{ location?.locationLabel ? location?.locationLabel : facilityLocations[0]?.locationLabel }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
         </ion-item>
