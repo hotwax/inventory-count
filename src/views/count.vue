@@ -44,7 +44,7 @@
         <ion-item>
           <ion-label>{{ $t("Location") }}</ion-label>
           <ion-chip @click="selectLocation">
-            <ion-label>{{ location ? location : facilityLocations[0]?.locationPath }}</ion-label>
+            <ion-label>{{ location }}</ion-label>
             <ion-icon :icon="locationOutline" />
           </ion-chip>
         </ion-item>
@@ -108,20 +108,17 @@
       ...mapGetters({
         product: "product/getCurrent",
         facility: 'user/getCurrentFacility',
-      }),
-      location : function () {
-        const location = (this as any).facilityLocations.find((location: any) => location.locationSeqId === this.product.locationId);
-        return location?.locationPath ? location?.locationPath : "";
-      }
+      })
     },
     data(){
       return{
         facilityLocations: [] as any,
         pickerOptions: {} as any,
+        location: ""
       }
     },
     async mounted(){
-      this.getFacilityLocations();
+      await this.getFacilityLocations();
     },
     methods: {
       async selectLocation() {
@@ -143,6 +140,7 @@
             {
               text: translate('Confirm'),
               handler: (data) => {
+                this.location = data.Location.text;
                 this.product.locationId = data.Location.value;
               },
             },
@@ -186,10 +184,13 @@
                 locationPath: location.areaId + location.aisleId + location.sectionId + location.levelId + location.positionId
               }
             })
+            this.location = this.facilityLocations[0].locationPath;
+            this.product.locationId = this.facilityLocations[0].locationSeqId;
           }
         } catch(err) {
           console.error(err);
         }
+        return resp;
       }
     },
     setup() {
