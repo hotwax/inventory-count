@@ -122,14 +122,14 @@
     },
     methods: {
       async selectLocation() {
-        this.pickerOptions.options = await this.facilityLocations.data.docs.map((location: any) => {
-          return { text:location.locationSeqId, value: location.locationSeqId };
+        this.pickerOptions = await this.facilityLocations.map((location: any) => {
+          return { text:location.locationLabel, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
           columns: [
             {
               name: 'Location',
-              options: this.pickerOptions.options
+              options: this.pickerOptions
             }
           ],
           buttons: [
@@ -171,13 +171,21 @@
               facilityId: this.facility.facilityId,
               productId: this.product.productId,
             },
-            "entityName": "ProductFacilityLocation",
-            "fieldsToSelect": [ "locationSeqId" ]
+            "entityName": "ProductAndFacilityLocation",
+            "fieldList": ["areaId", "aisleId", "sectionId", "levelId", "positionId", "locationSeqId"]
           }
           resp = await ProductService.getFacilityLocations(params);
           if(resp.status === 200 && resp.data.count && resp.data.count > 0 && !hasError(resp)) {
-            this.facilityLocations = resp;
-            this.locationId = await this.facilityLocations.data.docs[0].locationSeqId;
+            this.facilityLocations = resp.data.docs;
+
+            this.facilityLocations = this.facilityLocations.map((location: any) => {
+              return {
+                locationSeqId: location.locationSeqId,
+                locationLabel: location.areaId + location.aisleId + location.sectionId + location.levelId + location.positionId
+              }
+            })
+
+            this.locationId = await this.facilityLocations[0].locationSeqId;
           }
         } catch(err) {
           console.error(err);
