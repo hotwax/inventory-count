@@ -3,7 +3,7 @@
     <ion-toolbar>
       <ion-buttons slot="end" @click="closeScanner()" >
         <ion-button>
-          <ion-icon :icon="closeOutline" />
+          <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
     </ion-toolbar>
