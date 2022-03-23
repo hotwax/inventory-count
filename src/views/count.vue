@@ -41,6 +41,13 @@
         <ion-item lines="none">
           <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
         </ion-item>
+        <ion-item>
+          <ion-label position="floating">{{ $t("Damage") }}</ion-label>
+          <ion-input v-model="product.damage" />
+        </ion-item>
+        <ion-item lines="none">
+          <ion-note id="damageCount">{{ $t("Enter the count of damage on the shelf.") }}</ion-note>
+        </ion-item>
   
         <div class="action">
           <ion-button size="large" @click="updateProductInventoryCount()">
@@ -102,7 +109,7 @@
     },
     methods: {
       updateProductInventoryCount() {
-        if (this.product.quantity) {
+        if (this.product.quantity && this.product.damage) {
           this.store.dispatch('product/updateInventoryCount', this.product);
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
@@ -113,7 +120,7 @@
         }])
         this.router.push('/search')
         } else {
-          showToast(translate("Enter the stock count for the product"))
+          showToast(translate("Enter the stock and damage count for the product"))
         }
       }
     },
@@ -143,6 +150,10 @@
     margin-top: 8px;
   }
   
+  #damageCount {
+    margin-top: 8px;
+  }
+
   .action {
     text-align: center;
   }
