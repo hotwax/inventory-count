@@ -113,7 +113,6 @@
     data(){
       return{
         facilityLocations: [] as any,
-        pickerOptions: {} as any,
         location: ""
       }
     },
@@ -122,14 +121,14 @@
     },
     methods: {
       async selectLocation() {
-        this.pickerOptions = await this.facilityLocations.map((location: any) => {
+        const pickerOptions = await this.facilityLocations.map((location: any) => {
           return { text:location.locationPath, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
           columns: [
             {
               name: 'Location',
-              options: this.pickerOptions
+              options: pickerOptions
             }
           ],
           buttons: [
