@@ -4,6 +4,7 @@ import Upload from "@/views/Upload.vue";
 import Settings from "@/views/Settings.vue";
 import Login from "@/views/Login.vue";
 import store from "@/store";
+import Search from "@/views/Search.vue";
 import Count from "@/views/count.vue";
 
 const authGuard = (to: any, from: any, next: any) => {
@@ -52,6 +53,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: Login,
     beforeEnter: loginGuard,
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: Search,
+    beforeEnter: authGuard
   },
   {
     path: "/count/:sku",
