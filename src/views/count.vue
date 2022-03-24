@@ -175,7 +175,6 @@
           }
           resp = await ProductService.getFacilityLocations(params);
           if(resp.status === 200 && resp.data.count && resp.data.count > 0 && !hasError(resp)) {
-            this.facilityLocations = resp.data.docs;
 
             this.facilityLocations = this.facilityLocations.map((location: any) => {
               return {
