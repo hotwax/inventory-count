@@ -1,13 +1,16 @@
 {
   "Cancel": "Cancel",
   "Click the backdrop to dismiss.": "Click the backdrop to dismiss.",
+  "Confirm": "Confirm",
   "Count": "Count",
   "Cycle Count": "Cycle Count",
   "Enter product sku to search": "Enter product sku to search",
   "Enter the count of stock on the shelf.": "Enter the count of stock on the shelf.",
+  "Enter the stock count for the product": "Enter the stock count for the product",
   "Instance Url": "Instance Url",
   "Item added to upload list": "Item added to upload list",
   "Loading": "Loading",
+  "Location": "Location",
   "Login": "Login",
   "Logout": "Logout",
   "Ok": "Ok",
@@ -26,5 +29,6 @@
   "Results": "Results",
   "The products in the upload list will be removed.": "The products in the upload list will be removed.",
   "Upload": "Upload",
-  "Username": "Username"
+  "Username": "Username",
+  "View": "View"
 }
