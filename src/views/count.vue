@@ -170,6 +170,7 @@
               facilityId: this.facility.facilityId,
               productId: this.product.productId,
             },
+            "viewSize": 20,
             "entityName": "ProductAndFacilityLocation",
             "fieldList": ["areaId", "aisleId", "sectionId", "levelId", "positionId", "locationSeqId"]
           }
