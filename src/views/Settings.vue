@@ -8,6 +8,15 @@
     
     <ion-content>
       <ion-list>
+        <!-- Select eCom store -->
+        <ion-item>
+          <ion-icon :icon="globeOutline" slot="start" />
+          <ion-label>{{$t("eCom Store")}}</ion-label>
+          <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
+            <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+
         <!-- Select store -->
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
@@ -38,7 +47,7 @@
 <script lang="ts">
 import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVertical, globeOutline, personCircleOutline, storefrontOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -62,11 +71,19 @@ export default defineComponent({
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
+      currentEComStore: 'user/getCurrentEComStore',
       uploadProducts: 'product/getUploadProducts',
       instanceUrl: 'user/getInstanceUrl'
     })
   },
   methods: {
+    setEComStore(store: any) {
+      if(this.userProfile) {
+        this.store.dispatch('user/setEComStore', {
+          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
+        })
+      }
+    },
     setFacility (facility: any) {
       if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
@@ -109,6 +126,7 @@ export default defineComponent({
     return {
       codeWorkingOutline,
       ellipsisVertical,
+      globeOutline,
       personCircleOutline,
       storefrontOutline,
       store,
