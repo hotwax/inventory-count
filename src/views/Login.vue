@@ -1,9 +1,9 @@
 <template>
   <ion-page>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <div class="flex">
         <form class="login-container" @keyup.enter="login(form)" @submit.prevent="login(form)">
-          <img src="../assets/images/hc.png"/>
+          <Logo />
 
           <ion-item lines="full">
             <ion-label position="fixed">{{ $t("OMS") }}</ion-label>
@@ -39,6 +39,7 @@ import { defineComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
 import { mapGetters } from 'vuex';
+import Logo from '@/components/Logo.vue';
 
 export default defineComponent({
   name: "Login",
@@ -48,7 +49,8 @@ export default defineComponent({
     IonInput,
     IonItem,
     IonLabel,
-    IonPage
+    IonPage,
+    Logo
   },
   data() {
     return {
@@ -67,9 +69,9 @@ export default defineComponent({
   },
   methods: {
     login: function () {
-      this.store.dispatch("user/setUserInstanceUrl", this.instanceUrl)
+      this.store.dispatch("user/setUserInstanceUrl", this.instanceUrl.trim())
       const { username, password } = this;
-      this.store.dispatch("user/login", { username, password }).then((data: any) => {
+      this.store.dispatch("user/login", { username: username.trim(), password }).then((data: any) => {
         if (data.token) {
           this.username = ''
           this.password = ''
@@ -89,11 +91,6 @@ export default defineComponent({
 
 .login-container {
   width: 375px;
-}
-
-img {
-  margin-bottom: 25px;
-  padding: 16px;
 }
 
 .flex {

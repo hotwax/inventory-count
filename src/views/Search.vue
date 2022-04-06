@@ -5,7 +5,7 @@
         <ion-title>{{ $t("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()"/>
 
       <ion-list v-if="products.length > 0">
@@ -22,7 +22,7 @@
     <ion-grid id="scan-button">
       <ion-row>
         <ion-col>
-          <ion-button color="primary" expand="block">
+          <ion-button color="primary" expand="block" @click="scanProduct">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ $t("Scan") }}
           </ion-button>
@@ -48,7 +48,8 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonList,
-  IonListHeader
+  IonListHeader,
+  modalController
 } from '@ionic/vue'
 import { barcodeOutline } from 'ionicons/icons'
 import { defineComponent } from 'vue'
@@ -56,6 +57,7 @@ import { mapGetters, useStore } from 'vuex'
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
+import Scanner from "@/components/Scanner.vue"
 
 export default defineComponent({
   name: "Search",
@@ -89,6 +91,21 @@ export default defineComponent({
     })
   },
   methods: {
+    async scanProduct(){
+      const modal = await modalController
+        .create({
+          component: Scanner,
+        });
+        modal.onDidDismiss()
+        .then((result) => {
+          //result : value of the scanned barcode/QRcode
+          if(result.role){
+            this.queryString = result.role
+            this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
+          }
+        });
+      return modal.present();
+    },
     selectSearchBarText(event: any) {
       event.target.getInputElement().then((element: any) => {
         element.select();
@@ -129,9 +146,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-  #scan-button {
-    position: fixed;
-    bottom: 55px;
-    width: 100%;
-  }
+ion-content {
+  --padding-bottom : 50px;
+}
+
+#scan-button {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
 </style>

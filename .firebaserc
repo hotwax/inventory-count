@@ -1,0 +1,22 @@
+{
+  "projects": {
+    "default": "hotwax-digital-commerce",
+    "production": "digital-commerce-71eb8"
+  },
+  "targets": {
+    "hotwax-digital-commerce": {
+      "hosting": {
+        "dev-inventorycount": [
+          "dev-inventorycount"
+        ]
+      }
+    },
+    "digital-commerce-71eb8": {
+      "hosting": {
+        "inventorycount": [
+          "inventorycount"
+        ]
+      }
+    }
+  }
+}
