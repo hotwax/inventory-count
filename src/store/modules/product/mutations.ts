@@ -20,10 +20,6 @@ const mutations: MutationTree <ProductState> = {
   [types.PRODUCT_CLEAR_UPLD_PRDTS] (state) {
     state.uploadProducts = {};
   },
-  [types.PRODUCT_CLEAR_SEARCH_PRDTS] (state) {
-    state.products.list = {};
-    state.products.total = 0;
-  },
   [types.PRODUCT_SEARCH_UPDATED] (state, payload) {
     state.products.list = payload.products;
     state.products.total = payload.totalProductsCount;

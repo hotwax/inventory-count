@@ -55,7 +55,7 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async clearSearchProducts({ commit }) {
-    commit(types.PRODUCT_CLEAR_SEARCH_PRDTS);
+    commit(types.PRODUCT_SEARCH_UPDATED, { products: {}, totalProductsCount: 0 })
   },
 
   async uploadInventoryCount({ commit }, payload) {
