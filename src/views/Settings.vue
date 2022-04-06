@@ -84,10 +84,9 @@ export default defineComponent({
         buttons: [
           {
             text: this.$t('Cancel'),
-            // TODO: Implement this handler to change facility when we click on cancle.
             handler: () => {
-              facility.target.childNodes[0].nextElementSibling.innerHTML = this.currentFacility.name
-              return true;
+              // TODO: find a better way to handle this case.
+              this.$forceUpdate()
             }
           },
           {
