@@ -81,23 +81,26 @@ export default defineComponent({
       const alert = await alertController.create({
         header: this.$t('Change Store'),
         message: this.$t('The products of the upload list and search list will be removed.'),
-        buttons: [{
-          text: this.$t('Cancel'),
-          // TODO: Implement this handler to change facility when we click on cancle.
-          handler: () => {
-            facility.target.childNodes[0].nextElementSibling.innerHTML = this.currentFacility.name
-            return true;
-          }
-        }, {
-          text: this.$t('Ok'),
-          handler: () => {
+        buttons: [
+          {
+            text: this.$t('Cancel'),
+            // TODO: Implement this handler to change facility when we click on cancle.
+            handler: () => {
+              facility.target.childNodes[0].nextElementSibling.innerHTML = this.currentFacility.name
+              return true;
+            }
+          },
+          {
+            text: this.$t('Ok'),
+            handler: () => {
               this.store.dispatch('product/clearUploadProducts');
               this.store.dispatch('product/clearSearchProducts');
               this.store.dispatch('user/setFacility', {
                 'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
               });
+            }
           }
-        }]
+        ]
       });
       await alert.present();
     },
