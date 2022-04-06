@@ -1,17 +1,32 @@
 {
-    "hosting": {
-      "target": "commerce-hub-dev",
+  "hosting": [
+    {
+      "target": "inventorycount",
       "public": "dist",
       "ignore": [
         "firebase.json",
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
+      "rewrites": [ {
+        "source": "**",
+        "destination": "/index.html"
+      } ]
+
+    },
+    {
+      "target": "dev-inventorycount",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [ {
+        "source": "**",
+        "destination": "/index.html"
+      } ]
+
     }
-  }
+  ]
+}
