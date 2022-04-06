@@ -54,6 +54,10 @@ const actions: ActionTree<ProductState, RootState> = {
     commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
   },
 
+  async clearSearchProducts({ commit }) {
+    commit(types.PRODUCT_SEARCH_UPDATED, { products: {}, totalProductsCount: 0 })
+  },
+
   async uploadInventoryCount({ commit }, payload) {
     emitter.emit("presentLoader");
     let resp;

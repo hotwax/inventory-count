@@ -63,18 +63,56 @@ export default defineComponent({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
       uploadProducts: 'product/getUploadProducts',
-      instanceUrl: 'user/getInstanceUrl'
+      instanceUrl: 'user/getInstanceUrl',
+      getSearchProducts: "product/getSearchProducts"
     })
   },
   methods: {
     setFacility (facility: any) {
-      if (this.userProfile) {
+      if(Object.keys((this.uploadProducts).length > 0 || this.getSearchProducts.length > 0) && facility['detail'].value != this.currentFacility.facilityId) {
+        this.storeChangeAlert(facility);
+      } else if (this.userProfile) {
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
         });
       }
     },
-    async presentAlert () {
+    async storeChangeAlert (facility?: any) {
+      const alert = await alertController.create({
+        header: this.$t('Change Store'),
+        message: this.$t('The products of the upload list and search list will be removed.'),
+        buttons: [
+          {
+            text: this.$t('Cancel'),
+            handler: () => {
+              // TODO: find a better way to handle this case.
+              this.$forceUpdate()
+            }
+          },
+          {
+            text: this.$t('Ok'),
+            handler: () => {
+              this.store.dispatch('product/clearUploadProducts');
+              this.store.dispatch('product/clearSearchProducts');
+              this.store.dispatch('user/setFacility', {
+                'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+              });
+            }
+          }
+        ]
+      });
+      await alert.present();
+    },
+    logout () {
+      if (Object.keys(this.uploadProducts).length > 0) {
+        this.logoutAlert();
+      } else {
+        this.store.dispatch('user/logout').then(() => {
+          this.router.push('/login');
+        })
+      }
+    },
+    async logoutAlert () {
       const alert = await alertController.create({
         header: this.$t('Logout'),
         message: this.$t('The products in the upload list will be removed.'),
@@ -84,23 +122,12 @@ export default defineComponent({
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('product/clearUploadProducts');
-            this.store.dispatch('user/logout').then(() => {
-              this.router.push('/login');
-            })
+            this.store.dispatch('user/logout')
           }
         }]
       });
       await alert.present();
     },
-    logout () {
-      if (Object.keys(this.uploadProducts).length > 0) {
-        this.presentAlert();
-      } else {
-        this.store.dispatch('user/logout').then(() => {
-          this.router.push('/login');
-        })
-      }
-    }
   },
   setup(){
     const store = useStore();
