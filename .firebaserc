@@ -13,8 +13,8 @@
     },
     "digital-commerce-71eb8": {
       "hosting": {
-        "hotwax-import": [
-          "hotwax-import"
+        "inventorycount": [
+          "inventorycount"
         ]
       }
     }
