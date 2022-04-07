@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
@@ -30,7 +30,7 @@
         </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
-      <ion-fab id="upload-button" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
@@ -96,7 +96,7 @@ export default defineComponent({
     upload () {
       if (Object.keys(this.uploadProducts).length > 0) {
         const inventoryCountRegister = Object.entries(this.uploadProducts).map((product: any) => {
-          return {"locationId": "", "productId": product[1].productId, "quantity": product[1].quantity};
+          return {"locationId": product[1].locationId, "productId": product[1].productId, "quantity": product[1].quantity};
         })
         // TODO handle the case if there is no facilities available
         this.store.dispatch('product/uploadInventoryCount', {inventoryCountRegister: inventoryCountRegister, facilityId: this.currentFacility.facilityId});
@@ -121,9 +121,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-  #upload-button {
-    bottom: 70px;
-  }
-</style>

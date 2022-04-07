@@ -6,14 +6,14 @@
       </ion-toolbar>
     </ion-header>
     
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-list>
         <!-- Select store -->
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
-          <ion-label>{{$t("store")}}</ion-label>
-          <ion-select interface="popover" :placeholder="$t('store name')" :selected-text="currentFacility.facilityId" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityId }}</ion-select-option>
+          <ion-label>{{$t("Store")}}</ion-label>
+          <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
         </ion-item>
 
@@ -21,7 +21,7 @@
         <ion-item>
           <ion-icon :icon="codeWorkingOutline" slot="start"/>
           <ion-label>{{ $t("OMS") }}</ion-label>
-          <ion-note slot="end">{{ instanceUrl }}</ion-note>
+          <ion-label slot="end">{{ instanceUrl }}</ion-label>
         </ion-item>
 
         <!-- Profile of user logged in -->
@@ -38,7 +38,7 @@
 <script lang="ts">
 import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { ellipsisVertical, personCircleOutline, storefrontOutline, codeWorkingOutline } from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 
@@ -68,12 +68,11 @@ export default defineComponent({
   },
   methods: {
     setFacility (facility: any) {
-      this.userProfile.facilities.map((fac: any) => {
-        if (fac.facilityId == facility['detail'].value) {
-          this.store.dispatch('user/setFacility', {'facility': fac});
-          console.log(fac);
-        }
-      })
+      if (this.userProfile) {
+        this.store.dispatch('user/setFacility', {
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+        });
+      }
     },
     async presentAlert () {
       const alert = await alertController.create({
@@ -108,14 +107,18 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      codeWorkingOutline,
       ellipsisVertical,
       personCircleOutline,
       storefrontOutline,
-      codeWorkingOutline,
       store,
       router
     }
   }
 });
 </script>
-
+<style scoped>
+ion-label[slot="end"] {
+  text-align: end;
+}
+</style>
