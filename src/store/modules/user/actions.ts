@@ -20,7 +20,11 @@ const actions: ActionTree<UserState, RootState> = {
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-            if(!await dispatch('getProfile')) commit(types.USER_END_SESSION)
+            await dispatch('getProfile').then((resp) => {
+              if(resp.facilities?.length === 0) {
+                commit(types.USER_END_SESSION)
+              }
+            })
             return resp.data;
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
@@ -63,12 +67,11 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, resp.data);
       await dispatch('getEComStores', { facilityId: resp.data.facilities[0]?.facilityId })
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
-      return true
     } else {
-      commit(types.USER_END_SESSION)
       showToast(translate('Something went wrong'))
-      return false
     }
+
+    return resp.data
   },
 
   /**
