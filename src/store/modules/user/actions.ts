@@ -21,7 +21,7 @@ const actions: ActionTree<UserState, RootState> = {
         if (resp.data.token) {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
             await dispatch('getProfile').then((resp) => {
-              if(resp.facilities?.length === 0) {
+              if(resp.data.facilities?.length === 0) {
                 commit(types.USER_END_SESSION)
               }
             })
@@ -71,7 +71,7 @@ const actions: ActionTree<UserState, RootState> = {
       showToast(translate('Something went wrong'))
     }
 
-    return resp.data
+    return resp
   },
 
   /**
