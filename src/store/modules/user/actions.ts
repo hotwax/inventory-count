@@ -20,7 +20,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-            dispatch('getProfile')
+            if(!await dispatch('getProfile')) commit(types.USER_END_SESSION)
             return resp.data;
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
@@ -54,17 +54,21 @@ const actions: ActionTree<UserState, RootState> = {
    */
   async getProfile ( { commit, dispatch }) {
     const resp = await UserService.getProfile()
-    if (resp.status === 200) {
+    if (resp.status === 200 && resp.data.facilities?.length > 0) {
       const localTimeZone = moment.tz.guess();
       if (resp.data.userTimeZone !== localTimeZone) {
         emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
       }
 
       commit(types.USER_INFO_UPDATED, resp.data);
-      await dispatch('getEComStores', { facilityId: resp.data.facilities[0] })
+      await dispatch('getEComStores', { facilityId: resp.data.facilities[0]?.facilityId })
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
+      return true
+    } else {
+      commit(types.USER_END_SESSION)
+      showToast(translate('Something went wrong'))
+      return false
     }
-    return resp;
   },
 
   /**
