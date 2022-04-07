@@ -166,10 +166,7 @@
         }
       },
       fetchProduct(sku: any) {
-        const payload = {
-          currentSku: sku
-        }
-        this.store.dispatch("product/updateCurrentProduct", payload)
+        this.store.dispatch("product/updateCurrentProduct", sku)
       },
       async getFacilityLocations() {
         let resp;
