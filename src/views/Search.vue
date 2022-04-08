@@ -8,18 +8,25 @@
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()"/>
 
-      <ion-list v-if="products.length > 0">
-        <ion-list-header>{{ $t("Results") }}</ion-list-header>
+      <div class="list-scan-container">
+        <div class="list">
+          <ion-list v-if="products.length > 0" :class="{list: isOpen}">
+            <ion-list-header>{{ $t("Results") }}</ion-list-header>
 
-        <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
+            <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
 
-        <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
-          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
-        </ion-infinite-scroll>
-      </ion-list>
+            <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
+              <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
+            </ion-infinite-scroll>
+          </ion-list>
+        </div>
+        <div class="scanner" v-if="isOpen">
+          <Scanner />    
+        </div>
+      </div>
     </ion-content>
 
-    <ion-grid id="scan-button">
+    <ion-grid id="scan-button" v-if="!isOpen">
       <ion-row>
         <ion-col>
           <ion-button color="primary" expand="block" @click="scanProduct">
@@ -48,8 +55,7 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonList,
-  IonListHeader,
-  modalController
+  IonListHeader
 } from '@ionic/vue'
 import { barcodeOutline } from 'ionicons/icons'
 import { defineComponent } from 'vue'
@@ -58,6 +64,7 @@ import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
 import Scanner from "@/components/Scanner.vue"
+import emitter from "@/event-bus"
 
 export default defineComponent({
   name: "Search",
@@ -77,10 +84,12 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonList,
     IonListHeader,
-    ProductListItem
+    ProductListItem,
+    Scanner
   },
   data (){
     return {
+      isOpen: false,
       queryString: ''
     }
   },
@@ -90,21 +99,15 @@ export default defineComponent({
       isScrollable: 'product/isScrollable'
     })
   },
+  created () {
+    emitter.on("closeScan", this.closeScan);
+  },
   methods: {
     async scanProduct(){
-      const modal = await modalController
-        .create({
-          component: Scanner,
-        });
-        modal.onDidDismiss()
-        .then((result) => {
-          //result : value of the scanned barcode/QRcode
-          if(result.role){
-            this.queryString = result.role
-            this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
-          }
-        });
-      return modal.present();
+      this.isOpen = true;
+    },
+    closeScan(){
+      this.isOpen = false;
     },
     selectSearchBarText(event: any) {
       event.target.getInputElement().then((element: any) => {
@@ -154,5 +157,20 @@ ion-content {
   position: absolute;
   bottom: 0;
   width: 100%;
+}
+
+.list-scan-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.list {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+.scanner {
+  min-height: 50%;
 }
 </style>
