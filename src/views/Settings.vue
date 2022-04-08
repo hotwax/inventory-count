@@ -11,7 +11,7 @@
         <!-- Select eCom store -->
         <ion-item>
           <ion-icon :icon="globeOutline" slot="start" />
-          <ion-label>{{$t("eCom Store")}}</ion-label>
+          <ion-label>{{$t("Shop")}}</ion-label>
           <ion-select interface="popover" :value="currentEComStore.productStoreId" @ionChange="setEComStore($event)">
             <ion-select-option v-for="store in (userProfile ? userProfile.stores : [])" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName }}</ion-select-option>
           </ion-select>
