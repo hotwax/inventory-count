@@ -19,12 +19,7 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
-            commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-            await dispatch('getProfile').then((resp) => {
-              if(resp.data.facilities?.length === 0) {
-                commit(types.USER_END_SESSION)
-              }
-            })
+            await dispatch('getProfile', { token: resp.data.token });
             return resp.data;
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
@@ -56,12 +51,15 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ( { commit, dispatch }) {
-    const resp = await UserService.getProfile()
+  async getProfile ({ commit, dispatch }, payload) {
+    const resp = await UserService.getProfile(payload)
     if (resp.status === 200 && resp.data.facilities?.length > 0) {
       const localTimeZone = moment.tz.guess();
       if (resp.data.userTimeZone !== localTimeZone) {
         emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
+      }
+      if(resp.data.facilities?.length > 0) {
+        commit(types.USER_TOKEN_CHANGED, { newToken: payload.token });
       }
 
       commit(types.USER_INFO_UPDATED, resp.data);
