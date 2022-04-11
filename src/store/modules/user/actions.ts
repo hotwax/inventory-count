@@ -20,10 +20,14 @@ const actions: ActionTree<UserState, RootState> = {
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
           const user = await dispatch('getProfile', { token: resp.data.token });
+
+          // If the user is not associated with any facility we will consider that the user does not have permission to access this app.
           if (user.data.facilities?.length > 0) {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token });
             await dispatch('getEComStores', { facilityId: user.data.facilities[0]?.facilityId })
             return resp.data;
+          } else {
+            showToast(translate('You do not have permission to login into this app.'));
           }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
@@ -65,10 +69,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
-    } else {
-      showToast(translate('Something went wrong'))
     }
-
     return resp
   },
 
