@@ -19,8 +19,14 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
-            await dispatch('getProfile', { token: resp.data.token });
-            return resp.data;
+            const user = await dispatch('getProfile', { token: resp.data.token });
+            if (user.data.facilities?.length > 0) {
+              commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token });
+              await dispatch('getEComStores', { facilityId: user.data.facilities[0]?.facilityId })
+              return resp.data;
+            } else {
+              showToast(translate("You do not have permission to login into this app."));
+            }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
           console.error("error", resp.data._ERROR_MESSAGE_);
@@ -58,12 +64,8 @@ const actions: ActionTree<UserState, RootState> = {
       if (resp.data.userTimeZone !== localTimeZone) {
         emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
       }
-      if(resp.data.facilities?.length > 0) {
-        commit(types.USER_TOKEN_CHANGED, { newToken: payload.token });
-      }
 
       commit(types.USER_INFO_UPDATED, resp.data);
-      await dispatch('getEComStores', { facilityId: resp.data.facilities[0]?.facilityId })
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
     } else {
       showToast(translate('Something went wrong'))
