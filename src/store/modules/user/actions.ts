@@ -19,14 +19,12 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
-            const user = await dispatch('getProfile', { token: resp.data.token });
-            if (user.data.facilities?.length > 0) {
-              commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token });
-              await dispatch('getEComStores', { facilityId: user.data.facilities[0]?.facilityId })
-              return resp.data;
-            } else {
-              showToast(translate("You do not have permission to login into this app."));
-            }
+          const user = await dispatch('getProfile', { token: resp.data.token });
+          if (user.data.facilities?.length > 0) {
+            commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token });
+            await dispatch('getEComStores', { facilityId: user.data.facilities[0]?.facilityId })
+            return resp.data;
+          }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
           console.error("error", resp.data._ERROR_MESSAGE_);
