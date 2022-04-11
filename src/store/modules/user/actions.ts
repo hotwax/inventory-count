@@ -28,6 +28,7 @@ const actions: ActionTree<UserState, RootState> = {
             return resp.data;
           } else {
             showToast(translate('You do not have permission to login into this app.'));
+            return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
           }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
@@ -59,7 +60,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ({ commit, dispatch }, payload) {
+  async getProfile ({ commit }, payload) {
     const resp = await UserService.getProfile(payload)
     if (resp.status === 200 && resp.data.facilities?.length > 0) {
       const localTimeZone = moment.tz.guess();
@@ -76,7 +77,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    *  update current eComStore information
   */
-  async setEComStore({ commit, dispatch }, payload) {
+  async setEComStore({ commit }, payload) {
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
   },
 
