@@ -1,0 +1,6 @@
+---
+title: 'Improved: code to remove error while having spaces around fields on the Login page.'
+ticket_id: "#20jwqu1"
+merge_request: 78
+author: Aniket Kumar Pandey
+type: fixed
