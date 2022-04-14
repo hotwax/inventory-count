@@ -100,7 +100,7 @@ export default defineComponent({
         modal.onDidDismiss()
         .then(async (result) => {
           //result : value of the scanned barcode/QRcode
-          if(result.role){
+          if(result.role && result.role !== 'backdrop'){
             this.queryString = result.role
             await this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
             this.store.dispatch('product/updateCurrentProduct', {product: this.products[0]});
