@@ -36,5 +36,5 @@ export const UserService = {
     login,
     getAvailableTimeZones,
     getProfile,
-    setUserTimeZone,
+    setUserTimeZone
 }

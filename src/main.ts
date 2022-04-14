@@ -30,7 +30,9 @@ import i18n from './i18n'
 import store from './store'
 
 const app = createApp(App)
-  .use(IonicVue)
+  .use(IonicVue, {
+    mode: 'md'
+  })
   .use(router)
   .use(i18n)
   .use(store);

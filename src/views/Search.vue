@@ -5,7 +5,7 @@
         <ion-title>{{ $t("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content :fullscreen="true">
+    <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="getProducts()"/>
 
       <ion-list v-if="products.length > 0">
@@ -146,9 +146,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-  #scan-button {
-    position: fixed;
-    bottom: 10px;
-    width: 100%;
-  }
+ion-content {
+  --padding-bottom : 50px;
+}
+
+#scan-button {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
 </style>
