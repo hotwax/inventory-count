@@ -72,7 +72,7 @@ const api = async (customConfig: any) => {
     
     let baseURL = process.env.VUE_APP_BASE_URL;
     if(!baseURL){
-        baseURL = store.getters['user/getInstaceUrl'];
+        baseURL = store.getters['user/getInstanceUrl'];
         baseURL = baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`;
     }
     if(baseURL) config.baseURL = baseURL;   
