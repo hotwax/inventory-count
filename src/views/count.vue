@@ -36,7 +36,7 @@
         </div>
         <ion-item>
           <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-          <ion-input inputmode="numeric" v-model="product.quantity"></ion-input>
+          <ion-input type="number" min="0" inputmode="numeric" v-model="product.quantity"></ion-input>
         </ion-item>
         <ion-item lines="none">
           <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
