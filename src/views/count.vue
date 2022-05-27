@@ -116,6 +116,9 @@
         location: ""
       }
     },
+    ionViewWillEnter() {
+      this.fetchProduct(this.$route.params.sku)
+    },
     async mounted(){
       await this.getFacilityLocations();
     },
@@ -161,6 +164,9 @@
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
+      },
+      fetchProduct(sku: any) {
+        this.store.dispatch("product/updateCurrentProduct", sku)
       },
       async getFacilityLocations() {
         let resp;
