@@ -89,12 +89,12 @@ const actions: ActionTree<ProductState, RootState> = {
     if(currentProduct) {
       commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
     } else {
-    try {
-      const resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + '*' + payload + '*', 'isVirtual: false'],
-      })
-      if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
+      try {
+        const resp = await ProductService.fetchProducts({
+          // used sku as we are currently only using sku to search for the product
+          "filters": ['sku: ' + '*' + payload + '*', 'isVirtual: false'],
+        })
+        if (resp.status === 200 && resp.data?.response?.numFound > 0 && !hasError(resp)) {
           commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
         }
       } catch (error) {
