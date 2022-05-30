@@ -93,7 +93,11 @@ const actions: ActionTree<ProductState, RootState> = {
         // used sku as we are currently only using sku to search for the product
         "filters": ['sku: ' + '*' + payload + '*', 'isVirtual: false'],
       })
-      commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
+      if(resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
+        commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
+      } else {
+        showToast(translate("Something went wrong"));
+      }
     }
   }
 }
