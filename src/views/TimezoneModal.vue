@@ -9,7 +9,7 @@
       <ion-title>{{ $t("Select time zone") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')"  v-model="queryString" v-on:keyup.enter="queryString = $event.target.value; findTimeZone()" />
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')"  v-model="queryString" @keyup.enter="queryString = $event.target.value; findTimeZone()" />
     </ion-toolbar>
   </ion-header>
 
@@ -23,7 +23,7 @@
     <div v-else>
       <ion-list>
         <ion-radio-group value="rd" v-model="timeZoneId">
-          <ion-item  v-bind:key="timeZone.id" v-for="timeZone in filteredTimeZones">
+          <ion-item :key="timeZone.id" v-for="timeZone in filteredTimeZones">
             <ion-label>{{ timeZone.label }} ({{ timeZone.id }})</ion-label>
             <ion-radio :value="timeZone.id" slot="start"></ion-radio>
           </ion-item>
