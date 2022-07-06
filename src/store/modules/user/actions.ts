@@ -5,9 +5,8 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
-import moment from 'moment';
+import { DateTime } from 'luxon'
 import emitter from '@/event-bus'
-import "moment-timezone";
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -55,7 +54,7 @@ const actions: ActionTree<UserState, RootState> = {
   async getProfile ( { commit }) {
     const resp = await UserService.getProfile()
     if (resp.status === 200) {
-      const localTimeZone = moment.tz.guess();
+      const localTimeZone = DateTime.now().zoneName;
       if (resp.data.userTimeZone !== localTimeZone) {
         emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
       }
