@@ -1,5 +1,7 @@
 {
+  "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to?",
   "Cancel": "Cancel",
+  "Change": "Change",
   "Click the backdrop to dismiss.": "Click the backdrop to dismiss.",
   "Confirm": "Confirm",
   "Count": "Count",
@@ -13,6 +15,7 @@
   "Location": "Location",
   "Login": "Login",
   "Logout": "Logout",
+  "No time zone found": "No time zone found",
   "Ok": "Ok",
   "OMS": "OMS",
   "Password": "Password",
@@ -21,6 +24,8 @@
   "Save":"Save",
   "Scan": "Scan",
   "Search": "Search",
+  "Search time zones": "Search time zones",
+  "Select time zone": "Select time zone",
   "Settings": "Settings",
   "Something went wrong": "Something went wrong",
   "Stock": "Stock",
@@ -28,6 +33,7 @@
   "store name":"store name",
   "Results": "Results",
   "The products in the upload list will be removed.": "The products in the upload list will be removed.",
+  "Update time zone": "Update time zone",
   "Upload": "Upload",
   "Username": "Username",
   "View": "View"
