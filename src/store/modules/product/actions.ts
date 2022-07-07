@@ -6,6 +6,9 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
+import { fetchProducts } from "@hotwax/oms-api/src/product";
+import { isError } from "@hotwax/oms-api/src/util";
+import { Product } from "@hotwax/oms-api/src/types";
 
 
 const actions: ActionTree<ProductState, RootState> = {
@@ -19,17 +22,16 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
 
     try {
-      resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
+      resp = await fetchProducts({
+        "filters": { 'isVirtual': false },
         "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
+        "viewIndex": payload.viewIndex,
+        "queryString": payload.queryString
       })
 
-      // resp.data.response.numFound tells the number of items in the response
-      if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
-        let products = resp.data.response.docs;
-        const totalProductsCount = resp.data.response.numFound;
+      if (!isError(resp)) {
+        let products = resp;
+        const totalProductsCount = (resp as Product[]).length;
 
         if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
@@ -85,7 +87,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
   updateCurrentProduct ({ commit, state }, payload) {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
-    const currentProduct = state.uploadProducts[payload.product.sku]
+    const currentProduct = state.uploadProducts[payload.product.identifications[0].idValue]
     commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product })
   }
 }

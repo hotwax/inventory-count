@@ -11,7 +11,7 @@ const mutations: MutationTree <ProductState> = {
     // storing the product in the upload list
     if (payload) {
       // using sku as a key to store a product in the upload list
-      state.uploadProducts[payload.product.sku] = payload.product;
+      state.uploadProducts[payload.product.identifications[0].idValue] = payload.product;
     }
   },
   [types.PRODUCT_REMOVE_FROM_UPLD_PRDTS] (state, payload) {
