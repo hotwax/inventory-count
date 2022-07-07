@@ -16,7 +16,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2>{{ product.identifications[0].idValue }}</h2>
+                <h2 v-if="product.identifications">{{ product.identifications[0].idValue }}</h2>
               </ion-label>
             </ion-item>
   

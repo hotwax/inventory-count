@@ -8,8 +8,6 @@ import { translate } from '@/i18n'
 import emitter from '@/event-bus'
 import { fetchProducts } from "@hotwax/oms-api/src/product";
 import { isError } from "@hotwax/oms-api/src/util";
-import { Product } from "@hotwax/oms-api/src/types";
-
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -30,8 +28,8 @@ const actions: ActionTree<ProductState, RootState> = {
       })
 
       if (!isError(resp)) {
-        let products = resp;
-        const totalProductsCount = (resp as Product[]).length;
+        let products = (resp as any).products;
+        const totalProductsCount = (resp as any).totalProductsCount;
 
         if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
