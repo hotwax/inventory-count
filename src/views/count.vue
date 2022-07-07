@@ -10,13 +10,13 @@
       <ion-content>
         <div class="header">
           <div class="product-image">
-             <Image :src="product.mainImageUrl"/>
+             <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
           </div>
           <div class="product-info">
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2>{{ product.sku }}</h2>
+                <h2>{{ product.identifications[0].idValue }}</h2>
               </ion-label>
             </ion-item>
   

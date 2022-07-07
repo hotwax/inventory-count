@@ -10,7 +10,7 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <Image :src="product.mainImageUrl"/>
+            <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>
@@ -28,7 +28,7 @@
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
           </ion-chip>
         </ion-item>
-        <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
+        <ion-button fill="clear" @click="removeItem(product.identifications[0].idValue)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">

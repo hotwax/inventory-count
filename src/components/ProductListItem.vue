@@ -1,11 +1,11 @@
 <template>
   <ion-item button @click="viewProduct()" detail="true" lines="none">
     <ion-thumbnail slot="start">
-      <Image :src="product.mainImageUrl"/>
+      <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
     </ion-thumbnail>
     <ion-label>
       <p>{{ product.productName }}</p>
-      <h3>{{ product.sku }}</h3>
+      <h3>{{ product.identifications ? product.identifications[0].idValue : '' }}</h3>
       <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(product.featureHierarchy, '1/COLOR/') && $filters.getFeature(product.featureHierarchy, '1/SIZE/')? "|" : ""}} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
     </ion-label>
   </ion-item>
@@ -34,7 +34,7 @@ export default defineComponent({
   methods: {
     async viewProduct () {
       await this.store.dispatch('product/updateCurrentProduct', {product: this.product});
-      this.router.push({ path: `/count/${this.product.sku}` })
+      this.router.push({ path: `/count/${this.product.identifications[0].idValue}` })
     }
   },
   setup() {
