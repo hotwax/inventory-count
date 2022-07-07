@@ -19,6 +19,8 @@ import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import TabBar from "./components/TabBar.vue"
+import { updateToken, updateInstanceUrl } from '@hotwax/oms-api/api'
+import { mapGetters } from 'vuex';
 
 export default defineComponent({
   name: 'App',
@@ -64,16 +66,24 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+    updateToken(this.userToken)
+    updateInstanceUrl(this.instanceUrl)
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+    updateToken('')
+    updateInstanceUrl('')
   },
   computed: {
     showFooter () {
       if (['/settings', '/search', '/upload'].includes(this.$route.path)) return true
       return false
-    }
+    },
+    ...mapGetters({
+      userToken: 'user/getUserToken',
+      instanceUrl: 'user/getInstanceUrl'
+    })
   }
 });
 </script>
