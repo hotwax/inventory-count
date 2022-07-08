@@ -10,13 +10,13 @@
       <ion-content>
         <div class="header">
           <div class="product-image">
-             <Image :src="product.contents ? getContent(product.contents, 'PcntImageUrlOriginal') : ''"/>
+             <Image :src="product.images.mainImageUrl ? product.images.mainImageUrl : ''"/>
           </div>
           <div class="product-info">
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2 v-if="getIdentification(product.identifications, 'PidtSku')">{{ getIdentification(product.identifications, 'PidtSku') }}</h2>
+                <h2>{{ product.sku }}</h2>
               </ion-label>
             </ion-item>
   
@@ -80,7 +80,7 @@
   import { defineComponent } from "vue";
   import { colorPaletteOutline, resize, saveOutline, locationOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
-  import { hasError, showToast, getContent, getIdentification, getFeature } from "@/utils";
+  import { hasError, showToast, getFeature } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
@@ -203,8 +203,6 @@
         resize,
         saveOutline,
         locationOutline,
-        getContent,
-        getIdentification,
         getFeature
       };
     },
