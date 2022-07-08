@@ -25,4 +25,28 @@ const showToast = async (message: string, configButtons?: any) => {
   return toast.present();
 }
 
-export { showToast, hasError }
+const getIdentification = (identifications: any, key: string) => {
+  let identificationValue = '';
+  if (identifications) {
+    identificationValue = identifications.find((identification: any) => identification.productIdTypeEnumId === key)?.idValue
+  }
+  return identificationValue
+}
+
+const getContent = (contents: any, key: string) => {
+  let contentValue = '';
+  if (contents) {
+    contentValue = contents.find((content: any) => content.productContentTypeEnumId === key)?.contentLocation
+  }
+  return contentValue
+}
+
+const getFeature = (features: any, key: string) => {
+  let featureValue = ''
+  if (features) {
+    featureValue = features.find((data: any) => data.feature.productFeatureTypeEnumId === key)?.feature.description
+  }
+  return featureValue;
+}
+
+export { showToast, hasError, getContent, getFeature, getIdentification }

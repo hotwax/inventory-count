@@ -1,12 +1,12 @@
 <template>
   <ion-item button @click="viewProduct()" detail="true" lines="none">
     <ion-thumbnail slot="start">
-      <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
+      <Image :src="product.contents ? getContent(product.contents, 'PcntImageUrlOriginal') : ''"/>
     </ion-thumbnail>
     <ion-label>
       <p>{{ product.productName }}</p>
-      <h3>{{ product.identifications ? product.identifications[0].idValue : '' }}</h3>
-      <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(product.featureHierarchy, '1/COLOR/') && $filters.getFeature(product.featureHierarchy, '1/SIZE/')? "|" : ""}} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
+      <h3>{{ product.identifications ? getIdentification(product.identifications, 'PidtSku') : '' }}</h3>
+      <p>{{ getFeature(product.features, 'Color')}} {{ getFeature(product.features, 'Color') && getFeature(product.features, 'Size')? "|" : ""}} {{ getFeature(product.features, 'Size')}}</p>
     </ion-label>
   </ion-item>
 </template>
@@ -21,6 +21,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
+import { getContent, getFeature, getIdentification } from '@/utils'
 
 export default defineComponent({
   name: "ProductListItem",
@@ -42,6 +43,9 @@ export default defineComponent({
     const store = useStore();
     
     return {
+      getContent,
+      getFeature,
+      getIdentification,
       router,
       store
     }

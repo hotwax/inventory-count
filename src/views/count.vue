@@ -10,25 +10,25 @@
       <ion-content>
         <div class="header">
           <div class="product-image">
-             <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
+             <Image :src="product.contents ? getContent(product.contents, 'PcntImageUrlOriginal') : ''"/>
           </div>
           <div class="product-info">
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ product.productName }}</p>
-                <h2 v-if="product.identifications">{{ product.identifications[0].idValue }}</h2>
+                <h2 v-if="getIdentification(product.identifications, 'PidtSku')">{{ getIdentification(product.identifications, 'PidtSku') }}</h2>
               </ion-label>
             </ion-item>
   
             <div class="product-features">
               <ion-item lines="none">
-                <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
+                <ion-chip v-if="getFeature(product.features, 'Color')">
                   <ion-icon :icon="colorPaletteOutline" />
-                  <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
+                  <ion-label>{{ getFeature(product.features, 'Color') }}</ion-label>
                 </ion-chip>
-                <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
+                <ion-chip v-if="getFeature(product.features, 'Size')">
                   <ion-icon :icon="resize" />
-                  <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
+                  <ion-label>{{ getFeature(product.features, 'Size') }}</ion-label>
                 </ion-chip>
               </ion-item>
             </div>
@@ -80,7 +80,7 @@
   import { defineComponent } from "vue";
   import { colorPaletteOutline, resize, saveOutline, locationOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
-  import { hasError, showToast } from "@/utils";
+  import { hasError, showToast, getContent, getIdentification, getFeature } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
@@ -202,7 +202,10 @@
         colorPaletteOutline,
         resize,
         saveOutline,
-        locationOutline
+        locationOutline,
+        getContent,
+        getIdentification,
+        getFeature
       };
     },
   });

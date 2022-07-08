@@ -10,25 +10,25 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <Image :src="product.contents ? product.contents[0].contentLocation : ''"/>
+            <Image :src="product.contents ? getContent(product.contents, 'PcntImageUrlOriginal') : ''"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>
-            <h2>{{ product.sku }}</h2>
+            <h2>{{ getIdentification(product.identifications, 'PidtSku') }}</h2>
           </ion-label>
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
         <ion-item lines="full">
-          <ion-chip>
+          <ion-chip v-if="getFeature(product.features, 'Color')">
             <ion-icon :icon="colorPaletteOutline" />
-            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
+            <ion-label>{{ getFeature(product.features, 'Color') }}</ion-label>
           </ion-chip>
-          <ion-chip>
+          <ion-chip v-if="getFeature(product.features, 'Size')">
             <ion-icon :icon="resize" />
-            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
+            <ion-label>{{ getFeature(product.features, 'Size') }}</ion-label>
           </ion-chip>
         </ion-item>
-        <ion-button fill="clear" @click="removeItem(product.identifications[0].idValue)">{{ $t( "Remove" ) }}</ion-button>
+        <ion-button fill="clear" @click="removeItem(getIdentification(product.identifications, 'PidtSku'))">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="upload()">
@@ -62,6 +62,7 @@ import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
+import { getContent, getIdentification, getFeature } from '@/utils'
 
 export default defineComponent({
   name: "Upload",
@@ -116,7 +117,10 @@ export default defineComponent({
       router,
       colorPaletteOutline,
       resize,
-      cloudUploadOutline
+      cloudUploadOutline,
+      getContent,
+      getIdentification,
+      getFeature
     };
   },
 });
