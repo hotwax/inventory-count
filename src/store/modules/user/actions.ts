@@ -19,9 +19,17 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
-            commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
-            dispatch('getProfile')
+          const user = await dispatch('getProfile', { token: resp.data.token });
+
+          // If the user is not associated with any facility we will consider that the user does not have permission to access this app.
+          if (user.data.facilities?.length > 0) {
+            commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token });
+            await dispatch('getEComStores', { facilityId: user.data.facilities[0]?.facilityId })
             return resp.data;
+          } else {
+            showToast(translate('You do not have permission to login into this app.'));
+            return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
+          }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
           console.error("error", resp.data._ERROR_MESSAGE_);
@@ -52,16 +60,25 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ( { commit }) {
-    const resp = await UserService.getProfile()
-    if (resp.status === 200) {
+  async getProfile ({ commit }, payload) {
+    const resp = await UserService.getProfile(payload)
+    if (resp.status === 200 && resp.data.facilities?.length > 0) {
       const localTimeZone = moment.tz.guess();
       if (resp.data.userTimeZone !== localTimeZone) {
         emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
       }
+
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
     }
+    return resp
+  },
+
+  /**
+   *  update current eComStore information
+  */
+  async setEComStore({ commit }, payload) {
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
   },
 
   /**
@@ -78,13 +95,49 @@ const actions: ActionTree<UserState, RootState> = {
     },
 
   // update current facility information
-  async setFacility ({ commit }, payload) {
+  async setFacility ({ commit, dispatch }, payload) {
+    await dispatch("getEComStores", { facilityId: payload.facility.facilityId })
     commit(types.USER_CURRENT_FACILITY_UPDATED, payload.facility);
   },
 
   // Set User Instance Url
   setUserInstanceUrl ({ state, commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
+  },
+
+  async getEComStores({ state, commit, dispatch }, payload) {
+    let resp;
+
+    try {
+      const param = {
+        "inputFields": {
+          "facilityId": payload.facilityId,
+          "storeName_op": "not-empty"
+        },
+        "fieldList": ["productStoreId", "storeName"],
+        "entityName": "ProductStore",
+        "distinct": "Y",
+        "noConditionFind": "Y"
+      }
+
+      resp = await UserService.getEComStores(param);
+      if(resp.status === 200 && resp.data.docs?.length > 0 && !hasError(resp)) {
+        const user = state.current as any;
+        
+        user.stores = [{
+          productStoreId: '',
+          storeName: 'None'
+        }, ...(resp.data.docs ? resp.data.docs : [])]
+        
+        commit(types.USER_INFO_UPDATED, user);
+        dispatch('setEComStore', { eComStore: user.stores.length > 0 ? user.stores[0] : {} });
+
+        return user.stores
+      }
+    } catch(error) {
+      console.error(error);
+    }
+    return []
   }
 }
 export default actions;
