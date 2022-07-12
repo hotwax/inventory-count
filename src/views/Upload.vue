@@ -10,7 +10,7 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <Image :src="product.images.mainImageUrl ? product.images.mainImageUrl : ''"/>
+            <Image :src="product.images?.mainImageUrl ? product.images.mainImageUrl : ''"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>

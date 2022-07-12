@@ -10,7 +10,7 @@
       <ion-content>
         <div class="header">
           <div class="product-image">
-             <Image :src="product.images.mainImageUrl ? product.images.mainImageUrl : ''"/>
+             <Image :src="product.images?.mainImageUrl ? product.images.mainImageUrl : ''"/>
           </div>
           <div class="product-info">
             <ion-item lines="none">

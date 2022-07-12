@@ -1,7 +1,7 @@
 <template>
   <ion-item button @click="viewProduct()" detail="true" lines="none">
     <ion-thumbnail slot="start">
-      <Image :src="product.images.mainImageUrl ? product.images.mainImageUrl : ''"/>
+      <Image :src="product.images?.mainImageUrl ? product.images.mainImageUrl : ''"/>
     </ion-thumbnail>
     <ion-label>
       <p>{{ product.productName }}</p>
