@@ -21,7 +21,7 @@
         <ion-item>
           <ion-icon :icon="codeWorkingOutline" slot="start"/>
           <ion-label>{{ $t("OMS") }}</ion-label>
-          <ion-label slot="end">{{ instanceUrl }}</ion-label>
+          <ion-label slot="end">{{ baseURL ? baseURL : instanceUrl }}</ion-label>
         </ion-item>
 
         <!-- Profile of user logged in -->
@@ -57,6 +57,11 @@ export default defineComponent({
     IonTitle, 
     IonToolbar,
     IonList
+  },
+  data() {
+    return {
+      baseURL: process.env.VUE_APP_BASE_URL
+    };
   },
   computed: {
     ...mapGetters({
