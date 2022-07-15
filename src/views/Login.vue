@@ -70,8 +70,7 @@ export default defineComponent({
   },
   methods: {
     login: function () {
-      if(!this.baseURL) this.store.dispatch("user/setUserInstanceUrl", this.instanceUrl.trim())
-      
+      if(!this.baseURL) this.store.dispatch("user/setUserInstanceUrl", this.instanceUrl.trim().toLowerCase())
       const { username, password } = this;
       this.store.dispatch("user/login", { username: username.trim(), password }).then((data: any) => {
         if (data.token) {
