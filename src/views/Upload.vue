@@ -10,7 +10,7 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <Image :src="product.mainImageUrl"/>
+            <Image :src="product.images?.mainImageUrl ? product.images.mainImageUrl : ''"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>
@@ -19,13 +19,13 @@
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
         <ion-item lines="full">
-          <ion-chip>
+          <ion-chip v-if="getFeature(product.features, 'Color')">
             <ion-icon :icon="colorPaletteOutline" />
-            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
+            <ion-label>{{ getFeature(product.features, 'Color') }}</ion-label>
           </ion-chip>
-          <ion-chip>
+          <ion-chip v-if="getFeature(product.features, 'Size')">
             <ion-icon :icon="resize" />
-            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
+            <ion-label>{{ getFeature(product.features, 'Size') }}</ion-label>
           </ion-chip>
         </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
@@ -62,6 +62,7 @@ import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
+import { getFeature } from '@/utils'
 
 export default defineComponent({
   name: "Upload",
@@ -116,7 +117,8 @@ export default defineComponent({
       router,
       colorPaletteOutline,
       resize,
-      cloudUploadOutline
+      cloudUploadOutline,
+      getFeature
     };
   },
 });
