@@ -19,9 +19,37 @@ const actions: ActionTree<UserState, RootState> = {
       const resp = await UserService.login(username, password)
       if (resp.status === 200 && resp.data) {
         if (resp.data.token) {
+          const permissionId = process.env.VUE_APP_PERMISSION_ID;
+          if (permissionId) {
+            const checkPermissionResponse = await UserService.checkPermission({
+              data: {
+                permissionId
+              },
+              headers: {
+                Authorization:  'Bearer ' + resp.data.token,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (checkPermissionResponse.status === 200 && !hasError(checkPermissionResponse) && checkPermissionResponse.data && checkPermissionResponse.data.hasPermission) {
+              commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
+              dispatch('getProfile')
+              if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
+              // TODO Internationalise text
+                showToast(translate(resp.data._EVENT_MESSAGE_));
+              }
+              return resp.data;
+            } else {
+              const permissionError = 'You do not have permission to access the app.';
+              showToast(translate(permissionError));
+              console.error("error", permissionError);
+              return Promise.reject(new Error(permissionError));
+            }
+          } else {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
             dispatch('getProfile')
             return resp.data;
+          }
         } else if (hasError(resp)) {
           showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
           console.error("error", resp.data._ERROR_MESSAGE_);
