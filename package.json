@@ -15,7 +15,7 @@
     "@capacitor/android": "^2.5.0",
     "@capacitor/core": "^2.4.7",
     "@capacitor/ios": "^2.4.7",
-    "@hotwax/oms-api": "github:ymaheshwari1/oms-api##2h1fjk7",
+    "@hotwax/oms-api": "git+https://github.com/ymaheshwari1/oms-api.git##2kbmy1a",
     "@ionic/vue": "^5.4.0",
     "@ionic/vue-router": "^5.4.0",
     "axios": "^0.21.1",

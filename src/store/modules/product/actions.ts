@@ -6,8 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
-import { fetchProducts } from "@hotwax/oms-api/src/product";
-import { isError } from "@hotwax/oms-api/src/util";
+import { fetchProducts, isError } from "@hotwax/oms-api";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -29,7 +28,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
       if (!isError(resp)) {
         let products = (resp as any).products;
-        const totalProductsCount = (resp as any).totalProductsCount;
+        const totalProductsCount = (resp as any).total;
 
         if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })

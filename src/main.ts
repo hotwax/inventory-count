@@ -28,7 +28,7 @@ import './theme/variables.css';
 
 import i18n from './i18n'
 import store from './store'
-import { init } from '@hotwax/oms-api/api';
+import { init } from '@hotwax/oms-api';
 
 const app = createApp(App)
   .use(IonicVue, {
