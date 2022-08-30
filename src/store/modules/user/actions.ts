@@ -127,19 +127,25 @@ const actions: ActionTree<UserState, RootState> = {
       resp = await UserService.getEComStores(param);
       if(resp.status === 200 && resp.data.docs?.length > 0 && !hasError(resp)) {
         const user = state.current as any;
-        const userPref =  await UserService.getUserPreference({
-          'userPrefTypeId': 'SELECTED_BRAND'
-        });
         
         user.stores = [{
           productStoreId: '',
           storeName: 'None'
         }, ...(resp.data.docs ? resp.data.docs : [])]
         
-        commit(types.USER_INFO_UPDATED, user);
-        const userPrefStore = user.stores.find((store: any) => store.productStoreId == userPref.data.userPrefValue)
-        dispatch('setEComStore', { eComStore: userPrefStore? userPrefStore: user.stores.length > 0 ? user.stores[0] : {} });
+        let userPrefStore = ''
 
+        try {
+          const userPrefResponse =  await UserService.getUserPreference({
+           'userPrefTypeId': 'SELECTED_BRAND'
+          });
+          userPrefStore = user.stores.find((store: any) => store.productStoreId == userPrefResponse.data.userPrefValue)
+        } catch (err) {
+          console.log(err)
+        }
+
+        dispatch('setEComStore', { eComStore: userPrefStore ? userPrefStore : user.stores.length > 0 ? user.stores[0] : {} });
+        commit(types.USER_INFO_UPDATED, user);
         return user.stores
       }
     } catch(error) {
