@@ -20,7 +20,7 @@
         <!-- Select store -->
         <ion-item>
           <ion-icon :icon="storefrontOutline" slot="start" />
-          <ion-label>{{$t("Store")}}</ion-label>
+          <ion-label>{{$t("eCom Store")}}</ion-label>
           <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
             <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
           </ion-select>
@@ -30,7 +30,7 @@
         <ion-item>
           <ion-icon :icon="codeWorkingOutline" slot="start"/>
           <ion-label>{{ $t("OMS") }}</ion-label>
-          <ion-label slot="end">{{ instanceUrl }}</ion-label>
+          <ion-label slot="end">{{ baseURL ? baseURL : instanceUrl }}</ion-label>
         </ion-item>
 
         <!-- Profile of user logged in -->
@@ -66,6 +66,11 @@ export default defineComponent({
     IonTitle, 
     IonToolbar,
     IonList
+  },
+  data() {
+    return {
+      baseURL: process.env.VUE_APP_BASE_URL
+    };
   },
   computed: {
     ...mapGetters({

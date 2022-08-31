@@ -12,19 +12,30 @@ const login = async (username: string, password: string): Promise <any> => {
   });
 }
 
-const getProfile = async (payload: any): Promise <any>  => {
-    const baseURL = store.getters['user/getInstanceUrl'];
-    const headers = {
-      'Authorization': `Bearer ${payload.token}`,
-      'Content-Type': 'application/json'
-    }
+const checkPermission = async (payload: any): Promise <any>  => {
+  let baseURL = store.getters['user/getInstanceUrl'];
+  baseURL = baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`;
+  return client({
+    url: "checkPermission",
+    method: "post",
+    baseURL: baseURL,
+    ...payload
+  });
+}
 
-    return client({
-      url: "user-profile",
-      baseURL: baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`,
-      method: "get",
-      headers
-    });
+const getProfile = async (payload: any): Promise <any>  => {
+  const baseURL = store.getters['user/getInstanceUrl'];
+  const headers = {
+    'Authorization': `Bearer ${payload.token}`,
+    'Content-Type': 'application/json'
+  }
+
+  return client({
+    url: "user-profile",
+    baseURL: baseURL && baseURL.startsWith('http') ? baseURL : `https://${baseURL}.hotwax.io/api/`,
+    method: "get",
+    headers
+  });
 }
 const getAvailableTimeZones = async (): Promise <any>  => {
   return api({
@@ -67,11 +78,12 @@ const getUserPreference = async (payload: any): Promise<any> => {
 }
 
 export const UserService = {
-    login,
-    getAvailableTimeZones,
-    getProfile,
-    setUserTimeZone,
-    getEComStores,
-    setUserPreference,
-    getUserPreference
+  login,
+  getAvailableTimeZones,
+  getProfile,
+  setUserTimeZone,
+  getEComStores,
+  setUserPreference,
+  getUserPreference,
+  checkPermission
 }
