@@ -80,7 +80,7 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Get User profile
    */
-  async getProfile ({ commit }, payload) {
+  async getProfile ({ commit, dispatch }, payload) {
     const resp = await UserService.getProfile(payload)
     if (resp.status === 200 && resp.data.facilities?.length > 0) {
       const localTimeZone = moment.tz.guess();
@@ -89,7 +89,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       commit(types.USER_INFO_UPDATED, resp.data);
-      commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
+      dispatch("setFacility", { facility: resp.data.facilities[0] });
     }
     return resp
   },
@@ -161,7 +161,7 @@ const actions: ActionTree<UserState, RootState> = {
           });
           userPrefStore = user.stores.find((store: any) => store.productStoreId == userPrefResponse.data.userPrefValue)
         } catch (err) {
-          console.log(err)
+          console.error(err)
         }
 
         dispatch('setEComStore', { eComStore: userPrefStore ? userPrefStore : user.stores.length > 0 ? user.stores[0] : {} });
