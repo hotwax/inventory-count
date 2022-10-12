@@ -14,8 +14,9 @@
   "dependencies": {
     "@capacitor/android": "^2.5.0",
     "@capacitor/core": "^2.4.7",
-    "@ionic/vue": "^6.0.2",
-    "@ionic/vue-router": "^6.0.2",
+    "@ionic/core": "6.1.15",
+    "@ionic/vue": "^6.1.15",
+    "@ionic/vue-router": "^6.1.15",
     "@capacitor/ios": "^2.4.7",
     "axios": "^0.21.1",
     "axios-cache-adapter": "^2.7.3",
