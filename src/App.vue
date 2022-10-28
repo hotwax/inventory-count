@@ -19,7 +19,7 @@ import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import TabBar from "./components/TabBar.vue"
-import { updateToken, updateInstanceUrl } from '@hotwax/oms-api'
+import { updateToken, updateInstanceUrl } from '@/adapter'
 import { mapGetters } from 'vuex';
 
 export default defineComponent({

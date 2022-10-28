@@ -6,7 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
-import { fetchProducts, isError } from "@hotwax/oms-api";
+import { fetchProducts, isError } from "@/adapter";
 
 const actions: ActionTree<ProductState, RootState> = {
 
