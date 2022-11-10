@@ -23,10 +23,6 @@ const mutations: MutationTree <ProductState> = {
   [types.PRODUCT_SEARCH_UPDATED] (state, payload) {
     state.products.list = payload.products;
     state.products.total = payload.totalProductsCount;
-  },
-  [types.PRODUCT_SEARCH_CLEARED] (state) {
-    state.products.list = [];
-    state.products.total = 0;
   }
 }
 export default mutations;
