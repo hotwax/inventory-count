@@ -102,7 +102,7 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   clearSearchProducts ({ commit }) {
-    commit(types.PRODUCT_SEARCH_CLEARED);
+    commit(types.PRODUCT_SEARCH_UPDATED, {products: [], totalProductsCount: 0});
   } 
 }
 
