@@ -104,12 +104,11 @@ export default defineComponent({
             this.queryString = result.role
             await this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
             this.router.push({ path: `/count/${this.products[0].sku}` });
-            // to empty the search bar, we assign it to '' (empty). 
             // We are using the value in getProducts function above, and hence
             // are emptying it after usage only.
             this.queryString = '';
-            // the action clears the product being shown as the search result,
-            // below the search bar.
+            // After scanning the SKU, the search product list gets populated 
+            // with the product, hence, clearing it.
             this.store.dispatch('product/clearSearchProducts');
           }
         });
