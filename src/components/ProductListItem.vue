@@ -6,7 +6,7 @@
     <ion-label>
       <p>{{ product.productName }}</p>
       <h3>{{ product.sku }}</h3>
-      <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} | {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
+      <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(product.featureHierarchy, '1/COLOR/') && $filters.getFeature(product.featureHierarchy, '1/SIZE/')? "|" : ""}} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
     </ion-label>
   </ion-item>
 </template>
@@ -33,7 +33,6 @@ export default defineComponent({
   props: ["product"],
   methods: {
     async viewProduct () {
-      await this.store.dispatch('product/updateCurrentProduct', {product: this.product});
       this.router.push({ path: `/count/${this.product.sku}` })
     }
   },

@@ -39,7 +39,7 @@ const actions: ActionTree<ProductState, RootState> = {
       // Remove added loader only when new query and not the infinite scroll
       if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     } catch(error){
-      console.log(error)
+      console.error(error)
       showToast(translate("Something went wrong"));
     }
     // TODO Handle specific error
@@ -72,7 +72,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
       emitter.emit("dismissLoader");
     } catch (error) {
-      console.log(error);
+      console.error(error);
       showToast(translate("Something went wrong"));
     }
 
@@ -83,10 +83,25 @@ const actions: ActionTree<ProductState, RootState> = {
     commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
   },
 
-  updateCurrentProduct ({ commit, state }, payload) {
+  async updateCurrentProduct ({ commit, state }, payload) {
     // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
     const currentProduct = state.uploadProducts[payload.product.sku]
     commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct ? currentProduct : payload.product })
+
+    const currentProduct = state.uploadProducts[payload]
+    if(currentProduct) {
+      commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
+    } else {
+      const resp = await ProductService.fetchProducts({
+        // used sku as we are currently only using sku to search for the product
+        "filters": ['sku: ' + '*' + payload + '*', 'isVirtual: false'],
+      })
+      if(resp.status === 200 && !hasError(resp) && resp.data.response?.numFound > 0) {
+        commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
+      } else {
+        showToast(translate("Something went wrong"));
+      }
+    }
   },
 
   clearSearchProducts ({ commit }) {
