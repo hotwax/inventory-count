@@ -105,6 +105,8 @@ export default defineComponent({
             await this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
             this.store.dispatch('product/updateCurrentProduct', {product: this.products[0]});
             this.router.push({ path: `/count/${this.products[0].sku}` });
+            this.queryString = '';
+            this.store.dispatch('product/clearSearchProducts');
           }
         });
       return modal.present();
