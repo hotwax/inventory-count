@@ -6,14 +6,17 @@
   "targets": {
     "hotwax-digital-commerce": {
       "hosting": {
-        "dev-inventorycount": [
+        "dev": [
           "dev-inventorycount"
+        ],
+        "uat": [
+          "inventorycount-uat"
         ]
       }
     },
     "digital-commerce-71eb8": {
       "hosting": {
-        "inventorycount": [
+        "prod": [
           "inventorycount"
         ]
       }

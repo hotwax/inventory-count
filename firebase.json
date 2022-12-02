@@ -1,7 +1,7 @@
 {
   "hosting": [
     {
-      "target": "inventorycount",
+      "target": "prod",
       "public": "dist",
       "ignore": [
         "firebase.json",
@@ -15,7 +15,7 @@
 
     },
     {
-      "target": "dev-inventorycount",
+      "target": "dev",
       "public": "dist",
       "ignore": [
         "firebase.json",
@@ -27,6 +27,19 @@
         "destination": "/index.html"
       } ]
 
+    },
+    {
+      "target": "uat",
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [ {
+        "source": "**",
+        "destination": "/index.html"
+      } ]
     }
   ]
 }
