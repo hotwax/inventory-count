@@ -1,3 +1,14 @@
+# Release 1.1.0
+
+## What's Changed
+* Upgraded ionic 5 to ionic 6(#1yky426) by @disha1202 in https://github.com/hotwax/inventory-count/pull/35
+* Upgraded ionic to 6.1.15(#2uaz29u) by @disha1202 in https://github.com/hotwax/inventory-count/pull/102
+* Added support to alias specific instance URL with environment configuration(#30dkjp1) by @disha1202 in https://github.com/hotwax/inventory-count/pull/119
+* Upgraded ionic to 6.2(#2w9wz26) by @disha1202 in https://github.com/hotwax/inventory-count/pull/116
+
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.0.1...v1.1.0
+
 # Release 1.0.1
 
 ## What's Changed
