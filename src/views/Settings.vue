@@ -138,7 +138,7 @@ export default defineComponent({
       }
     },
     goToOms(){
-      window.location.href = this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`;
+      window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
     }
   },
   setup(){
