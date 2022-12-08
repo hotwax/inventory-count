@@ -68,16 +68,23 @@
 </template>
 
 <script lang="ts">
-import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue';
+import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import Image from '@/components/Image.vue'
 
 export default defineComponent({
   name: 'Settings',
   components: {
+    IonAvatar,
     IonButton, 
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
     IonContent, 
     IonHeader, 
     IonIcon,
@@ -88,6 +95,7 @@ export default defineComponent({
     IonSelectOption,
     IonTitle, 
     IonToolbar,
+    Image
   },
   data() {
     return {
