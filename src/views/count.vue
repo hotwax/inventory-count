@@ -125,7 +125,7 @@
     methods: {
       async selectLocation() {
         const pickerOptions = await this.facilityLocations.map((location: any) => {
-          return { text:location.locationPath, value: location.locationSeqId };
+          return { text:location.locationSeqId, value: location.locationSeqId };
         })
         const picker = await pickerController.create({
           columns: [
@@ -186,7 +186,7 @@
                 locationPath: location.areaId + location.aisleId + location.sectionId + location.levelId + location.positionId
               }
             })
-            this.location = this.facilityLocations[0].locationPath;
+            this.location = this.facilityLocations[0].locationSeqId;
             this.product.locationId = this.facilityLocations[0].locationSeqId;
           }
         } catch(err) {
