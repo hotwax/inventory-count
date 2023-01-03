@@ -44,9 +44,10 @@ const getContent = (contents: any, key: string) => {
 const getFeature = (features: any, key: string) => {
   let featureValue = ''
   if (features) {
-    featureValue = features.find((data: any) => data.feature.productFeatureTypeEnumId === key)?.feature.description
+    featureValue = features.find((feature: any) => feature.desc === key)?.value
   }
-  return featureValue;
+  // returning 0th index as the featureValue is an array
+  return featureValue ? featureValue[0] : '';
 }
 
 export { showToast, hasError, getContent, getFeature, getIdentification }
