@@ -63,7 +63,8 @@ app.config.globalProperties.$filters = {
   }
 }
 
-init(store.getters['user/getUserToken'], store.getters['user/getInstanceUrl'], 3000)
+const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+init(store.getters['user/getUserToken'], store.getters['user/getInstanceUrl'], maxAge)
 
 router.isReady().then(() => {
   app.mount('#app');

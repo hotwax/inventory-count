@@ -19,7 +19,7 @@ import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import TabBar from "./components/TabBar.vue"
-import { updateToken, updateInstanceUrl } from '@/adapter'
+import { updateToken, updateInstanceUrl, resetConfig } from '@/adapter'
 import { mapGetters } from 'vuex';
 
 export default defineComponent({
@@ -72,8 +72,7 @@ export default defineComponent({
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
-    updateToken('')
-    updateInstanceUrl('')
+    resetConfig();
   },
   computed: {
     showFooter () {
