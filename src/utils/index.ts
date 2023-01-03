@@ -25,22 +25,6 @@ const showToast = async (message: string, configButtons?: any) => {
   return toast.present();
 }
 
-const getIdentification = (identifications: any, key: string) => {
-  let identificationValue = '';
-  if (identifications) {
-    identificationValue = identifications.find((identification: any) => identification.productIdTypeEnumId === key)?.idValue
-  }
-  return identificationValue
-}
-
-const getContent = (contents: any, key: string) => {
-  let contentValue = '';
-  if (contents) {
-    contentValue = contents.find((content: any) => content.productContentTypeEnumId === key)?.contentLocation
-  }
-  return contentValue
-}
-
 const getFeature = (features: any, key: string) => {
   let featureValue = ''
   if (features) {
@@ -50,4 +34,4 @@ const getFeature = (features: any, key: string) => {
   return featureValue ? featureValue[0] : '';
 }
 
-export { showToast, hasError, getContent, getFeature, getIdentification }
+export { showToast, hasError, getFeature }
