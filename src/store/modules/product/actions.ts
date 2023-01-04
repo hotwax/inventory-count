@@ -98,8 +98,8 @@ const actions: ActionTree<ProductState, RootState> = {
       const resp = await fetchProducts({
         "filters": { 'sku': { value: `*${payload}*` }, 'isVirtual': { value: false }}
       }) as Product[] | Response
-      if(!isError(resp) && resp.total > 0) {
-        commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.products[0] })
+      if(!isError(resp)) {
+        resp.total > 0 && commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.products[0] })
       } else {
         console.error(resp.serverResponse)
         showToast(translate("Something went wrong"));
