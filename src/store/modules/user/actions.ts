@@ -8,6 +8,7 @@ import { translate } from '@/i18n'
 import moment from 'moment';
 import emitter from '@/event-bus'
 import "moment-timezone";
+import { resetConfig, updateInstanceUrl, updateToken } from '@/adapter'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -33,6 +34,7 @@ const actions: ActionTree<UserState, RootState> = {
 
             if (checkPermissionResponse.status === 200 && !hasError(checkPermissionResponse) && checkPermissionResponse.data && checkPermissionResponse.data.hasPermission) {
               commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
+              updateToken(resp.data.token)
               dispatch('getProfile')
               if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
               // TODO Internationalise text
@@ -47,6 +49,7 @@ const actions: ActionTree<UserState, RootState> = {
             }
           } else {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
+            updateToken(resp.data.token)
             dispatch('getProfile')
             return resp.data;
           }
@@ -74,7 +77,7 @@ const actions: ActionTree<UserState, RootState> = {
   async logout ({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
-    
+    resetConfig()
   },
 
   /**
@@ -111,7 +114,8 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   // Set User Instance Url
-  setUserInstanceUrl ({ state, commit }, payload){
+  setUserInstanceUrl ({ commit }, payload){
+    updateInstanceUrl(payload)
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   }
 }

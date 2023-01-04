@@ -25,4 +25,13 @@ const showToast = async (message: string, configButtons?: any) => {
   return toast.present();
 }
 
-export { showToast, hasError }
+const getFeature = (features: any, key: string) => {
+  let featureValue = ''
+  if (features) {
+    featureValue = features.find((feature: any) => feature.desc === key)?.value
+  }
+  // returning 0th index as the featureValue is an array
+  return featureValue ? featureValue[0] : '';
+}
+
+export { showToast, hasError, getFeature }

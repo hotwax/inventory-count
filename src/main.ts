@@ -28,6 +28,7 @@ import './theme/variables.css';
 
 import i18n from './i18n'
 import store from './store'
+import { init } from '@/adapter';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -62,6 +63,8 @@ app.config.globalProperties.$filters = {
   }
 }
 
+const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+init(store.getters['user/getUserToken'], store.getters['user/getInstanceUrl'], maxAge)
 
 router.isReady().then(() => {
   app.mount('#app');

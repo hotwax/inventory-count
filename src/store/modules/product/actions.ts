@@ -6,7 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
-
+import { fetchProducts, isError, Product, Response } from "@/adapter";
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -16,32 +16,38 @@ const actions: ActionTree<ProductState, RootState> = {
     // Show loader only when new query and not the infinite scroll
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
 
-    let resp;
+    let resp: Product[] | Response;
 
     try {
-      resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
+      resp = await fetchProducts({
+        // passing below filters as we only need to fetch virtual products, there are some cases(template product) in which
+        // both virtual and variant are false, thus explictly sending variant as true.
+        "filters": { 'isVirtual': { 'value': false }, 'isVariant': { 'value': true }},
         "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
+        "viewIndex": payload.viewIndex * payload.viewSize,
+        "queryString": payload.queryString
       })
 
-      // resp.data.response.numFound tells the number of items in the response
-      if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
-        let products = resp.data.response.docs;
-        const totalProductsCount = resp.data.response.numFound;
+      if(isError(resp)) {
+        throw resp.serverResponse;
+      }
+
+      if (resp.total > 0) {
+        let products = resp.products;
+        const totalProductsCount = resp.total;
 
         if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
-        commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
+        commit(types.PRODUCT_SEARCH_UPDATED, { products, totalProductsCount })
       } else if (payload.viewIndex == 0) {
-          showToast(translate("Product not found"));
+        showToast(translate("Product not found"));
       }
-      // Remove added loader only when new query and not the infinite scroll
-      if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     } catch(error){
       console.error(error)
       showToast(translate("Something went wrong"));
     }
+    // Remove added loader only when new query and not the infinite scroll
+    if (payload.viewIndex === 0) emitter.emit("dismissLoader");
+
     // TODO Handle specific error
     return resp;
   },
@@ -89,13 +95,13 @@ const actions: ActionTree<ProductState, RootState> = {
     if(currentProduct) {
       commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
     } else {
-      const resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + '*' + payload + '*', 'isVirtual: false'],
-      })
-      if(resp.status === 200 && !hasError(resp) && resp.data.response?.numFound > 0) {
-        commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
+      const resp = await fetchProducts({
+        "filters": { 'sku': { value: `*${payload}*` }, 'isVirtual': { value: false }}
+      }) as Product[] | Response
+      if(!isError(resp)) {
+        resp.total > 0 && commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.products[0] })
       } else {
+        console.error(resp.serverResponse)
         showToast(translate("Something went wrong"));
       }
     }
