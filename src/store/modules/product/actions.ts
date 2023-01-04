@@ -28,7 +28,11 @@ const actions: ActionTree<ProductState, RootState> = {
         "queryString": payload.queryString
       })
 
-      if (!isError(resp) && resp.total > 0) {
+      if(isError(resp)) {
+        throw resp.serverResponse;
+      }
+
+      if (resp.total > 0) {
         let products = resp.products;
         const totalProductsCount = resp.total;
 
@@ -36,7 +40,6 @@ const actions: ActionTree<ProductState, RootState> = {
         commit(types.PRODUCT_SEARCH_UPDATED, { products, totalProductsCount })
       } else if (payload.viewIndex == 0) {
         showToast(translate("Product not found"));
-        console.error(resp.serverResponse)
       }
     } catch(error){
       console.error(error)
