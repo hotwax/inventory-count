@@ -31,7 +31,7 @@
               {{ $t("OMS instance") }}
             </ion-card-subtitle>
             <ion-card-title>
-              {{ instanceUrl }}
+              {{ baseURL ? baseURL : instanceUrl }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
