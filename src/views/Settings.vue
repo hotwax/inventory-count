@@ -165,24 +165,25 @@ export default defineComponent({
   }
 });
 </script>
+
 <style scoped>
 ion-label[slot="end"] {
   text-align: end;
 }
 
-  ion-card > ion-button {
-    margin: var(--spacer-xs);
-  }
-  h1 {
-    padding: var(--spacer-xs) 10px 0;
-  }
-  section {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    align-items: start;
-  }
-  .user-profile {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  }
+ion-card > ion-button {
+  margin: var(--spacer-xs);
+}
+h1 {
+  padding: var(--spacer-xs) 10px 0;
+}
+section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+}
+.user-profile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
 </style>
