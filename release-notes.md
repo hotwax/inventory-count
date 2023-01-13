@@ -1,3 +1,13 @@
+# Release 1.2.0
+
+## What's Changed
+* Fixed build issue due to eslint version mismatch in dependencies and removed warnings (#85zrhpak3) by @k2maan in https://github.com/hotwax/inventory-count/pull/133
+
+## New Contributors
+* @k2maan made their first contribution in https://github.com/hotwax/inventory-count/pull/133
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.1.0...v1.2.0
+
 # Release 1.1.0
 
 ## What's Changed
