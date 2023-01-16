@@ -42,13 +42,33 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ $t("Shopify Config") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ $t("eCommerce") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('eCommerce stores are directly connected to one Shop Configs. If your OMS is connected to multiple eCommerce stores selling the same catalog operating as one Company, you may have multiple Shop Configs for the selected Product Store.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Select eCommerce") }}</ion-label>
+            <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
@@ -71,6 +91,8 @@ export default defineComponent({
     IonItem, 
     IonLabel, 
     IonPage, 
+    IonSelect,
+    IonSelectOption,
     IonTitle, 
     IonToolbar,
     Image
