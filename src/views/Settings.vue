@@ -13,17 +13,19 @@
             <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
               <Image :src="userProfile.partyImageUrl"/>
             </ion-avatar>
-            <ion-label>
-              {{ userProfile?.partyName }}
-              <p>{{ userProfile?.userLoginId }}</p>
-            </ion-label>
+            <ion-card-header>
+              <ion-card-subtitle>{{ userProfile.userLoginId }}</ion-card-subtitle>
+              <ion-card-title>{{ userProfile.partyName }}</ion-card-title>
+            </ion-card-header>
           </ion-item>
           <ion-button fill="outline" color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
         </ion-card>
       </div>
-      <h1>{{ $t('OMS') }}</h1>
+      <div class="section-header">
+        <h1>{{ $t('OMS') }}</h1>
+      </div>
       <section>
         <ion-card>
           <ion-card-header>
@@ -63,6 +65,16 @@
           </ion-item>
         </ion-card>
       </section>
+
+      <hr />
+
+      <div class="section-header">
+        <h1>
+          {{ $t('App') }}
+          <p class="overline" >{{ "Version: " + appVersion }}</p>
+        </h1>
+        <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -74,6 +86,7 @@ import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOu
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from '@/components/Image.vue'
+import { DateTime } from 'luxon';
 
 export default defineComponent({
   name: 'Settings',
@@ -99,8 +112,13 @@ export default defineComponent({
   },
   data() {
     return {
-      baseURL: process.env.VUE_APP_BASE_URL
+      baseURL: process.env.VUE_APP_BASE_URL,
+      appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
+      appVersion: ""
     };
+  },
+  mounted() {
+    this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   computed: {
     ...mapGetters({
@@ -147,6 +165,9 @@ export default defineComponent({
     },
     goToOms(){
       window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
+    },
+    getDateTime(time: any) {
+      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
     }
   },
   setup(){
@@ -174,9 +195,6 @@ ion-label[slot="end"] {
 ion-card > ion-button {
   margin: var(--spacer-xs);
 }
-h1 {
-  padding: var(--spacer-xs) 10px 0;
-}
 section {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -185,5 +203,14 @@ section {
 .user-profile {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+hr {
+  border-top: 1px solid var(--ion-color-medium);
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacer-xs) 10px 0px;
 }
 </style>

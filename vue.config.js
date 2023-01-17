@@ -1,3 +1,4 @@
+require("@hotwax/app-version-info")
 module.exports = {
   pluginOptions: {
     i18n: {
