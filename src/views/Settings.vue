@@ -45,18 +45,15 @@
 
         <ion-card>
           <ion-card-header>
-            <ion-card-subtitle>
-              {{ $t("Shopify Config") }}
-            </ion-card-subtitle>
             <ion-card-title>
-              {{ $t("eCommerce") }}
+              {{ $t("Facility") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('eCommerce stores are directly connected to one Shop Configs. If your OMS is connected to multiple eCommerce stores selling the same catalog operating as one Company, you may have multiple Shop Configs for the selected Product Store.') }}
+            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ $t("Select eCommerce") }}</ion-label>
+            <ion-label>{{ $t("Select facility") }}</ion-label>
             <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
             </ion-select>
