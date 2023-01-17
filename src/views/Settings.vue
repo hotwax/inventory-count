@@ -7,45 +7,81 @@
     </ion-header>
     
     <ion-content>
-      <ion-list>
-        <!-- Select store -->
-        <ion-item>
-          <ion-icon :icon="storefrontOutline" slot="start" />
-          <ion-label>{{$t("eCom Store")}}</ion-label>
-          <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
-            <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
-          </ion-select>
-        </ion-item>
+      <div class="user-profile">
+        <ion-card>
+          <ion-item lines="full">
+            <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
+              <Image :src="userProfile.partyImageUrl"/>
+            </ion-avatar>
+            <ion-label>
+              {{ userProfile?.partyName }}
+              <p>{{ userProfile?.userLoginId }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-button fill="outline" color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <!-- Commenting this code as we currently do not have reset password functionality -->
+          <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
+        </ion-card>
+      </div>
+      <h1>{{ $t('OMS') }}</h1>
+      <section>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ $t("OMS instance") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ baseURL ? baseURL : instanceUrl }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
+          </ion-card-content>
+          <ion-button @click="goToOms" fill="clear">
+            {{ $t('Go to OMS') }}
+            <ion-icon slot="end" :icon="openOutline" />
+          </ion-button>
+        </ion-card>
 
-        <!-- OMS information -->
-        <ion-item>
-          <ion-icon :icon="codeWorkingOutline" slot="start"/>
-          <ion-label>{{ $t("OMS") }}</ion-label>
-          <ion-label slot="end">{{ baseURL ? baseURL : instanceUrl }}</ion-label>
-        </ion-item>
-
-        <!-- Profile of user logged in -->
-        <ion-item>
-          <ion-icon :icon="personCircleOutline" slot="start" />
-          <ion-label>{{ userProfile !== null ? userProfile.partyName : '' }}</ion-label>
-         <ion-button slot="end" fill="outline" color="dark" @click="logout()">{{ $t("Logout") }}</ion-button>
-        </ion-item>
-      </ion-list>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Facility") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ $t("Select facility") }}</ion-label>
+            <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+      </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { alertController, IonButton, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonList } from '@ionic/vue';
+import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from '@ionic/vue';
 import { defineComponent } from 'vue';
-import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline} from 'ionicons/icons'
+import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import Image from '@/components/Image.vue'
 
 export default defineComponent({
   name: 'Settings',
   components: {
+    IonAvatar,
     IonButton, 
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonCardTitle,
     IonContent, 
     IonHeader, 
     IonIcon,
@@ -56,7 +92,7 @@ export default defineComponent({
     IonSelectOption,
     IonTitle, 
     IonToolbar,
-    IonList
+    Image
   },
   data() {
     return {
@@ -105,6 +141,9 @@ export default defineComponent({
           this.router.push('/login');
         })
       }
+    },
+    goToOms(){
+      window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
     }
   },
   setup(){
@@ -116,14 +155,32 @@ export default defineComponent({
       ellipsisVertical,
       personCircleOutline,
       storefrontOutline,
+      openOutline,
       store,
       router
     }
   }
 });
 </script>
+
 <style scoped>
 ion-label[slot="end"] {
   text-align: end;
+}
+
+ion-card > ion-button {
+  margin: var(--spacer-xs);
+}
+h1 {
+  padding: var(--spacer-xs) 10px 0;
+}
+section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-items: start;
+}
+.user-profile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
 }
 </style>
