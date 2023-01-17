@@ -12,7 +12,8 @@ const productModule: Module<ProductState, RootState> = {
       uploadProducts: {},
       products: {
         list: {},
-        total: 0
+        total: 0,
+        searchQuery: ''
       }
     },
     getters,

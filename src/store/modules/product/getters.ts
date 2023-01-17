@@ -18,5 +18,8 @@ const getters: GetterTree<ProductState, RootState> = {
       state.products.list.length < state.products.total
     );
   },
+  getSearchQuery(state) {
+    return state.products.searchQuery;
+  }
 };
 export default getters;

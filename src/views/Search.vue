@@ -84,10 +84,14 @@ export default defineComponent({
       queryString: ''
     }
   },
+  ionViewDidEnter() {
+    this.queryString = this.searchQuery
+  },
   computed: {
     ...mapGetters({
       products: 'product/getSearchProducts',
-      isScrollable: 'product/isScrollable'
+      isScrollable: 'product/isScrollable',
+      searchQuery: 'product/getSearchQuery'
     })
   },
   methods: {
@@ -128,6 +132,7 @@ export default defineComponent({
         queryString: '*' + this.queryString + '*'
       }
       if (this.queryString) {
+        this.store.dispatch("product/updateSearchQuery", { searchQuery: this.queryString });
         await this.store.dispatch("product/findProduct", payload);
       } else {
         showToast(translate("Enter product sku to search"))

@@ -99,6 +99,14 @@ const actions: ActionTree<ProductState, RootState> = {
         showToast(translate("Something went wrong"));
       }
     }
+  },
+
+  async clearProductsList({ commit }) {
+    commit(types.PRODUCT_SEARCH_UPDATED, { products: {}, totalProductsCount: 0 })
+  },
+
+  async updateSearchQuery({ commit }, payload) {
+    commit(types.PRODUCT_SEARCH_QUERY, { searchQuery: payload.searchQuery })
   }
 }
 
