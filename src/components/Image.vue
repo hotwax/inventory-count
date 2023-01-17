@@ -35,7 +35,7 @@ export default defineComponent({
         img.onload = function () {
           resolve(true);
         }
-        img.onerror = function (error) {
+        img.onerror = function () {
           reject(false);
         }
         img.src = src;
