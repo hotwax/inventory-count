@@ -20,10 +20,10 @@ const actions: ActionTree<ProductState, RootState> = {
 
     try {
       resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
+        "filters": ['isVirtual: false'],
         "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
+        "viewIndex": payload.viewIndex,
+        "keyword":  payload.queryString
       })
 
       // resp.data.response.numFound tells the number of items in the response
