@@ -237,12 +237,3 @@ http://ionicframework.com/docs/theming/ */
     --ion-card-background: #1e1e1e;
   }
 }
-
-.overline {
-  font-weight: 500 !important;
-  font-size: 10px !important;
-  line-height: 16px !important;
-  letter-spacing: 1.5px;
-  color: #666;
-  text-transform: uppercase !important;
-}
