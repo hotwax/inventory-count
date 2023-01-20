@@ -94,13 +94,11 @@ export default defineComponent({
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
     },
     upload () {
-      if (Object.keys(this.uploadProducts).length > 0) {
-        const inventoryCountRegister = Object.entries(this.uploadProducts).map((product: any) => {
-          return {"locationId": product[1].locationId, "productId": product[1].productId, "quantity": product[1].quantity};
-        })
-        // TODO handle the case if there is no facilities available
-        this.store.dispatch('product/uploadInventoryCount', {inventoryCountRegister: inventoryCountRegister, facilityId: this.currentFacility.facilityId});
-      }
+      const inventoryCountRegister = Object.entries(this.uploadProducts).map((product: any) => {
+        return {"locationId": product[1].locationId, "productId": product[1].productId, "quantity": product[1].quantity};
+      })
+      // TODO handle the case if there is no facilities available
+      this.store.dispatch('product/uploadInventoryCount', {inventoryCountRegister: inventoryCountRegister, facilityId: this.currentFacility.facilityId});
     },
     viewProduct (product: any) {
       this.store.commit('product/product/CURRENT_UPDATED', { product: product });
