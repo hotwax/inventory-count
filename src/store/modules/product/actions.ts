@@ -17,13 +17,12 @@ const actions: ActionTree<ProductState, RootState> = {
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
 
     let resp;
-
+    const query = `sku: ${payload.queryString} OR upc: ${payload.queryString} OR goodIdentifications: ${payload.queryString}`
     try {
       resp = await ProductService.fetchProducts({
-        "filters": ['isVirtual: false'],
+        "filters": [query,'isVirtual: false'],
         "viewSize": payload.viewSize,
         "viewIndex": payload.viewIndex,
-        "keyword":  payload.queryString
       })
 
       // resp.data.response.numFound tells the number of items in the response
