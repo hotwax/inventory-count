@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -81,7 +81,7 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: '',
+      queryString: ''
     }
   },
   computed: {
