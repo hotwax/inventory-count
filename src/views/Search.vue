@@ -119,13 +119,15 @@ export default defineComponent({
         event.target.complete();
       })
     },
-    async getProducts(vSize: any, vIndex: any) {
+    async getProducts(vSize: any, vIndex: any, scannedValue?: any) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
       const payload = {
         viewSize,
         viewIndex,
-        queryString: '*' + this.queryString + '*'
+        queryString: '*' + this.queryString + '*',
+        sku: scannedValue,
+        upc: scannedValue
       }
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);

@@ -17,13 +17,24 @@ const actions: ActionTree<ProductState, RootState> = {
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
 
     let resp;
-    const query = `sku: ${payload.queryString} OR upc: ${payload.queryString} OR goodIdentifications: ${payload.queryString}`
+     
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": [query,'isVirtual: false'],
-        "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex,
-      })
+      let params = {}
+      // if (payload.sku) {
+        params = {
+          "viewSize": payload.viewSize,
+          "viewIndex": payload.viewIndex,
+          "filters": [`sku: ${payload.queryString} OR upc: ${payload.queryString}`,'isVirtual: false'] 
+        } 
+      // } else {
+      //   params = {
+      //     "viewSize": payload.viewSize,
+      //     "viewIndex": payload.viewIndex,
+      //     "filters": ['isVirtual: false'],
+      //     "keyword":  payload.queryString
+      //   }
+      // }
+      resp = await ProductService.fetchProducts(params);
 
       // resp.data.response.numFound tells the number of items in the response
       if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
