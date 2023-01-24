@@ -114,7 +114,7 @@ export default defineComponent({
     async loadMoreProducts (event: any) {
       this.searchProducts(
         undefined,
-        Math.ceil(this.products.length / process.env.VUE_APP_VIEW_SIZE).toString(),
+        Math.ceil(this.products.length / process.env.VUE_APP_VIEW_SIZE).toString()
       ).then(() => {
         event.target.complete();
       })
