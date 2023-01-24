@@ -112,23 +112,23 @@ export default defineComponent({
       })
     },
     async loadMoreProducts (event: any) {
-      this.getProducts(
+      this.searchProducts(
         undefined,
-        Math.ceil(this.products.length / process.env.VUE_APP_VIEW_SIZE).toString()
+        Math.ceil(this.products.length / process.env.VUE_APP_VIEW_SIZE).toString(),
       ).then(() => {
         event.target.complete();
       })
     },
-    searchProducts() {
-      const queryString = '*' + this.queryString + '*';
-      this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0, queryString);
-    },
-    async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
+    async searchProducts(vSize?: any, vIndex?: any) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
+      const queryString = '*' + this.queryString + '*';
+      this.getProducts(viewSize, viewIndex, queryString);
+    },
+    async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
       const payload = {
-        viewSize,
-        viewIndex,
+        viewSize: vSize,
+        viewIndex: vIndex,
         queryString: queryString ? queryString : this.queryString,
       }
       if (this.queryString) {
