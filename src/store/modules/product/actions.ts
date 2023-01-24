@@ -19,12 +19,22 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
 
     try {
-      resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload.queryString, 'isVirtual: false'],
-        "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
-      })
+      let params = {}
+      if (payload.scannedValue) {
+        params = {
+          "viewSize": payload.viewSize,
+          "viewIndex": payload.viewIndex,
+          "filters": [`sku: ${payload.scannedValue} OR upc: ${payload.scannedValue}`,'isVirtual: false'] 
+        } 
+      } else {
+        params = {
+          "viewSize": payload.viewSize,
+          "viewIndex": payload.viewIndex,
+          "filters": ['isVirtual: false'],
+          "keyword":  '*' + payload.queryString + '*'
+        }
+      }
+      resp = await ProductService.fetchProducts(params);
 
       // resp.data.response.numFound tells the number of items in the response
       if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {

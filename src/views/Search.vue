@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="queryString = $event.target.value; getProducts()"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="queryString = $event.target.value; searchProducts()"/>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -81,7 +81,8 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: ''
+      queryString: '',
+      scannedValue: '',
     }
   },
   computed: {
@@ -100,7 +101,7 @@ export default defineComponent({
         .then((result) => {
           //result : value of the scanned barcode/QRcode
           if(result.role){
-            this.queryString = result.role
+            this.scannedValue = result.role;
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
         });
@@ -119,15 +120,19 @@ export default defineComponent({
         event.target.complete();
       })
     },
-    async getProducts(vSize: any, vIndex: any) {
+    searchProducts() {
+      this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
+    },
+    async getProducts(vSize?: any, vIndex?: any) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
       const payload = {
         viewSize,
         viewIndex,
-        queryString: '*' + this.queryString + '*'
+        queryString: this.queryString,
+        scannedValue: this.scannedValue,
       }
-      if (this.queryString) {
+      if (this.queryString || this.scannedValue) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
         showToast(translate("Enter product sku to search"))
