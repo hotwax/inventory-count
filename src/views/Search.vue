@@ -129,7 +129,7 @@ export default defineComponent({
       const payload = {
         viewSize,
         viewIndex,
-        queryString,
+        queryString: queryString ? queryString : this.queryString,
       }
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
