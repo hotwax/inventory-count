@@ -82,7 +82,6 @@ export default defineComponent({
   data (){
     return {
       queryString: '',
-      scannedValue: '',
     }
   },
   computed: {
@@ -101,7 +100,7 @@ export default defineComponent({
         .then((result) => {
           //result : value of the scanned barcode/QRcode
           if(result.role){
-            this.scannedValue = result.role;
+            this.queryString = result.role;
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
         });
@@ -121,18 +120,18 @@ export default defineComponent({
       })
     },
     searchProducts() {
-      this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
+      const queryString = '*' + this.queryString + '*';
+      this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0, queryString);
     },
-    async getProducts(vSize?: any, vIndex?: any) {
+    async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
       const payload = {
         viewSize,
         viewIndex,
-        queryString: this.queryString,
-        scannedValue: this.scannedValue,
+        queryString,
       }
-      if (this.queryString || this.scannedValue) {
+      if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
         showToast(translate("Enter product sku to search"))
