@@ -1,3 +1,12 @@
+# Release 1.3.0
+
+## What's Changed
+* Added hotwax-apps-theme package(#85zrj08rb) by @disha1202 in https://github.com/hotwax/inventory-count/pull/136
+* Implemented: Updated UI of Settings page(#32j3r6t) by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/141 and by @shashwatbangar in https://github.com/hotwax/inventory-count/pull/123
+* Updated code to disable the upload button when no products to upload (#85zrjcac7) by @k2maan in https://github.com/hotwax/inventory-count/pull/142
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.2.0...v1.3.0
+
 # Release 1.2.0
 
 ## What's Changed
