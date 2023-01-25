@@ -95,14 +95,12 @@ export default defineComponent({
       const modal = await modalController
         .create({
           component: Scanner,
+          backdropDismiss: false
         });
         modal.onDidDismiss()
         .then((result) => {
           //result : value of the scanned barcode/QRcode
-          // Ionic modal returns data and role where the 'role' string defines the element that is dismissing the modal (backdrop in our case). 
-          // When the modal is dismissed, the role string is set as undefined else it is assigned that element only (backdrop in our case).
-          // So, the modal isn't getting dismissed correctly amd that is why result.role returns backdrop
-          if(result.role && result.role !== 'backdrop'){
+          if (result.role) {
             this.queryString = result.role;
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
