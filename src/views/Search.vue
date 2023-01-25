@@ -95,11 +95,12 @@ export default defineComponent({
       const modal = await modalController
         .create({
           component: Scanner,
+          backdropDismiss: false
         });
         modal.onDidDismiss()
         .then((result) => {
           //result : value of the scanned barcode/QRcode
-          if(result.role){
+          if (result.role) {
             this.queryString = result.role;
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
