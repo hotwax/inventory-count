@@ -116,9 +116,6 @@
         location: ""
       }
     },
-    ionViewWillEnter() {
-      this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku)
-    },
     async mounted(){
       await this.getFacilityLocations();
     },
