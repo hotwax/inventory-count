@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" v-on:keyup.enter="queryString = $event.target.value; getProducts()"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -95,12 +95,13 @@ export default defineComponent({
       const modal = await modalController
         .create({
           component: Scanner,
+          backdropDismiss: false
         });
         modal.onDidDismiss()
         .then((result) => {
           //result : value of the scanned barcode/QRcode
-          if(result.role){
-            this.queryString = result.role
+          if (result.role) {
+            this.queryString = result.role;
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
         });
@@ -112,20 +113,24 @@ export default defineComponent({
       })
     },
     async loadMoreProducts (event: any) {
-      this.getProducts(
+      this.searchProducts(
         undefined,
         Math.ceil(this.products.length / process.env.VUE_APP_VIEW_SIZE).toString()
       ).then(() => {
         event.target.complete();
       })
     },
-    async getProducts(vSize: any, vIndex: any) {
+    async searchProducts(vSize?: any, vIndex?: any) {
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
+      const queryString = '*' + this.queryString + '*';
+      this.getProducts(viewSize, viewIndex, queryString);
+    },
+    async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
       const payload = {
-        viewSize,
-        viewIndex,
-        queryString: '*' + this.queryString + '*'
+        viewSize: vSize,
+        viewIndex: vIndex,
+        queryString: queryString ? queryString : this.queryString,
       }
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
