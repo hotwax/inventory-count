@@ -13,7 +13,8 @@ const productModule: Module<ProductState, RootState> = {
       products: {
         list: {},
         total: 0
-      }
+      },
+      searchQuery: ''
     },
     getters,
     actions,

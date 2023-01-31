@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="updateQueryString($event.target.value); searchProducts()"/>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
@@ -81,16 +81,23 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: ''
+      queryString: (this as any).searchQuery
     }
   },
   computed: {
     ...mapGetters({
       products: 'product/getSearchProducts',
-      isScrollable: 'product/isScrollable'
+      isScrollable: 'product/isScrollable',
+      searchQuery: 'product/getSearchQuery'
     })
   },
+  ionViewDidEnter() {
+    this.queryString = this.searchQuery
+  },
   methods: {
+    updateQueryString(queryString: string){
+      this.store.dispatch('product/updateSearchQuery', queryString);
+    },
     async scanProduct(){
       const modal = await modalController
         .create({
