@@ -73,6 +73,7 @@ const actions: ActionTree<UserState, RootState> = {
   async logout ({ commit }) {
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
+    this.dispatch('product/clearSearchProducts');
     
   },
 
