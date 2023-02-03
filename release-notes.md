@@ -1,3 +1,18 @@
+# Release 1.4.0
+
+## What's Changed
+* Added support to scan products with all the product identifications (#85zrjbtxf) by @k2maan in https://github.com/hotwax/inventory-count/pull/146
+* Fixed 'backdrop' being searched on closing the scanner without scanning barcode by @k2maan in https://github.com/hotwax/inventory-count/pull/147
+* fixed: incorrect facility locations on product detail page(#85zrgfqdj) by @disha1202 in https://github.com/hotwax/inventory-count/pull/149
+* Added support to change timezone and migrated from moment to luxon(#25k8h53) by @k2maan in https://github.com/hotwax/inventory-count/pull/150 and by @disha1202 in https://github.com/hotwax/inventory-count/pull/90 and by @Mayank909 in https://github.com/hotwax/inventory-count/pull/88
+* Implemented: Code to show app version & build information on Settings page (#85zrhn8w8) by @k2maan in https://github.com/hotwax/inventory-count/pull/153 and by @shashwatbangar in https://github.com/hotwax/inventory-count/pull/137
+* fix: searched products not cleared if product not found on scanning or searching and on logout(#85zrkjneg) by @disha1202 in https://github.com/hotwax/inventory-count/pull/154 and https://github.com/hotwax/inventory-count/pull/156
+* fix: warning in console when clicking scan button(#85zrkj2ud) by @disha1202 in https://github.com/hotwax/inventory-count/pull/152
+
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.3.0...v1.4.0
+
+
 # Release 1.3.0
 
 ## What's Changed
