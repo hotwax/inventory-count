@@ -58,6 +58,7 @@ import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
 import Scanner from "@/components/Scanner.vue"
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: "Search",
@@ -89,6 +90,9 @@ export default defineComponent({
       products: 'product/getSearchProducts',
       isScrollable: 'product/isScrollable'
     })
+  },
+  ionViewWillEnter(){
+    if(this.$route.redirectedFrom) this.queryString = '';
   },
   methods: {
     async scanProduct(){
@@ -141,7 +145,7 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-
+    const router = useRouter();
     return {
       store,
       barcodeOutline
