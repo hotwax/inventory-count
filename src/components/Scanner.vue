@@ -37,14 +37,17 @@ export default {
     IonToolbar,
     StreamBarcodeReader,
   },
-  async mounted() {
-    try {
-      await navigator.mediaDevices.getUserMedia({ video: true });
-    } catch (err) {
-      showToast(translate("Camera permission denied."));
-    }
+  mounted() {
+    this.checkCameraPermission();
   },
   methods: {
+    async checkCameraPermission() {
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (err) {
+        showToast(translate("Camera permission denied."));
+      }
+    },
     onDecode(result) {
       modalController.dismiss({dismissed: true}, result);
     },
