@@ -23,6 +23,9 @@ import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonToolbar, moda
 import {
   closeOutline
 } from 'ionicons/icons';
+import { showToast } from "@/utils";
+import { translate } from '@/i18n'
+
 export default {
   name: 'Scanner',
   components: {
@@ -33,6 +36,13 @@ export default {
     IonIcon, 
     IonToolbar,
     StreamBarcodeReader,
+  },
+  async mounted() {
+    try {
+      await navigator.mediaDevices.getUserMedia({ video: true });
+    } catch (err) {
+      showToast(translate("Camera permission denied."));
+    }
   },
   methods: {
     onDecode(result) {
