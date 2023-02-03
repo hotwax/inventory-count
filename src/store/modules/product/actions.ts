@@ -11,7 +11,7 @@ import emitter from '@/event-bus'
 const actions: ActionTree<ProductState, RootState> = {
 
   // Find Product
-  async findProduct ({ commit, state }, payload) {
+  async findProduct ({ commit, state, dispatch }, payload) {
 
     // Show loader only when new query and not the infinite scroll
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
@@ -33,12 +33,14 @@ const actions: ActionTree<ProductState, RootState> = {
         if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
       } else if (payload.viewIndex == 0) {
-          showToast(translate("Product not found"));
+        dispatch('clearSearchProducts')
+        showToast(translate("Product not found"));
       }
       // Remove added loader only when new query and not the infinite scroll
       if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     } catch(error){
       console.error(error)
+      dispatch('clearSearchProducts')
       showToast(translate("Something went wrong"));
     }
     // TODO Handle specific error
@@ -80,6 +82,10 @@ const actions: ActionTree<ProductState, RootState> = {
   
   async updateInventoryCount ({ commit }, payload) {
     commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
+  },
+
+  clearSearchProducts({commit}){
+    commit(types.PRODUCT_SEARCH_UPDATED, { products: [], totalProductsCount: 0 })
   },
 
   async updateCurrentProduct ({ commit, state }, payload) {
