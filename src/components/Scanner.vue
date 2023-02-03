@@ -12,7 +12,6 @@
     <div class="scanner">
       <StreamBarcodeReader
         @decode="onDecode"
-        @loaded="onLoaded"
       />
     </div>
   </ion-content>
