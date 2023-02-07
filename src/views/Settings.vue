@@ -55,7 +55,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
-            <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select ref="selectFacility" interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -140,26 +140,52 @@ export default defineComponent({
     })
   },
   methods: {
-    setFacility (facility: any) {
-      if (this.userProfile) {
+    setFacility (event: any) {
+      const stateFacilityID = JSON.parse(JSON.stringify(this.currentFacility.facilityId));
+      if (this.userProfile && event.detail.value != this.currentFacility.facilityId) {
         this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
+          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
         });
+        if (Object.keys(this.uploadProducts).length > 0) {
+          this.presentAlertOnFacilityChange(stateFacilityID);
+        }
       }
     },
-    async presentAlert () {
+    async presentAlertOnLogout() {
       const alert = await alertController.create({
         header: this.$t('Logout'),
         message: this.$t('The products in the upload list will be removed.'),
         buttons: [{
           text: this.$t('Cancel')
-        }, {
+        },
+        {
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('product/clearUploadProducts');
             this.store.dispatch('user/logout').then(() => {
               this.router.push('/login');
             })
+          }
+        }]
+      });
+      await alert.present();
+    },
+    async presentAlertOnFacilityChange(facilityId: string) {
+      const alert = await alertController.create({
+        header: this.$t('Set facility'),
+        message: this.$t('The products in the upload list will be removed.'),
+        buttons: [{
+          text: this.$t('Cancel'),
+          handler: async () => {
+            await this.store.dispatch('user/setFacility', {
+              'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
+            });
+          }
+        },
+        {
+          text: this.$t('Ok'),
+          handler: () => {
+            this.store.dispatch('product/clearUploadProducts');
           }
         }]
       });
@@ -173,7 +199,7 @@ export default defineComponent({
     },
     logout () {
       if (Object.keys(this.uploadProducts).length > 0) {
-        this.presentAlert();
+        this.presentAlertOnLogout();
       } else {
         this.store.dispatch('user/logout').then(() => {
           this.router.push('/login');

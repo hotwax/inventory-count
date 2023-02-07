@@ -1,4 +1,5 @@
 {
+  "App": "App",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
   "Cancel": "Cancel",
   "Change": "Change",
@@ -30,6 +31,7 @@
   "Search time zones": "Search time zones",
   "Select facility": "Select facility",
   "Select time zone": "Select time zone",
+  "Set facility": "Set facility",
   "Settings": "Settings",
   "Shopify Config": "Shopify Config",
   "Something went wrong": "Something went wrong",
