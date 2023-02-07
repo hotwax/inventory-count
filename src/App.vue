@@ -19,6 +19,9 @@ import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import TabBar from "./components/TabBar.vue"
+import { mapGetters, useStore } from 'vuex';
+import { init, resetConfig } from '@/adapter'
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'App',
@@ -33,7 +36,8 @@ export default defineComponent({
   },
   data() {
     return {
-      loader: null as any
+      loader: null as any,
+      maxAge: process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
     }
   },
   methods: {
@@ -53,6 +57,10 @@ export default defineComponent({
         this.loader.dismiss();
         this.loader = null as any;
       }
+    },
+    async unauthorized() {
+      this.store.dispatch("user/logout");
+      this.router.push("/login")
     }
   },
   async mounted() {
@@ -64,15 +72,34 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+    emitter.on('unauthorized', this.unauthorized);
+
+    init(this.userToken, this.instanceUrl, this.maxAge)
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
+    emitter.off('unauthorized', this.unauthorized);
+
+    resetConfig()
   },
   computed: {
     showFooter () {
       if (['/settings', '/search', '/upload'].includes(this.$route.path)) return true
       return false
+    },
+    ...mapGetters({
+      userToken: 'user/getUserToken',
+      instanceUrl: 'user/getInstanceUrl'
+    })
+  },
+  setup() {
+    const store = useStore();
+    const router = useRouter();
+
+    return {
+      router,
+      store
     }
   }
 });
