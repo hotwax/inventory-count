@@ -92,7 +92,10 @@ export default defineComponent({
   },
   methods: {
     async scanProduct(){
-      const modal = await modalController
+      try {
+        // checking camera permission before opening the scanner
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        const modal = await modalController
         .create({
           component: Scanner,
           backdropDismiss: false
@@ -105,7 +108,10 @@ export default defineComponent({
             this.getProducts(process.env.VUE_APP_VIEW_SIZE, 0);
           }
         });
-      return modal.present();
+        return modal.present();
+      } catch (err) {
+        showToast(translate("Camera permission denied."));
+      }
     },
     selectSearchBarText(event: any) {
       event.target.getInputElement().then((element: any) => {
