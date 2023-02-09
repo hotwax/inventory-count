@@ -55,7 +55,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
-            <ion-select ref="selectFacility" interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -141,13 +141,15 @@ export default defineComponent({
   },
   methods: {
     setFacility (event: any) {
-      const stateFacilityID = JSON.parse(JSON.stringify(this.currentFacility.facilityId));
-      if (this.userProfile && event.detail.value != this.currentFacility.facilityId) {
+      // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
+      // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
+      if (this.userProfile && this.currentFacility.facilityId && event.detail.value != this.currentFacility.facilityId ) {
+        const facilityId = this.currentFacility.facilityId;
         this.store.dispatch('user/setFacility', {
           'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
         });
         if (Object.keys(this.uploadProducts).length > 0) {
-          this.presentAlertOnFacilityChange(stateFacilityID);
+          this.presentAlertOnFacilityChange(facilityId);
         }
       }
     },
@@ -161,7 +163,6 @@ export default defineComponent({
         {
           text: this.$t('Ok'),
           handler: () => {
-            this.store.dispatch('product/clearUploadProducts');
             this.store.dispatch('user/logout').then(() => {
               this.router.push('/login');
             })
@@ -176,8 +177,8 @@ export default defineComponent({
         message: this.$t('The products in the upload list will be removed.'),
         buttons: [{
           text: this.$t('Cancel'),
-          handler: async () => {
-            await this.store.dispatch('user/setFacility', {
+          handler: () => {
+            this.store.dispatch('user/setFacility', {
               'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
             });
           }
