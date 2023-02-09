@@ -1,6 +1,7 @@
 {
   "App": "App",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
+  "Camera permission denied.": "Camera permission denied.",
   "Cancel": "Cancel",
   "Change": "Change",
   "Click the backdrop to dismiss.": "Click the backdrop to dismiss.",

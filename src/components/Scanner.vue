@@ -23,6 +23,7 @@ import { IonButton, IonButtons, IonContent, IonHeader, IonIcon, IonToolbar, moda
 import {
   closeOutline
 } from 'ionicons/icons';
+
 export default {
   name: 'Scanner',
   components: {
