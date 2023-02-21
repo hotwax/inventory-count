@@ -55,7 +55,7 @@
           </ion-card-content>
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
-            <ion-select interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+            <ion-select interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -125,11 +125,15 @@ export default defineComponent({
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
       appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
-      appVersion: ""
+      appVersion: "",
+      currentFacilityId: ""
     };
   },
   mounted() {
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
+  },
+  ionViewWillEnter() {
+    this.currentFacilityId = this.currentFacility.facilityId;
   },
   computed: {
     ...mapGetters({
@@ -140,26 +144,56 @@ export default defineComponent({
     })
   },
   methods: {
-    setFacility (facility: any) {
-      if (this.userProfile) {
-        this.store.dispatch('user/setFacility', {
-          'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facility['detail'].value)
-        });
+    setFacility (event: any) {
+      // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
+      // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
+      if (this.userProfile && this.currentFacility.facilityId && event.detail.value != this.currentFacility.facilityId ) {
+        if (Object.keys(this.uploadProducts).length > 0) {
+          this.presentAlertOnFacilityChange(event.detail.value);
+        } else {
+          this.store.dispatch('user/setFacility', {
+            'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
+          });
+          this.currentFacilityId = this.currentFacility.facilityId;
+        }
       }
     },
-    async presentAlert () {
+    async presentAlertOnLogout() {
       const alert = await alertController.create({
         header: this.$t('Logout'),
         message: this.$t('The products in the upload list will be removed.'),
         buttons: [{
           text: this.$t('Cancel')
-        }, {
+        },
+        {
           text: this.$t('Ok'),
           handler: () => {
-            this.store.dispatch('product/clearUploadProducts');
             this.store.dispatch('user/logout').then(() => {
               this.router.push('/login');
             })
+          }
+        }]
+      });
+      await alert.present();
+    },
+    async presentAlertOnFacilityChange(facilityId: string) {
+      const alert = await alertController.create({
+        header: this.$t('Set facility'),
+        message: this.$t('The products in the upload list will be removed.'),
+        buttons: [{
+          text: this.$t('Cancel'),
+          handler: () => {
+            this.currentFacilityId = this.currentFacility.facilityId
+          }
+        },
+        {
+          text: this.$t('Ok'),
+          handler: () => {
+            this.store.dispatch('product/clearUploadProducts');
+            this.store.dispatch('user/setFacility', {
+              'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
+            });
+            this.currentFacilityId = this.currentFacility.facilityId
           }
         }]
       });
@@ -173,7 +207,7 @@ export default defineComponent({
     },
     logout () {
       if (Object.keys(this.uploadProducts).length > 0) {
-        this.presentAlert();
+        this.presentAlertOnLogout();
       } else {
         this.store.dispatch('user/logout').then(() => {
           this.router.push('/login');
