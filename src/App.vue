@@ -20,7 +20,7 @@ import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import TabBar from "./components/TabBar.vue"
 import { mapGetters, useStore } from 'vuex';
-import { init, resetConfig } from '@/adapter'
+import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 
 export default defineComponent({
@@ -72,14 +72,25 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
-    emitter.on('unauthorized', this.unauthorized);
 
-    init(this.userToken, this.instanceUrl, this.maxAge)
+    initialise({
+      token: this.userToken,
+      instanceUrl: this.instanceUrl,
+      cacheMaxAge: this.maxAge,
+      events: {
+        unauthorised: this.unauthorized,
+        responseErrror: () => {
+          setTimeout(() => this.dismissLoader(), 100);
+        },
+        queueTask: (payload: any) => {
+          emitter.emit("queueTask", payload);
+        }
+      }
+    })
   },
   unmounted() {
     emitter.off('presentLoader', this.presentLoader);
     emitter.off('dismissLoader', this.dismissLoader);
-    emitter.off('unauthorized', this.unauthorized);
 
     resetConfig()
   },
