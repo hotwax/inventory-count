@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
       - name: Checkout to latest release tag
         run: |
           git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
