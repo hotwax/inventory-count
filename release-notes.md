@@ -1,3 +1,14 @@
+# Release 1.5.0
+
+## What's Changed
+* Implemented: support for using api and client method from oms api package(#85zrm1ktj) by @ymaheshwari1 in https://github.com/hotwax/inventory-count/pull/160
+* Implemented: Toast notification when camera permission is denied for scanner (#85zrk1af8) by @k2maan in https://github.com/hotwax/inventory-count/pull/159
+* Implemented: alert on facility change when products are uploaded (#85zrmb9v7) by @k2maan in https://github.com/hotwax/inventory-count/pull/161
+* Fixed: navigation to login failed for token expire (oms-api#61) by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/164
+
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.4.0...v1.5.0
+
 # Release 1.4.0
 
 ## What's Changed
