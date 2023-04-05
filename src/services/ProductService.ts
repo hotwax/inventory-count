@@ -21,7 +21,8 @@ const getFacilityLocations = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "get",
-    params: payload
+    params: payload,
+    cache: true
   });
 }
 
