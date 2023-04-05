@@ -117,6 +117,7 @@
       }
     },
     async mounted(){
+      await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
       await this.getFacilityLocations();
     },
     methods: {

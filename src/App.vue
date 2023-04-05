@@ -72,14 +72,15 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
-
+  },
+  created() {
     initialise({
       token: this.userToken,
       instanceUrl: this.instanceUrl,
       cacheMaxAge: this.maxAge,
       events: {
         unauthorised: this.unauthorized,
-        responseErrror: () => {
+        responseError: () => {
           setTimeout(() => this.dismissLoader(), 100);
         },
         queueTask: (payload: any) => {

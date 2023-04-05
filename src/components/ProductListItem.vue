@@ -33,7 +33,6 @@ export default defineComponent({
   props: ["product"],
   methods: {
     async viewProduct () {
-      await this.store.dispatch("product/updateCurrentProduct", this.product.sku)
       this.router.push({ path: `/count/${this.product.sku}` })
     }
   },
