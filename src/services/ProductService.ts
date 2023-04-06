@@ -19,9 +19,10 @@ const importInventoryCount = async (query: any): Promise <any> => {
 
 const getFacilityLocations = async (payload: any): Promise<any> => {
   return api({
-    url: "/performFind",
-    method: "POST",
-    data: payload
+    url: "performFind",
+    method: "get",
+    params: payload,
+    cache: true
   });
 }
 

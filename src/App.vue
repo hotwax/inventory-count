@@ -58,7 +58,7 @@ export default defineComponent({
         this.loader = null as any;
       }
     },
-    async unauthorized() {
+    async unauthorised() {
       this.store.dispatch("user/logout");
       this.router.push("/login")
     }
@@ -72,14 +72,15 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
-
+  },
+  created() {
     initialise({
       token: this.userToken,
       instanceUrl: this.instanceUrl,
       cacheMaxAge: this.maxAge,
       events: {
-        unauthorised: this.unauthorized,
-        responseErrror: () => {
+        unauthorised: this.unauthorised,
+        responseError: () => {
           setTimeout(() => this.dismissLoader(), 100);
         },
         queueTask: (payload: any) => {
