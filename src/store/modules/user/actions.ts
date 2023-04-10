@@ -5,8 +5,7 @@ import UserState from './UserState'
 import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
-import emitter from '@/event-bus'
-import { DateTime, Settings } from 'luxon';
+import { Settings } from 'luxon';
 import { updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 
 const actions: ActionTree<UserState, RootState> = {
@@ -34,7 +33,7 @@ const actions: ActionTree<UserState, RootState> = {
             if (checkPermissionResponse.status === 200 && !hasError(checkPermissionResponse) && checkPermissionResponse.data && checkPermissionResponse.data.hasPermission) {
               commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
               updateToken(resp.data.token)
-              dispatch('getProfile')
+              await dispatch('getProfile')
               if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
               // TODO Internationalise text
                 showToast(translate(resp.data._EVENT_MESSAGE_));
@@ -49,7 +48,7 @@ const actions: ActionTree<UserState, RootState> = {
           } else {
             commit(types.USER_TOKEN_CHANGED, { newToken: resp.data.token })
             updateToken(resp.data.token)
-            dispatch('getProfile')
+            await dispatch('getProfile')
             return resp.data;
           }
         } else if (hasError(resp)) {
@@ -89,10 +88,6 @@ const actions: ActionTree<UserState, RootState> = {
     if (resp.status === 200) {
       if (resp.data.userTimeZone) {
         Settings.defaultZone = resp.data.userTimeZone;
-      }
-      const localTimeZone = DateTime.local().zoneName;
-      if (resp.data.userTimeZone !== localTimeZone) {
-        emitter.emit('timeZoneDifferent', { profileTimeZone: resp.data.userTimeZone, localTimeZone});
       }
       commit(types.USER_INFO_UPDATED, resp.data);
       commit(types.USER_CURRENT_FACILITY_UPDATED, resp.data.facilities.length > 0 ? resp.data.facilities[0] : {});
