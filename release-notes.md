@@ -1,3 +1,12 @@
+# Release 1.6.0
+
+## What's Changed
+* Fixed: Product data not fetched on refresh (#85zrvh9we) by @k2maan in https://github.com/hotwax/inventory-count/pull/167
+* Fixed: missing facilities causing sideeffects when userprofile response is delayed by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/168
+
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.5.0...v1.6.0
+
 # Release 1.5.0
 
 ## What's Changed
