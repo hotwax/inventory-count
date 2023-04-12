@@ -8,54 +8,56 @@
       </ion-header>
   
       <ion-content>
-        <div class="header">
-          <div class="product-image">
-             <Image :src="product.mainImageUrl"/>
-          </div>
-          <div class="product-info">
+        <div class="product-image">
+            <Image :src="product.mainImageUrl"/>
+        </div>
+        
+        <div class="product-info">
+          <ion-item lines="none">
+            <ion-label>
+              <p class="overline">{{ product.productName }}</p>
+              <h2>{{ product.sku }}</h2>
+            </ion-label>
+          </ion-item>
+
+          <div class="product-features">
             <ion-item lines="none">
-              <ion-label>
-                <p class="overline">{{ product.productName }}</p>
-                <h2>{{ product.sku }}</h2>
-              </ion-label>
+              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
+                <ion-icon :icon="colorPaletteOutline" />
+                <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
+              </ion-chip>
+              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
+                <ion-icon :icon="resize" />
+                <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
+              </ion-chip>
             </ion-item>
-  
-            <div class="product-features">
-              <ion-item lines="none">
-                <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
-                  <ion-icon :icon="colorPaletteOutline" />
-                  <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
-                </ion-chip>
-                <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
-                  <ion-icon :icon="resize" />
-                  <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
-                </ion-chip>
-              </ion-item>
-            </div>
           </div>
         </div>
-        <ion-item>
-          <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-          <ion-input type="number" min="0" inputmode="numeric" v-model="product.quantity"></ion-input>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
-        </ion-item>
-        <ion-item>
-          <ion-label>{{ $t("Location") }}</ion-label>
-          <ion-chip @click="selectLocation">
-            <ion-label>{{ location }}</ion-label>
-            <ion-icon :icon="locationOutline" />
-          </ion-chip>
-        </ion-item>
-  
-        <div class="action">
-          <ion-button size="large" @click="updateProductInventoryCount()">
-            <ion-icon :icon="saveOutline" slot="start" />{{
-              $t("Save")
-            }}</ion-button
-          >
-        </div>
+        
+        <div class="inventory-form">
+          <ion-item>
+            <ion-label position="floating">{{ $t("Stock") }}</ion-label>
+            <ion-input type="number" min="0" inputmode="numeric" v-model="product.quantity"></ion-input>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{ $t("Location") }}</ion-label>
+            <ion-chip @click="selectLocation">
+              <ion-label>{{ location }}</ion-label>
+              <ion-icon :icon="locationOutline" />
+            </ion-chip>
+          </ion-item>
+    
+          <div class="action">
+            <ion-button size="large" @click="updateProductInventoryCount()">
+              <ion-icon :icon="saveOutline" slot="start" />{{
+                $t("Save")
+              }}</ion-button
+            >
+          </div>
+        </div>  
       </ion-content>
     </ion-page>
   </template>
@@ -210,6 +212,7 @@
   </script>
   
   <style scoped> 
+
   .product-image > img {
     width: 100%;
     height: 50vh;
@@ -222,5 +225,18 @@
   
   .action {
     text-align: center;
+  }
+
+  @media (max-height: 750px) {
+    .product-image {
+      position: sticky;
+      top: 0px;
+      z-index: -1;
+    }
+    
+    .inventory-form {
+      background-color: var(--ion-background-color);
+      height: 80vh;
+    }
   }
   </style>
