@@ -235,7 +235,7 @@
     }
     
     .inventory-form {
-      background-color: white;
+      background-color: var(--ion-background-color);
       height: 80vh;
     }
   }
