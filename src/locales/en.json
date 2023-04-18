@@ -19,6 +19,7 @@
   "Location": "Location",
   "Login": "Login",
   "Logout": "Logout",
+  "Make sure you've reviewed the products and their counts before uploading them for review": "Make sure you've reviewed the products and their counts before uploading them for review",
   "No time zone found": "No time zone found",
   "Ok": "Ok",
   "OMS": "OMS",
@@ -49,5 +50,6 @@
   "Update time zone": "Update time zone",
   "Upload": "Upload",
   "Username": "Username",
+  "Upload inventory count": "Upload inventory count",
   "View": "View"
 }
