@@ -31,7 +31,7 @@
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="upload()" :disabled="Object.keys(uploadProducts).length === 0">
+        <ion-fab-button @click="presentAlertOnUpload()" :disabled="Object.keys(uploadProducts).length === 0">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -41,6 +41,7 @@
 
 <script lang="ts">
 import {
+  alertController,
   IonBadge,
   IonButton,
   IonCard,
@@ -92,6 +93,23 @@ export default defineComponent({
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
+    },
+    async presentAlertOnUpload() {
+      const alert = await alertController.create({
+        header: this.$t("Upload inventory count"),
+        message: this.$t("Make sure you've reviewed the products and their counts before uploading them for review"),
+        buttons: [{
+          text: this.$t('Cancel'),
+          role: 'cancel',
+        },
+        {
+          text: this.$t('Upload'),
+          handler: () => {
+            this.upload()
+          }
+        }]
+      });
+      await alert.present();
     },
     upload () {
       const inventoryCountRegister = Object.entries(this.uploadProducts).map((product: any) => {
