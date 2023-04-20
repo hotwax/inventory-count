@@ -33,8 +33,19 @@
             </ion-item>
           </div>
         </div>
+
+        <div class="segment">
+          <ion-segment v-model="segmentSelected">
+            <ion-segment-button value="count">
+              <ion-label>{{ $t("Count") }}</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="variance">
+              <ion-label>{{ $t("Variance") }}</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
         
-        <div class="inventory-form">
+        <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
             <ion-label position="floating">{{ $t("Stock") }}</ion-label>
             <ion-input type="number" min="0" inputmode="numeric" v-model="product.quantity"></ion-input>
@@ -52,18 +63,43 @@
     
           <div class="action">
             <ion-button size="large" @click="updateProductInventoryCount()">
-              <ion-icon :icon="saveOutline" slot="start" />{{
-                $t("Save")
-              }}</ion-button
-            >
+              <ion-icon :icon="saveOutline" slot="start" />
+              {{$t("Save")}}
+            </ion-button>
           </div>
         </div>  
+
+        <div v-else class="inventory-form">
+          <ion-item>
+            <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
+            <ion-input type="number" inputmode="numeric" placeholder="inventory variance" v-model="product.variance" />
+          </ion-item>
+          <ion-item lines="none">
+            <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>{{ $t("Variance reason") }}</ion-label>
+            <ion-select interface="popover" :value="product.reason" @ionChange="updateVarianceReason($event)" placeholder="Select reason">
+              <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <div class="action">
+            <ion-button size="large" @click="presentAlertOnVarianceUpdate()">
+              <ion-icon :icon="cloudUploadOutline" slot="start" />
+              {{$t("Log variance")}}
+            </ion-button>
+          </div>
+        </div>
+
       </ion-content>
     </ion-page>
   </template>
   
   <script lang="ts">
   import {
+    alertController,
     IonBackButton,
     IonButton,
     IonChip,
@@ -75,12 +111,16 @@
     IonLabel,
     IonNote,
     IonPage,
+    IonSegment,
+    IonSelect,
+    IonSelectOption,
+    IonSegmentButton,
     IonTitle,
     IonToolbar,
     pickerController
   } from "@ionic/vue";
   import { defineComponent } from "vue";
-  import { colorPaletteOutline, resize, saveOutline, locationOutline } from "ionicons/icons";
+  import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
   import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
@@ -102,6 +142,10 @@
       IonLabel,
       IonNote,
       IonPage,
+      IonSegment,
+      IonSegmentButton,
+      IonSelect,
+      IonSelectOption,
       IonTitle,
       IonToolbar,
       Image
@@ -110,15 +154,18 @@
       ...mapGetters({
         product: "product/getCurrent",
         facility: 'user/getCurrentFacility',
+        varianceReasons: 'util/getVarianceReasons'
       })
     },
     data(){
       return{
+        segmentSelected: "count",
         facilityLocations: [] as any,
         location: ""
       }
     },
     async mounted(){
+      await this.store.dispatch('util/fetchVarianceReasons');
       await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
       await this.getFacilityLocations();
     },
@@ -193,19 +240,57 @@
           console.error(err);
         }
         return resp;
-      }
+      },
+      updateVarianceReason(event: any) {
+        this.product.reason = event.detail.value
+      },
+      async presentAlertOnVarianceUpdate() {
+        if (this.product.variance && this.product.reason) {
+          const alert = await alertController.create({
+            header: this.$t("Log variance"),
+            message: this.$t("Are you sure you want to update the inventory variance?"),
+            buttons: [{
+              text: this.$t('Cancel'),
+              role: 'cancel',
+            },
+            {
+              text: this.$t('Update'),
+              handler: () => {
+                this.updateProductVarianceCount()
+              }
+            }]
+          });
+          await alert.present();
+        } else {
+          showToast(translate("Enter the variance count and the reason"))
+        }
+      },
+      updateProductVarianceCount() {
+        this.store.dispatch('product/updateVarianceCount', {
+          productId: this.product.productId,
+          quantity: parseInt(this.product.variance),
+          facilityId: this.facility.facilityId,
+          locationSeqId: this.product.locationId,
+          varianceReasonId: this.product.reason
+        });
+        this.router.push('/search')
+        // removing after updation
+        delete this.product.variance;
+        delete this.product.reason
+      },
     },
     setup() {
       const store = useStore();
       const router = useRouter();
   
       return {
-        store,
-        router,
+        cloudUploadOutline,
         colorPaletteOutline,
+        locationOutline,
         resize,
+        router,
         saveOutline,
-        locationOutline
+        store,
       };
     },
   });
@@ -237,6 +322,10 @@
     .inventory-form {
       background-color: var(--ion-background-color, #fff);
       height: 80vh;
+    }
+
+    .segment {
+      background-color: var(--ion-background-color, #fff);
     }
   }
   </style>
