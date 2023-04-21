@@ -1,3 +1,14 @@
+# Release 1.7.0
+## What's Changed
+* PDP is scrollable now by @dt2patel in https://github.com/hotwax/inventory-count/pull/170
+* Implemented: confirmation alert on inventory count upload (#85zrx64et) by @k2maan in https://github.com/hotwax/inventory-count/pull/173
+* Improved: PR template by fixing typos, links and removed unwanted checks by @ymaheshwari1 in https://github.com/hotwax/inventory-count/pull/174
+* Implemented: option for logging inventory variance (#85zrx66zh) by @k2maan in https://github.com/hotwax/inventory-count/pull/175
+
+## New Contributors
+* @dt2patel made their first contribution in https://github.com/hotwax/inventory-count/pull/170
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.6.0...v1.7.0
 # Release 1.6.0
 
 ## What's Changed
