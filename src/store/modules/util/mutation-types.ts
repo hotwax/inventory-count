@@ -1,2 +1,0 @@
-export const SN_UTIL = 'util'
-export const UTIL_VARIANCE_REASONS_UPDATED = SN_UTIL + '/VARIANCE_REASONS_UPDATED'

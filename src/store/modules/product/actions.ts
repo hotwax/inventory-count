@@ -84,35 +84,6 @@ const actions: ActionTree<ProductState, RootState> = {
     commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
   },
 
-  async updateVarianceCount({ commit }, payload) {
-    emitter.emit("presentLoader");
-    let resp;
-    try {
-      const params = {
-        "payLoad": {
-          "productId": payload.productId,
-          "quantity": payload.quantity,
-          "facilityId": payload.facilityId,
-          "locationSeqId": payload.locationSeqId,
-          "varianceReasonId": payload.varianceReasonId
-        }
-      }
-
-      resp = await ProductService.updateVariance(params)
-      if (!hasError(resp)) {
-        showToast(translate("Variance updated successfully"))
-      } else {
-        showToast(translate("Something went wrong"))
-      }
-      emitter.emit("dismissLoader");
-    } catch (error) {
-      console.error(error);
-      showToast(translate("Something went wrong"));
-    }
-
-    return resp;
-  },
-
   clearSearchProducts({commit}){
     commit(types.PRODUCT_SEARCH_UPDATED, { products: [], totalProductsCount: 0 })
   },

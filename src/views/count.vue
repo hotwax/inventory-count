@@ -126,7 +126,9 @@
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
+  import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
+  import emitter from "@/event-bus"
   
   export default defineComponent({
     name: "Count",
@@ -153,19 +155,19 @@
     computed: {
       ...mapGetters({
         product: "product/getCurrent",
-        facility: 'user/getCurrentFacility',
-        varianceReasons: 'util/getVarianceReasons'
+        facility: 'user/getCurrentFacility'
       })
     },
     data(){
       return{
         segmentSelected: "count",
         facilityLocations: [] as any,
-        location: ""
+        location: "",
+        varianceReasons: []
       }
     },
     async mounted(){
-      await this.store.dispatch('util/fetchVarianceReasons');
+      await this.fetchVarianceReasons();
       await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
       await this.getFacilityLocations();
     },
@@ -248,7 +250,7 @@
         if (this.product.variance && this.product.reason) {
           const alert = await alertController.create({
             header: this.$t("Log variance"),
-            message: this.$t("Are you sure you want to update the inventory variance?"),
+            message: this.$t("The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?"),
             buttons: [{
               text: this.$t('Cancel'),
               role: 'cancel',
@@ -265,18 +267,56 @@
           showToast(translate("Enter the variance count and the reason"))
         }
       },
-      updateProductVarianceCount() {
-        this.store.dispatch('product/updateVarianceCount', {
-          productId: this.product.productId,
-          quantity: parseInt(this.product.variance),
-          facilityId: this.facility.facilityId,
-          locationSeqId: this.product.locationId,
-          varianceReasonId: this.product.reason
-        });
-        this.router.push('/search')
+      async fetchVarianceReasons() {
+        try {
+          const payload = {
+            "inputFields": {
+              "enumTypeId": "IID_REASON"
+            },
+            "fieldList": ["enumId", "description"],
+            "distinct": "Y",
+            "entityName": "Enumeration",
+            "viewSize": 20
+          }
+
+          const resp = await UtilService.fetchVarianceReasons(payload)
+          if (!hasError(resp)) {
+            this.varianceReasons = resp.data.docs
+          }
+        } catch (err) {
+          console.error(err)
+        }
+      },
+      async updateProductVarianceCount() {
+        emitter.emit("presentLoader");
+        let resp;
+        try {
+          const params = {
+            "payLoad": {
+              "productId": this.product.productId,
+              "quantity": parseInt(this.product.variance),
+              "facilityId": this.facility.facilityId,
+              "locationSeqId": this.product.locationId,
+              "varianceReasonId": this.product.reason
+            }
+          }
+
+          resp = await ProductService.updateVariance(params)
+          if (!hasError(resp)) {
+            showToast(translate("Variance updated successfully"))
+          } else {
+            showToast(translate("Something went wrong"))
+          }
+          emitter.emit("dismissLoader");
+        } catch (error) {
+          console.error(error);
+          showToast(translate("Something went wrong"));
+        }
+
         // removing after updation
         delete this.product.variance;
         delete this.product.reason
+        this.router.push('/search')
       },
     },
     setup() {
