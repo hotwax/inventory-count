@@ -99,12 +99,11 @@ const actions: ActionTree<ProductState, RootState> = {
       }
 
       resp = await ProductService.updateVariance(params)
-      if (resp.status == 200 && !hasError(resp)) {
+      if (!hasError(resp)) {
         showToast(translate("Variance updated successfully"))
       } else {
         showToast(translate("Something went wrong"))
       }
-
       emitter.emit("dismissLoader");
     } catch (error) {
       console.error(error);

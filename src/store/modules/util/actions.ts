@@ -20,8 +20,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const resp = await UtilService.fetchVarianceReasons(payload)
-      console.log(resp)
-      if (!hasError(resp) && resp.data.count > 0) {
+      if (!hasError(resp)) {
         varianceReasons = resp.data.docs
       }
     } catch (err) {
