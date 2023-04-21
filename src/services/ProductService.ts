@@ -26,8 +26,17 @@ const getFacilityLocations = async (payload: any): Promise<any> => {
   });
 }
 
+const updateVariance = async (query: any): Promise<any> => {
+  return api({
+    url: "updateInventory",
+    method: "post",
+    data: query
+  })
+}
+
 export const ProductService = {
   fetchProducts,
   importInventoryCount,
-  getFacilityLocations
+  getFacilityLocations,
+  updateVariance
 }
