@@ -72,7 +72,7 @@
         <div v-else class="inventory-form">
           <ion-item>
             <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
-            <ion-input type="number" inputmode="numeric" placeholder="inventory variance" v-model="product.variance" />
+            <ion-input type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
@@ -80,7 +80,7 @@
 
           <ion-item>
             <ion-label>{{ $t("Variance reason") }}</ion-label>
-            <ion-select interface="popover" :value="product.reason" @ionChange="updateVarianceReason($event)" placeholder="Select reason">
+            <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
               <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -244,10 +244,10 @@
         return resp;
       },
       updateVarianceReason(event: any) {
-        this.product.reason = event.detail.value
+        this.product.varianceReasonId = event.detail.value
       },
       async confirmVarianceUpdate() {
-        if (this.product.variance && this.product.reason) {
+        if (this.product.varianceQuantity && this.product.varianceReasonId) {
           const alert = await alertController.create({
             header: this.$t("Log variance"),
             message: this.$t("The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?"),
@@ -294,10 +294,10 @@
           const params = {
             "payLoad": {
               "productId": this.product.productId,
-              "quantity": parseInt(this.product.variance),
+              "quantity": parseInt(this.product.varianceQuantity),
               "facilityId": this.facility.facilityId,
               "locationSeqId": this.product.locationId,
-              "varianceReasonId": this.product.reason
+              "varianceReasonId": this.product.varianceReasonId
             }
           }
 
@@ -314,8 +314,8 @@
         }
 
         // removing after updation
-        delete this.product.variance;
-        delete this.product.reason
+        delete this.product.varianceQuantity;
+        delete this.product.varianceReasonId
         this.router.push('/search')
       },
     },
