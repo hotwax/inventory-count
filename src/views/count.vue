@@ -86,7 +86,7 @@
           </ion-item>
 
           <div class="action">
-            <ion-button size="large" @click="presentAlertOnVarianceUpdate()">
+            <ion-button size="large" @click="confirmVarianceUpdate()">
               <ion-icon :icon="cloudUploadOutline" slot="start" />
               {{$t("Log variance")}}
             </ion-button>
@@ -246,7 +246,7 @@
       updateVarianceReason(event: any) {
         this.product.reason = event.detail.value
       },
-      async presentAlertOnVarianceUpdate() {
+      async confirmVarianceUpdate() {
         if (this.product.variance && this.product.reason) {
           const alert = await alertController.create({
             header: this.$t("Log variance"),
