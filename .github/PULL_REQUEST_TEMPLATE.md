@@ -11,11 +11,7 @@ Closes #
 <!-- If you made any changes in the UI layer, please provide before/after screenshots -->
 
 
-**IMPORTANT NOTICE** - Remember to update `CHANGELOG.md` with description of your change
-
-
 ### Contribution and Currently Important Rules Acceptance
 <!-- Please get familiar with following info -->
 
-- [ ] I read and followed [contribution rules](https://github.com/DivanteLtd/vsf-capybara/blob/master/CONTRIBUTING.md)
-- [ ] I have changed the target to hacktoberfest branch
+- [ ] I have read and followed [contribution rules](https://github.com/hotwax/inventory-count#contribution-guideline)
