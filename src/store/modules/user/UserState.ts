@@ -1,6 +1,7 @@
 export default interface UserState {
     token: string;
-    current: object | null;
+    current: any;
     currentFacility: object | null;
+    permissions: any;
     instanceUrl: string;
 }

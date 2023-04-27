@@ -42,6 +42,7 @@
   "Settings": "Settings",
   "Shopify Config": "Shopify Config",
   "Something went wrong": "Something went wrong",
+  "Something went wrong while login. Please contact administrator": "Something went wrong while login. Please contact administrator.",
   "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.": "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.",
   "Stock": "Stock",
   "Select reason": "Select reason",
@@ -61,5 +62,6 @@
   "Variance": "Variance",
   "Variance reason": "Variance reason",
   "Variance updated successfully": "Variance updated successfully",
-  "View": "View"
+  "View": "View",
+  "You do not have permission to access this page": "You do not have permission to access this page",
 }
