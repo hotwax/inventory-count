@@ -31,7 +31,7 @@
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="presentAlertOnUpload()" :disabled="Object.keys(uploadProducts).length === 0">
+        <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) || Object.keys(uploadProducts).length === 0">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -63,6 +63,7 @@ import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
+  import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
   name: "Upload",
@@ -128,6 +129,8 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      Actions,
+      hasPermission,
       store,
       router,
       colorPaletteOutline,

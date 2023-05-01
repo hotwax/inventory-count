@@ -3,8 +3,8 @@ import { api } from '@/adapter';
 const fetchProducts = async (query: any): Promise <any>  => {
   return api({
     url: "searchProducts", 
-    method: "post",
-    data: query,
+    method: "get",
+    params: query,
     cache: true
   });
 }
