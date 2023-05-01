@@ -34,12 +34,12 @@
           </div>
         </div>
 
-        <div class="segment">
+        <div class="segment" v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) && hasPermission(Actions.APP_VARIANCE_LOG)">
           <ion-segment v-model="segmentSelected">
-            <ion-segment-button value="count">
+            <ion-segment-button v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" value="count">
               <ion-label>{{ $t("Count") }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="variance">
+            <ion-segment-button v-if="hasPermission(Actions.APP_VARIANCE_LOG)" value="variance">
               <ion-label>{{ $t("Variance") }}</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -62,7 +62,7 @@
           </ion-item>
     
           <div class="action">
-            <ion-button size="large" @click="updateProductInventoryCount()">
+            <ion-button size="large" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" @click="updateProductInventoryCount()">
               <ion-icon :icon="saveOutline" slot="start" />
               {{$t("Save")}}
             </ion-button>
@@ -129,6 +129,7 @@
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import emitter from "@/event-bus"
+  import { Actions, hasPermission } from '@/authorization'
   
   export default defineComponent({
     name: "Count",
@@ -324,8 +325,10 @@
       const router = useRouter();
   
       return {
+        Actions,
         cloudUploadOutline,
         colorPaletteOutline,
+        hasPermission,
         locationOutline,
         resize,
         router,

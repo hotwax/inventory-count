@@ -9,9 +9,10 @@ const userModule: Module<UserState, RootState> = {
     namespaced: true,
     state: {
       token: '',
-      current: null,
+      current: {},
       currentFacility: {},
       instanceUrl: '',
+      permissions: [],
     },
     getters,
     actions,
