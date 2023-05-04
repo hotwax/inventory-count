@@ -1,4 +1,12 @@
+# Release 1.8.0
+
+## What's Changed
+* Implemented: logic to identify authorisations for the given user (#176) by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/177
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.7.0...v1.8.0
+
 # Release 1.7.0
+
 ## What's Changed
 * PDP is scrollable now by @dt2patel in https://github.com/hotwax/inventory-count/pull/170
 * Implemented: confirmation alert on inventory count upload (#85zrx64et) by @k2maan in https://github.com/hotwax/inventory-count/pull/173
