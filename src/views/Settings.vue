@@ -84,13 +84,27 @@
             <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t('Quantity on hand') }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t('Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label> {{ $t('Show systemic inventory') }} </ion-label>
+            <ion-toggle :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)" slot="end" />
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, modalController } from '@ionic/vue';
+import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToggle, IonToolbar, modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
@@ -98,6 +112,10 @@ import { useRouter } from 'vue-router';
 import Image from '@/components/Image.vue'
 import { DateTime } from 'luxon';
 import TimeZoneModal from '@/views/TimezoneModal.vue';
+import { Actions, hasPermission } from '@/authorization'
+import { UserService } from '@/services/UserService'
+import { hasError, showToast } from '@/utils';
+import { translate } from "@/i18n";
 
 export default defineComponent({
   name: 'Settings',
@@ -117,7 +135,8 @@ export default defineComponent({
     IonPage, 
     IonSelect,
     IonSelectOption,
-    IonTitle, 
+    IonTitle,
+    IonToggle,
     IonToolbar,
     Image
   },
@@ -126,7 +145,8 @@ export default defineComponent({
       baseURL: process.env.VUE_APP_BASE_URL,
       appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
       appVersion: "",
-      currentFacilityId: ""
+      currentFacilityId: "",
+      currentQOHViewConfig: {} as any
     };
   },
   mounted() {
@@ -134,16 +154,50 @@ export default defineComponent({
   },
   ionViewWillEnter() {
     this.currentFacilityId = this.currentFacility.facilityId;
+    this.getViewQOHConfig();
   },
   computed: {
     ...mapGetters({
       userProfile: 'user/getUserProfile',
       currentFacility: 'user/getCurrentFacility',
       uploadProducts: 'product/getUploadProducts',
-      instanceUrl: 'user/getInstanceUrl'
+      instanceUrl: 'user/getInstanceUrl',
+      currentEComStore: 'user/getCurrentEComStore',
     })
   },
   methods: {
+    async getViewQOHConfig() {
+      this.currentQOHViewConfig = await UserService.getQOHViewConfig(undefined, this.currentEComStore?.productStoreId) as any;
+      if (Object.keys(this.currentQOHViewConfig).length > 0) {
+        this.store.dispatch('user/updateViewQOHConfig', this.currentQOHViewConfig.settingValue == "true");
+      }  
+    },
+    async updateViewQOHConfig(config: any, value: any) {
+      // Handled initial programmatical update
+      // When storing boolean values, it is stored as string. Further comparison needs conversion
+      if (config.settingValue === value || (typeof value === 'boolean' && (config.settingValue == 'true') === value)) {
+        return;
+      } 
+      const params = {
+        "fromDate": config.fromDate,
+        "productStoreId": this.currentEComStore?.productStoreId,
+        "settingTypeEnumId": config.settingTypeEnumId,
+        "settingValue": value
+      }
+      try {
+        const resp = await UserService.updateQOHViewConfig(params) as any
+        if(!hasError(resp)) {
+          showToast(translate('Configuration updated'))
+        } else {
+          showToast(translate('Failed to update configuration'))
+        }
+      } catch(err) {
+        showToast(translate('Failed to update configuration'))
+        console.error(err)
+      }
+      // Fetch the updated configuration
+      await this.getViewQOHConfig();
+    },
     setFacility (event: any) {
       // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
       // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
@@ -226,8 +280,10 @@ export default defineComponent({
     const router = useRouter();
 
     return {
+      Actions,
       codeWorkingOutline,
       ellipsisVertical,
+      hasPermission,
       personCircleOutline,
       storefrontOutline,
       openOutline,

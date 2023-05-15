@@ -79,6 +79,8 @@ const actions: ActionTree<UserState, RootState> = {
       }, []);
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities.length > 0 ? userProfile.facilities[0] : {};
+      const currentEComStore = await UserService.getCurrentEComStore(token, currentFacility?.facilityId);
+      const currentQOHViewConfig = await UserService.getQOHViewConfig(token, currentEComStore?.productStoreId);
 
       /*  ---- Guard clauses ends here --- */
 
@@ -91,7 +93,9 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO user single mutation
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
+      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, currentEComStore)
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
+      commit(types.USER_VIEW_QOH_CNFG_UPDATED, currentQOHViewConfig.settingValue == "true" )
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
 
       // Handling case for warnings like password may expire in few days
@@ -141,12 +145,18 @@ const actions: ActionTree<UserState, RootState> = {
       facility = state.current.facilities.find((facility: any) => facility.facilityId === payload.facilityId);
     }
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
+    const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
   },
 
   // Set User Instance Url
   setUserInstanceUrl ({ commit }, payload){
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
-  }
+  },
+
+  updateViewQOHConfig( { commit }, config){
+    commit(types.USER_VIEW_QOH_CNFG_UPDATED, config)
+  },
 }
 export default actions;

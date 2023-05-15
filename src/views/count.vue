@@ -48,7 +48,7 @@
         <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
             <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-            <ion-input type="number" min="0" inputmode="numeric" v-model="product.quantity"></ion-input>
+            <ion-input type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
@@ -59,6 +59,14 @@
               <ion-label>{{ location }}</ion-label>
               <ion-icon :icon="locationOutline" />
             </ion-chip>
+          </ion-item>
+          <ion-item v-if="viewQOH">
+            <ion-label>{{ $t("In stock") }}</ion-label>
+            <ion-note slot="end">{{ availableQOH }}</ion-note>
+          </ion-item>
+          <ion-item v-if="viewQOH">
+            <ion-label>{{ $t("Variance") }}</ion-label>
+            <ion-note slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-note>
           </ion-item>
     
           <div class="action">
@@ -128,6 +136,7 @@
   import Image from "@/components/Image.vue";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
+  import { StockService } from '@/services/StockService';
   import emitter from "@/event-bus"
   import { Actions, hasPermission } from '@/authorization'
   
@@ -156,7 +165,8 @@
     computed: {
       ...mapGetters({
         product: "product/getCurrent",
-        facility: 'user/getCurrentFacility'
+        facility: 'user/getCurrentFacility',
+        viewQOH: 'user/getViewQOHConfig'
       })
     },
     data(){
@@ -164,13 +174,17 @@
         segmentSelected: "count",
         facilityLocations: [] as any,
         location: "",
-        varianceReasons: []
+        varianceReasons: [],
+        availableQOH: 0,
+        quantity: 0 as any
       }
     },
     async mounted(){
       await this.fetchVarianceReasons();
       await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
+      this.quantity = this.product.quantity
       await this.getFacilityLocations();
+      if (this.viewQOH) await this.getInventory()
     },
     methods: {
       async selectLocation() {
@@ -194,6 +208,7 @@
               handler: (data) => {
                 this.location = data.Location.text;
                 this.product.locationId = data.Location.value;
+                this.getInventory()
               },
             },
           ],
@@ -201,7 +216,9 @@
         await picker.present();
       },
       updateProductInventoryCount() {
-        if (this.product.quantity) {
+        if (this.quantity) {
+          this.product.quantity = this.quantity;
+          this.product.availableQOH = this.availableQOH;
           this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
@@ -214,6 +231,24 @@
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
+      },
+      async getInventory() {
+        if (!this.product.locationId) {
+          console.warn("There are no facility locations, skipping fetching the inventory");
+        }
+        try {
+          const resp = await StockService.getInventoryAvailableByLocation({
+              facilityId: this.facility.facilityId,
+              productId: this.product.productId,
+              locationSeqId: this.product.locationId
+          });
+          if (!hasError(resp)) {
+            this.availableQOH = resp.data.quantityOnHandTotal;
+          }
+        } catch(err) {
+          console.error(err);
+        }
+
       },
       async getFacilityLocations() {
         let resp;

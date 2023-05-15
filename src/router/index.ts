@@ -54,10 +54,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/settings",
     name: "Settings",
     component: Settings,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
+    beforeEnter: authGuard
   },
   {
     path: "/count/:sku",

@@ -28,6 +28,14 @@
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
           </ion-chip>
         </ion-item>
+        <ion-item v-if="viewQOH && product.availableQOH">
+            <ion-label>{{ $t("In stock") }}</ion-label>
+            <ion-note slot="end">{{  product.availableQOH }}</ion-note>
+          </ion-item>
+          <ion-item v-if="viewQOH && product.availableQOH">
+            <ion-label>{{ $t("Variance") }}</ion-label>
+            <ion-note slot="end">{{ product.quantity - product.availableQOH }}</ion-note>
+          </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -53,6 +61,7 @@ import {
   IonFab,
   IonFabButton,
   IonLabel,
+  IonNote,
   IonPage,
   IonThumbnail,
   IonTitle,
@@ -79,6 +88,7 @@ export default defineComponent({
     IonFab,
     IonFabButton,
     IonLabel,
+    IonNote,
     IonPage,
     IonThumbnail,
     IonTitle,
@@ -88,7 +98,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       uploadProducts: 'product/getUploadProducts',
-      currentFacility: 'user/getCurrentFacility'
+      currentFacility: 'user/getCurrentFacility',
+      viewQOH: 'user/getViewQOHConfig'
     })
   },
   methods: {
