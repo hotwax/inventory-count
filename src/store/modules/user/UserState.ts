@@ -4,4 +4,6 @@ export default interface UserState {
     currentFacility: object | null;
     permissions: any;
     instanceUrl: string;
+    config: any;
+    currentEComStore: any;
 }

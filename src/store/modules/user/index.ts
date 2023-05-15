@@ -13,6 +13,10 @@ const userModule: Module<UserState, RootState> = {
       currentFacility: {},
       instanceUrl: '',
       permissions: [],
+      config: {
+        viewQOH: false
+      },
+      currentEComStore: {}
     },
     getters,
     actions,

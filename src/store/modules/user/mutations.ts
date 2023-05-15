@@ -11,6 +11,8 @@ const mutations: MutationTree <UserState> = {
       state.current = {}
       state.currentFacility = {}
       state.permissions = []
+      state.currentEComStore = {}
+      state.config.viewQOH = false
     },
     [types.USER_INFO_UPDATED] (state, payload) {
         state.current = payload
@@ -18,11 +20,17 @@ const mutations: MutationTree <UserState> = {
     [types.USER_CURRENT_FACILITY_UPDATED] (state, payload) {
         state.currentFacility = payload;
     },
+    [types.USER_CURRENT_ECOM_STORE_UPDATED] (state, payload) {
+        state.currentEComStore = payload
+    },
     [types.USER_INSTANCE_URL_UPDATED] (state, payload) {
         state.instanceUrl = payload;
     },
     [types.USER_PERMISSIONS_UPDATED] (state, payload) {
         state.permissions = payload
+    },
+    [types.USER_VIEW_QOH_CNFG_UPDATED] (state, payload) {
+        state.config.viewQOH = payload;
     }
 }
 export default mutations;

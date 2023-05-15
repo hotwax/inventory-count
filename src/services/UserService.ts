@@ -57,6 +57,42 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
     data: payload
   });
 }
+const getQOHViewConfig = async (token: any, productStoreId: any): Promise<any> => {
+  const baseURL = store.getters['user/getBaseUrl'];
+  try {
+    const params = {
+      "inputFields": {
+        "productStoreId": productStoreId,
+        "settingTypeEnumId": "INV_CNT_VIEW_QOH"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
+      "viewSize": 1
+    }
+    const resp = await client({
+      url: "performFind",
+      method: "get",
+      params,
+      baseURL,
+      headers: {
+        Authorization:  'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+    // In all cases we resolve to empty object, as default option would be to hide QOH
+    return Promise.resolve(!hasError(resp) && resp.data.docs?.length ? resp.data.docs[0] : {});
+  } catch(error: any) {
+    return Promise.resolve({})
+  }
+}
+const updateQOHViewConfig = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/updateProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
 
 const getUserPermissions = async (payload: any, token: any): Promise<any> => {
   const baseURL = store.getters['user/getBaseUrl'];
@@ -146,12 +182,52 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
       return Promise.reject(error);
     }
 }
+const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> => {
+  // If the facilityId is not provided, it may be case of user not associated with any facility or the logout
+  if (!facilityId) {
+    return Promise.resolve({});
+  }
+  const baseURL = store.getters['user/getBaseUrl'];
+  try {
+    const params = {
+      "inputFields": {
+        "facilityId": facilityId,
+      },
+      "fieldList": ["storeName", "productStoreId"], 
+      "entityName": "ProductStoreFacilityDetail",
+      "distinct": "Y",
+      "noConditionFind": "Y",
+      "filterByDate": 'Y',
+      "viewSize": 1
+
+    }   
+    const resp = await client({
+      url: "performFind",
+      method: "get",
+      params,
+      baseURL,
+      headers: {
+        Authorization:  'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (hasError(resp)) {
+      return Promise.reject(resp.data);
+    }   
+    return Promise.resolve(resp.data.docs?.length ? resp.data.docs[0] : {});
+  } catch(error: any) {
+    return Promise.reject(error)
+  }
+}
 
 export const UserService = {
     login,
     getAvailableTimeZones,
+    getCurrentEComStore,
+    getQOHViewConfig,
     getUserPermissions,
     getUserProfile,
     setUserTimeZone,
-    checkPermission
+    checkPermission,
+    updateQOHViewConfig
 }
