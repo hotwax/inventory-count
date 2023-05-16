@@ -1,3 +1,10 @@
+# Release 1.9.0
+## What's Changed
+* Implemented: Option to view actual QOH on detail page (#169) by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/179
+
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.8.0...v1.9.0
+
 # Release 1.8.0
 
 ## What's Changed
