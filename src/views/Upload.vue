@@ -30,11 +30,11 @@
         </ion-item>
         <ion-item v-if="viewQOH && product.availableQOH">
             <ion-label>{{ $t("In stock") }}</ion-label>
-            <ion-note slot="end">{{  product.availableQOH }}</ion-note>
+            <ion-label slot="end">{{  product.availableQOH }}</ion-label>
           </ion-item>
           <ion-item v-if="viewQOH && product.availableQOH">
             <ion-label>{{ $t("Variance") }}</ion-label>
-            <ion-note slot="end">{{ product.quantity - product.availableQOH }}</ion-note>
+            <ion-label slot="end">{{ product.quantity - product.availableQOH }}</ion-label>
           </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
@@ -61,7 +61,6 @@ import {
   IonFab,
   IonFabButton,
   IonLabel,
-  IonNote,
   IonPage,
   IonThumbnail,
   IonTitle,
@@ -88,7 +87,6 @@ export default defineComponent({
     IonFab,
     IonFabButton,
     IonLabel,
-    IonNote,
     IonPage,
     IonThumbnail,
     IonTitle,

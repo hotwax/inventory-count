@@ -62,11 +62,11 @@
           </ion-item>
           <ion-item v-if="viewQOH">
             <ion-label>{{ $t("In stock") }}</ion-label>
-            <ion-note slot="end">{{ availableQOH }}</ion-note>
+            <ion-label slot="end">{{ availableQOH }}</ion-label>
           </ion-item>
           <ion-item v-if="viewQOH">
             <ion-label>{{ $t("Variance") }}</ion-label>
-            <ion-note slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-note>
+            <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
           </ion-item>
     
           <div class="action">
