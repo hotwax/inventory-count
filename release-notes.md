@@ -1,3 +1,15 @@
+# Release 1.10.0
+
+## What's Changed
+* Changed: QOH and Variance text style on the Count and Upload page by @Dhiraj1405 in https://github.com/hotwax/inventory-count/pull/181
+* Updated favicon by @Nidbhagwat in https://github.com/hotwax/inventory-count/pull/182
+
+## New Contributors
+* @Dhiraj1405 made their first contribution in https://github.com/hotwax/inventory-count/pull/181
+* @Nidbhagwat made their first contribution in https://github.com/hotwax/inventory-count/pull/182
+
+**Full Changelog**: https://github.com/hotwax/inventory-count/compare/v1.9.0...v1.10.0
+
 # Release 1.9.0
 ## What's Changed
 * Implemented: Option to view actual QOH on detail page (#169) by @adityasharma7 in https://github.com/hotwax/inventory-count/pull/179
