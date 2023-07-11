@@ -11,5 +11,6 @@ module.exports = {
       fullInstall: true,
       enableInSFC: true
     }
-  }
+  },
+  runtimeCompiler: true
 }
