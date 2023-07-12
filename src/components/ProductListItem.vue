@@ -1,7 +1,7 @@
 <template>
   <ion-item button @click="viewProduct()" detail="true" lines="none">
     <ion-thumbnail slot="start">
-      <ShopifyImg :src="product.mainImageUrl"/>
+      <ShopifyImg :src="product.mainImageUrl" size="small" />
     </ion-thumbnail>
     <ion-label>
       <p>{{ product.productName }}</p>
@@ -20,7 +20,7 @@ import {
 } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
-import { ShopifyImg } from 'dxp-components';
+import { ShopifyImg } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "ProductListItem",

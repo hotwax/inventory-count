@@ -31,7 +31,7 @@ import store from './store'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
-import { dxpComponents } from 'dxp-components';
+import { dxpComponents } from '@hotwax/dxp-components';
 
 const app = createApp(App)
   .use(IonicVue, {

@@ -133,7 +133,7 @@
   import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
-  import { ShopifyImg } from "dxp-components";
+  import { ShopifyImg } from "@hotwax/dxp-components";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import { StockService } from '@/services/StockService';
