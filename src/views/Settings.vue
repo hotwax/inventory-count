@@ -98,6 +98,35 @@
             <ion-toggle :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)" slot="end" />
           </ion-item>
         </ion-card>
+
+        <!-- Product Identifier -->
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t('Product Identifier') }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ $t('Choosing a product identifier allows you to view products with your preferred identifiers.') }}
+          </ion-card-content>
+
+          <ion-item>
+            <ion-label>{{ $t("Primary Product Identifier") }}</ion-label>
+            <ion-select interface="popover" :placeholder="$t('primary identifier')" :value="primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{ $t("Secondary Product Identifier") }}</ion-label>
+            <ion-select interface="popover" :placeholder="$t('secondary identifier')" :value="secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+              <ion-select-option value="">{{ $t("None") }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
+
       </section>
     </ion-content>
   </ion-page>
@@ -105,7 +134,7 @@
 
 <script lang="ts">
 import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToggle, IonToolbar, modalController } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -116,6 +145,8 @@ import { Actions, hasPermission } from '@/authorization'
 import { UserService } from '@/services/UserService'
 import { hasError, showToast } from '@/utils';
 import { translate } from "@/i18n";
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
+import Logo from '@/components/Logo.vue';
 
 export default defineComponent({
   name: 'Settings',
@@ -278,6 +309,27 @@ export default defineComponent({
   setup(){
     const store = useStore();
     const router = useRouter();
+    const productIdentificationStore = useProductIdentificationStore();
+
+    const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId
+
+    // Get product identification from api and set state using dxp-component
+    productIdentificationStore.getIdentificationPref(eComStoreId); 
+
+    // Reactive state
+    let primaryId = ref('productId');
+    let secondaryId = ref('');
+
+    const productIdentificationOptions = productIdentificationStore.getProductIdentificationOptions;
+
+    // Subscribing to store and changing the value of primariId and secondaryId when state changes
+    productIdentificationStore.$subscribe((watch, state) => { 
+      primaryId.value = state.productIdentificationPref.primaryId;
+      secondaryId.value = state.productIdentificationPref.secondaryId
+    });
+
+    // Function to set the value of productIdentificationPref using dxp-component
+    const setProductIdentificationPref = (value: string, id: string) =>  productIdentificationStore.setProductIdentificationPref(id, value, eComStoreId);
 
     return {
       Actions,
@@ -288,7 +340,12 @@ export default defineComponent({
       storefrontOutline,
       openOutline,
       store,
-      router
+      router,
+      primaryId,
+      secondaryId,
+      setProductIdentificationPref,
+      productIdentificationOptions,
+      productIdentificationStore
     }
   }
 });

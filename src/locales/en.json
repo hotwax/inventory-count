@@ -68,5 +68,12 @@
   "Variance reason": "Variance reason",
   "Variance updated successfully": "Variance updated successfully",
   "View": "View",
-  "You do not have permission to access this page": "You do not have permission to access this page"
+  "You do not have permission to access this page": "You do not have permission to access this page",
+  "Product Identifier": "Product Identifier",
+  "Choosing a product identifier allows you to view products with your preferred identifiers.": "Choosing a product identifier allows you to view products with your preferred identifiers.",
+  "Primary Product Identifier": "Primary Product Identifier",
+  "Secondary Product Identifier": "Secondary Product Identifier",
+  "secondary identifier": "secondary identifier",
+  "None": "None",
+  "primary identifier": "primary identifier"
 }

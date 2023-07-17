@@ -13,8 +13,8 @@
             <Image :src="product.mainImageUrl"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
-            <p class="overline">{{ product.productName }}</p>
-            <h2>{{ product.sku }}</h2>
+            <p class="overline">{{ productHelpers.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+            <h2>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
           </ion-label>
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
@@ -66,12 +66,14 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
-  import { Actions, hasPermission } from '@/authorization'
+import { Actions, hasPermission } from '@/authorization';
+import { productHelpers } from '@/utils';
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Upload",
@@ -137,6 +139,14 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
 
+    // reactive state for productIdentificationPref
+    let productIdentificationPref = ref(useProductIdentificationStore().$state.productIdentificationPref);
+
+    // subscribing to useProductIdentificationStore and changing the value of productIdentificationPref when state changes
+    useProductIdentificationStore().$subscribe((watch, state) => {      
+      productIdentificationPref.value = state.productIdentificationPref;
+    });
+
     return {
       Actions,
       hasPermission,
@@ -144,7 +154,9 @@ export default defineComponent({
       router,
       colorPaletteOutline,
       resize,
-      cloudUploadOutline
+      cloudUploadOutline,
+      productIdentificationPref,
+      productHelpers
     };
   },
 });

@@ -1,5 +1,6 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
+import productHelpers from './product'
 
 // TODO Use separate files for specific utilities
 
@@ -34,4 +35,4 @@ const handleDateTimeInput = (dateTimeValue: any) => {
   return DateTime.fromISO(dateTime).toMillis()
 }
 
-export { showToast, hasError, handleDateTimeInput }
+export { showToast, hasError, handleDateTimeInput, productHelpers }

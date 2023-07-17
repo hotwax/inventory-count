@@ -15,8 +15,8 @@
         <div class="product-info">
           <ion-item lines="none">
             <ion-label>
-              <p class="overline">{{ product.productName }}</p>
-              <h2>{{ product.sku }}</h2>
+              <p class="overline">{{ productHelpers.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+              <h2>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
             </ion-label>
           </ion-item>
 
@@ -127,18 +127,19 @@
     IonToolbar,
     pickerController
   } from "@ionic/vue";
-  import { defineComponent } from "vue";
+  import { defineComponent, ref } from "vue";
   import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
-  import { hasError, showToast } from "@/utils";
+  import { hasError, showToast, productHelpers } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import { StockService } from '@/services/StockService';
-  import emitter from "@/event-bus"
-  import { Actions, hasPermission } from '@/authorization'
+  import emitter from "@/event-bus";
+  import { Actions, hasPermission } from '@/authorization';
+  import { useProductIdentificationStore } from "@hotwax/dxp-components";
   
   export default defineComponent({
     name: "Count",
@@ -358,6 +359,14 @@
     setup() {
       const store = useStore();
       const router = useRouter();
+
+      // reactive state for productIdentificationPref
+      let productIdentificationPref = ref(useProductIdentificationStore().$state.productIdentificationPref);
+
+      // subscribing to useProductIdentificationStore and changing the value of productIdentificationPref when state changes
+      useProductIdentificationStore().$subscribe((watch, state) => {      
+        productIdentificationPref.value = state.productIdentificationPref;
+      });
   
       return {
         Actions,
@@ -369,6 +378,8 @@
         router,
         saveOutline,
         store,
+        productHelpers,
+        productIdentificationPref
       };
     },
   });

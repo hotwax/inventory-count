@@ -22,6 +22,7 @@ import TabBar from "./components/TabBar.vue"
 import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'App',
@@ -72,6 +73,9 @@ export default defineComponent({
       });
     emitter.on('presentLoader', this.presentLoader);
     emitter.on('dismissLoader', this.dismissLoader);
+
+    // Get product identification from api using dxp-component and set the state 
+    await useProductIdentificationStore().getIdentificationPref(this.currentEComStore.productStoreId);
   },
   created() {
     initialise({
@@ -102,7 +106,8 @@ export default defineComponent({
     },
     ...mapGetters({
       userToken: 'user/getUserToken',
-      instanceUrl: 'user/getInstanceUrl'
+      instanceUrl: 'user/getInstanceUrl',
+      currentEComStore: 'user/getCurrentEComStore'
     })
   },
   setup() {
