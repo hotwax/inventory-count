@@ -13,6 +13,7 @@ import {
   resetPermissions,
   setPermissions
 } from '@/authorization'
+import { useProductIdentificationStore } from '@hotwax/dxp-components'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -146,7 +147,10 @@ const actions: ActionTree<UserState, RootState> = {
     }
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
     const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore);
+
+    // Get product identification from api using dxp-component and set the state 
+    await useProductIdentificationStore().getIdentificationPref(eComStore.productStoreId);
   },
 
   // Set User Instance Url

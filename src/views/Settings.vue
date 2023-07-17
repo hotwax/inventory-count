@@ -309,26 +309,32 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
     const productIdentificationStore = useProductIdentificationStore();
-
     const eComStoreId = store.getters['user/getCurrentEComStore'].productStoreId
 
-    // Get product identification from api and set state using dxp-component
-    productIdentificationStore.getIdentificationPref(eComStoreId); 
-
     // Reactive state
-    let primaryId = ref('productId');
-    let secondaryId = ref('');
+    let primaryId = ref(productIdentificationStore.$state.productIdentificationPref.primaryId);
+    let secondaryId = ref(productIdentificationStore.$state.productIdentificationPref.secondaryId);
 
     const productIdentificationOptions = productIdentificationStore.getProductIdentificationOptions;
 
     // Subscribing to store and changing the value of primariId and secondaryId when state changes
-    productIdentificationStore.$subscribe((watch, state) => { 
+    productIdentificationStore.$subscribe((watch, state) => {          
       primaryId.value = state.productIdentificationPref.primaryId;
-      secondaryId.value = state.productIdentificationPref.secondaryId
+      secondaryId.value = state.productIdentificationPref.secondaryId;
     });
 
     // Function to set the value of productIdentificationPref using dxp-component
-    const setProductIdentificationPref = (value: string, id: string) =>  productIdentificationStore.setProductIdentificationPref(id, value, eComStoreId);
+    const setProductIdentificationPref = (value: string, id: string) =>  {      
+      productIdentificationStore.setProductIdentificationPref(id, value, eComStoreId)
+        .then(() => { 
+          // TO DO: The setProductIdentificationPref function runs when refreshing setup view and
+          //        hence toast pops up of identifier preference change as ion change hits. This
+          //        only happens when user directly lends to the settings view for the first time.
+          //        The toast appears for more than one time.
+          showToast('Product identifier preference updated');
+        })
+        .catch(error => console.log(error)); 
+    }
 
     return {
       Actions,
