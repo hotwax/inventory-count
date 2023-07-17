@@ -15,8 +15,8 @@
         <div class="product-info">
           <ion-item lines="none">
             <ion-label>
-              <p class="overline">{{ productHelpers.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
-              <h2>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
+              <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+              <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
             </ion-label>
           </ion-item>
 
@@ -130,7 +130,7 @@
   import { defineComponent, ref } from "vue";
   import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
-  import { hasError, showToast, productHelpers } from "@/utils";
+  import { hasError, showToast, getProductIdentificationValue } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
   import Image from "@/components/Image.vue";
@@ -378,7 +378,7 @@
         router,
         saveOutline,
         store,
-        productHelpers,
+        getProductIdentificationValue,
         productIdentificationPref
       };
     },

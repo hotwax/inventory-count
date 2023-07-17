@@ -4,8 +4,8 @@
       <Image :src="product.mainImageUrl"/>
     </ion-thumbnail>
     <ion-label>
-      <p>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
-      <h3>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h3>
+      <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+      <h3>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h3>
 
       <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(product.featureHierarchy, '1/COLOR/') && $filters.getFeature(product.featureHierarchy, '1/SIZE/')? "|" : ""}} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
     </ion-label>
@@ -22,7 +22,7 @@ import {
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
-import { productHelpers } from '@/utils';
+import { getProductIdentificationValue } from '@/utils';
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
@@ -54,7 +54,7 @@ export default defineComponent({
     return {
       router,
       store,
-      productHelpers,
+      getProductIdentificationValue,
       productIdentificationPref
     }
   },

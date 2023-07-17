@@ -13,8 +13,8 @@
             <Image :src="product.mainImageUrl"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
-            <p class="overline">{{ productHelpers.getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
-            <h2>{{ productHelpers.getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
+            <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+            <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) }}</h2>
           </ion-label>
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
@@ -72,7 +72,7 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
 import { Actions, hasPermission } from '@/authorization';
-import { productHelpers } from '@/utils';
+import { getProductIdentificationValue } from '@/utils';
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
@@ -156,7 +156,7 @@ export default defineComponent({
       resize,
       cloudUploadOutline,
       productIdentificationPref,
-      productHelpers
+      getProductIdentificationValue
     };
   },
 });
