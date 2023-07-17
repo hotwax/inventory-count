@@ -146,7 +146,6 @@ import { UserService } from '@/services/UserService'
 import { hasError, showToast } from '@/utils';
 import { translate } from "@/i18n";
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
-import Logo from '@/components/Logo.vue';
 
 export default defineComponent({
   name: 'Settings',
