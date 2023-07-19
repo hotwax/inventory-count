@@ -32,6 +32,7 @@ import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components';
+import { setProductIdentificationPref, getProductIdentificationPref } from '@hotwax/oms-api';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -45,13 +46,15 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
-    defaultImgUrl: require("@/assets/images/defaultImage.png")
+    defaultImgUrl: require("@/assets/images/defaultImage.png"),
+    setProductIdentificationPref,
+    getProductIdentificationPref
   });
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
   formatDate(value: any, inFormat?: any, outFormat?: string) {
-    if(inFormat){
+    if (inFormat) {
       return DateTime.fromFormat(value, inFormat).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
     }
     return DateTime.fromISO(value).toFormat(outFormat ? outFormat : 'MM-dd-yyyy');
@@ -60,10 +63,10 @@ app.config.globalProperties.$filters = {
     // TODO Make default format configurable and from environment variables
     const userProfile = store.getters['user/getUserProfile'];
     // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
-    return DateTime.fromISO(value, { zone: 'utc' }).setZone(userProfile.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')  
+    return DateTime.fromISO(value, { zone: 'utc' }).setZone(userProfile.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
   },
   getFeature(featureHierarchy: any, featureKey: string) {
-    let  featureValue = ''
+    let featureValue = ''
     if (featureHierarchy) {
       const feature = featureHierarchy.find((featureItem: any) => featureItem.startsWith(featureKey))
       const featureSplit = feature ? feature.split('/') : [];

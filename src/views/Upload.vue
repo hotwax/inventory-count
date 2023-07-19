@@ -66,14 +66,13 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/vue';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, inject } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from "@/components/Image.vue";
 import { Actions, hasPermission } from '@/authorization';
 import { getProductIdentificationValue } from '@/utils';
-import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "Upload",
@@ -139,13 +138,8 @@ export default defineComponent({
     const store = useStore();
     const router = useRouter();
 
-    // reactive state for productIdentificationPref
-    let productIdentificationPref = ref(useProductIdentificationStore().$state.productIdentificationPref);
-
-    // subscribing to useProductIdentificationStore and changing the value of productIdentificationPref when state changes
-    useProductIdentificationStore().$subscribe((watch, state) => {      
-      productIdentificationPref.value = state.productIdentificationPref;
-    });
+    // Injecting identifier preference from app.view
+    const productIdentificationPref: any  = inject("productIdentificationPref");
 
     return {
       Actions,

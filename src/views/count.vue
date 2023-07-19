@@ -127,7 +127,7 @@
     IonToolbar,
     pickerController
   } from "@ionic/vue";
-  import { defineComponent, ref } from "vue";
+  import { defineComponent, inject } from "vue";
   import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
   import { hasError, showToast, getProductIdentificationValue } from "@/utils";
@@ -139,7 +139,6 @@
   import { StockService } from '@/services/StockService';
   import emitter from "@/event-bus";
   import { Actions, hasPermission } from '@/authorization';
-  import { useProductIdentificationStore } from "@hotwax/dxp-components";
   
   export default defineComponent({
     name: "Count",
@@ -360,13 +359,8 @@
       const store = useStore();
       const router = useRouter();
 
-      // reactive state for productIdentificationPref
-      let productIdentificationPref = ref(useProductIdentificationStore().$state.productIdentificationPref);
-
-      // subscribing to useProductIdentificationStore and changing the value of productIdentificationPref when state changes
-      useProductIdentificationStore().$subscribe((watch, state) => {      
-        productIdentificationPref.value = state.productIdentificationPref;
-      });
+      // Injecting identifier preference from app.view
+      const productIdentificationPref: any  = inject("productIdentificationPref");
   
       return {
         Actions,

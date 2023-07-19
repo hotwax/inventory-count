@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, inject, ref } from 'vue'
 import {
   IonItem,
   IonThumbnail,
@@ -23,7 +23,6 @@ import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
 import { getProductIdentificationValue } from '@/utils';
-import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "ProductListItem",
@@ -43,13 +42,8 @@ export default defineComponent({
     const router = useRouter();
     const store = useStore();
 
-    // reactive state for productIdentificationPref
-    let productIdentificationPref = ref(useProductIdentificationStore().$state.productIdentificationPref);
-
-    // subscribing to useProductIdentificationStore and changing the value of productIdentificationPref when state changes
-    useProductIdentificationStore().$subscribe((watch, state) => {      
-      productIdentificationPref.value = state.productIdentificationPref;
-    });
+    // Injecting identifier preference from app.view
+    const productIdentificationPref: any  = inject("productIdentificationPref");
     
     return {
       router,
