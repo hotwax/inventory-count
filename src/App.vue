@@ -133,7 +133,7 @@ export default defineComponent({
     // Subscribing to productIdentificationStore state change and changing value productIdentificationPref 
     productIdentificationStore.$subscribe((mutation: any, state) => {
         productIdentificationPref.value = state.productIdentificationPref;
-    }, {detached: true});
+    });
 
     /* End Product Identifier */
 

@@ -148,12 +148,6 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
     const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore);
-
-    // Get product identification from api using dxp-component and set the state if eComStore is defined
-    if(eComStore.productStoreId){
-      await useProductIdentificationStore().getIdentificationPref(eComStore.productStoreId)
-        .catch((error) => console.log(error));
-    }
   },
 
   // Set User Instance Url
