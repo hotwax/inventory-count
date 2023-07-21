@@ -318,10 +318,15 @@ export default defineComponent({
     const productIdentificationPref: any  = inject("productIdentificationPref");
 
     // Function to set the value of productIdentificationPref using dxp-component
-    const setProductIdentificationPref = (value: string, id: string) =>  {   
-      const eComStore = store.getters['user/getCurrentEComStore'];
-      if(eComStore.productStoreId){
+    const setProductIdentificationPref = (value:any, id: string) =>  {
+      const eComStore = store.getters['user/getCurrentEComStore']; 
+
+      // If productPreference value is same as ion change value then not calling the set function as there is no cahnge 
+      if(eComStore.productStoreId && (productIdentificationPref.value[id] !== value)){
         productIdentificationStore.setProductIdentificationPref(id, value, eComStore.productStoreId)
+          .then(() => {
+            showToast("Product identifier preference updated");
+          })
           .catch(error => console.log(error)); 
       } 
     }
