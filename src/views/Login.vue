@@ -75,17 +75,10 @@ export default defineComponent({
     login: function () {
       const instanceURL = this.instanceUrl.trim().toLowerCase();
       if(!this.baseURL) this.store.dispatch("user/setUserInstanceUrl", this.alias[instanceURL] ? this.alias[instanceURL] : instanceURL);      const { username, password } = this;
-      this.store.dispatch("user/login", { username: username.trim(), password }).then(async () => {
+      this.store.dispatch("user/login", { username: username.trim(), password }).then(() => {
         // All the failure cases are handled in action, if then block is executing, login is successful
         this.username = ''
         this.password = ''
-
-        // Get product identification from api using dxp-component and set the state if eComStore is defined
-        if(this.currentEComStore.productStoreId){
-          await useProductIdentificationStore().getIdentificationPref(this.currentEComStore.productStoreId)
-          .catch((error) => console.log(error));
-        }
-
         this.$router.push('/')
       })
     }
