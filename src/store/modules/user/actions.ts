@@ -108,7 +108,7 @@ const actions: ActionTree<UserState, RootState> = {
       // Get product identification from api using dxp-component and set the state if eComStore is defined
       if(currentEComStore.productStoreId){
         await useProductIdentificationStore().getIdentificationPref(currentEComStore.productStoreId)
-        .catch((error) => console.log(error));
+        .catch((error) => console.error(error));
       }
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.

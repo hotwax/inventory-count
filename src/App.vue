@@ -78,7 +78,7 @@ export default defineComponent({
     // Get product identification from api using dxp-component and set the state if eComStore is defined
     if (this.currentEComStore.productStoreId) {
       await useProductIdentificationStore().getIdentificationPref(this.currentEComStore.productStoreId)
-        .catch((error) => console.log(error));
+        .catch((error) => console.error(error));
     }
   },
   created() {
