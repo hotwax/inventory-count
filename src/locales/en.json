@@ -1,6 +1,8 @@
 {
   "App": "App",
+  "Active session": "Active session",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
+  "Authenticating": "Authenticating",
   "Camera permission denied.": "Camera permission denied.",
   "Cancel": "Cancel",
   "Change": "Change",
@@ -24,6 +26,7 @@
   "Location": "Location",
   "Log variance": "Log variance",
   "Login": "Login",
+  "Logging in": "Logging in",
   "Logout": "Logout",
   "Make sure you've reviewed the products and their counts before uploading them for review": "Make sure you've reviewed the products and their counts before uploading them for review",
   "No time zone found": "No time zone found",

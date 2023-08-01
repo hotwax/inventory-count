@@ -223,7 +223,7 @@ export default defineComponent({
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('user/logout').then(() => {
-              this.router.push('/login');
+              window.location.href = process.env.VUE_APP_LOGIN_URL as string
             })
           }
         }]
@@ -264,7 +264,7 @@ export default defineComponent({
         this.presentAlertOnLogout();
       } else {
         this.store.dispatch('user/logout').then(() => {
-          this.router.push('/login');
+          window.location.href = process.env.VUE_APP_LOGIN_URL as string
         })
       }
     },
