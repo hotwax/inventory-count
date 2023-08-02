@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, inject, ref } from 'vue'
+import { defineComponent, inject } from 'vue'
 import {
   IonItem,
   IonThumbnail,

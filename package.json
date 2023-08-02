@@ -18,7 +18,7 @@
     "@casl/ability": "^6.0.0",
     "@hotwax/app-version-info": "^1.0.0",
     "@hotwax/apps-theme": "^1.1.0",
-    "@hotwax/dxp-components": "^1.3.0",
+    "@hotwax/dxp-components": "^1.3.4",
     "@hotwax/oms-api": "^1.7.0",
     "@ionic/core": "6.7.5",
     "@ionic/vue": "6.7.5",
