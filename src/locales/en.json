@@ -1,6 +1,5 @@
 {
   "App": "App",
-  "Active session": "Active session",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
   "Authenticating": "Authenticating",
   "Camera permission denied.": "Camera permission denied.",
