@@ -26,7 +26,9 @@
           </ion-list>
         </ion-col>
         <ion-col v-if="isDesktop">
-          <count v-if="selectedProductSku" :sku="selectedProductSku"></count>
+          <div class="count">
+            <count v-if="selectedProductSku" :sku="selectedProductSku"></count>
+          </div>
         </ion-col>
       </ion-row>
     </ion-content>
@@ -201,6 +203,12 @@ ion-content {
   position: absolute;
   bottom: 0;
   width: 50%;
+}
+.count{
+  position: fixed;
+  width: 50%;
+  height: 100%;
+  overflow-y:auto;
 }
 
 </style>
