@@ -6,20 +6,32 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      <ion-row>
+        <ion-col>
+          <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+          
+          <!-- Empty state -->
+          <div class="empty-state" v-if="!products.length">
+            <p>{{ $t("Search for a product and it will show up here")}}</p>
+          </div>
 
-      <ion-list v-if="products.length > 0">
-        <ion-list-header>{{ $t("Results") }}</ion-list-header>
-
-        <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
-
-        <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
-          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
-        </ion-infinite-scroll>
-      </ion-list>
+          <ion-list v-if="products.length > 0">
+            <ion-list-header>{{ $t("Results") }}</ion-list-header>
+    
+            <product-list-item @click="viewProduct(product.sku)" v-for="product in products" :key="product.productId" :product="product"/>
+    
+            <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
+              <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
+            </ion-infinite-scroll>
+          </ion-list>
+        </ion-col>
+        <ion-col v-if="isDesktop">
+          <count v-if="selectedProductSku" :sku="selectedProductSku"></count>
+        </ion-col>
+      </ion-row>
     </ion-content>
 
-    <ion-grid id="scan-button">
+    <ion-grid :class="{'scan-button-mobile': isDesktop, 'scan-button': !isDesktop,}">
       <ion-row>
         <ion-col>
           <ion-button color="primary" expand="block" @click="scanProduct">
@@ -49,6 +61,7 @@ import {
   IonInfiniteScrollContent,
   IonList,
   IonListHeader,
+  isPlatform,
   modalController
 } from '@ionic/vue'
 import { barcodeOutline } from 'ionicons/icons'
@@ -58,10 +71,13 @@ import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import ProductListItem from '@/components/ProductListItem.vue'
 import Scanner from "@/components/Scanner.vue"
+import Count from "@/views/count.vue"
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   name: "Search",
   components: {
+    Count,
     IonPage,
     IonHeader,
     IonContent,
@@ -81,7 +97,9 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: ''
+      queryString: '',
+      isDesktop: isPlatform('desktop'),
+      selectedProductSku: ''
     }
   },
   computed: {
@@ -146,13 +164,24 @@ export default defineComponent({
       } else {
         showToast(translate("Enter product sku to search"))
       }
+    },
+    async viewProduct(sku: string) {
+      if(this.isDesktop){
+        !this.selectedProductSku ? this.selectedProductSku = sku : await this.store.dispatch("product/updateCurrentProduct", sku);
+      }
+      else{
+        this.router.push({ path: `/count/${sku}` });
+      }
     }
   },
   setup() {
     const store = useStore();
+    const router = useRouter();
+
     return {
       store,
-      barcodeOutline
+      barcodeOutline,
+      router
     }
   },
 })
@@ -163,9 +192,15 @@ ion-content {
   --padding-bottom : 50px;
 }
 
-#scan-button {
+.scan-button {
   position: absolute;
   bottom: 0;
   width: 100%;
 }
+.scan-button-mobile {
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+}
+
 </style>

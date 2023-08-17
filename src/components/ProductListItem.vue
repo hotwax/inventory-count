@@ -1,5 +1,5 @@
 <template>
-  <ion-item button @click="viewProduct()" detail="true" lines="none">
+  <ion-item button detail="true" lines="none">
     <ion-thumbnail slot="start">
       <Image :src="product.mainImageUrl"/>
     </ion-thumbnail>
@@ -18,7 +18,6 @@ import {
   IonThumbnail,
   IonLabel
 } from '@ionic/vue'
-import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
 
@@ -31,17 +30,10 @@ export default defineComponent({
     Image
   },
   props: ["product"],
-  methods: {
-    async viewProduct () {
-      this.router.push({ path: `/count/${this.product.sku}` })
-    }
-  },
   setup() {
-    const router = useRouter();
     const store = useStore();
     
     return {
-      router,
       store
     }
   },

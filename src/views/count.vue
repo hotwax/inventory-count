@@ -1,130 +1,114 @@
 <template>
-    <ion-page>
-      <ion-header :translucent="true">
-        <ion-toolbar>
-          <ion-back-button slot="start" default-href="/"></ion-back-button>
-          <ion-title>{{ $t("Count") }}</ion-title>
-        </ion-toolbar>
-      </ion-header>
-  
-      <ion-content>
-        <div class="product-image">
-            <Image :src="product.mainImageUrl"/>
-        </div>
-        
-        <div class="product-info">
-          <ion-item lines="none">
-            <ion-label>
-              <p class="overline">{{ product.productName }}</p>
-              <h2>{{ product.sku }}</h2>
-            </ion-label>
-          </ion-item>
-
-          <div class="product-features">
-            <ion-item lines="none">
-              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
-                <ion-icon :icon="colorPaletteOutline" />
-                <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
-              </ion-chip>
-              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
-                <ion-icon :icon="resize" />
-                <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
-              </ion-chip>
-            </ion-item>
-          </div>
-        </div>
-
-        <div class="segment" v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) && hasPermission(Actions.APP_VARIANCE_LOG)">
-          <ion-segment v-model="segmentSelected">
-            <ion-segment-button v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" value="count">
-              <ion-label>{{ $t("Count") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button v-if="hasPermission(Actions.APP_VARIANCE_LOG)" value="variance">
-              <ion-label>{{ $t("Variance") }}</ion-label>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
-        
-        <div v-if="segmentSelected === 'count'" class="inventory-form">
-          <ion-item>
-            <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-            <ion-input type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
-          </ion-item>
-          <ion-item lines="none">
-            <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-label>{{ $t("Location") }}</ion-label>
-            <ion-chip @click="selectLocation">
-              <ion-label>{{ location }}</ion-label>
-              <ion-icon :icon="locationOutline" />
-            </ion-chip>
-          </ion-item>
-          <ion-item v-if="viewQOH">
-            <ion-label>{{ $t("In stock") }}</ion-label>
-            <ion-label slot="end">{{ availableQOH }}</ion-label>
-          </ion-item>
-          <ion-item v-if="viewQOH">
-            <ion-label>{{ $t("Variance") }}</ion-label>
-            <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
-          </ion-item>
+  <section>
+    <div class="product-image">
+        <Image :src="product.mainImageUrl"/>
+    </div>
     
-          <div class="action">
-            <ion-button size="large" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" @click="updateProductInventoryCount()">
-              <ion-icon :icon="saveOutline" slot="start" />
-              {{$t("Save")}}
-            </ion-button>
-          </div>
-        </div>  
+    <div class="product-info">
+      <ion-item lines="none">
+        <ion-label>
+          <p class="overline">{{ product.productName }}</p>
+          <h2>{{ product.sku }}</h2>
+        </ion-label>
+      </ion-item>
 
-        <div v-else class="inventory-form">
-          <ion-item>
-            <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
-            <ion-input type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
-          </ion-item>
-          <ion-item lines="none">
-            <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
-          </ion-item>
+      <div class="product-features">
+        <ion-item lines="none">
+          <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
+            <ion-icon :icon="colorPaletteOutline" />
+            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
+          </ion-chip>
+          <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
+            <ion-icon :icon="resize" />
+            <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
+          </ion-chip>
+        </ion-item>
+      </div>
+    </div>
 
-          <ion-item>
-            <ion-label>{{ $t("Variance reason") }}</ion-label>
-            <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
-              <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
-            </ion-select>
-          </ion-item>
+    <div class="segment" v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) && hasPermission(Actions.APP_VARIANCE_LOG)">
+      <ion-segment v-model="segmentSelected">
+        <ion-segment-button v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" value="count">
+          <ion-label>{{ $t("Count") }}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button v-if="hasPermission(Actions.APP_VARIANCE_LOG)" value="variance">
+          <ion-label>{{ $t("Variance") }}</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+    
+    <div v-if="segmentSelected === 'count'" class="inventory-form">
+      <ion-item>
+        <ion-label position="floating">{{ $t("Stock") }}</ion-label>
+        <ion-input type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
+      </ion-item>
+      <ion-item>
+        <ion-label>{{ $t("Location") }}</ion-label>
+        <ion-chip @click="selectLocation">
+          <ion-label>{{ location }}</ion-label>
+          <ion-icon :icon="locationOutline" />
+        </ion-chip>
+      </ion-item>
+      <ion-item v-if="viewQOH">
+        <ion-label>{{ $t("In stock") }}</ion-label>
+        <ion-label slot="end">{{ availableQOH }}</ion-label>
+      </ion-item>
+      <ion-item v-if="viewQOH">
+        <ion-label>{{ $t("Variance") }}</ion-label>
+        <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
+      </ion-item>
 
-          <div class="action">
-            <ion-button size="large" @click="confirmVarianceUpdate()">
-              <ion-icon :icon="cloudUploadOutline" slot="start" />
-              {{$t("Log variance")}}
-            </ion-button>
-          </div>
-        </div>
+      <div class="action">
+        <ion-button size="large" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" @click="updateProductInventoryCount()">
+          <ion-icon :icon="saveOutline" slot="start" />
+          {{$t("Save")}}
+        </ion-button>
+      </div>
+    </div>  
 
-      </ion-content>
-    </ion-page>
-  </template>
+    <div v-else class="inventory-form">
+      <ion-item>
+        <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
+        <ion-input type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
+      </ion-item>
+      <ion-item lines="none">
+        <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>{{ $t("Variance reason") }}</ion-label>
+        <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
+          <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <div class="action">
+        <ion-button size="large" @click="confirmVarianceUpdate()">
+          <ion-icon :icon="cloudUploadOutline" slot="start" />
+          {{$t("Log variance")}}
+        </ion-button>
+      </div>
+    </div>
+  </section>
+</template>
   
   <script lang="ts">
   import {
     alertController,
-    IonBackButton,
     IonButton,
     IonChip,
-    IonContent,
-    IonHeader,
     IonIcon,
     IonInput,
     IonItem,
     IonLabel,
     IonNote,
-    IonPage,
     IonSegment,
     IonSelect,
     IonSelectOption,
     IonSegmentButton,
-    IonTitle,
-    IonToolbar,
     pickerController
   } from "@ionic/vue";
   import { defineComponent } from "vue";
@@ -143,23 +127,17 @@
   export default defineComponent({
     name: "Count",
     components: {
-      IonBackButton,
       IonButton,
       IonChip,
-      IonContent,
-      IonHeader,
       IonIcon,
       IonInput,
       IonItem,
       IonLabel,
       IonNote,
-      IonPage,
       IonSegment,
       IonSegmentButton,
       IonSelect,
       IonSelectOption,
-      IonTitle,
-      IonToolbar,
       Image
     },
     computed: {
@@ -179,9 +157,10 @@
         quantity: 0 as any
       }
     },
+    props: ['sku'],
     async mounted(){
       await this.fetchVarianceReasons();
-      await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
+      await this.store.dispatch("product/updateCurrentProduct", this.sku);
       this.quantity = this.product.quantity
       await this.getFacilityLocations();
       if (this.viewQOH) await this.getInventory()

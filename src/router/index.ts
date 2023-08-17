@@ -4,7 +4,6 @@ import Upload from "@/views/Upload.vue";
 import Settings from "@/views/Settings.vue";
 import store from "@/store";
 import Search from "@/views/Search.vue";
-import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
@@ -12,6 +11,7 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { Login, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
+import CountMobileView from '@/views/CountMobile.vue'
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -64,7 +64,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/count/:sku",
     name: "Count",
-    component: Count,
+    component: CountMobileView,
     beforeEnter: authGuard,
     props: true,
     meta: {
