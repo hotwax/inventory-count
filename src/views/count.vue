@@ -1,7 +1,7 @@
 <template>
   <section>
     <div class="product-image">
-        <Image :src="product.mainImageUrl"/>
+      <Image :src="product.mainImageUrl"/>
     </div>
     
     <div class="product-info">
