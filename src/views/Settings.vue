@@ -13,12 +13,19 @@
             <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
               <Image :src="userProfile.partyImageUrl"/>
             </ion-avatar>
-            <ion-card-header>
+            <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
+            is added on sides from ion-item and ion-padding-vertical to compensate the removed
+            vertical padding -->
+            <ion-card-header class="ion-no-padding ion-padding-vertical">
               <ion-card-subtitle>{{ userProfile.userLoginId }}</ion-card-subtitle>
               <ion-card-title>{{ userProfile.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button fill="outline" color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button fill="outline" @click="goToLaunchpad()">
+            {{ $t("Go to Launchpad") }}
+            <ion-icon slot="end" :icon="openOutline" />
+          </ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
         </ion-card>
@@ -223,7 +230,8 @@ export default defineComponent({
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('user/logout').then(() => {
-              this.router.push('/login');
+              const redirectUrl = window.location.origin + '/login'
+              window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
             })
           }
         }]
@@ -264,9 +272,13 @@ export default defineComponent({
         this.presentAlertOnLogout();
       } else {
         this.store.dispatch('user/logout').then(() => {
-          this.router.push('/login');
+          const redirectUrl = window.location.origin + '/login'
+          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
         })
       }
+    },
+    goToLaunchpad() {
+      window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
     },
     goToOms(){
       window.open(this.instanceUrl.startsWith('http') ? this.instanceUrl.replace('api/', "") : `https://${this.instanceUrl}.hotwax.io/`, '_blank', 'noopener, noreferrer');
