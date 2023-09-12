@@ -182,29 +182,63 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
       return Promise.reject(error);
     }
 }
-const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> => {
-  // If the facilityId is not provided, it may be case of user not associated with any facility or the logout
+
+const getEComStores = async (token: any, facilityId: any): Promise<any> => {
+  // If the facilityId is not provided, it may be case of user not associated with any facility
   if (!facilityId) {
-    return Promise.resolve({});
+    return Promise.resolve([]);
   }
-  const baseURL = store.getters['user/getBaseUrl'];
   try {
     const params = {
       "inputFields": {
-        "facilityId": facilityId,
+        "storeName_op": "not-empty",
+        facilityId
       },
-      "fieldList": ["storeName", "productStoreId"], 
+      "fieldList": ["productStoreId", "storeName"],
       "entityName": "ProductStoreFacilityDetail",
       "distinct": "Y",
       "noConditionFind": "Y",
       "filterByDate": 'Y',
-      "viewSize": 1
-
-    }   
+    }
+    const baseURL = store.getters['user/getBaseUrl'];
     const resp = await client({
       url: "performFind",
       method: "get",
+      baseURL,
       params,
+      headers: {
+        Authorization:  'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+    // Disallow login if the user is not associated with any product store
+    if (hasError(resp) || resp.data.docs.length === 0) {
+      return Promise.reject(resp.data);
+    } else {
+      return Promise.resolve(resp.data.docs);
+    }
+  } catch(error: any) {
+    return Promise.reject(error)
+  }
+}
+
+const setUserPreference = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/setUserPreference",
+    method: "post",
+    data: payload
+  });
+}
+
+const getPreferredStore = async (token: any): Promise<any> => {
+  const baseURL = store.getters['user/getBaseUrl'];
+  try {
+    const resp = await client({
+      url: "service/getUserPreference",
+      method: "post",
+      data: {
+        'userPrefTypeId': 'SELECTED_BRAND'
+      },
       baseURL,
       headers: {
         Authorization:  'Bearer ' + token,
@@ -213,8 +247,8 @@ const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> =>
     });
     if (hasError(resp)) {
       return Promise.reject(resp.data);
-    }   
-    return Promise.resolve(resp.data.docs?.length ? resp.data.docs[0] : {});
+    }
+    return Promise.resolve(resp.data.userPrefValue);
   } catch(error: any) {
     return Promise.reject(error)
   }
@@ -223,11 +257,13 @@ const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> =>
 export const UserService = {
     login,
     getAvailableTimeZones,
-    getCurrentEComStore,
+    getEComStores,
+    getPreferredStore,
     getQOHViewConfig,
     getUserPermissions,
     getUserProfile,
     setUserTimeZone,
     checkPermission,
-    updateQOHViewConfig
+    updateQOHViewConfig,
+    setUserPreference,
 }
