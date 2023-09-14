@@ -4,7 +4,7 @@ import { loadingController } from '@ionic/vue'
 
 const login = async (payload: any) => store.dispatch('user/login', payload);
 
-const logout = async () => store.dispatch('user/logout');
+const logout = async (payload: any) => store.dispatch('user/logout', payload);
 
 const loader = {
   value: null as any,
