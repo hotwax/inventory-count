@@ -1,4 +1,5 @@
 {
+  "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "App": "App",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
   "Authenticating": "Authenticating",
@@ -34,6 +35,7 @@
   "OMS": "OMS",
   "OMS instance": "OMS instance",
   "Password": "Password",
+  "Product Store": "Product Store",
   "Product not found": "Product not found",
   "Quantity": "Quantity",
   "Quantity on hand": "Quantity on hand",
@@ -54,6 +56,8 @@
   "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.": "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.",
   "Stock": "Stock",
   "Select reason": "Select reason",
+  "Select store": "Select store",
+  "Store": "Store",
   "store name":"store name",
   "Results": "Results",
   "The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?": "The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?",

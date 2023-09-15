@@ -62,8 +62,20 @@ const actions: ActionTree<UserState, RootState> = {
       }, []);
       // TODO Use a separate API for getting facilities, this should handle user like admin accessing the app
       const currentFacility = userProfile.facilities.length > 0 ? userProfile.facilities[0] : {};
-      const currentEComStore = await UserService.getCurrentEComStore(token, currentFacility?.facilityId);
-      const currentQOHViewConfig = await UserService.getQOHViewConfig(token, currentEComStore?.productStoreId);
+      userProfile.stores = await UserService.getEComStores(token, currentFacility?.facilityId);
+      let preferredStore = {} as any;
+
+      // Handling case if stores are not present, it may be case of user not associated with any facility
+      if(userProfile.stores.length){
+        preferredStore = userProfile.stores[0];
+        const preferredStoreId =  await UserService.getPreferredStore(token);
+        if (preferredStoreId) {
+          const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+          store && (preferredStore = store)
+        }
+      }
+
+      const currentQOHViewConfig = await UserService.getQOHViewConfig(token, preferredStore?.productStoreId);
 
       /*  ---- Guard clauses ends here --- */
 
@@ -76,7 +88,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO user single mutation
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
-      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, currentEComStore)
+      commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore)
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_VIEW_QOH_CNFG_UPDATED, currentQOHViewConfig.settingValue == "true" )
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
@@ -126,9 +138,19 @@ const actions: ActionTree<UserState, RootState> = {
     if(!facility && state.current?.facilities) {
       facility = state.current.facilities.find((facility: any) => facility.facilityId === payload.facilityId);
     }
+    const userProfile = JSON.parse(JSON.stringify(state.current));
+    userProfile.stores = await UserService.getEComStores(undefined, payload.facility.facilityId);
+    let preferredStore = userProfile.stores[0];
+
+    const preferredStoreId =  await UserService.getPreferredStore(undefined);
+    if (preferredStoreId) {
+      const store = userProfile.stores.find((store: any) => store.productStoreId === preferredStoreId);
+      store && (preferredStore = store)
+    }
+
+    commit(types.USER_INFO_UPDATED, userProfile);
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
-    const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
-    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, preferredStore)
   },
 
   // Set User Instance Url
@@ -139,6 +161,14 @@ const actions: ActionTree<UserState, RootState> = {
 
   updateViewQOHConfig( { commit }, config){
     commit(types.USER_VIEW_QOH_CNFG_UPDATED, config)
+  },
+
+  async setEComStore({ commit }, payload) {
+    await UserService.setUserPreference({
+      'userPrefTypeId': 'SELECTED_BRAND',
+      'userPrefValue': payload.eComStore.productStoreId
+    });
+    commit(types.USER_CURRENT_ECOM_STORE_UPDATED, payload.eComStore);
   },
 }
 export default actions;
