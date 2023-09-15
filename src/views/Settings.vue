@@ -228,10 +228,10 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    setEComStore(store: any) {
-      if(this.userProfile) {
+    setEComStore(event: any) {
+      if(this.userProfile && this.currentEComStore?.productStoreId !== event.detail.value) {
         this.store.dispatch('user/setEComStore', {
-          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == store['detail'].value)
+          'eComStore': this.userProfile.stores.find((str: any) => str.productStoreId == event['detail'].value)
         })
       }
     },
