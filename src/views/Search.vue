@@ -7,6 +7,13 @@
     </ion-header>
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      <!-- Empty state -->
+      <div class="empty-state"  v-if="!products.length">
+        <!-- No result -->
+        <p v-if="products.length===0">{{ $t("No results found")}}</p>
+        <img src="../assets/images/empty-state.png" alt="No results found"/>
+        <p>{{ $t("Enter a SKU, or use the barcode scanner to search a product")}}</p>
+      </div>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
