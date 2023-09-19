@@ -7,16 +7,26 @@
     </ion-header>
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+  
+  
+     <!-- No result -->
+     <div class="empty-state"  v-if="products.length===0" >
+        <p>{{ $t("No results found")}}</p>
+      </div>
+
+     <!-- Empty state -->
+      <div class="empty-state"  v-if="!products.length && queryString==0">
+      <img src="../assets/images/empty-state-image.png" alt="No results found" width="250"/>
+        <p>{{ $t("Enter a SKU, or use the barcode scanner to search a product")}}</p>
+    </div>
 
       <ion-list v-if="products.length > 0">
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
-
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
-
         <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
-      </ion-list>
+      </ion-list>  
     </ion-content>
 
     <ion-grid id="scan-button">
@@ -167,5 +177,22 @@ ion-content {
   position: absolute;
   bottom: 0;
   width: 100%;
+}
+
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom:50px;
+}
+
+.empty-state > img {
+  object-fit:contain;
+}
+
+ p {
+  text-align: center;
 }
 </style>
