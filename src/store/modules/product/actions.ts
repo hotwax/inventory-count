@@ -34,7 +34,6 @@ const actions: ActionTree<ProductState, RootState> = {
         commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
       } else if (payload.viewIndex == 0) {
         dispatch('clearSearchProducts')
-        // showToast(translate("Product not found"));
       }
       // Remove added loader only when new query and not the infinite scroll
       if (payload.viewIndex === 0) emitter.emit("dismissLoader");
