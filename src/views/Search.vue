@@ -144,7 +144,8 @@ export default defineComponent({
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
       const queryString = '*' + this.queryString + '*';
-      this.getProducts(viewSize, viewIndex, queryString);
+      await this.getProducts(viewSize, viewIndex, queryString);
+      this.fetchingProduct = false;
     },
     async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
       const payload = {
@@ -154,10 +155,7 @@ export default defineComponent({
       }
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
-        this.fetchingProduct = false;
       } else {
-        this.fetchingProduct = false;
-        this.showErrorMessage = true;
         showToast(translate("Enter product sku to search"))
       }
     }
