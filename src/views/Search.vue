@@ -7,10 +7,10 @@
     </ion-header>
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      
       <!-- Empty state -->
-      <div class="empty-state"  v-if="!products.length">
-        <!-- No result -->
-        <p v-if="products.length===0">{{ $t("No results found")}}</p>
+      <div class="empty-state"  v-if="!products.length && !productFetch">
+        <p v-if="noResultMessage">{{ $t("No results found")}}</p>
         <img src="../assets/images/empty-state.png" alt="No results found"/>
         <p>{{ $t("Enter a SKU, or use the barcode scanner to search a product")}}</p>
       </div>
@@ -88,7 +88,9 @@ export default defineComponent({
   },
   data (){
     return {
-      queryString: ''
+      queryString: '',
+      noResultMessage: false,
+      productFetch: false
     }
   },
   computed: {
@@ -137,6 +139,8 @@ export default defineComponent({
       })
     },
     async searchProducts(vSize?: any, vIndex?: any) {
+      this.queryString ? this.noResultMessage = true: this.noResultMessage = false;
+      this.productFetch = true;
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
       const queryString = '*' + this.queryString + '*';
@@ -150,7 +154,10 @@ export default defineComponent({
       }
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
+        this.productFetch = false;
       } else {
+        this.productFetch = false;
+        this.noResultMessage = true;
         showToast(translate("Enter product sku to search"))
       }
     }

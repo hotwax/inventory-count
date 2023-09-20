@@ -78,6 +78,7 @@ http://ionicframework.com/docs/theming/ */
   /** Spacer **/
   --spacer-xs: 0.5rem;
 }
+
 .empty-state {
   max-width: 100%;
   display: flex;
@@ -94,6 +95,7 @@ http://ionicframework.com/docs/theming/ */
 .empty-state > p {
   text-align: center; 
 }
+
 @media (prefers-color-scheme: dark) {
   /*
    * Dark Colors
