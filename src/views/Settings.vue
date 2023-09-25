@@ -77,6 +77,8 @@
         <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
       </div>
       <section>
+        <ProductIdentifier />
+
         <ion-card>
           <ion-card-header>
             <ion-card-title>
