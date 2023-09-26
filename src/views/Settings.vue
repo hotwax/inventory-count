@@ -229,9 +229,12 @@ export default defineComponent({
         {
           text: this.$t('Ok'),
           handler: () => {
-            this.store.dispatch('user/logout').then(() => {
-              const redirectUrl = window.location.origin + '/login'
-              window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+            this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
+              // if not having redirection url then redirect the user to launchpad
+              if (!redirectionUrl) {
+                const redirectUrl = window.location.origin + '/login'
+                window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+              }
             })
           }
         }]
@@ -271,9 +274,12 @@ export default defineComponent({
       if (Object.keys(this.uploadProducts).length > 0) {
         this.presentAlertOnLogout();
       } else {
-        this.store.dispatch('user/logout').then(() => {
-          const redirectUrl = window.location.origin + '/login'
-          window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+        this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
+          // if not having redirection url then redirect the user to launchpad
+          if (!redirectionUrl) {
+            const redirectUrl = window.location.origin + '/login'
+            window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+          }
         })
       }
     },
