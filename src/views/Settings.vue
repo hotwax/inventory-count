@@ -187,9 +187,9 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    checkFacility (facilityId: any) {
+    checkFacility(facilityId: any) {
       if (Object.keys(this.uploadProducts).length > 0) {
-        this.presentAlertOnFacilityChange(facilityId);
+        this.presentAlertOnFacilityChange();
       }
     },
     async presentAlertOnLogout() {
@@ -211,7 +211,8 @@ export default defineComponent({
       });
       await alert.present();
     },
-    async presentAlertOnFacilityChange(facilityId: string) {
+    async presentAlertOnFacilityChange() {
+
       let facilityUpdateCancelled = false
       const alert = await alertController.create({
         header: this.$t('Set facility'),
