@@ -130,12 +130,13 @@ export default defineComponent({
     IonToggle,
     IonToolbar,
     Image
-},
+  },
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
       appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
       appVersion: "",
+      currentFacilityId: "",
       currentQOHViewConfig: {} as any
     };
   },
@@ -143,6 +144,7 @@ export default defineComponent({
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   ionViewWillEnter() {
+    this.currentFacilityId = this.currentFacility.facilityId;
     this.getViewQOHConfig();
   },
   computed: {
@@ -189,7 +191,7 @@ export default defineComponent({
     },
     checkFacility(facilityId: any) {
       if (Object.keys(this.uploadProducts).length > 0) {
-        this.presentAlertOnFacilityChange();
+        this.presentAlertOnFacilityChange(facilityId);
       }
     },
     async presentAlertOnLogout() {
@@ -211,29 +213,27 @@ export default defineComponent({
       });
       await alert.present();
     },
-    async presentAlertOnFacilityChange() {
-
-      let facilityUpdateCancelled = false
+    async presentAlertOnFacilityChange(facilityId: string) {
       const alert = await alertController.create({
         header: this.$t('Set facility'),
         message: this.$t('The products in the upload list will be removed.'),
         buttons: [{
           text: this.$t('Cancel'),
           handler: () => {
-            facilityUpdateCancelled = true
+            this.store.dispatch('user/setFacility', {
+              'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == this.currentFacilityId)
+            });
           }
         },
         {
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('product/clearUploadProducts');
+            this.currentFacilityId = facilityId;
           }
         }]
       });
       await alert.present();
-      if(facilityUpdateCancelled) {
-        throw new Error('Facility Update Cancelled')
-      }
     },
     async changeTimeZone() {
       const timeZoneModal = await modalController.create({
