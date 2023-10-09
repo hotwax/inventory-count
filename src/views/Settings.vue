@@ -52,7 +52,7 @@
           </ion-button>
         </ion-card>
 
-        <FacilitySwitcher @check-facility="checkFacility"/>
+        <DxpFacilitySwitcher @check-facility="checkFacility"/>
       </section>
       <hr />
       <div class="section-header">
