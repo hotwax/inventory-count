@@ -51,22 +51,8 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ $t("Facility") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-label>{{ $t("Select facility") }}</ion-label>
-            <ion-select interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
+
+        <DxpFacilitySwitcher @check-facility="checkFacility"/>
       </section>
       <hr />
       <div class="section-header">
@@ -111,7 +97,7 @@
 </template>
 
 <script lang="ts">
-import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonSelect, IonSelectOption, IonTitle, IonToggle, IonToolbar, modalController } from '@ionic/vue';
+import { alertController, IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader,IonIcon, IonItem, IonLabel, IonPage, IonTitle, IonToggle, IonToolbar, modalController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOutline, openOutline} from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
@@ -128,20 +114,18 @@ export default defineComponent({
   name: 'Settings',
   components: {
     IonAvatar,
-    IonButton, 
+    IonButton,
     IonCard,
     IonCardContent,
     IonCardHeader,
     IonCardSubtitle,
     IonCardTitle,
-    IonContent, 
-    IonHeader, 
+    IonContent,
+    IonHeader,
     IonIcon,
-    IonItem, 
-    IonLabel, 
-    IonPage, 
-    IonSelect,
-    IonSelectOption,
+    IonItem,
+    IonLabel,
+    IonPage,
     IonTitle,
     IonToggle,
     IonToolbar,
@@ -205,18 +189,9 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    setFacility (event: any) {
-      // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
-      // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
-      if (this.userProfile && this.currentFacility.facilityId && event.detail.value != this.currentFacility.facilityId ) {
-        if (Object.keys(this.uploadProducts).length > 0) {
-          this.presentAlertOnFacilityChange(event.detail.value);
-        } else {
-          this.store.dispatch('user/setFacility', {
-            'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
-          });
-          this.currentFacilityId = this.currentFacility.facilityId;
-        }
+    checkFacility(facilityId: any) {
+      if (Object.keys(this.uploadProducts).length > 0) {
+        this.presentAlertOnFacilityChange(facilityId);
       }
     },
     async presentAlertOnLogout() {
@@ -245,17 +220,16 @@ export default defineComponent({
         buttons: [{
           text: this.$t('Cancel'),
           handler: () => {
-            this.currentFacilityId = this.currentFacility.facilityId
+            this.store.dispatch('user/setFacility', {
+              'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == this.currentFacilityId)
+            });
           }
         },
         {
           text: this.$t('Ok'),
           handler: () => {
             this.store.dispatch('product/clearUploadProducts');
-            this.store.dispatch('user/setFacility', {
-              'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
-            });
-            this.currentFacilityId = this.currentFacility.facilityId
+            this.currentFacilityId = facilityId;
           }
         }]
       });
