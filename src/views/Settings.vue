@@ -52,7 +52,7 @@
           </ion-button>
         </ion-card>
 
-        <DxpFacilitySwitcher @check-facility="checkFacility"/>
+        <DxpFacilitySwitcher @before-set-facility="beforeSetFacility"/>
       </section>
       <hr />
       <div class="section-header">
@@ -189,7 +189,7 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    checkFacility(facilityId: any) {
+    beforeSetFacility(facilityId: any) {
       if (Object.keys(this.uploadProducts).length > 0) {
         this.presentAlertOnFacilityChange(facilityId);
       }

@@ -122,10 +122,8 @@ const actions: ActionTree<UserState, RootState> = {
 
   // update current facility information
   async setFacility ({ commit, state }, payload) {
-    let facility = payload.facility;
-    if(!facility && state.current?.facilities) {
-      facility = state.current.facilities.find((facility: any) => facility.facilityId === payload.facilityId);
-    }
+    const facility = payload.facility;
+
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
     const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
