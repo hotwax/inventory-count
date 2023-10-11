@@ -11,7 +11,7 @@ const productModule: Module<ProductState, RootState> = {
       current: {},
       uploadProducts: {},
       products: {
-        list: {},
+        list: [],
         total: 0
       }
     },
