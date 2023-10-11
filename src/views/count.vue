@@ -9,7 +9,7 @@
   
       <ion-content>
         <div class="product-image">
-            <Image :src="product.mainImageUrl"/>
+            <ShopifyImg :src="product.mainImageUrl"/>
         </div>
         
         <div class="product-info">
@@ -133,7 +133,7 @@
   import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
-  import Image from "@/components/Image.vue";
+  import { ShopifyImg } from "@hotwax/dxp-components";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import { StockService } from '@/services/StockService';
@@ -160,7 +160,7 @@
       IonSelectOption,
       IonTitle,
       IonToolbar,
-      Image
+      ShopifyImg
     },
     computed: {
       ...mapGetters({
