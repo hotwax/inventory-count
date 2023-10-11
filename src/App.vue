@@ -41,13 +41,16 @@ export default defineComponent({
     }
   },
   methods: {
-    async presentLoader() {
+    async presentLoader(options = { message: '', backdropDismiss: true }) {
+      // When having a custom message remove already existing loader
+      if(options.message && this.loader) this.dismissLoader();
+
       if (!this.loader) {
         this.loader = await loadingController
           .create({
-            message: this.$t("Click the backdrop to dismiss."),
+            message: options.message ? this.$t(options.message) : this.$t("Click the backdrop to dismiss."),
             translucent: true,
-            backdropDismiss: true
+            backdropDismiss: options.backdropDismiss
           });
       }
       this.loader.present();
@@ -59,7 +62,8 @@ export default defineComponent({
       }
     },
     async unauthorised() {
-      this.store.dispatch("user/logout");
+      // Mark the user as unauthorised, this will help in not making the logout api call in actions
+      this.store.dispatch("user/logout", { isUserUnauthorised: true });
       const redirectUrl = window.location.origin + '/login';
       window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}`;
     }
