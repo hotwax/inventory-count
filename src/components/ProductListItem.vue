@@ -4,15 +4,15 @@
       <ShopifyImg :src="product.mainImageUrl" size="small" />
     </ion-thumbnail>
     <ion-label>
-      <p>{{ product.productName }}</p>
-      <h3>{{ product.sku }}</h3>
+      <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+      <h3>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName }}</h3>
       <p>{{$filters.getFeature(product.featureHierarchy, '1/COLOR/')}} {{$filters.getFeature(product.featureHierarchy, '1/COLOR/') && $filters.getFeature(product.featureHierarchy, '1/SIZE/')? "|" : ""}} {{$filters.getFeature(product.featureHierarchy, '1/SIZE/')}}</p>
     </ion-label>
   </ion-item>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { computed, defineComponent } from 'vue'
 import {
   IonItem,
   IonThumbnail,
@@ -20,7 +20,7 @@ import {
 } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "ProductListItem",
@@ -39,8 +39,12 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const store = useStore();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
     
     return {
+      getProductIdentificationValue,
+      productIdentificationPref,
       router,
       store
     }

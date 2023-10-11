@@ -13,8 +13,8 @@
             <ShopifyImg :src="product.mainImageUrl" size="small"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
-            <p class="overline">{{ product.productName }}</p>
-            <h2>{{ product.sku }}</h2>
+            <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+            <h2>{{  getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName }}</h2>
           </ion-label>
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
@@ -66,11 +66,11 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/vue';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { ShopifyImg } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, ShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
   import { Actions, hasPermission } from '@/authorization'
 
 export default defineComponent({
@@ -136,15 +136,19 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const router = useRouter();
+    const productIdentificationStore = useProductIdentificationStore();
+    let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
 
     return {
       Actions,
-      hasPermission,
-      store,
-      router,
+      cloudUploadOutline,
       colorPaletteOutline,
+      getProductIdentificationValue,
+      hasPermission,
+      productIdentificationPref,
+      router,
       resize,
-      cloudUploadOutline
+      store,
     };
   },
 });
