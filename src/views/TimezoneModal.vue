@@ -2,21 +2,30 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal">
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Select time zone") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')"  v-model="queryString" @keyup.enter="queryString = $event.target.value; findTimeZone()" @keydown="preventSpecialCharacters($event)" />
+      <ion-searchbar
+        @ionFocus="selectSearchBarText($event)"
+        :placeholder="$t('Search time zones')"
+        v-model="queryString"
+        @keyup.enter="
+          queryString = $event.target.value;
+          findTimeZone();
+        "
+        @keydown="preventSpecialCharacters($event)"
+      />
     </ion-toolbar>
   </ion-header>
 
   <ion-content class="ion-padding">
     <!-- Empty state -->
     <div class="empty-state" v-if="filteredTimeZones.length === 0">
-      <p>{{ $t("No time zone found")}}</p>
+      <!-- <p>{{ $t("No time zone found") }}</p> -->
     </div>
 
     <!-- Timezones -->
@@ -30,7 +39,7 @@
         </ion-radio-group>
       </ion-list>
     </div>
-    
+
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!timeZoneId" @click="saveAlert">
         <ion-icon :icon="save" />
@@ -40,7 +49,7 @@
 </template>
 
 <script lang="ts">
-import { 
+import {
   IonButtons,
   IonButton,
   IonContent,
@@ -57,17 +66,19 @@ import {
   IonTitle,
   IonToolbar,
   modalController,
-  alertController } from "@ionic/vue";
+  alertController,
+} from "@ionic/vue";
 import { defineComponent } from "vue";
 import { close, save } from "ionicons/icons";
 import { useStore } from "@/store";
 import { UserService } from "@/services/UserService";
-import { hasError } from '@/utils'
-import { DateTime } from 'luxon';
-
+import { hasError } from "@/utils";
+import { DateTime } from "luxon";
+import { loadingController } from "@ionic/vue";
+import emitter from "@/event-bus";
 export default defineComponent({
   name: "TimeZoneModal",
-  components: { 
+  components: {
     IonButtons,
     IonButton,
     IonContent,
@@ -82,22 +93,25 @@ export default defineComponent({
     IonRadio,
     IonSearchbar,
     IonTitle,
-    IonToolbar 
+    IonToolbar,
   },
   data() {
     return {
-      queryString: '',
+      queryString: "",
       filteredTimeZones: [],
       timeZones: [],
-      timeZoneId: ''
-    }
+      timeZoneId: "",
+    };
   },
   methods: {
     closeModal() {
       modalController.dismiss({ dismissed: true });
     },
     async saveAlert() {
-      const message = this.$t("Are you sure you want to change the time zone to?", { timeZoneId: this.timeZoneId });
+      const message = this.$t(
+        "Are you sure you want to change the time zone to?",
+        { timeZoneId: this.timeZoneId }
+      );
       const alert = await alertController.create({
         header: this.$t("Update time zone"),
         message,
@@ -109,44 +123,62 @@ export default defineComponent({
             text: this.$t("Confirm"),
             handler: () => {
               this.setUserTimeZone();
-            }
-          }
+            },
+          },
         ],
       });
       return alert.present();
     },
     preventSpecialCharacters($event: any) {
       // Searching special characters fails the API, hence, they must be omitted
-      if(/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
+      if (/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key))
+        $event.preventDefault();
     },
-    findTimeZone() { 
+    findTimeZone() {
       const queryString = this.queryString.toLowerCase();
       this.filteredTimeZones = this.timeZones.filter((timeZone: any) => {
-        return timeZone.id.toLowerCase().match(queryString) || timeZone.label.toLowerCase().match(queryString);
+        return (
+          timeZone.id.toLowerCase().match(queryString) ||
+          timeZone.label.toLowerCase().match(queryString)
+        );
       });
     },
     async getAvailableTimeZones() {
-      const resp = await UserService.getAvailableTimeZones()
-      if(resp.status === 200 && !hasError(resp)) {
+      this.showTimezoneLoading(); //function to display timezone loading modal @ashutosh7i
+      const resp = await UserService.getAvailableTimeZones();
+      if (resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
         this.timeZones = resp.data.filter((timeZone: any) => {
           return DateTime.local().setZone(timeZone.id).isValid;
         });
         this.findTimeZone();
+        this.hideTimezoneLoading(); ////function to display timezone loading modal @ashutosh7i
       }
     },
+    // Functions to show Timezone loading modal @ashutosh7i
+    async showTimezoneLoading() {
+      const loading = await loadingController.create({
+        message: "Fetching time zones",
+      });
+      return loading.present();
+    },
+    // Functions to hide Timezone loading modal @ashutosh7i
+    async hideTimezoneLoading() {
+      await loadingController.dismiss();
+    },
+    //
     async selectSearchBarText(event: any) {
-      const element = await event.target.getInputElement()
+      const element = await event.target.getInputElement();
       element.select();
     },
     async setUserTimeZone() {
       await this.store.dispatch("user/setUserTimeZone", {
-        "timeZoneId": this.timeZoneId
-      })
-      this.closeModal()
-    }
+        timeZoneId: this.timeZoneId,
+      });
+      this.closeModal();
+    },
   },
-  beforeMount () {
+  beforeMount() {
     this.getAvailableTimeZones();
   },
   setup() {
@@ -154,8 +186,8 @@ export default defineComponent({
     return {
       close,
       save,
-      store
+      store,
     };
-  }
+  },
 });
 </script>
