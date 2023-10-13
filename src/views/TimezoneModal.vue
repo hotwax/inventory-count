@@ -16,7 +16,8 @@
   <ion-content class="ion-padding">
     <!-- Empty state -->
     <div class="empty-state" v-if="filteredTimeZones.length === 0">
-      <p>{{ $t("No time zone found")}}</p>
+      <!--No need to show as Fetching timezone loader will show anyways-->
+      <!-- <p>{{ $t("No time zone found")}}</p>  --> 
     </div>
 
     <!-- Timezones -->
@@ -64,6 +65,7 @@ import { useStore } from "@/store";
 import { UserService } from "@/services/UserService";
 import { hasError } from '@/utils'
 import { DateTime } from 'luxon';
+import { loadingController } from "@ionic/vue";
 
 export default defineComponent({
   name: "TimeZoneModal",
@@ -126,6 +128,7 @@ export default defineComponent({
       });
     },
     async getAvailableTimeZones() {
+      this.showTimezoneLoading(); //function to display timezone loading modal @ashutosh7i
       const resp = await UserService.getAvailableTimeZones()
       if(resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
@@ -133,8 +136,21 @@ export default defineComponent({
           return DateTime.local().setZone(timeZone.id).isValid;
         });
         this.findTimeZone();
+        this.hideTimezoneLoading(); //function to display timezone loading modal @ashutosh7i
       }
     },
+    // Functions to show Timezone loading modal @ashutosh7i
+    async showTimezoneLoading() {
+      const loading = await loadingController.create({
+        message: "Fetching time zones",
+      });
+      return loading.present();
+    },
+    // Functions to hide Timezone loading modal @ashutosh7i
+    async hideTimezoneLoading() {
+      await loadingController.dismiss();
+    },
+    //
     async selectSearchBarText(event: any) {
       const element = await event.target.getInputElement()
       element.select();
