@@ -72,6 +72,8 @@ import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { ShopifyImg } from '@hotwax/dxp-components';
   import { Actions, hasPermission } from '@/authorization'
+import { showToast } from '@/utils';
+import { translate } from '@/i18n';
 
 export default defineComponent({
   name: "Upload",
@@ -103,6 +105,7 @@ export default defineComponent({
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
+      showToast(translate("The item has Sucessfully Removed!"))
     },
     async presentAlertOnUpload() {
       const alert = await alertController.create({
