@@ -38,8 +38,8 @@
           </ion-item>
         <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) || Object.keys(uploadProducts).length === 0">
+      <ion-fab style="cursor: pointer" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) ||Object.keys(uploadProducts).length === 0">
           <ion-icon :icon="cloudUploadOutline" />
         </ion-fab-button>
       </ion-fab>
