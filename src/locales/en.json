@@ -23,6 +23,7 @@
   "inventory variance": "inventory variance", 
   "Instance Url": "Instance Url",
   "Item added to upload list": "Item added to upload list",
+  "Item removed successfully":"Item removed successfully",
   "Loading": "Loading",
   "Location": "Location",
   "Log variance": "Log variance",
@@ -74,4 +75,5 @@
   "Variance updated successfully": "Variance updated successfully",
   "View": "View",
   "You do not have permission to access this page": "You do not have permission to access this page"
+  
 }
