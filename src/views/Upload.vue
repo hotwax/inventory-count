@@ -36,7 +36,7 @@
             <ion-label>{{ $t("Variance") }}</ion-label>
             <ion-label slot="end">{{ product.quantity - product.availableQOH }}</ion-label>
           </ion-item>
-        <ion-button fill="clear" @click.stop="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
+        <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) || Object.keys(uploadProducts).length === 0">
