@@ -228,10 +228,10 @@
           }
         }])
         this.router.push('/search')
-        } else if(this.quantity==0){
-          showToast(translate("Enter the stock count for the product"))
+        } else if(this.quantity<0){
+          showToast(translate("Negative stock count cannot be accepted"))
         }else{
-          showToast(translate('Neagative stock count cannot be accepted'))
+          showToast(translate("Enter the stock count for the product"))
         }
       },
       async getInventory() {
