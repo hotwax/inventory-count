@@ -48,7 +48,6 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async removeItemFromUploadProducts( {commit}, payload) {
     commit(types.PRODUCT_REMOVE_FROM_UPLD_PRDTS, {sku: payload});
-    showToast(translate("Item removed successfully"));
   },
 
   async clearUploadProducts ({ commit }) {
