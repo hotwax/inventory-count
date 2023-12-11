@@ -19,11 +19,11 @@
           <ion-badge slot="end" color="dark">{{ product.quantity }}</ion-badge>
         </ion-item>
         <ion-item lines="full">
-          <ion-chip>
+          <ion-chip class="remove-pointer">
             <ion-icon :icon="colorPaletteOutline" />
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
           </ion-chip>
-          <ion-chip>
+          <ion-chip class="remove-pointer">
             <ion-icon :icon="resize" />
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
           </ion-chip>
@@ -149,3 +149,8 @@ export default defineComponent({
   },
 });
 </script>
+<style scoped>
+.remove-pointer{
+  pointer-events: none;
+}
+</style>

@@ -22,11 +22,11 @@
 
           <div class="product-features">
             <ion-item lines="none">
-              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')">
+              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/COLOR/')" class="remove-count">
                 <ion-icon :icon="colorPaletteOutline" />
                 <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/COLOR/') }}</ion-label>
               </ion-chip>
-              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')">
+              <ion-chip v-if="$filters.getFeature(product.featureHierarchy, '1/SIZE/')" class="remove-count">
                 <ion-icon :icon="resize" />
                 <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
               </ion-chip>
@@ -55,7 +55,7 @@
           </ion-item>
           <ion-item>
             <ion-label>{{ $t("Location") }}</ion-label>
-            <ion-chip @click="selectLocation">
+            <ion-chip @click="selectLocation" class="remove-count">
               <ion-label>{{ location }}</ion-label>
               <ion-icon :icon="locationOutline" />
             </ion-chip>
@@ -404,6 +404,9 @@
 
     .segment {
       background-color: var(--ion-background-color, #fff);
+    }
+    .remove-count{
+      pointer-events: none;
     }
   }
   </style>
