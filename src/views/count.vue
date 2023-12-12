@@ -55,7 +55,7 @@
           </ion-item>
           <ion-item>
             <ion-label>{{ $t("Location") }}</ion-label>
-            <ion-chip @click="selectLocation" class="remove-count">
+            <ion-chip @click="selectLocation">
               <ion-label>{{ location }}</ion-label>
               <ion-icon :icon="locationOutline" />
             </ion-chip>
