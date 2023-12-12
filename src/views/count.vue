@@ -230,7 +230,7 @@
         this.router.push('/search')
         } else if(this.quantity < 0) {
           showToast(translate("Negative stock count cannot be accepted"))
-        }else{
+        } else {
           showToast(translate("Enter the stock count for the product"))
         }
       },
