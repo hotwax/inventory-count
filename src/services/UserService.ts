@@ -58,6 +58,11 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
   });
 }
 const getQOHViewConfig = async (token: any, productStoreId: any): Promise<any> => {
+  // If the productStoreId is not provided, it may be case of facility not associated with any productStore
+  if (!productStoreId) {
+    return Promise.resolve({});
+  }
+
   const baseURL = store.getters['user/getBaseUrl'];
   try {
     const params = {
@@ -212,11 +217,11 @@ const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> =>
       }
     });
     if (hasError(resp)) {
-      return Promise.reject(resp.data);
+      throw resp.data;
     }   
     return Promise.resolve(resp.data.docs?.length ? resp.data.docs[0] : {});
   } catch(error: any) {
-    return Promise.reject(error)
+    return Promise.resolve({})
   }
 }
 
