@@ -16,6 +16,7 @@
   "Enter the amount of stock that has changed.": "Enter the amount of stock that has changed.",
   "Enter the count of stock on the shelf.": "Enter the count of stock on the shelf.",
   "Enter the stock count for the product": "Enter the stock count for the product",
+  "Facility needs to be associated with a product store to change this configuration.": "Facility needs to be associated with a product store to change this configuration.",
   "Facility": "Facility",
   "Go to Launchpad": "Go to Launchpad",
   "Go to OMS": "Go to OMS",
