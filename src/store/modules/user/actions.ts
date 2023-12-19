@@ -60,6 +60,9 @@ const actions: ActionTree<UserState, RootState> = {
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_INVCUNT_ADMIN" );
       const baseURL = store.getters['user/getBaseUrl'];
       const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "", isAdminUser);
+
+      if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+
       userProfile.facilities = facilities;
 
       // removing duplicate records as a single user can be associated with a facility by multiple roles.
