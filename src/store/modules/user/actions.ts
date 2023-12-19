@@ -6,7 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import { Settings } from 'luxon';
-import { logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
+import { getUserFacilities, logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import {
   getServerPermissionsFromRules,
   prepareAppPermissions,
@@ -15,6 +15,7 @@ import {
 } from '@/authorization'
 import { useAuthStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
+import store from '@/store'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -54,6 +55,12 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const userProfile = await UserService.getUserProfile(token);
+
+      //fetching user facilities
+      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_INVCUNT_ADMIN" );
+      const baseURL = store.getters['user/getBaseUrl'];
+      const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "", isAdminUser);
+      userProfile.facilities = facilities;
 
       // removing duplicate records as a single user can be associated with a facility by multiple roles.
       userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {

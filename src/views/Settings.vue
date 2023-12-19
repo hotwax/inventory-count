@@ -48,7 +48,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
             <ion-select interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>

@@ -2,6 +2,7 @@
   "App": "App",
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
   "Authenticating": "Authenticating",
+  "Back to Launchpad": "Back to Launchpad",
   "Camera permission denied.": "Camera permission denied.",
   "Cancel": "Cancel",
   "Change": "Change",
@@ -28,6 +29,7 @@
   "Location": "Location",
   "Log variance": "Log variance",
   "Login": "Login",
+  "Login failed": "Login failed",
   "Logging in": "Logging in",
   "Logging out": "Logging out",
   "Logout": "Logout",
@@ -38,6 +40,7 @@
   "OMS": "OMS",
   "OMS instance": "OMS instance",
   "Password": "Password",
+  "Please contact the administrator.": "Please contact the administrator.",
   "Quantity": "Quantity",
   "Quantity on hand": "Quantity on hand",
   "Remove": "Remove",
@@ -74,5 +77,6 @@
   "Variance reason": "Variance reason",
   "Variance updated successfully": "Variance updated successfully",
   "View": "View",
+  "You do not have permission to access the app.": "You do not have permission to access the app.",
   "You do not have permission to access this page": "You do not have permission to access this page"
 }
