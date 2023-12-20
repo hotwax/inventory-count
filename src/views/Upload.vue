@@ -7,12 +7,12 @@
     </ion-header>
 
     <ion-content>
-      <ion-card v-for="product in uploadProducts" :key="product.productId" @click="viewProduct(product)">
+      <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
             <ShopifyImg :src="product.mainImageUrl" size="small"/>
           </ion-thumbnail>
-          <ion-label>
+          <ion-label @click="viewProduct(product)">
             <p class="overline">{{ product.productName }}</p>
             <h2>{{ product.sku }}</h2>
           </ion-label>
