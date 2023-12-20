@@ -1,4 +1,4 @@
-import { api, client, getConfig, getProductIdentificationPref, initialise, resetConfig, setProductIdentificationPref, updateInstanceUrl, updateToken } from '@hotwax/oms-api'
+import { api, client, getConfig, getProductIdentificationPref, initialise, logout, resetConfig, setProductIdentificationPref, updateInstanceUrl, updateToken } from '@hotwax/oms-api'
 
 export {
   api,
@@ -6,6 +6,7 @@ export {
   getConfig,
   getProductIdentificationPref,
   initialise,
+  logout,
   resetConfig,
   setProductIdentificationPref,
   updateInstanceUrl,
