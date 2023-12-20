@@ -134,7 +134,7 @@ export default defineComponent({
   },
   data() {
     return {
-      baseURL: process.env.VUE_APP_BASE_URL,
+      baseURL: "",
       appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
       appVersion: "",
       currentFacilityId: "",
@@ -142,6 +142,7 @@ export default defineComponent({
     };
   },
   mounted() {
+    this.baseURL=this.store.state.instanceURL 
     this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   ionViewWillEnter() {
