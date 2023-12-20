@@ -216,7 +216,7 @@
         await picker.present();
       },
       updateProductInventoryCount() {
-        if (this.quantity > 0) {
+        if(this.quantity) {
           this.product.quantity = this.quantity;
           this.product.availableQOH = this.availableQOH;
           this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
@@ -228,8 +228,6 @@
           }
         }])
         this.router.push('/search')
-        } else if(this.quantity < 0) {
-          showToast(translate("Negative stock count cannot be accepted"))
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
