@@ -48,7 +48,7 @@
           <ion-item lines="none">
             <ion-label>{{ $t("Select facility") }}</ion-label>
             <ion-select interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -84,10 +84,11 @@
           </ion-card-header>
           <ion-card-content>
             {{ $t('Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.') }}
+            <p>{{ $t('Facility needs to be associated with a product store to change this configuration.') }}</p>
           </ion-card-content>
           <ion-item lines="none">
             <ion-label> {{ $t('Show systemic inventory') }} </ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)" slot="end" />
+            <ion-toggle :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || !currentEComStore?.productStoreId || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)" slot="end" />
           </ion-item>
         </ion-card>
       </section>
@@ -123,7 +124,7 @@ export default defineComponent({
     IonHeader, 
     IonIcon,
     IonItem, 
-    IonLabel, 
+    IonLabel,
     IonPage, 
     IonSelect,
     IonSelectOption,
