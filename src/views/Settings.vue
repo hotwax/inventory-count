@@ -155,14 +155,13 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       uploadProducts: 'product/getUploadProducts',
       currentEComStore: 'user/getCurrentEComStore',
+      QOHConfig: 'user/getViewQOHConfig'
     })
   },
   methods: {
     async getViewQOHConfig() {
       this.currentQOHViewConfig = await UserService.getQOHViewConfig(undefined, this.currentEComStore?.productStoreId) as any;
-      if (Object.keys(this.currentQOHViewConfig).length > 0) {
-        this.store.dispatch('user/updateViewQOHConfig', this.currentQOHViewConfig.settingValue == "true");
-      }  
+      this.store.dispatch('user/updateViewQOHConfig', { currentQOHViewConfig: this.currentQOHViewConfig, viewQOH: this.currentQOHViewConfig.settingValue == "true" });
     },
     async updateViewQOHConfig(config: any, value: any) {
       // Handled initial programmatical update
@@ -190,17 +189,18 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    setFacility (event: any) {
+    async setFacility (event: any) {
       // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
       // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
       if (this.userProfile && this.currentFacility.facilityId && event.detail.value != this.currentFacility.facilityId ) {
         if (Object.keys(this.uploadProducts).length > 0) {
           this.presentAlertOnFacilityChange(event.detail.value);
         } else {
-          this.store.dispatch('user/setFacility', {
+          await this.store.dispatch('user/setFacility', {
             'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
           });
           this.currentFacilityId = this.currentFacility.facilityId;
+          this.currentQOHViewConfig = this.QOHConfig.currentQOHViewConfig
         }
       }
     },
@@ -238,12 +238,13 @@ export default defineComponent({
         },
         {
           text: this.$t('Ok'),
-          handler: () => {
+          handler: async () => {
             this.store.dispatch('product/clearUploadProducts');
-            this.store.dispatch('user/setFacility', {
+            await this.store.dispatch('user/setFacility', {
               'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
             });
             this.currentFacilityId = this.currentFacility.facilityId
+            this.currentQOHViewConfig = this.QOHConfig.currentQOHViewConfig
           }
         }]
       });

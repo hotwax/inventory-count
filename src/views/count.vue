@@ -60,11 +60,11 @@
               <ion-icon :icon="locationOutline" />
             </ion-chip>
           </ion-item>
-          <ion-item v-if="viewQOH">
+          <ion-item v-if="QOHConfig.viewQOH">
             <ion-label>{{ $t("In stock") }}</ion-label>
             <ion-label slot="end">{{ availableQOH }}</ion-label>
           </ion-item>
-          <ion-item v-if="viewQOH">
+          <ion-item v-if="QOHConfig.viewQOH">
             <ion-label>{{ $t("Variance") }}</ion-label>
             <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
           </ion-item>
@@ -166,7 +166,7 @@
       ...mapGetters({
         product: "product/getCurrent",
         facility: 'user/getCurrentFacility',
-        viewQOH: 'user/getViewQOHConfig'
+        QOHConfig: 'user/getViewQOHConfig'
       })
     },
     data(){
@@ -184,7 +184,7 @@
       await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
       this.quantity = this.product.quantity
       await this.getFacilityLocations();
-      if (this.viewQOH) await this.getInventory()
+      if (this.QOHConfig.viewQOH) await this.getInventory()
     },
     methods: {
       async selectLocation() {

@@ -14,6 +14,7 @@ const userModule: Module<UserState, RootState> = {
       instanceUrl: '',
       permissions: [],
       config: {
+        currentQOHViewConfig: {},
         viewQOH: false
       },
       currentEComStore: {}

@@ -89,7 +89,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, currentEComStore)
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
-      commit(types.USER_VIEW_QOH_CNFG_UPDATED, currentQOHViewConfig.settingValue == "true" )
+      commit(types.USER_VIEW_QOH_CNFG_UPDATED, { currentQOHViewConfig, viewQOH: currentQOHViewConfig.settingValue == "true" })
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
@@ -166,7 +166,7 @@ const actions: ActionTree<UserState, RootState> = {
     },
 
   // update current facility information
-  async setFacility ({ commit, state }, payload) {
+  async setFacility ({ commit, dispatch, state }, payload) {
     let facility = payload.facility;
     if(!facility && state.current?.facilities) {
       facility = state.current.facilities.find((facility: any) => facility.facilityId === payload.facilityId);
@@ -174,6 +174,14 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
     const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
+
+    let currentQOHViewConfig = {} as any
+
+    // fetching QOH config value for the updated eComStore
+    if(eComStore?.productStoreId) {
+      currentQOHViewConfig = await UserService.getQOHViewConfig(undefined, eComStore.productStoreId) as any;
+    }
+    dispatch('updateViewQOHConfig', { currentQOHViewConfig, viewQOH: currentQOHViewConfig.settingValue == "true" });
   },
 
   // Set User Instance Url
@@ -182,7 +190,7 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-  updateViewQOHConfig( { commit }, config){
+  updateViewQOHConfig({ commit }, config) {
     commit(types.USER_VIEW_QOH_CNFG_UPDATED, config)
   },
 }
