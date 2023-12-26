@@ -163,7 +163,7 @@ export default defineComponent({
     },
     async updateViewQOHConfig(config: any, value: any) {
       // When storing boolean values, it is stored as string. Further comparison needs conversion
-      if (config.settingValue === value || (typeof value === 'boolean' && (config.settingValue == 'true') === value)) {
+      if (typeof value === 'boolean' && (config.settingValue == 'true') === value) {
         return;
       } 
       const params = {
