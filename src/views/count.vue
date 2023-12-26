@@ -87,8 +87,7 @@
           </ion-item>
 
           <ion-item>
-            <ion-label>{{ $t("Variance reason") }}</ion-label>
-            <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
+            <ion-select :label="$t('Variance reason')" interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
               <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
             </ion-select>
           </ion-item>
