@@ -219,6 +219,8 @@
         if (this.quantity) {
           this.product.quantity = this.quantity;
           this.product.availableQOH = this.availableQOH;
+          //Create the ProductFacility record if it does not exist.
+          this.checkAndCreateProductFacilityAssoc();
           this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
@@ -230,6 +232,21 @@
         this.router.push('/search')
         } else {
           showToast(translate("Enter the stock count for the product"))
+        }
+      },
+      async checkAndCreateProductFacilityAssoc() {
+        try {
+          if (!await ProductService.isProductFacilityAssocExists(this.product.productId, this.facility.facilityId)) {
+            const resp = await ProductService.addProductToFacility({
+              productId: this.product.productId, 
+              facilityId: this.facility.facilityId
+            });
+            if (hasError(resp)) {
+              throw resp.data;
+            }
+          }
+        } catch (err) {
+          console.error(err);
         }
       },
       async getInventory() {
