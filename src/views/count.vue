@@ -216,7 +216,7 @@
         await picker.present();
       },
       updateProductInventoryCount() {
-        if (this.quantity) {
+        if (this.quantity > 0) {
           this.product.quantity = this.quantity;
           this.product.availableQOH = this.availableQOH;
           //Create the ProductFacility record if it does not exist.
@@ -230,6 +230,8 @@
           }
         }])
         this.router.push('/search')
+        } else if(this.quantity < 0) {
+          showToast(translate("Negative stock count cannot be accepted"))
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
