@@ -104,7 +104,7 @@ export default defineComponent({
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
-      showToast(this.$t("Item removed successfully"));
+      showToast(this.$t("Item removed from upload list"));
     },
     async presentAlertOnUpload() {
       const alert = await alertController.create({
