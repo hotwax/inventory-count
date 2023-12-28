@@ -143,8 +143,7 @@ export default defineComponent({
       this.fetchingProducts = true;
       const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
       const viewIndex = vIndex ? vIndex : 0;
-      const queryString = '*' + this.queryString + '*';
-      await this.getProducts(viewSize, viewIndex, queryString);
+      await this.getProducts(viewSize, viewIndex, this.queryString);
       this.fetchingProducts = false;
     },
     async getProducts(vSize?: any, vIndex?: any, queryString?: string) {
@@ -156,7 +155,7 @@ export default defineComponent({
       if (this.queryString) {
         await this.store.dispatch("product/findProduct", payload);
       } else {
-        showToast(translate("Enter product sku to search"))
+        showToast(translate("Enter the product sku, upc, product name, etc. to search."))
       }
     }
   },

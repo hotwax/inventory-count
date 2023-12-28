@@ -3,9 +3,9 @@ import { hasError } from "@/utils";
 
 const fetchProducts = async (query: any): Promise <any>  => {
   return api({
-    url: "searchProducts", 
-    method: "get",
-    params: query,
+    url: "solr-query", 
+    method: "post",
+    data: query,
     cache: true
   });
 }
