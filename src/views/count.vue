@@ -47,8 +47,7 @@
         
         <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
-            <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-            <ion-input type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
+            <ion-input :label="$t('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
@@ -79,16 +78,14 @@
 
         <div v-else class="inventory-form">
           <ion-item>
-            <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
-            <ion-input type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
+            <ion-input :label="$t('Quantity')" label-placement="floating" type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
           </ion-item>
 
           <ion-item>
-            <ion-label>{{ $t("Variance reason") }}</ion-label>
-            <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
+            <ion-select :label="$t('Variance reason')" interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
               <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
             </ion-select>
           </ion-item>
