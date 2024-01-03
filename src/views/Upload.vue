@@ -71,7 +71,8 @@ import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { ShopifyImg } from '@hotwax/dxp-components';
-  import { Actions, hasPermission } from '@/authorization'
+import { Actions, hasPermission } from '@/authorization';
+import { showToast } from '@/utils';
 
 export default defineComponent({
   name: "Upload",
@@ -103,6 +104,7 @@ export default defineComponent({
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
+      showToast(this.$t("Item removed from upload list"));
     },
     async presentAlertOnUpload() {
       const alert = await alertController.create({
