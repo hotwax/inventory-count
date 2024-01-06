@@ -9,8 +9,8 @@
       <ion-title>{{ $t("Select time zone") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')" v-model="queryString"
-        @keyup.enter="queryString = $event.target.value; findTimeZone()" @keydown="preventSpecialCharacters($event)" />
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')" v-model="queryString" @keyup.enter="queryString = $event.target.value; 
+  findTimeZone()" @keydown="preventSpecialCharacters($event)" />
     </ion-toolbar>
   </ion-header>
  
@@ -26,10 +26,8 @@
         </ion-item>
       </div>
     </div>
-    <div v-if="!loading && filteredTimeZones.length === 0">
-      <div class="empty-state">
+    <div class="empty-state" v-if="!loading && filteredTimeZones.length === 0">
         <p>{{ $t("No time zone found") }}</p>
-      </div>
     </div>
  
     <!-- Timezones -->
@@ -37,14 +35,12 @@
       <ion-list>
         <ion-radio-group value="rd" v-model="timeZoneId">
           <ion-item :key="timeZone.id" v-for="timeZone in filteredTimeZones">
-            <ion-radio justify="start" label-placement="end" :value="timeZone.id">{{ timeZone.label }} ({{ timeZone.id
-            }})</ion-radio>
+            <ion-radio justify="start" label-placement="end" :value="timeZone.id">{{ timeZone.label }} ({{ timeZone.id}})</ion-radio>
           </ion-item>
         </ion-radio-group>
       </ion-list>
     </div>
  
-
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!timeZoneId" @click="saveAlert">
         <ion-icon :icon="save" />
@@ -52,7 +48,6 @@
     </ion-fab>
   </ion-content>
  </template>
- 
  
  <script lang="ts">
  import {
@@ -79,7 +74,6 @@
  import { UserService } from "@/services/UserService";
  import { hasError } from '@/utils'
  import { DateTime } from 'luxon';
- 
  
  export default defineComponent({
   name: "TimeZoneModal",
@@ -133,7 +127,7 @@
     },
     preventSpecialCharacters($event: any) {
       // Searching special characters fails the API, hence, they must be omitted
-      if (/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
+      if(/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
     },
     findTimeZone() {
       const queryString = this.queryString.toLowerCase();
@@ -143,8 +137,6 @@
     },
     async getAvailableTimeZones() {
       const resp = await UserService.getAvailableTimeZones()
-      console.log(resp);
-      
       if (resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
         this.timeZones = resp.data.filter((timeZone: any) => {
