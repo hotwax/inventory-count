@@ -12,22 +12,19 @@
       <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')" v-model="queryString" @keyup.enter="queryString = $event.target.value; findTimeZone()" @keydown="preventSpecialCharacters($event)" />
     </ion-toolbar>
   </ion-header>
- 
+
   <ion-content class="ion-padding">
     <!-- Empty state -->
-    <div>
-      <div class="empty-state" v-if="loading && timeZones.length === 0">
-        <ion-item lines="none" color="none">
-          
-          <ion-spinner color="secondary" name="crescent" slot="start" ></ion-spinner>
-          {{ $t("Fetching time zones") }}
-        </ion-item>
-      </div>
+    <div class="empty-state" v-if="loading">
+      <ion-item lines="none" >
+        <ion-spinner color="secondary" name="crescent" slot="start" ></ion-spinner>
+        {{ $t("Fetching time zones") }}
+      </ion-item>
     </div>
-    <div class="empty-state" v-if="!loading && filteredTimeZones.length === 0">
-        <p>{{ $t("No time zone found") }}</p>
+    <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
+      <p>{{ $t("No time zone found") }}</p>
     </div>
- 
+
     <!-- Timezones -->
     <div v-else>
       <ion-list>
@@ -38,7 +35,7 @@
         </ion-radio-group>
       </ion-list>
     </div>
-  
+    
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!timeZoneId" @click="saveAlert">
         <ion-icon :icon="save" />
@@ -46,7 +43,7 @@
     </ion-fab>
   </ion-content>
 </template>
- 
+
 <script lang="ts">
 import { 
   IonButtons,
@@ -141,7 +138,7 @@ export default defineComponent({
         });
         this.findTimeZone();
       }
-      this.loading = false;
+    this.loading = false;
     },
     async selectSearchBarText(event: any) {
       const element = await event.target.getInputElement()
@@ -165,5 +162,5 @@ export default defineComponent({
       store
     };
   }
- });
- </script>
+});
+</script>
