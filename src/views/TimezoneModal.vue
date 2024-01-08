@@ -21,7 +21,7 @@
       <div class="empty-state" v-if="loading && timeZones.length === 0">
         <ion-item lines="none" color="none">
           
-          <ion-spinner class="center-spinner" color="secondary" name="crescent" slot="start" ></ion-spinner>
+          <ion-spinner color="secondary" name="crescent" slot="start" ></ion-spinner>
           {{ $t("Fetching time zones") }}
         </ion-item>
       </div>
@@ -47,10 +47,10 @@
       </ion-fab-button>
     </ion-fab>
   </ion-content>
- </template>
+</template>
  
- <script lang="ts">
- import {
+<script lang="ts">
+import {
   IonButtons,
   IonButton,
   IonContent,
@@ -66,18 +66,17 @@
   IonTitle,
   IonToolbar,
   modalController,
-  alertController
- } from "@ionic/vue";
- import { defineComponent } from "vue";
- import { close, save } from "ionicons/icons";
- import { useStore } from "@/store";
- import { UserService } from "@/services/UserService";
- import { hasError } from '@/utils'
- import { DateTime } from 'luxon';
+  alertController } from "@ionic/vue";
+import { defineComponent } from "vue";
+import { close, save } from "ionicons/icons";
+import { useStore } from "@/store";
+import { UserService } from "@/services/UserService";
+import { hasError } from '@/utils'
+import { DateTime } from 'luxon';
  
- export default defineComponent({
+export default defineComponent({
   name: "TimeZoneModal",
-  components: {
+  components: { 
     IonButtons,
     IonButton,
     IonContent,
