@@ -38,7 +38,7 @@
         </ion-radio-group>
       </ion-list>
     </div>
-        
+  
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!timeZoneId" @click="saveAlert">
         <ion-icon :icon="save" />
