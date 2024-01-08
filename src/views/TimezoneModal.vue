@@ -16,8 +16,8 @@
   <ion-content class="ion-padding">
     <!-- Empty state -->
     <div class="empty-state" v-if="loading">
-      <ion-item lines="none" >
-        <ion-spinner color="secondary" name="crescent" slot="start" ></ion-spinner>
+      <ion-item lines="none">
+        <ion-spinner color="secondary" name="crescent" slot="start" />
         {{ $t("Fetching time zones") }}
       </ion-item>
     </div>
