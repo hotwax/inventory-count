@@ -2,18 +2,16 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal">
+        <ion-button @click="closeModal"> 
           <ion-icon :icon="close" />
         </ion-button>
       </ion-buttons>
       <ion-title>{{ $t("Select time zone") }}</ion-title>
     </ion-toolbar>
     <ion-toolbar>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')" v-model="queryString" @keyup.enter="queryString = $event.target.value; 
-  findTimeZone()" @keydown="preventSpecialCharacters($event)" />
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search time zones')" v-model="queryString" @keyup.enter="queryString = $event.target.value; findTimeZone()" @keydown="preventSpecialCharacters($event)" />
     </ion-toolbar>
   </ion-header>
- 
  
   <ion-content class="ion-padding">
     <!-- Empty state -->
@@ -35,12 +33,12 @@
       <ion-list>
         <ion-radio-group value="rd" v-model="timeZoneId">
           <ion-item :key="timeZone.id" v-for="timeZone in filteredTimeZones">
-            <ion-radio justify="start" label-placement="end" :value="timeZone.id">{{ timeZone.label }} ({{ timeZone.id}})</ion-radio>
+            <ion-radio justify="start" label-placement="end" :value="timeZone.id">{{ timeZone.label }} ({{ timeZone.id }})</ion-radio>
           </ion-item>
         </ion-radio-group>
       </ion-list>
     </div>
- 
+        
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!timeZoneId" @click="saveAlert">
         <ion-icon :icon="save" />
@@ -50,7 +48,7 @@
 </template>
  
 <script lang="ts">
-import {
+import { 
   IonButtons,
   IonButton,
   IonContent,
@@ -73,7 +71,7 @@ import { useStore } from "@/store";
 import { UserService } from "@/services/UserService";
 import { hasError } from '@/utils'
 import { DateTime } from 'luxon';
- 
+
 export default defineComponent({
   name: "TimeZoneModal",
   components: { 
@@ -90,7 +88,7 @@ export default defineComponent({
     IonRadio,
     IonSearchbar,
     IonTitle,
-    IonToolbar
+    IonToolbar 
   },
   data() {
     return {
@@ -128,7 +126,7 @@ export default defineComponent({
       // Searching special characters fails the API, hence, they must be omitted
       if(/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
     },
-    findTimeZone() {
+    findTimeZone() { 
       const queryString = this.queryString.toLowerCase();
       this.filteredTimeZones = this.timeZones.filter((timeZone: any) => {
         return timeZone.id.toLowerCase().match(queryString) || timeZone.label.toLowerCase().match(queryString);
@@ -136,7 +134,7 @@ export default defineComponent({
     },
     async getAvailableTimeZones() {
       const resp = await UserService.getAvailableTimeZones()
-      if (resp.status === 200 && !hasError(resp)) {
+      if(resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
         this.timeZones = resp.data.filter((timeZone: any) => {
           return DateTime.local().setZone(timeZone.id).isValid;
@@ -156,7 +154,7 @@ export default defineComponent({
       this.closeModal()
     }
   },
-  beforeMount() {
+  beforeMount () {
     this.getAvailableTimeZones();
   },
   setup() {
@@ -169,4 +167,3 @@ export default defineComponent({
   }
  });
  </script>
- 
