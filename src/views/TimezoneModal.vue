@@ -15,7 +15,7 @@
 
   <ion-content class="ion-padding">
     <!-- Empty state -->
-    <div class="empty-state" v-if="loading">
+    <div class="empty-state" v-if="isLoading">
       <ion-item lines="none">
         <ion-spinner color="secondary" name="crescent" slot="start" />
         {{ $t("Fetching time zones") }}
@@ -93,7 +93,7 @@ export default defineComponent({
       filteredTimeZones: [],
       timeZones: [],
       timeZoneId: '',
-      loading: true
+      isLoading: true
     }
   },
   methods: {
@@ -138,7 +138,7 @@ export default defineComponent({
         });
         this.findTimeZone();
       }
-    this.loading = false;
+    this.isLoading = false;
     },
     async selectSearchBarText(event: any) {
       const element = await event.target.getInputElement()
