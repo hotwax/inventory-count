@@ -93,7 +93,7 @@ export default defineComponent({
       filteredTimeZones: [],
       timeZones: [],
       timeZoneId: '',
-      isLoading: true
+      isLoading: false
     }
   },
   methods: {
@@ -130,6 +130,7 @@ export default defineComponent({
       });
     },
     async getAvailableTimeZones() {
+      this.isLoading = true;
       const resp = await UserService.getAvailableTimeZones()
       if(resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
