@@ -34,7 +34,7 @@ const getters: GetterTree <UserState, RootState> = {
         return state.currentEComStore;
     },
     getViewQOHConfig (state) {
-        return state.config.viewQOH;
+        return state.config;
     }
 }
 export default getters;

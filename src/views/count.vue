@@ -47,8 +47,7 @@
         
         <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
-            <ion-label position="floating">{{ $t("Stock") }}</ion-label>
-            <ion-input type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
+            <ion-input :label="$t('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
@@ -60,11 +59,11 @@
               <ion-icon :icon="locationOutline" />
             </ion-chip>
           </ion-item>
-          <ion-item v-if="viewQOH">
+          <ion-item v-if="QOHConfig.viewQOH">
             <ion-label>{{ $t("In stock") }}</ion-label>
             <ion-label slot="end">{{ availableQOH }}</ion-label>
           </ion-item>
-          <ion-item v-if="viewQOH">
+          <ion-item v-if="QOHConfig.viewQOH">
             <ion-label>{{ $t("Variance") }}</ion-label>
             <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
           </ion-item>
@@ -79,16 +78,14 @@
 
         <div v-else class="inventory-form">
           <ion-item>
-            <ion-label position="floating">{{ $t("Quantity") }}</ion-label>
-            <ion-input type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
+            <ion-input :label="$t('Quantity')" label-placement="floating" type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
           </ion-item>
 
           <ion-item>
-            <ion-label>{{ $t("Variance reason") }}</ion-label>
-            <ion-select interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
+            <ion-select :label="$t('Variance reason')" interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
               <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -166,7 +163,7 @@
       ...mapGetters({
         product: "product/getCurrent",
         facility: 'user/getCurrentFacility',
-        viewQOH: 'user/getViewQOHConfig'
+        QOHConfig: 'user/getViewQOHConfig'
       })
     },
     data(){
@@ -184,7 +181,7 @@
       await this.store.dispatch("product/updateCurrentProduct", this.$route.params.sku);
       this.quantity = this.product.quantity
       await this.getFacilityLocations();
-      if (this.viewQOH) await this.getInventory()
+      if (this.QOHConfig.viewQOH) await this.getInventory()
     },
     methods: {
       async selectLocation() {
@@ -219,6 +216,8 @@
         if (this.quantity) {
           this.product.quantity = this.quantity;
           this.product.availableQOH = this.availableQOH;
+          //Create the ProductFacility record if it does not exist.
+          this.checkAndCreateProductFacilityAssoc();
           this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
@@ -230,6 +229,21 @@
         this.router.push('/search')
         } else {
           showToast(translate("Enter the stock count for the product"))
+        }
+      },
+      async checkAndCreateProductFacilityAssoc() {
+        try {
+          if (!await ProductService.isProductFacilityAssocExists(this.product.productId, this.facility.facilityId)) {
+            const resp = await ProductService.addProductToFacility({
+              productId: this.product.productId, 
+              facilityId: this.facility.facilityId
+            });
+            if (hasError(resp)) {
+              throw resp.data;
+            }
+          }
+        } catch (err) {
+          console.error(err);
         }
       },
       async getInventory() {

@@ -28,11 +28,11 @@
             <ion-label>{{ $filters.getFeature(product.featureHierarchy, '1/SIZE/') }}</ion-label>
           </ion-chip>
         </ion-item>
-        <ion-item v-if="viewQOH && product.availableQOH">
+        <ion-item v-if="QOHConfig.viewQOH && product.availableQOH">
             <ion-label>{{ $t("In stock") }}</ion-label>
             <ion-label slot="end">{{  product.availableQOH }}</ion-label>
           </ion-item>
-          <ion-item v-if="viewQOH && product.availableQOH">
+          <ion-item v-if="QOHConfig.viewQOH && product.availableQOH">
             <ion-label>{{ $t("Variance") }}</ion-label>
             <ion-label slot="end">{{ product.quantity - product.availableQOH }}</ion-label>
           </ion-item>
@@ -71,7 +71,8 @@ import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons'
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { getProductIdentificationValue, ShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
-  import { Actions, hasPermission } from '@/authorization'
+import { Actions, hasPermission } from '@/authorization';
+import { showToast } from '@/utils';
 
 export default defineComponent({
   name: "Upload",
@@ -97,12 +98,13 @@ export default defineComponent({
     ...mapGetters({
       uploadProducts: 'product/getUploadProducts',
       currentFacility: 'user/getCurrentFacility',
-      viewQOH: 'user/getViewQOHConfig'
+      QOHConfig: 'user/getViewQOHConfig'
     })
   },
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
+      showToast(this.$t("Item removed from upload list"));
     },
     async presentAlertOnUpload() {
       const alert = await alertController.create({

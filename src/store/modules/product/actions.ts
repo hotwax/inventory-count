@@ -6,6 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
+import { prepareProductQuery } from '@/utils/solrHelper'
 
 
 const actions: ActionTree<ProductState, RootState> = {
@@ -19,11 +20,14 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
 
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": [`sku: ${payload.queryString} OR upc: ${payload.queryString}`,'isVirtual: false'],
-        "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
-      })
+      const params = {
+        ...payload,
+        filters: {
+          isVirtual: { value: 'false' },
+        }
+      }
+      const productQueryPayload = prepareProductQuery(params)
+      resp = await ProductService.fetchProducts(productQueryPayload)
 
       // resp.data.response.numFound tells the number of items in the response
       if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {

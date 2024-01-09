@@ -30,7 +30,8 @@ const mutations: MutationTree <UserState> = {
         state.permissions = payload
     },
     [types.USER_VIEW_QOH_CNFG_UPDATED] (state, payload) {
-        state.config.viewQOH = payload;
+        state.config.viewQOH = payload.viewQOH;
+        state.config.currentQOHViewConfig = payload.currentQOHViewConfig;
     }
 }
 export default mutations;

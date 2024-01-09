@@ -46,9 +46,8 @@
             {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label>{{ $t("Select facility") }}</ion-label>
-            <ion-select interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.name }}</ion-select-option>
+            <ion-select :label="$t('Select facility')" interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
+              <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -86,10 +85,10 @@
           </ion-card-header>
           <ion-card-content>
             {{ $t('Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.') }}
+            <p>{{ $t('Facility needs to be associated with a product store to change this configuration.') }}</p>
           </ion-card-content>
           <ion-item lines="none">
-            <ion-label> {{ $t('Show systemic inventory') }} </ion-label>
-            <ion-toggle :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)" slot="end" />
+            <ion-toggle justify="space-between" :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || !currentEComStore?.productStoreId || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)">{{ $t('Show systemic inventory') }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -125,7 +124,7 @@ export default defineComponent({
     IonHeader, 
     IonIcon,
     IonItem, 
-    IonLabel, 
+    IonLabel,
     IonPage, 
     IonSelect,
     IonSelectOption,
@@ -156,19 +155,17 @@ export default defineComponent({
       currentFacility: 'user/getCurrentFacility',
       uploadProducts: 'product/getUploadProducts',
       currentEComStore: 'user/getCurrentEComStore',
+      QOHConfig: 'user/getViewQOHConfig'
     })
   },
   methods: {
     async getViewQOHConfig() {
       this.currentQOHViewConfig = await UserService.getQOHViewConfig(undefined, this.currentEComStore?.productStoreId) as any;
-      if (Object.keys(this.currentQOHViewConfig).length > 0) {
-        this.store.dispatch('user/updateViewQOHConfig', this.currentQOHViewConfig.settingValue == "true");
-      }  
+      this.store.dispatch('user/updateViewQOHConfig', { currentQOHViewConfig: this.currentQOHViewConfig, viewQOH: this.currentQOHViewConfig.settingValue == "true" });
     },
     async updateViewQOHConfig(config: any, value: any) {
-      // Handled initial programmatical update
       // When storing boolean values, it is stored as string. Further comparison needs conversion
-      if (config.settingValue === value || (typeof value === 'boolean' && (config.settingValue == 'true') === value)) {
+      if (typeof value === 'boolean' && (config.settingValue == 'true') === value) {
         return;
       } 
       const params = {
@@ -191,17 +188,18 @@ export default defineComponent({
       // Fetch the updated configuration
       await this.getViewQOHConfig();
     },
-    setFacility (event: any) {
+    async setFacility (event: any) {
       // adding check for this.currentFacility.facilityId as it gets set to undefined on logout
       // but setFacility is called again due to :value="currentFacility.facilityId" in ion-select
-      if (this.userProfile && this.currentFacility.facilityId && event.detail.value != this.currentFacility.facilityId ) {
+      if (this.userProfile && this.currentFacility.facilityId) {
         if (Object.keys(this.uploadProducts).length > 0) {
           this.presentAlertOnFacilityChange(event.detail.value);
         } else {
-          this.store.dispatch('user/setFacility', {
+          await this.store.dispatch('user/setFacility', {
             'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == event.detail.value)
           });
           this.currentFacilityId = this.currentFacility.facilityId;
+          this.currentQOHViewConfig = this.QOHConfig.currentQOHViewConfig
         }
       }
     },
@@ -239,12 +237,13 @@ export default defineComponent({
         },
         {
           text: this.$t('Ok'),
-          handler: () => {
+          handler: async () => {
             this.store.dispatch('product/clearUploadProducts');
-            this.store.dispatch('user/setFacility', {
+            await this.store.dispatch('user/setFacility', {
               'facility': this.userProfile.facilities.find((fac: any) => fac.facilityId == facilityId)
             });
             this.currentFacilityId = this.currentFacility.facilityId
+            this.currentQOHViewConfig = this.QOHConfig.currentQOHViewConfig
           }
         }]
       });
