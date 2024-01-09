@@ -15,8 +15,8 @@
         <div class="product-info">
           <ion-item lines="none">
             <ion-label>
-              <p class="overline">{{ product.productName }}</p>
-              <h2>{{ product.sku }}</h2>
+              <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
+              <h2>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName  }}</h2>
             </ion-label>
           </ion-item>
 
@@ -124,13 +124,13 @@
     IonToolbar,
     pickerController
   } from "@ionic/vue";
-  import { defineComponent } from "vue";
+  import { computed, defineComponent } from "vue";
   import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
   import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
-  import { ShopifyImg } from "@hotwax/dxp-components";
+  import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from "@hotwax/dxp-components";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import { StockService } from '@/services/StockService';
@@ -372,13 +372,17 @@
     setup() {
       const store = useStore();
       const router = useRouter();
+      const productIdentificationStore = useProductIdentificationStore();
+      let productIdentificationPref = computed(() => productIdentificationStore.getProductIdentificationPref)
   
       return {
         Actions,
         cloudUploadOutline,
         colorPaletteOutline,
+        getProductIdentificationValue,
         hasPermission,
         locationOutline,
+        productIdentificationPref,
         resize,
         router,
         saveOutline,
