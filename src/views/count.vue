@@ -9,7 +9,7 @@
   
       <ion-content>
         <div class="product-image">
-            <ShopifyImg :src="product.mainImageUrl"/>
+          <DxpShopifyImg :src="product.mainImageUrl"/>
         </div>
         
         <div class="product-info">
@@ -130,7 +130,7 @@
   import { hasError, showToast } from "@/utils";
   import { translate } from "@/i18n";
   import { useRouter } from "vue-router";
-  import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from "@hotwax/dxp-components";
+  import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from "@hotwax/dxp-components";
   import { UtilService } from "@/services/UtilService";
   import { ProductService } from '@/services/ProductService';
   import { StockService } from '@/services/StockService';
@@ -157,7 +157,7 @@
       IonSelectOption,
       IonTitle,
       IonToolbar,
-      ShopifyImg
+      DxpShopifyImg
     },
     computed: {
       ...mapGetters({

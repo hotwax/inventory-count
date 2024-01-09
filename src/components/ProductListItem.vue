@@ -1,8 +1,9 @@
 <template>
   <ion-item button @click="viewProduct()" detail="true" lines="none">
     <ion-thumbnail slot="start">
-      <ShopifyImg :src="product.mainImageUrl" size="small" />
+      <DxpShopifyImg :src="product.mainImageUrl" size="small" />
     </ion-thumbnail>
+
     <ion-label>
       <p>{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
       <h3>{{ getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName }}</h3>
@@ -20,7 +21,7 @@ import {
 } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex';
-import { getProductIdentificationValue, ShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: "ProductListItem",
@@ -28,7 +29,7 @@ export default defineComponent({
     IonItem,
     IonThumbnail,
     IonLabel,
-    ShopifyImg
+    DxpShopifyImg
   },
   props: ["product"],
   methods: {
