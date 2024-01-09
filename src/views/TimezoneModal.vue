@@ -139,7 +139,7 @@ export default defineComponent({
         });
         this.findTimeZone();
       }
-    this.isLoading = false;
+      this.isLoading = false;
     },
     async selectSearchBarText(event: any) {
       const element = await event.target.getInputElement()
