@@ -34,7 +34,7 @@
         <h1>{{ $t('OMS') }}</h1>
       </div>
       <section>
-        <OmsInstanceNavigator />
+        <DxpOmsInstanceNavigator />
 
         <ion-card>
           <ion-card-header>
@@ -61,7 +61,7 @@
         <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
       </div>
       <section>
-        <ProductIdentifier />
+        <DxpProductIdentifier />
 
         <ion-card>
           <ion-card-header>

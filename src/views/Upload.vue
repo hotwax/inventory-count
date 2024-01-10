@@ -10,7 +10,7 @@
       <ion-card v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <ShopifyImg :src="product.mainImageUrl" size="small"/>
+            <DxpShopifyImg :src="product.mainImageUrl" size="small"/>
           </ion-thumbnail>
           <ion-label @click="viewProduct(product)">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
@@ -70,7 +70,7 @@ import { computed, defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { getProductIdentificationValue, ShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
 import { Actions, hasPermission } from '@/authorization';
 import { showToast } from '@/utils';
 
@@ -92,7 +92,7 @@ export default defineComponent({
     IonThumbnail,
     IonTitle,
     IonToolbar,
-    ShopifyImg
+    DxpShopifyImg
   },
   computed: {
     ...mapGetters({
