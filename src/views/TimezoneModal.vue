@@ -15,8 +15,14 @@
 
   <ion-content class="ion-padding">
     <!-- Empty state -->
-    <div class="empty-state" v-if="filteredTimeZones.length === 0">
-      <p>{{ $t("No time zone found")}}</p>
+    <div class="empty-state" v-if="isLoading">
+      <ion-item lines="none">
+        <ion-spinner color="secondary" name="crescent" slot="start" />
+        {{ $t("Fetching time zones") }}
+      </ion-item>
+    </div>
+    <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
+      <p>{{ $t("No time zone found") }}</p>
     </div>
 
     <!-- Timezones -->
@@ -86,7 +92,8 @@ export default defineComponent({
       queryString: '',
       filteredTimeZones: [],
       timeZones: [],
-      timeZoneId: ''
+      timeZoneId: '',
+      isLoading: false
     }
   },
   methods: {
@@ -123,6 +130,7 @@ export default defineComponent({
       });
     },
     async getAvailableTimeZones() {
+      this.isLoading = true;
       const resp = await UserService.getAvailableTimeZones()
       if(resp.status === 200 && !hasError(resp)) {
         // We are filtering valid the timeZones coming with response here
@@ -131,6 +139,7 @@ export default defineComponent({
         });
         this.findTimeZone();
       }
+      this.isLoading = false;
     },
     async selectSearchBarText(event: any) {
       const element = await event.target.getInputElement()
