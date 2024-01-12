@@ -28,6 +28,7 @@ const actions: ActionTree<ProductState, RootState> = {
       }
       const productQueryPayload = prepareProductQuery(params)
       resp = await ProductService.fetchProducts(productQueryPayload)
+
       // resp.data.response.numFound tells the number of items in the response
       if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
         let products = resp.data.response.docs;
