@@ -31,12 +31,10 @@ const actions: ActionTree<UserState, RootState> = {
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
       // Prepare permissions list
       const serverPermissionsFromRules = getServerPermissionsFromRules();
-      
-      const removeDuplicatePermissionIds = new Set(serverPermissionsFromRules)
-      removeDuplicatePermissionIds.add(permissionId);
+      if (permissionId) serverPermissionsFromRules.push(permissionId);
 
       const serverPermissions = await UserService.getUserPermissions({
-        permissionIds: serverPermissionsFromRules
+        permissionIds: [...new Set(serverPermissionsFromRules)]
       }, token);
       const appPermissions = prepareAppPermissions(serverPermissions);
 
