@@ -71,6 +71,7 @@ const addProductToFacility = async (payload: any): Promise<any> => {
 
 const getCurrentFacilityLocation = async (facilityId: string): Promise<any> => {
   let locationSeqId;
+
   try {
     const params = {
       "inputFields": {
@@ -88,6 +89,7 @@ const getCurrentFacilityLocation = async (facilityId: string): Promise<any> => {
   } catch (err) {
     console.error(err);
   }
+
   return locationSeqId;
 }
 
