@@ -212,12 +212,12 @@
         });
         await picker.present();
       },
-      updateProductInventoryCount() {
+      async updateProductInventoryCount() {
         if (this.quantity) {
           this.product.quantity = this.quantity;
           this.product.availableQOH = this.availableQOH;
           //Create the ProductFacility record if it does not exist.
-          this.checkAndCreateProductFacilityAssoc();
+          await this.checkAndCreateProductFacilityAssoc();
           this.store.dispatch('product/updateInventoryCount', { ...this.product, locationId: this.product.locationId });
           showToast(translate("Item added to upload list"), [{
           text: translate('View'),
@@ -232,13 +232,28 @@
         }
       },
       async checkAndCreateProductFacilityAssoc() {
+        let resp;
         try {
           if (!await ProductService.isProductFacilityAssocExists(this.product.productId, this.facility.facilityId)) {
-            const resp = await ProductService.addProductToFacility({
+            resp = await ProductService.addProductToFacility({
               productId: this.product.productId, 
               facilityId: this.facility.facilityId
             });
             if (hasError(resp)) {
+              throw resp.data;
+            }
+
+            const locationSeqId =  await ProductService.getCurrentFacilityLocation(this.facility.facilityId)
+
+            resp = await ProductService.createProductFacilityLocation({
+              productId: this.product.productId,
+              facilityId: this.facility.facilityId,
+              locationSeqId
+            });
+
+            if (!hasError(resp)) {
+              await this.getFacilityLocations()
+            } else {
               throw resp.data;
             }
           }
