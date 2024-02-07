@@ -354,6 +354,9 @@
       },
       async updateProductVarianceCount() {
         emitter.emit("presentLoader");
+
+        await this.checkAndCreateProductFacilityAssoc();
+
         let resp;
         try {
           const params = {
