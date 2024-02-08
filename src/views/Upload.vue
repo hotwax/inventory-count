@@ -70,14 +70,9 @@ import { computed, defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-<<<<<<< HEAD
-import { ShopifyImg } from '@hotwax/dxp-components';
-  import { Actions, hasPermission } from '@/authorization'
-=======
 import { getProductIdentificationValue, DxpShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
 import { Actions, hasPermission } from '@/authorization';
 import { showToast } from '@/utils';
->>>>>>> 036b52ecd1964586ccbdf01a92dbb419c727accc
 
 export default defineComponent({
   name: "Upload",
