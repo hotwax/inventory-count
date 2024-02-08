@@ -69,11 +69,45 @@ const addProductToFacility = async (payload: any): Promise<any> => {
   });
 }
 
+const getCurrentFacilityLocation = async (facilityId: string): Promise<any> => {
+  let locationSeqId;
+
+  try {
+    const params = {
+      "inputFields": {
+        facilityId
+      },
+      "viewSize": 1,
+      "entityName": "FacilityLocation",
+      "fieldList": ["areaId", "aisleId", "sectionId", "levelId", "positionId", "locationSeqId"]
+    }
+
+    const resp = await ProductService.getFacilityLocations(params);
+    if (!hasError(resp) && resp.data.docs.length) {
+      locationSeqId = resp.data.docs[0].locationSeqId
+    }
+  } catch (err) {
+    console.error(err);
+  }
+
+  return locationSeqId;
+}
+
+const createProductFacilityLocation = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductFacilityLocation",
+    method: "post",
+    data: payload
+  });
+}
+
 export const ProductService = {
   addProductToFacility,
+  createProductFacilityLocation,
   fetchProducts,
   importInventoryCount,
   isProductFacilityAssocExists,
+  getCurrentFacilityLocation,
   getFacilityLocations,
   updateVariance
 }
