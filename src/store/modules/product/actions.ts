@@ -6,6 +6,7 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import emitter from '@/event-bus'
+import { prepareProductQuery } from '@/utils/solrHelper'
 
 
 const actions: ActionTree<ProductState, RootState> = {
@@ -19,11 +20,14 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
 
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": [`sku: ${payload.queryString} OR upc: ${payload.queryString}`,'isVirtual: false'],
-        "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex
-      })
+      const params = {
+        ...payload,
+        filters: {
+          isVirtual: { value: 'false' },
+        }
+      }
+      const productQueryPayload = prepareProductQuery(params)
+      resp = await ProductService.fetchProducts(productQueryPayload)
 
       // resp.data.response.numFound tells the number of items in the response
       if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
@@ -93,10 +97,17 @@ const actions: ActionTree<ProductState, RootState> = {
     if(currentProduct) {
       commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
     } else {
-      const resp = await ProductService.fetchProducts({
-        // used sku as we are currently only using sku to search for the product
-        "filters": ['sku: ' + payload, 'isVirtual: false'],
-      })
+      // used sku as we are currently only using sku to search for the product
+      const params = {
+        filters: {
+          isVirtual: { value: 'false' },
+          sku: { value: payload }
+        }
+      }
+      const productQueryPayload = prepareProductQuery(params)
+
+      const resp = await ProductService.fetchProducts(productQueryPayload)
+
       if(resp.status === 200 && !hasError(resp) && resp.data.response?.numFound > 0) {
         commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
       } else {

@@ -6,15 +6,16 @@ import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
 import { translate } from '@/i18n'
 import { Settings } from 'luxon';
-import { logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
+import { getUserFacilities, logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import {
   getServerPermissionsFromRules,
   prepareAppPermissions,
   resetPermissions,
   setPermissions
 } from '@/authorization'
-import { useAuthStore } from '@hotwax/dxp-components'
+import { useAuthStore, useProductIdentificationStore } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
+import store from '@/store'
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -43,9 +44,9 @@ const actions: ActionTree<UserState, RootState> = {
       if (permissionId) {
         // As the token is not yet set in the state passing token headers explicitly
         // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermissionId: any) => appPermissionId === permissionId );
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
         // If there are any errors or permission check fails do not allow user to login
-        if (hasPermission) {
+        if (!hasPermission) {
           const permissionError = 'You do not have permission to access the app.';
           showToast(translate(permissionError));
           console.error("error", permissionError);
@@ -54,6 +55,15 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       const userProfile = await UserService.getUserProfile(token);
+
+      //fetching user facilities
+      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_INVCUNT_ADMIN" );
+      const baseURL = store.getters['user/getBaseUrl'];
+      const facilities = await getUserFacilities(token, baseURL, userProfile?.partyId, "", isAdminUser);
+
+      if (!facilities.length) throw 'Unable to login. User is not assocaited with any facility'
+
+      userProfile.facilities = facilities;
 
       // removing duplicate records as a single user can be associated with a facility by multiple roles.
       userProfile.facilities.reduce((uniqueFacilities: any, facility: any, index: number) => {
@@ -79,14 +89,19 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_CURRENT_FACILITY_UPDATED, currentFacility);
       commit(types.USER_CURRENT_ECOM_STORE_UPDATED, currentEComStore)
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
-      commit(types.USER_VIEW_QOH_CNFG_UPDATED, currentQOHViewConfig.settingValue == "true" )
+      commit(types.USER_VIEW_QOH_CNFG_UPDATED, { currentQOHViewConfig, viewQOH: currentQOHViewConfig.settingValue == "true" })
       commit(types.USER_TOKEN_CHANGED, { newToken: token })
+
+      // Get product identification from api using dxp-component
+      await useProductIdentificationStore().getIdentificationPref(currentEComStore?.productStoreId)
+        .catch((error) => console.error(error));
     } catch (err: any) {
       // If any of the API call in try block has status code other than 2xx it will be handled in common catch block.
       // TODO Check if handling of specific status codes is required.
       showToast(translate('Something went wrong while login. Please contact administrator'));
       console.error("error", err);
-      return Promise.reject(new Error(err))
+      // Added ternary check for serverResponse as in to correctly display the message on UI, need to remove this once all the service reject in same format
+      return Promise.reject(new Error(err?.serverResponse ? err.serverResponse : err))
     }
   },
 
@@ -155,7 +170,7 @@ const actions: ActionTree<UserState, RootState> = {
     },
 
   // update current facility information
-  async setFacility ({ commit, state }, payload) {
+  async setFacility ({ commit, dispatch, state }, payload) {
     let facility = payload.facility;
     if(!facility && state.current?.facilities) {
       facility = state.current.facilities.find((facility: any) => facility.facilityId === payload.facilityId);
@@ -163,6 +178,14 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility);
     const eComStore = await UserService.getCurrentEComStore(undefined, facility?.facilityId);
     commit(types.USER_CURRENT_ECOM_STORE_UPDATED, eComStore)
+
+    let currentQOHViewConfig = {} as any
+
+    // fetching QOH config value for the updated eComStore
+    if(eComStore?.productStoreId) {
+      currentQOHViewConfig = await UserService.getQOHViewConfig(undefined, eComStore.productStoreId) as any;
+    }
+    dispatch('updateViewQOHConfig', { currentQOHViewConfig, viewQOH: currentQOHViewConfig.settingValue == "true" });
   },
 
   // Set User Instance Url
@@ -171,7 +194,7 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-  updateViewQOHConfig( { commit }, config){
+  updateViewQOHConfig({ commit }, config) {
     commit(types.USER_VIEW_QOH_CNFG_UPDATED, config)
   },
 }
