@@ -12,7 +12,7 @@
           <ion-thumbnail slot="start">
             <DxpShopifyImg :src="product.mainImageUrl" size="small"/>
           </ion-thumbnail>
-          <ion-label @click="viewProduct(product)">
+          <ion-label>
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
             <h2>{{  getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName }}</h2>
           </ion-label>
