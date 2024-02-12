@@ -8,12 +8,11 @@
 
     <ion-content>
       <ion-card style="cursor: pointer" v-for="product in uploadProducts" :key="product.productId">
-      <ion-card v-for="product in uploadProducts" :key="product.productId" @click="viewProduct(product)">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
             <DxpShopifyImg :src="product.mainImageUrl" size="small"/>
           </ion-thumbnail>
-          <ion-label>
+          <ion-label @click="viewProduct(product)">
             <p class="overline">{{ getProductIdentificationValue(productIdentificationPref.secondaryId, product) }}</p>
             <h2>{{  getProductIdentificationValue(productIdentificationPref.primaryId, product) ? getProductIdentificationValue(productIdentificationPref.primaryId, product) : product.productName }}</h2>
           </ion-label>
@@ -37,7 +36,7 @@
             <ion-label>{{ $t("Variance") }}</ion-label>
             <ion-label slot="end">{{ product.quantity - product.availableQOH }}</ion-label>
           </ion-item>
-        <ion-button fill="clear" @click.stop="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
+        <ion-button fill="clear" @click="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) || Object.keys(uploadProducts).length === 0">
