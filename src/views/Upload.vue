@@ -7,7 +7,7 @@
     </ion-header>
 
     <ion-content>
-      <ion-card v-for="product in uploadProducts" :key="product.productId">
+      <ion-card style="cursor: pointer" v-for="product in uploadProducts" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
             <DxpShopifyImg :src="product.mainImageUrl" size="small"/>
