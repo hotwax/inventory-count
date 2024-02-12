@@ -34,7 +34,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (permissionId) serverPermissionsFromRules.push(permissionId);
 
       const serverPermissions = await UserService.getUserPermissions({
-        permissionIds: serverPermissionsFromRules
+        permissionIds: [...new Set(serverPermissionsFromRules)]
       }, token);
       const appPermissions = prepareAppPermissions(serverPermissions);
 
