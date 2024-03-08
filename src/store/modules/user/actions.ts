@@ -100,8 +100,7 @@ const actions: ActionTree<UserState, RootState> = {
       // TODO Check if handling of specific status codes is required.
       showToast(translate('Something went wrong while login. Please contact administrator'));
       console.error("error", err);
-      // Added ternary check for serverResponse as in to correctly display the message on UI, need to remove this once all the service reject in same format
-      return Promise.reject(new Error(err?.serverResponse ? err.serverResponse : err))
+      return Promise.reject(err instanceof Object ? err : new Error(err));
     }
   },
 
