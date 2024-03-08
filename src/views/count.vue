@@ -163,7 +163,8 @@
       ...mapGetters({
         product: "product/getCurrent",
         facility: 'user/getCurrentFacility',
-        QOHConfig: 'user/getViewQOHConfig'
+        QOHConfig: 'user/getViewQOHConfig',
+        userProfile: 'user/getUserProfile',
       })
     },
     data(){
@@ -365,7 +366,8 @@
               "quantity": parseInt(this.product.varianceQuantity),
               "facilityId": this.facility.facilityId,
               "locationSeqId": this.product.locationId,
-              "varianceReasonId": this.product.varianceReasonId
+              "varianceReasonId": this.product.varianceReasonId,
+              "comments": this.userProfile.userLoginId
             }
           }
 
