@@ -47,7 +47,7 @@
         
         <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
-            <ion-input :label="$t('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionChange="quantity = $event.detail.value" ></ion-input>
+            <ion-input :label="$t('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionInput="quantity = $event.detail.value" ></ion-input>
           </ion-item>
           <ion-item lines="none">
             <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
