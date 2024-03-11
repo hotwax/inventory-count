@@ -199,5 +199,6 @@ const actions: ActionTree<UserState, RootState> = {
 
   updatePwaState({ commit }, payload) {
     commit(types.USER_PWA_STATE_UPDATED, payload);
+  }
 }
 export default actions;
