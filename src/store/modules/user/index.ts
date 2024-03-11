@@ -17,7 +17,11 @@ const userModule: Module<UserState, RootState> = {
         currentQOHViewConfig: {},
         viewQOH: false
       },
-      currentEComStore: {}
+      currentEComStore: {},
+      pwaState: {
+        updateExists: false,
+        registration: null,
+      }
     },
     getters,
     actions,

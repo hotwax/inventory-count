@@ -3,6 +3,7 @@
   "Are you sure you want to change the time zone to?": "Are you sure you want to change the time zone to {timeZoneId}?",
   "Authenticating": "Authenticating",
   "Back to Launchpad": "Back to Launchpad",
+  "Built: ": "Built: {builtDateTime}",
   "Camera permission denied.": "Camera permission denied.",
   "Cancel": "Cancel",
   "Change": "Change",
@@ -80,6 +81,7 @@
   "Variance": "Variance",
   "Variance reason": "Variance reason",
   "Variance updated successfully": "Variance updated successfully",
+  "Version: ": "Version: {appVersion}",
   "View": "View",
   "You do not have permission to access the app.": "You do not have permission to access the app.",
   "You do not have permission to access this page": "You do not have permission to access this page"

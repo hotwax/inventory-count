@@ -35,6 +35,9 @@ const getters: GetterTree <UserState, RootState> = {
     },
     getViewQOHConfig (state) {
         return state.config;
+    },
+    getPwaState(state) {
+        return state.pwaState;
     }
 }
 export default getters;
