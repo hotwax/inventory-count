@@ -99,7 +99,6 @@ import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOu
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from '@/components/Image.vue'
-import { DateTime } from 'luxon';
 import TimeZoneModal from '@/views/TimezoneModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import { UserService } from '@/services/UserService'
