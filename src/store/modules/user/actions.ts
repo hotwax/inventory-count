@@ -196,5 +196,9 @@ const actions: ActionTree<UserState, RootState> = {
   updateViewQOHConfig({ commit }, config) {
     commit(types.USER_VIEW_QOH_CNFG_UPDATED, config)
   },
+
+  updatePwaState({ commit }, payload) {
+    commit(types.USER_PWA_STATE_UPDATED, payload);
+  }
 }
 export default actions;

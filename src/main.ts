@@ -34,6 +34,7 @@ import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components'
 import { login, logout, loader } from './user-utils';
 import { getConfig, getProductIdentificationPref, initialise, setProductIdentificationPref } from '@/adapter';
+import localeMessages from './locales';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -55,6 +56,7 @@ const app = createApp(App)
     getConfig,
     getProductIdentificationPref,
     initialise,
+    localeMessages,
     setProductIdentificationPref
   });
 

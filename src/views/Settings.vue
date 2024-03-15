@@ -53,13 +53,9 @@
         </ion-card>
       </section>
       <hr />
-      <div class="section-header">
-        <h1>
-          {{ $t('App') }}
-          <p class="overline" >{{ "Version: " + appVersion }}</p>
-        </h1>
-        <p class="overline">{{ "Built: " + getDateTime(appInfo.builtTime) }}</p>
-      </div>
+
+      <DxpAppVersionInfo />
+
       <section>
         <DxpProductIdentifier />
 
@@ -103,7 +99,6 @@ import { codeWorkingOutline, ellipsisVertical, personCircleOutline, storefrontOu
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import Image from '@/components/Image.vue'
-import { DateTime } from 'luxon';
 import TimeZoneModal from '@/views/TimezoneModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import { UserService } from '@/services/UserService'
@@ -136,14 +131,9 @@ export default defineComponent({
   data() {
     return {
       baseURL: process.env.VUE_APP_BASE_URL,
-      appInfo: (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any,
-      appVersion: "",
       currentFacilityId: "",
       currentQOHViewConfig: {} as any
     };
-  },
-  mounted() {
-    this.appVersion = this.appInfo.branch ? (this.appInfo.branch + "-" + this.appInfo.revision) : this.appInfo.tag;
   },
   ionViewWillEnter() {
     this.currentFacilityId = this.currentFacility.facilityId;
@@ -270,9 +260,6 @@ export default defineComponent({
     },
     goToLaunchpad() {
       window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-    },
-    getDateTime(time: any) {
-      return DateTime.fromMillis(time).toLocaleString(DateTime.DATETIME_MED);
     }
   },
   setup(){

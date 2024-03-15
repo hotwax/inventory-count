@@ -32,6 +32,10 @@ const mutations: MutationTree <UserState> = {
     [types.USER_VIEW_QOH_CNFG_UPDATED] (state, payload) {
         state.config.viewQOH = payload.viewQOH;
         state.config.currentQOHViewConfig = payload.currentQOHViewConfig;
-    }
+    },
+    [types.USER_PWA_STATE_UPDATED](state, payload) {
+        state.pwaState.registration = payload.registration;
+        state.pwaState.updateExists = payload.updateExists;
+    },
 }
 export default mutations;
