@@ -3,7 +3,7 @@
       <ion-header :translucent="true">
         <ion-toolbar>
           <ion-back-button slot="start" default-href="/"></ion-back-button>
-          <ion-title>{{ $t("Count") }}</ion-title>
+          <ion-title>{{ translate("Count") }}</ion-title>
         </ion-toolbar>
       </ion-header>
   
@@ -37,55 +37,55 @@
         <div class="segment" v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) && hasPermission(Actions.APP_VARIANCE_LOG)">
           <ion-segment v-model="segmentSelected">
             <ion-segment-button v-if="hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" value="count">
-              <ion-label>{{ $t("Count") }}</ion-label>
+              <ion-label>{{ translate("Count") }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="hasPermission(Actions.APP_VARIANCE_LOG)" value="variance">
-              <ion-label>{{ $t("Variance") }}</ion-label>
+              <ion-label>{{ translate("Variance") }}</ion-label>
             </ion-segment-button>
           </ion-segment>
         </div>
         
         <div v-if="segmentSelected === 'count'" class="inventory-form">
           <ion-item>
-            <ion-input :label="$t('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionInput="quantity = $event.detail.value" ></ion-input>
+            <ion-input :label="translate('Stock')" label-placement="floating" type="number" min="0" inputmode="numeric" :value="quantity" @ionInput="quantity = $event.detail.value" ></ion-input>
           </ion-item>
           <ion-item lines="none">
-            <ion-note id="stockCount">{{ $t("Enter the count of stock on the shelf.") }}</ion-note>
+            <ion-note id="stockCount">{{ translate("Enter the count of stock on the shelf.") }}</ion-note>
           </ion-item>
           <ion-item>
-            <ion-label>{{ $t("Location") }}</ion-label>
+            <ion-label>{{ translate("Location") }}</ion-label>
             <ion-chip @click="selectLocation">
               <ion-label>{{ location }}</ion-label>
               <ion-icon :icon="locationOutline" />
             </ion-chip>
           </ion-item>
           <ion-item v-if="QOHConfig.viewQOH">
-            <ion-label>{{ $t("In stock") }}</ion-label>
+            <ion-label>{{ translate("In stock") }}</ion-label>
             <ion-label slot="end">{{ availableQOH }}</ion-label>
           </ion-item>
           <ion-item v-if="QOHConfig.viewQOH">
-            <ion-label>{{ $t("Variance") }}</ion-label>
+            <ion-label>{{ translate("Variance") }}</ion-label>
             <ion-label slot="end">{{ availableQOH && quantity ? quantity - availableQOH : "-" }}</ion-label>
           </ion-item>
     
           <div class="action">
             <ion-button size="large" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT)" @click="updateProductInventoryCount()">
               <ion-icon :icon="saveOutline" slot="start" />
-              {{$t("Save")}}
+              {{translate("Save")}}
             </ion-button>
           </div>
         </div>  
 
         <div v-else class="inventory-form">
           <ion-item>
-            <ion-input :label="$t('Quantity')" label-placement="floating" type="number" inputmode="numeric" :placeholder="$t('inventory variance')" v-model="product.varianceQuantity" />
+            <ion-input :label="translate('Quantity')" label-placement="floating" type="number" inputmode="numeric" :placeholder="translate('inventory variance')" v-model="product.varianceQuantity" />
           </ion-item>
           <ion-item lines="none">
-            <ion-note id="stockCount">{{ $t("Enter the amount of stock that has changed.") }}</ion-note>
+            <ion-note id="stockCount">{{ translate("Enter the amount of stock that has changed.") }}</ion-note>
           </ion-item>
 
           <ion-item>
-            <ion-select :label="$t('Variance reason')" interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="$t('Select reason')" >
+            <ion-select :label="translate('Variance reason')" interface="popover" :value="product.varianceReasonId" @ionChange="updateVarianceReason($event)" :placeholder="translate('Select reason')" >
               <ion-select-option v-for="reason in varianceReasons" :key="reason.enumId" :value="reason.enumId" >{{ reason.description }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -93,7 +93,7 @@
           <div class="action">
             <ion-button size="large" @click="confirmVarianceUpdate()">
               <ion-icon :icon="cloudUploadOutline" slot="start" />
-              {{$t("Log variance")}}
+              {{translate("Log variance")}}
             </ion-button>
           </div>
         </div>
@@ -128,7 +128,7 @@
   import { cloudUploadOutline, colorPaletteOutline, locationOutline, resize, saveOutline } from "ionicons/icons";
   import { mapGetters, useStore } from "vuex";
   import { hasError, showToast } from "@/utils";
-  import { translate } from "@/i18n";
+  import { translate } from "@hotwax/dxp-components";
   import { useRouter } from "vue-router";
   import { getProductIdentificationValue, DxpShopifyImg, useProductIdentificationStore } from "@hotwax/dxp-components";
   import { UtilService } from "@/services/UtilService";
@@ -315,14 +315,14 @@
       async confirmVarianceUpdate() {
         if (this.product.varianceQuantity && this.product.varianceReasonId) {
           const alert = await alertController.create({
-            header: this.$t("Log variance"),
-            message: this.$t("The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?"),
+            header: translate("Log variance"),
+            message: translate("The inventory will be immediately updated and cannot be undone. Are you sure you want to update the inventory variance?"),
             buttons: [{
-              text: this.$t('Cancel'),
+              text: translate('Cancel'),
               role: 'cancel',
             },
             {
-              text: this.$t('Update'),
+              text: translate('Update'),
               handler: () => {
                 this.updateProductVarianceCount()
               }
@@ -407,6 +407,7 @@
         router,
         saveOutline,
         store,
+        translate
       };
     },
   });

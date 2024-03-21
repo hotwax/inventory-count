@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 import emitter from '@/event-bus'
 import { prepareProductQuery } from '@/utils/solrHelper'
 

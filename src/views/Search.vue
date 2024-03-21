@@ -2,26 +2,26 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ $t("Cycle Count") }}</ion-title>
+        <ion-title>{{ translate("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="$t('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="translate('Search')" @keyup.enter="queryString = $event.target.value; searchProducts()"/>
       
       <!-- Empty state -->
       <div class="empty-state" v-if="!products.length && !fetchingProducts">
-        <p v-if="showErrorMessage">{{ $t("No results found")}}</p>
+        <p v-if="showErrorMessage">{{ translate("No results found")}}</p>
         <img src="../assets/images/empty-state.png" alt="No results found"/>
-        <p>{{ $t("Enter a SKU, or use the barcode scanner to search a product")}}</p>
+        <p>{{ translate("Enter a SKU, or use the barcode scanner to search a product")}}</p>
       </div>
 
       <ion-list v-if="products.length > 0">
-        <ion-list-header>{{ $t("Results") }}</ion-list-header>
+        <ion-list-header>{{ translate("Results") }}</ion-list-header>
 
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
 
         <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable">
-          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
+          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
       </ion-list>
     </ion-content>
@@ -31,7 +31,7 @@
         <ion-col>
           <ion-button color="primary" expand="block" @click="scanProduct">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-            {{ $t("Scan") }}
+            {{ translate("Scan") }}
           </ion-button>
         </ion-col>
       </ion-row>
@@ -62,7 +62,7 @@ import { barcodeOutline } from 'ionicons/icons'
 import { defineComponent } from 'vue'
 import { mapGetters, useStore } from 'vuex'
 import { showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 import ProductListItem from '@/components/ProductListItem.vue'
 import Scanner from "@/components/Scanner.vue"
 
@@ -163,7 +163,8 @@ export default defineComponent({
     const store = useStore();
     return {
       store,
-      barcodeOutline
+      barcodeOutline,
+      translate
     }
   },
 })
