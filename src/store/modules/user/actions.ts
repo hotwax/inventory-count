@@ -4,7 +4,7 @@ import RootState from '@/store/RootState'
 import UserState from './UserState'
 import * as types from './mutation-types'
 import { hasError, showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 import { Settings } from 'luxon';
 import { getUserFacilities, logout, updateInstanceUrl, updateToken, resetConfig } from '@/adapter'
 import {

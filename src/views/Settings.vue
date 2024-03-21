@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ $t("Settings") }}</ion-title>
+        <ion-title>{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -21,17 +21,17 @@
               <ion-card-title>{{ userProfile.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ $t("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
           <ion-button fill="outline" @click="goToLaunchpad()">
-            {{ $t("Go to Launchpad") }}
+            {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
-          <!-- <ion-button fill="outline" color="medium">{{ $t("Reset password") }}</ion-button> -->
+          <!-- <ion-button fill="outline" color="medium">{{ translate("Reset password") }}</ion-button> -->
         </ion-card>
       </div>
       <div class="section-header">
-        <h1>{{ $t('OMS') }}</h1>
+        <h1>{{ translate('OMS') }}</h1>
       </div>
       <section>
         <DxpOmsInstanceNavigator />
@@ -39,14 +39,14 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t("Facility") }}
+              {{ translate("Facility") }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+            {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
           </ion-card-content>
           <ion-item lines="none">
-            <ion-select :label="$t('Select facility')" interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
+            <ion-select :label="translate('Select facility')" interface="popover" v-model="currentFacilityId" @ionChange="setFacility($event)">
               <ion-select-option v-for="facility in (userProfile ? userProfile.facilities : [])" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -62,29 +62,29 @@
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t('Timezone') }}
+              {{ translate('Timezone') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
+            {{ translate('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
           </ion-card-content>
           <ion-item lines="none">
             <ion-label> {{ userProfile && userProfile.userTimeZone ? userProfile.userTimeZone : '-' }} </ion-label>
-            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ $t("Change") }}</ion-button>
+            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
           </ion-item>
         </ion-card>
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ $t('Quantity on hand') }}
+              {{ translate('Quantity on hand') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.') }}
-            <p>{{ $t('Facility needs to be associated with a product store to change this configuration.') }}</p>
+            {{ translate('Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.') }}
+            <p>{{ translate('Facility needs to be associated with a product store to change this configuration.') }}</p>
           </ion-card-content>
           <ion-item lines="none">
-            <ion-toggle justify="space-between" :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || !currentEComStore?.productStoreId || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)">{{ $t('Show systemic inventory') }}</ion-toggle>
+            <ion-toggle justify="space-between" :disabled="!hasPermission(Actions.APP_QOH_STNG_UPDATE) || !currentEComStore?.productStoreId || Object.keys(currentQOHViewConfig).length == 0" :checked="currentQOHViewConfig.settingValue" @ionChange="updateViewQOHConfig(currentQOHViewConfig, $event.detail.checked)">{{ translate('Show systemic inventory') }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -103,7 +103,7 @@ import TimeZoneModal from '@/views/TimezoneModal.vue';
 import { Actions, hasPermission } from '@/authorization'
 import { UserService } from '@/services/UserService'
 import { hasError, showToast } from '@/utils';
-import { translate } from "@/i18n";
+import { translate } from "@hotwax/dxp-components";
 
 export default defineComponent({
   name: 'Settings',
@@ -195,13 +195,13 @@ export default defineComponent({
     },
     async presentAlertOnLogout() {
       const alert = await alertController.create({
-        header: this.$t('Logout'),
-        message: this.$t('The products in the upload list will be removed.'),
+        header: translate('Logout'),
+        message: translate('The products in the upload list will be removed.'),
         buttons: [{
-          text: this.$t('Cancel')
+          text: translate('Cancel')
         },
         {
-          text: this.$t('Ok'),
+          text: translate('Ok'),
           handler: () => {
             this.store.dispatch('user/logout', { isUserUnauthorised: false }).then((redirectionUrl) => {
               // if not having redirection url then redirect the user to launchpad
@@ -217,16 +217,16 @@ export default defineComponent({
     },
     async presentAlertOnFacilityChange(facilityId: string) {
       const alert = await alertController.create({
-        header: this.$t('Set facility'),
-        message: this.$t('The products in the upload list will be removed.'),
+        header: translate('Set facility'),
+        message: translate('The products in the upload list will be removed.'),
         buttons: [{
-          text: this.$t('Cancel'),
+          text: translate('Cancel'),
           handler: () => {
             this.currentFacilityId = this.currentFacility.facilityId
           }
         },
         {
-          text: this.$t('Ok'),
+          text: translate('Ok'),
           handler: async () => {
             this.store.dispatch('product/clearUploadProducts');
             await this.store.dispatch('user/setFacility', {
@@ -275,7 +275,8 @@ export default defineComponent({
       storefrontOutline,
       openOutline,
       store,
-      router
+      router,
+      translate
     }
   }
 });

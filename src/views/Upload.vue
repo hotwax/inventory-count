@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ $t("Upload") }}</ion-title>
+        <ion-title>{{ translate("Upload") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -29,14 +29,14 @@
           </ion-chip>
         </ion-item>
         <ion-item v-if="QOHConfig.viewQOH && product.availableQOH">
-            <ion-label>{{ $t("In stock") }}</ion-label>
+            <ion-label>{{ translate("In stock") }}</ion-label>
             <ion-label slot="end">{{  product.availableQOH }}</ion-label>
           </ion-item>
           <ion-item v-if="QOHConfig.viewQOH && product.availableQOH">
-            <ion-label>{{ $t("Variance") }}</ion-label>
+            <ion-label>{{ translate("Variance") }}</ion-label>
             <ion-label slot="end">{{ product.quantity - product.availableQOH }}</ion-label>
           </ion-item>
-        <ion-button fill="clear" @click.stop="removeItem(product.sku)">{{ $t( "Remove" ) }}</ion-button>
+        <ion-button fill="clear" @click.stop="removeItem(product.sku)">{{ translate( "Remove" ) }}</ion-button>
       </ion-card>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="presentAlertOnUpload()" :disabled="!hasPermission(Actions.APP_INVNTRY_CNT_IMPORT) || Object.keys(uploadProducts).length === 0">
@@ -70,7 +70,7 @@ import { computed, defineComponent } from 'vue';
 import { colorPaletteOutline, resize, cloudUploadOutline } from 'ionicons/icons';
 import { mapGetters, useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { getProductIdentificationValue, DxpShopifyImg , useProductIdentificationStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue, DxpShopifyImg , useProductIdentificationStore, translate } from '@hotwax/dxp-components';
 import { Actions, hasPermission } from '@/authorization';
 import { showToast } from '@/utils';
 
@@ -104,18 +104,18 @@ export default defineComponent({
   methods: {
     removeItem (sku: any) {
       this.store.dispatch('product/removeItemFromUploadProducts', sku)
-      showToast(this.$t("Item removed from upload list"));
+      showToast(translate("Item removed from upload list"));
     },
     async presentAlertOnUpload() {
       const alert = await alertController.create({
-        header: this.$t("Upload inventory count"),
-        message: this.$t("Make sure you've reviewed the products and their counts before uploading them for review"),
+        header: translate("Upload inventory count"),
+        message: translate("Make sure you've reviewed the products and their counts before uploading them for review"),
         buttons: [{
-          text: this.$t('Cancel'),
+          text: translate('Cancel'),
           role: 'cancel',
         },
         {
-          text: this.$t('Upload'),
+          text: translate('Upload'),
           handler: () => {
             this.upload()
           }
@@ -151,6 +151,7 @@ export default defineComponent({
       router,
       resize,
       store,
+      translate
     };
   },
 });

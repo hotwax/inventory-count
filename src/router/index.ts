@@ -7,7 +7,7 @@ import Search from "@/views/Search.vue";
 import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
