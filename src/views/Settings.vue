@@ -89,7 +89,6 @@ import { Actions, hasPermission } from '@/authorization'
 import { UserService } from '@/services/UserService'
 import { hasError, showToast } from '@/utils';
 import { translate } from "@/i18n";
-// import { DxpTimeZoneSwitcher } from '@hotwax/dxp-components';
 
 export default defineComponent({
   name: 'Settings',

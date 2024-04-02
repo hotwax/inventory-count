@@ -41,20 +41,6 @@ const checkPermission = async (payload: any): Promise <any>  => {
   });
 }
 
-const getAvailableTimeZones = async (): Promise <any>  => {
-  return api({
-    url: "getAvailableTimeZones",
-    method: "get",
-    cache: true
-  });
-}
-const setUserTimeZone = async (payload: any): Promise <any>  => {
-  return api({
-    url: "setUserTimeZone",
-    method: "post",
-    data: payload
-  });
-}
 const getQOHViewConfig = async (token: any, productStoreId: any): Promise<any> => {
   // If the productStoreId is not provided, it may be case of facility not associated with any productStore
   if (!productStoreId) {
@@ -225,12 +211,10 @@ const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> =>
 
 export const UserService = {
     login,
-    getAvailableTimeZones,
     getCurrentEComStore,
     getQOHViewConfig,
     getUserPermissions,
     getUserProfile,
-    setUserTimeZone,
     checkPermission,
     updateQOHViewConfig
 }
