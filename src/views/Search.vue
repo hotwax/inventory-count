@@ -19,7 +19,13 @@
         <ion-list-header>{{ $t("Results") }}</ion-list-header>
 
         <product-list-item v-for="product in products" :key="product.productId" :product="product"/>
-
+        <!--
+          When searching for a keyword, and if the user moves to the last item, then the didFire value inside infinite scroll becomes true and thus the infinite scroll does not trigger again on the same page(https://github.com/hotwax/users/issues/84).
+          In ionic v7.6.0, an issue related to infinite scroll has been fixed that when more items can be added to the DOM, but infinite scroll does not fire as the window is not completely filled with the content(https://github.com/ionic-team/ionic-framework/issues/18071).
+          The above fix in ionic 7.6.0 is resulting in the issue of infinite scroll not being called again.
+          To fix this, we have added a key with value as queryString(searched keyword), so that the infinite scroll component can be re-rendered
+          whenever the searched string is changed resulting in the correct behaviour for infinite scroll
+        -->
         <ion-infinite-scroll @ionInfinite="loadMoreProducts($event)" threshold="100px" :disabled="!isScrollable" :key="queryString">
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')"></ion-infinite-scroll-content>
         </ion-infinite-scroll>
