@@ -154,7 +154,7 @@ export default defineComponent({
     async loadMoreProducts (event: any) {
       // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
       if(!(this.isScrollingEnabled && this.isScrollable)) {
-       await event.target.complete();
+        await event.target.complete();
       }  
       this.searchProducts(
         undefined,
