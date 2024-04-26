@@ -224,10 +224,10 @@
           text: translate('View'),
           role: 'view',
           handler: () => {
-            this.router.push('/upload')
+            this.router.push('/tabs/upload')
           }
         }])
-        this.router.push('/search')
+        this.router.push('/tabs/search')
         } else {
           showToast(translate("Enter the stock count for the product"))
         }
@@ -386,7 +386,7 @@
         // removing after updation
         delete this.product.varianceQuantity;
         delete this.product.varianceReasonId
-        this.router.push('/search')
+        this.router.push('/tabs/search')
       },
     },
     setup() {

@@ -4,21 +4,15 @@
       <ion-content>
         <ion-router-outlet />
       </ion-content>
-      <ion-footer v-if="showFooter">
-        <ion-toolbar>
-          <tab-bar />
-        </ion-toolbar>
-      </ion-footer>
     </ion-page>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonPage, IonFooter, IonToolbar, IonContent } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonPage, IonContent } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
-import TabBar from "./components/TabBar.vue"
 import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
@@ -30,9 +24,6 @@ export default defineComponent({
     IonApp,
     IonRouterOutlet,
     IonPage,
-    IonFooter,
-    IonToolbar,
-    TabBar,
     IonContent
   },
   data() {
@@ -106,10 +97,6 @@ export default defineComponent({
     resetConfig()
   },
   computed: {
-    showFooter () {
-      if (['/settings', '/search', '/upload'].includes(this.$route.path)) return true
-      return false
-    },
     ...mapGetters({
       userToken: 'user/getUserToken',
       instanceUrl: 'user/getInstanceUrl',

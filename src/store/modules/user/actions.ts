@@ -157,16 +157,13 @@ const actions: ActionTree<UserState, RootState> = {
   /**
    * Update user timeZone
    */
-     async setUserTimeZone ( { state, commit }, payload) {
-      const resp = await UserService.setUserTimeZone(payload)
-      if (resp.status === 200 && !hasError(resp)) {
-        const current: any = state.current;
-        current.userTimeZone = payload.timeZoneId;
-        commit(types.USER_INFO_UPDATED, current);
-        Settings.defaultZone = current.userTimeZone;
-        showToast(translate("Time zone updated successfully"));
-      }
+    async setUserTimeZone ( { state, commit }, timeZoneId) {
+      const current: any = state.current;
+      current.userTimeZone = timeZoneId;
+      commit(types.USER_INFO_UPDATED, current);
+      Settings.defaultZone = current.userTimeZone;
     },
+  
 
   // update current facility information
   async setFacility ({ commit, dispatch, state }, payload) {

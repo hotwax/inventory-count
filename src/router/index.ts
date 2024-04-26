@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import Upload from "@/views/Upload.vue";
-import Settings from "@/views/Settings.vue";
 import store from "@/store";
-import Search from "@/views/Search.vue";
 import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@hotwax/dxp-components'
+import TabBar from "@/components/TabBar.vue";
 
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
@@ -43,23 +41,39 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: "/search",
+    redirect: "/tabs/search",
   },
   {
-    path: "/upload",
-    name: "upload",
-    component: Upload,
+    path: '/tabs',
+    component: TabBar,
+    children: [
+      {
+        path: '',
+        redirect: '/search'
+      },
+      {
+        path: 'search',
+        component: () => import('@/views/Search.vue'),
+        meta: {
+          permissionId: "APP_SEARCH_VIEW"
+        }
+      },
+      {
+        path: 'upload',
+        component: () => import('@/views/Upload.vue'),
+        meta: {
+          permissionId: "APP_UPLOAD_VIEW"
+        }
+      },
+      {
+        path: 'settings',
+        component: () => import('@/views/Settings.vue')
+      },
+    ],
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_UPLOAD_VIEW"
+      permissionId: ""
     }
-  },
-  {
-  
-    path: "/settings",
-    name: "Settings",
-    component: Settings,
-    beforeEnter: authGuard
   },
   {
     path: "/count/:sku",
@@ -76,15 +90,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
-  },
-  {
-    path: '/search',
-    name: 'Search',
-    component: Search,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_SEARCH_VIEW"
-    }
   }
 ];
 
@@ -97,7 +102,7 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/tabs/settings";
     else {
       showToast(translate('You do not have permission to access this page'));
     }
