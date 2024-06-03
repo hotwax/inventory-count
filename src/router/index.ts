@@ -6,7 +6,8 @@ import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import TabBar from "@/components/TabBar.vue";
-
+import Drafts from "@/views/Drafts.vue";
+import DraftCount from "@/views/DraftCount.vue"
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
@@ -40,8 +41,27 @@ const loginGuard = (to: any, from: any, next: any) => {
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: "/",
-    redirect: "/tabs/search",
+    path: '/',
+    redirect: '/drafts'
+  },
+  {
+    path: '/drafts',
+    name: 'Drafts',
+    component: Drafts,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: "/draft-count",
+    name: "DraftCount",
+    component: DraftCount,
+    // beforeEnter: authGuard,
+    // props: true,
+    // meta: {
+    //   permissionId: "APP_COUNT_VIEW"
+    // }
   },
   {
     path: '/tabs',
