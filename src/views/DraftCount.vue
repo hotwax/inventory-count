@@ -15,7 +15,7 @@
               <h1>CountName</h1> 
               <p>CountId</p>
             </ion-label>
-            <ion-button slot="end" fill="outline" color="medium">Rename</ion-button>
+            <ion-button slot="end" fill="outline" color="medium">{{ translate("Rename") }}</ion-button>
           </ion-item>
         </div>
         <div class="filters">
@@ -24,7 +24,7 @@
               <ion-icon slot="start" :icon="cloudUploadOutline"/>
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
-              <label for="inputFile">Upload</label>
+              <label for="inputFile">{{ translate("Upload") }}</label>
             </ion-item> 
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline"/>
@@ -38,7 +38,7 @@
               <ion-label>{{ translate("Facility") }}</ion-label>  
               <ion-button fill="outline">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                Assign
+                {{ translate("Assign") }}
               </ion-button>
             </ion-item>
           </ion-list>
@@ -60,16 +60,16 @@
         </div>
         <div class="filters">
           <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <DxpShopifyImg size="small" />
-              </ion-thumbnail>
-              <ion-label overline>
-                <p>SEARCH RESULT</p>
-                Internal Name
-              </ion-label>
-              <ion-button fill="clear" slot="end">
-                <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
-              </ion-button>
+            <ion-thumbnail slot="start">
+              <DxpShopifyImg size="small" />
+            </ion-thumbnail>
+            <ion-label overline>
+              <p>{{ translate("SEARCH RESULT") }}</p>
+              Internal Name
+            </ion-label>
+            <ion-button fill="clear" slot="end">
+              <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
+            </ion-button>
           </ion-item>
         </div>
       </div>
@@ -88,19 +88,19 @@
           
           <ion-label>
             3
-            <p>QoH</p>
+            <p>{{ translate("QoH") }}</p>
           </ion-label>
 
           <div class="tablet">
             <ion-chip outline>
               <ion-label>4th March 2024</ion-label>
             </ion-chip>
-            <ion-label class="config-label">last counted</ion-label>
+            <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
           </div>
 
           <div class="tablet">
             <ion-chip outline>
-              <ion-label>3 rejections in the last week</ion-label>
+              <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
             </ion-chip>
           </div>
 
@@ -118,12 +118,14 @@
 
 <script>
 import { defineComponent } from "vue";
-import { translate, DxpShopifyImg } from "@hotwax/dxp-components";
+import { DxpShopifyImg } from "@hotwax/dxp-components";
+import { translate } from "@/i18n";
 import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, listOutline, closeCircleOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar} from "@ionic/vue";
- export default defineComponent({
-   name: 'DraftCount',
-   components: {
+
+export default defineComponent({
+  name: 'DraftCount',
+  components: {
     IonBackButton,
     IonButton,
     IonChip,
@@ -139,9 +141,9 @@ import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonI
     IonTitle,
     IonToolbar,
     DxpShopifyImg
-   },
-   setup() {
+  },
 
+  setup() {
     return {
       translate,
       cloudUploadOutline,

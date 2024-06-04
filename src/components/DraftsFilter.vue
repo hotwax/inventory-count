@@ -15,8 +15,11 @@
         </ion-item>
         <ion-item>
           <ion-icon slot="start" :icon="checkmarkDoneOutline"/>
-          <ion-select placeholder="All">
-            <div slot="label">Assigned to</div>
+          <ion-select interface="popover" placeholder="All">
+            <div slot="label">{{ translate("Assigned to") }}</div>
+            <ion-select-option>Facility-1</ion-select-option>
+            <ion-select-option>Facility-2</ion-select-option>
+            <ion-select-option>Facility-3</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item button>
@@ -33,27 +36,33 @@
 <script lang="ts">
 import {
   IonContent,
+  IonCheckbox,
   IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonList,
   IonMenu,
+  IonSelect,
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { checkmarkDoneOutline, locateOutline } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components';
+import { translate } from "@/i18n";
 
 export default defineComponent({
-  name: "TransferOrderFilters",
+  name: "DraftFilters",
   components: {
     IonContent,
+    IonCheckbox,
     IonHeader,
+    IonIcon,
     IonItem,
     IonLabel,
     IonList,
     IonMenu,
+    IonSelect,
     IonTitle,
     IonToolbar
   },

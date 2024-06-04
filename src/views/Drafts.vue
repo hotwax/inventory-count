@@ -12,6 +12,7 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
+
     <ion-content id="drafts-filter">
       <main>
         <ion-list class="list">
@@ -20,21 +21,21 @@
               <h2>count name</h2>
               <p>count id</p>
             </ion-label>
-            <ion-label slot="end" color="medium">items</ion-label>
+            <ion-label slot="end" color="medium">{{ translate('items') }}</ion-label>
           </ion-item>
           <ion-item button detail="true">
             <ion-label>
               <h2>count name</h2>
               <p>count id</p>
             </ion-label>
-            <ion-label slot="end" color="medium">items</ion-label>
+            <ion-label slot="end" color="medium">{{ translate('items') }}</ion-label>
           </ion-item>
           <ion-item button detail="true">
             <ion-label>
               <h2>count name</h2>
               <p>count id</p>
             </ion-label>
-            <ion-label slot="end" color="medium">items</ion-label>
+            <ion-label slot="end" color="medium">{{ translate('items') }}</ion-label>
           </ion-item>
         </ion-list>
       </main>
@@ -58,7 +59,7 @@ import {
 } from '@ionic/vue';
 import { filterOutline } from 'ionicons/icons';
 import { defineComponent } from 'vue'
-import { translate } from "@hotwax/dxp-components"
+import { translate } from "@/i18n";
 import DraftsFilter from "@/components/DraftsFilter.vue"
 
 export default defineComponent({
