@@ -13,6 +13,8 @@ import Drafts from "@/views/Drafts.vue";
 import DraftCount from "@/views/DraftCount.vue"
 import Assigned from "@/views/Assigned.vue"
 import AssignedCount from "@/views/AssignedCount.vue"
+import PendingReview from "@/views/PendingReview.vue";
+import ReviewCount from "@/views/ReviewCount.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -78,6 +80,24 @@ const routes: Array<RouteRecordRaw> = [
     path: '/assigned-count',
     name: 'AssignedCount',
     component: AssignedCount,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: '/review-count',
+    name: 'ReviewCount',
+    component: ReviewCount,
     // beforeEnter: authGuard,
     // meta: {
     //   permissionId: "APP_SHIPMENTS_VIEW"

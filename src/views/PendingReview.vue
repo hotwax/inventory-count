@@ -2,7 +2,7 @@
   <ion-page>  
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ translate("Assigned")}}</ion-title>
+        <ion-title>{{ translate("Pending review")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button>
             <ion-icon :icon="filterOutline" />
@@ -17,8 +17,8 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <h2>primary identifier</h2>
-              <p>secondary identifier</p>
+              <h2>Count name</h2>
+              <p>count id</p>
             </ion-label>
           </ion-item>
           
@@ -28,16 +28,16 @@
          
           <ion-label overline>
             <h2>10/20</h2>
-            <p>counter</p>
+            <p>{{ translate("counter") }}</p>
           </ion-label>
 
           <ion-label overline>
             <h2>4th March 2024</h2>
-            <p>due date</p>
+            <p>{{ translate("due date") }}</p>
           </ion-label>
           
           <ion-item class="ion-padding" lines="none">
-            <ion-badge outline slot="end">Assigned</ion-badge>
+            <ion-badge outline slot="end">{{ translate("Submitted") }}</ion-badge>
           </ion-item>
         </div>
 
@@ -45,8 +45,8 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <h2>primary identifier</h2>
-              <p>secondary identifier</p>
+              <h2>Count name</h2>
+              <p>count id</p>
             </ion-label>
           </ion-item>
         
@@ -56,19 +56,18 @@
 
           <ion-label overline>
             <h2>10/20</h2>
-            <p>counter</p>
+            <p>{{ translate("counter") }}</p>
           </ion-label>
 
           <ion-label overline>
             <h2>4th March 2024</h2>
-            <p>due date</p>
+            <p>{{ translate("due date") }}</p>
           </ion-label>
           
           <ion-item class="ion-padding" lines="none">
-            <ion-badge outline slot="end" color="danger">Recount requested</ion-badge>
+            <ion-badge outline slot="end" color="danger">{{ translate("Re-submitted") }}</ion-badge>
           </ion-item>
-        </div>
-        
+        </div>  
       </main>
     </ion-content>
   </ion-page>
@@ -78,10 +77,10 @@
 import { defineComponent } from "vue";
 import { translate } from "@hotwax/dxp-components";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar} from "@ionic/vue";
+import { IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar } from "@ionic/vue";
 
 export default defineComponent({
-  name: 'Assigned',
+  name: 'PendingReview',
   components: {
     IonChip,
     IonContent,
