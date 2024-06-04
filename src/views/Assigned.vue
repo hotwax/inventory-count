@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/drafts" />
-        <ion-title>{{ translate("Assinged")}}</ion-title>
+        <ion-title>{{ translate("Assigned")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button>
             <ion-icon :icon="filterOutline" />
