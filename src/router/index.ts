@@ -6,11 +6,13 @@ import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import TabBar from "@/components/TabBar.vue";
-import Drafts from "@/views/Drafts.vue";
-import DraftCount from "@/views/DraftCount.vue"
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
+import Drafts from "@/views/Drafts.vue";
+import DraftCount from "@/views/DraftCount.vue"
+import Assigned from "@/views/Assigned.vue"
+import AssignedCount from "@/views/AssignedCount.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -61,6 +63,24 @@ const routes: Array<RouteRecordRaw> = [
     // props: true,
     // meta: {
     //   permissionId: "APP_COUNT_VIEW"
+    // }
+  },
+  {
+    path: '/assigned',
+    name: 'Assigned',
+    component: Assigned,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: '/assigned-count',
+    name: 'AssignedCount',
+    component: AssignedCount,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
     // }
   },
   {
