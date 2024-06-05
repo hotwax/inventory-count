@@ -14,8 +14,10 @@
               <ion-card-title>
                 {{ translate('Quantity on hand') }}
               </ion-card-title>
-              <p>{{ translate("Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.") }}</p>
             </ion-card-header>
+            <ion-card-content>
+              <p>{{ translate("Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.") }}</p>
+            </ion-card-content>
             <ion-item lines="none">
               <ion-toggle>
                 {{ translate("Show systemic inventory") }}
@@ -27,8 +29,10 @@
               <ion-card-title>
                 {{ translate('Force scan') }}
               </ion-card-title>
-              <p>{{ translate("Require inventory to be scanned when counting instead of manually entering values.") }}</p>
             </ion-card-header>
+            <ion-card-content>
+              <p>{{ translate("Require inventory to be scanned when counting instead of manually entering values.") }}</p>
+            </ion-card-content>
             <ion-item lines="none">
               <ion-toggle>
                 {{ translate("Require barcode scanning") }}
@@ -44,6 +48,7 @@
 <script lang="ts">
 import {
   IonCard,
+  IonCardContent,
   IonCardHeader,
   IonCardTitle,
   IonContent,
@@ -61,6 +66,7 @@ export default defineComponent({
   name: "StorePermissions",
   components: {
     IonCard,
+    IonCardContent,
     IonCardHeader,
     IonCardTitle,
     IonContent,
