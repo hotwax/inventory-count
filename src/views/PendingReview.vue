@@ -77,11 +77,13 @@
 import { defineComponent } from "vue";
 import { translate } from "@hotwax/dxp-components";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar } from "@ionic/vue";
 
 export default defineComponent({
   name: 'PendingReview',
   components: {
+    IonBadge, 
+    IonButtons,
     IonChip,
     IonContent,
     IonHeader,

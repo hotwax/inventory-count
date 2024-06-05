@@ -183,7 +183,7 @@
 <script>
 import { defineComponent } from "vue";
 import { translate, DxpShopifyImg } from "@hotwax/dxp-components";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline } from "ionicons/icons";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline } from "ionicons/icons";
 import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, popoverController} from "@ionic/vue";
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 
@@ -230,8 +230,6 @@ export default defineComponent({
       translate,
       calendarClearOutline,
       businessOutline,
-      personCircleOutline,
-      ellipsisVerticalOutline,
       thermometerOutline,
       thumbsUpOutline,
       refreshOutline,
