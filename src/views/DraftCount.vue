@@ -118,7 +118,8 @@
 
 <script>
 import { defineComponent } from "vue";
-import { translate, DxpShopifyImg } from "@hotwax/dxp-components";
+import { DxpShopifyImg } from "@hotwax/dxp-components";
+import { translate } from '@/i18n'
 import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, listOutline, closeCircleOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar} from "@ionic/vue";
  export default defineComponent({

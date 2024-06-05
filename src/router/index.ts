@@ -15,6 +15,8 @@ import Assigned from "@/views/Assigned.vue"
 import AssignedCount from "@/views/AssignedCount.vue"
 import PendingReview from "@/views/PendingReview.vue";
 import ReviewCount from "@/views/ReviewCount.vue"
+import Closed from "@/views/Closed.vue"
+import StorePermissions from "@/views/StorePermissions.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -98,6 +100,24 @@ const routes: Array<RouteRecordRaw> = [
     path: '/review-count',
     name: 'ReviewCount',
     component: ReviewCount,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,
+    // beforeEnter: authGuard,
+    // meta: {
+    //   permissionId: "APP_SHIPMENTS_VIEW"
+    // }
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
     // beforeEnter: authGuard,
     // meta: {
     //   permissionId: "APP_SHIPMENTS_VIEW"

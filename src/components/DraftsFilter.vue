@@ -43,7 +43,7 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { checkmarkDoneOutline, locateOutline } from "ionicons/icons";
-import { translate } from '@hotwax/dxp-components';
+import { translate } from '@/i18n'
 
 export default defineComponent({
   name: "TransferOrderFilters",

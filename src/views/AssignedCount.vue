@@ -125,7 +125,8 @@
 
 <script>
 import { defineComponent } from "vue";
-import { translate, DxpShopifyImg } from "@hotwax/dxp-components";
+import { DxpShopifyImg } from "@hotwax/dxp-components";
+import { translate } from '@/i18n'
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, popoverController} from "@ionic/vue";
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"

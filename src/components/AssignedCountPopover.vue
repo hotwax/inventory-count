@@ -30,7 +30,7 @@ import {
 } from '@ionic/vue'
 import { removeCircleOutline } from "ionicons/icons";
 import { defineComponent } from 'vue';
-import { translate } from '@hotwax/dxp-components';
+import { translate } from '@/i18n'
 
 export default defineComponent({  
   name: 'AssignedCountPopover',

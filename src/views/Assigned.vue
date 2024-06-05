@@ -76,7 +76,7 @@
 
 <script>
 import { defineComponent } from "vue";
-import { translate } from "@hotwax/dxp-components";
+import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar} from "@ionic/vue";
 

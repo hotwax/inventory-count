@@ -58,7 +58,7 @@ import {
 } from '@ionic/vue';
 import { filterOutline } from 'ionicons/icons';
 import { defineComponent } from 'vue'
-import { translate } from "@hotwax/dxp-components"
+import { translate } from '@/i18n'
 import DraftsFilter from "@/components/DraftsFilter.vue"
 
 export default defineComponent({
