@@ -101,6 +101,17 @@ body {
   --border-medium: 1px solid var(--ion-color-medium);
 }
 
+.date-time-button::part(native) {
+  box-shadow: none;
+  border-radius: 8px;
+  padding-inline: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: var(--ion-color-step-300, #edeef0);
+  color: var(--ion-text-color, #000);
+  font-family: inherit;
+}
+
 
 @media (prefers-color-scheme: dark) {
   /*

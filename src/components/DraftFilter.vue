@@ -8,24 +8,23 @@
 
     <ion-content>
       <ion-list>
-        <ion-item lines="full">
-          <ion-label class="ion-text-wrap">
+        <ion-list-header lines="full">
+          <ion-label>
             <p>{{ translate("Facility") }}</p>
           </ion-label>
-        </ion-item>
+        </ion-list-header>
         <ion-item>
           <ion-icon slot="start" :icon="checkmarkDoneOutline"/>
-          <ion-select interface="popover" placeholder="All">
-            <div slot="label">{{ translate("Assigned to") }}</div>
+          <ion-select interface="popover" placeholder="All" :label="translate('Assigned to')">
             <ion-select-option>Facility-1</ion-select-option>
             <ion-select-option>Facility-2</ion-select-option>
             <ion-select-option>Facility-3</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-item button>
+        <ion-item>
           <ion-icon slot="start" :icon="locateOutline"/>
           <ion-checkbox>
-            <ion-label>{{ translate("No facility") }}</ion-label>
+            {{ translate("No facility") }}
           </ion-checkbox>
         </ion-item>
       </ion-list>
@@ -42,8 +41,10 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonMenu,
   IonSelect,
+  IonSelectOption,
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
@@ -61,8 +62,10 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonList,
+    IonListHeader,
     IonMenu,
     IonSelect,
+    IonSelectOption,
     IonTitle,
     IonToolbar
   },
