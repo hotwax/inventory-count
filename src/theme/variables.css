@@ -96,11 +96,6 @@ http://ionicframework.com/docs/theming/ */
   text-align: center; 
 }
 
-body {
-  /** Border variable **/
-  --border-medium: 1px solid var(--ion-color-medium);
-}
-
 
 @media (prefers-color-scheme: dark) {
   /*

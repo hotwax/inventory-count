@@ -32,7 +32,7 @@
           </div>
         </div>
 
-        <div class="list-item border">
+        <div class="list-item">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
@@ -67,8 +67,10 @@
             <p>{{ translate("closed") }}</p>
           </ion-label>
         </div>
+        
+        <hr/>
 
-        <div class="list-item border">
+        <div class="list-item">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
@@ -102,7 +104,8 @@
             <h2>4th March 2024</h2>
             <p>{{ translate("closed") }}</p>
           </ion-label> 
-        </div>  
+        </div> 
+        <hr/> 
       </main>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="openClosedCountModal">
@@ -163,10 +166,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.border {
-  border-bottom: var(--border-medium);
-}
-
 .list-item {
   --columns-desktop: 6;
 }

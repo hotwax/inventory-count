@@ -3,15 +3,15 @@
     <ion-list>
       <ion-list-header>{{ translate("Primary identifier")}}</ion-list-header>
       <ion-item>
-        <ion-label class="ion-text-wrap">{{ translate("Variance")}}</ion-label>
-        <ion-note slot="end">count pending</ion-note>
+        <ion-label>{{ translate("Variance")}}</ion-label>
+        <ion-note slot="end">{{ translate("count pending") }}</ion-note>
       </ion-item>
       <ion-item>
-        <ion-label class="ion-text-wrap">{{ translate("Last counted")}}</ion-label>
+        <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">1 week ago</ion-note>
       </ion-item>
       <ion-item lines="none">
-        <ion-label class="ion-text-wrap">{{ translate("Remove from count")}}</ion-label>
+        <ion-label>{{ translate("Remove from count")}}</ion-label>
         <ion-icon slot="end" :icon="removeCircleOutline"/>
       </ion-item>
     </ion-list>

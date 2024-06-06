@@ -20,28 +20,26 @@
         <div class="search ion-padding">
           <ion-item lines="none">
             <ion-label>
-              <h1>CountName</h1> 
+              <h1>CountName</h1>
               <p>CountId</p>
             </ion-label>
             <ion-button slot="end" fill="outline" color="medium">{{ translate("Rename") }}</ion-button>
           </ion-item>
-          <ion-item lines="none">
-            <ion-chip outline>
-              <ion-icon :icon="calendarClearOutline"></ion-icon>
-              <ion-label>3rd March 2024</ion-label>
-            </ion-chip>
-            <ion-chip outline>
-              <ion-icon :icon="businessOutline"></ion-icon>
-              <ion-label>Broadway</ion-label>
-            </ion-chip>
-          </ion-item>
+          <ion-chip outline>
+            <ion-icon :icon="calendarClearOutline"></ion-icon>
+            <ion-label>3rd March 2024</ion-label>
+          </ion-chip>
+          <ion-chip outline>
+            <ion-icon :icon="businessOutline"></ion-icon>
+            <ion-label>Broadway</ion-label>
+          </ion-chip>
         </div>
-        <div class="filters ion-padding">
-          <ion-list>
+        <ion-list>
+          <div class="filters ion-padding">
             <ion-item>
               <ion-spinner slot="start" name="circular" paused="true"/>
               <ion-label>{{ translate("Progress") }}</ion-label>
-              <ion-label slot="end">{{ translate("40% complete") }}</ion-label>
+              <ion-label slot="end">40% complete</ion-label>
             </ion-item>  
             <ion-item>
               <ion-spinner slot="start" name="circular" paused="true"/>
@@ -51,17 +49,17 @@
             <ion-item lines="none">
               <ion-icon slot="start" :icon="thermometerOutline"/>
               <ion-label>{{ translate("Item variance threshold") }}</ion-label>
-              <ion-label slot="end">{{ translate("50% complete") }}</ion-label>
+              <ion-label slot="end">50%</ion-label>
             </ion-item>  
-            <ion-item lines="none" >
+            <ion-item lines="none">
               <ion-range aria-label="Range with ionChange"></ion-range>
             </ion-item>
-          </ion-list>
-        </div>
+          </div>
+        </ion-list>
       </div>
 
-      <div class="header border">
-        <div class="search">
+      <div class="header">
+        <div>
           <ion-segment>
             <ion-segment-button>
               <ion-label>{{ translate("All") }}</ion-label>
@@ -76,11 +74,13 @@
         </div>
       </div>
 
+      <hr/>
+
       <main>
-        <div class="list-item border">
+        <div class="list-item">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg size="small" />
+              <DxpShopifyImg/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               primary identifier
@@ -119,10 +119,12 @@
           </div>
         </div>
 
-        <div class="list-item border">
+        <hr/>
+
+        <div class="list-item">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg size="small" />
+              <DxpShopifyImg/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               primary identifier
@@ -158,6 +160,7 @@
             </ion-item>
           </div>
         </div>
+        <hr/>
       </main>
     </ion-content>
     
@@ -245,10 +248,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.border {
-  border-bottom: var(--border-medium);
-}
-
 .list-item {
   --columns-desktop: 6;
 }
