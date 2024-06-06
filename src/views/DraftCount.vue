@@ -24,7 +24,7 @@
               <ion-icon slot="start" :icon="cloudUploadOutline"/>
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
-              <label for="inputFile">{{ translate("Upload") }}</label>
+              <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
             </ion-item> 
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline" />
@@ -45,7 +45,7 @@
             <ion-item>
               <ion-icon slot="start" :icon="businessOutline"/>
               <ion-label>{{ translate("Facility") }}</ion-label>  
-              <ion-button fill="outline">
+              <ion-button fill="outline" @click="openDraftSearchFacilityModal">
                 <ion-icon slot="start" :icon="addCircleOutline"/>
                 {{ translate("Assign") }}
               </ion-button>
@@ -118,8 +118,10 @@
 import { defineComponent } from "vue";
 import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { translate } from "@/i18n";
+import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
+import DraftSearchFacilityModal from "@/components/DraftSearchFacilityModal.vue"
 import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, listOutline, closeCircleOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 
 export default defineComponent({
   name: 'DraftCount',
@@ -142,7 +144,22 @@ export default defineComponent({
     IonToolbar,
     DxpShopifyImg
   },
+  
+  methods: {
+    async openDraftImportCsvModal() {
+      const draftImportCsvModal = await modalController.create({
+        component: DraftImportCsvModal,
+      })
+      draftImportCsvModal.present();
+    },
 
+    async openDraftSearchFacilityModal() {
+      const draftSearchFacilityModal = await modalController.create({
+        component: DraftSearchFacilityModal,
+      })
+      draftSearchFacilityModal.present();
+    }  
+  },
   setup() {
     return {
       translate,
