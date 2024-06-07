@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import store from "@/store";
-import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
-import TabBar from "@/components/TabBar.vue";
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
@@ -17,6 +15,7 @@ import PendingReview from "@/views/PendingReview.vue";
 import ReviewCount from "@/views/ReviewCount.vue"
 import Closed from "@/views/Closed.vue"
 import StorePermissions from "@/views/StorePermissions.vue"
+import Settings from "@/views/Settings.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -54,116 +53,54 @@ const routes: Array<RouteRecordRaw> = [
     path: '/drafts',
     name: 'Drafts',
     component: Drafts,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: "/draft-count",
     name: "DraftCount",
     component: DraftCount,
-    // beforeEnter: authGuard,
-    // props: true,
-    // meta: {
-    //   permissionId: "APP_COUNT_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: '/assigned',
     name: 'Assigned',
     component: Assigned,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: '/assigned-count',
     name: 'AssignedCount',
     component: AssignedCount,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: '/pending-review',
     name: 'PendingReview',
     component: PendingReview,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: '/review-count',
     name: 'ReviewCount',
     component: ReviewCount,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
     path: '/closed',
     name: 'Closed',
-    component: Closed,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    component: Closed,   
   },
   {
     path: '/store-permissions',
     name: 'StorePermissions',
     component: StorePermissions,
-    // beforeEnter: authGuard,
-    // meta: {
-    //   permissionId: "APP_SHIPMENTS_VIEW"
-    // }
+    beforeEnter: authGuard,
   },
   {
-    path: '/tabs',
-    component: TabBar,
-    children: [
-      {
-        path: '',
-        redirect: '/search'
-      },
-      {
-        path: 'search',
-        component: () => import('@/views/Search.vue'),
-        meta: {
-          permissionId: "APP_SEARCH_VIEW"
-        }
-      },
-      {
-        path: 'upload',
-        component: () => import('@/views/Upload.vue'),
-        meta: {
-          permissionId: "APP_UPLOAD_VIEW"
-        }
-      },
-      {
-        path: 'settings',
-        component: () => import('@/views/Settings.vue')
-      },
-    ],
+    path: '/settings',
+    name: 'Settings',
+    component: Settings,
     beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
-  },
-  {
-    path: "/count/:sku",
-    name: "Count",
-    component: Count,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
   },
   {
     path: '/login',
@@ -182,7 +119,7 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/tabs/settings";
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/drafts";
     else {
       showToast(translate('You do not have permission to access this page'));
     }

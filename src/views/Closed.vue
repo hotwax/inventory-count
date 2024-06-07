@@ -1,13 +1,13 @@
 <template>
   <ion-page>  
     <ClosedFilter menu-id="closed-filter" content-id="closed-filter"/>
-    <ion-header :translucent="true" >
+    <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="closed-filter">
-            <ion-icon :icon="filterOutline" />
+            <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
@@ -36,7 +36,7 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <h2>Count name</h2>
+              Count name
               <p>count id</p>
             </ion-label>
           </ion-item>
@@ -45,25 +45,25 @@
             <ion-label>facilityId</ion-label>
           </ion-chip>
 
-          <ion-label overline>
-            <h2>10/20</h2>
-            <p>{{ translate("counter") }}</p>
+          <ion-label>
+            10/20
+            <p>{{ translate("products counted") }}</p>
           </ion-label>
 
 
-          <ion-label overline>
-            <h2>3</h2>
+          <ion-label>
+            3
             <p>{{ translate("rejected counts") }}</p>
           </ion-label>
 
 
-          <ion-label overline>
-            <h2>14</h2>
+          <ion-label>
+            14
             <p>{{ translate("total variance") }}</p>
           </ion-label>
 
-          <ion-label overline class="ion-padding">
-            <h2>4th March 2024</h2>
+          <ion-label class="ion-padding">
+            4th March 2024
             <p>{{ translate("closed") }}</p>
           </ion-label>
         </div>
@@ -74,7 +74,7 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <h2>Count name</h2>
+              Count name
               <p>count id</p>
             </ion-label>
           </ion-item>
@@ -83,28 +83,28 @@
             <ion-label>facilityId</ion-label>
           </ion-chip>
 
-          <ion-label overline>
-            <h2>10/20</h2>
-            <p>{{ translate("counter") }}</p>
+          <ion-label>
+            10/20
+            <p>{{ translate("products counted") }}</p>
           </ion-label>
 
 
-          <ion-label overline>
-            <h2>3</h2>
+          <ion-label>
+            3
             <p>{{ translate("rejected counts") }}</p>
           </ion-label>
 
 
-          <ion-label overline>
-            <h2>14</h2>
+          <ion-label>
+            14
             <p>{{ translate("total variance") }}</p>
           </ion-label>
 
-          <ion-label overline class="ion-padding">
-            <h2>4th March 2024</h2>
+          <ion-label class="ion-padding">
+            4th March 2024
             <p>{{ translate("closed") }}</p>
-          </ion-label> 
-        </div> 
+          </ion-label>
+        </div>
         <hr/> 
       </main>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">

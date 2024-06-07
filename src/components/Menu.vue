@@ -2,7 +2,7 @@
   <ion-menu content-id="main-content" type="overlay">
     <ion-header>
       <ion-toolbar>
-        <ion-title> Cycle Count </ion-title>
+        <ion-title>{{ translate("Cycle Count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -36,6 +36,7 @@ import { defineComponent } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
+import { translate } from "@/i18n";
 
 export default defineComponent({
   name: "Menu",
@@ -108,7 +109,8 @@ export default defineComponent({
       shieldCheckmarkOutline,
       settingsOutline,
       store,
-      router
+      router,
+      translate
     };
   }
 });

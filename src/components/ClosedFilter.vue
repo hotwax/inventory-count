@@ -13,18 +13,15 @@
         </ion-item-divider>
         <ion-item>
           <ion-icon slot="start" :icon="businessOutline"/>
-          <ion-select interface="popover" placeholder="All">
-            <div slot="label">{{ translate("Facility") }}</div>
-            <ion-select-option>Facility-1</ion-select-option>
+          <ion-select interface="popover" value="default" :label="translate('Facility')">
+            <ion-select-option value="default">Facility-1</ion-select-option>
             <ion-select-option>Facility-2</ion-select-option>
             <ion-select-option>Facility-3</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item button>
           <ion-icon slot="start" :icon="removeCircleOutline"/>
-          <ion-checkbox>
-            <ion-label>{{ translate("No facility") }}</ion-label>
-          </ion-checkbox>
+          <ion-checkbox>{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
         <ion-item-divider>
           <ion-label>{{ translate("Date") }}</ion-label>
@@ -38,12 +35,32 @@
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>Before</ion-label>
-                <ion-button color="light" fill="solid">DATE</ion-button>
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime    
+                      id="schedule-datetime"        
+                      show-default-buttons 
+                      hour-cycle="h23"
+                      value="3rd March 2024"
+                    />
+                  </ion-content>
+                </ion-modal> 
               </ion-item>
               <ion-item>
-                <ion-label>After</ion-label>
-                <ion-button color="light" fill="solid">DATE</ion-button>
+                <ion-label>{{ translate("After") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime    
+                      id="schedule-datetime"        
+                      show-default-buttons 
+                      hour-cycle="h23"
+                      value="3rd March 2024"
+                    />
+                  </ion-content>
+                </ion-modal>               
               </ion-item>
             </div>
           </ion-accordion>
@@ -55,16 +72,35 @@
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>Before</ion-label>
-                <ion-button color="light" fill="solid">DATE</ion-button>
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime    
+                      id="schedule-datetime"        
+                      show-default-buttons 
+                      hour-cycle="h23"
+                      value="3rd March 2024"
+                    />
+                  </ion-content>
+                </ion-modal>       
               </ion-item>
               <ion-item>
-                <ion-label>After</ion-label>
-                <ion-button color="light" fill="solid">DATE</ion-button>
+                <ion-label>{{ translate("After") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime    
+                      id="schedule-datetime"        
+                      show-default-buttons 
+                      hour-cycle="h23"
+                      value="3rd March 2024"
+                    />
+                  </ion-content>
+                </ion-modal>               
               </ion-item>
             </div>
-          </ion-accordion>
-          
+          </ion-accordion>  
         </ion-accordion-group>
       </ion-list>
     </ion-content> 
@@ -78,6 +114,7 @@ import {
   IonButton,
   IonCheckbox,
   IonContent,
+  IonDatetime,
   IonHeader,
   IonIcon,
   IonItem,
@@ -85,6 +122,7 @@ import {
   IonLabel,
   IonList,
   IonMenu,
+  IonModal,
   IonSelect,
   IonSelectOption,
   IonTitle,
@@ -102,6 +140,7 @@ export default defineComponent({
     IonButton,
     IonCheckbox,
     IonContent,
+    IonDatetime,
     IonHeader,
     IonIcon,
     IonItem,
@@ -109,10 +148,22 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonMenu,
+    IonModal,
     IonSelect,
     IonSelectOption,
     IonTitle,
     IonToolbar
+  },
+  data() {
+    return {
+      dateTimeModalOpen: false,
+    }
+  },
+  methods: {
+    
+    openDateTimeModal() {
+      this.dateTimeModalOpen = true;
+    }
   },
 
   setup() {    

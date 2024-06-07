@@ -96,6 +96,22 @@ http://ionicframework.com/docs/theming/ */
   text-align: center; 
 }
 
+.date-time-button::part(native) {
+  box-shadow: none;
+  border-radius: 8px;
+  padding-inline: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background: var(--ion-color-step-300, #edeef0);
+  color: var(--ion-text-color, #000);
+  font-family: inherit;
+}
+
+.date-time-modal {
+  --width: 320px;
+  --height: 445px;
+  --border-radius: 8px;
+}
 
 @media (prefers-color-scheme: dark) {
   /*

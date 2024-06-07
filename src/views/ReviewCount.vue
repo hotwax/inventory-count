@@ -52,7 +52,7 @@
               <ion-label slot="end">50%</ion-label>
             </ion-item>  
             <ion-item lines="none">
-              <ion-range aria-label="Range with ionChange"></ion-range>
+              <ion-range aria-label="Range"></ion-range>
             </ion-item>
           </div>
         </ion-list>
@@ -101,18 +101,18 @@
           </ion-item>
 
           <div class="tablet">
-              <ion-button fill="outline" color="success" size="small">
-                <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
-              </ion-button>
-              <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-                <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
-              </ion-button>
-              <ion-button fill="outline" color="danger" size="small">
-                <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
-              </ion-button>
+            <ion-button fill="outline" color="success" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+              <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" color="danger" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
+            </ion-button>
           </div>
           
-          <div class="tablet">
+          <div>
             <ion-item lines="none">
               <ion-checkbox></ion-checkbox>
             </ion-item>
@@ -137,24 +137,24 @@
             <p>{{ translate("counted/systemic") }}</p>
           </ion-label>
 
-            <ion-label>
-              +1
-              <p>user.name</p>
-            </ion-label>  
+          <ion-label>
+            +1
+            <p>user.name</p>
+          </ion-label>  
 
           <div class="tablet">
-              <ion-button fill="outline" color="success" size="small">
-                <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
-              </ion-button>
-              <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-                <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
-              </ion-button>
-              <ion-button fill="outline" color="danger" size="small">
-                <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
-              </ion-button>
+            <ion-button fill="outline" color="success" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+              <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" color="danger" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
+            </ion-button>
           </div>
           
-          <div class="tablet">
+          <div>
             <ion-item lines="none">
               <ion-checkbox></ion-checkbox>
             </ion-item>
@@ -179,7 +179,6 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
-
   </ion-page>
 </template>
 

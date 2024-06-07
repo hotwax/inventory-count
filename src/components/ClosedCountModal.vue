@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button>
+        <ion-button @click="closeModal"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -13,73 +13,60 @@
   <ion-content>
     <ion-list>
       <ion-list-header>
-        <ion-label>Select fields</ion-label>
+        <ion-label>{{ translate("Select fields") }}</ion-label>
       </ion-list-header>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Count ID</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Count ID") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Count name</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Count name") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Accepted by user</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Accepted by user") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Created date</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Created date") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Last submitted date</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Last submitted date") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Closed date</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Closed date") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Facility</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Facility") }}</ion-checkbox>
       </ion-item>
       <ion-item lines="inset">
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Primary product ID</ion-label>
-        <ion-select aria-label="Label" interface="popover" value="default" slot="end">
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Primary product ID") }}</ion-checkbox>
+        <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end">
           <ion-select-option value="default">SKU</ion-select-option>
           <ion-select-option>Product store ID</ion-select-option>
           <ion-select-option>UPC</ion-select-option>
         </ion-select>
       </ion-item> 
       <ion-item lines="inset">
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Secondary Product ID</ion-label>
-        <ion-select aria-label="Label" interface="popover" value="default" slot="end">
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Secondary product ID") }}</ion-checkbox>
+        <ion-select aria-label="secondaryProduct" interface="popover" value="default" slot="end">
           <ion-select-option value="default">Product ID</ion-select-option>
           <ion-select-option>Product store ID</ion-select-option>
         </ion-select>
       </ion-item> 
       <ion-item lines="inset">
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Line status</ion-label>
-        <ion-select aria-label="Label" interface="popover" value="all" slot="end">
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Line status") }}</ion-checkbox>
+        <ion-select aria-label="lineStatus" interface="popover" value="all" slot="end">
           <ion-select-option value="all">All</ion-select-option>
           <ion-select-option>Counted</ion-select-option>
           <ion-select-option>Pending</ion-select-option>
         </ion-select>
       </ion-item> 
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Expected quantity</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Expected quantity") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Counted quantity</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Counted quantity") }}</ion-checkbox>
       </ion-item> 
       <ion-item>
-        <ion-checkbox aria-label="Label" slot="start"></ion-checkbox>
-        <ion-label>Variance</ion-label>
+        <ion-checkbox justify="start" label-placement="end">{{ translate("Variance") }}</ion-checkbox>
       </ion-item> 
     </ion-list>
   </ion-content>
@@ -108,7 +95,8 @@ import {
   IonSelect,
   IonSelectOption,
   IonTitle,
-  IonToolbar
+  IonToolbar,
+  modalController
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
@@ -133,6 +121,11 @@ export default defineComponent({
     IonSelectOption,
     IonTitle,
     IonToolbar
+  },
+  methods: {
+    closeModal() {
+      modalController.dismiss({ dismissed: true});
+    },
   },
   setup() {
 

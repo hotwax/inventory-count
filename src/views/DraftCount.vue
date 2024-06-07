@@ -10,107 +10,107 @@
     <ion-content>
       <div class="header">
         <div class="search">
-          <ion-item lines="none">
-            <ion-label>
-              <h1>CountName</h1> 
+          <ion-item lines="none" class="ion-padding">
+            <ion-label slot="start">
+              CountName
               <p>CountId</p>
             </ion-label>
-            <ion-button slot="end" fill="outline" color="medium">Rename</ion-button>
+            <ion-button slot="end" fill="outline" color="medium">{{ translate("Rename") }}</ion-button>
           </ion-item>
         </div>
         <div class="filters">
-          <ion-list>
+          <ion-list class="ion-padding">
             <ion-item>
               <ion-icon slot="start" :icon="cloudUploadOutline"/>
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
-              <label for="inputFile">Upload</label>
+              <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
             </ion-item> 
             <ion-item>
-              <ion-icon slot="start" :icon="calendarNumberOutline"/>
+              <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  
-              <ion-button class="date-time-button" slot="end" fill="solid" color="light">
-                3rd March 2024
-              </ion-button> 
+              <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime    
+                      id="schedule-datetime"        
+                      show-default-buttons 
+                      hour-cycle="h23"
+                      value="3rd March 2024"
+                    />
+                  </ion-content>
+                </ion-modal>     
             </ion-item>
             <ion-item>
               <ion-icon slot="start" :icon="businessOutline"/>
               <ion-label>{{ translate("Facility") }}</ion-label>  
-              <ion-button fill="outline">
-                <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                Assign
+              <ion-button fill="outline" @click="openDraftSearchFacilityModal">
+                <ion-icon slot="start" :icon="addCircleOutline"/>
+                {{ translate("Assign") }}
               </ion-button>
             </ion-item>
           </ion-list>
         </div>
       </div>
 
-      <div class="header border">
-        <div class="search">
-          <ion-item>
-            <ion-icon slot="start" :icon="listOutline"></ion-icon>
-            <ion-input
-              label="Add product"
-              label-placement="stacked"
-              :clear-input="true"
-              placeholder="Enter product"
-              value="">
-            </ion-input>
-          </ion-item>
-        </div>
-        <div class="filters">
-          <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <DxpShopifyImg size="small" />
-              </ion-thumbnail>
-              <ion-label overline>
-                <p>SEARCH RESULT</p>
-                Internal Name
-              </ion-label>
-              <ion-button fill="clear" slot="end">
-                <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
-              </ion-button>
-          </ion-item>
-        </div>
+      <div class="list-item">
+        <ion-item>
+          <ion-icon slot="start" :icon="listOutline"/>
+          <ion-input
+            :label="translate('Add product')"
+            label-placement="floating"
+            :clear-input="true"
+            value="WS-90-BL"
+          >
+          </ion-input>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label>
+            <p class="overline">{{ translate("Search result") }}</p>
+            Internal Name
+          </ion-label>
+        </ion-item>
+        <ion-button fill="clear" slot="end">
+          <ion-icon slot="icon-only" :icon="addCircleOutline"/>
+        </ion-button>
       </div>
+      
+      <hr/>
 
       <main>
-        <div class="list-item border">
+        <div class="list-item">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg size="small" />
+              <DxpShopifyImg/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               primary identifier
               <p>secondary identifier</p>
             </ion-label>
-          </ion-item>
-          
+          </ion-item>          
           <ion-label>
             3
-            <p>QoH</p>
+            <p>{{ translate("QoH") }}</p>
           </ion-label>
-
           <div class="tablet">
             <ion-chip outline>
               <ion-label>4th March 2024</ion-label>
             </ion-chip>
-            <ion-label class="config-label">last counted</ion-label>
+            <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
           </div>
-
           <div class="tablet">
             <ion-chip outline>
-              <ion-label>3 rejections in the last week</ion-label>
+              <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
             </ion-chip>
           </div>
-
-          <div class="tablet">
-            <ion-button fill="clear" slot="end">
-              <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"></ion-icon>
-            </ion-button>
-          </div> 
+          <ion-button fill="clear" slot="end">
+            <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+          </ion-button>
         </div>
-        
+        <hr/>
       </main>
     </ion-content>
   </ion-page>
@@ -119,30 +119,60 @@
 <script>
 import { defineComponent } from "vue";
 import { DxpShopifyImg } from "@hotwax/dxp-components";
-import { translate } from '@/i18n'
+import { translate } from "@/i18n";
+import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
+import DraftSearchFacilityModal from "@/components/DraftSearchFacilityModal.vue"
 import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, listOutline, closeCircleOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar} from "@ionic/vue";
- export default defineComponent({
-   name: 'DraftCount',
-   components: {
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+
+export default defineComponent({
+  name: 'DraftCount',
+  components: {
     IonBackButton,
     IonButton,
     IonChip,
     IonContent,
+    IonDatetime,
     IonHeader,
     IonIcon,
     IonInput,
     IonItem,
     IonLabel,
     IonList,
+    IonModal,
     IonPage,
     IonThumbnail,
     IonTitle,
     IonToolbar,
     DxpShopifyImg
-   },
-   setup() {
+  },
+  
+  data() {
+    return {
+      dateTimeModalOpen: false,
+    }
+  },
+  
+  methods: {
+    async openDraftImportCsvModal() {
+      const draftImportCsvModal = await modalController.create({
+        component: DraftImportCsvModal,
+      })
+      draftImportCsvModal.present();
+    },
+    
+    async openDraftSearchFacilityModal() {
+      const draftSearchFacilityModal = await modalController.create({
+        component: DraftSearchFacilityModal,
+      })
+      draftSearchFacilityModal.present();
+    },
 
+    openDateTimeModal() {
+      this.dateTimeModalOpen = true;
+    }
+  },
+  setup() {
     return {
       translate,
       cloudUploadOutline,
@@ -157,9 +187,6 @@ import { IonBackButton, IonButton, IonChip, IonContent, IonHeader, IonIcon, IonI
 </script>
 
 <style scoped>
-.border {
-  border-bottom: var(--border-medium);
-}
 
 .list-item {
   --columns-desktop: 6;
