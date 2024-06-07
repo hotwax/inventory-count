@@ -21,14 +21,14 @@
     
     <ion-list>
       <ion-list-header>{{ translate("Select the column containing products") }}</ion-list-header>
-      <ion-item>
-        <ion-label>column 1</ion-label>
-        <ion-radio aria-label="col" slot="end"></ion-radio>
-      </ion-item>
-      <ion-item>
-        <ion-label>column 2</ion-label>
-        <ion-radio aria-label="col" slot="end"></ion-radio>
-      </ion-item>
+      <ion-radio-group>
+        <ion-item>
+          <ion-radio justify="space-between">column 1</ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-radio justify="space-between">column 2</ion-radio>
+        </ion-item>
+      </ion-radio-group>
     </ion-list>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -49,10 +49,10 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
-  IonLabel,
   IonList,
   IonListHeader,
   IonRadio,
+  IonRadioGroup,
   IonSelect,
   IonSelectOption,
   IonTitle,
@@ -74,9 +74,9 @@ export default defineComponent({
     IonHeader,
     IonIcon,
     IonItem,
-    IonLabel,
     IonList,
     IonListHeader,
+    IonRadioGroup,
     IonRadio,
     IonSelect,
     IonSelectOption,

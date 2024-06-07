@@ -9,9 +9,7 @@
     <ion-content>
       <ion-list>
         <ion-list-header lines="full">
-          <ion-label>
-            <p>{{ translate("Facility") }}</p>
-          </ion-label>
+          <ion-label>{{ translate("Facility") }}</ion-label>
         </ion-list-header>
         <ion-item>
           <ion-icon slot="start" :icon="checkmarkDoneOutline"/>

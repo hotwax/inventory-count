@@ -13,22 +13,24 @@
   <ion-content>
     <ion-searchbar/>
     <ion-list>
-      <ion-item>
-        <ion-radio label-placement="end" justify="start">
-          <ion-label>
-            Facility name
-            <p>Facility ID</p>
-          </ion-label>
-        </ion-radio>
-      </ion-item>
-      <ion-item>
-        <ion-radio label-placement="end" justify="start">
-          <ion-label>
-            Facility name
-            <p>Facility ID</p>
-          </ion-label>
-        </ion-radio>
-      </ion-item>
+      <ion-radio-group>
+        <ion-item>
+          <ion-radio label-placement="end" justify="start">
+            <ion-label>
+              Facility name
+              <p>Facility ID</p>
+            </ion-label>
+          </ion-radio>
+        </ion-item>
+        <ion-item>
+          <ion-radio label-placement="end" justify="start">
+            <ion-label>
+              Facility name
+              <p>Facility ID</p>
+            </ion-label>
+          </ion-radio>
+        </ion-item>
+      </ion-radio-group>
     </ion-list>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -52,6 +54,7 @@ import {
   IonLabel,
   IonList,
   IonRadio,
+  IonRadioGroup,
   IonSearchbar,
   IonTitle,
   IonToolbar,
@@ -76,6 +79,7 @@ export default defineComponent({
     IonLabel,
     IonList,
     IonRadio,
+    IonRadioGroup,
     IonSearchbar,
     IonTitle,
     IonToolbar,
