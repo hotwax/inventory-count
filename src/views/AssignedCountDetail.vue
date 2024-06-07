@@ -133,7 +133,7 @@ import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonHeader, I
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 
 export default defineComponent({
-  name: 'AssignedCount',
+  name: 'AssignedCountDetail',
   components: {
     IonBackButton,
     IonButton,
@@ -198,11 +198,6 @@ export default defineComponent({
 
 .filters {
   grid-area: filters;
-}
-
-.config-label {
-  display: block;
-  text-align: center;
 }
 
 @media (max-width: 991px) {

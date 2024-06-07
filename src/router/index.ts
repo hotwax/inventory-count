@@ -7,12 +7,12 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-import Drafts from "@/views/Drafts.vue";
-import DraftCount from "@/views/DraftCount.vue"
+import Draft from "@/views/Draft.vue";
+import DraftDetail from "@/views/DraftDetail.vue"
 import Assigned from "@/views/Assigned.vue"
-import AssignedCount from "@/views/AssignedCount.vue"
+import AssignedCountDetail from "@/views/AssignedCountDetail.vue"
 import PendingReview from "@/views/PendingReview.vue";
-import ReviewCount from "@/views/ReviewCount.vue"
+import PendingReviewDetail from "@/views/PendingReviewDetail.vue"
 import Closed from "@/views/Closed.vue"
 import StorePermissions from "@/views/StorePermissions.vue"
 import Settings from "@/views/Settings.vue";
@@ -47,18 +47,18 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/drafts'
+    redirect: '/draft'
   },
   {
-    path: '/drafts',
-    name: 'Drafts',
-    component: Drafts,
+    path: '/draft',
+    name: 'Draft',
+    component: Draft,
     beforeEnter: authGuard,
   },
   {
-    path: "/draft-count",
-    name: "DraftCount",
-    component: DraftCount,
+    path: "/draft-detail",
+    name: "DraftDetail",
+    component: DraftDetail,
     beforeEnter: authGuard,
   },
   {
@@ -68,9 +68,9 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/assigned-count',
-    name: 'AssignedCount',
-    component: AssignedCount,
+    path: '/assigned-count-detail',
+    name: 'AssignedCountDetail',
+    component: AssignedCountDetail,
     beforeEnter: authGuard,
   },
   {
@@ -80,15 +80,16 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/review-count',
-    name: 'ReviewCount',
-    component: ReviewCount,
+    path: '/pending-review-detail',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
     beforeEnter: authGuard,
   },
   {
     path: '/closed',
     name: 'Closed',
-    component: Closed,   
+    component: Closed,  
+    beforeEnter: authGuard, 
   },
   {
     path: '/store-permissions',
@@ -119,7 +120,7 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/drafts";
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/draft";
     else {
       showToast(translate('You do not have permission to access this page'));
     }

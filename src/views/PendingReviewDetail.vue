@@ -59,7 +59,6 @@
       </div>
 
       <div class="header">
-        <div>
           <ion-segment>
             <ion-segment-button>
               <ion-label>{{ translate("All") }}</ion-label>
@@ -71,7 +70,6 @@
               <ion-icon color="danger" :icon="thermometerOutline"/>
             </ion-segment-button>
           </ion-segment>
-        </div>
       </div>
 
       <hr/>
@@ -191,7 +189,7 @@ import { translate } from '@/i18n'
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 
 export default defineComponent({
-  name: 'ReviewCount',
+  name: 'PendingReviewDetail',
   components: {
   IonBackButton,
   IonBadge,

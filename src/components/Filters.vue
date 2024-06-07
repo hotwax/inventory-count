@@ -36,7 +36,7 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
@@ -50,7 +50,7 @@
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
@@ -73,7 +73,7 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
@@ -87,7 +87,7 @@
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
@@ -133,7 +133,7 @@ import { removeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestO
 import { translate } from '@/i18n'
 
 export default defineComponent({
-  name: "ClosedFilters",
+  name: "Filters",
   components: {
     IonAccordion,
     IonAccordionGroup,

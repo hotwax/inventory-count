@@ -1,6 +1,6 @@
 <template>
   <ion-page>  
-    <ClosedFilter menu-id="closed-filter" content-id="closed-filter"/>
+    <Filters menu-id="closed-filter" content-id="closed-filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
@@ -119,7 +119,7 @@
 <script>
 import { defineComponent } from "vue";
 import { translate } from '@/i18n'
-import ClosedFilter from "@/components/ClosedFilter.vue"
+import Filters from "@/components/Filters.vue"
 import ClosedCountModal from '@/components/ClosedCountModal.vue';
 import { filterOutline, storefrontOutline, listOutline, thermometerOutline, cloudDownloadOutline } from "ionicons/icons";
 import { IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar, modalController } from "@ionic/vue";
@@ -140,7 +140,7 @@ export default defineComponent({
     IonPage,
     IonTitle,
     IonToolbar,
-    ClosedFilter
+    Filters
   },
   methods: {
 

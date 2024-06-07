@@ -63,8 +63,8 @@ export default defineComponent({
     const router = useRouter();
     const appPages = [
       {
-        title: "Drafts",
-        url: "/drafts",
+        title: "Draft",
+        url: "/draft",
         iosIcon: createOutline,
         mdIcon: createOutline,
       },

@@ -29,7 +29,7 @@
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  
-              <ion-button slot="end" size="small" class="date-time-button" style="solid" @click="openDateTimeModal">Date</ion-button>
+              <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
@@ -126,7 +126,7 @@ import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOu
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 
 export default defineComponent({
-  name: 'DraftCount',
+  name: 'DraftDetail',
   components: {
     IonBackButton,
     IonButton,
