@@ -96,6 +96,20 @@ http://ionicframework.com/docs/theming/ */
   text-align: center; 
 }
 
+main {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  gap: var(--spacer-2xl);
+  max-width: 990px;
+  margin: var(--spacer-base) auto 0;
+}
+
+section {
+  display: grid;
+  grid-template-columns: minmax(400px, 1fr);
+}
+
 @media (prefers-color-scheme: dark) {
   /*
    * Dark Colors

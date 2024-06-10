@@ -1,16 +1,14 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import store from "@/store";
-import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
-import TabBar from "@/components/TabBar.vue";
-
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-
+import AssignedStoreView from '@/views/AssignedStoreView.vue'
+import Tabs from '@/views/Tabs.vue'
 // Defining types for the meta values
 declare module 'vue-router' {
   interface RouteMeta {
@@ -41,29 +39,19 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: "/tabs/search",
+    redirect: "/tabs/cycle-count",
   },
   {
     path: '/tabs',
-    component: TabBar,
+    component: Tabs,
     children: [
       {
         path: '',
-        redirect: '/search'
+        redirect: '/tabs/cycle-count'
       },
       {
-        path: 'search',
-        component: () => import('@/views/Search.vue'),
-        meta: {
-          permissionId: "APP_SEARCH_VIEW"
-        }
-      },
-      {
-        path: 'upload',
-        component: () => import('@/views/Upload.vue'),
-        meta: {
-          permissionId: "APP_UPLOAD_VIEW"
-        }
+        path: 'cycle-count',
+        component: () => import('@/views/CycleCount.vue'),
       },
       {
         path: 'settings',
@@ -71,19 +59,12 @@ const routes: Array<RouteRecordRaw> = [
       },
     ],
     beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
   },
   {
-    path: "/count/:sku",
-    name: "Count",
-    component: Count,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
+    path: '/store-view',
+    name: 'AssignedStoreView',
+    component: AssignedStoreView,
+    beforeEnter: authGuard
   },
   {
     path: '/login',
