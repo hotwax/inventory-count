@@ -163,7 +163,7 @@ import { defineComponent } from "vue";
 import { useRouter } from 'vue-router'
 
 export default defineComponent({
-  name: "CycleCount",
+  name: "Count",
   components: {
     IonCard,
     IonCardHeader,
@@ -186,7 +186,7 @@ export default defineComponent({
   },  
   methods: {
     navigateToStoreView() {
-      this.router.push('/store-view');
+      this.router.push('/count-detail');
     }
   },
   setup() {

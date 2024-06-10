@@ -2,15 +2,15 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button default-href="/tabs/cycle-count" slot="start"></ion-back-button>
+        <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
         <ion-title>{{ translate("Count name") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <div class="find">
-        <aside class="filters menu">
-          <ion-item lines="none">
+        <aside class="filters">
+          <ion-item lines="full" class="ion-margin-top">
             <ion-input slot="start" :label="translate('SKU')" :placeholder="translate('Scan or search products')"/>  
           </ion-item>
           <ion-segment v-model="selectedSegment">
@@ -61,7 +61,6 @@
         </aside>
 
         <main>
-          
           <section class="product-image">
             <DxpShopifyImg />
           </section>
@@ -121,7 +120,7 @@ import { translate } from '@/i18n'
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "AssignedStoreView",
+  name: "CountDetail",
   components: {
     IonBackButton,
     IonButton,
@@ -196,14 +195,17 @@ export default defineComponent({
 
 .filters {
   grid-area: filters;
+  border-right: 1px solid var(--ion-color-medium);
+}
+
+.product-info {
+  width: 100%;
+  margin-top: var(--spacer-lg);
 }
 
 .product-image {
   text-align: center;
-}
-
-.product-image > img {
-  width: 200px;
+  margin-top: var(--spacer-lg);
 }
 
 ion-content > main {
@@ -212,24 +214,8 @@ ion-content > main {
   height: 100%;
 }
 
-.menu {
-  border-right: 1px solid var(--ion-color-medium);
-}
-
 .re-count {
   margin: var(--spacer-base) var(--spacer-sm);
-}
-
-
-@media (min-width: 720px) {
-  main {
-    padding: var(--spacer-sm);
-    margin: auto;
-  }
-
-  .product-image > img {
-    width: 400px;
-  }
 }
 
 @media (min-width: 991px) {
@@ -238,12 +224,7 @@ ion-content > main {
           "filters main" 1fr
           / 375px;
     column-gap: var(--spacer-2xl);
-    /* margin: var(--spacer-lg); */
   }
-
- /* .filters {
-    margin-top: var(--spacer-lg);
-  } */
 
  .find >.filters {
     display: unset;

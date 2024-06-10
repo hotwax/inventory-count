@@ -7,7 +7,7 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-import AssignedStoreView from '@/views/AssignedStoreView.vue'
+import CountDetail from '@/views/CountDetail.vue'
 import Tabs from '@/views/Tabs.vue'
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -39,7 +39,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: "/tabs/cycle-count",
+    redirect: "/tabs/count",
   },
   {
     path: '/tabs',
@@ -47,11 +47,11 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/tabs/cycle-count'
+        redirect: '/tabs/count'
       },
       {
-        path: 'cycle-count',
-        component: () => import('@/views/CycleCount.vue'),
+        path: 'count',
+        component: () => import('@/views/Count.vue'),
       },
       {
         path: 'settings',
@@ -61,9 +61,9 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/store-view',
-    name: 'AssignedStoreView',
-    component: AssignedStoreView,
+    path: '/count-detail',
+    name: 'CountDetail',
+    component: CountDetail,
     beforeEnter: authGuard
   },
   {

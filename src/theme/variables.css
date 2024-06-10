@@ -102,7 +102,6 @@ main {
   align-items: start;
   gap: var(--spacer-2xl);
   max-width: 990px;
-  margin: var(--spacer-base) auto 0;
 }
 
 section {
