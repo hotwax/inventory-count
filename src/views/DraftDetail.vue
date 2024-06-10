@@ -30,16 +30,16 @@
               <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  
               <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>     
+              <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                <ion-content force-overscroll="false">
+                  <ion-datetime    
+                    id="schedule-datetime"        
+                    show-default-buttons 
+                    hour-cycle="h23"
+                    value="3rd March 2024"
+                  />
+                </ion-content>
+              </ion-modal>     
             </ion-item>
             <ion-item>
               <ion-icon slot="start" :icon="businessOutline"/>
@@ -78,8 +78,6 @@
         </ion-button>
       </div>
       
-      <hr/>
-
       <main>
         <div class="list-item">
           <ion-item lines="none">
@@ -110,7 +108,6 @@
             <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
           </ion-button>
         </div>
-        <hr/>
       </main>
     </ion-content>
   </ion-page>
@@ -190,6 +187,7 @@ export default defineComponent({
 
 .list-item {
   --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {

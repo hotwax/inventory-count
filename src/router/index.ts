@@ -10,7 +10,7 @@ import { loader } from '@/user-utils';
 import Draft from "@/views/Draft.vue";
 import DraftDetail from "@/views/DraftDetail.vue"
 import Assigned from "@/views/Assigned.vue"
-import AssignedCountDetail from "@/views/AssignedCountDetail.vue"
+import AssignedDetail from "@/views/AssignedDetail.vue"
 import PendingReview from "@/views/PendingReview.vue";
 import PendingReviewDetail from "@/views/PendingReviewDetail.vue"
 import Closed from "@/views/Closed.vue"
@@ -68,9 +68,9 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/assigned-count-detail',
-    name: 'AssignedCountDetail',
-    component: AssignedCountDetail,
+    path: '/assigned-detail',
+    name: 'AssignedDetail',
+    component: AssignedDetail,
     beforeEnter: authGuard,
   },
   {

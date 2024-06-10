@@ -41,7 +41,7 @@
             <ion-item>
               <ion-spinner slot="start" name="circular" paused="true"/>
               <ion-label>{{ translate("Variance") }}</ion-label>
-              <ion-label slot="end">13 counted | 20 expected</ion-label>
+              <ion-label slot="end">13 counted | 2  0 expected</ion-label>
             </ion-item>  
           </ion-list>
         </div>
@@ -81,8 +81,6 @@
           </ion-button>
         </div>
         
-        <hr/>
-
         <div class="list-item">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
@@ -118,7 +116,6 @@
             <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
           </ion-button>
         </div>
-        <hr/>
       </main>
     </ion-content>
   </ion-page>
@@ -133,7 +130,7 @@ import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonHeader, I
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 
 export default defineComponent({
-  name: 'AssignedCountDetail',
+  name: 'AssignedDetail',
   components: {
     IonBackButton,
     IonButton,
@@ -180,6 +177,7 @@ export default defineComponent({
 <style scoped>
 .list-item {
   --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {

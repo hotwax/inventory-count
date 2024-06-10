@@ -58,21 +58,21 @@
         </ion-list>
       </div>
 
-      <div class="header">
-          <ion-segment>
-            <ion-segment-button>
-              <ion-label>{{ translate("All") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button>
-              <ion-icon color="success" :icon="thermometerOutline"/>
-            </ion-segment-button>
-            <ion-segment-button>
-              <ion-icon color="danger" :icon="thermometerOutline"/>
-            </ion-segment-button>
-          </ion-segment>
+      <div class="header border">
+        <ion-segment>
+          <ion-segment-button>
+            <ion-label>{{ translate("All") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button>
+            <ion-icon color="success" :icon="thermometerOutline"/>
+          </ion-segment-button>
+          <ion-segment-button>
+            <ion-icon color="danger" :icon="thermometerOutline"/>
+          </ion-segment-button>
+        </ion-segment>
       </div>
 
-      <hr/>
+      
 
       <main>
         <div class="list-item">
@@ -100,13 +100,13 @@
 
           <div class="tablet">
             <ion-button fill="outline" color="success" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
+              <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
             </ion-button>
             <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-              <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
+              <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
             </ion-button>
             <ion-button fill="outline" color="danger" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
+              <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
             </ion-button>
           </div>
           
@@ -116,8 +116,6 @@
             </ion-item>
           </div>
         </div>
-
-        <hr/>
 
         <div class="list-item">
           <ion-item lines="none">
@@ -158,7 +156,6 @@
             </ion-item>
           </div>
         </div>
-        <hr/>
       </main>
     </ion-content>
     
@@ -191,28 +188,28 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 export default defineComponent({
   name: 'PendingReviewDetail',
   components: {
-  IonBackButton,
-  IonBadge,
-  IonButtons,
-  IonButton,
-  IonCheckbox,
-  IonChip,
-  IonContent,
-  IonFooter,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonPage,
-  IonRange,
-  IonSegment,
-  IonSegmentButton,
-  IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  DxpShopifyImg
+    IonBackButton,
+    IonBadge,
+    IonButtons,
+    IonButton,
+    IonCheckbox,
+    IonChip,
+    IonContent,
+    IonFooter,
+    IonHeader,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonPage,
+    IonRange,
+    IonSegment,
+    IonSegmentButton,
+    IonSpinner,
+    IonThumbnail,
+    IonTitle,
+    IonToolbar,
+    DxpShopifyImg
   },
 
   methods: {
@@ -245,8 +242,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.border {
+  border-bottom : 1px solid var(--ion-color-medium);
+}
+
 .list-item {
   --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {

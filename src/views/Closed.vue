@@ -17,14 +17,14 @@
       <main>
         <div class="header">
           <div class="search">
-            <ion-item>
+            <ion-item lines="full">
               <ion-icon slot="start" :icon="listOutline"/>
               <ion-label>{{ translate("Counts closed") }}</ion-label>
               <ion-label slot="end">14</ion-label>
             </ion-item>  
           </div>
           <div class="filters">
-            <ion-item>
+            <ion-item lines="full">
               <ion-icon slot="start" :icon="thermometerOutline"/>
               <ion-label>{{ translate("Average variance") }}</ion-label>
               <ion-label slot="end">50%</ion-label>
@@ -68,8 +68,6 @@
           </ion-label>
         </div>
         
-        <hr/>
-
         <div class="list-item">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
@@ -105,7 +103,6 @@
             <p>{{ translate("closed") }}</p>
           </ion-label>
         </div>
-        <hr/> 
       </main>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="openClosedCountModal">
@@ -168,6 +165,7 @@ export default defineComponent({
 <style scoped>
 .list-item {
   --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
@@ -177,6 +175,7 @@ export default defineComponent({
 .header {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
 }
 
 .search {

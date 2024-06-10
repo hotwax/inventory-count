@@ -42,9 +42,7 @@
             </ion-item>
           </div>
         </ion-list>
-      
-        <hr/>
-        
+              
         <ion-list>
           <div class="list-item">
             <ion-item lines="none">
@@ -74,7 +72,6 @@
             </ion-item>
           </div>
         </ion-list>
-        <hr/>  
       </main>
     </ion-content>
   </ion-page>
@@ -117,6 +114,7 @@ export default defineComponent({
 <style scoped>
 .list-item {
   --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
