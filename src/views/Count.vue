@@ -210,6 +210,10 @@ ion-card-header {
   padding-bottom: 0px;
 }
 
+main {
+  margin: var(--spacer-base) auto 0;
+}
+
 .header {
   display: grid;
   grid: "search filters"
