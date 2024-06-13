@@ -4,7 +4,7 @@ import store from "@/store";
 import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
-import { translate } from '@/i18n'
+import { translate } from '@hotwax/dxp-components'
 import TabBar from "@/components/TabBar.vue";
 
 import 'vue-router'
