@@ -1,15 +1,14 @@
 <template>
   <ion-app>
-    <ion-page>
-      <ion-content>
-        <ion-router-outlet />
-      </ion-content>
-    </ion-page>
+    <IonSplitPane content-id="main-content" when="lg">
+      <Menu/>
+      <ion-router-outlet id="main-content"></ion-router-outlet>
+    </IonSplitPane>
   </ion-app>
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet, IonPage, IonContent } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
 import { defineComponent } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
@@ -17,14 +16,16 @@ import { mapGetters, useStore } from 'vuex';
 import { initialise, resetConfig } from '@/adapter'
 import { useRouter } from 'vue-router';
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
+import Menu from '@/components/Menu.vue';
+
 
 export default defineComponent({
   name: 'App',
   components: {
     IonApp,
     IonRouterOutlet,
-    IonPage,
-    IonContent
+    IonSplitPane,
+    Menu
   },
   data() {
     return {

@@ -1,15 +1,21 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import store from "@/store";
-import Count from "@/views/count.vue";
 import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
-import TabBar from "@/components/TabBar.vue";
-
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
+import Draft from "@/views/Draft.vue";
+import DraftDetail from "@/views/DraftDetail.vue"
+import Assigned from "@/views/Assigned.vue"
+import AssignedDetail from "@/views/AssignedDetail.vue"
+import PendingReview from "@/views/PendingReview.vue";
+import PendingReviewDetail from "@/views/PendingReviewDetail.vue"
+import Closed from "@/views/Closed.vue"
+import StorePermissions from "@/views/StorePermissions.vue"
+import Settings from "@/views/Settings.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -40,50 +46,62 @@ const loginGuard = (to: any, from: any, next: any) => {
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: "/",
-    redirect: "/tabs/search",
+    path: '/',
+    redirect: '/draft'
   },
   {
-    path: '/tabs',
-    component: TabBar,
-    children: [
-      {
-        path: '',
-        redirect: '/search'
-      },
-      {
-        path: 'search',
-        component: () => import('@/views/Search.vue'),
-        meta: {
-          permissionId: "APP_SEARCH_VIEW"
-        }
-      },
-      {
-        path: 'upload',
-        component: () => import('@/views/Upload.vue'),
-        meta: {
-          permissionId: "APP_UPLOAD_VIEW"
-        }
-      },
-      {
-        path: 'settings',
-        component: () => import('@/views/Settings.vue')
-      },
-    ],
+    path: '/draft',
+    name: 'Draft',
+    component: Draft,
     beforeEnter: authGuard,
-    meta: {
-      permissionId: ""
-    }
   },
   {
-    path: "/count/:sku",
-    name: "Count",
-    component: Count,
+    path: "/draft-detail",
+    name: "DraftDetail",
+    component: DraftDetail,
     beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
+  },
+  {
+    path: '/assigned',
+    name: 'Assigned',
+    component: Assigned,
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/assigned-detail',
+    name: 'AssignedDetail',
+    component: AssignedDetail,
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/pending-review-detail',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,  
+    beforeEnter: authGuard, 
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: Settings,
+    beforeEnter: authGuard,
   },
   {
     path: '/login',
@@ -102,7 +120,7 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/tabs/settings";
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/draft";
     else {
       showToast(translate('You do not have permission to access this page'));
     }
