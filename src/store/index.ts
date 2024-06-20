@@ -4,8 +4,6 @@ import getters  from './getters'
 import actions from './actions'
 import RootState from './RootState'
 import createPersistedState from "vuex-persistedstate";
-import userModule from './modules/user';
-import productModule from "./modules/product"
 import { setPermissions } from '@/authorization'
 
 // TODO check how to register it from the components only
@@ -30,8 +28,6 @@ const store = createStore<RootState>({
     getters,
     plugins: [ persistState ],
     modules: { 
-        'user': userModule,
-        'product': productModule
     },
 })
 
