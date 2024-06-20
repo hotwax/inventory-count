@@ -1,0 +1,207 @@
+<template>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-back-button slot="start" default-href="/assigned" />
+        <ion-title>{{ translate("Assigned count")}}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button>
+            <ion-icon slot="icon-only" :icon="addOutline" />
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+ 
+    <ion-content>
+      <div class="header">
+        <div class="search ion-padding">
+          <ion-item lines="none">
+            <ion-label>
+              CountName 
+              <p>CountId</p>
+            </ion-label>
+            <ion-button slot="end" fill="outline" color="medium">{{ translate("Rename") }}</ion-button>
+          </ion-item>
+          <ion-chip outline>
+            <ion-icon :icon="calendarClearOutline"/>
+            <ion-label>3rd March 2024</ion-label>
+          </ion-chip>
+          <ion-chip outline>
+            <ion-icon :icon="businessOutline"/>
+            <ion-label>Broadway</ion-label>
+          </ion-chip>
+        </div>
+        <div class="filters ion-padding">
+          <ion-list>
+            <ion-item>
+              <ion-spinner slot="start" name="circular" paused="true"/>
+              <ion-label>{{ translate("Progress") }}</ion-label>
+              <ion-label slot="end">40% complete</ion-label>
+            </ion-item>  
+            <ion-item>
+              <ion-spinner slot="start" name="circular" paused="true"/>
+              <ion-label>{{ translate("Variance") }}</ion-label>
+              <ion-label slot="end">13 counted | 2  0 expected</ion-label>
+            </ion-item>  
+          </ion-list>
+        </div>
+      </div>
+
+      <hr/>
+
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label>
+            primary identifier
+            <p>secondary identifier</p>
+          </ion-label>
+        </ion-item>
+        
+        <ion-label>
+          3
+          <p>{{ translate("QoH") }}</p>
+        </ion-label>
+
+        <ion-chip outline class="tablet">
+          <ion-label>{{ translate("count pending") }}</ion-label>
+        </ion-chip>
+
+        <div class="tablet">
+          <ion-item lines="none">
+            <ion-icon :icon="personCircleOutline" ></ion-icon>
+          </ion-item>
+        </div>
+
+        <ion-button fill="clear" color="medium">
+          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+        </ion-button>
+      </div>
+      
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label>
+            primary identifier
+            <p>secondary identifier</p>
+          </ion-label>
+        </ion-item>
+        
+        <ion-label>
+          3
+          <p>{{ translate("QoH") }}</p>
+        </ion-label>
+
+        <ion-label>
+          4
+          <p>{{ translate("counted") }}</p>
+        </ion-label>
+
+        <ion-label>
+          +1
+          <p>{{ translate("variance") }}</p>
+        </ion-label>
+
+        <ion-chip outline>
+          <ion-icon :icon="personCircleOutline"/>
+          <ion-label> user.name </ion-label>
+        </ion-chip>
+
+        <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event)">
+          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+        </ion-button>
+      </div>
+    </ion-content>
+  </ion-page>
+</template>
+
+<script>
+import { defineComponent } from "vue";
+import { DxpShopifyImg } from "@hotwax/dxp-components";
+import { translate } from '@/i18n'
+import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, popoverController} from "@ionic/vue";
+import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
+
+export default defineComponent({
+  name: 'AssignedDetail',
+  components: {
+    IonBackButton,
+    IonButton,
+    IonButtons,
+    IonChip,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonPage,
+    IonSpinner,
+    IonThumbnail,
+    IonTitle,
+    IonToolbar,
+    DxpShopifyImg
+  },
+
+  methods: {
+    async openAssignedCountPopover(Event){
+      const popover = await popoverController.create({
+        component: AssignedCountPopover,
+        event: Event,
+        showBackdrop: false,
+      });
+      await popover.present();
+    },
+  },
+
+  setup() {
+    return {
+      translate,
+      addOutline,
+      calendarClearOutline,
+      businessOutline,
+      personCircleOutline,
+      ellipsisVerticalOutline,
+    }
+  }
+})
+</script>
+
+<style scoped>
+.list-item {
+  --columns-desktop: 6;
+  border-bottom : 1px solid var(--ion-color-medium);
+}
+
+.list-item > ion-item {
+  width: 100%;
+}
+
+.header {
+  display: grid;
+  grid: "search filters"
+        /1fr 1fr;
+}
+
+.search {
+  grid-area: search;
+}
+
+.filters {
+  grid-area: filters;
+}
+
+@media (max-width: 991px) {
+  .header {
+    grid: "search"
+          "filters"
+          / auto;
+    padding: 0;
+  }
+}
+</style>
