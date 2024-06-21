@@ -7,14 +7,16 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
+import CountDetail from '@/views/CountDetail.vue';
+import Tabs from '@/views/Tabs.vue';
 import Draft from "@/views/Draft.vue";
-import DraftDetail from "@/views/DraftDetail.vue"
-import Assigned from "@/views/Assigned.vue"
-import AssignedDetail from "@/views/AssignedDetail.vue"
+import DraftDetail from "@/views/DraftDetail.vue";
+import Assigned from "@/views/Assigned.vue";
+import AssignedDetail from "@/views/AssignedDetail.vue";
 import PendingReview from "@/views/PendingReview.vue";
-import PendingReviewDetail from "@/views/PendingReviewDetail.vue"
-import Closed from "@/views/Closed.vue"
-import StorePermissions from "@/views/StorePermissions.vue"
+import PendingReviewDetail from "@/views/PendingReviewDetail.vue";
+import Closed from "@/views/Closed.vue";
+import StorePermissions from "@/views/StorePermissions.vue";
 import Settings from "@/views/Settings.vue";
 
 // Defining types for the meta values
@@ -45,6 +47,35 @@ const loginGuard = (to: any, from: any, next: any) => {
 };
 
 const routes: Array<RouteRecordRaw> = [
+  {
+    path: "/tabs",
+    redirect: "/tabs/count",
+  },
+  {
+    path: '/tabs',
+    component: Tabs,
+    children: [
+      {
+        path: '',
+        redirect: '/tabs/count'
+      },
+      {
+        path: 'count',
+        component: () => import('@/views/Count.vue'),
+      },
+      {
+        path: 'settings',
+        component: () => import('@/views/Settings.vue')
+      },
+    ],
+    beforeEnter: authGuard,
+  },
+  {
+    path: '/count-detail',
+    name: 'CountDetail',
+    component: CountDetail,
+    beforeEnter: authGuard 
+  },
   {
     path: '/',
     redirect: '/draft'

@@ -14,31 +14,29 @@
     </ion-header>
 
     <ion-content id="draft-filter">
-      <main>
-        <ion-list class="list">
-          <ion-item button detail>
-            <ion-label>
-              count name
-              <p>count id</p>
-            </ion-label>
-            <ion-note slot="end" color="medium">items</ion-note>
-          </ion-item>
-          <ion-item button detail>
-            <ion-label>
-              count name
-              <p>count id</p>
-            </ion-label>
-            <ion-note slot="end" color="medium">items</ion-note>
-          </ion-item>
-          <ion-item button detail>
-            <ion-label>
-              count name
-              <p>count id</p>
-            </ion-label>
-            <ion-note slot="end" color="medium">items</ion-note>
-          </ion-item>
-        </ion-list>
-      </main>
+      <ion-list class="list">
+        <ion-item button detail>
+          <ion-label>
+            count name
+            <p>count id</p>
+          </ion-label>
+          <ion-note slot="end" color="medium">items</ion-note>
+        </ion-item>
+        <ion-item button detail>
+          <ion-label>
+            count name
+            <p>count id</p>
+          </ion-label>
+          <ion-note slot="end" color="medium">items</ion-note>
+        </ion-item>
+        <ion-item button detail>
+          <ion-label>
+            count name
+            <p>count id</p>
+          </ion-label>
+          <ion-note slot="end" color="medium">items</ion-note>
+        </ion-item>
+      </ion-list>
     </ion-content>
   </ion-page>
 </template>

@@ -72,91 +72,87 @@
         </ion-segment>
       </div>
 
-      
-
-      <main>
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
-            </ion-thumbnail>
-            <ion-label class="ion-text-wrap">
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
-          </ion-item>
-          
-          <ion-label>
-            3
-            <p>{{ translate("systemic") }}</p>
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label class="ion-text-wrap">
+            primary identifier
+            <p>secondary identifier</p>
           </ion-label>
+        </ion-item>
+        
+        <ion-label>
+          3
+          <p>{{ translate("systemic") }}</p>
+        </ion-label>
 
-          <ion-item lines="none">
-            <ion-label class="ion-text-center">
-              <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-              <p>{{ translate("last counted 1 week ago") }}</p>
-            </ion-label>  
-          </ion-item>
-
-          <div class="tablet">
-            <ion-button fill="outline" color="success" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-            </ion-button>
-            <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-              <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-            </ion-button>
-            <ion-button fill="outline" color="danger" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-            </ion-button>
-          </div>
-          
-          <div>
-            <ion-item lines="none">
-              <ion-checkbox></ion-checkbox>
-            </ion-item>
-          </div>
-        </div>
-
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
-            </ion-thumbnail>
-            <ion-label class="ion-text-wrap">
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
-          </ion-item>
-          
-          <ion-label>
-            6/3
-            <p>{{ translate("counted/systemic") }}</p>
-          </ion-label>
-
-          <ion-label>
-            +1
-            <p>user.name</p>
+        <ion-item lines="none">
+          <ion-label class="ion-text-center">
+            <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+            <p>{{ translate("last counted 1 week ago") }}</p>
           </ion-label>  
+        </ion-item>
 
-          <div class="tablet">
-            <ion-button fill="outline" color="success" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
-            </ion-button>
-            <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-              <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
-            </ion-button>
-            <ion-button fill="outline" color="danger" size="small">
-              <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
-            </ion-button>
-          </div>
-          
-          <div>
-            <ion-item lines="none">
-              <ion-checkbox></ion-checkbox>
-            </ion-item>
-          </div>
+        <div class="tablet">
+          <ion-button fill="outline" color="success" size="small">
+            <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
+          </ion-button>
+          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+            <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
+          </ion-button>
+          <ion-button fill="outline" color="danger" size="small">
+            <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
+          </ion-button>
         </div>
-      </main>
+        
+        <div>
+          <ion-item lines="none">
+            <ion-checkbox></ion-checkbox>
+          </ion-item>
+        </div>
+      </div>
+
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label class="ion-text-wrap">
+            primary identifier
+            <p>secondary identifier</p>
+          </ion-label>
+        </ion-item>
+        
+        <ion-label>
+          6/3
+          <p>{{ translate("counted/systemic") }}</p>
+        </ion-label>
+
+        <ion-label>
+          +1
+          <p>user.name</p>
+        </ion-label>  
+
+        <div class="tablet">
+          <ion-button fill="outline" color="success" size="small">
+            <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
+          </ion-button>
+          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+            <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
+          </ion-button>
+          <ion-button fill="outline" color="danger" size="small">
+            <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
+          </ion-button>
+        </div>
+        
+        <div>
+          <ion-item lines="none">
+            <ion-checkbox></ion-checkbox>
+          </ion-item>
+        </div>
+      </div>
     </ion-content>
     
     <ion-footer>

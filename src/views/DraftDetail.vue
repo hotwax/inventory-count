@@ -78,37 +78,35 @@
         </ion-button>
       </div>
       
-      <main>
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
-            </ion-thumbnail>
-            <ion-label class="ion-text-wrap">
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
-          </ion-item>          
-          <ion-label>
-            3
-            <p>{{ translate("QoH") }}</p>
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label class="ion-text-wrap">
+            primary identifier
+            <p>secondary identifier</p>
           </ion-label>
-          <div class="tablet">
-            <ion-chip outline>
-              <ion-label>4th March 2024</ion-label>
-            </ion-chip>
-            <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
-          </div>
-          <div class="tablet">
-            <ion-chip outline>
-              <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
-            </ion-chip>
-          </div>
-          <ion-button fill="clear" slot="end">
-            <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
-          </ion-button>
+        </ion-item>          
+        <ion-label>
+          3
+          <p>{{ translate("QoH") }}</p>
+        </ion-label>
+        <div class="tablet">
+          <ion-chip outline>
+            <ion-label>4th March 2024</ion-label>
+          </ion-chip>
+          <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
         </div>
-      </main>
+        <div class="tablet">
+          <ion-chip outline>
+            <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
+          </ion-chip>
+        </div>
+        <ion-button fill="clear" slot="end">
+          <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+        </ion-button>
+      </div>
     </ion-content>
   </ion-page>
 </template>

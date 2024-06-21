@@ -49,74 +49,72 @@
 
       <hr/>
 
-      <main>       
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
-            </ion-thumbnail>
-            <ion-label>
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
-          </ion-item>
-          
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
           <ion-label>
-            3
-            <p>{{ translate("QoH") }}</p>
+            primary identifier
+            <p>secondary identifier</p>
           </ion-label>
-
-          <ion-chip outline class="tablet">
-            <ion-label>{{ translate("count pending") }}</ion-label>
-          </ion-chip>
-
-          <div class="tablet">
-            <ion-item lines="none">
-              <ion-icon :icon="personCircleOutline" ></ion-icon>
-            </ion-item>
-          </div>
-
-          <ion-button fill="clear" color="medium">
-            <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-          </ion-button>
-        </div>
+        </ion-item>
         
-        <div class="list-item">
+        <ion-label>
+          3
+          <p>{{ translate("QoH") }}</p>
+        </ion-label>
+
+        <ion-chip outline class="tablet">
+          <ion-label>{{ translate("count pending") }}</ion-label>
+        </ion-chip>
+
+        <div class="tablet">
           <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
-            </ion-thumbnail>
-            <ion-label>
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
+            <ion-icon :icon="personCircleOutline" ></ion-icon>
           </ion-item>
-          
-          <ion-label>
-            3
-            <p>{{ translate("QoH") }}</p>
-          </ion-label>
-
-          <ion-label>
-            4
-            <p>{{ translate("counted") }}</p>
-          </ion-label>
-
-          <ion-label>
-            +1
-            <p>{{ translate("variance") }}</p>
-          </ion-label>
-
-          <ion-chip outline>
-            <ion-icon :icon="personCircleOutline"/>
-            <ion-label> user.name </ion-label>
-          </ion-chip>
-
-          <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event)">
-            <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-          </ion-button>
         </div>
-      </main>
+
+        <ion-button fill="clear" color="medium">
+          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+        </ion-button>
+      </div>
+      
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-thumbnail slot="start">
+            <DxpShopifyImg/>
+          </ion-thumbnail>
+          <ion-label>
+            primary identifier
+            <p>secondary identifier</p>
+          </ion-label>
+        </ion-item>
+        
+        <ion-label>
+          3
+          <p>{{ translate("QoH") }}</p>
+        </ion-label>
+
+        <ion-label>
+          4
+          <p>{{ translate("counted") }}</p>
+        </ion-label>
+
+        <ion-label>
+          +1
+          <p>{{ translate("variance") }}</p>
+        </ion-label>
+
+        <ion-chip outline>
+          <ion-icon :icon="personCircleOutline"/>
+          <ion-label> user.name </ion-label>
+        </ion-chip>
+
+        <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event)">
+          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+        </ion-button>
+      </div>
     </ion-content>
   </ion-page>
 </template>

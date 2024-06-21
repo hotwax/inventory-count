@@ -14,96 +14,94 @@
     </ion-header>
 
     <ion-content id="closed-filter">
-      <main>
-        <div class="header">
-          <div class="search">
-            <ion-item lines="full">
-              <ion-icon slot="start" :icon="listOutline"/>
-              <ion-label>{{ translate("Counts closed") }}</ion-label>
-              <ion-label slot="end">14</ion-label>
-            </ion-item>  
-          </div>
-          <div class="filters">
-            <ion-item lines="full">
-              <ion-icon slot="start" :icon="thermometerOutline"/>
-              <ion-label>{{ translate("Average variance") }}</ion-label>
-              <ion-label slot="end">50%</ion-label>
-            </ion-item>  
-          </div>
+      <div class="header">
+        <div class="search">
+          <ion-item lines="full">
+            <ion-icon slot="start" :icon="listOutline"/>
+            <ion-label>{{ translate("Counts closed") }}</ion-label>
+            <ion-label slot="end">14</ion-label>
+          </ion-item>  
         </div>
-
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-            <ion-label>
-              Count name
-              <p>count id</p>
-            </ion-label>
-          </ion-item>
-        
-          <ion-chip outline>
-            <ion-label>facilityId</ion-label>
-          </ion-chip>
-
-          <ion-label>
-            10/20
-            <p>{{ translate("products counted") }}</p>
-          </ion-label>
-
-
-          <ion-label>
-            3
-            <p>{{ translate("rejected counts") }}</p>
-          </ion-label>
-
-
-          <ion-label>
-            14
-            <p>{{ translate("total variance") }}</p>
-          </ion-label>
-
-          <ion-label class="ion-padding">
-            4th March 2024
-            <p>{{ translate("closed") }}</p>
-          </ion-label>
+        <div class="filters">
+          <ion-item lines="full">
+            <ion-icon slot="start" :icon="thermometerOutline"/>
+            <ion-label>{{ translate("Average variance") }}</ion-label>
+            <ion-label slot="end">50%</ion-label>
+          </ion-item>  
         </div>
-        
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-            <ion-label>
-              Count name
-              <p>count id</p>
-            </ion-label>
-          </ion-item>
-        
-          <ion-chip outline>
-            <ion-label>facilityId</ion-label>
-          </ion-chip>
+      </div>
 
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
           <ion-label>
-            10/20
-            <p>{{ translate("products counted") }}</p>
+            Count name
+            <p>count id</p>
           </ion-label>
+        </ion-item>
+      
+        <ion-chip outline>
+          <ion-label>facilityId</ion-label>
+        </ion-chip>
+
+        <ion-label>
+          10/20
+          <p>{{ translate("products counted") }}</p>
+        </ion-label>
 
 
+        <ion-label>
+          3
+          <p>{{ translate("rejected counts") }}</p>
+        </ion-label>
+
+
+        <ion-label>
+          14
+          <p>{{ translate("total variance") }}</p>
+        </ion-label>
+
+        <ion-label class="ion-padding">
+          4th March 2024
+          <p>{{ translate("closed") }}</p>
+        </ion-label>
+      </div>
+      
+      <div class="list-item">
+        <ion-item lines="none">
+          <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
           <ion-label>
-            3
-            <p>{{ translate("rejected counts") }}</p>
+            Count name
+            <p>count id</p>
           </ion-label>
+        </ion-item>
+      
+        <ion-chip outline>
+          <ion-label>facilityId</ion-label>
+        </ion-chip>
+
+        <ion-label>
+          10/20
+          <p>{{ translate("products counted") }}</p>
+        </ion-label>
 
 
-          <ion-label>
-            14
-            <p>{{ translate("total variance") }}</p>
-          </ion-label>
+        <ion-label>
+          3
+          <p>{{ translate("rejected counts") }}</p>
+        </ion-label>
 
-          <ion-label class="ion-padding">
-            4th March 2024
-            <p>{{ translate("closed") }}</p>
-          </ion-label>
-        </div>
-      </main>
+
+        <ion-label>
+          14
+          <p>{{ translate("total variance") }}</p>
+        </ion-label>
+
+        <ion-label class="ion-padding">
+          4th March 2024
+          <p>{{ translate("closed") }}</p>
+        </ion-label>
+      </div>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="openClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />

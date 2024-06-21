@@ -12,66 +12,64 @@
     </ion-header>
 
     <ion-content>
-      <main>
-        <ion-list>
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-              <ion-label>
-                primary identifier
-                <p>secondary identifier</p>
-              </ion-label>
-            </ion-item>
-            
-            <ion-chip outline>
-              <ion-label>facilityId</ion-label>
-            </ion-chip>
-           
+      <ion-list>
+        <div class="list-item">
+          <ion-item lines="none">
+            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              10/20
-              <p>{{ translate("counter") }}</p>
+              primary identifier
+              <p>secondary identifier</p>
             </ion-label>
-  
+          </ion-item>
+          
+          <ion-chip outline>
+            <ion-label>facilityId</ion-label>
+          </ion-chip>
+          
+          <ion-label>
+            10/20
+            <p>{{ translate("counter") }}</p>
+          </ion-label>
+
+          <ion-label>
+            4th March 2024
+            <p>{{ translate("due date") }}</p>
+          </ion-label>
+          
+          <ion-item lines="none">
+            <ion-badge slot="end">{{ translate("Assigned") }}</ion-badge>
+          </ion-item>
+        </div>
+      </ion-list>
+      <ion-list>
+        <div class="list-item">
+          <ion-item lines="none">
+            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              4th March 2024
-              <p>{{ translate("due date") }}</p>
+              primary identifier
+              <p>secondary identifier</p>
             </ion-label>
-            
-            <ion-item lines="none">
-              <ion-badge slot="end">{{ translate("Assigned") }}</ion-badge>
-            </ion-item>
-          </div>
-        </ion-list>
-        <ion-list>
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-              <ion-label>
-                primary identifier
-                <p>secondary identifier</p>
-              </ion-label>
-            </ion-item>
-            
-            <ion-chip outline>
-              <ion-label>facilityId</ion-label>
-            </ion-chip>
-           
-            <ion-label>
-              10/20
-              <p>{{ translate("counter") }}</p>
-            </ion-label>
-  
-            <ion-label>
-              4th March 2024
-              <p>{{ translate("due date") }}</p>
-            </ion-label>
-            
-            <ion-item lines="none">
-              <ion-badge slot="end" color="danger">{{ translate("Recount requested") }}</ion-badge>
-            </ion-item>
-          </div>
-        </ion-list>
-      </main>
+          </ion-item>
+          
+          <ion-chip outline>
+            <ion-label>facilityId</ion-label>
+          </ion-chip>
+          
+          <ion-label>
+            10/20
+            <p>{{ translate("counter") }}</p>
+          </ion-label>
+
+          <ion-label>
+            4th March 2024
+            <p>{{ translate("due date") }}</p>
+          </ion-label>
+          
+          <ion-item lines="none">
+            <ion-badge slot="end" color="danger">{{ translate("Recount requested") }}</ion-badge>
+          </ion-item>
+        </div>
+      </ion-list>
     </ion-content>
   </ion-page>
 </template>
