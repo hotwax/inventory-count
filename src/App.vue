@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <IonSplitPane content-id="main-content" when="lg">
-      <Menu/>
+      <!-- <Menu/> -->
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>

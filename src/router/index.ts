@@ -48,7 +48,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: "/tabs",
+    path: "/",
     redirect: "/tabs/count",
   },
   {
@@ -77,7 +77,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard 
   },
   {
-    path: '/',
+    path: '/draft',
     redirect: '/draft'
   },
   {

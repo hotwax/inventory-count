@@ -5,6 +5,7 @@ import actions from "./actions"
 import RootState from "./RootState"
 import createPersistedState from "vuex-persistedstate";
 import userModule from "./modules/user";
+import pickerCountModule from "./modules/pickerCount"
 
 
 // TODO check how to register it from the components only
@@ -14,7 +15,7 @@ import userModule from "./modules/user";
 const state: any = {}
 
 const persistState = createPersistedState({
-  paths: ["user"],
+  paths: ["user", "pickerCount"],
   fetchBeforeUse: true
 })
 
@@ -27,6 +28,7 @@ const store = createStore<RootState>({
   plugins: [ persistState ],
   modules: {
     "user": userModule,
+    "pickerCount": pickerCountModule
   },
 })
 

@@ -19,11 +19,11 @@
 
     <ion-content>
       <main>
-        <section v-if="selectedSegment === 'assigned'">  
-          <ion-card @click="navigateToStoreView">
+        <section v-if="selectedSegment === 'assigned' || cycleCount.statusId === 'INV_COUNT_CREATED'" >  
+          <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView">
             <ion-card-header>
               <ion-card-title>
-                Count Name
+                {{ count.countImportName }}
                 <ion-label>
                   <p>created date</p>
                 </ion-label>
@@ -33,30 +33,7 @@
             <ion-item lines="none">
               {{ translate("Due date") }}
               <ion-label slot="end">
-                <p>2nd July 2024</p>
-              </ion-label>
-            </ion-item>
-          </ion-card>
-
-          <ion-card>
-            <ion-card-header>
-              <div>
-                <ion-label overline color="danger">
-                  {{ translate("Recount requested")}}
-                </ion-label>
-                <ion-card-title>
-                  Count Name
-                  <ion-label>
-                    <p>created date</p>
-                  </ion-label>
-                </ion-card-title>
-              </div>
-              <ion-note>10 items</ion-note>
-            </ion-card-header>
-            <ion-item lines="none">
-              {{ translate("Due date") }}
-              <ion-label slot="end">
-                <p>2nd July 2024</p>
+                <p>{{ getTime(count.dueDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -142,7 +119,7 @@
   </ion-page>
 </template>
 
-<script>
+<script setup>
 import {
   IonCard,
   IonCardHeader,
@@ -157,47 +134,41 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
+  onIonViewDidEnter
 } from '@ionic/vue';
+import { DateTime } from 'luxon';
 import { translate } from '@/i18n';
-import { defineComponent } from "vue";
+import { computed, ref } from "vue";
+import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
+import { UtilService } from '@/services/UtilService';
 
-export default defineComponent({
-  name: "Count",
-  components: {
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonNote,
-    IonPage,
-    IonSegment,
-    IonSegmentButton,
-    IonTitle,
-    IonToolbar,
-  },
-  data() {
-    return {
-      selectedSegment: 'assigned',
-    }
-  },  
-  methods: {
-    navigateToStoreView() {
-      this.router.push('/count-detail');
-    }
-  },
-  setup() {
-    const router = useRouter();
+const store = useStore();
+const router = useRouter()
 
-    return {
-      router,
-      translate,
-    };
-  }
-});
+const cycleCount = computed(() => store.getters["pickerCount/getCycleCount"]);
+const selectedSegment = ref('assigned');
+
+onIonViewDidEnter(async() => {
+  fetchCycleCount();
+})
+
+async function fetchCycleCount() {
+  await store.dispatch("pickerCount/fetchCycleCount");
+}
+
+function getTime(time) {
+  if (!time) return '';
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = UtilService.getOrdinalSuffix(dateTime.day);
+
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+}
+
+function navigateToStoreView() {
+  router.push('/count-detail')
+}
+
 </script>
 
 <style scoped>
