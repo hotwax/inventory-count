@@ -8,7 +8,10 @@ import RootState from '../../RootState'
 const pickerCountModule: Module<pickerCountState, RootState> = {
     namespaced: true,
     state: {
-      cycleCounts: {},
+      cycleCounts: {
+        list: [],
+        isScrollable: true
+      },
     },
     getters,
     actions,

@@ -11,21 +11,34 @@ import emitter from '@/event-bus'
 
 const actions: ActionTree<pickerCountState, RootState> = {	
 
-  async fetchCycleCount ({ commit }) {
-    let count;
-    
+  async fetchCycleCount ({ commit, state }, payload) {
+
+    const params = {
+      pageSize: payload.pageSize,
+      pageIndex: payload.pageIndex
+    }
+    let counts = state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
+    let isScrollable = true
+
     try {
-      const resp = await pickerService.fetchCycleCount({page: 20})
+      const resp = await pickerService.fetchCycleCount(params)
       if(!hasError(resp) && resp.data.length) {
-        count = resp.data
+
+        if(payload.pageIndex && payload.pageIndex > 0) {
+          counts = counts.concat(resp.data)
+        } else {
+          counts = resp.data
+        }
+
+        if(resp.data.length == payload.pageSize) isScrollable = true
+        else isScrollable = false
       } else {
         throw resp.data;
       }
     } catch (err: any) {
       logger.error(err)
     }
-    commit(types.PICKER_COUNT_UPDATED, count)
-    return count;
+    commit(types.PICKER_COUNT_UPDATED, {cycleCount: counts, isScrollable})
   }
 
 }	

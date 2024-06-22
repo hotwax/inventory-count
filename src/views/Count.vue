@@ -17,10 +17,10 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <main>
         <section v-if="selectedSegment === 'assigned' || cycleCount.statusId === 'INV_COUNT_CREATED'" >  
-          <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView">
+          <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
             <ion-card-header>
               <ion-card-title>
                 {{ count.countImportName }}
@@ -115,6 +115,17 @@
           </ion-card>
         </section>
       </main>
+      <ion-infinite-scroll
+        @ionInfinite="loadMoreCycleCount($event)"
+        threshold="100px"
+        v-show="isScrollable"
+        ref="infiniteScrollRef"
+      >
+        <ion-infinite-scroll-content
+          loading-spinner="crescent"
+          :loading-text="translate('Loading')"
+        />
+      </ion-infinite-scroll>
     </ion-content>
   </ion-page>
 </template>
@@ -126,6 +137,8 @@ import {
   IonCardTitle,
   IonContent,
   IonHeader,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonItem,
   IonLabel,
   IonNote,
@@ -147,14 +160,52 @@ const store = useStore();
 const router = useRouter()
 
 const cycleCount = computed(() => store.getters["pickerCount/getCycleCount"]);
+const isScrollable = computed(() => store.getters["pickerCount/isCycleCountScrollable"])
+
 const selectedSegment = ref('assigned');
+const isScrollingEnabled = ref(false);
+const contentRef = ref({});
+const infiniteScrollRef = ref({});
 
 onIonViewDidEnter(async() => {
   fetchCycleCount();
 })
 
-async function fetchCycleCount() {
-  await store.dispatch("pickerCount/fetchCycleCount");
+function enableScrolling() {
+  const parentElement = contentRef.value.$el
+  const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+  if(distanceFromInfinite < 0) {
+    isScrollingEnabled.value = false;
+  } else {
+    isScrollingEnabled.value = true;
+  }
+}
+
+async function loadMoreCycleCount(event) {
+  // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
+  if(!(isScrollingEnabled.value && isScrollable.value)) {
+    await event.target.complete();
+  }
+  fetchCycleCount(
+    undefined,
+    Math.ceil(
+      cycleCount.value?.length / (process.env.VUE_APP_VIEW_SIZE)
+    ).toString()
+  ).then(async () => {
+    await event.target.complete();
+  });
+}
+
+async function fetchCycleCount(vSize, vIndex) {
+  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
+  const pageIndex = vIndex ? vIndex : 0;
+  const payload = {
+    pageSize,
+    pageIndex,
+  };
+  await store.dispatch("pickerCount/fetchCycleCount", payload);
 }
 
 function getTime(time) {
@@ -165,11 +216,11 @@ function getTime(time) {
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
-function navigateToStoreView() {
-  router.push('/count-detail')
+function navigateToStoreView(countId) {
+  router.push(`/count-detail/${countId}`)
 }
 
-</script>
+</script> 
 
 <style scoped>
 
