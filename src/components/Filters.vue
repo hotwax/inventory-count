@@ -13,21 +13,19 @@
         </ion-item-divider>
         <ion-item>
           <ion-icon slot="start" :icon="businessOutline"/>
-          <ion-select interface="popover" value="default" :label="translate('Facility')">
-            <ion-select-option value="default">Facility-1</ion-select-option>
-            <ion-select-option>Facility-2</ion-select-option>
-            <ion-select-option>Facility-3</ion-select-option>
+          <ion-select interface="popover" value="default" :label="translate('Facility')" >
+            <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">{{ facility.facilityName }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item button>
           <ion-icon slot="start" :icon="removeCircleOutline"/>
           <ion-checkbox>{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
-        <ion-item-divider>
+
+        <ion-item-divider v-if="showAdditionalFilters()">
           <ion-label>{{ translate("Date") }}</ion-label>
         </ion-item-divider>
-        
-        <ion-accordion-group>
+        <ion-accordion-group v-if="showAdditionalFilters()">
           <ion-accordion>
             <ion-item slot="header">
               <ion-icon slot="start" :icon="gitBranchOutline"/>
@@ -107,7 +105,7 @@
   </ion-menu>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -128,52 +126,21 @@ import {
   IonTitle,
   IonToolbar
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, ref } from "vue";
 import { removeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
+import store from "@/store";
+import router from "@/router";
 
-export default defineComponent({
-  name: "Filters",
-  components: {
-    IonAccordion,
-    IonAccordionGroup,
-    IonButton,
-    IonCheckbox,
-    IonContent,
-    IonDatetime,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonItemDivider,
-    IonLabel,
-    IonList,
-    IonMenu,
-    IonModal,
-    IonSelect,
-    IonSelectOption,
-    IonTitle,
-    IonToolbar
-  },
-  data() {
-    return {
-      dateTimeModalOpen: false,
-    }
-  },
-  methods: {
-    
-    openDateTimeModal() {
-      this.dateTimeModalOpen = true;
-    }
-  },
+const dateTimeModalOpen = ref(false)
 
-  setup() {    
-    return {
-      removeCircleOutline,
-      businessOutline,
-      gitBranchOutline,
-      gitPullRequestOutline,
-      translate
-    };
-  },
-});
+const facilities = computed(() => store.getters["user/getFacilities"])
+
+function openDateTimeModal() {
+  dateTimeModalOpen.value = true;
+}
+
+function showAdditionalFilters() {
+  return router.currentRoute.value.name !== "Draft"
+}
 </script>
