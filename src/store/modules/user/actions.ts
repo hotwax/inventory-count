@@ -65,6 +65,9 @@ const actions: ActionTree<UserState, RootState> = {
     // reset plugin state on logout
     authStore.$reset()
 
+    commit(types.USER_FACILITIES_UPDATED, [])
+    commit(types.USER_CURRENT_FACILITY_UPDATED, {})
+
     emitter.emit('dismissLoader')
   },
 
@@ -111,8 +114,16 @@ const actions: ActionTree<UserState, RootState> = {
       logger.error("Failed to fetch facilities")
     }
 
-    commit(types.USER_FACILITIES_UPDATED, facilities)
-  }
+    // Updating current facility with a default first facility when fetching facilities on login
+    if(facilities.length) {
+      commit(types.USER_CURRENT_FACILITY_UPDATED, facilities[0])
+    }
 
+    commit(types.USER_FACILITIES_UPDATED, facilities)
+  },
+
+  async updateCurrentFacility({ commit }, facility) {
+    commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
+  }
 }
 export default actions;

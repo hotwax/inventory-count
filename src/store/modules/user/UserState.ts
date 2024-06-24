@@ -7,4 +7,5 @@ export default interface UserState {
     token: string;
   }
   facilities: Array<any>;
+  currentFacility: any;
 }

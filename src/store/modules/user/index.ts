@@ -15,7 +15,8 @@ const userModule: Module<UserState, RootState> = {
         url: "",
         token: ""
       },
-      facilities: []
+      facilities: [],
+      currentFacility: {}
     },
     getters,
     actions,

@@ -52,15 +52,23 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ $t("Facility") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ $t("Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.") }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-select :label="$t('Select facility')" interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
+              <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName || facility.facilityId }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
       <hr />
-      <!-- <div class="section-header">
-        <h1>
-          {{ translate("App") }}
-          <p class="overline" >{{ translate("Version:", { appVersion }) }}</p>
-        </h1>
-        <p class="overline">{{ translate("Built:", { builtTime:  getDateTime(appInfo.builtTime)}) }}</p>
-      </div> -->
       <!-- <section>
         <ion-card>
           <ion-card-header>
@@ -82,12 +90,10 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonMenuButton, IonPage, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
-// import TimeZoneModal from "@/components/TimezoneModal.vue";
 import Image from "@/components/Image.vue"
-import { DateTime } from "luxon";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms } from "@hotwax/dxp-components";
@@ -99,17 +105,12 @@ const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_A
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
+const facilities = computed(() => store.getters["user/getFacilities"])
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 onMounted(() => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
 })
-
-// async function changeTimeZone() {
-//   const timeZoneModal = await modalController.create({
-//     component: TimeZoneModal,
-//   });
-//   return timeZoneModal.present();
-// }
 
 function logout() {
   store.dispatch("user/logout").then(() => {
@@ -118,12 +119,14 @@ function logout() {
   })
 }
 
-function getDateTime(time: any) {
-  return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
-}
-
 function goToLaunchpad() {
   window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+}
+
+async function setFacility(event: CustomEvent) {
+  const facilityId = event.detail.value
+  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+  await store.dispatch("user/updateCurrentFacility", facility)
 }
 </script>
 
