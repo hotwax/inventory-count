@@ -13,6 +13,8 @@
       </ion-toolbar>
     </ion-header>
 
+    {{ cycleCounts }}
+
     <ion-content id="draft-filter">
       <ion-list class="list">
         <ion-item button detail>
@@ -37,14 +39,22 @@
           <ion-note slot="end" color="medium">items</ion-note>
         </ion-item>
       </ion-list>
+
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="createCycleCount">
+          <ion-icon :icon="addOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   IonButtons,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -54,38 +64,64 @@ import {
   IonNote,
   IonPage,
   IonTitle,
-  IonToolbar
-} from '@ionic/vue';
-import { filterOutline } from 'ionicons/icons';
-import { defineComponent } from 'vue'
+  IonToolbar,
+  alertController
+} from "@ionic/vue";
+import { addOutline, filterOutline } from "ionicons/icons";
+import { computed, onMounted } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
+import store from "@/store";
+import { showToast } from "@/utils";
 
-export default defineComponent({
-  name: "Draft",
-  components: {
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonTitle,
-    IonToolbar,
-    Filters
-  },
+const cycleCounts = computed(() => store.getters["count/getCounts"])
 
-  setup() {
-    return {
-      translate,
-      filterOutline
-    }
-  }
+onMounted(async () => {
+  await store.dispatch("count/fetchCycleCounts")
 })
+
+async function createCycleCount() {
+  const createCountAlert = await alertController.create({
+    header: translate("Create cycle count"),
+    buttons: [{
+      text: translate("Cancel"),
+      role: "cancel"
+    }, {
+      text: translate("Save"),
+      handler: (data: any) => {
+        const name = data?.name;
+        if(!name.trim()) {
+          showToast(translate("Enter a valid value"))
+          return false;
+        }
+      }
+    }],
+    inputs: [{
+      name: "name",
+      placeholder: translate("count name"),
+      min: 0,
+      type: "text"
+    }]
+  })
+
+  createCountAlert.onDidDismiss().then(async (result: any) => {
+    // considered that if a role is available on dismiss, it will be a negative role in which we don't need to perform any action
+    if(result.role) {
+      return;
+    }
+
+    const name = result.data?.values?.name?.trim();
+
+    if(name) {
+      // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
+      await store.dispatch("count/createCycleCount", {
+        countImportName: name
+      })
+    }
+  })
+
+  return createCountAlert.present();
+}
 </script>
 
 <style scoped>
