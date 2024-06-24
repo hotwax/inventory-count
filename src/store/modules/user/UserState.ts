@@ -6,4 +6,5 @@ export default interface UserState {
     url: string;
     token: string;
   }
+  facilities: Array<any>;
 }
