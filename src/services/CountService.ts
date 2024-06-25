@@ -8,6 +8,13 @@ const fetchCycleCounts = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchCycleCountItems = async (inventoryCountImportId: string): Promise<any> => {
+  return api({
+    url: `cycleCounts/${inventoryCountImportId}/items`,
+    method: "GET"
+  })
+}
+
 const createCycleCount = async (payload: any): Promise<any> => {
   return api({
     url: "cycleCounts",
@@ -16,7 +23,17 @@ const createCycleCount = async (payload: any): Promise<any> => {
   })
 }
 
+const updateCycleCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}`,
+    method: "PUT",
+    data: payload
+  })
+}
+
 export const CountService = {
   createCycleCount,
-  fetchCycleCounts
+  fetchCycleCounts,
+  fetchCycleCountItems,
+  updateCycleCount
 }
