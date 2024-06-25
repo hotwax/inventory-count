@@ -8,10 +8,10 @@
 
     <ion-content>
       <ion-list id="receiving-list">
-        <ion-menu-toggle auto-hide="false" v-for="(p, i) in appPages" :key="i">
-          <ion-item button router-direction="root" :router-link="p.url" class="hydrated">
-            <ion-icon :ios="p.iosIcon" :md="p.mdIcon" slot="start" />
-            <ion-label>{{ p.title }}</ion-label>
+        <ion-menu-toggle auto-hide="false" v-for="(page, index) in appPages" :key="index">
+          <ion-item button router-direction="root" :router-link="page.url" class="hydrated" :class="{ selected: selectedIndex === index }">
+            <ion-icon :ios="page.iosIcon" :md="page.mdIcon" slot="start" />
+            <ion-label>{{ translate(page.title) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -32,7 +32,7 @@ import {
   IonMenu,
   IonMenuToggle,
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { computed, defineComponent } from "vue";
 import { mapGetters, useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
@@ -67,6 +67,7 @@ export default defineComponent({
         url: "/draft",
         iosIcon: createOutline,
         mdIcon: createOutline,
+        childRoutes: ["/draft/"]
       },
       {
         title: "Assigned",
@@ -98,7 +99,18 @@ export default defineComponent({
         iosIcon: settingsOutline,
         mdIcon: settingsOutline,
       }
-    ];
+    ] as Array<{
+      title: string,
+      url: string,
+      iosIcon: any;
+      mdIcon: any;
+      childRoutes: Array<string>;
+    }>;
+
+    const selectedIndex = computed(() => {
+      const path = router.currentRoute.value.path
+      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
+    })
 
     return {
       appPages,
@@ -110,7 +122,8 @@ export default defineComponent({
       settingsOutline,
       store,
       router,
-      translate
+      translate,
+      selectedIndex
     };
   }
 });
