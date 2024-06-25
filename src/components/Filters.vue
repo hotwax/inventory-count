@@ -13,13 +13,13 @@
         </ion-item-divider>
         <ion-item>
           <ion-icon slot="start" :icon="businessOutline"/>
-          <ion-select interface="popover" value="default" :label="translate('Facility')" >
+          <ion-select interface="popover" :value="query.facilityId" :label="translate('Facility')" :placeholder="translate('Select facility')" @ionChange="updateQuery('facilityId', $event.detail.value)">
             <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">{{ facility.facilityName }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item button>
           <ion-icon slot="start" :icon="removeCircleOutline"/>
-          <ion-checkbox>{{ translate("No facility") }}</ion-checkbox>
+          <ion-checkbox :value="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
         <ion-item-divider v-if="showAdditionalFilters()">
@@ -135,6 +135,7 @@ import router from "@/router";
 const dateTimeModalOpen = ref(false)
 
 const facilities = computed(() => store.getters["user/getFacilities"])
+const query = computed(() => store.getters["count/getQuery"])
 
 function openDateTimeModal() {
   dateTimeModalOpen.value = true;
@@ -142,5 +143,9 @@ function openDateTimeModal() {
 
 function showAdditionalFilters() {
   return router.currentRoute.value.name !== "Draft"
+}
+
+async function updateQuery(key: string, value: any) {
+  await store.dispatch("count/updateQuery", { key, value })
 }
 </script>

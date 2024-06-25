@@ -13,30 +13,17 @@
       </ion-toolbar>
     </ion-header>
 
-    {{ cycleCounts }}
-
     <ion-content id="draft-filter">
-      <ion-list class="list">
-        <ion-item button detail>
+      <p v-if="!cycleCounts.length" class="empty-state">
+        {{ translate("No cycle counts found") }}
+      </p>
+      <ion-list v-else class="list">
+        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail>
           <ion-label>
-            count name
-            <p>count id</p>
+            {{ count.countImportName }}
+            <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
-        </ion-item>
-        <ion-item button detail>
-          <ion-label>
-            count name
-            <p>count id</p>
-          </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
-        </ion-item>
-        <ion-item button detail>
-          <ion-label>
-            count name
-            <p>count id</p>
-          </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
+          <ion-note slot="end" color="medium">{{ "items" }}</ion-note>
         </ion-item>
       </ion-list>
 
@@ -77,7 +64,9 @@ import { showToast } from "@/utils";
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 
 onMounted(async () => {
-  await store.dispatch("count/fetchCycleCounts")
+  await store.dispatch("count/fetchCycleCounts", {
+    statusId: "INV_COUNT_CREATED"
+  })
 })
 
 async function createCycleCount() {
@@ -91,7 +80,7 @@ async function createCycleCount() {
       handler: (data: any) => {
         const name = data?.name;
         if(!name.trim()) {
-          showToast(translate("Enter a valid value"))
+          showToast(translate("Enter a valid cycle count name"))
           return false;
         }
       }

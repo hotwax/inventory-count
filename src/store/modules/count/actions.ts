@@ -4,18 +4,45 @@ import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
 import logger from "@/logger"
+import { hasError } from "@/utils"
+import emitter from "@/event-bus"
 
 const actions: ActionTree<CountState, RootState> = {
-  async fetchCycleCounts({ commit }) {    
+  async fetchCycleCounts({ commit, state }, payload) {
+    emitter.emit("presentLoader", { message: "Fetching cycle counts" })
     let counts: Array<any> = [], total = 0;
+
+    const params = {
+      ...payload
+    }
+
+    if(state.query.facilityId) {
+      params["facilityId"] = state.query.facilityId
+    }
+
+    if(state.query.noFacility) {
+      if(params["facilityId"]) {
+        params["facilityId"] = params["facilityId"].concat(", ''")
+        params["facilityId_op"] = "in"
+      } else {
+        params["facilityId_op"] = "empty"
+      }
+    }
+
     try {
-      const resp = await CountService.fetchCycleCounts();
-      counts = [], total = 0
-      console.log('resp', resp)
+      const resp = await CountService.fetchCycleCounts(params);
+
+      if(!hasError(resp) && resp.data.length > 0) {
+        counts = resp.data
+        total = resp.data.length
+      } else {
+        throw "Failed to fetch the counts"
+      }
     } catch(err) {
       logger.error(err)
     }
     commit(types.COUNT_LIST_UPDATED, { counts, total })
+    emitter.emit("dismissLoader")
   },
 
   async createCycleCount({ commit }, payload) {    
@@ -25,6 +52,11 @@ const actions: ActionTree<CountState, RootState> = {
     } catch(err) {
       logger.error(err)
     }
+  },
+
+  async updateQuery({ commit, dispatch }, payload) {
+    commit(types.COUNT_QUERY_UPDATED, payload)
+    dispatch("fetchCycleCounts")
   }
 }	
 

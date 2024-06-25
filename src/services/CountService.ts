@@ -1,9 +1,10 @@
 import api from '@/api';
 
-const fetchCycleCounts = async (): Promise<any> => {
+const fetchCycleCounts = async (payload: any): Promise<any> => {
   return api({
     url: "cycleCounts",
-    method: "GET"
+    method: "GET",
+    params: payload
   })
 }
 

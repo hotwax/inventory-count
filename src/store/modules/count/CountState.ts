@@ -1,4 +1,8 @@
 export default interface CountState {
   list: Array<any>,
-  total: number
+  total: number,
+  query: {
+    facilityId: string,
+    noFacility: boolean
+  }
 }
