@@ -1,15 +1,15 @@
-import { UserService } from '@/services/UserService'
-import { ActionTree } from 'vuex'
-import RootState from '@/store/RootState'
-import UserState from './UserState'
+import { UserService } from "@/services/UserService"
+import { ActionTree } from "vuex"
+import RootState from "@/store/RootState"
+import UserState from "./UserState"
 import * as types from "./mutation-types"
-import { showToast } from '@/utils'
+import { hasError, showToast } from "@/utils"
 import logger from "@/logger"
-import { translate } from '@/i18n'
-import { Settings } from 'luxon';
-import { resetConfig } from '@/adapter'
-import { useAuthStore } from '@hotwax/dxp-components'
-import emitter from '@/event-bus'
+import { translate } from "@/i18n"
+import { Settings } from "luxon";
+import { resetConfig } from "@/adapter"
+import { useAuthStore } from "@hotwax/dxp-components"
+import emitter from "@/event-bus"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -38,6 +38,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
+      await dispatch("fetchFacilities", api_key)
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
@@ -63,6 +64,9 @@ const actions: ActionTree<UserState, RootState> = {
 
     // reset plugin state on logout
     authStore.$reset()
+
+    commit(types.USER_FACILITIES_UPDATED, [])
+    commit(types.USER_CURRENT_FACILITY_UPDATED, {})
 
     emitter.emit('dismissLoader')
   },
@@ -92,5 +96,34 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
+  async fetchFacilities({ commit }, token) {
+    let facilities: Array<any> = []
+    try {
+      const resp = await UserService.fetchFacilities({
+        parentTypeId: "VIRTUAL_FACILITY",
+        parentTypeId_not: "Y",
+        facilityTypeId: "VIRTUAL_FACILITY",
+        facilityTypeId_not: "Y",
+        pageSize: 200
+      }, token)
+
+      if(!hasError(resp)) {
+        facilities = resp.data
+      }
+    } catch(err) {
+      logger.error("Failed to fetch facilities")
+    }
+
+    // Updating current facility with a default first facility when fetching facilities on login
+    if(facilities.length) {
+      commit(types.USER_CURRENT_FACILITY_UPDATED, facilities[0])
+    }
+
+    commit(types.USER_FACILITIES_UPDATED, facilities)
+  },
+
+  async updateCurrentFacility({ commit }, facility) {
+    commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
+  }
 }
 export default actions;

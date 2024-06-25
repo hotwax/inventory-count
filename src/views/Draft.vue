@@ -57,7 +57,7 @@ import {
   IonToolbar
 } from '@ionic/vue';
 import { filterOutline } from 'ionicons/icons';
-import { defineComponent } from 'vue'
+import { defineComponent, onMounted } from 'vue'
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 
@@ -78,7 +78,6 @@ export default defineComponent({
     IonToolbar,
     Filters
   },
-
   setup() {
     return {
       translate,

@@ -24,6 +24,12 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getOmsRedirectionInfo(state) {
     return state.omsRedirectionInfo;
-  }  
+  },
+  getFacilities(state) {
+    return state.facilities;
+  },
+  getCurrentFacility(state) {
+    return state.currentFacility;
+  }
 }
 export default getters;

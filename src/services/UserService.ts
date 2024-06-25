@@ -62,6 +62,21 @@ const getAvailableTimeZones = async (): Promise <any>  => {
   });
 }
 
+const fetchFacilities = async (payload: any, token: string): Promise <any>  => {
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  return await client({
+    url: "facilities",
+    method: "GET",
+    baseURL,
+    headers: {
+      "api_key": token,
+      "Content-Type": "application/json"
+    },
+    data: payload
+  });
+}
+
 const setUserTimeZone = async (payload: any): Promise <any>  => {
   return api({
     url: "setUserTimeZone",
@@ -71,6 +86,7 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
 }
 
 export const UserService = {
+  fetchFacilities,
   getAvailableTimeZones,
   getUserProfile,
   login,
