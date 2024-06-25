@@ -7,5 +7,8 @@ const mutations: MutationTree <pickerCountState> = {
     state.cycleCounts.list = payload.cycleCount
     state.cycleCounts.isScrollable = payload.isScrollable;
   },
+  [types.PICKER_COUNT_ITEMS_UPDATED] (state, payload) {
+    state.cycleCountItems = payload
+  }
 }	
 export default mutations;	

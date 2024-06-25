@@ -8,7 +8,10 @@ const getters: GetterTree<pickerCountState, RootState> = {
   },
   isCycleCountScrollable(state) {
     return state.cycleCounts.isScrollable
+  },
+  getCycleCountItems (state) {
+    return state.cycleCountItems
   }
-
+  
 };
 export default getters;

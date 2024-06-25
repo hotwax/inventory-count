@@ -71,10 +71,11 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/count-detail',
+    path: '/count-detail/:id',
     name: 'CountDetail',
     component: CountDetail,
-    beforeEnter: authGuard 
+    beforeEnter: authGuard,
+    props: true 
   },
   {
     path: '/draft',

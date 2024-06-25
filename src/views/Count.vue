@@ -19,100 +19,106 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <main>
-        <section v-if="selectedSegment === 'assigned' || cycleCount.statusId === 'INV_COUNT_CREATED'" >  
-          <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
-            <ion-card-header>
-              <ion-card-title>
-                {{ count.countImportName }}
-                <ion-label>
-                  <p>created date</p>
+        <section> 
+          <template v-for="count in cycleCount" :key="count.inventoryCountImportId" >
+            <ion-card v-if="selectedSegment === 'assigned' && count.statusId === 'INV_COUNT_CREATED'" @click="navigateToStoreView(count.inventoryCountImportId)">
+              <ion-card-header>
+                <ion-card-title>
+                  {{ count.countImportName }}
+                  <ion-label>
+                    <p>created date</p>
+                  </ion-label>
+                </ion-card-title>
+                <ion-note>10 items</ion-note>
+              </ion-card-header>
+              <ion-item lines="none">
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>{{ getTime(count.dueDate) }}</p>
                 </ion-label>
-              </ion-card-title>
-              <ion-note>10 items</ion-note>
-            </ion-card-header>
-            <ion-item lines="none">
-              {{ translate("Due date") }}
-              <ion-label slot="end">
-                <p>{{ getTime(count.dueDate) }}</p>
-              </ion-label>
-            </ion-item>
-          </ion-card>
+              </ion-item>
+            </ion-card>
+          </template> 
         </section>
 
-        <section v-if="selectedSegment === 'pendingReview'">  
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>
-                Count Name
-                <ion-label>
-                  <p>created date</p>
+        <section>  
+          <template v-for="count in cycleCount" :key="count.inventoryCountImportId">
+            <ion-card v-if="selectedSegment === 'pendingReview' && count.statusId === 'INV_COUNT_REVIEW'" @click="navigateToStoreView(count.inventoryCountImportId)">
+              <ion-card-header>
+                <ion-card-title>
+                  {{ count.countImportName }}
+                  <ion-label>
+                    <p>created date</p>
+                  </ion-label>
+                </ion-card-title>
+                <ion-note>9/10 items counted</ion-note>
+              </ion-card-header>
+              <ion-item>
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>2nd July 2024</p>
                 </ion-label>
-              </ion-card-title>
-              <ion-note>9/10 items counted</ion-note>
-            </ion-card-header>
-            <ion-item>
-              {{ translate("Due date") }}
-              <ion-label slot="end">
-                <p>2nd July 2024</p>
-              </ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              {{ translate("Submission date") }}
-              <ion-label slot="end">
-                <p>1st July 2024</p>
-              </ion-label>
-            </ion-item>
-          </ion-card>
+              </ion-item>
+              <ion-item lines="none">
+                {{ translate("Submission date") }}
+                <ion-label slot="end">
+                  <p>1st July 2024</p>
+                </ion-label>
+              </ion-item>
+            </ion-card>
+          </template>
         </section>
 
-        <section v-if="selectedSegment === 'closed'">  
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>
-                Count Name
-                <ion-label>
-                  <p>created date</p>
-                </ion-label>
-              </ion-card-title>
-              <ion-note>9/10 items counted</ion-note>
-            </ion-card-header>
-            <div class="header">
-              <div class="search">
-                <ion-item>
-                  {{ translate("Due date") }}
-                  <ion-label slot="end">
-                    <p>2nd July 2024</p>
+        <section> 
+          <template v-for="count in cycleCount" :key="count.inventoryCountImportId">
+            <ion-card v-if="selectedSegment === 'closed' && (count.statusId === 'INV_COUNT_COMPLETED' || count.statusId === 'INV_COUNT_REJECTED')" @click="navigateToStoreView(count.inventoryCountImportId)">
+              <ion-card-header>
+                <ion-card-title>
+                  {{ count.countImportName }}
+                  <ion-label>
+                    <p>created date</p>
                   </ion-label>
-                </ion-item>
-                <ion-item>
-                  {{ translate("Submission date") }}
-                  <ion-label slot="end">
-                    <p>1st July 2024</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item lines="none">
-                  {{ translate("Closed date") }}
-                  <ion-label slot="end">
-                    <p>1st July 2024</p>
-                  </ion-label>
-                </ion-item>
+                </ion-card-title>
+                <ion-note>9/10 items counted</ion-note>
+              </ion-card-header>
+              <div class="header">
+                <div class="search">
+                  <ion-item>
+                    {{ translate("Due date") }}
+                    <ion-label slot="end">
+                      <p>2nd July 2024</p>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    {{ translate("Submission date") }}
+                    <ion-label slot="end">
+                      <p>1st July 2024</p>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item lines="none">
+                    {{ translate("Closed date") }}
+                    <ion-label slot="end">
+                      <p>1st July 2024</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <div class="filters">
+                  <ion-item>
+                    {{ translate("Rejected") }}
+                    <ion-label slot="end">
+                      <p>4</p>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    {{ translate("Total variance") }}
+                    <ion-label slot="end">
+                      <p>2</p>
+                    </ion-label>
+                  </ion-item>
+                </div>
               </div>
-              <div class="filters">
-                <ion-item>
-                  {{ translate("Rejected") }}
-                  <ion-label slot="end">
-                    <p>4</p>
-                  </ion-label>
-                </ion-item>
-                <ion-item>
-                  {{ translate("Total variance") }}
-                  <ion-label slot="end">
-                    <p>2</p>
-                  </ion-label>
-                </ion-item>
-              </div>
-            </div>
-          </ion-card>
+            </ion-card>
+          </template> 
         </section>
       </main>
       <ion-infinite-scroll
@@ -168,7 +174,7 @@ const contentRef = ref({});
 const infiniteScrollRef = ref({});
 
 onIonViewDidEnter(async() => {
-  fetchCycleCount();
+  fetchCycleCounts();
 })
 
 function enableScrolling() {
@@ -188,7 +194,7 @@ async function loadMoreCycleCount(event) {
   if(!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
   }
-  fetchCycleCount(
+  fetchCycleCounts(
     undefined,
     Math.ceil(
       cycleCount.value?.length / (process.env.VUE_APP_VIEW_SIZE)
@@ -198,14 +204,14 @@ async function loadMoreCycleCount(event) {
   });
 }
 
-async function fetchCycleCount(vSize, vIndex) {
+async function fetchCycleCounts(vSize, vIndex) {
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
   const payload = {
     pageSize,
     pageIndex,
   };
-  await store.dispatch("pickerCount/fetchCycleCount", payload);
+  await store.dispatch("pickerCount/fetchCycleCounts", payload);
 }
 
 function getTime(time) {

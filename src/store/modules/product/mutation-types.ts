@@ -1,0 +1,3 @@
+export const SN_PRODUCT = 'product'
+export const PRODUCT_ADD_TO_CACHED = SN_PRODUCT + '/ADD_TO_CACHED'
+export const PRODUCT_CURRENT_UPDATED = SN_PRODUCT + '/CURRENT_UPDATED'

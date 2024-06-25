@@ -12,6 +12,7 @@ const pickerCountModule: Module<pickerCountState, RootState> = {
         list: [],
         isScrollable: true
       },
+      cycleCountItems: {}
     },
     getters,
     actions,
