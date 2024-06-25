@@ -18,7 +18,7 @@
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else class="list">
-        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail>
+        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
           <ion-label>
             {{ count.countImportName }}
             <p>{{ count.inventoryCountImportId }}</p>
@@ -60,6 +60,7 @@ import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { showToast } from "@/utils";
+import router from "@/router";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 

@@ -4,8 +4,9 @@ import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
 import logger from "@/logger"
-import { hasError } from "@/utils"
+import { hasError, showToast } from "@/utils"
 import emitter from "@/event-bus"
+import { translate } from "@/i18n"
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, state }, payload) {
@@ -48,9 +49,16 @@ const actions: ActionTree<CountState, RootState> = {
   async createCycleCount({ commit }, payload) {    
     try {
       const resp = await CountService.createCycleCount(payload);
-      console.log('resp', resp)
+
+      if(!hasError(resp)) {
+        showToast(translate("Cycle Count created successfully"))
+      } else {
+        throw "Failed to create cycle count"
+      }
+
     } catch(err) {
       logger.error(err)
+      showToast(translate("Failed to create cycle count"))
     }
   },
 
