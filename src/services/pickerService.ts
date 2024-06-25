@@ -4,7 +4,7 @@ const fetchCycleCounts = async (query: any): Promise <any> => {
   return api({
     url: "cycleCounts",
     method: "get",
-    data: query
+    params: query
   })
 }
 

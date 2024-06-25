@@ -167,6 +167,7 @@ const router = useRouter()
 
 const cycleCount = computed(() => store.getters["pickerCount/getCycleCount"]);
 const isScrollable = computed(() => store.getters["pickerCount/isCycleCountScrollable"])
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const selectedSegment = ref('assigned');
 const isScrollingEnabled = ref(false);
@@ -207,9 +208,11 @@ async function loadMoreCycleCount(event) {
 async function fetchCycleCounts(vSize, vIndex) {
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
+  const facilityId = currentFacility.value?.facilityId
   const payload = {
     pageSize,
     pageIndex,
+    facilityId 
   };
   await store.dispatch("pickerCount/fetchCycleCounts", payload);
 }

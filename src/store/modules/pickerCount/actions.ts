@@ -15,7 +15,8 @@ const actions: ActionTree<pickerCountState, RootState> = {
 
     const params = {
       pageSize: payload.pageSize,
-      pageIndex: payload.pageIndex
+      pageIndex: payload.pageIndex,
+      facilityId: payload.facilityId
     }
     let counts = state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
     let isScrollable = true
