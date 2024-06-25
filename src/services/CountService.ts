@@ -31,8 +31,16 @@ const updateCycleCount = async (payload: any): Promise<any> => {
   })
 }
 
+const deleteCycleCountItem = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
+    method: "DELETE"
+  })
+}
+
 export const CountService = {
   createCycleCount,
+  deleteCycleCountItem,
   fetchCycleCounts,
   fetchCycleCountItems,
   updateCycleCount
