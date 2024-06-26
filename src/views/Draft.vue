@@ -52,6 +52,7 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  onIonViewWillLeave,
   alertController
 } from "@ionic/vue";
 import { addOutline, filterOutline } from "ionicons/icons";
@@ -69,6 +70,10 @@ onMounted(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_CREATED"
   })
+})
+
+onIonViewWillLeave(async () => {
+  await store.dispatch("count/clearCycleCountList")
 })
 
 async function createCycleCount() {

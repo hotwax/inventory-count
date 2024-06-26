@@ -13,7 +13,8 @@ const countModule: Module<CountState, RootState> = {
     query: {
       facilityId: '',
       noFacility: false
-    }
+    },
+    stats: {}
   },
   getters,
   actions,

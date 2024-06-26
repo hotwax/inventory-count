@@ -4,5 +4,6 @@ export default interface CountState {
   query: {
     facilityId: string,
     noFacility: boolean
-  }
+  },
+  stats: any;
 }

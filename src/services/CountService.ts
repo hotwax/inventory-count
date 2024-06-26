@@ -8,6 +8,14 @@ const fetchCycleCounts = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchCycleCountStats = async (payload: any): Promise<any> => {
+  return api({
+    url: "cycleCounts/stats",
+    method: "GET",
+    params: { inventoryCountImportIds: JSON.stringify(payload.inventoryCountImportIds)}
+  })
+}
+
 const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => {
   return api({
     url: `cycleCounts/${inventoryCountImportId}`,
@@ -58,6 +66,7 @@ export const CountService = {
   createCycleCount,
   deleteCycleCountItem,
   fetchCycleCount,
+  fetchCycleCountStats,
   fetchCycleCounts,
   fetchCycleCountItems,
   updateCycleCount

@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/drafts" />
+        <ion-back-button slot="start" default-href="/draft" />
         <ion-title>{{ translate("Draft count")}}</ion-title>
       </ion-toolbar>
     </ion-header>
