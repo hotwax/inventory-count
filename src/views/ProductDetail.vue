@@ -39,7 +39,7 @@
               {{ translate("Variance") }}
               <ion-label slot="end">{{ variance }}</ion-label>
             </ion-item> 
-            <div class="button-container">
+            <div class="button-container"> //TODO: add css to show the button inline
               <ion-button fill="outline" expand="block" @click="discardRecount()">
                 {{ translate("Discard re-count") }}
               </ion-button>
@@ -48,8 +48,8 @@
               </ion-button>
             </div>
           </ion-list>
-          
-          <ion-list v-else-if="product.quantity">
+
+          <ion-list v-else-if="product.quantity"> //TODO: landing on this section after saving the recount need to call action to updated the product information
             <ion-item v-if="product.quantity">
               {{ translate("Counted") }}
               <ion-label slot="end">{{ product.quantity }}</ion-label>
