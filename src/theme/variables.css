@@ -126,6 +126,10 @@ section {
   --border-radius: 8px;
 }
 
+ion-input.name {
+  --background: var(--ion-color-light)
+}
+
 @media (prefers-color-scheme: dark) {
   /*
    * Dark Colors

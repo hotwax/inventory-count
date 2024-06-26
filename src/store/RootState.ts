@@ -1,4 +1,5 @@
 export default interface RootState {
-    user: any;
-    pickerCount: any;
+  user: any;
+  pickerCount: any;
+  count: any;
 }

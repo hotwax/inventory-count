@@ -88,10 +88,11 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: "/draft-detail",
+    path: "/draft/:inventoryCountImportId",
     name: "DraftDetail",
     component: DraftDetail,
     beforeEnter: authGuard,
+    props: true
   },
   {
     path: '/assigned',

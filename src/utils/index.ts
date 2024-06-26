@@ -34,4 +34,8 @@ const handleDateTimeInput = (dateTimeValue: any) => {
   return DateTime.fromISO(dateTime).toMillis()
 }
 
-export { showToast, hasError, handleDateTimeInput }
+const getDateTime = (time: any) => {
+  return time ? DateTime.fromMillis(time).toISO() : ''
+}
+
+export { showToast, hasError, handleDateTimeInput, getDateTime }
