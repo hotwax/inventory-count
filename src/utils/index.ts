@@ -38,4 +38,9 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
-export { showToast, hasError, handleDateTimeInput, getDateTime }
+const getDerivedStatusForCount = (count: any) => {
+  // TODO: make it dynamic based on coditions or from the stats api, currently always showing as submitted
+  return "Submitted"
+}
+
+export { showToast, hasError, handleDateTimeInput, getDateTime, getDerivedStatusForCount }

@@ -9,6 +9,11 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_QUERY_UPDATED](state, payload) {
     (state.query as any)[payload.key] = payload.value
+  },
+  [types.COUNT_STATS_UPDATED](state, payload) {
+    payload.map((count: any) => {
+      state.stats[count.inventoryCountImportId] = count
+    })
   }
 }	
 export default mutations;	

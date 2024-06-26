@@ -142,7 +142,7 @@ function openDateTimeModal() {
 }
 
 function showAdditionalFilters() {
-  return router.currentRoute.value.name !== "Draft"
+  return router.currentRoute.value.name === "Closed"
 }
 
 async function updateQuery(key: string, value: any) {

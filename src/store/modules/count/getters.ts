@@ -8,6 +8,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getQuery(state) {
     return state.query
+  },
+  getCountStats: (state) => (id: string) =>  {
+    return state.stats[id]
   }
 };
 

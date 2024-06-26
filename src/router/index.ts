@@ -112,10 +112,11 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/pending-review-detail',
+    path: '/pending-review/:inventoryCountImportId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
+    props: true
   },
   {
     path: '/closed',
