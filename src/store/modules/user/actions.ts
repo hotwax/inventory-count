@@ -67,6 +67,8 @@ const actions: ActionTree<UserState, RootState> = {
 
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
+    dispatch('pickerCount/clearCycleCounts')
+    dispatch('pickerCount/clearCycleCountItems')
 
     emitter.emit('dismissLoader')
   },

@@ -41,6 +41,10 @@ const actions: ActionTree<pickerCountState, RootState> = {
     }
     commit(types.PICKER_COUNT_UPDATED, {cycleCount: counts, isScrollable})
   },
+  
+  async clearCycleCounts ({ commit }) {
+    commit(types.PICKER_COUNT_UPDATED, {})
+  },
 
   async fetchCycleCountItems ({commit} ,payload) {
     let items;
@@ -55,6 +59,10 @@ const actions: ActionTree<pickerCountState, RootState> = {
       logger.error(err)
     }
     commit(types.PICKER_COUNT_ITEMS_UPDATED, items)
+  },
+
+  async clearCycleCountItems ({ commit }) {
+    commit(types.PICKER_COUNT_ITEMS_UPDATED, [])
   }
 }	
 

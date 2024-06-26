@@ -6,15 +6,14 @@
         <ion-title>{{ translate("Count name") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-
     <ion-content>
       <div class="find">
         <aside class="filters">
           <ion-item lines="full" class="ion-margin-top">
-            <ion-input slot="start" :label="translate('SKU')" :placeholder="translate('Scan or search products')"/>  
+            <ion-input slot="start" :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>  
           </ion-item>
-          <template v-if="cycleCount?.statusId === 'INV_COUNT_CREATED'">
-            <ion-segment v-model="selectedSegment">
+          <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
+            <template v-if="cycleCount?.statusId === 'INV_COUNT_CREATED'">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>
@@ -24,10 +23,9 @@
               <ion-segment-button value="counted">
                 <ion-label>{{ translate("COUNTED") }}</ion-label>
               </ion-segment-button>
-            </ion-segment>
-          </template>
-          <template v-else-if="cycleCount?.statusId === 'INV_COUNT_REVIEW'">
-            <ion-segment>
+            </template>
+
+            <template v-else-if="cycleCount?.statusId === 'INV_COUNT_REVIEW'">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>
@@ -37,10 +35,9 @@
               <ion-segment-button value="counted">
                 <ion-label>{{ translate("COUNTED") }}</ion-label>
               </ion-segment-button>
-            </ion-segment>
-          </template>
-          <template v-else-if="cycleCount?.statusId === 'INV_COUNT_COMPLETED' || 'INV_COUNT_REJECTED'">
-            <ion-segment>
+            </template>
+
+            <template v-else-if="cycleCount?.statusId === 'INV_COUNT_COMPLETED' && 'INV_COUNT_REJECTED'">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>
@@ -50,9 +47,16 @@
               <ion-segment-button value="accepted">
                 <ion-label>{{ translate("ACCEPTED") }}</ion-label>
               </ion-segment-button>
-            </ion-segment>
+            </template> 
+          </ion-segment>
+          <template v-if="filteredItems.length > 0">
+            <ProductItemList v-for="item in filteredItems" :key="item.inventoryCountImportId" :item="item"/>
           </template>
-          <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+          <template v-else>
+            <div class="empty-state">
+              <p>{{ translate("No products found.") }}</p>
+            </div>
+          </template>
         </aside>
         
         <main>
@@ -76,7 +80,8 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
-  onIonViewDidEnter
+  onIonViewDidEnter,
+  onIonViewWillLeave
 } from '@ionic/vue';
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from 'vue';
@@ -112,14 +117,17 @@ const itemsList = computed(() => {
   }
 });
 
-
 const props = defineProps(["id"]);
 let selectedSegment = ref('all');
-let cycleCount = ref();
+let cycleCount = ref([]);
+const queryString = ref('');
+let filteredItems = ref([]);
 
 onIonViewDidEnter(async() => {  
   fetchCycleCount();
   fetchCycleCountItems();
+  updateFilteredItems();
+  emitter.on("updateItemList", updateFilteredItems);
   await store.dispatch("product/currentProduct", itemsList.value[0])
 })
 
@@ -135,11 +143,10 @@ async function fetchCycleCount() {
   try {
     resp = await pickerService.fetchCycleCount(payload)
     if (!hasError(resp)) {
-      cycleCount = resp?.data
+      cycleCount.value = resp?.data
     } else {
       showToast(translate("Something went wrong"))
     }
-    emitter.emit("dismissLoader")
   } catch (err) {
     logger.error(err)
     showToast(translate("Something went wrong"))
@@ -147,6 +154,28 @@ async function fetchCycleCount() {
   emitter.emit("dismissLoader")
   return;
 }
+
+function selectSearchBarText(event) {
+  event.target.getInputElement().then((element) => {
+    element.select();
+  })
+}
+
+async function searchProducts() {
+  updateFilteredItems(); 
+}
+
+async function updateFilteredItems() {
+  if (!queryString.value.trim()) {
+    filteredItems.value = itemsList.value;
+  } else {
+    filteredItems.value = itemsList.value.filter(item => item.productId.includes(queryString.value.trim()));
+  }
+} 
+
+onIonViewWillLeave(() => {
+  emitter.off("updateItemList", updateFilteredItems);
+})
 
 </script>
 
@@ -187,7 +216,6 @@ async function fetchCycleCount() {
 
 ion-content > main {
   display: grid;
-  /* grid-template-columns: repeat(2, minmax(375px, 25%)) 1fr; */
   height: 100%;
 }
 

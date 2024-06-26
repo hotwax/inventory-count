@@ -19,9 +19,9 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <main>
-        <section> 
-          <template v-for="count in cycleCount" :key="count.inventoryCountImportId" >
-            <ion-card v-if="selectedSegment === 'assigned' && count.statusId === 'INV_COUNT_CREATED'" @click="navigateToStoreView(count.inventoryCountImportId)">
+        <section v-if="getCycleCounts()?.length"> 
+          <template v-if="selectedSegment === 'assigned'">
+            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
@@ -39,11 +39,8 @@
               </ion-item>
             </ion-card>
           </template> 
-        </section>
-
-        <section>  
-          <template v-for="count in cycleCount" :key="count.inventoryCountImportId">
-            <ion-card v-if="selectedSegment === 'pendingReview' && count.statusId === 'INV_COUNT_REVIEW'" @click="navigateToStoreView(count.inventoryCountImportId)">
+          <template v-else-if="selectedSegment === 'pendingReview'">
+            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
@@ -67,11 +64,8 @@
               </ion-item>
             </ion-card>
           </template>
-        </section>
-
-        <section> 
-          <template v-for="count in cycleCount" :key="count.inventoryCountImportId">
-            <ion-card v-if="selectedSegment === 'closed' && (count.statusId === 'INV_COUNT_COMPLETED' || count.statusId === 'INV_COUNT_REJECTED')" @click="navigateToStoreView(count.inventoryCountImportId)">
+          <template v-else>
+            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
@@ -120,6 +114,11 @@
             </ion-card>
           </template> 
         </section>
+        <template v-else>
+          <div class="empty-state">
+            <p>{{ translate("No cycle counts found") }}</p>
+          </div>
+        </template>
       </main>
       <ion-infinite-scroll
         @ionInfinite="loadMoreCycleCount($event)"
@@ -229,9 +228,24 @@ function navigateToStoreView(countId) {
   router.push(`/count-detail/${countId}`)
 }
 
+function getCycleCounts() {
+  if (selectedSegment.value === 'assigned') {
+    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_CREATED')
+  }
+  else if (selectedSegment.value === 'pendingReview') {
+    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_REVIEW')
+  }
+  else {
+    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_COMPLETED')
+  }
+} 
 </script> 
 
 <style scoped>
+
+ion-card {
+  width: 450px;
+}
 
 ion-card-header {
   display: flex;

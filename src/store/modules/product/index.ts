@@ -1,7 +1,6 @@
 import actions from './actions'
 import getters from './getters'
 import mutations from './mutations'
-import mutations from './mutations'
 import { Module } from 'vuex'
 import ProductState from './ProductState'
 import RootState from '../../RootState'

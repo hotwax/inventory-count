@@ -32,8 +32,8 @@ const updateCount = async (payload: any): Promise<any> => {
 
 
 export const pickerService = {
+  fetchCycleCount,
   fetchCycleCounts,
   fetchCycleCountItems,
-  fetchCycleCount,
   updateCount,
 }

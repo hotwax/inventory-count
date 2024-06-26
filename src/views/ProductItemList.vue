@@ -1,5 +1,5 @@
 <template>
-  <ion-list>
+  <ion-list v-if="!item.length">
     <ion-item @click="selectedProduct(item)" button>
       <ion-thumbnail slot="start">
         <DxpShopifyImg/>
@@ -28,11 +28,14 @@
       </ion-note>
     </ion-item>
   </ion-list>
+  <div v-else class="empty-state">
+    <p>{{ translate("No products found") }}</p>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, defineProps, ref } from 'vue';
-import { IonItem, IonLabel, IonList, IonThumbnail, IonBadge } from "@ionic/vue";
+import {  IonBadge, IonItem, IonLabel, IonList, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
 
