@@ -8,7 +8,7 @@ import { StatusCodes } from "http-status-codes";
 axios.interceptors.request.use((config: any) => {
   // TODO: pass csrf token
   const token = store.getters["user/getUserToken"];
-  if (token) {
+  if (token && !config.noAuth) {
     config.headers["api_key"] =  token;
     config.headers["Content-Type"] = "application/json";
   }

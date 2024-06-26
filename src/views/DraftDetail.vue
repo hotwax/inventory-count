@@ -42,7 +42,7 @@
                 <ion-content force-overscroll="false">
                   <ion-datetime    
                     id="schedule-datetime"
-                    :value="getDateTime(currentCycleCount.dueDate)"
+                    :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
                     @ionChange="updateCustomTime($event)"
                     :min="DateTime.now().toISO()"
                     presentation="date"
@@ -72,52 +72,58 @@
             :label="translate('Add product')"
             label-placement="floating"
             :clear-input="true"
-            value="WS-90-BL"
+            v-model="queryString"
+            @keyup.enter="findProduct()"
           >
           </ion-input>
         </ion-item>
-        <ion-item lines="none">
+        <ion-item lines="none" v-if="searchedProduct.productId">
           <ion-thumbnail slot="start">
             <DxpShopifyImg/>
           </ion-thumbnail>
           <ion-label>
             <p class="overline">{{ translate("Search result") }}</p>
-            Internal Name
+            {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
           </ion-label>
         </ion-item>
-        <ion-button fill="clear" slot="end">
+        <ion-button v-if="searchedProduct.productId" fill="clear" @click="addProductToCount">
           <ion-icon slot="icon-only" :icon="addCircleOutline"/>
         </ion-button>
       </div>
       
-      <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
-        <ion-item lines="none">
-          <ion-thumbnail slot="start">
-            <DxpShopifyImg/>
-          </ion-thumbnail>
-          <ion-label class="ion-text-wrap">
-            <p>{{ item.productId }}</p>
+      <template v-if="currentCycleCount.items?.length">
+        <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
+          <ion-item lines="none">
+            <ion-thumbnail slot="start">
+              <DxpShopifyImg/>
+            </ion-thumbnail>
+            <ion-label class="ion-text-wrap">
+              <p>{{ item.productId }}</p>
+            </ion-label>
+          </ion-item>          
+          <ion-label>
+            {{ item.qoh }}
+            <p>{{ translate("QoH") }}</p>
           </ion-label>
-        </ion-item>          
-        <ion-label>
-          {{ item.qoh }}
-          <p>{{ translate("QoH") }}</p>
-        </ion-label>
-        <div class="tablet">
-          <ion-chip outline>
-            <ion-label>4th March 2024</ion-label>
-          </ion-chip>
-          <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
+          <div class="tablet">
+            <ion-chip outline>
+              <ion-label>4th March 2024</ion-label>
+            </ion-chip>
+            <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
+          </div>
+          <div class="tablet">
+            <ion-chip outline>
+              <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
+            </ion-chip>
+          </div>
+          <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+            <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+          </ion-button>
         </div>
-        <div class="tablet">
-          <ion-chip outline>
-            <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
-          </ion-chip>
-        </div>
-        <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
-          <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
-        </ion-button>
-      </div>
+      </template>
+      <template v-else>
+        <p class="empty-state">{{ translate("No items found") }}</p>
+      </template>
     </ion-content>
   </ion-page>
 </template>
@@ -136,6 +142,7 @@ import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
 import store from "@/store";
+import { ProductService } from "@/services/ProductService";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -148,33 +155,46 @@ const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
 let countName = ref("")
+let queryString = ref("")
+let searchedProduct = ref({} as any)
 
 onMounted(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {
-    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
-    if(!hasError(resp) && resp.data?.itemList?.length) {
-      const item = resp.data.itemList[0]
+    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
       currentCycleCount.value = {
-        countName: item.countImportName,
-        countId: item.inventoryCountImportId,
-        dueDate: item.dueDate,
-        statusId: item.statusId,
-        facilityId: item.facilityId,
-        uploadedByUserLogin: item.uploadedByUserLogin,
-        items: resp.data.itemList
+        countName: resp.data.countImportName,
+        countId: resp.data.inventoryCountImportId,
+        items: [],
+        ...resp.data
       }
 
-      countName.value = item.countImportName
+      countName.value = resp.data.countImportName
     }
   } catch(err) {
     logger.error()
   }
 
+  await fetchCountItems();
+
   emitter.emit("dismissLoader")
 })
+
+async function fetchCountItems() {
+  try {
+    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      currentCycleCount.value["items"] = resp.data.itemList
+      store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
+    }
+  } catch(err) {
+    logger.error()
+  }
+}
 
 async function openDraftImportCsvModal() {
   const draftImportCsvModal = await modalController.create({
@@ -195,8 +215,10 @@ async function openSelectFacilityModal() {
     if(result?.data?.value) {
       updateCycleCount({
         facilityId: result.data.value
-      }).then(() => {
+      }).then(async () => {
         currentCycleCount.value.facilityId = result.data.value
+        // Fetching items information again as on changing facility, the QOH of the items needs to be updated
+        await fetchCountItems()
       }).catch(err => {
         logger.info(err)
       })
@@ -282,6 +304,45 @@ async function deleteItemFromCount(seqId: string) {
   } catch(err) {
     showToast(translate("Failed to remove the item from the count"))
     logger.error(err)
+  }
+}
+
+async function findProduct() {
+  if(!queryString.value.trim()) {
+    showToast(translate("Enter a valid search string"));
+    return;
+  }
+
+  try {
+    const resp = await ProductService.fetchProducts({
+      "keyword": queryString.value,
+      "viewSize": 1 // as we only need a single record
+    })
+    if (!hasError(resp) && resp.data.response?.docs?.length) {
+      searchedProduct.value = resp.data.response.docs[0];
+    }
+  } catch(err) {
+    logger.error("Product not found", err)
+  }
+}
+
+async function addProductToCount() {
+  try {
+    const resp = await CountService.addProductToCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
+      itemList: [{
+        idValue: searchedProduct.value.productId
+      }]
+    })
+
+    if(!hasError(resp)) {
+      showToast(translate("Added product to count"))
+      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
+      await fetchCountItems();
+    }
+  } catch(err) {
+    logger.error("Failed to add product to count", err)
+    showToast(translate("Failed to add product to count"))
   }
 }
 </script>

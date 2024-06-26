@@ -61,6 +61,7 @@ import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { showToast } from "@/utils";
 import router from "@/router";
+import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 
@@ -105,7 +106,9 @@ async function createCycleCount() {
     if(name) {
       // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
       await store.dispatch("count/createCycleCount", {
-        countImportName: name
+        countImportName: name,
+        statusId: "INV_COUNT_CREATED",
+        createdDate: DateTime.now()
       })
     }
   })

@@ -46,12 +46,15 @@ const actions: ActionTree<CountState, RootState> = {
     emitter.emit("dismissLoader")
   },
 
-  async createCycleCount({ commit }, payload) {    
+  async createCycleCount({ dispatch }, payload) {
     try {
       const resp = await CountService.createCycleCount(payload);
 
-      if(!hasError(resp)) {
+      if(!hasError(resp) && resp.data.inventoryCountImportId) {
         showToast(translate("Cycle Count created successfully"))
+        await dispatch("fetchCycleCounts", {
+          statusId: "INV_COUNT_CREATED"
+        })
       } else {
         throw "Failed to create cycle count"
       }
