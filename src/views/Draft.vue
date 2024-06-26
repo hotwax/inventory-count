@@ -14,37 +14,34 @@
     </ion-header>
 
     <ion-content id="draft-filter">
-      <ion-list class="list">
-        <ion-item button detail>
+      <p v-if="!cycleCounts.length" class="empty-state">
+        {{ translate("No cycle counts found") }}
+      </p>
+      <ion-list v-else class="list">
+        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
           <ion-label>
-            count name
-            <p>count id</p>
+            {{ count.countImportName }}
+            <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
-        </ion-item>
-        <ion-item button detail>
-          <ion-label>
-            count name
-            <p>count id</p>
-          </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
-        </ion-item>
-        <ion-item button detail>
-          <ion-label>
-            count name
-            <p>count id</p>
-          </ion-label>
-          <ion-note slot="end" color="medium">items</ion-note>
+          <ion-note slot="end" color="medium">{{ "items" }}</ion-note>
         </ion-item>
       </ion-list>
+
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="createCycleCount">
+          <ion-icon :icon="addOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   IonButtons,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -54,37 +51,70 @@ import {
   IonNote,
   IonPage,
   IonTitle,
-  IonToolbar
-} from '@ionic/vue';
-import { filterOutline } from 'ionicons/icons';
-import { defineComponent, onMounted } from 'vue'
+  IonToolbar,
+  alertController
+} from "@ionic/vue";
+import { addOutline, filterOutline } from "ionicons/icons";
+import { computed, onMounted } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
+import store from "@/store";
+import { showToast } from "@/utils";
+import router from "@/router";
+import { DateTime } from "luxon";
 
-export default defineComponent({
-  name: "Draft",
-  components: {
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonMenuButton,
-    IonNote,
-    IonPage,
-    IonTitle,
-    IonToolbar,
-    Filters
-  },
-  setup() {
-    return {
-      translate,
-      filterOutline
-    }
-  }
+const cycleCounts = computed(() => store.getters["count/getCounts"])
+
+onMounted(async () => {
+  await store.dispatch("count/fetchCycleCounts", {
+    statusId: "INV_COUNT_CREATED"
+  })
 })
+
+async function createCycleCount() {
+  const createCountAlert = await alertController.create({
+    header: translate("Create cycle count"),
+    buttons: [{
+      text: translate("Cancel"),
+      role: "cancel"
+    }, {
+      text: translate("Save"),
+      handler: (data: any) => {
+        const name = data?.name;
+        if(!name.trim()) {
+          showToast(translate("Enter a valid cycle count name"))
+          return false;
+        }
+      }
+    }],
+    inputs: [{
+      name: "name",
+      placeholder: translate("count name"),
+      min: 0,
+      type: "text"
+    }]
+  })
+
+  createCountAlert.onDidDismiss().then(async (result: any) => {
+    // considered that if a role is available on dismiss, it will be a negative role in which we don't need to perform any action
+    if(result.role) {
+      return;
+    }
+
+    const name = result.data?.values?.name?.trim();
+
+    if(name) {
+      // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
+      await store.dispatch("count/createCycleCount", {
+        countImportName: name,
+        statusId: "INV_COUNT_CREATED",
+        createdDate: DateTime.now()
+      })
+    }
+  })
+
+  return createCountAlert.present();
+}
 </script>
 
 <style scoped>
