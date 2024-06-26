@@ -1,7 +1,7 @@
 <template>
   <ion-page>
     <Filters menu-id="draft-filter" content-id="draft-filter"/>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Drafts") }}</ion-title>
@@ -52,11 +52,12 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-  onIonViewWillLeave,
-  alertController
+  alertController,
+  onIonViewWillEnter,
+  onIonViewWillLeave
 } from "@ionic/vue";
 import { addOutline, filterOutline } from "ionicons/icons";
-import { computed, onMounted } from "vue"
+import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
@@ -66,7 +67,7 @@ import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_CREATED"
   })

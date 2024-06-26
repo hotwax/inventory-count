@@ -12,7 +12,8 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_STATS_UPDATED](state, payload) {
     payload.map((count: any) => {
-      state.stats[count.inventoryCountImportId] = count
+      // Parsing the id as in api response we are getting the id in the format `"\"100255\""`
+      state.stats[JSON.parse(count.inventoryCountImportId)] = count
     })
   }
 }	
