@@ -74,12 +74,14 @@ export default defineComponent({
         url: "/assigned",
         iosIcon: storefrontOutline,
         mdIcon: storefrontOutline,
+        childRoutes: ["/assigned/"]
       },
       {
         title: "Pending review",
         url: "/pending-review",
         iosIcon: mailUnreadOutline,
-        mdIcon: mailUnreadOutline
+        mdIcon: mailUnreadOutline,
+        childRoutes: ["/pending-review/"]
       },
       {
         title: "Closed",

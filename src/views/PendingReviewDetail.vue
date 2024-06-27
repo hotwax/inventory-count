@@ -5,10 +5,10 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-button>
+          <ion-button @click="selectAll()">
             <ion-icon slot="icon-only" :icon="checkboxOutline"/>
           </ion-button>
-          <ion-button >
+          <ion-button @click="addProduct()">
             <ion-icon slot="icon-only" :icon="addOutline" />
           </ion-button>
         </ion-buttons>
@@ -128,7 +128,7 @@
           
           <div>
             <ion-item lines="none">
-              <ion-checkbox></ion-checkbox>
+              <ion-checkbox aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </ion-item>
           </div>
         </div>
@@ -138,17 +138,29 @@
         {{ translate("No items found") }}
       </p>
     </ion-content>
+
+    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+      <ion-fab-button>
+        <ion-icon :icon="playBackOutline" />
+      </ion-fab-button>
+    </ion-fab>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button>
+        <ion-icon :icon="receiptOutline" />
+      </ion-fab-button>
+    </ion-fab>
     
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="success" size="small">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
           </ion-button>
-          <ion-button fill="outline" color="danger" size="small">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
@@ -159,8 +171,8 @@
 
 <script setup lang="ts">
 import { DxpShopifyImg } from "@hotwax/dxp-components";
-import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, popoverController} from "@ionic/vue";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
+import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
@@ -169,6 +181,7 @@ import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
 import { showToast, getDateWithOrdinalSuffix, hasError, timeFromNow } from "@/utils"
 import logger from "@/logger";
+import AddProductModal from "@/components/AddProductModal.vue";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -187,6 +200,10 @@ const filteredItems = computed(() => {
   }
 
   return items
+})
+
+const isAnyItemSelected = computed(() => {
+  return !currentCycleCount.value.items?.some((item: any) => item.isChecked)
 })
 
 const currentCycleCount = ref({}) as any
@@ -232,7 +249,7 @@ async function fetchCountItems() {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
-      currentCycleCount.value["items"] = resp.data.itemList
+      currentCycleCount.value["items"] = resp.data.itemList.map((item: any) => ({ ...item, isChecked: false }))
       store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
     }
   } catch(err) {
@@ -263,15 +280,6 @@ async function addProductToCount(productId: any) {
     logger.error("Failed to add product to count", err)
     showToast(translate("Failed to add product to count"))
   }
-}
-
-async function openAssignedCountPopover(event: any){
-  const popover = await popoverController.create({
-    component: AssignedCountPopover,
-    event,
-    showBackdrop: false,
-  });
-  await popover.present();
 }
 
 function getFacilityName(id: string) {
@@ -347,6 +355,24 @@ function isItemReadyToAccept(item: any) {
 function isItemReadyToReject(item: any) {
   return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
 }
+
+function selectItem(checked: boolean, item: any) {
+  return item.isChecked = checked
+}
+
+function selectAll() {
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: true }))
+}
+
+async function addProduct() {
+  const addProductModal = await modalController.create({
+    component: AddProductModal,
+    componentProps: { cycleCount: currentCycleCount.value },
+    showBackdrop: false,
+  });
+
+  await addProductModal.present();
+}
 </script>
 
 <style scoped>
@@ -377,6 +403,10 @@ function isItemReadyToReject(item: any) {
   grid-area: filters;
 }
 
+/* To remove overlapping of fab button with footer buttons */
+ion-footer ion-buttons {
+  padding-right: 80px;
+}
 
 @media (max-width: 991px) {
   .header {
