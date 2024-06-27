@@ -91,7 +91,7 @@
             {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
           </ion-label>
         </ion-item>
-        <ion-button v-if="searchedProduct.productId" fill="clear" @click="isProductAvailableInCycleCount ? addProductToCount : ''">
+        <ion-button v-if="searchedProduct.productId" fill="clear" @click="isProductAvailableInCycleCount ? '' : addProductToCount">
           <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
         </ion-button>
       </div>
@@ -347,9 +347,14 @@ async function findProduct() {
 async function addProductToCount() {
   // If product is not found in the searched string then do not make the api call
   // This check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
-  if(!searchedProduct.value.productId || isProductAvailableInCycleCount) {
-    return
+  if(!searchedProduct.value.productId) {
+    return;
   }
+
+  if(isProductAvailableInCycleCount.value) {
+    return;
+  }
+
   try {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
