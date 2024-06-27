@@ -28,16 +28,17 @@
         </div>
         <div class="filters">
           <ion-list class="ion-padding">
-            <ion-item>
+            <!-- TODO: Will implement CSV import support in the next phase -->
+            <!-- <ion-item>
               <ion-icon slot="start" :icon="cloudUploadOutline"/>
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
               <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-            </ion-item>
+            </ion-item> -->
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  
-              <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">{{ currentCycleCount.dueDate ? currentCycleCount.dueDate : translate("Select date") }}</ion-button>
+              <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">{{ currentCycleCount.dueDate ? getDateWithOrdinalSuffix(currentCycleCount.dueDate) : translate("Select date") }}</ion-button>
               <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                 <ion-content force-overscroll="false">
                   <ion-datetime    
@@ -55,7 +56,9 @@
               <ion-icon slot="start" :icon="businessOutline"/>
               <ion-label>{{ translate("Facility") }}</ion-label>
               <ion-label v-if="currentCycleCount.facilityId" slot="end">{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-              <ion-icon v-if="currentCycleCount.facilityId" slot="end" :icon="pencilOutline"  @click="openSelectFacilityModal"/>
+              <ion-button fill="clear" slot="end" v-if="currentCycleCount.facilityId" @click="openSelectFacilityModal">
+                <ion-icon slot="icon-only" :icon="pencilOutline" />
+              </ion-button>
               <ion-button v-else fill="outline" @click="openSelectFacilityModal">
                 <ion-icon slot="start" :icon="addCircleOutline"/>
                 {{ translate("Assign") }}
@@ -73,21 +76,23 @@
             label-placement="floating"
             :clear-input="true"
             v-model="queryString"
-            @keyup.enter="findProduct()"
+            @ionInput="findProduct()"
+            :debounce="1000"
+            @keyup.enter="addProductToCount"
           >
           </ion-input>
         </ion-item>
         <ion-item lines="none" v-if="searchedProduct.productId">
           <ion-thumbnail slot="start">
-            <DxpShopifyImg/>
+            <DxpShopifyImg :src="getProduct(searchedProduct.productId).mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
             <p class="overline">{{ translate("Search result") }}</p>
             {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
           </ion-label>
         </ion-item>
-        <ion-button v-if="searchedProduct.productId" fill="clear" @click="addProductToCount">
-          <ion-icon slot="icon-only" :icon="addCircleOutline"/>
+        <ion-button v-if="searchedProduct.productId" fill="clear" @click="isProductAvailableInCycleCount ? addProductToCount : ''">
+          <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
         </ion-button>
       </div>
       
@@ -95,7 +100,7 @@
         <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
+              <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               <p>{{ item.productId }}</p>
@@ -107,13 +112,14 @@
           </ion-label>
           <div class="tablet">
             <ion-chip outline>
-              <ion-label>4th March 2024</ion-label>
+              <ion-label>{{ getDateWithOrdinalSuffix(item.lastCountedDate) }}</ion-label>
             </ion-chip>
             <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
           </div>
           <div class="tablet">
             <ion-chip outline>
-              <ion-label>{{ translate("3 rejections in the last week") }}</ion-label>
+              <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
+              <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
             </ion-chip>
           </div>
           <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
@@ -139,11 +145,11 @@ import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
-import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
+import { cloudUploadOutline, calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
-import { hasError, getDateTime, handleDateTimeInput, showToast } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, showToast } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -156,6 +162,12 @@ const props = defineProps({
 })
 
 const facilities = computed(() => store.getters["user/getFacilities"])
+const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+
+const isProductAvailableInCycleCount = computed(() => {
+  if(!searchedProduct.value.productId) return false
+  return currentCycleCount.value.items?.some((item: any) => item.productId == searchedProduct.value.productId)
+})
 
 const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
@@ -333,6 +345,11 @@ async function findProduct() {
 }
 
 async function addProductToCount() {
+  // If product is not found in the searched string then do not make the api call
+  // This check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
+  if(!searchedProduct.value.productId || isProductAvailableInCycleCount) {
+    return
+  }
   try {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
@@ -376,6 +393,11 @@ async function updateCountStatus() {
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
+/* Added to make the last Counted date chip to be displayed in center when missing data */
+.tablet {
+  text-align: center;
+}
+
 .list-item > ion-item {
   width: 100%;
 }
@@ -397,6 +419,10 @@ async function updateCountStatus() {
 .config-label {
   display: block;
   text-align: center;
+}
+
+ion-content {
+  --padding-bottom: 80px;
 }
 
 @media (max-width: 991px) {
