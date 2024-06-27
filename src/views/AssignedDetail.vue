@@ -32,7 +32,7 @@
           </ion-item>
           <ion-chip outline>
             <ion-icon :icon="calendarClearOutline"/>
-            <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) || "-" }}</ion-label>
+            <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
           </ion-chip>
           <ion-chip outline>
             <ion-icon :icon="businessOutline"/>

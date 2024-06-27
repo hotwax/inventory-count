@@ -54,7 +54,7 @@ const getDerivedStatusForCount = (count: any) => {
 }
 
 function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return "";
+  if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
   const suffix = dateOrdinalSuffix[dateTime.day] || "th"
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;

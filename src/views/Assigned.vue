@@ -33,11 +33,11 @@
           <ion-label>
             <!-- TODO: make it dynamic currently not getting stats correctly -->
             {{ getCycleCountStats(count.inventoryCountImportId) }}
-            <p>{{ translate("counter") }}</p>
+            <p>{{ translate("counted") }}</p>
           </ion-label>
 
           <ion-label>
-            {{ count.dueDate ? getDateWithOrdinalSuffix(count.dueDate) : "-" }}
+            {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           

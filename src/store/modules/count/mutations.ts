@@ -10,6 +10,12 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_QUERY_UPDATED](state, payload) {
     (state.query as any)[payload.key] = payload.value
   },
+  [types.COUNT_QUERY_CLEARED](state, payload) {
+    state.query = {
+      facilityId: "",
+      noFacility: false
+    }
+  },
   [types.COUNT_STATS_UPDATED](state, payload) {
     payload.map((count: any) => {
       // Parsing the id as in api response we are getting the id in the format `"\"100255\""`

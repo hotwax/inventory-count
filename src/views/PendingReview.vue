@@ -32,12 +32,12 @@
           
           <ion-label>
             <!-- TODO: make it dynamic currently not getting stats correctly -->
-            {{ "-" }}
-            <p>{{ translate("counter") }}</p>
+            {{ getCycleCountStats(count.inventoryCountImportId) }}
+            <p>{{ translate("counted") }}</p>
           </ion-label>
 
           <ion-label>
-            {{ count.dueDate || "-" }}
+            {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           
@@ -53,17 +53,18 @@
 <script setup lang="ts">
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave } from "@ionic/vue";
-import { onMounted, computed } from "vue"
+import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewWillEnter } from "@ionic/vue";
+import { computed } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
-import { getDerivedStatusForCount } from "@/utils"
+import { getDateWithOrdinalSuffix, getDerivedStatusForCount } from "@/utils"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const facilities = computed(() => store.getters["user/getFacilities"])
+const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_REVIEW"
   })
@@ -71,10 +72,16 @@ onMounted(async () => {
 
 onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearQuery")
 })
 
 function getFacilityName(id: string) {
   return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+
+function getCycleCountStats(id: string) {
+  const stats = cycleCountStats.value(id)
+  return stats ? `${stats.itemCounted}/${stats.totalItems}` : '0/0'
 }
 </script>
 
