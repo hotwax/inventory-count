@@ -33,7 +33,7 @@
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
               <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-            </ion-item> 
+            </ion-item>
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  
@@ -125,6 +125,12 @@
         <p class="empty-state">{{ translate("No items found") }}</p>
       </template>
     </ion-content>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button @click="updateCountStatus">
+        <ion-icon :icon="sendOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -133,8 +139,8 @@ import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
-import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { cloudUploadOutline, calendarNumberOutline, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
 import { hasError, getDateTime, handleDateTimeInput, showToast } from "@/utils";
@@ -143,6 +149,7 @@ import logger from "@/logger"
 import { DateTime } from "luxon"
 import store from "@/store";
 import { ProductService } from "@/services/ProductService";
+import router from "@/router"
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -259,7 +266,6 @@ async function updateCycleCount(payload: any) {
     }
   } catch(err) {
     showToast(translate("Failed to update cycle count information"))
-    logger.error(err)
     return Promise.reject("Failed to update cycle count information")
   }
 }
@@ -343,6 +349,18 @@ async function addProductToCount() {
   } catch(err) {
     logger.error("Failed to add product to count", err)
     showToast(translate("Failed to add product to count"))
+  }
+}
+
+async function updateCountStatus() {
+  try {
+    await updateCycleCount({
+      statusId: "INV_COUNT_ASSIGNED"
+    })
+    router.push("/draft")
+    showToast(translate("Count status changed successfully"))
+  } catch(err) {
+    showToast(translate("Failed to change the cycle count status"))
   }
 }
 </script>

@@ -3,11 +3,11 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
-import logger from "@/logger"
 import { hasError, showToast } from "@/utils"
 import emitter from "@/event-bus"
 import { translate } from "@/i18n"
 import router from "@/router"
+import logger from "@/logger";
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
