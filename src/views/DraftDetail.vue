@@ -33,7 +33,7 @@
               <ion-label>{{ translate("Import CSV") }}</ion-label>
               <input id="inputFile" class="ion-hide"/>
               <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-            </ion-item> 
+            </ion-item>
             <ion-item>
               <ion-icon slot="start" :icon="calendarNumberOutline" />
               <ion-label>{{ translate("Due date") }}</ion-label>  

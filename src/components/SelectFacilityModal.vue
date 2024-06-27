@@ -86,7 +86,7 @@ function updateFacility() {
 }
 </script>
 
-<style>
+<style scoped>
 ion-content {
   --padding-bottom: 80px;
 }

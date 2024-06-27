@@ -1,16 +1,12 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ translate("Primary identifier")}}</ion-list-header>
-      <ion-item>
-        <ion-label>{{ translate("Variance")}}</ion-label>
-        <ion-note slot="end">{{ translate("count pending") }}</ion-note>
-      </ion-item>
-      <ion-item>
+      <ion-list-header>{{ item.productId }}</ion-list-header>
+      <ion-item :lines="item.quantity ? 'none' : 'full'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
-        <ion-note slot="end">1 week ago</ion-note>
+        <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>
       </ion-item>
-      <ion-item lines="none">
+      <ion-item v-if="!item.quantity" lines="none" button @click="updateItem('remove')">
         <ion-label>{{ translate("Remove from count")}}</ion-label>
         <ion-icon slot="end" :icon="removeCircleOutline"/>
       </ion-item>
@@ -18,7 +14,7 @@
   </ion-content>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   IonContent,
   IonIcon,
@@ -26,29 +22,17 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonNote
-} from '@ionic/vue'
+  IonNote,
+  popoverController
+} from "@ionic/vue"
 import { removeCircleOutline } from "ionicons/icons";
-import { defineComponent } from 'vue';
-import { translate } from '@/i18n'
+import { defineProps } from "vue";
+import { translate } from "@/i18n"
+import { timeFromNow } from "@/utils"
 
-export default defineComponent({  
-  name: 'AssignedCountPopover',
-  components:{
-    IonContent,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonNote,
-  },
+defineProps(["item"])
 
-  setup () {
-    return {
-      translate,
-      removeCircleOutline
-    }
-  }
-})
+function updateItem(action: string) {
+  popoverController.dismiss({ itemAction: action })
+}
 </script>

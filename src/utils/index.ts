@@ -54,10 +54,16 @@ const getDerivedStatusForCount = (count: any) => {
 }
 
 function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return '';
+  if (!time) return "";
   const dateTime = DateTime.fromMillis(time);
   const suffix = dateOrdinalSuffix[dateTime.day] || "th"
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
-export { showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount }
+function timeFromNow(time: any) {
+  if(!time) return "-"
+  const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
+  return DateTime.local().plus(timeDiff).toRelative();
+}
+
+export { showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, timeFromNow }

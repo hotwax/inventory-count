@@ -100,10 +100,11 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/assigned-detail',
+    path: '/assigned/:inventoryCountImportId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,
+    props: true
   },
   {
     path: '/pending-review',

@@ -10,5 +10,9 @@ const mutations: MutationTree <ProductState> = {
       });
     }
   },
+  [types.PRODUCT_LIST_UPDATED](state, payload) {
+    state.list.items = payload.products
+    state.list.total = payload.total
+  }
 }
 export default mutations;

@@ -58,6 +58,7 @@ import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem,
 import store from "@/store"
 import { getDateWithOrdinalSuffix, getDerivedStatusForCount } from "@/utils"
 import Filters from "@/components/Filters.vue"
+import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const facilities = computed(() => store.getters["user/getFacilities"])
