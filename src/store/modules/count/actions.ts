@@ -18,13 +18,14 @@ const actions: ActionTree<CountState, RootState> = {
       ...payload
     }
 
-    if(state.query.facilityId) {
-      params["facilityId"] = state.query.facilityId
+    if(state.query.facilityIds.length) {
+      params["facilityId"] = state.query.facilityIds.join(",")
+      params["facilityId_op"] = "in"
     }
 
     if(state.query.noFacility) {
       if(params["facilityId"]) {
-        params["facilityId"] = params["facilityId"].concat(", ''")
+        params["facilityId"] = params["facilityId"].concat(",''")
         params["facilityId_op"] = "in"
       } else {
         params["facilityId_op"] = "empty"
@@ -88,6 +89,9 @@ const actions: ActionTree<CountState, RootState> = {
 
   async updateQuery({ commit, dispatch }, payload) {
     commit(types.COUNT_QUERY_UPDATED, payload)
+
+    // After updating query we need to fetch the counts and thus need to pass the statusId for the counts to be fetched
+    // hence added check to decide the statusId on the basis of currently selected router
     let statusId = "INV_COUNT_CREATED"
     if(router.currentRoute.value.name === "PendingReview") {
       statusId = "INV_COUNT_REVIEW"
