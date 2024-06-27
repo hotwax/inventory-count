@@ -5,10 +5,10 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-button>
+          <ion-button @click="selectAll()">
             <ion-icon slot="icon-only" :icon="checkboxOutline"/>
           </ion-button>
-          <ion-button >
+          <ion-button @click="addProduct()">
             <ion-icon slot="icon-only" :icon="addOutline" />
           </ion-button>
         </ion-buttons>
@@ -19,152 +19,148 @@
       <div class="header">
         <div class="search ion-padding">
           <ion-item lines="none">
-            <ion-label>
-              <h1>CountName</h1>
-              <p>CountId</p>
+            <ion-label slot="start">
+              <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
+              <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
+              <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
+              <p>{{ currentCycleCount.countId }}</p>
             </ion-label>
-            <ion-button slot="end" fill="outline" color="medium">{{ translate("Rename") }}</ion-button>
+
+            <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
+              {{ translate("Rename") }}
+            </ion-button>
+            <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
+              {{ translate("Save") }}
+            </ion-button>
           </ion-item>
           <ion-chip outline>
             <ion-icon :icon="calendarClearOutline"></ion-icon>
-            <ion-label>3rd March 2024</ion-label>
+            <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
           </ion-chip>
           <ion-chip outline>
             <ion-icon :icon="businessOutline"></ion-icon>
-            <ion-label>Broadway</ion-label>
+            <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
           </ion-chip>
         </div>
         <ion-list>
           <div class="filters ion-padding">
             <ion-item>
-              <ion-spinner slot="start" name="circular" paused="true"/>
+              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Progress") }}</ion-label>
-              <ion-label slot="end">40% complete</ion-label>
+              <ion-label slot="end">{{ getProgress() }}</ion-label>
             </ion-item>  
             <ion-item>
-              <ion-spinner slot="start" name="circular" paused="true"/>
+              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Variance") }}</ion-label>
-              <ion-label slot="end">13 counted | 20 expected</ion-label>
+              <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
             </ion-item> 
             <ion-item lines="none">
               <ion-icon slot="start" :icon="thermometerOutline"/>
               <ion-label>{{ translate("Item variance threshold") }}</ion-label>
-              <ion-label slot="end">50%</ion-label>
+              <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
             </ion-item>  
             <ion-item lines="none">
-              <ion-range aria-label="Range"></ion-range>
+              <div slot="start"></div>
+              <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
             </ion-item>
           </div>
         </ion-list>
       </div>
 
       <div class="header border">
-        <ion-segment>
-          <ion-segment-button>
+        <ion-segment v-model="segmentSelected">
+          <ion-segment-button value="all">
             <ion-label>{{ translate("All") }}</ion-label>
           </ion-segment-button>
-          <ion-segment-button>
+          <ion-segment-button value="accept">
             <ion-icon color="success" :icon="thermometerOutline"/>
           </ion-segment-button>
-          <ion-segment-button>
+          <ion-segment-button value="reject">
             <ion-icon color="danger" :icon="thermometerOutline"/>
           </ion-segment-button>
         </ion-segment>
       </div>
 
-      <div class="list-item">
-        <ion-item lines="none">
-          <ion-thumbnail slot="start">
-            <DxpShopifyImg/>
-          </ion-thumbnail>
-          <ion-label class="ion-text-wrap">
-            primary identifier
-            <p>secondary identifier</p>
-          </ion-label>
-        </ion-item>
-        
-        <ion-label>
-          3
-          <p>{{ translate("systemic") }}</p>
-        </ion-label>
-
-        <ion-item lines="none">
-          <ion-label class="ion-text-center">
-            <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-            <p>{{ translate("last counted 1 week ago") }}</p>
-          </ion-label>  
-        </ion-item>
-
-        <div class="tablet">
-          <ion-button fill="outline" color="success" size="small">
-            <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-          </ion-button>
-          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-            <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-          </ion-button>
-          <ion-button fill="outline" color="danger" size="small">
-            <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-          </ion-button>
-        </div>
-        
-        <div>
+      <template v-if="filteredItems?.length">
+        <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
           <ion-item lines="none">
-            <ion-checkbox></ion-checkbox>
+            <ion-thumbnail slot="start">
+              <DxpShopifyImg/>
+            </ion-thumbnail>
+            <ion-label class="ion-text-wrap">
+              {{ item.productId }}
+            </ion-label>
           </ion-item>
-        </div>
-      </div>
-
-      <div class="list-item">
-        <ion-item lines="none">
-          <ion-thumbnail slot="start">
-            <DxpShopifyImg/>
-          </ion-thumbnail>
-          <ion-label class="ion-text-wrap">
-            primary identifier
-            <p>secondary identifier</p>
+          
+          <ion-label v-if="item.quantity">
+            {{ item.quantity }} / {{ item.qoh }}
+            <p>{{ translate("counted/systemic") }}</p>
           </ion-label>
-        </ion-item>
-        
-        <ion-label>
-          6/3
-          <p>{{ translate("counted/systemic") }}</p>
-        </ion-label>
+          
+          <ion-label v-else>
+            {{ item.qoh }}
+            <p>{{ translate("systemic") }}</p>
+          </ion-label>
+          
+          <ion-label v-if="item.performedByPartyId">
+            {{ +(item.quantity) - +(item.qoh) }}
+            <p>{{ item.performedByPartyId }}</p>
+          </ion-label>
 
-        <ion-label>
-          +1
-          <p>user.name</p>
-        </ion-label>  
-
-        <div class="tablet">
-          <ion-button fill="outline" color="success" size="small">
-            <ion-icon slot="icon-only" :icon="thumbsUpOutline" color="success"></ion-icon>
-          </ion-button>
-          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
-            <ion-icon slot="icon-only" :icon="refreshOutline" color="warning"></ion-icon>
-          </ion-button>
-          <ion-button fill="outline" color="danger" size="small">
-            <ion-icon slot="icon-only" :icon="thumbsDownOutline" color="danger"></ion-icon>
-          </ion-button>
-        </div>
-        
-        <div>
-          <ion-item lines="none">
-            <ion-checkbox></ion-checkbox>
+          <ion-item lines="none" v-else>
+            <ion-label class="ion-text-center">
+              <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+              <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+            </ion-label>  
           </ion-item>
+
+          <div class="tablet">
+            <ion-button :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
+            </ion-button>
+            <ion-button :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal">
+              <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
+            </ion-button>
+            <ion-button :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small">
+              <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
+            </ion-button>
+          </div>
+          
+          <div>
+            <ion-item lines="none">
+              <ion-checkbox aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+            </ion-item>
+          </div>
         </div>
-      </div>
+      </template>
+
+      <p v-else class="empty-state">
+        {{ translate("No items found") }}
+      </p>
     </ion-content>
+
+    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
+      <ion-fab-button>
+        <ion-icon :icon="playBackOutline" />
+      </ion-fab-button>
+    </ion-fab>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button>
+        <ion-icon :icon="receiptOutline" />
+      </ion-fab-button>
+    </ion-fab>
     
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="success" size="small">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="outline" color="warning" size="small" class="ion-margin-horizontal">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
           </ion-button>
-          <ion-button fill="outline" color="danger" size="small">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected">
             <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
@@ -173,68 +169,210 @@
   </ion-page>
 </template>
 
-<script>
-import { defineComponent } from "vue";
+<script setup lang="ts">
 import { DxpShopifyImg } from "@hotwax/dxp-components";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, popoverController} from "@ionic/vue";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
+import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
+import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
+import store from "@/store"
+import { CountService } from "@/services/CountService"
+import emitter from '@/event-bus';
+import { showToast, getDateWithOrdinalSuffix, hasError, timeFromNow } from "@/utils"
+import logger from "@/logger";
+import AddProductModal from "@/components/AddProductModal.vue";
 
-export default defineComponent({
-  name: 'PendingReviewDetail',
-  components: {
-    IonBackButton,
-    IonBadge,
-    IonButtons,
-    IonButton,
-    IonCheckbox,
-    IonChip,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonPage,
-    IonRange,
-    IonSegment,
-    IonSegmentButton,
-    IonSpinner,
-    IonThumbnail,
-    IonTitle,
-    IonToolbar,
-    DxpShopifyImg
-  },
+const props = defineProps({
+  inventoryCountImportId: String
+})
 
-  methods: {
-    async openAssignedCountPopover(Event){
-      const popover = await popoverController.create({
-        component: AssignedCountPopover,
-        event: Event,
-        showBackdrop: false,
-      });
-      await popover.present();
-    },
-  },
+const facilities = computed(() => store.getters["user/getFacilities"])
+const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
-  setup() {
-    return {
-      translate,
-      calendarClearOutline,
-      businessOutline,
-      personCircleOutline,
-      ellipsisVerticalOutline,
-      thermometerOutline,
-      thumbsUpOutline,
-      refreshOutline,
-      thumbsDownOutline,
-      checkboxOutline,
-      addOutline
+const filteredItems = computed(() => {
+  let items = currentCycleCount.value.items
+
+  if(segmentSelected.value === "accept") {
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item))
+  } else if(segmentSelected.value === "reject") {
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item))
+  }
+
+  return items
+})
+
+const isAnyItemSelected = computed(() => {
+  return !currentCycleCount.value.items?.some((item: any) => item.isChecked)
+})
+
+const currentCycleCount = ref({}) as any
+const countNameRef = ref()
+let isCountNameUpdating = ref(false)
+let countName = ref("")
+let segmentSelected = ref("all")
+let varianceThreshold = ref(40)
+
+onMounted(async () => {
+  emitter.emit("presentLoader", { message: "Loading cycle count details" })
+  emitter.on("addProductToCount", addProductToCount);
+
+  currentCycleCount.value = {}
+  try {
+    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
+
+    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
+      currentCycleCount.value = {
+        countName: resp.data.countImportName,
+        countId: resp.data.inventoryCountImportId,
+        items: [],
+        ...resp.data
+      }
+
+      countName.value = resp.data.countImportName
+    }
+  } catch(err) {
+    logger.error()
+  }
+
+  await fetchCountItems();
+
+  emitter.emit("dismissLoader")
+})
+
+onUnmounted(() => {
+  emitter.off("addProductToCount", addProductToCount)
+})
+
+async function fetchCountItems() {
+  try {
+    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      currentCycleCount.value["items"] = resp.data.itemList.map((item: any) => ({ ...item, isChecked: false }))
+      store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
+    }
+  } catch(err) {
+    logger.error()
+  }
+}
+
+async function addProductToCount(productId: any) {
+  if(!productId) {
+    showToast(translate("Failed to add product to count"))
+    return;
+  }
+
+  try {
+    const resp = await CountService.addProductToCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
+      itemList: [{
+        idValue: productId
+      }]
+    })
+
+    if(!hasError(resp)) {
+      showToast(translate("Added product to count"))
+      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
+      await fetchCountItems();
+    }
+  } catch(err) {
+    logger.error("Failed to add product to count", err)
+    showToast(translate("Failed to add product to count"))
+  }
+}
+
+function getFacilityName(id: string) {
+  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+
+function getVarianceInformation() {
+  let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
+
+  currentCycleCount.value.items?.map((item: any) => {
+    totalItemsQuantityCount += parseInt(item.quantity || 0)
+    totalItemsExpectedCount += parseInt(item.qoh || 0)
+  })
+
+  // TODO: internationalize text
+  return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
+}
+
+function getProgress() {
+  const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
+  const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
+  return `${isNaN(progress) ? 0 : progress}% progress`
+}
+
+async function updateCycleCount(payload: any) {
+  const params = {
+    inventoryCountImportId: currentCycleCount.value.countId,
+    ...payload
+  }
+
+  try {
+    const resp = await CountService.updateCycleCount(params)
+
+    if(!hasError(resp)) {
+      return Promise.resolve(resp.data?.inventoryCountImportId)
+    } else {
+      throw "Failed to update cycle count information"
+    }
+  } catch(err) {
+    showToast(translate("Failed to update cycle count information"))
+    return Promise.reject("Failed to update cycle count information")
+  }
+}
+
+async function editCountName() {
+  isCountNameUpdating.value = !isCountNameUpdating.value;
+  // Waiting for DOM updations before focus inside the text-area, as it is conditionally rendered in the DOM
+  await nextTick()
+  countNameRef.value.$el.setFocus();
+}
+
+async function updateCountName() {
+  if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+    const inventoryCountImportId = await updateCycleCount({ countImportName: countName.value.trim() })
+    if(inventoryCountImportId) {
+      currentCycleCount.value.countName = countName.value
+    } else {
+      countName.value = currentCycleCount.value.countName.trim()
     }
   }
-})
+
+  isCountNameUpdating.value = false
+}
+
+function updateVarianceThreshold(event: any) {
+  varianceThreshold.value = event.detail.value
+}
+
+function isItemReadyToAccept(item: any) {
+  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 >= varianceThreshold.value : false
+}
+
+function isItemReadyToReject(item: any) {
+  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
+}
+
+function selectItem(checked: boolean, item: any) {
+  return item.isChecked = checked
+}
+
+function selectAll() {
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: true }))
+}
+
+async function addProduct() {
+  const addProductModal = await modalController.create({
+    component: AddProductModal,
+    componentProps: { cycleCount: currentCycleCount.value },
+    showBackdrop: false,
+  });
+
+  await addProductModal.present();
+}
 </script>
 
 <style scoped>
@@ -265,6 +403,10 @@ export default defineComponent({
   grid-area: filters;
 }
 
+/* To remove overlapping of fab button with footer buttons */
+ion-footer ion-buttons {
+  padding-right: 80px;
+}
 
 @media (max-width: 991px) {
   .header {
