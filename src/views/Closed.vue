@@ -55,12 +55,12 @@
           </ion-label>
 
           <ion-label>
-            {{ cycleCountStats(id)?.rejectedCount || 0 }}
+            {{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount || 0 }}
             <p>{{ translate("rejected counts") }}</p>
           </ion-label>
 
           <ion-label>
-            {{ cycleCountStats(id)?.totalVaraince || 0 }}
+            {{ cycleCountStats(count.inventoryCountImportId)?.totalVaraince || 0 }}
             <p>{{ translate("total variance") }}</p>
           </ion-label>
 
