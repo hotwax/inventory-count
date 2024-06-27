@@ -23,7 +23,7 @@
             {{ count.countImportName }}
             <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>
-          <ion-note slot="end" color="medium">{{ "items" }}</ion-note>
+          <ion-note slot="end" color="medium">{{ cycleCountStats(count.inventoryCountImportId)?.totalItems || 0 }} {{ translate("items") }}</ion-note>
         </ion-item>
       </ion-list>
 
@@ -66,6 +66,7 @@ import router from "@/router";
 import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
+const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
 onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {

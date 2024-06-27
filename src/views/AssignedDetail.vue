@@ -42,12 +42,10 @@
         <div class="filters ion-padding">
           <ion-list>
             <ion-item>
-              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Progress") }}</ion-label>
               <ion-label slot="end">{{ getProgress() }}</ion-label>
             </ion-item>  
             <ion-item>
-              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Variance") }}</ion-label>
               <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
             </ion-item>  
@@ -61,7 +59,7 @@
         <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg />
+              <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
             </ion-thumbnail>
             <ion-label>
               {{ item.productId }}
@@ -92,7 +90,7 @@
           <ion-chip outline v-if="item.quantity">
             <ion-icon :icon="personCircleOutline"/>
             <!-- TODO: fetch username instead of partyId -->
-            <ion-label>{{ item.performedByPartyId }}</ion-label>
+            <ion-label>{{ item.performedByPartyId || "-"  }}</ion-label>
           </ion-chip>
 
           <div class="tablet" v-else>
@@ -124,7 +122,7 @@ import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vu
 import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { translate } from '@/i18n'
 import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, lockClosedOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
@@ -140,6 +138,7 @@ const props = defineProps({
 
 const facilities = computed(() => store.getters["user/getFacilities"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
+const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
@@ -335,8 +334,8 @@ async function updateCountStatus() {
     await updateCycleCount({
       statusId: "INV_COUNT_REVIEW"
     })
-    router.push("/assigned")
-    showToast(translate("Count status changed successfully"))
+    router.push("/pending-review")
+    showToast(translate("Count has been submitted for review"))
   } catch(err) {
     showToast(translate("Failed to change the cycle count status"))
   }

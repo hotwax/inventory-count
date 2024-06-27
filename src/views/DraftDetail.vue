@@ -82,13 +82,21 @@
           >
           </ion-input>
         </ion-item>
-        <ion-item lines="none" v-if="searchedProduct.productId">
+        <ion-item lines="none" v-if="isSearchingProduct">
+          <ion-spinner color="secondary" name="crescent"></ion-spinner>
+        </ion-item>
+        <ion-item lines="none" v-else-if="searchedProduct.productId">
           <ion-thumbnail slot="start">
             <DxpShopifyImg :src="getProduct(searchedProduct.productId).mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
             <p class="overline">{{ translate("Search result") }}</p>
             {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
+          </ion-label>
+        </ion-item>
+        <ion-item v-else-if="queryString" lines="none">
+          <ion-label>
+            {{ translate("No product found") }}
           </ion-label>
         </ion-item>
         <ion-button v-if="searchedProduct.productId" fill="clear" @click="isProductAvailableInCycleCount ? '' : addProductToCount">
@@ -146,7 +154,7 @@ import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { cloudUploadOutline, calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, showToast } from "@/utils";
@@ -176,6 +184,7 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let queryString = ref("")
 let searchedProduct = ref({} as any)
+let isSearchingProduct = ref(false)
 
 onMounted(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -331,6 +340,8 @@ async function findProduct() {
     return;
   }
 
+  isSearchingProduct.value = true
+
   try {
     const resp = await ProductService.fetchProducts({
       "keyword": queryString.value,
@@ -342,6 +353,8 @@ async function findProduct() {
   } catch(err) {
     logger.error("Product not found", err)
   }
+
+  isSearchingProduct.value = false
 }
 
 async function addProductToCount() {
@@ -384,8 +397,8 @@ async function updateCountStatus() {
     await updateCycleCount({
       statusId: "INV_COUNT_ASSIGNED"
     })
-    router.push("/draft")
-    showToast(translate("Count status changed successfully"))
+    router.push("/assigned")
+    showToast(translate("Count has been successfully assigned"))
   } catch(err) {
     showToast(translate("Failed to change the cycle count status"))
   }
