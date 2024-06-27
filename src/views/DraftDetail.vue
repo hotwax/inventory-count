@@ -353,6 +353,11 @@ async function addProductToCount() {
 }
 
 async function updateCountStatus() {
+  if(!currentCycleCount.value.facilityId) {
+    showToast(translate("Assign a facility to the cycle count"))
+    return;
+  }
+
   try {
     await updateCycleCount({
       statusId: "INV_COUNT_ASSIGNED"
