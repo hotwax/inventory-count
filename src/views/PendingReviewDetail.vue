@@ -45,12 +45,10 @@
         <ion-list>
           <div class="filters ion-padding">
             <ion-item>
-              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Progress") }}</ion-label>
               <ion-label slot="end">{{ getProgress() }}</ion-label>
             </ion-item>  
             <ion-item>
-              <ion-spinner slot="start" name="circular" :paused="true"/>
               <ion-label>{{ translate("Variance") }}</ion-label>
               <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
             </ion-item> 
