@@ -3,11 +3,8 @@ import RootState from '@/store/RootState'
 import pickerCountState from './pickerCountState'	
 import { pickerService } from '@/services/pickerService'
 import * as types from "./mutation-types"
-import { hasError, showToast } from '@/utils'	
+import { hasError } from '@/utils'	
 import logger from '@/logger'
-import { translate } from '@/i18n'	
-import emitter from '@/event-bus'	
-
 
 const actions: ActionTree<pickerCountState, RootState> = {	
 
@@ -31,6 +28,9 @@ const actions: ActionTree<pickerCountState, RootState> = {
           counts = resp.data
         }
 
+        // Fetching stats information for the counts
+        this.dispatch("count/fetchCycleCountStats", resp.data.map((count: any) => count.inventoryCountImportId))
+
         if(resp.data.length == payload.pageSize) isScrollable = true
         else isScrollable = false
       } else {
@@ -52,6 +52,8 @@ const actions: ActionTree<pickerCountState, RootState> = {
       const resp = await pickerService.fetchCycleCountItems(payload)
       if(!hasError(resp)) {
         items = resp.data
+
+        this.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
       } else {
         throw resp.data;
       }

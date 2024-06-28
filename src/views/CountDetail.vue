@@ -3,7 +3,7 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
-        <ion-title>{{ translate("Count name") }}</ion-title>
+        <ion-title>{{ cycleCount.countImportName }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
@@ -60,7 +60,7 @@
         </aside>
         
         <main>
-          <ProductDetail/>
+          <ProductDetail />
         </main>
       </div>
     </ion-content>
@@ -107,7 +107,7 @@ const itemsList = computed(() => {
   } else if (selectedSegment.value === 'counted') {
     return cycleCountItems.value.itemList.filter(item => item.quantity);
   } else if (selectedSegment.value === 'notCounted') {
-    return cycleCountItems.value.itemList.filter(item => item.quantity === 0);
+    return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.statusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
@@ -124,8 +124,8 @@ const queryString = ref('');
 let filteredItems = ref([]);
 
 onIonViewDidEnter(async() => {  
-  fetchCycleCount();
-  fetchCycleCountItems();
+  await fetchCycleCount();
+  await fetchCycleCountItems();
   updateFilteredItems();
   emitter.on("updateItemList", updateFilteredItems);
   await store.dispatch("product/currentProduct", itemsList.value[0])
@@ -165,7 +165,7 @@ async function searchProducts() {
   updateFilteredItems(); 
 }
 
-async function updateFilteredItems() {
+function updateFilteredItems() {
   if (!queryString.value.trim()) {
     filteredItems.value = itemsList.value;
   } else {

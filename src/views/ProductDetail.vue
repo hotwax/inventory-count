@@ -1,7 +1,7 @@
   <template>
     <main>
       <section class="product-image">
-        <DxpShopifyImg />
+        <DxpShopifyImg :src="getProduct(product.productId)?.mainImageUrl" />
       </section>
       <section class="product-info">
         <ion-item lines="none">
@@ -22,7 +22,7 @@
           </ion-item>
           <ion-item>
             {{ translate("Variance") }}
-            <ion-label slot="end">{{ product.qoh - product.quantity }}</ion-label>
+            <ion-label slot="end">{{ +product.qoh - +(product.quantity || 0) }}</ion-label>
           </ion-item>
         </ion-list>
 
@@ -106,10 +106,12 @@
   import logger from '@/logger'
   import { showToast } from '@/utils';
   import { pickerService } from '@/services/pickerService';
+  import { DxpShopifyImg } from '@hotwax/dxp-components';
 
 
   const store = useStore();
   const product = computed(() => store.getters['product/getCurrentProduct']);
+  const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
   const inputCount = ref('');
   const variance = ref(0);
@@ -217,6 +219,10 @@
   .product-image {
     text-align: center;
     margin-top: var(--spacer-lg);
+  }
+
+  .product-image > img {
+    width: 600px;
   }
 
   ion-content > main {

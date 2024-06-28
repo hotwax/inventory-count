@@ -85,10 +85,6 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/draft',
-    redirect: '/draft'
-  },
-  {
-    path: '/draft',
     name: 'Draft',
     component: Draft,
     beforeEnter: authGuard,

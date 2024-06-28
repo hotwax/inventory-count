@@ -1,23 +1,23 @@
 <template>
-  <ion-list v-if="!item.length">
+  <ion-list>
     <ion-item @click="selectedProduct(item)" button>
       <ion-thumbnail slot="start">
-        <DxpShopifyImg/>
+        <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
       </ion-thumbnail>
       <ion-label class="ion-text-wrap">
         <h2>{{ item.productId }}</h2>
         <p>{{ item.productId }}</p>
       </ion-label>
-      <ion-badge slot="end" v-if="item.quantity && item.statusId === 'INV_COUNT_CREATED'">
-        {{ item.quantity }} units
+      <ion-badge slot="end" v-if="item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+        {{ item.quantity }} {{ translate("units") }}
       </ion-badge>
-      <ion-note v-if="!item.quantity">
+      <ion-note v-if="!item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
         {{ translate("pending") }}
       </ion-note>
       <ion-note v-else-if="item.quantity > 0 && item.statusId === 'INV_COUNT_REVIEW'">
         {{ translate("pending review") }}
       </ion-note>
-      <ion-note v-else-if="item.quantity === 0 && item.statusId === 'INV_COUNT_REVIEW'" color="warning">
+      <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_REVIEW'" color="warning">
         {{ translate("not counted") }}
       </ion-note>
       <ion-note v-else-if="item.statusId === 'INV_COUNT_COMPLETED'" color="success">
@@ -28,20 +28,19 @@
       </ion-note>
     </ion-item>
   </ion-list>
-  <div v-else class="empty-state">
-    <p>{{ translate("No products found") }}</p>
-  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps } from 'vue';
 import {  IonBadge, IonItem, IonLabel, IonList, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
 
 const store = useStore();
 
-const props = defineProps(['item'])
+defineProps(['item'])
+
+const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
 async function selectedProduct(item: any) { 
   store.dispatch('product/currentProduct', item);
