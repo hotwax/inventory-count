@@ -1,5 +1,8 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
+import store from "@/store";
+
+const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
 
 const dateOrdinalSuffix = {
   1: 'st',
@@ -49,8 +52,8 @@ const getDateTime = (time: any) => {
 }
 
 const getDerivedStatusForCount = (count: any) => {
-  // TODO: make it dynamic based on coditions or from the stats api, currently always showing as submitted
-  return "Submitted"
+  const countStats = cycleCountStats(count.inventoryCountImportId)
+  return countStats ? countStats.rejectedCount > 0 ? count.statusId === "INV_COUNT_ASSIGNED" ? "Recount requested" : "Re-submitted" : count.statusId === "INV_COUNT_ASSIGNED" ? "Assigned" : "Submitted" : "-"
 }
 
 function getDateWithOrdinalSuffix(time: any) {
