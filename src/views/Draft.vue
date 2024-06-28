@@ -115,8 +115,7 @@ async function createCycleCount() {
       // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
       await store.dispatch("count/createCycleCount", {
         countImportName: name,
-        statusId: "INV_COUNT_CREATED",
-        createdDate: DateTime.now().toMillis()
+        statusId: "INV_COUNT_CREATED"
       })
     }
   })
