@@ -8,6 +8,20 @@ const fetchCycleCounts = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchCycleCountStats = async (payload: any): Promise<any> => {
+  const params = new URLSearchParams();
+
+  payload.inventoryCountImportIds.map((id: string) => {
+    params.append("inventoryCountImportIds", id)
+  })
+
+  return api({
+    url: "cycleCounts/stats",
+    method: "GET",
+    params
+  })
+}
+
 const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => {
   return api({
     url: `cycleCounts/${inventoryCountImportId}`,
@@ -53,12 +67,31 @@ const addProductToCount = async (payload: any): Promise<any> => {
   })
 }
 
+const updateProductsInCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/update`,
+    method: "POST",
+    data: payload
+  })
+}
+
+const recountItems = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/recount`,
+    method: "POST",
+    data: payload
+  })
+}
+
 export const CountService = {
   addProductToCount,
   createCycleCount,
   deleteCycleCountItem,
   fetchCycleCount,
+  fetchCycleCountStats,
   fetchCycleCounts,
   fetchCycleCountItems,
-  updateCycleCount
+  recountItems,
+  updateCycleCount,
+  updateProductsInCount
 }

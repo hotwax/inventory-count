@@ -4,7 +4,9 @@ import ProductState from './ProductState'
 import * as types from './mutation-types'
 import logger from "@/logger";
 import { ProductService } from "@/services/ProductService"
-import { hasError } from '@/utils';
+import { hasError, showToast } from '@/utils';
+import emitter from '@/event-bus';
+import { translate } from '@/i18n';
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -32,7 +34,33 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async currentProduct ({ commit }, payload) {
     commit(types.PRODUCT_CURRENT_UPDATED, payload )
-  }
+  },
+
+  async findProduct({ commit, state }, payload) {
+    let resp;
+    if (payload.viewIndex === 0) emitter.emit("presentLoader");
+    try {
+      resp = await ProductService.fetchProducts({
+        "filters": ['isVirtual: false'],
+        "viewSize": payload.viewSize,
+        "viewIndex": payload.viewIndex,
+        "keyword":  payload.queryString
+      })
+      if (resp.status === 200 && resp.data.response?.docs.length > 0 && !hasError(resp)) {
+        let products = resp.data.response.docs;
+        const total = resp.data.response.numFound;
+
+        if (payload.viewIndex && payload.viewIndex > 0) products = state.list.items.concat(products)
+        commit(types.PRODUCT_LIST_UPDATED, { products, total });
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      }
+    } catch (error) {
+      showToast(translate("Something went wrong"));
+    }
+    if (payload.viewIndex === 0) emitter.emit("dismissLoader");
+    
+    return resp;
+  },
 }
 
 export default actions;

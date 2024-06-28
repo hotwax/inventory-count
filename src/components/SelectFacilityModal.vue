@@ -26,7 +26,7 @@
     </ion-list>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button @click="updateFacility()">
+      <ion-fab-button @click="updateFacility()" :disabled="!isFacilityUpdated">
         <ion-icon :icon="saveOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -60,6 +60,11 @@ import store from "@/store";
 const props = defineProps(["currentCycleCount"])
 
 const facilities = computed(() => store.getters["user/getFacilities"])
+
+const isFacilityUpdated = computed(() => {
+  return props.currentCycleCount.facilityId !== selectedFacilityId.value
+})
+
 let filteredFacilities = ref([] as Array<any>)
 let queryString = ref("")
 let selectedFacilityId = ref("")
@@ -86,7 +91,7 @@ function updateFacility() {
 }
 </script>
 
-<style>
+<style scoped>
 ion-content {
   --padding-bottom: 80px;
 }

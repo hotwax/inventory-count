@@ -1,5 +1,18 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
+import store from "@/store";
+
+const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
+
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+} as any
 
 // TODO Use separate files for specific utilities
 
@@ -38,4 +51,22 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
-export { showToast, hasError, handleDateTimeInput, getDateTime }
+const getDerivedStatusForCount = (count: any) => {
+  const countStats = cycleCountStats(count.inventoryCountImportId)
+  return countStats ? countStats.rejectedCount > 0 ? count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Recount requested", color: "danger" } : { label: "Re-submitted", color: "danger" } : count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Assigned", color: "primary" } : { label: "Submitted", color: "primary" } : { label: "-", color: "primary" }
+}
+
+function getDateWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+}
+
+function timeFromNow(time: any) {
+  if(!time) return "-"
+  const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
+  return DateTime.local().plus(timeDiff).toRelative();
+}
+
+export { showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, timeFromNow }

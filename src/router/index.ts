@@ -62,6 +62,9 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'count',
         component: () => import('@/views/Count.vue'),
+        meta: {
+          permissionId: "APP_COUNT_VIEW"
+        }
       },
       {
         path: 'settings',
@@ -75,7 +78,10 @@ const routes: Array<RouteRecordRaw> = [
     name: 'CountDetail',
     component: CountDetail,
     beforeEnter: authGuard,
-    props: true 
+    props: true,
+    meta: {
+      permissionId: "APP_COUNT_VIEW"
+    }
   },
   {
     path: '/draft',
@@ -86,49 +92,75 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Draft',
     component: Draft,
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
   },
   {
     path: "/draft/:inventoryCountImportId",
     name: "DraftDetail",
     component: DraftDetail,
     beforeEnter: authGuard,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
   },
   {
     path: '/assigned',
     name: 'Assigned',
     component: Assigned,
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_ASSIGNED_VIEW"
+    }
   },
   {
-    path: '/assigned-detail',
+    path: '/assigned/:inventoryCountImportId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_ASSIGNED_VIEW"
+    }
   },
   {
     path: '/pending-review',
     name: 'PendingReview',
     component: PendingReview,
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
   },
   {
-    path: '/pending-review-detail',
+    path: '/pending-review/:inventoryCountImportId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
   },
   {
     path: '/closed',
     name: 'Closed',
     component: Closed,  
-    beforeEnter: authGuard, 
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
   },
   {
     path: '/store-permissions',
     name: 'StorePermissions',
     component: StorePermissions,
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_STORE_PERMISSIONS_VIEW"
+    }
   },
   {
     path: '/settings',
@@ -153,7 +185,7 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/draft";
+    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
     else {
       showToast(translate('You do not have permission to access this page'));
     }

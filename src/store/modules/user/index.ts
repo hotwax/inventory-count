@@ -16,7 +16,8 @@ const userModule: Module<UserState, RootState> = {
         token: ""
       },
       facilities: [],
-      currentFacility: {}
+      currentFacility: {},
+      permissions: []
     },
     getters,
     actions,

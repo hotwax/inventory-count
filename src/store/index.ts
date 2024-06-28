@@ -8,6 +8,7 @@ import userModule from "./modules/user";
 import pickerCountModule from "./modules/pickerCount";
 import productModule from "./modules/product";
 import countModule from "./modules/count";
+import { setPermissions } from "@/authorization"
 
 
 // TODO check how to register it from the components only
@@ -35,6 +36,8 @@ const store = createStore<RootState>({
     count: countModule,
   },
 })
+
+setPermissions(store.getters['user/getUserPermissions']);
 
 export default store
 export function useStore(): typeof store {
