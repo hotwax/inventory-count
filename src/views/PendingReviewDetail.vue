@@ -113,20 +113,20 @@
           </ion-item>
 
           <div class="tablet">
-            <ion-button :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small">
+            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="updateItemStatus('INV_COUNT_COMPLETED', item)">
               <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
             </ion-button>
-            <ion-button :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal">
+            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
               <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
             </ion-button>
-            <ion-button :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small">
+            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
               <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
             </ion-button>
           </div>
           
           <div>
             <ion-item lines="none">
-              <ion-checkbox aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+              <ion-checkbox aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)" :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'"></ion-checkbox>
             </ion-item>
           </div>
         </div>
@@ -144,7 +144,7 @@
     </ion-fab>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button>
+      <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -152,13 +152,13 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_COMPLETED')">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
             <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
           </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
             <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
@@ -180,6 +180,7 @@ import emitter from '@/event-bus';
 import { showToast, getDateWithOrdinalSuffix, hasError, timeFromNow } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
+import router from "@/router";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -202,6 +203,10 @@ const filteredItems = computed(() => {
 
 const isAnyItemSelected = computed(() => {
   return !currentCycleCount.value.items?.some((item: any) => item.isChecked)
+})
+
+const isAllItemsMarkedAsCompletedOrRejected = computed(() => {
+  return currentCycleCount.value.items?.every((item: any) => item.itemStatusId === "INV_COUNT_COMPLETED" || item.itemStatusId === "INV_COUNT_REJECTED")
 })
 
 const currentCycleCount = ref({}) as any
@@ -265,7 +270,8 @@ async function addProductToCount(productId: any) {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
       itemList: [{
-        idValue: productId
+        idValue: productId,
+        statusId: "INV_COUNT_CREATED"
       }]
     })
 
@@ -359,7 +365,8 @@ function selectItem(checked: boolean, item: any) {
 }
 
 function selectAll() {
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: true }))
+  // When an item is having rejected we do not want to be checked in any case thus added a check for reject item status
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId !== "INV_COUNT_REJECTED" ? true : false }))
 }
 
 async function addProduct() {
@@ -370,6 +377,92 @@ async function addProduct() {
   });
 
   await addProductModal.present();
+}
+
+async function updateItemStatus(statusId: string, item?: any) {
+  let itemList = []
+  if(item) {
+    itemList = [{
+      importItemSeqId: item.importItemSeqId,
+      statusId
+    }]
+  } else {
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        itemList.push({
+          importItemSeqId: item.importItemSeqId,
+          statusId
+        })
+      }
+    })
+  }
+
+  if(!itemList.length) {
+    return;
+  }
+
+  try {
+    const resp = await CountService.updateProductsInCount({
+      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
+      itemList
+    })
+
+    if(!hasError(resp)) {
+      await fetchCountItems();
+    } else {
+      throw resp.data
+    }
+
+  } catch(err) {
+    showToast(translate("Failed to update items"))
+    logger.error("Failed to update items", err)
+  }
+}
+
+async function recountItem(item?: any) {
+  let importItemSeqIds = []
+  if(item) {
+    importItemSeqIds = [item.importItemSeqId]
+  } else {
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        importItemSeqIds.push(item.importItemSeqId)
+      }
+    })
+  }
+
+  if(!importItemSeqIds.length) {
+    return;
+  }
+
+  try {
+    const resp = await CountService.recountItems({
+      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
+      importItemSeqIds
+    })
+
+    if(!hasError(resp)) {
+      await fetchCountItems();
+    } else {
+      throw resp.data
+    }
+
+  } catch(err) {
+    showToast(translate("Failed to recount items"))
+    logger.error("Failed to recount items", err)
+  }
+}
+
+async function completeCount() {
+  try {
+    await updateCycleCount({
+      statusId: "INV_COUNT_COMPLETED"
+    })
+    router.push("/closed")
+    showToast(translate("Count has been marked as completed"))
+  } catch(err) {
+    showToast(translate("Failed to complete cycle count"))
+  }
 }
 </script>
 

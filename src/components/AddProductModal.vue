@@ -116,6 +116,6 @@ function selectSearchBarText(event: any) {
 }
 
 function isProductAvailableInCycleCount(id: string) {
-  return props.cycleCount.items.some((item: any) => item.productId === id)
+  return props.cycleCount.items.some((item: any) => item.productId === id && item.itemStatusId !== "INV_COUNT_REJECTED")
 }
 </script>
