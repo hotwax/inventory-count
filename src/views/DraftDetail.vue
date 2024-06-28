@@ -381,6 +381,8 @@ async function addProductToCount() {
       showToast(translate("Added product to count"))
       // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
       await fetchCountItems();
+      // clearing the searchProduct information after product is successfully added to the count
+      searchedProduct.value = {}
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
