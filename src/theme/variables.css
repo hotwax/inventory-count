@@ -100,13 +100,13 @@ main {
   display: flex;
   justify-content: center;
   align-items: start;
-  gap: var(--spacer-2xl);
-  max-width: 990px;
+  /* gap: var(--spacer-2xl); */
+  max-width: 1000px;
 }
-
+    
 section {
   display: grid;
-  grid-template-columns: minmax(400px, 1fr);
+  /* grid-template-columns: minmax(400px); */
 }
 
 .date-time-button::part(native) {

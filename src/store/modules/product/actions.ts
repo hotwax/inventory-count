@@ -32,6 +32,10 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
+  async currentProduct ({ commit }, payload) {
+    commit(types.PRODUCT_CURRENT_UPDATED, payload )
+  },
+
   async findProduct({ commit, state }, payload) {
     let resp;
     if (payload.viewIndex === 0) emitter.emit("presentLoader");

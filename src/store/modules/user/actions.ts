@@ -68,7 +68,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
-      await dispatch("fetchFacilities", api_key)
+      await dispatch("fetchFacilities")
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
@@ -98,6 +98,8 @@ const actions: ActionTree<UserState, RootState> = {
 
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
+    this.dispatch('pickerCount/clearCycleCounts')
+    this.dispatch('pickerCount/clearCycleCountItems')
 
     emitter.emit('dismissLoader')
   },
@@ -127,7 +129,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit }, token) {
+  async fetchFacilities({ commit }) {
     let facilities: Array<any> = []
     try {
       const resp = await UserService.fetchFacilities({
@@ -136,7 +138,7 @@ const actions: ActionTree<UserState, RootState> = {
         facilityTypeId: "VIRTUAL_FACILITY",
         facilityTypeId_not: "Y",
         pageSize: 200
-      }, token)
+      })
 
       if(!hasError(resp)) {
         facilities = resp.data

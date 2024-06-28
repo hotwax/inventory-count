@@ -1,12 +1,13 @@
-import { createStore, useStore as useVuexStore } from "vuex"
-import mutations  from "./mutations"
-import getters  from "./getters"
-import actions from "./actions"
-import RootState from "./RootState"
+import { createStore, useStore as useVuexStore, Store } from "vuex";
 import createPersistedState from "vuex-persistedstate";
+import RootState from "./RootState"; // Ensure this is correctly imported
+import mutations from "./mutations";
+import getters from "./getters";
+import actions from "./actions";
 import userModule from "./modules/user";
-import countModule from "./modules/count"
-import productModule from "./modules/product"
+import pickerCountModule from "./modules/pickerCount";
+import productModule from "./modules/product";
+import countModule from "./modules/count";
 import { setPermissions } from "@/authorization"
 
 
@@ -17,7 +18,7 @@ import { setPermissions } from "@/authorization"
 const state: any = {}
 
 const persistState = createPersistedState({
-  paths: ["user"],
+  paths: ["user", "pickerCount"],
   fetchBeforeUse: true
 })
 
@@ -29,9 +30,10 @@ const store = createStore<RootState>({
   getters,
   plugins: [ persistState ],
   modules: {
-    "user": userModule,
-    "count": countModule,
-    "product": productModule
+    user: userModule,
+    pickerCount: pickerCountModule,
+    product: productModule,
+    count: countModule,
   },
 })
 

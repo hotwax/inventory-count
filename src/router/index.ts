@@ -48,7 +48,7 @@ const loginGuard = (to: any, from: any, next: any) => {
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: "/tabs",
+    path: "/",
     redirect: "/tabs/count",
   },
   {
@@ -74,17 +74,14 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   {
-    path: '/count-detail',
+    path: '/count-detail/:id',
     name: 'CountDetail',
     component: CountDetail,
     beforeEnter: authGuard,
+    props: true,
     meta: {
       permissionId: "APP_COUNT_VIEW"
     }
-  },
-  {
-    path: '/',
-    redirect: '/draft'
   },
   {
     path: '/draft',

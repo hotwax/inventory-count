@@ -1,5 +1,5 @@
 export default interface RootState {
   user: any;
-  product: any;
+  pickerCount: any;
   count: any;
 }
