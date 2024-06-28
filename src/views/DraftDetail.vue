@@ -372,7 +372,8 @@ async function addProductToCount() {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
       itemList: [{
-        idValue: searchedProduct.value.productId
+        idValue: searchedProduct.value.productId,
+        statusId: "INV_COUNT_CREATED"
       }]
     })
 

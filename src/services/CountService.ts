@@ -61,6 +61,22 @@ const addProductToCount = async (payload: any): Promise<any> => {
   })
 }
 
+const updateProductsInCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/update`,
+    method: "POST",
+    data: payload
+  })
+}
+
+const recountItems = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/recount`,
+    method: "POST",
+    data: payload
+  })
+}
+
 export const CountService = {
   addProductToCount,
   createCycleCount,
@@ -69,5 +85,7 @@ export const CountService = {
   fetchCycleCountStats,
   fetchCycleCounts,
   fetchCycleCountItems,
-  updateCycleCount
+  recountItems,
+  updateCycleCount,
+  updateProductsInCount
 }
