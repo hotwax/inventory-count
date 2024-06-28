@@ -87,7 +87,7 @@
         <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg/>
+              <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               {{ item.productId }}
@@ -96,7 +96,7 @@
           
           <ion-label v-if="item.quantity">
             {{ item.quantity }} / {{ item.qoh }}
-            <p>{{ translate("counted/systemic") }}</p>
+            <p>{{ translate("counted / systemic") }}</p>
           </ion-label>
           
           <ion-label v-else>
@@ -104,7 +104,7 @@
             <p>{{ translate("systemic") }}</p>
           </ion-label>
           
-          <ion-label v-if="item.performedByPartyId">
+          <ion-label v-if="item.performedByPartyId && item.quantity">
             {{ +(item.quantity) - +(item.qoh) }}
             <p>{{ item.performedByPartyId }}</p>
           </ion-label>
@@ -187,6 +187,7 @@ const props = defineProps({
 
 const facilities = computed(() => store.getters["user/getFacilities"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
+const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
 const filteredItems = computed(() => {
   let items = currentCycleCount.value.items

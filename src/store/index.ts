@@ -7,6 +7,7 @@ import createPersistedState from "vuex-persistedstate";
 import userModule from "./modules/user";
 import countModule from "./modules/count"
 import productModule from "./modules/product"
+import { setPermissions } from "@/authorization"
 
 
 // TODO check how to register it from the components only
@@ -33,6 +34,8 @@ const store = createStore<RootState>({
     "product": productModule
   },
 })
+
+setPermissions(store.getters['user/getUserPermissions']);
 
 export default store
 export function useStore(): typeof store {

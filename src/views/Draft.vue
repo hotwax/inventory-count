@@ -116,7 +116,7 @@ async function createCycleCount() {
       await store.dispatch("count/createCycleCount", {
         countImportName: name,
         statusId: "INV_COUNT_CREATED",
-        createdDate: DateTime.now()
+        createdDate: DateTime.now().toMillis()
       })
     }
   })
