@@ -37,6 +37,7 @@ import { mapGetters, useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import { translate } from "@/i18n";
+import { hasPermission } from "@/authorization";
 
 export default defineComponent({
   name: "Menu",
@@ -67,33 +68,48 @@ export default defineComponent({
         url: "/draft",
         iosIcon: createOutline,
         mdIcon: createOutline,
-        childRoutes: ["/draft/"]
+        childRoutes: ["/draft/"],
+        meta: {
+          permissionId: "APP_DRAFT_VIEW"
+        }
       },
       {
         title: "Assigned",
         url: "/assigned",
         iosIcon: storefrontOutline,
         mdIcon: storefrontOutline,
-        childRoutes: ["/assigned/"]
+        childRoutes: ["/assigned/"],
+        meta: {
+          permissionId: "APP_ASSIGNED_VIEW"
+        }
       },
       {
         title: "Pending review",
         url: "/pending-review",
         iosIcon: mailUnreadOutline,
         mdIcon: mailUnreadOutline,
-        childRoutes: ["/pending-review/"]
+        childRoutes: ["/pending-review/"],
+        meta: {
+          permissionId: "APP_PENDING_REVIEW_VIEW"
+        }
       },
       {
         title: "Closed",
         url: "/closed",
         iosIcon: receiptOutline,
         mdIcon: receiptOutline,
+        meta: {
+          permissionId: "APP_CLOSED_VIEW"
+        }
       },
       {
         title: "Store permissions",
         url: "/store-permissions",
         iosIcon: shieldCheckmarkOutline,
-        mdIcon: shieldCheckmarkOutline
+        mdIcon: shieldCheckmarkOutline,
+        meta: {
+          permissionId: "APP_STORE_PERMISSIONS_VIEW"
+        }
       },
       {
         title: "Settings",
@@ -107,12 +123,18 @@ export default defineComponent({
       iosIcon: any;
       mdIcon: any;
       childRoutes: Array<string>;
+      meta: any;
     }>;
 
     const selectedIndex = computed(() => {
       const path = router.currentRoute.value.path
-      return appPages.findIndex((screen) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route) => path.includes(route)))
+      return getValidMenuItems((appPages)).findIndex((screen: any) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route: any) => path.includes(route)))
     })
+
+    // Filtering array of app pages, retaining only those elements (pages) that have the necessary permissions for display.
+    const getValidMenuItems = (appPages: any) => {
+      return appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
+    }
 
     return {
       appPages,

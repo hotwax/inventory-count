@@ -1,13 +1,12 @@
-import { client } from '@/api';
+import api from '@/api';
 
 const fetchProducts = async (query: any): Promise <any>  => {
-  return client({
+  return api({
     url: "searchProducts",
-    baseURL: "https://dev-oms.hotwax.io/api", // Make it dynamic based on the used oms
     method: "post",
     data: query,
     cache: true,
-    noAuth: true  // Need to check how to make call to ofbiz, currently as api does not require auth so used this param
+    useOmsRedirection: true
   });
 }
 
