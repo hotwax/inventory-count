@@ -116,9 +116,6 @@ export default defineComponent({
         url: "/settings",
         iosIcon: settingsOutline,
         mdIcon: settingsOutline,
-        meta: {
-          permissionId: "APP_SETTINGS_VIEW"
-        }
       }
     ] as Array<{
       title: string,
