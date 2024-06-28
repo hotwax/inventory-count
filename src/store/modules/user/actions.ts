@@ -33,7 +33,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       const serverPermissions = await UserService.getUserPermissions({
         permissionIds: [...new Set(serverPermissionsFromRules)]
-      }, token);
+      }, omsRedirectionUrl, token);
       const appPermissions = prepareAppPermissions(serverPermissions);
 
 
