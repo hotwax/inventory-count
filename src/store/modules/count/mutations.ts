@@ -12,7 +12,7 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_QUERY_CLEARED](state, payload) {
     state.query = {
-      facilityId: "",
+      facilityIds: [],
       noFacility: false
     }
   },

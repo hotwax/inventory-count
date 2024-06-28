@@ -6,7 +6,7 @@
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Drafts") }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="draft-filter">
+          <ion-menu-button menu="draft-filter" :disabled="!cycleCounts?.length">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>

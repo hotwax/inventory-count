@@ -1,19 +1,19 @@
 <template>
   <ion-page>  
-    <Filters menu-id="closed-filter" content-id="closed-filter"/>
+    <Filters menu-id="filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="closed-filter">
+          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
             <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content id="closed-filter">
+    <ion-content id="filter">
       <div class="header">
         <div class="search">
           <ion-item lines="full">
