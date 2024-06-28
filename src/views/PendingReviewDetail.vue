@@ -41,6 +41,10 @@
             <ion-icon :icon="businessOutline"></ion-icon>
             <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
           </ion-chip>
+          <ion-chip outline @click="reassignCount">
+            <ion-icon :icon="playBackOutline"></ion-icon>
+            <ion-label>{{ translate("Re-assign") }}</ion-label>
+          </ion-chip>
         </div>
         <ion-list>
           <div class="filters ion-padding">
@@ -113,20 +117,21 @@
           </ion-item>
 
           <div class="tablet">
-            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="updateItemStatus('INV_COUNT_COMPLETED', item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="updateItemStatus('INV_COUNT_COMPLETED', item)">
               <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
             </ion-button>
-            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
               <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
             </ion-button>
-            <ion-button :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'" :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
               <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
             </ion-button>
           </div>
           
           <div>
             <ion-item lines="none">
-              <ion-checkbox aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)" :disabled="item.itemStatusId === 'INV_COUNT_REJECTED'"></ion-checkbox>
+              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </ion-item>
           </div>
         </div>
@@ -136,12 +141,6 @@
         {{ translate("No items found") }}
       </p>
     </ion-content>
-
-    <ion-fab vertical="bottom" horizontal="start" slot="fixed">
-      <ion-fab-button>
-        <ion-icon :icon="playBackOutline" />
-      </ion-fab-button>
-    </ion-fab>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
@@ -360,13 +359,17 @@ function isItemReadyToReject(item: any) {
   return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
 }
 
+function isItemCompletedOrRejected(item: any) {
+  return item.itemStatusId === "INV_COUNT_REJECTED" || item.itemStatusId === "INV_COUNT_COMPLETED"
+}
+
 function selectItem(checked: boolean, item: any) {
   return item.isChecked = checked
 }
 
 function selectAll() {
-  // When an item is having rejected we do not want to be checked in any case thus added a check for reject item status
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId !== "INV_COUNT_REJECTED" ? true : false }))
+  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not all the item to be marked as checked
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" ? true : false }))
 }
 
 async function addProduct() {
@@ -380,7 +383,7 @@ async function addProduct() {
 }
 
 async function updateItemStatus(statusId: string, item?: any) {
-  let itemList = []
+  let itemList: Array<any> = []
   if(item) {
     itemList = [{
       importItemSeqId: item.importItemSeqId,
@@ -420,7 +423,7 @@ async function updateItemStatus(statusId: string, item?: any) {
 }
 
 async function recountItem(item?: any) {
-  let importItemSeqIds = []
+  let importItemSeqIds: Array<string> = []
   if(item) {
     importItemSeqIds = [item.importItemSeqId]
   } else {
@@ -462,6 +465,18 @@ async function completeCount() {
     showToast(translate("Count has been marked as completed"))
   } catch(err) {
     showToast(translate("Failed to complete cycle count"))
+  }
+}
+
+async function reassignCount() {
+  try {
+    await updateCycleCount({
+      statusId: "INV_COUNT_ASSIGNED"
+    })
+    router.push("/assigned")
+    showToast(translate("Count has been re-assigned"))
+  } catch(err) {
+    showToast(translate("Failed to re-assign cycle count"))
   }
 }
 </script>
