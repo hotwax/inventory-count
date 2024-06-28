@@ -53,7 +53,7 @@ const getDateTime = (time: any) => {
 
 const getDerivedStatusForCount = (count: any) => {
   const countStats = cycleCountStats(count.inventoryCountImportId)
-  return countStats ? countStats.rejectedCount > 0 ? count.statusId === "INV_COUNT_ASSIGNED" ? "Recount requested" : "Re-submitted" : count.statusId === "INV_COUNT_ASSIGNED" ? "Assigned" : "Submitted" : "-"
+  return countStats ? countStats.rejectedCount > 0 ? count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Recount requested", color: "danger" } : { label: "Re-submitted", color: "danger" } : count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Assigned", color: "primary" } : { label: "Submitted", color: "primary" } : { label: "-", color: "primary" }
 }
 
 function getDateWithOrdinalSuffix(time: any) {

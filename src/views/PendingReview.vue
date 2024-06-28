@@ -42,7 +42,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ translate(getDerivedStatusForCount(count)) }}</ion-badge>
+            <ion-badge :color="getDerivedStatusForCount(count)?.color" slot="end">{{ translate(getDerivedStatusForCount(count)?.label) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
