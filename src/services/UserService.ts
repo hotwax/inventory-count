@@ -85,10 +85,9 @@ const setUserTimeZone = async (payload: any): Promise <any>  => {
   });
 }
 
-const getUserPermissions = async (payload: any, token: any): Promise<any> => {
+const getUserPermissions = async (payload: any, url: string, token: any): Promise<any> => {
   // Currently, making this request in ofbiz
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+  const baseURL = url.startsWith('http') ? url.includes('/api') ? url : `${url}/api/` : `https://${url}.hotwax.io/api/`;
   let serverPermissions = [] as any;
 
   // If the server specific permission list doesn't exist, getting server permissions will be of no use
