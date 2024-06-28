@@ -104,9 +104,9 @@
             <p>{{ translate("systemic") }}</p>
           </ion-label>
           
-          <ion-label v-if="item.performedByPartyId && item.quantity">
+          <ion-label v-if="item.quantity">
             {{ +(item.quantity) - +(item.qoh) }}
-            <p>{{ item.performedByPartyId }}</p>
+            <p>{{ item.performedByPartyId || "-" }}</p>
           </ion-label>
 
           <ion-item lines="none" v-else>
@@ -305,7 +305,7 @@ function getVarianceInformation() {
 function getProgress() {
   const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
   const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress}% progress`
+  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
 }
 
 async function updateCycleCount(payload: any) {
@@ -353,11 +353,11 @@ function updateVarianceThreshold(event: any) {
 }
 
 function isItemReadyToAccept(item: any) {
-  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 >= varianceThreshold.value : false
+  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
 }
 
 function isItemReadyToReject(item: any) {
-  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
+  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 >= varianceThreshold.value : false
 }
 
 function isItemCompletedOrRejected(item: any) {
