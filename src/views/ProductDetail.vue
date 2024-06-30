@@ -105,8 +105,8 @@
   import emitter from '@/event-bus';
   import logger from '@/logger'
   import { showToast } from '@/utils';
-  import { pickerService } from '@/services/pickerService';
   import { DxpShopifyImg } from '@hotwax/dxp-components';
+import { CountService } from '@/services/CountService';
 
 
   const store = useStore();
@@ -136,7 +136,7 @@
         productId: product.value.productId,
         quantity: inputCount.value,
       };
-      const resp = await pickerService.updateCount(payload);
+      const resp = await CountService.updateCount(payload);
       if (!hasError(resp)) {
         inputCount.value = ''; 
       } else {

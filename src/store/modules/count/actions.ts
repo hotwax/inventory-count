@@ -108,17 +108,11 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountsLists({ commit, state }, payload) {
-
-    const params = {
-      pageSize: payload.pageSize,
-      pageIndex: payload.pageIndex,
-      facilityId: payload.facilityId
-    }
     let counts = state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
     let isScrollable = true
 
     try {
-      const resp = await CountService.fetchCycleCounts(params)
+      const resp = await CountService.fetchCycleCounts(payload)
       if(!hasError(resp) && resp.data.length) {
 
         if(payload.pageIndex && payload.pageIndex > 0) {
@@ -138,7 +132,7 @@ const actions: ActionTree<CountState, RootState> = {
     } catch (err: any) {
       logger.error(err)
     }
-    commit(types.PICKER_COUNT_UPDATED, {cycleCount: counts, isScrollable})
+    commit(types.COUNT_UPDATED, {cycleCount: counts, isScrollable})
   },
   
   async clearCycleCounts ({ commit }) {

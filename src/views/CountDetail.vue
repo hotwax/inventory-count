@@ -89,10 +89,10 @@ import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
 import { showToast } from '@/utils';
-import emitter from '@/event-bus' 
-import { pickerService } from '@/services/pickerService';
+import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
 import ProductDetail from '@/views/ProductDetail.vue';
+import { CountService } from '@/services/CountService';
 
 const store = useStore();
 
@@ -141,7 +141,7 @@ async function fetchCycleCount() {
   let payload = props?.id
   let resp
   try {
-    resp = await pickerService.fetchCycleCount(payload)
+    resp = await CountService.fetchCycleCount(payload)
     if (!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {

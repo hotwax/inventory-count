@@ -12,7 +12,7 @@ const getters: GetterTree<CountState, RootState> = {
   getCycleCountStats: (state) => (id: string) =>  {
     return state.stats[id]
   },
-  getCycleCounts(state) {
+  getCycleCountsList(state) {
     return state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
   },
   isCycleCountScrollable(state) {
