@@ -97,7 +97,7 @@ import ProductDetail from '@/views/ProductDetail.vue';
 const store = useStore();
 
 const getProduct = computed(() => store.getters["product/getProduct"]);
-const cycleCountItems = computed(() => store.getters["pickerCount/getCycleCountItems"]);
+const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -133,7 +133,7 @@ onIonViewDidEnter(async() => {
 
 async function fetchCycleCountItems() {
   let payload = props?.id
-  await store.dispatch("pickerCount/fetchCycleCountItems", payload); 
+  await store.dispatch("count/fetchCycleCountItems", payload); 
 }
 
 async function fetchCycleCount() {

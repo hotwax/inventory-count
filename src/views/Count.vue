@@ -165,8 +165,8 @@ import { getDateWithOrdinalSuffix } from "@/utils"
 const store = useStore();
 const router = useRouter()
 
-const cycleCount = computed(() => store.getters["pickerCount/getCycleCount"]);
-const isScrollable = computed(() => store.getters["pickerCount/isCycleCountScrollable"])
+const cycleCount = computed(() => store.getters["count/getCycleCount"]);
+const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
 
@@ -215,7 +215,7 @@ async function fetchCycleCounts(vSize, vIndex) {
     pageIndex,
     facilityId 
   };
-  await store.dispatch("pickerCount/fetchCycleCounts", payload);
+  await store.dispatch("count/fetchCycleCountsLists", payload);
 }
 
 function navigateToStoreView(countId) {

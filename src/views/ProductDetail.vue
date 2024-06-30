@@ -142,7 +142,7 @@
       } else {
         throw resp.data;
       }
-      await store.dispatch("pickerCount/fetchCycleCountItems", payload.inventoryCountImportId); 
+      await store.dispatch("count/fetchCycleCountItems", payload.inventoryCountImportId); 
       emitter.emit("updateItemList");
     } catch (err) {
       logger.error(err);

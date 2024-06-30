@@ -83,6 +83,14 @@ const recountItems = async (payload: any): Promise<any> => {
   })
 }
 
+const updateCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
+    method: "put",
+    data: payload
+  })
+}
+
 export const CountService = {
   addProductToCount,
   createCycleCount,
@@ -92,6 +100,7 @@ export const CountService = {
   fetchCycleCounts,
   fetchCycleCountItems,
   recountItems,
+  updateCount,
   updateCycleCount,
   updateProductsInCount
 }
