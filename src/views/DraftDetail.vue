@@ -157,7 +157,7 @@ import { cloudUploadOutline, calendarNumberOutline, checkmarkCircle, businessOut
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, showToast } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -169,7 +169,6 @@ const props = defineProps({
   inventoryCountImportId: String
 })
 
-const facilities = computed(() => store.getters["user/getFacilities"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
 const isProductAvailableInCycleCount = computed(() => {
@@ -241,13 +240,14 @@ async function openSelectFacilityModal() {
 
   selectFacilityModal.onDidDismiss().then((result: any) => {
     if(result?.data?.value) {
-      updateCycleCount({
+      CountService.updateCycleCount({
+        inventoryCountImportId: currentCycleCount.value.countId,
         facilityId: result.data.value
       }).then(async () => {
         currentCycleCount.value.facilityId = result.data.value
         // Fetching items information again as on changing facility, the QOH of the items needs to be updated
         await fetchCountItems()
-      }).catch(err => {
+      }).catch((err: any) => {
         logger.info(err)
       })
     }
@@ -262,33 +262,14 @@ function openDateTimeModal() {
 
 function updateCustomTime(event: any) {
   const date = handleDateTimeInput(event.detail.value)
-  updateCycleCount({
+  CountService.updateCycleCount({
+    inventoryCountImportId: currentCycleCount.value.countId,
     dueDate: date
   }).then(() => {
     currentCycleCount.value.dueDate = date
   }).catch(err => {
     logger.info(err)
   })
-}
-
-async function updateCycleCount(payload: any) {
-  const params = {
-    inventoryCountImportId: currentCycleCount.value.countId,
-    ...payload
-  }
-
-  try {
-    const resp = await CountService.updateCycleCount(params)
-
-    if(!hasError(resp)) {
-      return Promise.resolve(resp.data?.inventoryCountImportId)
-    } else {
-      throw "Failed to update cycle count information"
-    }
-  } catch(err) {
-    showToast(translate("Failed to update cycle count information"))
-    return Promise.reject("Failed to update cycle count information")
-  }
 }
 
 async function editCountName() {
@@ -300,7 +281,7 @@ async function editCountName() {
 
 async function updateCountName() {
   if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
-    const inventoryCountImportId = await updateCycleCount({ countImportName: countName.value.trim() })
+    const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
       currentCycleCount.value.countName = countName.value
     } else {
@@ -309,10 +290,6 @@ async function updateCountName() {
   }
 
   isCountNameUpdating.value = false
-}
-
-function getFacilityName(id: string) {
-  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 async function deleteItemFromCount(seqId: string) {
@@ -397,7 +374,8 @@ async function updateCountStatus() {
   }
 
   try {
-    await updateCycleCount({
+    await CountService.updateCycleCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
       statusId: "INV_COUNT_ASSIGNED"
     })
     router.push("/assigned")

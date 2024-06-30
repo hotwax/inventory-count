@@ -161,7 +161,7 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { getDateWithOrdinalSuffix } from "@/utils"
+import { getCycleCountStats, getDateWithOrdinalSuffix } from "@/utils"
 
 const store = useStore();
 const router = useRouter()
@@ -242,11 +242,6 @@ function getStatusIdForCountsToBeFetched() {
   } else {
     return "INV_COUNT_COMPLETED"
   }
-} 
-
-function getCycleCountStats(id) {
-  const stats = cycleCountStats.value(id)
-  return stats ? `${stats.itemCounted}/${stats.totalItems}` : "0/0"
 }
 </script> 
 

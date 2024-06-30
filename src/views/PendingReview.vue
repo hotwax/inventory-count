@@ -58,11 +58,9 @@ import { computed } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
-import { getDateWithOrdinalSuffix, getDerivedStatusForCount } from "@/utils"
+import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
-const facilities = computed(() => store.getters["user/getFacilities"])
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
 onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
@@ -74,15 +72,6 @@ onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
   await store.dispatch("count/clearQuery")
 })
-
-function getFacilityName(id: string) {
-  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function getCycleCountStats(id: string) {
-  const stats = cycleCountStats.value(id)
-  return stats ? `${stats.itemCounted}/${stats.totalItems}` : '0/0'
-}
 </script>
 
 <style scoped>

@@ -127,7 +127,7 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
@@ -136,7 +136,6 @@ const props = defineProps({
   inventoryCountImportId: String
 })
 
-const facilities = computed(() => store.getters["user/getFacilities"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
@@ -224,7 +223,7 @@ async function editCountName() {
 
 async function updateCountName() {
   if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
-    const inventoryCountImportId = await updateCycleCount({ countImportName: countName.value.trim() })
+    const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
       currentCycleCount.value.countName = countName.value
     } else {
@@ -233,30 +232,6 @@ async function updateCountName() {
   }
 
   isCountNameUpdating.value = false
-}
-
-async function updateCycleCount(payload: any) {
-  const params = {
-    inventoryCountImportId: currentCycleCount.value.countId,
-    ...payload
-  }
-
-  try {
-    const resp = await CountService.updateCycleCount(params)
-
-    if(!hasError(resp)) {
-      return Promise.resolve(resp.data?.inventoryCountImportId)
-    } else {
-      throw "Failed to update cycle count information"
-    }
-  } catch(err) {
-    showToast(translate("Failed to update cycle count information"))
-    return Promise.reject("Failed to update cycle count information")
-  }
-}
-
-function getFacilityName(id: string) {
-  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 async function deleteItemFromCount(seqId: string) {
@@ -332,7 +307,8 @@ function getProgress() {
 
 async function updateCountStatus() {
   try {
-    await updateCycleCount({
+    await CountService.updateCycleCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
       statusId: "INV_COUNT_REVIEW"
     })
     router.push("/pending-review")

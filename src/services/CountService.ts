@@ -1,4 +1,6 @@
 import api from '@/api';
+import logger from '@/logger';
+import { hasError } from '@/utils';
 
 const fetchCycleCounts = async (payload: any): Promise<any> => {
   return api({
@@ -45,11 +47,22 @@ const createCycleCount = async (payload: any): Promise<any> => {
 }
 
 const updateCycleCount = async (payload: any): Promise<any> => {
-  return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}`,
-    method: "PUT",
-    data: payload
-  })
+  try {
+    const resp = await api({
+      url: `cycleCounts/${payload.inventoryCountImportId}`,
+      method: "PUT",
+      data: payload
+    }) as any
+
+    if(!hasError(resp)) {
+      return Promise.resolve(resp.data?.inventoryCountImportId)
+    } else {
+      throw "Failed to update cycle count information"
+    }
+  } catch(err) {
+    logger.error(err)
+    return Promise.reject("Failed to update cycle count information")
+  }
 }
 
 const deleteCycleCountItem = async (payload: any): Promise<any> => {

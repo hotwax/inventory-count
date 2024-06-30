@@ -171,12 +171,11 @@ import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
 import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
-import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, timeFromNow } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, timeFromNow } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
@@ -185,7 +184,6 @@ const props = defineProps({
   inventoryCountImportId: String
 })
 
-const facilities = computed(() => store.getters["user/getFacilities"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
@@ -286,10 +284,6 @@ async function addProductToCount(productId: any) {
   }
 }
 
-function getFacilityName(id: string) {
-  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
 function getVarianceInformation() {
   let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
 
@@ -308,26 +302,6 @@ function getProgress() {
   return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
 }
 
-async function updateCycleCount(payload: any) {
-  const params = {
-    inventoryCountImportId: currentCycleCount.value.countId,
-    ...payload
-  }
-
-  try {
-    const resp = await CountService.updateCycleCount(params)
-
-    if(!hasError(resp)) {
-      return Promise.resolve(resp.data?.inventoryCountImportId)
-    } else {
-      throw "Failed to update cycle count information"
-    }
-  } catch(err) {
-    showToast(translate("Failed to update cycle count information"))
-    return Promise.reject("Failed to update cycle count information")
-  }
-}
-
 async function editCountName() {
   isCountNameUpdating.value = !isCountNameUpdating.value;
   // Waiting for DOM updations before focus inside the text-area, as it is conditionally rendered in the DOM
@@ -337,7 +311,7 @@ async function editCountName() {
 
 async function updateCountName() {
   if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
-    const inventoryCountImportId = await updateCycleCount({ countImportName: countName.value.trim() })
+    const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
       currentCycleCount.value.countName = countName.value
     } else {
@@ -459,7 +433,8 @@ async function recountItem(item?: any) {
 
 async function completeCount() {
   try {
-    await updateCycleCount({
+    await CountService.updateCycleCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
       statusId: "INV_COUNT_COMPLETED"
     })
     router.push("/closed")
@@ -471,7 +446,8 @@ async function completeCount() {
 
 async function reassignCount() {
   try {
-    await updateCycleCount({
+    await CountService.updateCycleCount({
+      inventoryCountImportId: currentCycleCount.value.countId,
       statusId: "INV_COUNT_ASSIGNED"
     })
     router.push("/assigned")
