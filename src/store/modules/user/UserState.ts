@@ -9,4 +9,5 @@ export default interface UserState {
   facilities: Array<any>;
   currentFacility: any;
   permissions: any;
+  productStores: any;
 }
