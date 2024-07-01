@@ -8,11 +8,11 @@
       <h2>{{ item.productId }}</h2>
       <p>{{ item.productId }}</p>
     </ion-label>
-    <ion-badge slot="end" v-if="item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
-      {{ item.quantity }} {{ translate("units") }}
-    </ion-badge>
-    <ion-badge slot="end" color="danger" v-else-if="item.quantity && item.itemStatusId === 'INV_COUNT_REJECTED'">
+    <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
       {{ item.quantity ? item.quantity : "-" }} {{ translate("units") }}
+    </ion-badge>
+    <ion-badge slot="end" v-else-if="item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+      {{ item.quantity }} {{ translate("units") }}
     </ion-badge>
     <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}

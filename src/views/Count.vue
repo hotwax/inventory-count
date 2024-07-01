@@ -62,7 +62,7 @@
               <ion-item lines="none">
                 {{ translate("Submission date") }}
                 <ion-label slot="end">
-                  <p>1st July 2024</p>
+                  <p>{{ getSubmissionDate(count) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -89,13 +89,13 @@
                   <ion-item>
                     {{ translate("Submission date") }}
                     <ion-label slot="end">
-                      <p>1st July 2024</p>
+                      <p>{{ getSubmissionDate(count) }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     {{ translate("Closed date") }}
                     <ion-label slot="end">
-                      <p>1st July 2024</p>
+                      <p>{{ getClosedDate(count) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -242,6 +242,26 @@ function getStatusIdForCountsToBeFetched() {
   } else {
     return "INV_COUNT_COMPLETED"
   }
+}
+
+function getSubmissionDate(count) {
+  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+  if(!history) {
+    return "-";
+  }
+
+  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
+  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+}
+
+function getClosedDate(count) {
+  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+  if(!history) {
+    return "-";
+  }
+
+  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
+  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
 </script> 
 

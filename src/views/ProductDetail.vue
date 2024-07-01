@@ -102,7 +102,7 @@
 
   <script setup lang="ts">
   import { computed, ref } from 'vue';
-  import { IonButton, IonInput, IonItem, IonLabel, IonList, alertController, onIonViewWillLeave } from "@ionic/vue";
+  import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController, onIonViewWillLeave } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
   import { hasError } from '@/utils'
