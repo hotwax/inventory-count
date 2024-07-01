@@ -68,7 +68,7 @@
         </div>
       </div>
 
-      <div class="list-item">
+      <div class="item-search">
         <ion-item>
           <ion-icon slot="start" :icon="listOutline"/>
           <ion-input
@@ -79,6 +79,7 @@
             @ionInput="findProduct()"
             :debounce="1000"
             @keyup.enter="addProductToCount"
+            @keydown="initiateSearch()"
           >
           </ion-input>
         </ion-item>
@@ -93,16 +94,14 @@
             <p class="overline">{{ translate("Search result") }}</p>
             {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
           </ion-label>
+          <ion-button slot="end" fill="clear" @click="addProductToCount">
+            <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
+          </ion-button>
         </ion-item>
-        <ion-item v-else-if="queryString" lines="none">
-          <ion-label>
-            {{ translate("No product found") }}
-          </ion-label>
-        </ion-item>
-        <ion-button v-if="searchedProduct.productId" fill="clear" @click="addProductToCount">
-          <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
-        </ion-button>
+        <p v-else-if="queryString">{{ translate("No product found") }}</p>
       </div>
+
+      <hr />
       
       <template v-if="currentCycleCount.items?.length">
         <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
@@ -317,8 +316,6 @@ async function findProduct() {
     return;
   }
 
-  isSearchingProduct.value = true
-
   try {
     const resp = await ProductService.fetchProducts({
       "keyword": queryString.value,
@@ -326,8 +323,11 @@ async function findProduct() {
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       searchedProduct.value = resp.data.response.docs[0];
+    } else {
+      throw resp.data
     }
   } catch(err) {
+    searchedProduct.value = {}
     logger.error("Product not found", err)
   }
 
@@ -384,6 +384,10 @@ async function updateCountStatus() {
     showToast(translate("Failed to change the cycle count status"))
   }
 }
+
+function initiateSearch() {
+  isSearchingProduct.value = true
+}
 </script>
 
 <style scoped>
@@ -422,6 +426,12 @@ async function updateCountStatus() {
 
 ion-content {
   --padding-bottom: 80px;
+}
+
+.item-search {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 40px;
 }
 
 @media (max-width: 991px) {

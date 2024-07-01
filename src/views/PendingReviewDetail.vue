@@ -327,11 +327,11 @@ function updateVarianceThreshold(event: any) {
 }
 
 function isItemReadyToAccept(item: any) {
-  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 < varianceThreshold.value : false
+  return item.quantity ? Math.abs(item.quantity - (item.qoh || 0) / (item.qoh || 0) * 100) <= varianceThreshold.value : false
 }
 
 function isItemReadyToReject(item: any) {
-  return item.quantity ? (item.quantity / (item.qoh || 0)) * 100 >= varianceThreshold.value : false
+  return item.quantity ? Math.abs(item.quantity - (item.qoh || 0) / (item.qoh || 0) * 100) > varianceThreshold.value : false
 }
 
 function isItemCompletedOrRejected(item: any) {
