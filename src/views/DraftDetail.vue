@@ -99,7 +99,7 @@
             {{ translate("No product found") }}
           </ion-label>
         </ion-item>
-        <ion-button v-if="searchedProduct.productId" fill="clear" @click="isProductAvailableInCycleCount ? '' : addProductToCount">
+        <ion-button v-if="searchedProduct.productId" fill="clear" @click="addProductToCount">
           <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
         </ion-button>
       </div>
@@ -280,7 +280,7 @@ async function editCountName() {
 }
 
 async function updateCountName() {
-  if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value?.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
     const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
       currentCycleCount.value.countName = countName.value
@@ -301,7 +301,7 @@ async function deleteItemFromCount(seqId: string) {
 
     if(!hasError(resp)) {
       currentCycleCount.value.items = currentCycleCount.value.items.filter((item: any) => item.importItemSeqId !== seqId)
-      showToast(translate("Item has been successfully removed the cycle count"))
+      showToast(translate("Item has been removed from the cycle count"))
     } else {
       throw "Failed to remove the item from the count"
     }

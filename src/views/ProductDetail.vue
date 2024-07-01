@@ -9,13 +9,17 @@
             <h1>{{ product.productId }}</h1>
             <p>{{ product.productId }}</p>
           </ion-label>
+
+          <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+            {{ translate("rejected") }}
+          </ion-badge>
         </ion-item>
 
         <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
           <ion-item>
             {{ translate("Counted") }}
           <ion-label slot="end">{{ product.quantity ? product.quantity : '-'}}</ion-label>
-          </ion-item> 
+          </ion-item>
           <ion-item>
             {{ translate("Current on hand") }}
             <ion-label slot="end">{{ product.qoh }}</ion-label>
@@ -27,9 +31,9 @@
         </ion-list>
 
         <template v-else>
-          <ion-list v-if="isRecounting">
+          <ion-list v-if="product.isRecounting">
             <ion-item>
-              <ion-input :label="translate('Counted')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
             </ion-item>
             <ion-item>
               {{ translate("Current on hand") }}
@@ -50,15 +54,15 @@
           </ion-list>
 
           <ion-list v-else-if="product.quantity"> <!-- TODO: landing on this section after saving the recount need to call action to updated the product information-->
-            <ion-item v-if="product.quantity">
+            <ion-item>
               {{ translate("Counted") }}
               <ion-label slot="end">{{ product.quantity }}</ion-label>
             </ion-item>
-            <ion-item v-if="product.quantity">
+            <ion-item>
               {{ translate("Counted by") }}
-              <ion-label slot="end">{{ product.uploadedByUserLogin }}</ion-label>
+              <ion-label slot="end">{{ product.performedByPartyId || "-" }}</ion-label>
             </ion-item>
-            <ion-item v-if="product.quantity">
+            <ion-item>
               {{ translate("Counted at") }}
               <ion-label slot="end">user.name</ion-label>
             </ion-item>
@@ -77,7 +81,7 @@
           
           <ion-list v-else>
             <ion-item>
-              <ion-input :label="translate('Counted')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
             </ion-item>
             <ion-item>
               {{ translate("Current on hand") }}
@@ -87,7 +91,7 @@
               {{ translate("Variance") }}
               <ion-label slot="end">{{ variance }}</ion-label>
             </ion-item>
-            <ion-button fill="outline" expand="block" class="re-count" @click="saveCount()">
+            <ion-button fill="outline" expand="block" @click="saveCount()">
               {{ translate("Save count") }}
             </ion-button>
           </ion-list>
@@ -98,7 +102,7 @@
 
   <script setup lang="ts">
   import { computed, ref } from 'vue';
-  import { IonButton, IonInput, IonItem, IonLabel, IonList, alertController } from "@ionic/vue";
+  import { IonButton, IonInput, IonItem, IonLabel, IonList, alertController, onIonViewWillLeave } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
   import { hasError } from '@/utils'
@@ -106,16 +110,15 @@
   import logger from '@/logger'
   import { showToast } from '@/utils';
   import { DxpShopifyImg } from '@hotwax/dxp-components';
-import { CountService } from '@/services/CountService';
-
+  import { CountService } from '@/services/CountService';
 
   const store = useStore();
   const product = computed(() => store.getters['product/getCurrentProduct']);
   const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+  const userProfile = computed(() => store.getters["user/getUserProfile"])
 
   const inputCount = ref('');
   const variance = ref(0);
-  const isRecounting = ref(false);
 
   async function calculateVariance() {
     if (!product.value || !inputCount.value) {
@@ -135,6 +138,7 @@ import { CountService } from '@/services/CountService';
         importItemSeqId: product.value.importItemSeqId,
         productId: product.value.productId,
         quantity: inputCount.value,
+        performedByPartyId: userProfile.value.userId
       };
       const resp = await CountService.updateCount(payload);
       if (!hasError(resp)) {
@@ -162,7 +166,7 @@ import { CountService } from '@/services/CountService';
         text: translate('Re-count'),
         handler: () => {
           inputCount.value = ''; 
-          isRecounting.value = true;
+          product.value.isRecounting = true;
         }
       }]
     });
@@ -181,7 +185,7 @@ import { CountService } from '@/services/CountService';
         text: translate('Save Re-count'),
         handler: async () => {
           await saveCount(); 
-          isRecounting.value = false;
+          product.value.isRecounting = false;
         }
       }]
     });
@@ -200,7 +204,7 @@ import { CountService } from '@/services/CountService';
         text: translate('Discard'),
         handler: async () => {
           inputCount.value = ''; 
-          isRecounting.value = false;
+          product.value.isRecounting = false;
         }
       }]
     });

@@ -117,7 +117,7 @@
           </ion-item>
 
           <div class="tablet">
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="updateItemStatus('INV_COUNT_COMPLETED', item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
               <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
             </ion-button>
             <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
@@ -151,7 +151,7 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_COMPLETED')">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="acceptItem()">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
@@ -169,7 +169,7 @@
 <script setup lang="ts">
 import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
 import store from "@/store"
@@ -310,7 +310,7 @@ async function editCountName() {
 }
 
 async function updateCountName() {
-  if(countName.value.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value?.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
     const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
       currentCycleCount.value.countName = countName.value
@@ -454,6 +454,33 @@ async function reassignCount() {
     showToast(translate("Count has been re-assigned"))
   } catch(err) {
     showToast(translate("Failed to re-assign cycle count"))
+  }
+}
+
+async function acceptItem(item?: any) {
+  let importItemSeqIds: Array<string> = []
+  if(item) {
+    importItemSeqIds = [item.importItemSeqId]
+  } else {
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        importItemSeqIds.push(item.importItemSeqId)
+      }
+    })
+  }
+
+  const resp = await Promise.allSettled(importItemSeqIds.map((id: string) => CountService.acceptItem({
+    inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
+    importItemSeqId: id,
+    quantity: item.quantity
+  })))
+
+  const isAnyRespHasError = resp.map((response: any) => response.status === "rejected")
+
+  if(isAnyRespHasError) {
+    showToast(translate("Some of the items are failed to accept"))
+  } else {
+    showToast(translate("All the items are accepted"))
   }
 }
 </script>

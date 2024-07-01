@@ -104,7 +104,16 @@ const updateCount = async (payload: any): Promise<any> => {
   })
 }
 
+const acceptItem = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}/approve`,
+    method: "POST",
+    data: payload
+  })
+}
+
 export const CountService = {
+  acceptItem,
   addProductToCount,
   createCycleCount,
   deleteCycleCountItem,

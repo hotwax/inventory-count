@@ -80,7 +80,7 @@
   "inventory variance": "inventory variance", 
   "Instance Url": "Instance Url",
   "items": "items",
-  "Item has been successfully removed the cycle count": "Item has been successfully removed the cycle count",
+  "Item has been removed from the cycle count": "Item has been removed from the cycle count",
   "Item added to upload list": "Item added to upload list",
   "Item removed from upload list":"Item removed from upload list",
   "Item variance threshold": "Item variance threshold",

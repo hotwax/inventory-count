@@ -130,6 +130,10 @@ const actions: ActionTree<CountState, RootState> = {
         throw resp.data;
       }
     } catch (err: any) {
+      if(payload.pageIndex == 0) {
+        counts = []
+        isScrollable = false
+      }
       logger.error(err)
     }
     commit(types.COUNT_UPDATED, {cycleCount: counts, isScrollable})

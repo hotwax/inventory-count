@@ -59,9 +59,7 @@
           </template>
         </aside>
         
-        <main>
-          <ProductDetail />
-        </main>
+        <ProductDetail />
       </div>
     </ion-content>
   </ion-page>
@@ -217,10 +215,6 @@ onIonViewWillLeave(() => {
 ion-content > main {
   display: grid;
   height: 100%;
-}
-
-.re-count {
-  margin: var(--spacer-base) var(--spacer-sm);
 }
 
 @media (min-width: 991px) {

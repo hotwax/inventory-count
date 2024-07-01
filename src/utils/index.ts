@@ -76,7 +76,7 @@ function getCycleCountStats(id: string) {
 }
 
 function getFacilityName(id: string) {
-  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+  return facilities().find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, timeFromNow }
