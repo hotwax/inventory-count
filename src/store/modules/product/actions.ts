@@ -33,7 +33,7 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async currentProduct ({ commit }, payload) {
-    commit(types.PRODUCT_CURRENT_UPDATED, payload )
+    commit(types.PRODUCT_CURRENT_UPDATED, payload)
   },
 
   async findProduct({ commit, state }, payload) {

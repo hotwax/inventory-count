@@ -59,9 +59,7 @@
           </template>
         </aside>
         
-        <main>
-          <ProductDetail />
-        </main>
+        <ProductDetail />
       </div>
     </ion-content>
   </ion-page>
@@ -89,15 +87,15 @@ import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
 import { showToast } from '@/utils';
-import emitter from '@/event-bus' 
-import { pickerService } from '@/services/pickerService';
+import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
 import ProductDetail from '@/views/ProductDetail.vue';
+import { CountService } from '@/services/CountService';
 
 const store = useStore();
 
 const getProduct = computed(() => store.getters["product/getProduct"]);
-const cycleCountItems = computed(() => store.getters["pickerCount/getCycleCountItems"]);
+const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -133,7 +131,7 @@ onIonViewDidEnter(async() => {
 
 async function fetchCycleCountItems() {
   let payload = props?.id
-  await store.dispatch("pickerCount/fetchCycleCountItems", payload); 
+  await store.dispatch("count/fetchCycleCountItems", payload); 
 }
 
 async function fetchCycleCount() {
@@ -141,7 +139,7 @@ async function fetchCycleCount() {
   let payload = props?.id
   let resp
   try {
-    resp = await pickerService.fetchCycleCount(payload)
+    resp = await CountService.fetchCycleCount(payload)
     if (!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {
@@ -217,10 +215,6 @@ onIonViewWillLeave(() => {
 ion-content > main {
   display: grid;
   height: 100%;
-}
-
-.re-count {
-  margin: var(--spacer-base) var(--spacer-sm);
 }
 
 @media (min-width: 991px) {

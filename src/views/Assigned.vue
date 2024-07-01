@@ -56,13 +56,11 @@ import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
-import { getDateWithOrdinalSuffix, getDerivedStatusForCount } from "@/utils"
+import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
 import Filters from "@/components/Filters.vue"
 import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
-const facilities = computed(() => store.getters["user/getFacilities"])
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
 onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
@@ -73,15 +71,6 @@ onIonViewWillEnter(async () => {
 onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
 })
-
-function getFacilityName(id: string) {
-  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function getCycleCountStats(id: string) {
-  const stats = cycleCountStats.value(id)
-  return stats ? `${stats.itemCounted}/${stats.totalItems}` : '0/0'
-}
 </script>
 
 <style scoped>

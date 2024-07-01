@@ -98,8 +98,8 @@ const actions: ActionTree<UserState, RootState> = {
 
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
-    this.dispatch('pickerCount/clearCycleCounts')
-    this.dispatch('pickerCount/clearCycleCountItems')
+    this.dispatch('count/clearCycleCounts')
+    this.dispatch('count/clearCycleCountItems')
 
     emitter.emit('dismissLoader')
   },

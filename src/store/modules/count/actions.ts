@@ -105,6 +105,63 @@ const actions: ActionTree<CountState, RootState> = {
 
   async clearQuery({ commit }, payload) {
     commit(types.COUNT_QUERY_CLEARED, payload)
+  },
+
+  async fetchCycleCountsLists({ commit, state }, payload) {
+    let counts = state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
+    let isScrollable = true
+
+    try {
+      const resp = await CountService.fetchCycleCounts(payload)
+      if(!hasError(resp) && resp.data.length) {
+
+        if(payload.pageIndex && payload.pageIndex > 0) {
+          counts = counts.concat(resp.data)
+        } else {
+          counts = resp.data
+        }
+
+        // Fetching stats information for the counts
+        this.dispatch("count/fetchCycleCountStats", resp.data.map((count: any) => count.inventoryCountImportId))
+
+        if(resp.data.length == payload.pageSize) isScrollable = true
+        else isScrollable = false
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      if(payload.pageIndex == 0) {
+        counts = []
+        isScrollable = false
+      }
+      logger.error(err)
+    }
+    commit(types.COUNT_UPDATED, {cycleCount: counts, isScrollable})
+  },
+  
+  async clearCycleCounts ({ commit }) {
+    commit(types.COUNT_UPDATED, {})
+  },
+
+  async fetchCycleCountItems({commit} ,payload) {
+    let items;
+    try {
+      const resp = await CountService.fetchCycleCountItems(payload)
+      if(!hasError(resp)) {
+        items = resp.data
+
+        this.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error(err)
+    }
+    commit(types.COUNT_ITEMS_UPDATED, items)
+  },
+
+  async clearCycleCountItems ({ commit }) {
+    commit(types.COUNT_ITEMS_UPDATED, [])
   }
 }	
 

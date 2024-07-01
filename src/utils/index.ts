@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import store from "@/store";
 
 const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
+const facilities: any = () => store.getters["user/getFacilities"]
 
 const dateOrdinalSuffix = {
   1: 'st',
@@ -69,4 +70,13 @@ function timeFromNow(time: any) {
   return DateTime.local().plus(timeDiff).toRelative();
 }
 
-export { showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, timeFromNow }
+function getCycleCountStats(id: string) {
+  const stats = cycleCountStats(id)
+  return stats ? `${stats.itemCounted}/${stats.totalItems}` : "0/0"
+}
+
+function getFacilityName(id: string) {
+  return facilities().find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+
+export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, timeFromNow }

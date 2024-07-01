@@ -6,4 +6,6 @@ export default interface CountState {
     noFacility: boolean
   },
   stats: any;
+  cycleCounts: any;
+  cycleCountItems: any;
 }
