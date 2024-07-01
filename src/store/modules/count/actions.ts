@@ -55,6 +55,20 @@ const actions: ActionTree<CountState, RootState> = {
       const resp = await CountService.fetchCycleCountStats({ inventoryCountImportIds });
 
       if(!hasError(resp) && resp.data?.importStats?.length > 0) {
+
+        // Sorting the statusHistory based on statusDate, as in response we are getting this information sorted on statusId
+        resp.data.importStats.map((stats: any) => {
+          stats.statusHistory.sort((a: any, b: any) => {
+            if(a["statusDate"] === b["statusDate"]) return 0;
+
+            // Sort undefined values at last
+            if(a["statusDate"] == undefined) return 1;
+            if(b["statusDate"] == undefined) return -1;
+
+            return a["statusDate"] - b["statusDate"]
+          })
+        })
+
         commit(types.COUNT_STATS_UPDATED, resp.data.importStats)
       } else {
         throw "Failed to fetch the count stats"

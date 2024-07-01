@@ -107,9 +107,9 @@ const itemsList = computed(() => {
   } else if (selectedSegment.value === 'notCounted') {
     return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
-    return cycleCountItems.value.itemList.filter(item => item.statusId === 'INV_COUNT_REJECTED');
+    return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
-    return cycleCountItems.value.itemList.filter(item => item.statusId === 'INV_COUNT_COMPLETED');
+    return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_COMPLETED');
   } else {
     return [];
   }

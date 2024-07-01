@@ -11,16 +11,10 @@ const fetchCycleCounts = async (payload: any): Promise<any> => {
 }
 
 const fetchCycleCountStats = async (payload: any): Promise<any> => {
-  const params = new URLSearchParams();
-
-  payload.inventoryCountImportIds.map((id: string) => {
-    params.append("inventoryCountImportIds", id)
-  })
-
   return api({
     url: "cycleCounts/stats",
-    method: "GET",
-    params
+    method: "POST",
+    data: payload
   })
 }
 
