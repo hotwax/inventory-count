@@ -70,6 +70,30 @@ const fetchFacilities = async (payload: any): Promise <any>  => {
   });
 }
 
+const fetchProductStores = async (payload: any): Promise <any>  => {
+  return api({
+    url: "facilities/productStores",
+    method: "GET",
+    params: payload
+  });
+}
+
+const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
+  return api({
+    url: "productStores/settings",
+    method: "GET",
+    params: payload
+  });
+}
+
+const createForceScanSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: "service/createProductStoreSetting",
+    method: "post",
+    data: payload
+  });
+}
+
 const setUserTimeZone = async (payload: any): Promise <any>  => {
   return api({
     url: "setUserTimeZone",
@@ -170,6 +194,8 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 
 export const UserService = {
   fetchFacilities,
+  fetchProductStores,
+  fetchProductStoreSettings,
   getAvailableTimeZones,
   getUserPermissions,
   getUserProfile,

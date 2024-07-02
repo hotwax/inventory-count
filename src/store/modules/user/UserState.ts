@@ -9,5 +9,10 @@ export default interface UserState {
   facilities: Array<any>;
   currentFacility: any;
   permissions: any;
-  productStores: any;
+  productStores: Array<any>;
+  currentProductStore: any;
+  settings: {
+    forceScan: boolean,
+    showQoh: boolean
+  }
 }

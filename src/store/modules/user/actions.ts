@@ -69,6 +69,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       await dispatch("fetchFacilities")
+      await dispatch("fetchProductStores")
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
@@ -98,6 +99,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
+    commit(types.USER_PRODUCT_STORES_UPDATED, [])
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
 
@@ -157,6 +159,97 @@ const actions: ActionTree<UserState, RootState> = {
 
   async updateCurrentFacility({ commit }, facility) {
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
-  }
+  },
+
+  async fetchProductStores({ commit }) {
+    let productStores: Array<any> = []
+    try {
+      const resp = await UserService.fetchProductStores({
+        parentFacilityTypeId: "VIRTUAL_FACILITY",
+        parentFacilityTypeId_not: "Y",
+        facilityTypeId: "VIRTUAL_FACILITY",
+        facilityTypeId_not: "Y",
+        pageSize: 200
+      })
+
+      if(!hasError(resp)) {
+        const productStoresResp = resp.data.reduce((productStores: any, data: any) => {
+          if(productStores[data.productStoreId]) {
+            return productStores
+          }
+
+          productStores[data.productStoreId] = {
+            productStoreId: data.productStoreId,
+            storeName: data.storeName,
+            facilityId: data.facilityId
+          }
+          return productStores
+        }, {})
+
+        productStores = Object.values(productStoresResp)
+      }
+    } catch(err) {
+      logger.error("Failed to fetch facilities")
+    }
+
+    // Updating current facility with a default first facility when fetching facilities on login
+    if(productStores.length) {
+      commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStores[0])
+    }
+
+    commit(types.USER_PRODUCT_STORES_UPDATED, productStores)
+  },
+
+  async updateCurrentProductStore({ commit }, productStore) {
+    commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
+  },
+
+  async getProductStoreSetting({ commit, dispatch }, eComStoreId) {
+    const payload = {
+      "inputFields": {
+        "productStoreId": eComStoreId,
+        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
+      },
+      "filterByDate": 'Y',
+      "entityName": "ProductStoreSetting",
+      "fieldList": ["settingValue", "fromDate"],
+      "viewSize": 1
+    }
+
+    try {
+      const resp = await UserService.fetchProductStoreSettings(payload) as any
+      if(!hasError(resp)) {
+        const respValue = resp.data.docs[0].settingValue
+        commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, respValue)
+      } else {
+        dispatch('createForceScanSetting');
+      }
+    } catch(err) {
+      console.error(err)
+    }
+  },
+
+  async createForceScanSetting({ commit, state }) {
+    const productStoreId = state.currentProductStore.productStoreId
+    const fromDate = Date.now()
+
+    const params = {
+      fromDate,
+      "productStoreId": productStoreId,
+      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+      "settingValue": false
+    }
+
+    try {
+      await UserService.createForceScanSetting(params) as any
+    } catch(err) {
+      console.error(err)
+    }
+
+    // not checking for resp success and fail case as every time we need to update the state with the
+    // default value when creating a scan setting
+    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    return fromDate;
+  },
 }
 export default actions;

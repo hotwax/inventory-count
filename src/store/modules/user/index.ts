@@ -18,7 +18,12 @@ const userModule: Module<UserState, RootState> = {
       facilities: [],
       currentFacility: {},
       permissions: [],
-      productStores: []
+      productStores: [],
+      currentProductStore: {},
+      settings: {
+        forceScan: false,
+        showQoh: false
+      }
     },
     getters,
     actions,
