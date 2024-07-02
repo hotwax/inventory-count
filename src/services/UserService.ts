@@ -80,15 +80,23 @@ const fetchProductStores = async (payload: any): Promise <any>  => {
 
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
-    url: "productStores/settings",
+    url: `productStores/${payload.productStoreId}/settings`,
     method: "GET",
     params: payload
   });
 }
 
-const createForceScanSetting = async (payload: any): Promise<any> => {
+const updateProductStoreSetting = async (payload: any): Promise <any>  => {
   return api({
-    url: "service/createProductStoreSetting",
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    data: payload
+  });
+}
+
+const createProductStoreSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
     method: "post",
     data: payload
   });
@@ -193,6 +201,7 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 }
 
 export const UserService = {
+  createProductStoreSetting,
   fetchFacilities,
   fetchProductStores,
   fetchProductStoreSettings,
@@ -200,5 +209,6 @@ export const UserService = {
   getUserPermissions,
   getUserProfile,
   login,
+  updateProductStoreSetting,
   setUserTimeZone,
 }

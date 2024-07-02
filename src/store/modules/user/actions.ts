@@ -100,6 +100,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
     commit(types.USER_PRODUCT_STORES_UPDATED, [])
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
 
@@ -202,54 +203,115 @@ const actions: ActionTree<UserState, RootState> = {
 
   async updateCurrentProductStore({ commit }, productStore) {
     commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
   },
 
-  async getProductStoreSetting({ commit, dispatch }, eComStoreId) {
+  async getProductStoreSetting({ commit, dispatch, state }) {
     const payload = {
-      "inputFields": {
-        "productStoreId": eComStoreId,
-        "settingTypeEnumId": "FULFILL_FORCE_SCAN"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingValue", "fromDate"],
-      "viewSize": 1
+      "productStoreId": state.currentProductStore.productStoreId,
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN",
+      "settingTypeEnumId_op": "in"
     }
 
     try {
       const resp = await UserService.fetchProductStoreSettings(payload) as any
-      if(!hasError(resp)) {
-        const respValue = resp.data.docs[0].settingValue
-        commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, respValue)
-      } else {
-        dispatch('createForceScanSetting');
+      if(!hasError(resp) && resp.data.length) {
+        const settings = resp.data.reduce((settings: any, setting: any) => {
+          if(setting.settingTypeEnumId === "INV_CNT_VIEW_QOH") {
+            settings["showQoh"] = JSON.parse(setting.settingValue)
+          }
+
+          if(setting.settingTypeEnumId === "INV_FORCE_SCAN") {
+            settings["forceScan"] = JSON.parse(setting.settingValue)
+          }
+          return settings
+        }, {
+          showQoh: false,
+          forceScan: false
+        })
+        commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, settings)
       }
     } catch(err) {
       console.error(err)
     }
   },
 
-  async createForceScanSetting({ commit, state }) {
-    const productStoreId = state.currentProductStore.productStoreId
+  async createProductStoreSetting({ commit, state }, payload) {
+    const eComStoreId = state.currentProductStore.productStoreId;
     const fromDate = Date.now()
 
     const params = {
       fromDate,
-      "productStoreId": productStoreId,
-      "settingTypeEnumId": "FULFILL_FORCE_SCAN",
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": payload.enumId,
       "settingValue": false
     }
 
     try {
-      await UserService.createForceScanSetting(params) as any
+      await UserService.createProductStoreSetting(params) as any
     } catch(err) {
       console.error(err)
     }
 
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
-    commit(types.UTIL_FORCE_SCAN_STATUS_UPDATED, false)
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: false })
     return fromDate;
+  },
+
+  async setProductStoreSetting({ commit, dispatch, state }, payload) {
+    const eComStoreId = state.currentProductStore.productStoreId;
+    let prefValue = (state.settings as any)[payload.key]
+
+    let enumId = "";
+
+    if(payload.key === "showQoh") {
+      enumId = "INV_CNT_VIEW_QOH"
+    }
+
+    if(payload.key === "forceScan") {
+      enumId = "INV_FORCE_SCAN"
+    }
+
+    let fromDate;
+
+    try {
+      const resp = await UserService.fetchProductStoreSettings({
+        "productStoreId": state.currentProductStore.productStoreId,
+        "settingTypeEnumId": enumId
+      })
+      if(!hasError(resp) && resp.data.length) {
+        fromDate = resp.data[0]?.fromDate
+      }
+    } catch(err) {
+      console.error(err)
+    }
+
+    if(!fromDate) {
+      fromDate = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
+    }
+
+    const params = {
+      "fromDate": fromDate,
+      "productStoreId": eComStoreId,
+      "settingTypeEnumId": enumId,
+      "settingValue": payload.value
+    }
+
+    try {
+      const resp = await UserService.updateProductStoreSetting(params) as any
+
+      if((!hasError(resp))) {
+        showToast(translate("Store preference updated successfully."))
+        prefValue = payload.value
+      } else {
+        throw resp.data;
+      }
+    } catch(err) {
+      showToast(translate("Failed to update Store preference."))
+      console.error(err)
+    }
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: prefValue })
   },
 }
 export default actions;

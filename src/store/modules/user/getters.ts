@@ -39,6 +39,9 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getCurrentProductStore(state) {
     return state.currentProductStore
+  },
+  getProductStoreSettings(state) {
+    return state.settings
   }
 }
 export default getters;

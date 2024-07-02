@@ -36,7 +36,9 @@ const mutations: MutationTree <UserState> = {
     state.currentProductStore = payload
   },
   [types.USER_PRODUCT_STORE_SETTING_UPDATED] (state, payload) {
-    (state.settings as any)[payload.forceScan] = payload["value"]
+    Object.keys(payload).map((setting: any) => {
+      (state.settings as any)[setting] = payload[setting]
+    })
   },
 }
 export default mutations;
