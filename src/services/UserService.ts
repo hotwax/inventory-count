@@ -70,6 +70,38 @@ const fetchFacilities = async (payload: any): Promise <any>  => {
   });
 }
 
+const fetchProductStores = async (payload: any): Promise <any>  => {
+  return api({
+    url: "facilities/productStores",
+    method: "GET",
+    params: payload
+  });
+}
+
+const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    params: payload
+  });
+}
+
+const updateProductStoreSetting = async (payload: any): Promise <any>  => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    data: payload
+  });
+}
+
+const createProductStoreSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "post",
+    data: payload
+  });
+}
+
 const setUserTimeZone = async (payload: any): Promise <any>  => {
   return api({
     url: "setUserTimeZone",
@@ -169,10 +201,14 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 }
 
 export const UserService = {
+  createProductStoreSetting,
   fetchFacilities,
+  fetchProductStores,
+  fetchProductStoreSettings,
   getAvailableTimeZones,
   getUserPermissions,
   getUserProfile,
   login,
+  updateProductStoreSetting,
   setUserTimeZone,
 }

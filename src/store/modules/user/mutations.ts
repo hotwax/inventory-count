@@ -28,6 +28,17 @@ const mutations: MutationTree <UserState> = {
   },
   [types.USER_PERMISSIONS_UPDATED] (state, payload) {
     state.permissions = payload
-},
+  },
+  [types.USER_PRODUCT_STORES_UPDATED] (state, payload) {
+    state.productStores = payload
+  },
+  [types.USER_CURRENT_PRODUCT_STORE_UPDATED] (state, payload) {
+    state.currentProductStore = payload
+  },
+  [types.USER_PRODUCT_STORE_SETTING_UPDATED] (state, payload) {
+    Object.keys(payload).map((setting: any) => {
+      (state.settings as any)[setting] = payload[setting]
+    })
+  },
 }
 export default mutations;

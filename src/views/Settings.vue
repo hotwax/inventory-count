@@ -67,6 +67,24 @@
             </ion-select>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ translate("Product Store") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ translate("Store") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("A store repesents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores sellling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.") }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-select :label="translate('Select store')" interface="popover" :value="currentProductStore.productStoreId" @ionChange="setProductStore($event)">
+              <ion-select-option v-for="store in productStores" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName || store.productStoreId }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
       <hr />
       <!-- <section>
@@ -107,6 +125,8 @@ const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
 const facilities = computed(() => store.getters["user/getFacilities"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const currentProductStore = computed(() => store.getters["user/getCurrentProductStore"])
+const productStores = computed(() => store.getters["user/getProductStores"])
 
 onMounted(() => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
@@ -127,6 +147,12 @@ async function setFacility(event: CustomEvent) {
   const facilityId = event.detail.value
   const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
   await store.dispatch("user/updateCurrentFacility", facility)
+}
+
+async function setProductStore(event: any) {
+  const productStoreId = event.detail.value
+  const productStore = productStores.value.find((store: any) => store.productStoreId === productStoreId)
+  await store.dispatch("user/updateCurrentProductStore", productStore)
 }
 </script>
 
