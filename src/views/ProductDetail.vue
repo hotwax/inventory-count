@@ -49,8 +49,8 @@
             </div>
           </ion-list>
 
-          <ion-list v-else-if="product.quantity"> <!-- TODO: landing on this section after saving the recount need to call action to updated the product information-->
-            <ion-item v-if="product.quantity">
+          <ion-list v-else-if="product.quantity">
+            <ion-item>
               {{ translate("Counted") }}
               <ion-label slot="end">{{ product.quantity }}</ion-label>
             </ion-item>
@@ -136,6 +136,8 @@
       };
       const resp = await pickerService.updateCount(payload);
       if (!hasError(resp)) {
+        product.value.quantity = inputCount.value
+        await store.dispatch('product/currentProduct', product.value);
         inputCount.value = ''; 
       } else {
         throw resp.data;
