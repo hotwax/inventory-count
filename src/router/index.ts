@@ -49,7 +49,12 @@ const loginGuard = (to: any, from: any, next: any) => {
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    redirect: "/tabs/count",
+    redirect: () => {
+      if(hasPermission("APP_DRAFT_VIEW")) {
+        return "/draft"
+      }
+      return "/tabs/count"
+    },
   },
   {
     path: '/tabs',
@@ -181,8 +186,12 @@ router.beforeEach((to, from) => {
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
-    if (redirectToPath == "/login" || redirectToPath == "/") redirectToPath = "/settings";
-    else {
+    if (redirectToPath == "/login" || redirectToPath == "/") {
+      if(hasPermission("APP_DRAFT_VIEW"))
+        redirectToPath = "/settings";
+      else
+        redirectToPath = "/tabs/settings";
+    } else {
       showToast(translate('You do not have permission to access this page'));
     }
     return {
