@@ -106,7 +106,7 @@
           
           <ion-label v-if="item.quantity">
             {{ +(item.quantity) - +(item.qoh) }}
-            <p>{{ item.performedByPartyId || "-" }}</p>
+            <p>{{ getPartyName(item) }}</p>
           </ion-label>
 
           <ion-item lines="none" v-else>
@@ -117,13 +117,13 @@
           </ion-item>
 
           <div class="tablet">
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
               <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
             </ion-button>
             <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
               <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
             </ion-button>
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
               <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
             </ion-button>
           </div>
@@ -175,7 +175,7 @@ import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vu
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, timeFromNow } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
@@ -459,28 +459,38 @@ async function reassignCount() {
 
 async function acceptItem(item?: any) {
   let importItemSeqIds: Array<string> = []
+  const payloads = []
   if(item) {
-    importItemSeqIds = [item.importItemSeqId]
+    payloads.push({
+      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
+      importItemSeqId: item.importItemSeqId,
+      quantity: item.quantity,
+      reason: "CYCLE_COUNT",
+      systemQOH: item.qoh,
+      varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
+    })
   } else {
     currentCycleCount.value.items.map((item: any) => {
       if(item.isChecked) {
-        importItemSeqIds.push(item.importItemSeqId)
+        payloads.push({
+          inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
+          importItemSeqId: item.importItemSeqId,
+          quantity: item.quantity,
+          reason: "CYCLE_COUNT",
+          systemQOH: item.qoh,
+          varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
+        })
       }
     })
   }
 
-  const resp = await Promise.allSettled(importItemSeqIds.map((id: string) => CountService.acceptItem({
-    inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-    importItemSeqId: id,
-    quantity: item.quantity
-  })))
+  const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
 
-  const isAnyRespHasError = resp.map((response: any) => response.status === "rejected")
-
+  const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
   if(isAnyRespHasError) {
-    showToast(translate("Some of the items are failed to accept"))
+    showToast(translate("Some of the item(s) are failed to accept"))
   } else {
-    showToast(translate("All the items are accepted"))
+    showToast(translate("All of the item(s) are accepted"))
   }
 }
 </script>

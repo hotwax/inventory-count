@@ -79,7 +79,6 @@
             @ionInput="findProduct()"
             :debounce="1000"
             @keyup.enter="addProductToCount"
-            @keydown="initiateSearch()"
           >
           </ion-input>
         </ion-item>
@@ -316,6 +315,8 @@ async function findProduct() {
     return;
   }
 
+  isSearchingProduct.value = true
+
   try {
     const resp = await ProductService.fetchProducts({
       "keyword": queryString.value,
@@ -356,10 +357,8 @@ async function addProductToCount() {
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
-      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
+      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
       await fetchCountItems();
-      // clearing the searchProduct information after product is successfully added to the count
-      searchedProduct.value = {}
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
@@ -383,10 +382,6 @@ async function updateCountStatus() {
   } catch(err) {
     showToast(translate("Failed to change the cycle count status"))
   }
-}
-
-function initiateSearch() {
-  isSearchingProduct.value = true
 }
 </script>
 

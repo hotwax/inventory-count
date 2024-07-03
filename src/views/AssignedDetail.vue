@@ -90,7 +90,7 @@
           <ion-chip outline v-if="item.quantity">
             <ion-icon :icon="personCircleOutline"/>
             <!-- TODO: fetch username instead of partyId -->
-            <ion-label>{{ item.performedByPartyId || "-"  }}</ion-label>
+            <ion-label>{{ getPartyName(item) }}</ion-label>
           </ion-chip>
 
           <div class="tablet" v-else>
@@ -127,7 +127,7 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName, getPartyName } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";

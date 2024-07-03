@@ -60,12 +60,12 @@
           </ion-label>
 
           <ion-label>
-            {{ cycleCountStats(count.inventoryCountImportId)?.totalVaraince || 0 }}
+            {{ cycleCountStats(count.inventoryCountImportId)?.totalVariance || 0 }}
             <p>{{ translate("total variance") }}</p>
           </ion-label>
 
           <ion-label class="ion-padding">
-            {{ getDateWithOrdinalSuffix(count.closedDate) }}
+            {{ getClosedDate(count) }}
             <p>{{ translate("closed") }}</p>
           </ion-label>
         </div>
@@ -86,23 +86,18 @@ import {
   IonButtons,
   IonChip,
   IonContent,
-  IonFab,
-  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
   IonLabel,
-  IonList,
   IonMenuButton,
-  IonNote,
   IonPage,
   IonTitle,
   IonToolbar,
-  alertController,
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
+import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
@@ -114,7 +109,8 @@ const cycleCountStats = computed(() => (id: string) => store.getters["count/getC
 
 onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
-    statusId: "INV_COUNT_CLOSED"
+    statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
+    statusId_op: "in"
   })
 })
 
@@ -122,6 +118,16 @@ onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
   await store.dispatch("count/clearQuery")
 })
+
+function getClosedDate(count: any) {
+  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+  if(!history) {
+    return "-";
+  }
+
+  const submissionStatus = history.toReversed().find((status: any) => status.statusId === "INV_COUNT_COMPLETED")
+  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+}
 </script>
 
 <style scoped>
