@@ -72,21 +72,20 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
+        path: 'count-detail/:id',
+        name: 'CountDetail',
+        component: CountDetail,
+        props: true,
+        meta: {
+          permissionId: "APP_COUNT_VIEW"
+        }
+      },
+      {
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
     ],
     beforeEnter: authGuard,
-  },
-  {
-    path: '/count-detail/:id',
-    name: 'CountDetail',
-    component: CountDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
   },
   {
     path: '/draft',
