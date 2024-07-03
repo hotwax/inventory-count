@@ -37,8 +37,8 @@ const actions: ActionTree<UserState, RootState> = {
 
       // When a user has the admin level permission then remove all the other permissions as we want to only display the admin screens in that case
       // TODO: update the permission ID as per the app
-      if(serverPermissions.includes("FULFILL_INVCUNT_ADMIN")) {
-        serverPermissions = ["FULFILL_INVCUNT_ADMIN"]
+      if(serverPermissions.includes("COMMON_ADMIN")) {
+        serverPermissions = ["COMMON_ADMIN"]
       }
 
       const appPermissions = prepareAppPermissions(serverPermissions);
