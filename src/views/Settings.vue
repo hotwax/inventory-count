@@ -52,7 +52,7 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <ion-card v-if="!hasPermission('APP_DRAFT_VIEW')">
+        <ion-card v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-title>
               {{ $t("Facility") }}
@@ -67,7 +67,7 @@
             </ion-select>
           </ion-item>
         </ion-card>
-        <ion-card v-if="hasPermission('APP_DRAFT_VIEW')">
+        <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-subtitle>
               {{ translate("Product Store") }}
@@ -116,6 +116,7 @@ import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms } from "@hotwax/dxp-components";
 import { hasPermission } from "@/authorization"
+import router from "@/router";
 
 const store = useStore()
 const appVersion = ref("")

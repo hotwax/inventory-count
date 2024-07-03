@@ -2,7 +2,6 @@ import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
-import logger from "@/logger";
 import { ProductService } from "@/services/ProductService"
 import { hasError, showToast } from '@/utils';
 import emitter from '@/event-bus';
@@ -41,10 +40,9 @@ const actions: ActionTree<ProductState, RootState> = {
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
     try {
       resp = await ProductService.fetchProducts({
-        "filters": ['isVirtual: false'],
+        "filters": ['isVirtual: false', `sku: *${payload.queryString}*`],
         "viewSize": payload.viewSize,
-        "viewIndex": payload.viewIndex,
-        "keyword":  payload.queryString
+        "viewIndex": payload.viewIndex
       })
       if (resp.status === 200 && resp.data.response?.docs.length > 0 && !hasError(resp)) {
         let products = resp.data.response.docs;
@@ -53,14 +51,21 @@ const actions: ActionTree<ProductState, RootState> = {
         if (payload.viewIndex && payload.viewIndex > 0) products = state.list.items.concat(products)
         commit(types.PRODUCT_LIST_UPDATED, { products, total });
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      } else {
+        throw resp.data.docs;
       }
     } catch (error) {
-      showToast(translate("Something went wrong"));
+      commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
+    } finally {
+      if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     }
-    if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     
     return resp;
   },
+
+  async clearProducts({ commit }) {
+    commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
+  }
 }
 
 export default actions;

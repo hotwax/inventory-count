@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <IonSplitPane content-id="main-content" when="lg">
-      <Menu v-if="hasPermission(Actions.APP_DRAFT_VIEW)"/>
+      <Menu v-if="hasPermission(Actions.APP_DRAFT_VIEW) && !router.currentRoute.value.fullPath.includes('/tabs/')" />
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>
@@ -18,6 +18,7 @@ import { translate } from "@/i18n"
 import { Settings } from 'luxon'
 import Menu from '@/components/Menu.vue';
 import { Actions, hasPermission } from '@/authorization'
+import router from './router';
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])

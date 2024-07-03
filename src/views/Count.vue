@@ -229,7 +229,7 @@ async function segmentChanged(value) {
 }
 
 function navigateToStoreView(countId) {
-  router.push(`/count-detail/${countId}`)
+  router.push(`/tabs/count-detail/${countId}`)
 }
 
 function getStatusIdForCountsToBeFetched() {
