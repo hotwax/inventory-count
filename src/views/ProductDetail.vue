@@ -26,7 +26,7 @@
           </ion-item>
           <ion-item>
             {{ translate("Variance") }}
-            <ion-label slot="end">{{ +product.qoh - +(product.quantity || 0) }}</ion-label>
+            <ion-label slot="end">{{ +(product.quantity || 0) - +product.qoh }}</ion-label>
           </ion-item>
         </ion-list>
 
@@ -60,7 +60,7 @@
             </ion-item>
             <ion-item>
               {{ translate("Counted by") }}
-              <ion-label slot="end">{{ product.performedByPartyId || "-" }}</ion-label>
+              <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
             </ion-item>
             <ion-item>
               {{ translate("Counted at") }}
@@ -72,7 +72,7 @@
             </ion-item>
             <ion-item>
               {{ translate("Variance") }}
-              <ion-label slot="end">{{ product.qoh - product.quantity }}</ion-label>
+              <ion-label slot="end">{{ +(product.quantity || 0) - +product.qoh }}</ion-label>
             </ion-item>
             <ion-button fill="outline" expand="block" class="re-count" @click="openRecountAlert()">
               {{ translate("Re-count") }}
@@ -108,7 +108,7 @@
   import { hasError } from '@/utils'
   import emitter from '@/event-bus';
   import logger from '@/logger'
-  import { showToast } from '@/utils';
+  import { getPartyName, showToast } from '@/utils';
   import { DxpShopifyImg } from '@hotwax/dxp-components';
   import { CountService } from '@/services/CountService';
 
@@ -124,7 +124,7 @@
     if (!product.value || !inputCount.value) {
       variance.value = 0;
     } else {
-      variance.value = product.value.qoh - parseInt(inputCount.value);
+      variance.value = parseInt(inputCount.value) - parseInt(product.value.qoh) || 0;
     }
   }
 
@@ -138,7 +138,7 @@
         importItemSeqId: product.value.importItemSeqId,
         productId: product.value.productId,
         quantity: inputCount.value,
-        performedByPartyId: userProfile.value.userId
+        countedByUserLoginId: userProfile.value.username
       };
       const resp = await CountService.updateCount(payload);
       if (!hasError(resp)) {

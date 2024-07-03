@@ -20,7 +20,7 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <main>
         <template v-if="isLoading">
-          <p>{{ translate("Fetching cycle counts...") }}</p>
+          <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
         </template>
         <section v-else-if="cycleCount.length">
           <template v-if="selectedSegment === 'assigned'">
@@ -118,9 +118,7 @@
           </template> 
         </section>
         <template v-else>
-          <div class="empty-state">
-            <p>{{ translate("No cycle counts found") }}</p>
-          </div>
+          <p class="empty-state">{{ translate("No cycle counts found") }}</p>
         </template>
       </main>
       <ion-infinite-scroll
@@ -223,10 +221,10 @@ async function fetchCycleCounts(vSize, vIndex) {
   await store.dispatch("count/fetchCycleCountsLists", payload);
 }
 
-function segmentChanged(value) {
+async function segmentChanged(value) {
   isLoading.value = true;
   selectedSegment.value = value
-  fetchCycleCounts()
+  await fetchCycleCounts()
   isLoading.value = false;
 }
 
