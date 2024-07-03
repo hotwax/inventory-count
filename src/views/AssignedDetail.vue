@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/assigned" />
         <ion-title>{{ translate("Assigned count")}}</ion-title>
-        <ion-buttons slot="end">
+        <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
           <ion-button @click="addProduct()">
             <ion-icon slot="icon-only" :icon="addOutline" />
           </ion-button>
@@ -13,103 +13,110 @@
     </ion-header>
  
     <ion-content>
-      <div class="header">
-        <div class="search ion-padding">
-          <ion-item lines="none">
-            <ion-label slot="start">
-              <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-              <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-              <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-              <p>{{ currentCycleCount.countId }}</p>
-            </ion-label>
-
-            <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-              {{ translate("Rename") }}
-            </ion-button>
-            <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-              {{ translate("Save") }}
-            </ion-button>
-          </ion-item>
-          <ion-chip outline>
-            <ion-icon :icon="calendarClearOutline"/>
-            <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-          </ion-chip>
-          <ion-chip outline>
-            <ion-icon :icon="businessOutline"/>
-            <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-          </ion-chip>
-        </div>
-        <div class="filters ion-padding">
-          <ion-list>
-            <ion-item>
-              <ion-label>{{ translate("Progress") }}</ion-label>
-              <ion-label slot="end">{{ getProgress() }}</ion-label>
-            </ion-item>  
-            <ion-item>
-              <ion-label>{{ translate("Variance") }}</ion-label>
-              <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-            </ion-item>  
-          </ion-list>
-        </div>
-      </div>
-
-      <hr/>
-
-      <template v-if="currentCycleCount.items?.length">
-        <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="getProduct(item.productId).mainImageUrl"/>
-            </ion-thumbnail>
-            <ion-label>
-              {{ item.productId }}
-            </ion-label>
-          </ion-item>
-          
-          <ion-label>
-            {{ item.qoh }}
-            <p>{{ translate("QoH") }}</p>
-          </ion-label>
-
-          <template v-if="item.quantity">
-            <ion-label>
-              {{ item.quantity }}
-              <p>{{ translate("counted") }}</p>
-            </ion-label>
-
-            <ion-label>
-              {{ +(item.quantity) - +(item.qoh) }}
-              <p>{{ translate("variance") }}</p>
-            </ion-label>
-          </template>
-
-          <ion-chip outline class="tablet" v-else>
-            <ion-label>{{ translate("count pending") }}</ion-label>
-          </ion-chip>
-  
-          <ion-chip outline v-if="item.quantity">
-            <ion-icon :icon="personCircleOutline"/>
-            <!-- TODO: fetch username instead of partyId -->
-            <ion-label>{{ getPartyName(item) }}</ion-label>
-          </ion-chip>
-
-          <div class="tablet" v-else>
+      <template v-if="currentCycleCount.inventoryCountImportId">
+        <div class="header">
+          <div class="search ion-padding">
             <ion-item lines="none">
-              <ion-icon :icon="personCircleOutline" ></ion-icon>
+              <ion-label slot="start">
+                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
+                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
+                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
+                <p>{{ currentCycleCount.countId }}</p>
+              </ion-label>
+
+              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
+                {{ translate("Rename") }}
+              </ion-button>
+              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
+                {{ translate("Save") }}
+              </ion-button>
             </ion-item>
+            <ion-chip outline>
+              <ion-icon :icon="calendarClearOutline"/>
+              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
+            </ion-chip>
+            <ion-chip outline>
+              <ion-icon :icon="businessOutline"/>
+              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
+            </ion-chip>
           </div>
-  
-          <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
-            <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-          </ion-button>
+          <div class="filters ion-padding">
+            <ion-list>
+              <ion-item>
+                <ion-label>{{ translate("Progress") }}</ion-label>
+                <ion-label slot="end">{{ getProgress() }}</ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-label>{{ translate("Variance") }}</ion-label>
+                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
+              </ion-item>
+            </ion-list>
+          </div>
         </div>
+
+        <hr/>
+
+        <template v-if="currentCycleCount.items?.length">
+          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                {{ item.productId }}
+              </ion-label>
+            </ion-item>
+
+            <ion-label>
+              {{ item.qoh }}
+              <p>{{ translate("QoH") }}</p>
+            </ion-label>
+
+            <template v-if="item.quantity">
+              <ion-label>
+                {{ item.quantity }}
+                <p>{{ translate("counted") }}</p>
+              </ion-label>
+
+              <ion-label>
+                {{ +(item.quantity) - +(item.qoh) }}
+                <p>{{ translate("variance") }}</p>
+              </ion-label>
+            </template>
+
+            <ion-chip outline class="tablet" v-else>
+              <ion-label>{{ translate("count pending") }}</ion-label>
+            </ion-chip>
+
+            <ion-chip outline v-if="item.quantity">
+              <ion-icon :icon="personCircleOutline"/>
+              <!-- TODO: fetch username instead of partyId -->
+              <ion-label>{{ getPartyName(item) }}</ion-label>
+            </ion-chip>
+
+            <div class="tablet" v-else>
+              <ion-item lines="none">
+                <ion-icon :icon="personCircleOutline" ></ion-icon>
+              </ion-item>
+            </div>
+
+            <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
+              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+            </ion-button>
+          </div>
+        </template>
+        <p v-else class="empty-state">
+          {{ translate("No items found") }}
+        </p>
       </template>
-      <p v-else class="empty-state">
-        {{ translate("No items found") }}
-      </p>
+      <template v-else>
+        <p class="empty-state">
+          {{ translate("Cycle count not found") }}
+        </p>
+      </template>
     </ion-content>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
       <ion-fab-button @click="updateCountStatus">
         <ion-icon :icon="lockClosedOutline" />
       </ion-fab-button>
@@ -178,7 +185,7 @@ onMounted(async () => {
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
+    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data.statusId === "INV_COUNT_ASSIGNED") {
       currentCycleCount.value = {
         countName: resp.data.countImportName,
         countId: resp.data.inventoryCountImportId,
@@ -187,12 +194,11 @@ onMounted(async () => {
       }
 
       countName.value = resp.data.countImportName
+      await fetchCountItems();
     }
   } catch(err) {
     logger.error()
   }
-
-  await fetchCountItems();
 
   emitter.emit("dismissLoader")
 })

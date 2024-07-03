@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
-        <ion-buttons slot="end">
+        <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
           <ion-button @click="selectAll()">
             <ion-icon slot="icon-only" :icon="checkboxOutline"/>
           </ion-button>
@@ -16,139 +16,144 @@
     </ion-header>
 
     <ion-content>
-      <div class="header">
-        <div class="search ion-padding">
-          <ion-item lines="none">
-            <ion-label slot="start">
-              <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-              <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-              <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-              <p>{{ currentCycleCount.countId }}</p>
+      <template v-if="currentCycleCount.inventoryCountImportId">
+        <div class="header">
+          <div class="search ion-padding">
+            <ion-item lines="none">
+              <ion-label slot="start">
+                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
+                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
+                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
+                <p>{{ currentCycleCount.countId }}</p>
+              </ion-label>
+
+              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
+                {{ translate("Rename") }}
+              </ion-button>
+              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
+                {{ translate("Save") }}
+              </ion-button>
+            </ion-item>
+            <ion-chip outline>
+              <ion-icon :icon="calendarClearOutline"></ion-icon>
+              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
+            </ion-chip>
+            <ion-chip outline>
+              <ion-icon :icon="businessOutline"></ion-icon>
+              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
+            </ion-chip>
+            <ion-chip outline @click="reassignCount">
+              <ion-icon :icon="playBackOutline"></ion-icon>
+              <ion-label>{{ translate("Re-assign") }}</ion-label>
+            </ion-chip>
+          </div>
+          <ion-list>
+            <div class="filters ion-padding">
+              <ion-item>
+                <ion-label>{{ translate("Progress") }}</ion-label>
+                <ion-label slot="end">{{ getProgress() }}</ion-label>
+              </ion-item>
+              <ion-item>
+                <ion-label>{{ translate("Variance") }}</ion-label>
+                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-icon slot="start" :icon="thermometerOutline"/>
+                <ion-label>{{ translate("Item variance threshold") }}</ion-label>
+                <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <div slot="start"></div>
+                <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
+              </ion-item>
+            </div>
+          </ion-list>
+        </div>
+
+        <div class="header border">
+          <ion-segment v-model="segmentSelected">
+            <ion-segment-button value="all">
+              <ion-label>{{ translate("All") }}</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="accept">
+              <ion-icon color="success" :icon="thermometerOutline"/>
+            </ion-segment-button>
+            <ion-segment-button value="reject">
+              <ion-icon color="danger" :icon="thermometerOutline"/>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+
+        <template v-if="filteredItems?.length">
+          <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label class="ion-text-wrap">
+                {{ item.productId }}
+              </ion-label>
+            </ion-item>
+
+            <ion-label v-if="item.quantity">
+              {{ item.quantity }} / {{ item.qoh }}
+              <p>{{ translate("counted / systemic") }}</p>
             </ion-label>
 
-            <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-              {{ translate("Rename") }}
-            </ion-button>
-            <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-              {{ translate("Save") }}
-            </ion-button>
-          </ion-item>
-          <ion-chip outline>
-            <ion-icon :icon="calendarClearOutline"></ion-icon>
-            <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-          </ion-chip>
-          <ion-chip outline>
-            <ion-icon :icon="businessOutline"></ion-icon>
-            <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-          </ion-chip>
-          <ion-chip outline @click="reassignCount">
-            <ion-icon :icon="playBackOutline"></ion-icon>
-            <ion-label>{{ translate("Re-assign") }}</ion-label>
-          </ion-chip>
-        </div>
-        <ion-list>
-          <div class="filters ion-padding">
-            <ion-item>
-              <ion-label>{{ translate("Progress") }}</ion-label>
-              <ion-label slot="end">{{ getProgress() }}</ion-label>
-            </ion-item>  
-            <ion-item>
-              <ion-label>{{ translate("Variance") }}</ion-label>
-              <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-            </ion-item> 
-            <ion-item lines="none">
-              <ion-icon slot="start" :icon="thermometerOutline"/>
-              <ion-label>{{ translate("Item variance threshold") }}</ion-label>
-              <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
-            </ion-item>  
-            <ion-item lines="none">
-              <div slot="start"></div>
-              <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
-            </ion-item>
-          </div>
-        </ion-list>
-      </div>
-
-      <div class="header border">
-        <ion-segment v-model="segmentSelected">
-          <ion-segment-button value="all">
-            <ion-label>{{ translate("All") }}</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="accept">
-            <ion-icon color="success" :icon="thermometerOutline"/>
-          </ion-segment-button>
-          <ion-segment-button value="reject">
-            <ion-icon color="danger" :icon="thermometerOutline"/>
-          </ion-segment-button>
-        </ion-segment>
-      </div>
-
-      <template v-if="filteredItems?.length">
-        <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="getProduct(item.productId).mainImageUrl"/>
-            </ion-thumbnail>
-            <ion-label class="ion-text-wrap">
-              {{ item.productId }}
+            <ion-label v-else>
+              {{ item.qoh }}
+              <p>{{ translate("systemic") }}</p>
             </ion-label>
-          </ion-item>
-          
-          <ion-label v-if="item.quantity">
-            {{ item.quantity }} / {{ item.qoh }}
-            <p>{{ translate("counted / systemic") }}</p>
-          </ion-label>
-          
-          <ion-label v-else>
-            {{ item.qoh }}
-            <p>{{ translate("systemic") }}</p>
-          </ion-label>
-          
-          <ion-label v-if="item.quantity">
-            {{ +(item.quantity) - +(item.qoh) }}
-            <p>{{ getPartyName(item) }}</p>
-          </ion-label>
 
-          <ion-item lines="none" v-else>
-            <ion-label class="ion-text-center">
-              <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-              <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-            </ion-label>  
-          </ion-item>
+            <ion-label v-if="item.quantity">
+              {{ +(item.quantity) - +(item.qoh) }}
+              <p>{{ getPartyName(item) }}</p>
+            </ion-label>
 
-          <div class="tablet">
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
-              <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-            </ion-button>
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
-              <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-            </ion-button>
-            <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
-              <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-            </ion-button>
-          </div>
-          
-          <div>
-            <ion-item lines="none">
-              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+            <ion-item lines="none" v-else>
+              <ion-label class="ion-text-center">
+                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+              </ion-label>
             </ion-item>
+
+            <div class="tablet">
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+                <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
+              </ion-button>
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+                <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
+              </ion-button>
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+                <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
+              </ion-button>
+            </div>
+
+            <div>
+              <ion-item lines="none">
+                <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+                <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+              </ion-item>
+            </div>
           </div>
-        </div>
+        </template>
+
+        <p v-else class="empty-state">
+          {{ translate("No items found") }}
+        </p>
       </template>
-
-      <p v-else class="empty-state">
-        {{ translate("No items found") }}
-      </p>
+      <template v-else>
+        <p class="empty-state">{{ translate("Cycle count not found") }}</p>
+      </template>
     </ion-content>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
       <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
     
-    <ion-footer>
+    <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="acceptItem()">
@@ -222,7 +227,7 @@ onMounted(async () => {
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
+    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data?.statusId === "INV_COUNT_REVIEW") {
       currentCycleCount.value = {
         countName: resp.data.countImportName,
         countId: resp.data.inventoryCountImportId,
@@ -231,12 +236,11 @@ onMounted(async () => {
       }
 
       countName.value = resp.data.countImportName
+      await fetchCountItems();
     }
   } catch(err) {
     logger.error()
   }
-
-  await fetchCountItems();
 
   emitter.emit("dismissLoader")
 })

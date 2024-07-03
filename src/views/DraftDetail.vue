@@ -8,137 +8,142 @@
     </ion-header>
 
     <ion-content>
-      <div class="header">
-        <div class="search">
-          <ion-item lines="none" class="ion-padding">
-            <ion-label slot="start">
-              <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-              <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-              <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-              <p>{{ currentCycleCount.countId }}</p>
-            </ion-label>
+      <template v-if="currentCycleCount.inventoryCountImportId">
+        <div class="header">
+          <div class="search">
+            <ion-item lines="none" class="ion-padding">
+              <ion-label slot="start">
+                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
+                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
+                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
+                <p>{{ currentCycleCount.countId }}</p>
+              </ion-label>
 
-            <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-              {{ translate("Rename") }}
-            </ion-button>
-            <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-              {{ translate("Save") }}
+              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
+                {{ translate("Rename") }}
+              </ion-button>
+              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
+                {{ translate("Save") }}
+              </ion-button>
+            </ion-item>
+          </div>
+          <div class="filters">
+            <ion-list class="ion-padding">
+              <!-- TODO: Will implement CSV import support in the next phase -->
+              <!-- <ion-item>
+                <ion-icon slot="start" :icon="cloudUploadOutline"/>
+                <ion-label>{{ translate("Import CSV") }}</ion-label>
+                <input id="inputFile" class="ion-hide"/>
+                <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
+              </ion-item> -->
+              <ion-item>
+                <ion-icon slot="start" :icon="calendarNumberOutline" />
+                <ion-label>{{ translate("Due date") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">{{ currentCycleCount.dueDate ? getDateWithOrdinalSuffix(currentCycleCount.dueDate) : translate("Select date") }}</ion-button>
+                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+                  <ion-content force-overscroll="false">
+                    <ion-datetime
+                      id="schedule-datetime"
+                      :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
+                      @ionChange="updateCustomTime($event)"
+                      :min="DateTime.now().toISO()"
+                      presentation="date"
+                      showDefaultButtons
+                    />
+                  </ion-content>
+                </ion-modal>
+              </ion-item>
+              <ion-item>
+                <ion-icon slot="start" :icon="businessOutline"/>
+                <ion-label>{{ translate("Facility") }}</ion-label>
+                <ion-label v-if="currentCycleCount.facilityId" slot="end">{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
+                <ion-button fill="clear" slot="end" v-if="currentCycleCount.facilityId" @click="openSelectFacilityModal">
+                  <ion-icon slot="icon-only" :icon="pencilOutline" />
+                </ion-button>
+                <ion-button v-else fill="outline" @click="openSelectFacilityModal">
+                  <ion-icon slot="start" :icon="addCircleOutline"/>
+                  {{ translate("Assign") }}
+                </ion-button>
+              </ion-item>
+            </ion-list>
+          </div>
+        </div>
+
+        <div class="item-search">
+          <ion-item>
+            <ion-icon slot="start" :icon="listOutline"/>
+            <ion-input
+              :label="translate('Add product')"
+              label-placement="floating"
+              :clear-input="true"
+              v-model="queryString"
+              @ionInput="findProduct()"
+              :debounce="1000"
+              @keyup.enter="addProductToCount"
+            >
+            </ion-input>
+          </ion-item>
+          <ion-item lines="none" v-if="isSearchingProduct">
+            <ion-spinner color="secondary" name="crescent"></ion-spinner>
+          </ion-item>
+          <ion-item lines="none" v-else-if="searchedProduct.productId">
+            <ion-thumbnail slot="start">
+              <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
+            </ion-thumbnail>
+            <ion-label>
+              <p class="overline">{{ translate("Search result") }}</p>
+              {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
+            </ion-label>
+            <ion-button slot="end" fill="clear" @click="addProductToCount">
+              <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
             </ion-button>
           </ion-item>
+          <p v-else-if="queryString">{{ translate("No product found") }}</p>
         </div>
-        <div class="filters">
-          <ion-list class="ion-padding">
-            <!-- TODO: Will implement CSV import support in the next phase -->
-            <!-- <ion-item>
-              <ion-icon slot="start" :icon="cloudUploadOutline"/>
-              <ion-label>{{ translate("Import CSV") }}</ion-label>
-              <input id="inputFile" class="ion-hide"/>
-              <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-            </ion-item> -->
-            <ion-item>
-              <ion-icon slot="start" :icon="calendarNumberOutline" />
-              <ion-label>{{ translate("Due date") }}</ion-label>  
-              <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">{{ currentCycleCount.dueDate ? getDateWithOrdinalSuffix(currentCycleCount.dueDate) : translate("Select date") }}</ion-button>
-              <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                <ion-content force-overscroll="false">
-                  <ion-datetime    
-                    id="schedule-datetime"
-                    :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
-                    @ionChange="updateCustomTime($event)"
-                    :min="DateTime.now().toISO()"
-                    presentation="date"
-                    showDefaultButtons
-                  />
-                </ion-content>
-              </ion-modal>     
-            </ion-item>
-            <ion-item>
-              <ion-icon slot="start" :icon="businessOutline"/>
-              <ion-label>{{ translate("Facility") }}</ion-label>
-              <ion-label v-if="currentCycleCount.facilityId" slot="end">{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-              <ion-button fill="clear" slot="end" v-if="currentCycleCount.facilityId" @click="openSelectFacilityModal">
-                <ion-icon slot="icon-only" :icon="pencilOutline" />
-              </ion-button>
-              <ion-button v-else fill="outline" @click="openSelectFacilityModal">
-                <ion-icon slot="start" :icon="addCircleOutline"/>
-                {{ translate("Assign") }}
-              </ion-button>
-            </ion-item>
-          </ion-list>
-        </div>
-      </div>
 
-      <div class="item-search">
-        <ion-item>
-          <ion-icon slot="start" :icon="listOutline"/>
-          <ion-input
-            :label="translate('Add product')"
-            label-placement="floating"
-            :clear-input="true"
-            v-model="queryString"
-            @ionInput="findProduct()"
-            :debounce="1000"
-            @keyup.enter="addProductToCount"
-          >
-          </ion-input>
-        </ion-item>
-        <ion-item lines="none" v-if="isSearchingProduct">
-          <ion-spinner color="secondary" name="crescent"></ion-spinner>
-        </ion-item>
-        <ion-item lines="none" v-else-if="searchedProduct.productId">
-          <ion-thumbnail slot="start">
-            <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
-          </ion-thumbnail>
-          <ion-label>
-            <p class="overline">{{ translate("Search result") }}</p>
-            {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
-          </ion-label>
-          <ion-button slot="end" fill="clear" @click="addProductToCount">
-            <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
-          </ion-button>
-        </ion-item>
-        <p v-else-if="queryString">{{ translate("No product found") }}</p>
-      </div>
-
-      <hr />
-      
-      <template v-if="currentCycleCount.items?.length">
-        <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="getProduct(item.productId).mainImageUrl"/>
-            </ion-thumbnail>
-            <ion-label class="ion-text-wrap">
-              <p>{{ item.productId }}</p>
+        <hr />
+        
+        <template v-if="currentCycleCount.items?.length">
+          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label class="ion-text-wrap">
+                <p>{{ item.productId }}</p>
+              </ion-label>
+            </ion-item>          
+            <ion-label>
+              {{ item.qoh }}
+              <p>{{ translate("QoH") }}</p>
             </ion-label>
-          </ion-item>          
-          <ion-label>
-            {{ item.qoh }}
-            <p>{{ translate("QoH") }}</p>
-          </ion-label>
-          <div class="tablet">
-            <ion-chip outline>
-              <ion-label>{{ getDateWithOrdinalSuffix(item.lastCountedDate) }}</ion-label>
-            </ion-chip>
-            <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
+            <div class="tablet">
+              <ion-chip outline>
+                <ion-label>{{ getDateWithOrdinalSuffix(item.lastCountedDate) }}</ion-label>
+              </ion-chip>
+              <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
+            </div>
+            <div class="tablet">
+              <ion-chip outline>
+                <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
+                <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
+              </ion-chip>
+            </div>
+            <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+              <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+            </ion-button>
           </div>
-          <div class="tablet">
-            <ion-chip outline>
-              <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
-              <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
-            </ion-chip>
-          </div>
-          <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
-            <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
-          </ion-button>
-        </div>
+        </template>
+        <template v-else>
+          <p class="empty-state">{{ translate("No items found") }}</p>
+        </template>
       </template>
       <template v-else>
-        <p class="empty-state">{{ translate("No items found") }}</p>
+        <p class="empty-state">{{ translate("Cycle count not found") }}</p>
       </template>
     </ion-content>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
       <ion-fab-button @click="updateCountStatus">
         <ion-icon :icon="sendOutline" />
       </ion-fab-button>
@@ -189,7 +194,7 @@ onMounted(async () => {
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
+    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data.statusId === "INV_COUNT_CREATED") {
       currentCycleCount.value = {
         countName: resp.data.countImportName,
         countId: resp.data.inventoryCountImportId,
@@ -198,12 +203,11 @@ onMounted(async () => {
       }
 
       countName.value = resp.data.countImportName
+      await fetchCountItems();
     }
   } catch(err) {
     logger.error()
   }
-
-  await fetchCountItems();
 
   emitter.emit("dismissLoader")
 })

@@ -11,7 +11,7 @@ import logger from "@/logger";
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
-    emitter.emit("presentLoader", { message: "Fetching cycle counts" })
+    emitter.emit("presentLoader", { message: "Fetching cycle counts..." })
     let counts: Array<any> = [], total = 0;
 
     const params = {
