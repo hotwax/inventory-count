@@ -319,7 +319,7 @@ async function findProduct() {
 
   try {
     const resp = await ProductService.fetchProducts({
-      "keyword": queryString.value,
+      "filters": ['isVirtual: false', `sku: *${queryString.value}*`],
       "viewSize": 1 // as we only need a single record
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
