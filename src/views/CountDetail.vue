@@ -10,7 +10,7 @@
       <div class="find">
         <aside class="filters">
           <ion-item lines="full" class="ion-margin-top">
-            <ion-input slot="start" :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>  
+            <ion-input :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>
           </ion-item>
           <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
             <template v-if="cycleCount?.statusId === 'INV_COUNT_CREATED'">
