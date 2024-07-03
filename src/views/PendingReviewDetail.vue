@@ -254,7 +254,7 @@ async function fetchCountItems() {
       store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
     }
   } catch(err) {
-    logger.error()
+    logger.error(err)
   }
 }
 
@@ -458,7 +458,6 @@ async function reassignCount() {
 }
 
 async function acceptItem(item?: any) {
-  let importItemSeqIds: Array<string> = []
   const payloads = []
   if(item) {
     payloads.push({
@@ -492,6 +491,7 @@ async function acceptItem(item?: any) {
   } else {
     showToast(translate("All of the item(s) are accepted"))
   }
+  await fetchCountItems()
 }
 </script>
 
