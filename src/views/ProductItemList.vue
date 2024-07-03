@@ -42,8 +42,9 @@ defineProps(['item'])
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
-async function selectedProduct(item: any) { 
-  await store.dispatch('product/currentProduct', item);
+async function selectedProduct(item: any) {
+  // Making recount variable as false when clicking on the item so that the product details are displayed in the default state on initial load
+  await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
 }
 </script>
 

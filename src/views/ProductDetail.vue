@@ -43,11 +43,11 @@
               {{ translate("Variance") }}
               <ion-label slot="end">{{ variance }}</ion-label>
             </ion-item> 
-            <div class="button-container"> <!-- TODO: add css to show the button inline  -->
-              <ion-button fill="outline" expand="block" @click="discardRecount()">
+            <div class="ion-margin">
+              <ion-button color="medium" fill="outline" @click="discardRecount()">
                 {{ translate("Discard re-count") }}
               </ion-button>
-              <ion-button fill="outline" expand="block" @click="openRecountSaveAlert()">
+              <ion-button fill="outline" @click="openRecountSaveAlert()">
                 {{ translate("Save new count") }}
               </ion-button>
             </div>
@@ -74,7 +74,7 @@
               {{ translate("Variance") }}
               <ion-label slot="end">{{ getVariance(product) }}</ion-label>
             </ion-item>
-            <ion-button fill="outline" expand="block" class="re-count" @click="openRecountAlert()">
+            <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
               {{ translate("Re-count") }}
             </ion-button>
           </ion-list>
@@ -91,7 +91,7 @@
               {{ translate("Variance") }}
               <ion-label slot="end">{{ variance }}</ion-label>
             </ion-item>
-            <ion-button fill="outline" expand="block" @click="saveCount()">
+            <ion-button class="ion-margin" fill="outline" expand="block" @click="saveCount()">
               {{ translate("Save count") }}
             </ion-button>
           </ion-list>
@@ -219,29 +219,24 @@
   </script>
 
   <style>
-
   .product-info {
     width: 100%;
     margin-top: var(--spacer-lg);
     margin-right: var(--spacer-lg);
   }
 
+  .product-info > ion-list {
+    max-width: 400px;
+  }
+
   .product-image {
     text-align: center;
     margin-top: var(--spacer-lg);
-  }
-
-  .product-image > img {
-    width: 600px;
+    max-width: 350px;
   }
 
   ion-content > main {
     display: grid;
     height: 100%;
   }
-
-  .re-count {
-    margin: var(--spacer-base) var(--spacer-sm);
-  }
-
   </style>
