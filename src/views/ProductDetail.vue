@@ -1,7 +1,7 @@
   <template>
     <main>
       <section class="product-image">
-        <DxpShopifyImg :src="getProduct(product.productId)?.mainImageUrl" />
+        <Image :src="getProduct(product.productId)?.mainImageUrl" />
       </section>
       <section class="product-info">
         <ion-item lines="none">
@@ -26,7 +26,7 @@
           </ion-item>
           <ion-item>
             {{ translate("Variance") }}
-            <ion-label slot="end">{{ +(product.quantity || 0) - +product.qoh }}</ion-label>
+            <ion-label slot="end">{{ getVariance(product) }}</ion-label>
           </ion-item>
         </ion-list>
 
@@ -72,7 +72,7 @@
             </ion-item>
             <ion-item>
               {{ translate("Variance") }}
-              <ion-label slot="end">{{ +(product.quantity || 0) - +product.qoh }}</ion-label>
+              <ion-label slot="end">{{ getVariance(product) }}</ion-label>
             </ion-item>
             <ion-button fill="outline" expand="block" class="re-count" @click="openRecountAlert()">
               {{ translate("Re-count") }}
@@ -102,15 +102,15 @@
 
   <script setup lang="ts">
   import { computed, ref } from 'vue';
-  import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController, onIonViewWillLeave } from "@ionic/vue";
+  import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
   import { hasError } from '@/utils'
   import emitter from '@/event-bus';
   import logger from '@/logger'
   import { getPartyName, showToast } from '@/utils';
-  import { DxpShopifyImg } from '@hotwax/dxp-components';
   import { CountService } from '@/services/CountService';
+  import Image from "@/components/Image.vue"
 
   const store = useStore();
   const product = computed(() => store.getters['product/getCurrentProduct']);
@@ -126,6 +126,12 @@
     } else {
       variance.value = parseInt(inputCount.value) - parseInt(product.value.qoh) || 0;
     }
+  }
+
+  function getVariance(item: any, count?: any) {
+    const qty = item.quantity || 0
+    // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
+    return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
   }
 
   async function saveCount() {

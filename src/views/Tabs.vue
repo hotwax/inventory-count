@@ -8,7 +8,7 @@
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="more" href="/tabs/settings">
-          <ion-icon :icon="settings" />
+          <ion-icon :icon="settingsOutline" />
           <ion-label>{{ translate("Settings") }}</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
@@ -16,25 +16,13 @@
   </ion-page>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouterOutlet } from "@ionic/vue";
 import {
   infiniteOutline,
-  settings,
+  settingsOutline,
 } from "ionicons/icons";
 import { translate } from '@/i18n'
-
-export default {
-  name: "Tabs",
-  components: { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouterOutlet },
-  setup () {
-    return {
-      infiniteOutline,
-      settings,
-      translate
-    };
-  }
-};
 </script>
 
 <style scoped>

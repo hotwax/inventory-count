@@ -70,6 +70,7 @@ onIonViewWillEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearQuery")
 })
 </script>
 

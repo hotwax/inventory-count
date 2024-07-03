@@ -18,23 +18,18 @@
         {{ translate("No cycle counts found") }}
       </p>
       <template v-else>
-        <!-- TODO: implement this as does not have support for the same in the apis for now -->
-        <!-- <div class="header">
-          <div class="search">
-            <ion-item lines="full">
-              <ion-icon slot="start" :icon="listOutline"/>
-              <ion-label>{{ translate("Counts closed") }}</ion-label>
-              <ion-label slot="end">14</ion-label>
-            </ion-item>
-          </div>
-          <div class="filters">
-            <ion-item lines="full">
-              <ion-icon slot="start" :icon="thermometerOutline"/>
-              <ion-label>{{ translate("Average variance") }}</ion-label>
-              <ion-label slot="end">50%</ion-label>
-            </ion-item>
-          </div>
-        </div> -->
+        <div class="header">
+          <ion-item lines="full">
+            <ion-icon slot="start" :icon="listOutline"/>
+            <ion-label>{{ translate("Counts closed") }}</ion-label>
+            <ion-label slot="end">{{ cycleCounts.length }}</ion-label>
+          </ion-item>
+          <ion-item lines="full">
+            <ion-icon slot="start" :icon="thermometerOutline"/>
+            <ion-label>{{ translate("Average variance") }}</ion-label>
+            <ion-label slot="end">{{ getAverageVariance() }}</ion-label>
+          </ion-item>
+        </div>
 
         <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId">
           <ion-item lines="none">
@@ -97,7 +92,7 @@ import {
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { filterOutline, storefrontOutline } from "ionicons/icons";
+import { filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
@@ -128,6 +123,11 @@ function getClosedDate(count: any) {
   const submissionStatus = history.toReversed().find((status: any) => status.statusId === "INV_COUNT_COMPLETED")
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
+
+function getAverageVariance() {
+  // TODO: add support to display average variance
+  return "-"
+}
 </script>
 
 <style scoped>
@@ -142,16 +142,7 @@ function getClosedDate(count: any) {
 
 .header {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
-
-.search {
-  grid-column: 1 / 2;
-}
-
-.filters {
-  grid-column: 2 / 3;
-}
-
 </style>

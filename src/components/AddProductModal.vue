@@ -16,7 +16,7 @@
       <ion-list v-for="product in products" :key="product.productId">
         <ion-item lines="none">
           <ion-thumbnail slot="start">
-            <DxpShopifyImg :src="product.mainImageUrl" />
+            <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
             <!-- Honouring the identifications set by the user on the settings page -->
@@ -58,12 +58,13 @@ import {
   IonToolbar,
   modalController,
 } from "@ionic/vue";
-import { computed, defineProps, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineProps, onUnmounted, ref } from "vue";
 import { closeOutline, checkmarkCircle } from "ionicons/icons";
 import store from "@/store";
-import { DxpShopifyImg, translate } from "@hotwax/dxp-components";
+import { translate } from "@hotwax/dxp-components";
 import { showToast } from "@/utils"
 import emitter from "@/event-bus";
+import Image from "@/components/Image.vue"
 
 const props = defineProps(["cycleCount"])
 

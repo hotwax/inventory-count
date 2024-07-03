@@ -1,7 +1,7 @@
 <template>
   <ion-item @click="selectedProduct(item)" button>
     <ion-thumbnail slot="start">
-      <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
+      <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
     <ion-label class="ion-text-wrap">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
@@ -31,9 +31,10 @@
 
 <script setup lang="ts">
 import { computed, defineProps } from 'vue';
-import {  IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
+import { IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
+import Image from "@/components/Image.vue";
 
 const store = useStore();
 

@@ -142,7 +142,7 @@ function openDateTimeModal() {
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
-    date: router.currentRoute.value.name === "Closed"
+    // date: router.currentRoute.value.name === "Closed"
   }
 }
 
