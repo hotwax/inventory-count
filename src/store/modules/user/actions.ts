@@ -31,9 +31,16 @@ const actions: ActionTree<UserState, RootState> = {
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
 
-      const serverPermissions = await UserService.getUserPermissions({
+      let serverPermissions: Array<string> = await UserService.getUserPermissions({
         permissionIds: [...new Set(serverPermissionsFromRules)]
       }, omsRedirectionUrl, token);
+
+      // When a user has the admin level permission then remove all the other permissions as we want to only display the admin screens in that case
+      // TODO: update the permission ID as per the app
+      if(serverPermissions.includes("FULFILL_INVCUNT_ADMIN")) {
+        serverPermissions = ["FULFILL_INVCUNT_ADMIN"]
+      }
+
       const appPermissions = prepareAppPermissions(serverPermissions);
 
 
