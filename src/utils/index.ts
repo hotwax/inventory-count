@@ -54,7 +54,26 @@ const getDateTime = (time: any) => {
 
 const getDerivedStatusForCount = (count: any) => {
   const countStats = cycleCountStats(count.inventoryCountImportId)
-  return countStats ? countStats.rejectedCount > 0 ? count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Recount requested", color: "danger" } : { label: "Re-submitted", color: "danger" } : count.statusId === "INV_COUNT_ASSIGNED" ? { label: "Assigned", color: "primary" } : { label: "Submitted", color: "primary" } : { label: "-", color: "primary" }
+
+  const history = countStats?.statusHistory
+  if(!history) {
+    return "-";
+  }
+
+  const countAssignedStatus = history.filter((status: any) => status.statusId === "INV_COUNT_ASSIGNED")
+  const countReviewStatus = history.filter((status: any) => status.statusId === "INV_COUNT_REVIEW")
+
+  if(countReviewStatus?.length > 1) {
+    return { label: "Re-submitted", color: "danger" }
+  } else if(countAssignedStatus?.length > 1 && countReviewStatus?.length >= 1) {
+    return { label: "Recount requested", color: "danger" }
+  } else if(countReviewStatus?.length === 1) {
+    return { label: "Submitted", color: "primary" }
+  } else if(countAssignedStatus?.length === 1) {
+    return { label: "Assigned", color: "primary" }
+  } else {
+    return { label: "-", color: "primary" }
+  }
 }
 
 function getDateWithOrdinalSuffix(time: any) {
@@ -79,4 +98,8 @@ function getFacilityName(id: string) {
   return facilities().find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
-export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, timeFromNow }
+function getPartyName(item: any) {
+  return item.countedByGroupName ? item.countedByGroupName : item.countedByFirstName ? item.countedByFirstName + " " + item.countedByLastName : item.countedByUserLoginId ? item.countedByUserLoginId : "-"
+}
+
+export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, timeFromNow }
