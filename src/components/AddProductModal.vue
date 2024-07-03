@@ -74,7 +74,7 @@ const isScrollable = computed(() => store.getters["product/isScrollable"])
 let queryString = ref('')
 
 onUnmounted(() => {
-  products
+  store.dispatch("product/clearProducts")
 })
 
 async function getProducts( vSize?: any, vIndex?: any) {
