@@ -1,13 +1,19 @@
 import { client } from '@/api';
+import store from '@/store';
 
 const fetchProducts = async (query: any): Promise <any>  => {
-  return client({
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
+  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+
+  return await client({
     url: "searchProducts",
-    baseURL: "https://dev-oms.hotwax.io/api", // Make it dynamic based on the used oms
-    method: "post",
+    method: "POST",
+    baseURL,
     data: query,
-    cache: true,
-    noAuth: true  // Need to check how to make call to ofbiz, currently as api does not require auth so used this param
+    headers: {
+      "Authorization":  'Bearer ' + omsRedirectionInfo.token,
+      'Content-Type': 'application/json'
+    }
   });
 }
 

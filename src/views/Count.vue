@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-title slot="start">{{ translate("Count name") }}</ion-title>
-        <ion-segment :value="selectedSegment">
+        <ion-segment :value="selectedSegment" @ionChange="segmentChanged($event.detail.value)">
           <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
             <ion-label>{{ translate("Assigned") }}</ion-label>
           </ion-segment-button>
@@ -19,80 +19,83 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <main>
-        <section v-if="getCycleCounts()?.length"> 
+        <template v-if="isLoading">
+          <p>{{ translate("Fetching cycle counts...") }}</p>
+        </template>
+        <section v-else-if="cycleCount.length">
           <template v-if="selectedSegment === 'assigned'">
-            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
+            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)" button>
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
                   <ion-label>
-                    <p>created date</p>
+                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
                   </ion-label>
                 </ion-card-title>
-                <ion-note>10 items</ion-note>
+                <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
               </ion-card-header>
               <ion-item lines="none">
                 {{ translate("Due date") }}
                 <ion-label slot="end">
-                  <p>{{ getTime(count.dueDate) }}</p>
+                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
           </template> 
           <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
+            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
                   <ion-label>
-                    <p>created date</p>
+                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
                   </ion-label>
                 </ion-card-title>
-                <ion-note>9/10 items counted</ion-note>
+                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
               </ion-card-header>
               <ion-item>
                 {{ translate("Due date") }}
                 <ion-label slot="end">
-                  <p>2nd July 2024</p>
+                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
                 </ion-label>
               </ion-item>
               <ion-item lines="none">
                 {{ translate("Submission date") }}
                 <ion-label slot="end">
-                  <p>1st July 2024</p>
+                  <p>{{ getSubmissionDate(count) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
           </template>
           <template v-else>
-            <ion-card v-for="count in getCycleCounts()" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
+            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)" button>
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
                   <ion-label>
-                    <p>created date</p>
+                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
                   </ion-label>
                 </ion-card-title>
-                <ion-note>9/10 items counted</ion-note>
+                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
               </ion-card-header>
               <div class="header">
                 <div class="search">
                   <ion-item>
                     {{ translate("Due date") }}
                     <ion-label slot="end">
-                      <p>2nd July 2024</p>
+                      <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Submission date") }}
                     <ion-label slot="end">
-                      <p>1st July 2024</p>
+                      <p>{{ getSubmissionDate(count) }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item lines="none">
                     {{ translate("Closed date") }}
                     <ion-label slot="end">
-                      <p>1st July 2024</p>
+                      <p>{{ getClosedDate(count) }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -100,13 +103,13 @@
                   <ion-item>
                     {{ translate("Rejected") }}
                     <ion-label slot="end">
-                      <p>4</p>
+                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Total variance") }}
                     <ion-label slot="end">
-                      <p>2</p>
+                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalVariance }}</p>
                     </ion-label>
                   </ion-item>
                 </div>
@@ -154,27 +157,30 @@ import {
   IonToolbar,
   onIonViewDidEnter
 } from '@ionic/vue';
-import { DateTime } from 'luxon';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { UtilService } from '@/services/UtilService';
+import { getCycleCountStats, getDateWithOrdinalSuffix } from "@/utils"
 
 const store = useStore();
 const router = useRouter()
 
-const cycleCount = computed(() => store.getters["pickerCount/getCycleCount"]);
-const isScrollable = computed(() => store.getters["pickerCount/isCycleCountScrollable"])
+const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
+const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
 
-const selectedSegment = ref('assigned');
+const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const contentRef = ref({});
 const infiniteScrollRef = ref({});
+let isLoading = ref(false);
 
 onIonViewDidEnter(async() => {
-  fetchCycleCounts();
+  isLoading.value = true;
+  await fetchCycleCounts();
+  isLoading.value = false;
 })
 
 function enableScrolling() {
@@ -211,34 +217,52 @@ async function fetchCycleCounts(vSize, vIndex) {
   const payload = {
     pageSize,
     pageIndex,
-    facilityId 
+    facilityId,
+    statusId: getStatusIdForCountsToBeFetched()
   };
-  await store.dispatch("pickerCount/fetchCycleCounts", payload);
+  await store.dispatch("count/fetchCycleCountsLists", payload);
 }
 
-function getTime(time) {
-  if (!time) return '';
-  const dateTime = DateTime.fromMillis(time);
-  const suffix = UtilService.getOrdinalSuffix(dateTime.day);
-
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+function segmentChanged(value) {
+  isLoading.value = true;
+  selectedSegment.value = value
+  fetchCycleCounts()
+  isLoading.value = false;
 }
 
 function navigateToStoreView(countId) {
   router.push(`/count-detail/${countId}`)
 }
 
-function getCycleCounts() {
-  if (selectedSegment.value === 'assigned') {
-    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_CREATED')
+function getStatusIdForCountsToBeFetched() {
+  if(selectedSegment.value === "assigned") {
+    return "INV_COUNT_ASSIGNED"
+  } else if(selectedSegment.value === "pendingReview") {
+    return "INV_COUNT_REVIEW"
+  } else {
+    return "INV_COUNT_COMPLETED"
   }
-  else if (selectedSegment.value === 'pendingReview') {
-    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_REVIEW')
+}
+
+function getSubmissionDate(count) {
+  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+  if(!history) {
+    return "-";
   }
-  else {
-    return cycleCount.value.filter((count) => count.statusId === 'INV_COUNT_COMPLETED')
+
+  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
+  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+}
+
+function getClosedDate(count) {
+  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+  if(!history) {
+    return "-";
   }
-} 
+
+  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
+  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+}
 </script> 
 
 <style scoped>

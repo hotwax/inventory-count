@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <IonSplitPane content-id="main-content" when="lg">
-      <!-- <Menu/> -->
+      <Menu v-if="hasPermission(Actions.APP_DRAFT_VIEW)"/>
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>
@@ -17,6 +17,7 @@ import store from "./store";
 import { translate } from "@/i18n"
 import { Settings } from 'luxon'
 import Menu from '@/components/Menu.vue';
+import { Actions, hasPermission } from '@/authorization'
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])

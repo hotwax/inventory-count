@@ -11,9 +11,15 @@ const countModule: Module<CountState, RootState> = {
     list: [],
     total: 0,
     query: {
-      facilityId: '',
+      facilityIds: [],
       noFacility: false
-    }
+    },
+    stats: {},
+    cycleCounts: {
+      list: [],
+      isScrollable: true
+    },
+    cycleCountItems: {}
   },
   getters,
   actions,

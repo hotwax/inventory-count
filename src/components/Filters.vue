@@ -13,19 +13,19 @@
         </ion-item-divider>
         <ion-item>
           <ion-icon slot="start" :icon="businessOutline"/>
-          <ion-select interface="popover" :value="query.facilityId" :label="translate('Facility')" :placeholder="translate('Select facility')" @ionChange="updateQuery('facilityId', $event.detail.value)">
+          <ion-select multiple interface="popover" :value="query.facilityIds" :selected-text="getSelectedValue()" :label="translate('Facility')" :placeholder="translate('Select facility')" @ionChange="updateQuery('facilityIds', $event.detail.value)">
             <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">{{ facility.facilityName }}</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-item button>
+        <ion-item button v-if="showAdditionalFilters().noFacility">
           <ion-icon slot="start" :icon="removeCircleOutline"/>
           <ion-checkbox :value="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
-        <ion-item-divider v-if="showAdditionalFilters()">
+        <ion-item-divider v-if="showAdditionalFilters().date">
           <ion-label>{{ translate("Date") }}</ion-label>
         </ion-item-divider>
-        <ion-accordion-group v-if="showAdditionalFilters()">
+        <ion-accordion-group v-if="showAdditionalFilters().date">
           <ion-accordion>
             <ion-item slot="header">
               <ion-icon slot="start" :icon="gitBranchOutline"/>
@@ -38,9 +38,8 @@
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
+                      id="schedule-datetime"
+                      show-default-buttons
                       value="3rd March 2024"
                     />
                   </ion-content>
@@ -52,9 +51,8 @@
                 <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
                   <ion-content force-overscroll="false">
                     <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
+                      id="schedule-datetime"
+                      show-default-buttons
                       value="3rd March 2024"
                     />
                   </ion-content>
@@ -142,10 +140,29 @@ function openDateTimeModal() {
 }
 
 function showAdditionalFilters() {
-  return router.currentRoute.value.name !== "Draft"
+  return {
+    noFacility: router.currentRoute.value.name === "Draft",
+    date: router.currentRoute.value.name === "Closed"
+  }
 }
 
 async function updateQuery(key: string, value: any) {
   await store.dispatch("count/updateQuery", { key, value })
+}
+
+function getSelectedValue() {
+  let value = query.value.facilityIds
+
+  // Initially when adding a filter no value is selected thus returning "All" as default value
+  if(!value.length) {
+    return "All";
+  }
+
+  // If having more than 1 value selected then displaying the count of selected value otherwise returning the facilityName of the selected facility
+  if(value?.length > 1) {
+    return `${value.length} ${translate("selected")}`
+  } else {
+    return facilities.value.find((facility: any) => facility.facilityId === value[0])?.facilityName || value[0]
+  }
 }
 </script>

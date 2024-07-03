@@ -30,6 +30,18 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getCurrentFacility(state) {
     return state.currentFacility;
+  },
+  getUserPermissions (state) {
+    return state.permissions;
+  },
+  getProductStores(state) {
+    return state.productStores
+  },
+  getCurrentProductStore(state) {
+    return state.currentProductStore
+  },
+  getProductStoreSettings(state) {
+    return state.settings
   }
 }
 export default getters;

@@ -5,9 +5,9 @@ import mutations from "./mutations";
 import getters from "./getters";
 import actions from "./actions";
 import userModule from "./modules/user";
-import pickerCountModule from "./modules/pickerCount";
 import productModule from "./modules/product";
 import countModule from "./modules/count";
+import { setPermissions } from "@/authorization"
 
 
 // TODO check how to register it from the components only
@@ -17,7 +17,7 @@ import countModule from "./modules/count";
 const state: any = {}
 
 const persistState = createPersistedState({
-  paths: ["user", "pickerCount"],
+  paths: ["user"],
   fetchBeforeUse: true
 })
 
@@ -30,11 +30,12 @@ const store = createStore<RootState>({
   plugins: [ persistState ],
   modules: {
     user: userModule,
-    pickerCount: pickerCountModule,
     product: productModule,
     count: countModule,
   },
 })
+
+setPermissions(store.getters['user/getUserPermissions']);
 
 export default store
 export function useStore(): typeof store {

@@ -1,72 +1,48 @@
 <template>
-  <ion-page>  
+  <ion-page>
+    <Filters menu-id="filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Assigned")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button>
+          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <ion-list>
-        <div class="list-item">
+    <ion-content id="filter">
+      <p v-if="!cycleCounts.length" class="empty-state">
+        {{ translate("No cycle counts found") }}
+      </p>
+      <ion-list v-else>
+        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button @click="router.push(`/assigned/${count.inventoryCountImportId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              primary identifier
-              <p>secondary identifier</p>
+              {{ count.countImportName }}
+              <p>{{ count.inventoryCountImportId }}</p>
             </ion-label>
           </ion-item>
           
           <ion-chip outline>
-            <ion-label>facilityId</ion-label>
+            <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
           
           <ion-label>
-            10/20
-            <p>{{ translate("counter") }}</p>
+            <!-- TODO: make it dynamic currently not getting stats correctly -->
+            {{ getCycleCountStats(count.inventoryCountImportId) }}
+            <p>{{ translate("counted") }}</p>
           </ion-label>
 
           <ion-label>
-            4th March 2024
+            {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ translate("Assigned") }}</ion-badge>
-          </ion-item>
-        </div>
-      </ion-list>
-      <ion-list>
-        <div class="list-item">
-          <ion-item lines="none">
-            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-            <ion-label>
-              primary identifier
-              <p>secondary identifier</p>
-            </ion-label>
-          </ion-item>
-          
-          <ion-chip outline>
-            <ion-label>facilityId</ion-label>
-          </ion-chip>
-          
-          <ion-label>
-            10/20
-            <p>{{ translate("counter") }}</p>
-          </ion-label>
-
-          <ion-label>
-            4th March 2024
-            <p>{{ translate("due date") }}</p>
-          </ion-label>
-          
-          <ion-item lines="none">
-            <ion-badge slot="end" color="danger">{{ translate("Recount requested") }}</ion-badge>
+            <ion-badge :color="getDerivedStatusForCount(count)?.color" slot="end">{{ translate(getDerivedStatusForCount(count)?.label) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -74,38 +50,26 @@
   </ion-page>
 </template>
 
-<script>
-import { defineComponent } from "vue";
+<script setup lang="ts">
+import { computed } from "vue";
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import store from "@/store"
+import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
+import Filters from "@/components/Filters.vue"
+import router from "@/router"
 
-export default defineComponent({
-  name: 'Assigned',
-  components: {
-    IonBadge,
-    IonButtons,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonMenuButton,
-    IonPage,
-    IonTitle,
-    IonToolbar,
-  },
+const cycleCounts = computed(() => store.getters["count/getCounts"])
 
+onIonViewWillEnter(async () => {
+  await store.dispatch("count/fetchCycleCounts", {
+    statusId: "INV_COUNT_ASSIGNED"
+  })
+})
 
-  setup() {
-    return {
-      translate,
-      filterOutline,
-      storefrontOutline
-    }
-  }
+onIonViewWillLeave(async () => {
+  await store.dispatch("count/clearCycleCountList")
 })
 </script>
 

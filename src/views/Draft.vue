@@ -1,12 +1,12 @@
 <template>
   <ion-page>
     <Filters menu-id="draft-filter" content-id="draft-filter"/>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Drafts") }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="draft-filter">
+          <ion-menu-button menu="draft-filter" :disabled="!cycleCounts?.length">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -23,7 +23,7 @@
             {{ count.countImportName }}
             <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>
-          <ion-note slot="end" color="medium">{{ "items" }}</ion-note>
+          <ion-note slot="end" color="medium">{{ cycleCountStats(count.inventoryCountImportId)?.totalItems || 0 }} {{ translate("items") }}</ion-note>
         </ion-item>
       </ion-list>
 
@@ -52,10 +52,12 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-  alertController
+  alertController,
+  onIonViewWillEnter,
+  onIonViewWillLeave
 } from "@ionic/vue";
 import { addOutline, filterOutline } from "ionicons/icons";
-import { computed, onMounted } from "vue"
+import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
@@ -64,11 +66,17 @@ import router from "@/router";
 import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
+const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_CREATED"
   })
+})
+
+onIonViewWillLeave(async () => {
+  await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearQuery")
 })
 
 async function createCycleCount() {
@@ -107,8 +115,7 @@ async function createCycleCount() {
       // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
       await store.dispatch("count/createCycleCount", {
         countImportName: name,
-        statusId: "INV_COUNT_CREATED",
-        createdDate: DateTime.now()
+        statusId: "INV_COUNT_CREATED"
       })
     }
   })

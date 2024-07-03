@@ -8,7 +8,8 @@ import { StatusCodes } from "http-status-codes";
 axios.interceptors.request.use((config: any) => {
   // TODO: pass csrf token
   const token = store.getters["user/getUserToken"];
-  if (token && !config.noAuth) {
+
+  if (token) {
     config.headers["api_key"] =  token;
     config.headers["Content-Type"] = "application/json";
   }
@@ -43,12 +44,12 @@ axios.interceptors.response.use(function (response) {
   if (error.response) {
     // TODO Handle case for failed queue request
     const { status } = error.response;
-    if (status === StatusCodes.UNAUTHORIZED) {
-      store.dispatch("user/logout");
-      const redirectUrl = window.location.origin + '/login';
-      // Explicitly passing isLoggedOut as in case of maarg apps we need to call the logout api in launchpad
-      window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}&isLoggedOut=true`;
-    }
+    // if (status === StatusCodes.UNAUTHORIZED) {
+    //   store.dispatch("user/logout");
+    //   const redirectUrl = window.location.origin + '/login';
+    //   // Explicitly passing isLoggedOut as in case of maarg apps we need to call the logout api in launchpad
+    //   window.location.href = `${process.env.VUE_APP_LOGIN_URL}?redirectUrl=${redirectUrl}&isLoggedOut=true`;
+    // }
   }
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
@@ -87,7 +88,11 @@ const api = async (customConfig: any) => {
   }
 
   const baseURL = store.getters["user/getInstanceUrl"];
-  if (baseURL) config.baseURL = baseURL.startsWith('http') ? baseURL.includes('/rest/s1/inventory-cycle-count') ? baseURL : `${baseURL}/rest/s1/inventory-cycle-count/` : `https://${baseURL}.hotwax.io/rest/s1/inventory-cycle-count/`;
+
+  if (baseURL) {
+    config.baseURL = baseURL.startsWith('http') ? baseURL.includes('/rest/s1/inventory-cycle-count') ? baseURL : `${baseURL}/rest/s1/inventory-cycle-count/` : `https://${baseURL}.hotwax.io/rest/s1/inventory-cycle-count/`;
+  }
+
   if(customConfig.cache) config.adapter = axiosCache.adapter;
   const networkStatus =  await OfflineHelper.getNetworkStatus();
   if (customConfig.queue && !networkStatus.connected) {
@@ -108,7 +113,7 @@ const api = async (customConfig: any) => {
  * @return {Promise} Response from API as returned by Axios
  */
 const client = (config: any) => {
-  return axios.request(config);
+  return axios.create().request(config)
 }
 
 export { api as default, client, axios };
