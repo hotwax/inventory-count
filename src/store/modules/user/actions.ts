@@ -31,7 +31,7 @@ const actions: ActionTree<UserState, RootState> = {
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
 
-      let serverPermissions: Array<string> = await UserService.getUserPermissions({
+      const serverPermissions: Array<string> = await UserService.getUserPermissions({
         permissionIds: [...new Set(serverPermissionsFromRules)]
       }, omsRedirectionUrl, token);
 

@@ -1,7 +1,7 @@
   <template>
     <main>
       <section class="product-image">
-        <DxpShopifyImg :src="getProduct(product.productId)?.mainImageUrl" />
+        <Image :src="getProduct(product.productId)?.mainImageUrl" />
       </section>
       <section class="product-info">
         <ion-item lines="none">
@@ -102,15 +102,15 @@
 
   <script setup lang="ts">
   import { computed, ref } from 'vue';
-  import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController, onIonViewWillLeave } from "@ionic/vue";
+  import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
   import { hasError } from '@/utils'
   import emitter from '@/event-bus';
   import logger from '@/logger'
   import { getPartyName, showToast } from '@/utils';
-  import { DxpShopifyImg } from '@hotwax/dxp-components';
   import { CountService } from '@/services/CountService';
+  import Image from "@/components/Image.vue"
 
   const store = useStore();
   const product = computed(() => store.getters['product/getCurrentProduct']);

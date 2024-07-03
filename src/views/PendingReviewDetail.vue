@@ -87,7 +87,7 @@
         <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
+              <Image :src="getProduct(item.productId).mainImageUrl"/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               {{ item.productId }}
@@ -167,7 +167,6 @@
 </template>
 
 <script setup lang="ts">
-import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
 import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
@@ -179,6 +178,7 @@ import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPart
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
+import Image from "@/components/Image.vue"
 
 const props = defineProps({
   inventoryCountImportId: String

@@ -87,7 +87,7 @@
         </ion-item>
         <ion-item lines="none" v-else-if="searchedProduct.productId">
           <ion-thumbnail slot="start">
-            <DxpShopifyImg :src="getProduct(searchedProduct.productId).mainImageUrl"/>
+            <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
             <p class="overline">{{ translate("Search result") }}</p>
@@ -106,7 +106,7 @@
         <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
           <ion-item lines="none">
             <ion-thumbnail slot="start">
-              <DxpShopifyImg :src="getProduct(item.productId).mainImageUrl"/>
+              <Image :src="getProduct(item.productId).mainImageUrl"/>
             </ion-thumbnail>
             <ion-label class="ion-text-wrap">
               <p>{{ item.productId }}</p>
@@ -147,11 +147,10 @@
 </template>
 
 <script setup lang="ts">
-import { DxpShopifyImg } from "@hotwax/dxp-components";
 import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
-import { cloudUploadOutline, calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
+import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
@@ -162,6 +161,7 @@ import { DateTime } from "luxon"
 import store from "@/store";
 import { ProductService } from "@/services/ProductService";
 import router from "@/router"
+import Image from "@/components/Image.vue"
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -311,7 +311,7 @@ async function deleteItemFromCount(seqId: string) {
 
 async function findProduct() {
   if(!queryString.value.trim()) {
-    showToast(translate("Enter a valid search string"));
+    showToast(translate("Enter a valid product sku"));
     return;
   }
 
@@ -338,7 +338,7 @@ async function findProduct() {
 async function addProductToCount() {
   // If product is not found in the searched string then do not make the api call
   // This check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
-  if(!searchedProduct.value.productId) {
+  if(!searchedProduct.value.productId || !queryString.value) {
     return;
   }
 
