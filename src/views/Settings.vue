@@ -52,7 +52,7 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <ion-card>
+        <ion-card v-if="!hasPermission('APP_DRAFT_VIEW')">
           <ion-card-header>
             <ion-card-title>
               {{ $t("Facility") }}
@@ -67,7 +67,7 @@
             </ion-select>
           </ion-item>
         </ion-card>
-        <ion-card>
+        <ion-card v-if="hasPermission('APP_DRAFT_VIEW')">
           <ion-card-header>
             <ion-card-subtitle>
               {{ translate("Product Store") }}
@@ -115,6 +115,7 @@ import Image from "@/components/Image.vue"
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms } from "@hotwax/dxp-components";
+import { hasPermission } from "@/authorization"
 
 const store = useStore()
 const appVersion = ref("")
