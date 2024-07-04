@@ -91,7 +91,8 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                {{ item.productId }}
+                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
+                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
             </ion-item>
 
@@ -179,7 +180,7 @@ import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vu
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
@@ -191,6 +192,7 @@ const props = defineProps({
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const filteredItems = computed(() => {
   let items = currentCycleCount.value.items
@@ -279,7 +281,7 @@ async function addProductToCount(productId: any) {
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
-      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
+      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
       await fetchCountItems();
     }
   } catch(err) {
@@ -530,6 +532,10 @@ async function acceptItem(item?: any) {
 /* To remove overlapping of fab button with footer buttons */
 ion-footer ion-buttons {
   padding-right: 80px;
+}
+
+ion-content {
+  --padding-bottom: 80px;
 }
 
 @media (max-width: 991px) {

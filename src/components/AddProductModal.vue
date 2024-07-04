@@ -19,10 +19,8 @@
             <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
-            <!-- Honouring the identifications set by the user on the settings page -->
-            <!-- <h2>{{ product[productIdentificationPref.primaryId] }}</h2>
-            <p>{{ product[productIdentificationPref.secondaryId] }}</p> -->
-            {{ product.productId }}
+            <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) }}</h2>
+            <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
           </ion-label>
           <ion-icon v-if="isProductAvailableInCycleCount(product.productId)" color="success" :icon="checkmarkCircle" />
           <ion-button v-else fill="outline" @click="addToCycleCount(product)">{{ translate("Add to count") }}</ion-button>
@@ -62,7 +60,7 @@ import { computed, defineProps, onUnmounted, ref } from "vue";
 import { closeOutline, checkmarkCircle } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
-import { showToast } from "@/utils"
+import { getProductIdentificationValue, showToast } from "@/utils"
 import emitter from "@/event-bus";
 import Image from "@/components/Image.vue"
 
@@ -70,6 +68,7 @@ const props = defineProps(["cycleCount"])
 
 const products = computed(() => store.getters["product/getProducts"])
 const isScrollable = computed(() => store.getters["product/isScrollable"])
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 let queryString = ref('')
 

@@ -22,7 +22,11 @@ const userModule: Module<UserState, RootState> = {
       currentProductStore: {},
       settings: {
         forceScan: false,
-        showQoh: false
+        showQoh: false,
+        productIdentificationPref: {
+          primaryId: 'productId',
+          secondaryId: ''
+        },
       }
     },
     getters,

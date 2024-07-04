@@ -85,6 +85,29 @@
             </ion-select>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate('Product Identifier') }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ translate('Choosing a product identifier allows you to view products with your preferred identifiers.') }}
+          </ion-card-content>
+
+          <ion-item>
+            <ion-select :label="translate('Primary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore.productStoreId" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+              <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select :label="translate('Secondary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore.productStoreId" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+              <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+              <ion-select-option value="">{{ translate("None") }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
       <hr />
       <!-- <section>
@@ -115,12 +138,14 @@ import Image from "@/components/Image.vue"
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms } from "@hotwax/dxp-components";
-import { hasPermission } from "@/authorization"
+import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 
 const store = useStore()
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
+
+const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
@@ -129,6 +154,7 @@ const facilities = computed(() => store.getters["user/getFacilities"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const currentProductStore = computed(() => store.getters["user/getCurrentProductStore"])
 const productStores = computed(() => store.getters["user/getProductStores"])
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 onMounted(() => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
@@ -155,6 +181,13 @@ async function setProductStore(event: any) {
   const productStoreId = event.detail.value
   const productStore = productStores.value.find((store: any) => store.productStoreId === productStoreId)
   await store.dispatch("user/updateCurrentProductStore", productStore)
+}
+
+function setProductIdentificationPref(value: string, id: string) {
+  store.dispatch("user/setProductStoreSetting", { key: "productIdentificationPref", value: {
+    ...productStoreSettings.value["productIdentificationPref"],
+    [id]: value
+  }})
 }
 </script>
 
