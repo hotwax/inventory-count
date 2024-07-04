@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content class="main-content">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search">
@@ -102,7 +102,7 @@
         </div>
 
         <hr />
-        
+
         <template v-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
             <ion-item lines="none">
@@ -110,9 +110,10 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                <p>{{ item.productId }}</p>
+                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
+                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
-            </ion-item>          
+            </ion-item>
             <ion-label>
               {{ item.qoh }}
               <p>{{ translate("QoH") }}</p>
@@ -159,7 +160,7 @@ import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutli
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -173,6 +174,7 @@ const props = defineProps({
 })
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const isProductAvailableInCycleCount = computed(() => {
   if(!searchedProduct.value.productId) return false
@@ -423,7 +425,7 @@ async function updateCountStatus() {
   text-align: center;
 }
 
-ion-content {
+.main-content {
   --padding-bottom: 80px;
 }
 

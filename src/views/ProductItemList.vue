@@ -5,8 +5,8 @@
     </ion-thumbnail>
     <ion-label class="ion-text-wrap">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
-      <h2>{{ item.productId }}</h2>
-      <p>{{ item.productId }}</p>
+      <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
+      <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
       {{ item.quantity ? item.quantity : "-" }} {{ translate("units") }}
@@ -35,12 +35,14 @@ import { IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
+import { getProductIdentificationValue } from "@/utils"
 
 const store = useStore();
 
 defineProps(['item'])
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 async function selectedProduct(item: any) {
   // Making recount variable as false when clicking on the item so that the product details are displayed in the default state on initial load

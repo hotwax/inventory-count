@@ -101,7 +101,10 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
     commit(types.USER_PRODUCT_STORES_UPDATED, [])
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, productIdentificationPref: {
+      primaryId: 'productId',
+      secondaryId: ''
+    }})
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
 
@@ -133,7 +136,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit }) {
+  async fetchFacilities({ commit, dispatch }) {
     let facilities: Array<any> = []
     try {
       const resp = await UserService.fetchFacilities({
@@ -153,13 +156,38 @@ const actions: ActionTree<UserState, RootState> = {
 
     // Updating current facility with a default first facility when fetching facilities on login
     if(facilities.length) {
-      commit(types.USER_CURRENT_FACILITY_UPDATED, facilities[0])
+      dispatch("updateCurrentFacility", facilities[0])
     }
 
     commit(types.USER_FACILITIES_UPDATED, facilities)
   },
 
-  async updateCurrentFacility({ commit }, facility) {
+  async updateCurrentFacility({ commit, dispatch }, facility) {
+    if(!facility.productStore) {
+      // Fetching productStore for the facility and storing it in the facility, as we want to manage the productStores separately as well
+      // Thus to not have any conflicts in the information, saving the productStores on facility
+      try {
+        const resp = await UserService.fetchProductStores({
+          parentFacilityTypeId: "VIRTUAL_FACILITY",
+          parentFacilityTypeId_not: "Y",
+          facilityTypeId: "VIRTUAL_FACILITY",
+          facilityTypeId_not: "Y",
+          facilityId: facility.facilityId,
+          pageSize: 1
+        })
+
+        if(!hasError(resp) && resp.data.length > 0) {
+          facility.productStore = resp.data[0]
+        }
+      } catch(err) {
+        logger.error("Failed to fetch facilities for product store")
+      }
+    }
+
+    if(facility.productStore.productStoreId) {
+      dispatch("getProductStoreSetting", facility.productStore.productStoreId)
+    }
+
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
   },
 
@@ -176,6 +204,7 @@ const actions: ActionTree<UserState, RootState> = {
 
       if(!hasError(resp)) {
         const productStoresResp = resp.data.reduce((productStores: any, data: any) => {
+          // TODO: Added this check as we are getting duplicate productStores in resp
           if(productStores[data.productStoreId]) {
             return productStores
           }
@@ -207,23 +236,28 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
   },
 
-  async getProductStoreSetting({ commit, dispatch, state }) {
+  async getProductStoreSetting({ commit, state }, productStoreId?: string) {
     const payload = {
-      "productStoreId": state.currentProductStore.productStoreId,
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN",
-      "settingTypeEnumId_op": "in"
+      "productStoreId": productStoreId ? productStoreId : state.currentProductStore.productStoreId,
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF",
+      "settingTypeEnumId_op": "in",
+      "pageSize": 10
     }
 
     try {
       const resp = await UserService.fetchProductStoreSettings(payload) as any
       if(!hasError(resp) && resp.data.length) {
         const settings = resp.data.reduce((settings: any, setting: any) => {
-          if(setting.settingTypeEnumId === "INV_CNT_VIEW_QOH") {
+          if(setting.settingTypeEnumId === "INV_CNT_VIEW_QOH" && setting.settingValue) {
             settings["showQoh"] = JSON.parse(setting.settingValue)
           }
 
-          if(setting.settingTypeEnumId === "INV_FORCE_SCAN") {
+          if(setting.settingTypeEnumId === "INV_FORCE_SCAN" && setting.settingValue) {
             settings["forceScan"] = JSON.parse(setting.settingValue)
+          }
+
+          if(setting.settingTypeEnumId === "PRDT_IDEN_PREF" && setting.settingValue) {
+            settings["productIdentificationPref"] = JSON.parse(setting.settingValue)
           }
           return settings
         }, {
@@ -274,6 +308,10 @@ const actions: ActionTree<UserState, RootState> = {
       enumId = "INV_FORCE_SCAN"
     }
 
+    if(payload.key === "productIdentificationPref") {
+      enumId = "PRDT_IDEN_PREF"
+    }
+
     let fromDate;
 
     try {
@@ -296,7 +334,7 @@ const actions: ActionTree<UserState, RootState> = {
       "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
-      "settingValue": payload.value
+      "settingValue": JSON.stringify(payload.value)
     }
 
     try {

@@ -63,7 +63,8 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                {{ item.productId }}
+                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
+                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
             </ion-item>
 
@@ -84,19 +85,18 @@
               </ion-label>
             </template>
 
-            <ion-chip outline class="tablet" v-else>
+            <ion-chip outline class="tablet grid-span-columns" v-else>
               <ion-label>{{ translate("count pending") }}</ion-label>
             </ion-chip>
 
             <ion-chip outline v-if="item.quantity">
               <ion-icon :icon="personCircleOutline"/>
-              <!-- TODO: fetch username instead of partyId -->
               <ion-label>{{ getPartyName(item) }}</ion-label>
             </ion-chip>
 
             <div class="tablet" v-else>
               <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline" ></ion-icon>
+                <ion-icon :icon="personCircleOutline"></ion-icon>
               </ion-item>
             </div>
 
@@ -133,7 +133,7 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName, getPartyName } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
@@ -145,6 +145,7 @@ const props = defineProps({
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
@@ -347,6 +348,14 @@ async function updateCountStatus() {
 
 .filters {
   grid-area: filters;
+}
+
+.grid-span-columns {
+  grid-column: 3/5;
+}
+
+ion-content {
+  --padding-bottom: 80px;
 }
 
 @media (max-width: 991px) {

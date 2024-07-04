@@ -13,6 +13,10 @@ export default interface UserState {
   currentProductStore: any;
   settings: {
     forceScan: boolean,
-    showQoh: boolean
+    showQoh: boolean,
+    productIdentificationPref: {
+      primaryId: string,
+      secondaryId: string
+    }
   }
 }
