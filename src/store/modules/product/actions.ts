@@ -6,6 +6,7 @@ import { ProductService } from "@/services/ProductService"
 import { hasError, showToast } from '@/utils';
 import emitter from '@/event-bus';
 import { translate } from '@/i18n';
+import logger from '@/logger'
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -18,14 +19,20 @@ const actions: ActionTree<ProductState, RootState> = {
     // If there are no products skip the API call
     if (productIdFilter === '') return;
 
-    const resp = await ProductService.fetchProducts({
-      "filters": ['productId: (' + productIdFilter + ')'],
-      "viewSize": productIds.length
-    })
-    if (resp.status === 200 && !hasError(resp)) {
-      const products = resp.data.response.docs;
-      // Handled empty response in case of failed query
-      if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+    let resp;
+
+    try {
+      resp = await ProductService.fetchProducts({
+        "filters": ['productId: (' + productIdFilter + ')'],
+        "viewSize": productIds.length
+      })
+      if (resp.status === 200 && !hasError(resp)) {
+        const products = resp.data.response.docs;
+        // Handled empty response in case of failed query
+        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      }
+    } catch(err) {
+      logger.error("Failed to fetch products", err)
     }
     // TODO Handle specific error
     return resp;

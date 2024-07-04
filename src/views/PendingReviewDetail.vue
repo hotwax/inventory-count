@@ -122,7 +122,7 @@
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
                 <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
               </ion-button>
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
