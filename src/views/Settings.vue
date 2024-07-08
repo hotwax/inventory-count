@@ -97,12 +97,12 @@
           </ion-card-content>
 
           <ion-item>
-            <ion-select :label="translate('Primary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore.productStoreId" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+            <ion-select :label="translate('Primary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore?.productStoreId" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
               <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
-            <ion-select :label="translate('Secondary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore.productStoreId" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+            <ion-select :label="translate('Secondary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !currentFacility?.productStore?.productStoreId" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
               <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
               <ion-select-option value="">{{ translate("None") }}</ion-select-option>
             </ion-select>
@@ -110,6 +110,13 @@
         </ion-card>
       </section>
       <hr />
+      <div class="section-header">
+        <h1>
+          {{ translate("App") }}
+          <p class="overline">{{ translate("Version:") + appVersion }}</p>
+        </h1>
+        <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
+      </div>
       <!-- <section>
         <ion-card>
           <ion-card-header>
@@ -140,6 +147,7 @@ import { openOutline } from "ionicons/icons"
 import { goToOms } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
+import { DateTime } from "luxon";
 
 const store = useStore()
 const appVersion = ref("")
@@ -188,6 +196,10 @@ function setProductIdentificationPref(value: string, id: string) {
     ...productStoreSettings.value["productIdentificationPref"],
     [id]: value
   }})
+}
+
+function getDateTime(time: any) {
+  return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
 }
 </script>
 
