@@ -1,6 +1,9 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
 import store from "@/store";
+import { saveAs } from 'file-saver';
+import { JsonToCsvOption } from '@/types';
+import Papa from 'papaparse';
 
 const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
 const facilities: any = () => store.getters["user/getFacilities"]
@@ -123,4 +126,18 @@ const getProductIdentificationValue = (productIdentifier: string, product: any) 
   return value;
 }
 
-export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow }
+const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
+  const csv = Papa.unparse(file, {
+    ...options.parse
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  if (options.download) {
+    saveAs(blob, options.name ? options.name : "default.csv");
+  }
+
+  return blob;
+};
+
+export { jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow }

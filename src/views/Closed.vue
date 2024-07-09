@@ -67,11 +67,11 @@
       </template>
 
       <!-- TODO: need to implement support to download cycle counts, will be picked in second phase -->
-      <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button @click="openClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
-      </ion-fab> -->
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
@@ -89,15 +89,17 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  modalController,
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
+import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
+import ClosedCountModal from "@/components/ClosedCountModal.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
@@ -128,6 +130,17 @@ function getAverageVariance() {
   // TODO: add support to display average variance
   return "-"
 }
+
+async function openClosedCountModal() {
+  const addClosedCountModal = await modalController.create({
+    component: ClosedCountModal,
+    componentProps: { },
+    showBackdrop: false,
+  });
+
+  await addClosedCountModal.present();
+}
+
 </script>
 
 <style scoped>
