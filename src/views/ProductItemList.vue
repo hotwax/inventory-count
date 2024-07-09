@@ -50,7 +50,7 @@ async function selectedProduct(item: any) {
 }
 </script>
 
-<style>
+<style scoped>
 ion-thumbnail > img {
   object-fit: contain;
 }
