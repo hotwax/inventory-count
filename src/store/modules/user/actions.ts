@@ -184,7 +184,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
     }
 
-    if(facility.productStore.productStoreId) {
+    if(facility?.productStore?.productStoreId) {
       dispatch("getProductStoreSetting", facility.productStore.productStoreId)
     }
 
