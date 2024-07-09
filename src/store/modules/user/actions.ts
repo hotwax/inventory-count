@@ -191,7 +191,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
   },
 
-  async fetchProductStores({ commit }) {
+  async fetchProductStores({ commit, dispatch }) {
     let productStores: Array<any> = []
     try {
       const resp = await UserService.fetchProductStores({
@@ -226,14 +226,16 @@ const actions: ActionTree<UserState, RootState> = {
     // Updating current facility with a default first facility when fetching facilities on login
     if(productStores.length) {
       commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStores[0])
+      dispatch("getProductStoreSetting")
     }
 
     commit(types.USER_PRODUCT_STORES_UPDATED, productStores)
   },
 
-  async updateCurrentProductStore({ commit }, productStore) {
+  async updateCurrentProductStore({ commit, dispatch }, productStore) {
     commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
+    dispatch("getProductStoreSetting")
   },
 
   async getProductStoreSetting({ commit, state }, productStoreId?: string) {
