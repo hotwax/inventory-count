@@ -68,7 +68,7 @@
 
       <!-- TODO: need to implement support to download cycle counts, will be picked in second phase -->
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openClosedCountModal">
+        <ion-fab-button @click="openClosedCountDownloadModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -81,6 +81,8 @@ import {
   IonButtons,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -131,10 +133,9 @@ function getAverageVariance() {
   return "-"
 }
 
-async function openClosedCountModal() {
+async function openClosedCountDownloadModal() {
   const addClosedCountModal = await modalController.create({
     component: ClosedCountModal,
-    componentProps: { },
     showBackdrop: false,
   });
 

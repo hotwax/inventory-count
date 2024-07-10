@@ -35,10 +35,10 @@
       </ion-item>
       <ion-item>
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.facility">{{ translate("Facility") }}</ion-checkbox>
-        <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end">
-          <ion-select-option value="default">Internal Id</ion-select-option>
-          <ion-select-option>External Id</ion-select-option>
-          <ion-select-option>Facility name</ion-select-option>
+        <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityField" slot="end">
+          <ion-select-option value="facilityId">Internal Id</ion-select-option>
+          <ion-select-option value="externalId">External Id</ion-select-option>
+          <ion-select-option value="facilityName">Facility name</ion-select-option>
         </ion-select>
       </ion-item>
       <!-- <ion-item lines="inset">
@@ -106,7 +106,7 @@ import {
 } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { getCycleCountStats, getDateWithOrdinalSuffix, showToast, jsonToCsv } from "@/utils"
+import { getDateWithOrdinalSuffix, showToast, jsonToCsv } from "@/utils"
 import { translate } from '@/i18n';
 import { DateTime } from "luxon";
 import store from "@/store";
@@ -114,7 +114,9 @@ import store from "@/store";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-  
+const facilities = computed(() => store.getters["user/getFacilities"])
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+
 const selectedFields: any = ref({
   countId: false,
   countName: false,
@@ -127,11 +129,12 @@ const selectedFields: any = ref({
   countedQuantity: false,
   variance: false
 });
+const selectedFacilityField = ref('facilityId');
+
 
 function closeModal() {
   modalController.dismiss({ dismissed: true});
 }
-
 function getLastSubmittedDate(count: any) {
   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory;
   if (!history) {
@@ -152,7 +155,22 @@ function getClosedDate(count: any) {
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
 
+function getFacilityDetails() {
+
+  const facilityDetails: any = {};
+  facilities.value.forEach((facility: any) => {
+    facilityDetails[facility.facilityId] = {
+      facilityId: facility.facilityId,
+      externalId: facility.externalId,
+      facilityName: facility.name
+    };
+  });
+  return facilityDetails;
+}
+
 async function downloadCSV() {
+
+  const facilityDetails = getFacilityDetails();
   
   const selectedFieldMappings: any = {
     countId: "inventoryCountImportId",
@@ -175,20 +193,29 @@ async function downloadCSV() {
   }
 
   const downloadData = cycleCounts.value.map((count: any) => {
-    const orderInfo = selectedData.reduce((info: any, property: any) => {
+
+    const facilityId = count.facilityId;
+    const facility = facilityDetails[facilityId];
+   
+    const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
       if (property === 'countedQuantity' || property === 'variance') {
         const stats = cycleCountStats.value(count.inventoryCountImportId);
-        info[property] = stats[selectedFieldMappings[property]];
+        details[property] = stats[selectedFieldMappings[property]];
       } else if (property === 'lastSubmittedDate') {
-        info[property] = getLastSubmittedDate(count);
+        details[property] = getLastSubmittedDate(count);
       } else if (property === 'closedDate') {
-        info[property] = getClosedDate(count);
+        details[property] = getClosedDate(count);
+      } else if (property === 'createdDate') {
+        details[property] = getDateWithOrdinalSuffix(count.createdDate);
+      } else if (property === 'facility') {
+        details[property] = facility[selectedFacilityField.value];
       } else {
-        info[selectedFieldMappings[property]] = count[selectedFieldMappings[property]];
+        details[selectedFieldMappings[property]] = count[selectedFieldMappings[property]];
       }
-      return info;
+      return details;
     }, {});
-    return orderInfo;
+
+    return cycleCountDetails;
   });
 
   const alert = await alertController.create({
@@ -200,8 +227,9 @@ async function downloadCSV() {
     }, {
       text: translate("Download"),
       handler: async () => {
-        const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
+        const fileName = `CycleCounts-${currentFacility.value.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
         await jsonToCsv(downloadData, { download: true, name: fileName });
+        modalController.dismiss({ dismissed: true });
       }
     }]
   });
