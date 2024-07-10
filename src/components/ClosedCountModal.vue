@@ -156,16 +156,14 @@ function getClosedDate(count: any) {
 }
 
 function getFacilityDetails() {
-
-  const facilityDetails: any = {};
-  facilities.value.forEach((facility: any) => {
-    facilityDetails[facility.facilityId] = {
+  return facilities.value.reduce((details: any, facility: any) => {
+    details[facility.facilityId] = {
       facilityId: facility.facilityId,
       externalId: facility.externalId,
       facilityName: facility.name
     };
-  });
-  return facilityDetails;
+    return details;
+  }, {});
 }
 
 async function downloadCSV() {
@@ -219,7 +217,7 @@ async function downloadCSV() {
   });
 
   const alert = await alertController.create({
-    header: translate("Download results"),
+    header: translate("Download closed counts"),
     message: translate("Make sure all the labels provided are correct."),
     buttons: [{
       text: translate("Cancel"),
