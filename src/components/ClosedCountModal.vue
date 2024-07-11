@@ -106,9 +106,11 @@ import {
 } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { getDateWithOrdinalSuffix, showToast, jsonToCsv } from "@/utils"
+import { getDateWithOrdinalSuffix, showToast, hasError, jsonToCsv } from "@/utils";
+import { CountService } from "@/services/CountService"
 import { translate } from '@/i18n';
 import { DateTime } from "luxon";
+import logger from "@/logger";
 import store from "@/store";
 
 
@@ -160,10 +162,30 @@ function getFacilityDetails() {
     details[facility.facilityId] = {
       facilityId: facility.facilityId,
       externalId: facility.externalId,
-      facilityName: facility.name
+      facilityName: facility.facilityName
     };
     return details;
   }, {});
+}
+
+async function fetchCycleCountItems(countId: any) {
+  try {
+    const resp = await CountService.fetchCycleCountItems(countId.inventoryCountImportId);
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      return resp?.data;
+    }
+  } catch (err) {
+    logger.error(err);
+    return [];
+  }
+}
+
+function getExpectedCount(items: any) {
+  let totalItemsExpectedCount = 0;
+  items?.itemList.map((item: any) => {
+    totalItemsExpectedCount += parseInt(item.qoh || 0);
+  });
+  return totalItemsExpectedCount;
 }
 
 async function downloadCSV() {
@@ -190,23 +212,25 @@ async function downloadCSV() {
     return;
   }
 
-  const downloadData = cycleCounts.value.map((count: any) => {
+  const downloadData = await Promise.all(cycleCounts.value.map(async (count: any) => {
 
-    const facilityId = count.facilityId;
-    const facility = facilityDetails[facilityId];
-   
+    const cycleCountItems = await fetchCycleCountItems(count);
+    const facility = facilityDetails[count.facilityId];
+
     const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
       if (property === 'countedQuantity' || property === 'variance') {
         const stats = cycleCountStats.value(count.inventoryCountImportId);
         details[property] = stats[selectedFieldMappings[property]];
+      } else if (property === 'createdDate') {
+        details[property] = getDateWithOrdinalSuffix(count.createdDate);
       } else if (property === 'lastSubmittedDate') {
         details[property] = getLastSubmittedDate(count);
       } else if (property === 'closedDate') {
         details[property] = getClosedDate(count);
-      } else if (property === 'createdDate') {
-        details[property] = getDateWithOrdinalSuffix(count.createdDate);
       } else if (property === 'facility') {
         details[property] = facility[selectedFacilityField.value];
+      } else if (property === 'expectedQuantity') {
+        details[property] = getExpectedCount(cycleCountItems);
       } else {
         details[selectedFieldMappings[property]] = count[selectedFieldMappings[property]];
       }
@@ -214,7 +238,7 @@ async function downloadCSV() {
     }, {});
 
     return cycleCountDetails;
-  });
+  }));
 
   const alert = await alertController.create({
     header: translate("Download closed counts"),
