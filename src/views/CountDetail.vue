@@ -94,7 +94,6 @@ import { CountService } from '@/services/CountService';
 
 const store = useStore();
 
-const getProduct = computed(() => store.getters["product/getProduct"]);
 const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 
 const itemsList = computed(() => {
@@ -167,7 +166,10 @@ function updateFilteredItems() {
   if (!queryString.value.trim()) {
     filteredItems.value = itemsList.value;
   } else {
-    filteredItems.value = itemsList.value.filter(item => item.productId.includes(queryString.value.trim()));
+    filteredItems.value = itemsList.value.filter(item => {
+      const product = store.getters["product/getProduct"](item.productId);
+      return product.sku.toLowerCase().includes(queryString.value.trim().toLowerCase());
+    });
   }
 } 
 
