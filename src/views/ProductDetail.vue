@@ -67,10 +67,10 @@
               <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
             </ion-item>
             <!-- TODO: make the counted at information dynamic -->
-            <ion-item>
+            <!-- <ion-item>
               {{ translate("Counted at") }}
               <ion-label slot="end">{{ "-" }}</ion-label>
-            </ion-item>
+            </ion-item> -->
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
                 {{ translate("Current on hand") }}
