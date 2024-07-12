@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ item.productId }}</ion-list-header>
+      <ion-list-header>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || item.productId }}</ion-list-header>
       <ion-item :lines="item.quantity ? 'none' : 'full'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>
@@ -26,11 +26,15 @@ import {
   popoverController
 } from "@ionic/vue"
 import { removeCircleOutline } from "ionicons/icons";
-import { defineProps } from "vue";
+import { computed, defineProps } from "vue";
 import { translate } from "@/i18n"
-import { timeFromNow } from "@/utils"
+import { getProductIdentificationValue, timeFromNow } from "@/utils"
+import store from "@/store";
 
 defineProps(["item"])
+
+const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 function updateItem(action: string) {
   popoverController.dismiss({ itemAction: action })
