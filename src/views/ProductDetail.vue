@@ -159,6 +159,8 @@
       const resp = await CountService.updateCount(payload);
       if (!hasError(resp)) {
         product.value.quantity = inputCount.value
+        product.value.countedByGroupName = userProfile.value.userFullName
+        product.value.countedByUserLoginId = userProfile.value.username
         await store.dispatch('product/currentProduct', product.value);
         inputCount.value = ''; 
       } else {
