@@ -231,6 +231,11 @@
   </script>
 
   <style>
+
+  main{
+    overflow-y: hidd;
+  }
+
   .product-info {
     width: 100%;
     margin-top: var(--spacer-lg);
