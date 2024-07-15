@@ -1,5 +1,6 @@
 {
   "A store repesents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores sellling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store repesents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores sellling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
+  "Added products to the cycle count out of.": "Added { added } products to the cycle count out of { total }.",
   "ALL": "ALL",
   "Accepted by user": "Accepted by user",
   "After": "After",

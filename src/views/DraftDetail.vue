@@ -403,7 +403,7 @@ async function findProductFromIdentifier(payload: any) {
         return product && !itemsAlreadyInCycleCount.includes(product.productId);
       });
       await addProductToCount(filteredPayload, true);
-      showToast(`Added ${filteredPayload.length} products to the cycle count out of ${payload.length}.`);
+      showToast(translate("Added products to the cycle count out of.", {added: filteredPayload.length, total: payload.length}))
     } else {
       throw resp.data
     }
