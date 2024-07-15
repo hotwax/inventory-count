@@ -14,7 +14,7 @@
             <ion-item lines="none" class="ion-padding">
               <ion-label slot="start">
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
+                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now value is editable -->
                 <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
                 <p>{{ currentCycleCount.countId }}</p>
               </ion-label>
@@ -29,13 +29,14 @@
           </div>
           <div class="filters">
             <ion-list class="ion-padding">
-              <!-- TODO: Will implement CSV import support in the next phase -->
-              <!-- <ion-item>
+
+              <ion-item>
                 <ion-icon slot="start" :icon="cloudUploadOutline"/>
-                <ion-label>{{ translate("Import CSV") }}</ion-label>
-                <input id="inputFile" class="ion-hide"/>
-                <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-              </ion-item> -->
+                  <ion-label>{{ translate("Import CSV") }}</ion-label>
+                <input @change="parse" ref="file" class="ion-hide" type="file" id="updateProductFile" :key="fileUploaded.toString()"/>
+                <label for="updateProductFile">{{ translate("Upload") }}</label>
+              </ion-item>
+
               <ion-item>
                 <ion-icon slot="start" :icon="calendarNumberOutline" />
                 <ion-label>{{ translate("Due date") }}</ion-label>
@@ -156,11 +157,11 @@
 import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
-import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, onMounted, nextTick, computed } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -189,7 +190,11 @@ let countName = ref("")
 let queryString = ref("")
 let searchedProduct = ref({} as any)
 let isSearchingProduct = ref(false)
-
+let content = ref([]) as any 
+let fileColumns = ref([]) as any 
+let uploadedFile = ref({}) as any
+const fileUploaded = ref(false);
+ 
 onMounted(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
@@ -214,6 +219,30 @@ onMounted(async () => {
   emitter.emit("dismissLoader")
 })
 
+onIonViewDidEnter(async() => {
+  uploadedFile.value = {}
+  content.value = []
+})
+
+async function parse(event: any) {
+  let file = event.target.files[0];
+  try {
+    if (file) { 
+      uploadedFile.value = file;
+      content.value = await parseCsv(uploadedFile.value);
+      fileColumns.value = Object.keys(content.value[0]);
+      showToast(translate("File uploaded successfully"));
+      fileUploaded.value =!fileUploaded.value; 
+      openDraftImportCsvModal();
+    } else {
+      showToast(translate("No new file upload. Please try again"));
+    }
+  } catch {
+    content.value = []
+    showToast(translate("Please upload a valid csv to continue"));
+  }
+}
+
 async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
@@ -230,7 +259,19 @@ async function fetchCountItems() {
 async function openDraftImportCsvModal() {
   const draftImportCsvModal = await modalController.create({
     component: DraftImportCsvModal,
+    componentProps: {
+      fileColumns : fileColumns.value ,
+      content : content.value , 
+      countId : props.inventoryCountImportId
+    }
   })
+ // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
+  draftImportCsvModal.onDidDismiss().then((result: any) => {
+      if (result?.data?.identifierData) {
+        findProductFromIdentifier(result.data.identifierData)
+      }
+    })
+
   draftImportCsvModal.present();
 }
     
@@ -341,24 +382,64 @@ async function findProduct() {
   isSearchingProduct.value = false
 }
 
-async function addProductToCount() {
-  // If product is not found in the searched string then do not make the api call
-  // This check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
-  if(!searchedProduct.value.productId || !queryString.value) {
-    return;
+async function findProductFromIdentifier(payload: any) {
+
+  const filterValues = payload.map((item: any) => item.idValue).join(' OR ');
+  const filterString = `${payload[0].idType}: (${filterValues})`;
+  
+  try {
+    const resp = await ProductService.fetchProducts({
+      "filters": [filterString],
+      "viewSize": filterString.length
+    })
+
+    if (!hasError(resp) && resp.data.response?.docs?.length) {
+      const products = resp.data.response.docs;
+      const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);
+
+      // Filter payload products to only include items that have a matching product and are not already in the cycle count.
+      const filteredPayload = payload.filter((item: any) => {
+        const product = products.find((product: any) => product[item.idType] === item.idValue);
+        return product && !itemsAlreadyInCycleCount.includes(product.productId);
+      });
+      await addProductToCount(filteredPayload, true);
+      showToast(`Added ${filteredPayload.length} products to the cycle count out of ${payload.length}.`);
+    } else {
+      throw resp.data
+    }
+  } catch(err) {
+    logger.error("Product not found", err)
+  }
+}
+
+async function addProductToCount(payload?: any, fromModal?: boolean) {
+
+  let check = fromModal || false;
+  if (!check) {
+    // If product is not found in the searched string then do not make the api call
+    // check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
+    if (!searchedProduct.value.productId ||!queryString.value) {
+      return;
+    }
+    if (isProductAvailableInCycleCount.value) {
+      return;
+    }
   }
 
-  if(isProductAvailableInCycleCount.value) {
-    return;
+  let itemList;
+  if (payload && payload.length) {
+    itemList = payload; 
+  } else {
+    itemList = [{
+      idValue: searchedProduct.value.productId,
+      statusId: "INV_COUNT_CREATED"
+    }];
   }
 
   try {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
-      itemList: [{
-        idValue: searchedProduct.value.productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
+      itemList: itemList
     })
 
     if(!hasError(resp)) {

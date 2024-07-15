@@ -12,34 +12,29 @@
 
   <ion-content>
     <ion-item>
-      <ion-select :label="translate('Product identifier')" interface="popover" :placeholder="translate('Select')">
-        <ion-select-option>example-1</ion-select-option>
-        <ion-select-option>example-2</ion-select-option>
-        <ion-select-option>example-3</ion-select-option>
+      <ion-select :label="translate('Product identifier')" interface="popover" :placeholder="translate('Select')" v-model="selectedIdentifier">
+        <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
       </ion-select>
     </ion-item>
     
     <ion-list>
       <ion-list-header>{{ translate("Select the column containing products") }}</ion-list-header>
-      <ion-radio-group>
-        <ion-item>
-          <ion-radio justify="space-between">column 1</ion-radio>
-        </ion-item>
-        <ion-item>
-          <ion-radio justify="space-between">column 2</ion-radio>
+      <ion-radio-group v-model="selectedColumn">
+        <ion-item v-for="column in fileColumns" :key="column">
+          <ion-radio :value="column" justify="space-between">{{ column }}</ion-radio>
         </ion-item>
       </ion-radio-group>
     </ion-list>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-      <ion-fab-button>
+      <ion-fab-button @click="saveImportData">
         <ion-icon :icon="saveOutline"/>  
       </ion-fab-button>
     </ion-fab>
   </ion-content>
 </template>
   
-<script lang="ts">
+<script setup lang="ts">
 import { 
   IonButton,
   IonButtons,
@@ -59,43 +54,44 @@ import {
   IonToolbar,
   modalController
 } from "@ionic/vue";
-import { defineComponent } from "vue";
+import { defineProps, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
+import { showToast } from "@/utils";
 
-export default defineComponent({
-  name: "DraftImportCsvModal",
-  components: { 
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonList,
-    IonListHeader,
-    IonRadioGroup,
-    IonRadio,
-    IonSelect,
-    IonSelectOption,
-    IonTitle,
-    IonToolbar,
-  },
-  methods: {
-    closeModal() {
-      modalController.dismiss({ dismissed: true});
-    },
-  },
-  setup() {
 
+const props = defineProps(["fileColumns", "content", "countId"])
+const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
+
+const selectedIdentifier = ref('')
+const selectedColumn = ref('')
+
+function closeModal(identifierData: any) {
+  if (!identifierData || !identifierData.length) {
+    identifierData = null;
+  }
+  modalController.dismiss({ dismissed: true, identifierData });
+}
+
+function saveImportData() {
+  if (!selectedIdentifier.value) {
+    showToast(translate("Please select a Product identifier"));
+  }
+
+  if (!selectedColumn.value) {
+    showToast(translate("Please select the column that corresponds to the product identifier"));
+  }
+
+  const identifierData = props.content.map((row: any) => {
     return {
-      closeOutline,
-      saveOutline,
-      translate
-    };
-  },
-});
+      idType: selectedIdentifier.value,
+      idValue: row[selectedColumn.value]
+    }
+  })
+
+  closeModal(identifierData)
+}
+
+
 </script>
     
