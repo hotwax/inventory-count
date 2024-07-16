@@ -13,6 +13,9 @@ const getters: GetterTree<ProductState, RootState> = {
   getProducts: (state) => {
     return state.list.items
   },
+  getProductItemsList: (state) => {
+    return state.productItemsList
+  },
   isScrollable(state) {
     return (
       state.list.items.length > 0 &&

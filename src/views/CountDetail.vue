@@ -126,6 +126,7 @@ onIonViewDidEnter(async() => {
   await fetchCycleCountItems();
   updateFilteredItems();
   emitter.on("updateItemList", updateFilteredItems);
+  store.dispatch("product/productItemList", itemsList.value);
   await store.dispatch("product/currentProduct", itemsList.value[0])
 })
 
@@ -169,6 +170,7 @@ function updateFilteredItems() {
   } else {
     filteredItems.value = itemsList.value.filter(item => item.productId.includes(queryString.value.trim()));
   }
+  store.dispatch("product/productItemList", filteredItems.value);
 } 
 
 onIonViewWillLeave(() => {
