@@ -233,7 +233,7 @@
   <style>
 
   main{
-    overflow-y: hidd;
+    overflow-y: hidden;
   }
 
   .product-info {
