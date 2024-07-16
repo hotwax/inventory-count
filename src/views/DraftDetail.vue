@@ -124,12 +124,12 @@
               </ion-chip>
               <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
             </div>
-            <div class="tablet">
+            <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
+            <!-- <div class="tablet">
               <ion-chip outline>
-                <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
                 <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
               </ion-chip>
-            </div>
+            </div> -->
             <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
               <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
             </ion-button>
