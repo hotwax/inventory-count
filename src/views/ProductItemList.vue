@@ -1,5 +1,5 @@
 <template>
-  <ion-item @click="selectedProduct(item)" button>
+  <ion-item :color="isCurrentProduct() ? 'light' : ''" @click="selectedProduct(item)" button>
     <ion-thumbnail slot="start">
       <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
@@ -39,14 +39,21 @@ import { getProductIdentificationValue } from "@/utils"
 
 const store = useStore();
 
-defineProps(['item'])
+const props = defineProps(['item'])
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
 
 async function selectedProduct(item: any) {
   // Making recount variable as false when clicking on the item so that the product details are displayed in the default state on initial load
   await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
+}
+
+// Method to display the item as selected by changing the ion-item color to light
+function isCurrentProduct() {
+  // Added check for itemStatusId as we may have the same product added multiple times in different status(like in case when request recount an item)
+  return currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId
 }
 </script>
 
