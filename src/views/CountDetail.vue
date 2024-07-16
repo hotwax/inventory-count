@@ -13,7 +13,7 @@
             <ion-input :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>
           </ion-item>
           <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
-            <template v-if="cycleCount?.statusId === 'INV_COUNT_CREATED'">
+            <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>

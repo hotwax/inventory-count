@@ -110,7 +110,7 @@
   </template>
 
   <script setup lang="ts">
-  import { computed, ref } from 'vue';
+  import { computed, onUpdated, ref } from 'vue';
   import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
@@ -130,6 +130,12 @@
   const inputCount = ref('');
   const variance = ref(0);
 
+  // Clearning the local defined data variables to be cleared when the component is updated
+  onUpdated(() => {
+    inputCount.value = ""
+    variance.value = 0
+  })
+
   async function calculateVariance() {
     if (!product.value || !inputCount.value) {
       variance.value = 0;
@@ -139,7 +145,11 @@
   }
 
   function getVariance(item: any, count?: any) {
-    const qty = item.quantity || 0
+    const qty = item.quantity
+    if(!qty) {
+      return 0;
+    }
+
     // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
     return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
   }
