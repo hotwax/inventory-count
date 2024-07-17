@@ -6,7 +6,8 @@
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
           <ion-button @click="selectAll()">
-            <ion-icon slot="icon-only" :icon="checkboxOutline"/>
+            <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
+            <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
           </ion-button>
           <ion-button @click="addProduct()">
             <ion-icon slot="icon-only" :icon="addOutline" />
@@ -71,7 +72,7 @@
         </div>
 
         <div class="header border">
-          <ion-segment v-model="segmentSelected">
+          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
             <ion-segment-button value="all">
               <ion-label>{{ translate("All") }}</ion-label>
             </ion-segment-button>
@@ -173,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
 import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
@@ -349,8 +350,24 @@ function selectItem(checked: boolean, item: any) {
 }
 
 function selectAll() {
-  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not all the item to be marked as checked
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" ? true : false }))
+  // When all the items are already selected then unselect the items again
+  // Added check for every item selection as we need to check the items of the current segment, and filteredItems returns items based on current selected segment
+  if(areAllItemsSelected()) {
+    currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
+    return;
+  }
+
+  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not want all the items to be marked as checked
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" && ((segmentSelected.value === "accept" && isItemReadyToAccept(item)) || (segmentSelected.value === "reject" && isItemReadyToReject(item)) || segmentSelected.value === "all") ? true : false }))
+}
+
+function areAllItemsSelected() {
+  return filteredItems.value.every((item: any) => item.isChecked)
+}
+
+function segmentChanged() {
+  // When changing the segment make the isChecked property again to false.
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
 }
 
 async function addProduct() {
