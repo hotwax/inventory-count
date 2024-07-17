@@ -12,7 +12,7 @@
       </ion-toolbar>
     </ion-header>
  
-    <ion-content>
+    <ion-content class="main-content">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
@@ -31,10 +31,22 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip outline>
+            <ion-chip outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"/>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
+            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+              <ion-content :force-overscroll="false">
+                <ion-datetime
+                  id="schedule-datetime"
+                  :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
+                  @ionChange="updateCustomTime($event)"
+                  :min="DateTime.now().toISO()"
+                  presentation="date"
+                  showDefaultButtons
+                />
+              </ion-content>
+            </ion-modal>
             <ion-chip outline>
               <ion-icon :icon="businessOutline"/>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
@@ -128,16 +140,17 @@
 import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { translate } from '@/i18n'
 import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, lockClosedOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
+import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController } from "@ionic/vue";
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getProductIdentificationValue } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
 import Image from "@/components/Image.vue"
+import { DateTime } from "luxon";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -147,6 +160,7 @@ const cycleCountStats = computed(() => (id: string) => store.getters["count/getC
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
+const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
@@ -324,6 +338,30 @@ async function updateCountStatus() {
     showToast(translate("Failed to change the cycle count status"))
   }
 }
+
+function openDateTimeModal() {
+  dateTimeModalOpen.value = true;
+}
+
+const handleDateTimeInput = (dateTimeValue: any) => {
+  // TODO Handle it in a better way
+  // Remove timezone and then convert to timestamp
+  // Current date time picker picks browser timezone and there is no supprt to change it
+  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
+  return DateTime.fromISO(dateTime).toMillis()
+}
+
+function updateCustomTime(event: any) {
+  const date = handleDateTimeInput(event.detail.value)
+  CountService.updateCycleCount({
+    inventoryCountImportId: currentCycleCount.value.countId,
+    dueDate: date
+  }).then(() => {
+    currentCycleCount.value.dueDate = date
+  }).catch(err => {
+    logger.info(err)
+  })
+}
 </script>
 
 <style scoped>
@@ -354,7 +392,7 @@ async function updateCountStatus() {
   grid-column: 3/5;
 }
 
-ion-content {
+.main-content {
   --padding-bottom: 80px;
 }
 
