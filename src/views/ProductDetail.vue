@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main ref="main" @wheel.passive ="handleScroll">
     <section class="product-image">
       <Image :src="getProduct(product.productId)?.mainImageUrl" />
     </section>
@@ -18,11 +18,11 @@
           <ion-label>{{ getProductRatio() }}</ion-label>
         </ion-item>
 
-        <ion-button fill="outline" @click="showPreviousProduct" :disabled="isFirstItem">
+        <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
           <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
         </ion-button>
 
-        <ion-button fill="outline" @click="showNextProduct" :disabled="isLastItem">
+        <ion-button @click="showNextProduct" :disabled="isLastItem">
           <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
         </ion-button>
 
@@ -112,7 +112,7 @@
               <ion-label slot="end">{{ variance }}</ion-label>
             </ion-item>
           </template>
-          <ion-button class="ion-margin" fill="outline" expand="block" @click="saveCount()">
+          <ion-button class="ion-margin" expand="block" @click="saveCount()">
             {{ translate("Save count") }}
           </ion-button>
         </ion-list>
@@ -146,7 +146,8 @@ const inputCount = ref('');
 const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
-// let previousScrollPosition = 0;
+let timeoutId: number | null = null;
+
 
 // Clearning the local defined data variables to be cleared when the component is updated
 onUpdated(() => {
@@ -172,20 +173,19 @@ async function showNextProduct() {
     isFirstItem.value = false;
   }
 }
-
-// function handleScroll(event: any) {
-//   const scrollPosition = event.detail.scrollTop;
-//   console.log('scroll', scrollPosition);
-//   const scrollDirection = scrollPosition > previousScrollPosition ? 'down' : 'up';
-
-//   if (scrollDirection === 'down' && !isLastItem.value) {
-//     showNextProduct();
-//   } else if (scrollDirection === 'up' && !isFirstItem.value) {
-//     showPreviousProduct();
-//   }
-
-//   previousScrollPosition = scrollPosition;
-// }
+// `handleScroll` debounces scroll events, handling next/prev product navigation after 100ms delay.
+function handleScroll(event: any) {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+  }
+  timeoutId = setTimeout(() => {
+    if (event.deltaY > 0) {
+      showNextProduct()
+    } else if (event.deltaY < 0) {
+      showPreviousProduct()
+    }
+  }, 100);
+}
 
 function getProductRatio() {
   const currentIndex = productItemList.value?.findIndex((productItem: any) => productItem.productId === product.value.productId);
