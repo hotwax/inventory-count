@@ -70,7 +70,7 @@
         </div>
 
         <div class="item-search">
-          <ion-item>
+          <ion-item lines="none">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-input
               :label="translate('Add product')"
@@ -80,6 +80,7 @@
               @ionInput="findProduct()"
               :debounce="1000"
               @keyup.enter="addProductToCount"
+              :helper-text="translate('Searching on SKU')"
             >
             </ion-input>
           </ion-item>
