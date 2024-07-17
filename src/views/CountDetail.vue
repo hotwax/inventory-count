@@ -9,46 +9,48 @@
     <ion-content>
       <div class="find">
         <aside class="filters">
-          <ion-item lines="full" class="ion-margin-top">
-            <ion-input :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>
-          </ion-item>
-          <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
-            <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
-              <ion-segment-button value="all">
-                <ion-label>{{ translate("ALL") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="pending">
-                <ion-label>{{ translate("PENDING") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="counted">
-                <ion-label>{{ translate("COUNTED") }}</ion-label>
-              </ion-segment-button>
-            </template>
-
-            <template v-else-if="cycleCount?.statusId === 'INV_COUNT_REVIEW'">
-              <ion-segment-button value="all">
-                <ion-label>{{ translate("ALL") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="notCounted">
-                <ion-label>{{ translate("NOT COUNTED") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="counted">
-                <ion-label>{{ translate("COUNTED") }}</ion-label>
-              </ion-segment-button>
-            </template>
-
-            <template v-else-if="cycleCount?.statusId === 'INV_COUNT_COMPLETED' && 'INV_COUNT_REJECTED'">
-              <ion-segment-button value="all">
-                <ion-label>{{ translate("ALL") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="rejected">
-                <ion-label>{{ translate("REJECTED") }}</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="accepted">
-                <ion-label>{{ translate("ACCEPTED") }}</ion-label>
-              </ion-segment-button>
-            </template> 
-          </ion-segment>
+          <div class="fixed-section">
+            <ion-item lines="full">
+              <ion-input :label="translate('SKU')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="searchProducts()"/>
+            </ion-item>
+            <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
+              <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
+                <ion-segment-button value="all">
+                  <ion-label>{{ translate("ALL") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="pending">
+                  <ion-label>{{ translate("PENDING") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="counted">
+                  <ion-label>{{ translate("COUNTED") }}</ion-label>
+                </ion-segment-button>
+              </template>
+  
+              <template v-else-if="cycleCount?.statusId === 'INV_COUNT_REVIEW'">
+                <ion-segment-button value="all">
+                  <ion-label>{{ translate("ALL") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="notCounted">
+                  <ion-label>{{ translate("NOT COUNTED") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="counted">
+                  <ion-label>{{ translate("COUNTED") }}</ion-label>
+                </ion-segment-button>
+              </template>
+  
+              <template v-else-if="cycleCount?.statusId === 'INV_COUNT_COMPLETED' && 'INV_COUNT_REJECTED'">
+                <ion-segment-button value="all">
+                  <ion-label>{{ translate("ALL") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="rejected">
+                  <ion-label>{{ translate("REJECTED") }}</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="accepted">
+                  <ion-label>{{ translate("ACCEPTED") }}</ion-label>
+                </ion-segment-button>
+              </template> 
+            </ion-segment>
+          </div>
           <template v-if="filteredItems.length > 0">
             <ProductItemList v-for="item in filteredItems" :key="item.inventoryCountImportId" :item="item"/>
           </template>
@@ -217,6 +219,17 @@ onIonViewWillLeave(() => {
 ion-content > main {
   display: grid;
   height: 100%;
+}
+
+.fixed-section {
+  position: sticky;
+  top: 0;
+  background: var(--ion-background-color, #fff);
+  z-index: 1000;
+}
+
+aside {
+  overflow-y: scroll;
 }
 
 @media (min-width: 991px) {

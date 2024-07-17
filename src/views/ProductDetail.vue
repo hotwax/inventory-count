@@ -300,6 +300,11 @@ async function discardRecount() {
 </script>
 
 <style>
+
+  main{
+    overflow-y: hidden;
+  }
+
 .product-info {
   width: 100%;
   margin-top: var(--spacer-lg);
