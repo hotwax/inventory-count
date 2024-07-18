@@ -158,9 +158,9 @@ import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
-import { defineProps, ref, onMounted, nextTick, computed } from "vue"
+import { defineProps, ref, nextTick, computed } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
@@ -191,7 +191,7 @@ let queryString = ref("")
 let searchedProduct = ref({} as any)
 let isSearchingProduct = ref(false)
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {

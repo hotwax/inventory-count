@@ -5,7 +5,7 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button @click="selectAll()">
+          <ion-button :disabled="!filteredItems?.length" @click="selectAll()">
             <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
             <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
           </ion-button>
@@ -187,9 +187,9 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
@@ -212,9 +212,9 @@ const filteredItems = computed(() => {
   let items = currentCycleCount.value.items
 
   if(segmentSelected.value === "accept") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item))
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item) && item.itemStatusId === "INV_COUNT_CREATED")
   } else if(segmentSelected.value === "reject") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item))
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item) && item.itemStatusId === "INV_COUNT_CREATED")
   }
 
   return items
@@ -236,7 +236,7 @@ let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   emitter.on("addProductToCount", addProductToCount);
 
@@ -262,7 +262,7 @@ onMounted(async () => {
   emitter.emit("dismissLoader")
 })
 
-onUnmounted(() => {
+onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
 })
 
@@ -375,8 +375,9 @@ function selectAll() {
   currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" && ((segmentSelected.value === "accept" && isItemReadyToAccept(item)) || (segmentSelected.value === "reject" && isItemReadyToReject(item)) || segmentSelected.value === "all") ? true : false }))
 }
 
-function areAllItemsSelected() {
-  return filteredItems.value.every((item: any) => item.isChecked)
+function areAllItemsSelected(): boolean {
+  // Only checking for those items which are in created status
+  return filteredItems.value.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED").every((item: any) => item.isChecked)
 }
 
 function segmentChanged() {
