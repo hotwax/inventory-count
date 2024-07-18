@@ -69,7 +69,7 @@
   "Enter a SKU, or product name to search a product": "Enter a SKU, or product name to search a product",
   "Enter the product sku, upc, product name, etc. to search.": "Enter the product sku, upc, product name, etc. to search.",
   "Enter the amount of stock that has changed.": "Enter the amount of stock that has changed.",
-  "Enter the count of stock on the shelf.": "Enter the count of stock on the shelf.",
+  "Enter a count before saving changes": "Enter a count before saving changes",
   "Enter the stock count for the product": "Enter the stock count for the product",
   "expected": "expected",
   "Expected quantity": "Expected quantity", 
