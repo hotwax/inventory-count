@@ -136,15 +136,30 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit, dispatch }) {
+  async fetchFacilities({ commit, dispatch, state }) {
     let facilities: Array<any> = []
     try {
-      const resp = await UserService.fetchFacilities({
-        parentTypeId: "VIRTUAL_FACILITY",
-        parentTypeId_not: "Y",
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_not: "Y",
+      let associatedFacilityIds: Array<string> = []
+      const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
+        partyId: (state.current as any).partyId,
         pageSize: 200
+      })
+
+      if(!hasError(associatedFacilitiesResp)) {
+        // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+        // Considering that the facilities will always have a thruDate of the past.
+        associatedFacilityIds = associatedFacilitiesResp.data.filter((facility: any) => !facility.thruDate)?.map((facility: any) => facility.facilityId)
+      }
+
+      if(!associatedFacilityIds.length) {
+        throw "Failed to fetch facilities"
+      }
+
+      // Making this call to fetch the facility details like name, as the above api does not return facility details, need to replace this once api has support to return facility details
+      const resp = await UserService.fetchFacilities({
+        facilityId: associatedFacilityIds.join(","),
+        facilityId_op: "in",
+        pageSize: associatedFacilityIds.length
       })
 
       if(!hasError(resp)) {

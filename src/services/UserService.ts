@@ -70,6 +70,14 @@ const fetchFacilities = async (payload: any): Promise <any>  => {
   });
 }
 
+const fetchAssociatedFacilities = async (payload: any): Promise <any>  => {
+  return api({
+    url: `user/${payload.partyId}/facilities`,
+    method: "GET",
+    params: payload
+  });
+}
+
 const fetchProductStores = async (payload: any): Promise <any>  => {
   return api({
     url: "facilities/productStores",
@@ -202,6 +210,7 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 
 export const UserService = {
   createProductStoreSetting,
+  fetchAssociatedFacilities,
   fetchFacilities,
   fetchProductStores,
   fetchProductStoreSettings,
