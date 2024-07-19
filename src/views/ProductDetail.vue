@@ -35,7 +35,7 @@
         <template v-else>
           <ion-list v-if="product.isRecounting">
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -88,7 +88,7 @@
           
           <ion-list v-else>
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -135,6 +135,10 @@
     inputCount.value = ""
     variance.value = 0
   })
+
+  function inputCountValidation(event: any) {
+    if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+  }
 
   async function calculateVariance() {
     if (!product.value || !inputCount.value) {
