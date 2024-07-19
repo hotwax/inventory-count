@@ -14,13 +14,13 @@
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
     </ion-note>
-    <ion-badge slot="end" v-else-if="item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+    <ion-badge slot="end" v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ item.quantity }} {{ translate("units") }}
     </ion-badge>
-    <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+    <ion-note v-else-if="item.quantity === undefined || item.quantity === null && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}
     </ion-note>
-    <ion-note v-else-if="item.quantity > 0 && item.statusId === 'INV_COUNT_REVIEW'">
+    <ion-note v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_REVIEW'">
       {{ translate("pending review") }}
     </ion-note>
     <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_REVIEW'" color="warning">
