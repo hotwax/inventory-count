@@ -9,7 +9,7 @@
       <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
-      {{ item.quantity ? item.quantity : "-" }} {{ translate("units") }}
+      {{ item.quantity === 0 ? 0 : item.quantity }} {{ translate("units") }}
     </ion-badge>
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
