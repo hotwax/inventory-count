@@ -62,6 +62,12 @@
         <ProductDetail />
       </div>
     </ion-content>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button @click="readyForReview">
+        <ion-icon :icon="paperPlaneOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -70,6 +76,9 @@ import {
   IonBackButton,
   IonContent,
   IonHeader,
+  IonFab,
+  IonFabButton,
+  IonIcon,
   IonInput,
   IonItem,
   IonLabel,
@@ -79,7 +88,8 @@ import {
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
-  onIonViewWillLeave
+  onIonViewWillLeave,
+  alertController
 } from '@ionic/vue';
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from 'vue';
@@ -91,6 +101,8 @@ import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
 import ProductDetail from '@/views/ProductDetail.vue';
 import { CountService } from '@/services/CountService';
+import { paperPlaneOutline } from "ionicons/icons"
+import router from '@/router';
 
 const store = useStore();
 
@@ -178,6 +190,32 @@ onIonViewWillLeave(() => {
   emitter.off("updateItemList", updateFilteredItems);
 })
 
+async function readyForReview() {
+  const alert = await alertController.create({
+    header: translate("Submit for review"),
+    message: translate("Make sure you've reviewed the products and their counts before upload them for review."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Submit'),
+      handler: async () => {
+        try {
+          await CountService.updateCycleCount({
+            inventoryCountImportId: props?.id,
+            statusId: "INV_COUNT_REVIEW"
+          })
+          router.push("/tabs/count")
+          showToast(translate("Count has been submitted for review"))
+        } catch(err) {
+          showToast(translate("Failed to submit cycle count for review"))
+        }
+      }
+    }]
+  });
+  await alert.present();
+}
 </script>
 
 <style scoped>
