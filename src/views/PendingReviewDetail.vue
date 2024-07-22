@@ -109,7 +109,7 @@
               </ion-label>
             </ion-item>
 
-            <ion-label v-if="item.quantity">
+            <ion-label v-if="item.quantity >= 0">
               {{ item.quantity }} / {{ item.qoh }}
               <p>{{ translate("counted / systemic") }}</p>
             </ion-label>
@@ -119,7 +119,7 @@
               <p>{{ translate("systemic") }}</p>
             </ion-label>
 
-            <ion-label v-if="item.quantity">
+            <ion-label v-if="item.quantity >= 0">
               {{ +(item.quantity) - +(item.qoh) }}
               <p>{{ getPartyName(item) }}</p>
             </ion-label>
@@ -135,7 +135,7 @@
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
                 <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
               </ion-button>
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
@@ -348,11 +348,13 @@ function updateVarianceThreshold(event: any) {
 }
 
 function isItemReadyToAccept(item: any) {
-  return item.quantity ? Math.round(Math.abs(((item.quantity - (item.qoh || 0)) / (item.qoh || 0)) * 100)) <= varianceThreshold.value : false
+  // If the items qoh/quantity is not available then we will consider that the variance percentage is 100%, as we are unable to identify the % without qoh/quantity. Thus if qoh/quantity is not present for an item
+  // then we will suggest it for acceptance only when variance threshold is set to 100%
+  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) <= varianceThreshold.value : item.quantity === undefined ? false : 100 <= varianceThreshold.value
 }
 
 function isItemReadyToReject(item: any) {
-  return item.quantity ? Math.round(Math.abs(((item.quantity - (item.qoh || 0)) / (item.qoh || 0)) * 100)) > varianceThreshold.value : false
+  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) > varianceThreshold.value : item.quantity === undefined ? false : 100 > varianceThreshold.value
 }
 
 function isItemCompletedOrRejected(item: any) {
