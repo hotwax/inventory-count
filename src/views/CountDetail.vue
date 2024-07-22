@@ -60,8 +60,136 @@
             </div>
           </template>
         </aside>
-        
-        <ProductDetail />
+        <!--Product details-->
+        <!-- <template> -->
+          <main @scroll="onScroll" class="main" >
+            <div class="product" v-for="item in filteredItems" :key="item.productId" :data-product-id="item.productId" :id="item.productId">
+              <div class="image">
+                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              </div>
+              <div class="detail">
+                <ion-item lines="none">
+                  <ion-label class="ion-text-wrap">
+                    <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h1>
+                    <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                  </ion-label>
+          
+                  <ion-badge slot="end" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                    {{ translate("rejected") }}
+                  </ion-badge>
+                  
+                  <ion-item lines="none" v-if="filteredItems.length">
+                    <ion-label>{{ getProductRatio() }}</ion-label>
+                  </ion-item>
+          
+                  <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
+                    <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
+                  </ion-button>
+          
+                  <ion-button @click="showNextProduct" :disabled="isLastItem">
+                    <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
+                  </ion-button>
+          
+                </ion-item>
+          
+                <ion-list v-if="item.statusId !== 'INV_COUNT_CREATED' && item.statusId !== 'INV_COUNT_ASSIGNED'">
+                  <ion-item>
+                    {{ translate("Counted") }}
+                  <ion-label slot="end">{{ item.quantity ? item.quantity : '-'}}</ion-label>
+                  </ion-item>
+                  <template v-if="productStoreSettings['showQoh']">
+                    <ion-item>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ item.qoh }}</ion-label>
+                    </ion-item>
+                    <ion-item>
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ getVariance(item) }}</ion-label>
+                    </ion-item>
+                  </template>
+                </ion-list>
+                <template v-else>
+                  <ion-list v-if="item.isRecounting">
+                    <ion-item>
+                      <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                    </ion-item>
+                    <template v-if="productStoreSettings['showQoh']">
+                      <ion-item>
+                        {{ translate("Current on hand") }}
+                        <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      </ion-item>
+                      <ion-item>
+                        {{ translate("Variance") }}
+                        <ion-label slot="end">{{ variance }}</ion-label>
+                      </ion-item>
+                    </template>
+                    <div class="ion-margin">
+                      <ion-button color="medium" fill="outline" @click="discardRecount()">
+                        {{ translate("Discard re-count") }}
+                      </ion-button>
+                      <ion-button fill="outline" @click="openRecountSaveAlert()">
+                        {{ translate("Save new count") }}
+                      </ion-button>
+                    </div>
+                  </ion-list>
+          
+                  <ion-list v-else-if="item.quantity">
+                    <ion-item>
+                      {{ translate("Counted") }}
+                      <ion-label slot="end">{{ item.quantity }}</ion-label>
+                    </ion-item>
+                    <ion-item>
+                      {{ translate("Counted by") }}
+                      <ion-label slot="end">{{ getPartyName(item)}}</ion-label>
+                    </ion-item>
+                    <!-- TODO: make the counted at information dynamic -->
+                    <!-- <ion-item>
+                      {{ translate("Counted at") }}
+                      <ion-label slot="end">{{ "-" }}</ion-label>
+                    </ion-item> -->
+                    <template v-if="productStoreSettings['showQoh']">
+                      <ion-item>
+                        {{ translate("Current on hand") }}
+                        <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      </ion-item>
+                      <ion-item>
+                        {{ translate("Variance") }}
+                        <ion-label slot="end">{{ getVariance(item) }}</ion-label>
+                      </ion-item>
+                    </template>
+                    <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+                      {{ translate("Re-count") }}
+                    </ion-button>
+                  </ion-list>
+                  
+                  <ion-list v-else>
+                    <ion-item>
+                      <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                    </ion-item>
+                    <template v-if="productStoreSettings['showQoh']">
+                      <ion-item>
+                        {{ translate("Current on hand") }}
+                        <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      </ion-item>
+                      <ion-item>
+                        {{ translate("Variance") }}
+                        <ion-label slot="end">{{ variance }}</ion-label>
+                      </ion-item>
+                    </template>
+                    <ion-button class="ion-margin" expand="block" @click="saveCount()">
+                      {{ translate("Save count") }}
+                    </ion-button>
+                  </ion-list>
+                </template>
+              </div>
+            </div>
+            <!-- <template v-else>
+              <div class="empty-state">
+                <p>{{ translate("No products found.") }}</p>
+              </div>
+            </template> -->
+          </main>
+        <!-- </template> -->
       </div>
     </ion-content>
   </ion-page>
@@ -71,9 +199,13 @@
 import {
   IonBackButton,
   IonContent,
+  IonBadge, 
+  IonButton, 
+  IonIcon,
+  IonItem,  
+  IonList,
   IonHeader,
   IonInput,
-  IonItem,
   IonLabel,
   IonPage,
   IonSegment,
@@ -81,23 +213,31 @@ import {
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
-  onIonViewWillLeave
+  alertController
 } from '@ionic/vue';
+import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, ref, onUpdated, onMounted, nextTick } from 'vue';
 import { useStore } from "@/store";
+// import { useRouter } from "vue-router";
 import { hasError } from '@/utils'
 import logger from '@/logger'
-import { showToast } from '@/utils';
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
-import ProductDetail from '@/views/ProductDetail.vue';
+import { getPartyName, getProductIdentificationValue, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
+import Image from "@/components/Image.vue";
+import router from "@/router"
+
 
 const store = useStore();
+// const router = useRouter();
 
-const getProduct = computed(() => store.getters["product/getProduct"]);
+const product = computed(() => store.getters['product/getCurrentProduct']);
+const getProduct = computed(() => (id) => store.getters["product/getProduct"](id))
 const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
+const userProfile = computed(() => store.getters["user/getUserProfile"])
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -123,14 +263,30 @@ let cycleCount = ref([]);
 const queryString = ref('');
 let filteredItems = ref([]);
 
+const inputCount = ref('');
+const variance = ref(0);
+const isFirstItem = ref(true);
+const isLastItem = ref(false);
+
+let isScrolling = false;
+let lastScrollTop = 0;
+let scrollTimeout;
+
+// Clearning the local defined data variables to be cleared when the component is updated
+onUpdated(() => {
+  inputCount.value = ""
+  variance.value = 0
+  isFirstItem.value = true
+  isLastItem.value = false
+})
+
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
   await fetchCycleCountItems();
   updateFilteredItems();
-  emitter.on("updateItemList", updateFilteredItems);
-  store.dispatch("product/productItemList", itemsList.value);
   await store.dispatch("product/currentProduct", itemsList.value[0])
-})
+  updateNavigationState(0);
+})  
 
 async function fetchCycleCountItems() {
   let payload = props?.id
@@ -170,14 +326,200 @@ function updateFilteredItems() {
   if (!queryString.value.trim()) {
     filteredItems.value = itemsList.value;
   } else {
-    filteredItems.value = itemsList.value.filter(item => item.productId.includes(queryString.value.trim()));
+    filteredItems.value = itemsList.value.filter(item => {
+      const product = getProduct.value(item.productId);
+      return product.sku.toLowerCase().includes(queryString.value.trim().toLowerCase());
+    });
   }
-  store.dispatch("product/productItemList", filteredItems.value);
+  if (filteredItems.value.length > 0) {
+    store.dispatch("product/currentProduct", filteredItems.value[0]);
+    updateNavigationState(0);
+    // scrollToItem(filteredItems.value[0]);
+  } else {
+    store.dispatch("product/currentProduct", null);
+    isFirstItem.value = true
+    isLastItem.value = false
+  }  
 } 
 
-onIonViewWillLeave(() => {
-  emitter.off("updateItemList", updateFilteredItems);
-})
+const onScroll = (event) => {
+  if (isScrolling) {
+    clearTimeout(scrollTimeout);
+  }
+
+  isScrolling = true;
+
+  const main = event.target;
+  const currentScrollTop = main.scrollTop;
+  lastScrollTop = currentScrollTop;
+
+  scrollTimeout = setTimeout(() => {
+    isScrolling = false;
+
+    const products = Array.from(main.querySelectorAll('.product'));
+    const viewportHeight = main.clientHeight;
+    const threshold = viewportHeight / 2;
+
+    let currentProduct = null;
+    let smallestDistance = Infinity;
+
+    products.forEach((product) => {
+      const productRect = product.getBoundingClientRect();
+      const productCenter = productRect.top + productRect.height / 2;
+      const distanceFromCenter = Math.abs(productCenter - threshold);
+
+      if (distanceFromCenter < smallestDistance) {
+        smallestDistance = distanceFromCenter;
+        currentProduct = product;
+      }
+    });
+
+    if (currentProduct) {
+      const currentProductId = currentProduct.dataset.productId;
+      const currentIndex = filteredItems.value.findIndex((item) => item.productId === currentProductId);
+
+      if (currentIndex !== -1) {
+        const currentProduct = filteredItems.value[currentIndex];
+        store.dispatch("product/currentProduct", currentProduct);
+        updateNavigationState(currentIndex);
+        // router.replace({ hash: `#${currentProductId}` }); 
+      }
+    }
+  }, 100);
+};
+
+// Add this function to update the navigation state
+const updateNavigationState = (currentIndex) => {
+  isFirstItem.value = currentIndex === 0;
+  isLastItem.value = currentIndex === filteredItems.value.length - 1;
+};
+
+async function showPreviousProduct() {
+  const currentItemIndex = filteredItems.value.findIndex((productItem) => productItem.productId === product.value.productId);
+  if (currentItemIndex > 0) {
+    await store.dispatch("product/currentProduct", filteredItems.value[currentItemIndex - 1]);
+    updateNavigationState(currentItemIndex - 1);
+  }
+}
+
+async function showNextProduct() {
+  const currentItemIndex = filteredItems.value.findIndex((productItem) => productItem.productId === product.value.productId);
+  if (currentItemIndex < filteredItems.value.length - 1) {
+    await store.dispatch("product/currentProduct", filteredItems.value[currentItemIndex + 1]);
+    updateNavigationState(currentItemIndex + 1);
+  }
+}
+
+function getProductRatio() {
+  const currentIndex = filteredItems.value?.findIndex((productItem) => productItem.productId === product.value.productId);
+  const totalProducts = filteredItems.value.length;
+  return `${currentIndex + 1} / ${totalProducts}`;
+}
+
+async function calculateVariance() {
+  if (!product.value || !inputCount.value) {
+    variance.value = 0;
+  } else {
+    variance.value = parseInt(inputCount.value) - parseInt(product.value.qoh) || 0;
+  }
+}
+
+function getVariance(item , count) {
+  const qty = item.quantity
+  if(!qty) {
+    return 0;
+  }
+
+  // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
+}
+
+async function saveCount() {
+  if (!product.value) {
+    return;
+  }
+  try {
+    const payload = {
+      inventoryCountImportId: product.value.inventoryCountImportId,
+      importItemSeqId: product.value.importItemSeqId,
+      productId: product.value.productId,
+      quantity: inputCount.value,
+      countedByUserLoginId: userProfile.value.username
+    };
+    const resp = await CountService.updateCount(payload);
+    if (!hasError(resp)) {
+      product.value.quantity = inputCount.value
+      product.value.countedByGroupName = userProfile.value.userFullName
+      product.value.countedByUserLoginId = userProfile.value.username
+      await store.dispatch('product/currentProduct', product.value);
+      inputCount.value = ''; 
+    } else {
+      throw resp.data;
+    }
+    await store.dispatch("count/fetchCycleCountItems", payload.inventoryCountImportId); 
+    updateFilteredItems();
+  } catch (err) {
+    logger.error(err);
+    showToast(translate("Something went wrong, please try again"));
+  }
+}
+
+async function openRecountAlert() {
+  const alert = await alertController.create({
+    header: translate("Update count"),
+    message: translate("Updating a count will replace the existing count. The previous count cannot be restored after being replaced."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Re-count'),
+      handler: () => {
+        inputCount.value = ''; 
+        product.value.isRecounting = true;
+      }
+    }]
+  });
+  await alert.present();
+}
+
+async function openRecountSaveAlert() {
+  const alert = await alertController.create({
+    header: translate("Save re-count"),
+    message: translate("Saving recount will replace the existing count for item."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Save Re-count'),
+      handler: async () => {
+        await saveCount(); 
+        product.value.isRecounting = false;
+      }
+    }]
+  });
+  await alert.present();
+}
+
+async function discardRecount() {
+  const alert = await alertController.create({
+    header: translate("Discard re-count"),
+    message: translate("Discarding the re-count will revert the count to the previous count value."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Discard'),
+      handler: async () => {
+        inputCount.value = ''; 
+        product.value.isRecounting = false;
+      }
+    }]
+  });
+  await alert.present();
+}
 
 </script>
 
@@ -216,10 +558,10 @@ onIonViewWillLeave(() => {
   margin-top: var(--spacer-lg);
 }
 
-ion-content > main {
+/* ion-content > main {
   display: grid;
   height: 100%;
-}
+} */
 
 .fixed-section {
   position: sticky;
@@ -230,6 +572,50 @@ ion-content > main {
 
 aside {
   overflow-y: scroll;
+}
+
+main {
+  height: 100%;
+  overflow: scroll;
+  /* scroll-behavior: smooth; */
+  scroll-snap-type: y mandatory;
+  /* scroll-margin-top:56px;
+  z-index: 5000; */
+}
+
+.product {
+  display: grid;
+  max-width: 900px;
+  height: 100vh;
+  grid: "image detail"
+        /1fr 1fr;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding-top: 56px;  
+}
+
+.image {
+  grid-area: image;
+  margin-top: var(--spacer-lg);
+  margin-right: var(--spacer-lg);
+}
+
+.detail {
+  grid-area: detail;
+  margin-top: var(--spacer-lg);
+}
+
+.detail > ion-list {
+  max-width: 100%;
+}
+
+@media (max-width: 991px) {
+  .product {
+    grid: "image"
+          "detail"
+          / auto;
+    padding: 0;
+  }
 }
 
 @media (min-width: 991px) {

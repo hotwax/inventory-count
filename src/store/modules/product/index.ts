@@ -13,8 +13,7 @@ const productModule: Module<ProductState, RootState> = {
       items: [],
       total: 0
     },
-    currentProduct: {},
-    productItemsList: {}
+    currentProduct: {}
   },
   getters,
   actions,

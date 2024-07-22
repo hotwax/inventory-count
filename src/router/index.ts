@@ -179,6 +179,24 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+  scrollBehavior (to, from, savedPosition) {
+    let position = {}
+    if (to.hash) {
+        position = {
+          selector: to.hash,
+          offset: { left: 0, top: 2400 },
+          behavior: 'smooth',
+        }
+
+    } else {
+        position = { left: 0, top: 0 }
+    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(position)
+      }, 10)
+    })
+  }
 });
 
 router.beforeEach((to, from) => {
@@ -198,5 +216,6 @@ router.beforeEach((to, from) => {
     }
   }
 })
+
 
 export default router;

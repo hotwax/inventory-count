@@ -97,11 +97,8 @@ http://ionicframework.com/docs/theming/ */
 }
 
 main {
-  display: flex;
   justify-content: center;
   align-items: start;
-  /* gap: var(--spacer-2xl); */
-  max-width: 1000px;
 }
     
 section {

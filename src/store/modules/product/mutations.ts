@@ -20,9 +20,6 @@ const mutations: MutationTree <ProductState> = {
   [types.PRODUCT_CURRENT_UPDATED] (state, payload) {
     state.currentProduct = payload
   },
-  [types.PRODUCT_ITEMS_LIST_UPDATED] (state,payload) {
-    state.productItemsList = payload
-  },
   [types.PRODUCT_LIST_UPDATED](state, payload) {
     state.list.items = payload.products
     state.list.total = payload.total
