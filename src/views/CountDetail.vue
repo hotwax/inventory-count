@@ -63,7 +63,7 @@
       </div>
     </ion-content>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
       <ion-fab-button @click="readyForReview">
         <ion-icon :icon="paperPlaneOutline" />
       </ion-fab-button>
