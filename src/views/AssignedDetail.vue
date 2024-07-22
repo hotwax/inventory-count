@@ -85,7 +85,7 @@
               <p>{{ translate("QoH") }}</p>
             </ion-label>
 
-            <template v-if="item.quantity">
+            <template v-if="item.quantity >=0 ">
               <ion-label>
                 {{ item.quantity }}
                 <p>{{ translate("counted") }}</p>
@@ -101,7 +101,7 @@
               <ion-label>{{ translate("count pending") }}</ion-label>
             </ion-chip>
 
-            <ion-chip outline v-if="item.quantity">
+            <ion-chip outline v-if="item.quantity >= 0">
               <ion-icon :icon="personCircleOutline"/>
               <ion-label>{{ getPartyName(item) }}</ion-label>
             </ion-chip>
@@ -323,7 +323,7 @@ function getVarianceInformation() {
 function getProgress() {
   const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
   const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress}% progress`
+  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
 }
 
 async function updateCountStatus() {
