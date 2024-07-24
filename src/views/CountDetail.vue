@@ -61,42 +61,88 @@
           </template>
         </aside>
         <!--Product details-->
-        <!-- <template> -->
-          <main @scroll="onScroll" class="main" >
-            <div class="product" v-for="item in filteredItems" :key="item.productId" :data-product-id="item.productId" :id="item.productId">
-              <div class="image">
-                <Image :src="getProduct(item.productId)?.mainImageUrl" />
-              </div>
-              <div class="detail">
-                <ion-item lines="none">
-                  <ion-label class="ion-text-wrap">
-                    <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h1>
-                    <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
-                  </ion-label>
-          
-                  <ion-badge slot="end" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
-                    {{ translate("rejected") }}
-                  </ion-badge>
-                  
-                  <ion-item lines="none" v-if="filteredItems.length">
-                    <ion-label>{{ getProductRatio() }}</ion-label>
-                  </ion-item>
-          
-                  <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
-                    <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
-                  </ion-button>
-          
-                  <ion-button @click="showNextProduct" :disabled="isLastItem">
-                    <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
-                  </ion-button>
-          
+        <main @scroll="onScroll" class="main" >
+          <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+            <div class="image">
+              <Image :src="getProduct(item.productId)?.mainImageUrl" />
+            </div>
+            <div class="detail">
+              <ion-item lines="none">
+                <ion-label class="ion-text-wrap">
+                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h1>
+                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                </ion-label>
+                <ion-item lines="none" v-if="filteredItems.length">
+                  <ion-label>{{ `${item.importItemSeqId}/${filteredItems.length}` }}</ion-label>
                 </ion-item>
-          
-                <ion-list v-if="item.statusId !== 'INV_COUNT_CREATED' && item.statusId !== 'INV_COUNT_ASSIGNED'">
+
+                <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
+                  <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
+                </ion-button>
+        
+                <ion-button @click="showNextProduct" :disabled="isLastItem">
+                  <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
+                </ion-button>
+                
+                <ion-badge slot="end" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                  {{ translate("rejected") }}
+                </ion-badge>
+              </ion-item>
+              <ion-list v-if="item.statusId !== 'INV_COUNT_CREATED' && item.statusId !== 'INV_COUNT_ASSIGNED'">
+                <ion-item>
+                  {{ translate("Counted") }}
+                <ion-label slot="end">{{ item.quantity ? item.quantity : '-'}}</ion-label>
+                </ion-item>
+                <template v-if="productStoreSettings['showQoh']">
+                  <ion-item>
+                    {{ translate("Current on hand") }}
+                    <ion-label slot="end">{{ item.qoh }}</ion-label>
+                  </ion-item>
+                  <ion-item>
+                    {{ translate("Variance") }}
+                    <ion-label slot="end">{{ getVariance(item) }}</ion-label>
+                  </ion-item>
+                </template>
+              </ion-list>
+              <template v-else>
+                <ion-list v-if="item.isRecounting">
+                  <ion-item>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                  </ion-item>
+                  <template v-if="productStoreSettings['showQoh']">
+                    <ion-item>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ item.qoh }}</ion-label>
+                    </ion-item>
+                    <ion-item>
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ variance }}</ion-label>
+                    </ion-item>
+                  </template>
+                  <div class="ion-margin">
+                    <ion-button color="medium" fill="outline" @click="discardRecount()">
+                      {{ translate("Discard re-count") }}
+                    </ion-button>
+                    <ion-button fill="outline" @click="openRecountSaveAlert()">
+                      {{ translate("Save new count") }}
+                    </ion-button>
+                  </div>
+                </ion-list>
+        
+                <ion-list v-else-if="item.quantity">
                   <ion-item>
                     {{ translate("Counted") }}
-                  <ion-label slot="end">{{ item.quantity ? item.quantity : '-'}}</ion-label>
+                    <ion-label slot="end">{{ item.quantity }}</ion-label>
                   </ion-item>
+                  <ion-item>
+                    {{ translate("Counted by") }}
+                    <ion-label slot="end">{{ getPartyName(item)}}</ion-label>
+                  </ion-item>
+                  <!-- TODO: make the counted at information dynamic -->
+                  <!-- <ion-item>
+                    {{ translate("Counted at") }}
+                    <ion-label slot="end">{{ "-" }}</ion-label>
+                  </ion-item> -->
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
@@ -107,89 +153,38 @@
                       <ion-label slot="end">{{ getVariance(item) }}</ion-label>
                     </ion-item>
                   </template>
+                  <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+                    {{ translate("Re-count") }}
+                  </ion-button>
                 </ion-list>
-                <template v-else>
-                  <ion-list v-if="item.isRecounting">
+                
+                <ion-list v-else>
+                  <ion-item>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                  </ion-item>
+                  <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
-                      <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
-                    </ion-item>
-                    <template v-if="productStoreSettings['showQoh']">
-                      <ion-item>
-                        {{ translate("Current on hand") }}
-                        <ion-label slot="end">{{ item.qoh }}</ion-label>
-                      </ion-item>
-                      <ion-item>
-                        {{ translate("Variance") }}
-                        <ion-label slot="end">{{ variance }}</ion-label>
-                      </ion-item>
-                    </template>
-                    <div class="ion-margin">
-                      <ion-button color="medium" fill="outline" @click="discardRecount()">
-                        {{ translate("Discard re-count") }}
-                      </ion-button>
-                      <ion-button fill="outline" @click="openRecountSaveAlert()">
-                        {{ translate("Save new count") }}
-                      </ion-button>
-                    </div>
-                  </ion-list>
-          
-                  <ion-list v-else-if="item.quantity">
-                    <ion-item>
-                      {{ translate("Counted") }}
-                      <ion-label slot="end">{{ item.quantity }}</ion-label>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ item.qoh }}</ion-label>
                     </ion-item>
                     <ion-item>
-                      {{ translate("Counted by") }}
-                      <ion-label slot="end">{{ getPartyName(item)}}</ion-label>
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ variance }}</ion-label>
                     </ion-item>
-                    <!-- TODO: make the counted at information dynamic -->
-                    <!-- <ion-item>
-                      {{ translate("Counted at") }}
-                      <ion-label slot="end">{{ "-" }}</ion-label>
-                    </ion-item> -->
-                    <template v-if="productStoreSettings['showQoh']">
-                      <ion-item>
-                        {{ translate("Current on hand") }}
-                        <ion-label slot="end">{{ item.qoh }}</ion-label>
-                      </ion-item>
-                      <ion-item>
-                        {{ translate("Variance") }}
-                        <ion-label slot="end">{{ getVariance(item) }}</ion-label>
-                      </ion-item>
-                    </template>
-                    <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
-                      {{ translate("Re-count") }}
-                    </ion-button>
-                  </ion-list>
-                  
-                  <ion-list v-else>
-                    <ion-item>
-                      <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
-                    </ion-item>
-                    <template v-if="productStoreSettings['showQoh']">
-                      <ion-item>
-                        {{ translate("Current on hand") }}
-                        <ion-label slot="end">{{ item.qoh }}</ion-label>
-                      </ion-item>
-                      <ion-item>
-                        {{ translate("Variance") }}
-                        <ion-label slot="end">{{ variance }}</ion-label>
-                      </ion-item>
-                    </template>
-                    <ion-button class="ion-margin" expand="block" @click="saveCount()">
-                      {{ translate("Save count") }}
-                    </ion-button>
-                  </ion-list>
-                </template>
-              </div>
+                  </template>
+                  <ion-button class="ion-margin" expand="block" @click="saveCount()">
+                    {{ translate("Save count") }}
+                  </ion-button>
+                </ion-list>
+              </template>
             </div>
-            <!-- <template v-else>
-              <div class="empty-state">
-                <p>{{ translate("No products found.") }}</p>
-              </div>
-            </template> -->
-          </main>
-        <!-- </template> -->
+          </div>
+          <template v-if="!filteredItems.length">
+            <div class="empty-state">
+              <p>{{ translate("No products found.") }}</p>
+            </div>
+          </template>
+        </main>
       </div>
     </ion-content>
   </ion-page>
@@ -219,7 +214,6 @@ import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons
 import { translate } from '@/i18n'
 import { computed, defineProps, ref, onUpdated, onMounted, nextTick } from 'vue';
 import { useStore } from "@/store";
-// import { useRouter } from "vue-router";
 import { hasError } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
@@ -231,7 +225,6 @@ import router from "@/router"
 
 
 const store = useStore();
-// const router = useRouter();
 
 const product = computed(() => store.getters['product/getCurrentProduct']);
 const getProduct = computed(() => (id) => store.getters["product/getProduct"](id))
@@ -269,7 +262,6 @@ const isFirstItem = ref(true);
 const isLastItem = ref(false);
 
 let isScrolling = false;
-let lastScrollTop = 0;
 let scrollTimeout;
 
 // Clearning the local defined data variables to be cleared when the component is updated
@@ -334,7 +326,6 @@ function updateFilteredItems() {
   if (filteredItems.value.length > 0) {
     store.dispatch("product/currentProduct", filteredItems.value[0]);
     updateNavigationState(0);
-    // scrollToItem(filteredItems.value[0]);
   } else {
     store.dispatch("product/currentProduct", null);
     isFirstItem.value = true
@@ -342,16 +333,14 @@ function updateFilteredItems() {
   }  
 } 
 
+// Handles scrolling event to update the current product and navigation state based on the product closest to the viewport center.
 const onScroll = (event) => {
   if (isScrolling) {
     clearTimeout(scrollTimeout);
   }
-
   isScrolling = true;
 
   const main = event.target;
-  const currentScrollTop = main.scrollTop;
-  lastScrollTop = currentScrollTop;
 
   scrollTimeout = setTimeout(() => {
     isScrolling = false;
@@ -376,16 +365,17 @@ const onScroll = (event) => {
 
     if (currentProduct) {
       const currentProductId = currentProduct.dataset.productId;
-      const currentIndex = filteredItems.value.findIndex((item) => item.productId === currentProductId);
+      const currentItemSeqId = currentProduct.dataset.seq;
+      const currentIndex = filteredItems.value.findIndex((item) => item.productId === currentProductId && item.importItemSeqId === currentItemSeqId);
 
       if (currentIndex !== -1) {
         const currentProduct = filteredItems.value[currentIndex];
         store.dispatch("product/currentProduct", currentProduct);
         updateNavigationState(currentIndex);
-        // router.replace({ hash: `#${currentProductId}` }); 
+        router.replace({ hash: `#${currentProductId}-${currentItemSeqId}` }); 
       }
     }
-  }, 100);
+  }, 100); 
 };
 
 // Add this function to update the navigation state
@@ -395,25 +385,31 @@ const updateNavigationState = (currentIndex) => {
 };
 
 async function showPreviousProduct() {
-  const currentItemIndex = filteredItems.value.findIndex((productItem) => productItem.productId === product.value.productId);
+  const currentItemIndex = filteredItems.value.findIndex((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId);
+  let previousProduct;
   if (currentItemIndex > 0) {
-    await store.dispatch("product/currentProduct", filteredItems.value[currentItemIndex - 1]);
+    previousProduct = filteredItems.value[currentItemIndex - 1];
+    await store.dispatch("product/currentProduct", previousProduct);
     updateNavigationState(currentItemIndex - 1);
+  }
+  const productEl = document.querySelector(`[data-seq="${previousProduct?.importItemSeqId}"]`);
+  if (productEl) {
+    productEl.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
 async function showNextProduct() {
-  const currentItemIndex = filteredItems.value.findIndex((productItem) => productItem.productId === product.value.productId);
+  const currentItemIndex = filteredItems.value.findIndex((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId);
+  let nextProduct;
   if (currentItemIndex < filteredItems.value.length - 1) {
-    await store.dispatch("product/currentProduct", filteredItems.value[currentItemIndex + 1]);
+    nextProduct = filteredItems.value[currentItemIndex + 1];
+    await store.dispatch("product/currentProduct", nextProduct);
     updateNavigationState(currentItemIndex + 1);
   }
-}
-
-function getProductRatio() {
-  const currentIndex = filteredItems.value?.findIndex((productItem) => productItem.productId === product.value.productId);
-  const totalProducts = filteredItems.value.length;
-  return `${currentIndex + 1} / ${totalProducts}`;
+  const productEl = document.querySelector(`[data-seq="${nextProduct?.importItemSeqId}"]`);
+  if (productEl) {
+    productEl.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 async function calculateVariance() {
@@ -558,11 +554,6 @@ async function discardRecount() {
   margin-top: var(--spacer-lg);
 }
 
-/* ion-content > main {
-  display: grid;
-  height: 100%;
-} */
-
 .fixed-section {
   position: sticky;
   top: 0;
@@ -576,22 +567,18 @@ aside {
 
 main {
   height: 100%;
-  overflow: scroll;
-  /* scroll-behavior: smooth; */
+  overflow: auto;
+  scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
-  /* scroll-margin-top:56px;
-  z-index: 5000; */
 }
 
 .product {
   display: grid;
-  max-width: 900px;
-  height: 100vh;
+  height: 90vh;
   grid: "image detail"
-        /1fr 1fr;
-  scroll-snap-align: start;
+         /1fr 2fr;
   scroll-snap-stop: always;
-  padding-top: 56px;  
+  scroll-snap-align: start;
 }
 
 .image {
@@ -603,10 +590,13 @@ main {
 .detail {
   grid-area: detail;
   margin-top: var(--spacer-lg);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: max-content;
 }
 
-.detail > ion-list {
-  max-width: 100%;
+.detail > ion-item {
+  grid-column: span 2;
 }
 
 @media (max-width: 991px) {

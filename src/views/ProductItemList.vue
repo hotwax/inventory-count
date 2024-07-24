@@ -1,5 +1,5 @@
 <template>
-  <ion-item :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
+  <ion-item v-if="currentProduct" :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
     <ion-thumbnail slot="start">
       <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps } from 'vue';
+import { computed, defineProps, onMounted } from 'vue';
 import { IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
@@ -48,20 +48,33 @@ const getProduct = computed(() => (id: string) => store.getters["product/getProd
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
 
+onMounted(() => {
+  if (currentProduct.value) {
+    navigateToDetail(currentProduct.value);
+  }
+})
 
-function navigateToDetail(item: any) {
-  router.push({ path: `/tabs/count-detail/${item.inventoryCountImportId}`, hash: `#${item.productId}` });
+/**
+ * Navigates to a detail page and smoothly scrolls to a specific element.
+
+ * This function addresses a common issue where CSS scroll-behavior: smooth conflicts with scroll-snap-align, preventing smooth scrolling to work properly.
+ * It also handles the challenge of scrolling to an element on a page that is being navigated to and scroll smoothly.
+ **/
+async function navigateToDetail(item: any) {
+  await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
+  router.replace({ hash: `#${item.productId}-${item.importItemSeqId}` }); 
+  setTimeout(() => {
+    const element = document.getElementById(`${item.productId}-${item.importItemSeqId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 0);
 }
-
-// async function selectedProduct(item: any) {
-//   // Making recount variable as false when clicking on the item so that the product details are displayed in the default state on initial load
-//   await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
-// }
 
 // Method to display the item as selected by changing the ion-item color to light
 function isCurrentProduct() {
   // Added check for itemStatusId as we may have the same product added multiple times in different status(like in case when request recount an item)
-  return currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId
+  return currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId && currentProduct.value.importItemSeqId === props.item.importItemSeqId
 }
 
 </script>
