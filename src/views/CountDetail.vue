@@ -61,10 +61,12 @@
           </template>
         </aside>
         <!--Product details-->
-        <main @scroll="onScroll" class="main" >
-          <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-            <div class="image">
-              <Image :src="getProduct(item.productId)?.mainImageUrl" />
+        <main class="main" >
+          <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId">
+            <div @scroll="onScroll" class="image-scroll">
+              <div class="image" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              </div>
             </div>
             <div class="detail">
               <ion-item lines="none">
@@ -340,18 +342,19 @@ const onScroll = (event) => {
   }
   isScrolling = true;
 
-  const main = event.target;
-
+  const imageScroll = event.target;
+  console.log(imageScroll);
   scrollTimeout = setTimeout(() => {
     isScrolling = false;
 
-    const products = Array.from(main.querySelectorAll('.product'));
-    const viewportHeight = main.clientHeight;
+    const products = Array.from(imageScroll.querySelectorAll('.image'));
+    console.log('ptroo', products);
+    const viewportHeight = imageScroll.clientHeight;
     const threshold = viewportHeight / 2;
 
     let currentProduct = null;
     let smallestDistance = Infinity;
-
+    
     products.forEach((product) => {
       const productRect = product.getBoundingClientRect();
       const productCenter = productRect.top + productRect.height / 2;
@@ -520,6 +523,11 @@ async function discardRecount() {
 </script>
 
 <style scoped>
+
+ion-content {
+  overflow: hidden;
+}
+
 .find {
   display: grid;
   height: 100%;
@@ -568,26 +576,36 @@ aside {
 main {
   height: 100%;
   overflow: auto;
-  scroll-behavior: smooth;
-  scroll-snap-type: y mandatory;
+  /* scroll-behavior: smooth;
+  scroll-snap-type: y mandatory; */
 }
 
-.product {
-  display: grid;
-  height: 90vh;
-  grid: "image detail"
-         /1fr 2fr;
-  scroll-snap-stop: always;
-  scroll-snap-align: start;
+.image-scroll {
+  overflow: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
 }
 
 .image {
   grid-area: image;
   margin-top: var(--spacer-lg);
   margin-right: var(--spacer-lg);
+  scroll-snap-stop: always;
+  scroll-snap-align: start; 
 }
 
+.product {
+  display: grid;
+  height: 100vh;
+  grid: "image detail"
+         /1fr 2fr;
+  /* scroll-snap-stop: always;
+  scroll-snap-align: start; */
+}
+
+
 .detail {
+  position: sticky;
   grid-area: detail;
   margin-top: var(--spacer-lg);
   display: grid;
