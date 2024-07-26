@@ -66,9 +66,8 @@
         </div>
       </template>
 
-      <!-- TODO: need to implement support to download cycle counts, will be picked in second phase -->
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openClosedCountDownloadModal">
+        <ion-fab-button @click="openDownloadClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -101,7 +100,7 @@ import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
-import ClosedCountModal from "@/components/ClosedCountModal.vue";
+import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
@@ -133,13 +132,13 @@ function getAverageVariance() {
   return "-"
 }
 
-async function openClosedCountDownloadModal() {
-  const addClosedCountModal = await modalController.create({
-    component: ClosedCountModal,
+async function openDownloadClosedCountModal() {
+  const downloadClosedCountModal = await modalController.create({
+    component: DownloadClosedCountModal,
     showBackdrop: false,
   });
 
-  await addClosedCountModal.present();
+  await downloadClosedCountModal.present();
 }
 
 </script>

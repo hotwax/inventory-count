@@ -143,7 +143,7 @@ function getLastSubmittedDate(count: any) {
     return "-";
   }
 
-  const submissionStatus = history.toReversed().find((status: any) => status.statusId === "INV_COUNT_COMPLETED");
+  const submissionStatus = history.toReversed().find((status: any) => status.statusId === "INV_COUNT_REVIEW");
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate);
 }
 
@@ -200,12 +200,13 @@ async function downloadCSV() {
     lastSubmittedDate: "lastSubmittedDate",
     closedDate: "closedDate",
     facility: "facilityId",
-    expectedQuantity: "expectedQuantity",
-    countedQuantity: "itemCounted",
-    variance: "totalVariance"
+    expectedQuantity: "qoh",
+    countedQuantity: "quantity",
+    variance: "varianceQuantityOnHand"
   };
 
   const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
+  console.log("selectedData", selectedData);
 
   if (!selectedData.length) {
     showToast(translate('Please select at least one field to generate CSV'));
@@ -213,36 +214,32 @@ async function downloadCSV() {
   }
 
   const downloadData = await Promise.all(cycleCounts.value.map(async (count: any) => {
-
     const cycleCountItems = await fetchCycleCountItems(count);
     const facility = facilityDetails[count.facilityId];
-
-    const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
-      if (property === 'countedQuantity' || property === 'variance') {
-        const stats = cycleCountStats.value(count.inventoryCountImportId);
-        details[property] = stats[selectedFieldMappings[property]];
-      } else if (property === 'createdDate') {
-        details[property] = getDateWithOrdinalSuffix(count.createdDate);
-      } else if (property === 'lastSubmittedDate') {
-        details[property] = getLastSubmittedDate(count);
-      } else if (property === 'closedDate') {
-        details[property] = getClosedDate(count);
-      } else if (property === 'facility') {
-        details[property] = facility[selectedFacilityField.value];
-      } else if (property === 'expectedQuantity') {
-        details[property] = getExpectedCount(cycleCountItems);
-      } else {
-        details[selectedFieldMappings[property]] = count[selectedFieldMappings[property]];
-      }
-      return details;
-    }, {});
-
-    return cycleCountDetails;
+    return cycleCountItems?.itemList.map((item: any) => {
+      const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
+        if (property === 'createdDate') {
+          details[property] = getDateWithOrdinalSuffix(count.createdDate);
+        } else if (property === 'lastSubmittedDate') {
+          details[property] = getLastSubmittedDate(count);
+        } else if (property === 'closedDate') {
+          details[property] = getClosedDate(count);
+        } else if (property === 'facility') {
+          details[property] = facility[selectedFacilityField.value];
+        } else {
+          details[property] = item[selectedFieldMappings[property]];
+        }
+        return details;
+      }, {});
+      return cycleCountDetails
+    });
   }));
+
+  const flattenedData = downloadData.flat().filter((data: any) => data);
 
   const alert = await alertController.create({
     header: translate("Download closed counts"),
-    message: translate("Make sure all the labels provided are correct."),
+    message: translate("Are you sure you want to download the cycle counts?"),
     buttons: [{
       text: translate("Cancel"),
       role: 'cancel',
@@ -250,13 +247,17 @@ async function downloadCSV() {
       text: translate("Download"),
       handler: async () => {
         const fileName = `CycleCounts-${currentFacility.value.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
-        await jsonToCsv(downloadData, { download: true, name: fileName });
+        await jsonToCsv(flattenedData, { download: true, name: fileName });
         modalController.dismiss({ dismissed: true });
       }
     }]
   });
   return alert.present();
 }
-
-
 </script>
+
+<style scoped>
+ ion-content {
+    --padding-bottom: 70px;
+  }
+</style>
