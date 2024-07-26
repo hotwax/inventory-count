@@ -67,9 +67,6 @@ const selectedIdentifier = ref('')
 const selectedColumn = ref('')
 
 function closeModal(identifierData: any) {
-  if (!identifierData || !identifierData.idType || !identifierData.idValue) {
-    identifierData = null;
-  }
   modalController.dismiss({ dismissed: true, identifierData });
 }
 
