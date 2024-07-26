@@ -67,7 +67,7 @@ const selectedIdentifier = ref('')
 const selectedColumn = ref('')
 
 function closeModal(identifierData: any) {
-  if (!identifierData || !identifierData.length) {
+  if (!identifierData || !identifierData.idType || !identifierData.idValue) {
     identifierData = null;
   }
   modalController.dismiss({ dismissed: true, identifierData });
@@ -75,18 +75,24 @@ function closeModal(identifierData: any) {
 
 function saveImportData() {
   if (!selectedIdentifier.value) {
-    showToast(translate("Please select a Product identifier"));
+    return showToast(translate("Please select a Product identifier"));
   }
 
   if (!selectedColumn.value) {
-    showToast(translate("Please select the column that corresponds to the product identifier"));
+    return showToast(translate("Please select the column that corresponds to the product identifier"));
   }
 
-  const identifierData = props.content.map((row: any) => {
-    return {
-      idType: selectedIdentifier.value,
-      idValue: row[selectedColumn.value]
+  let identifierData: any = {};
+  props.content.forEach((row: any) => {
+    const idType = selectedIdentifier.value
+    const idValue = row[selectedColumn.value]
+
+    if (!identifierData.idType) {
+      identifierData.idType = idType;
+      identifierData.idValue = [];
     }
+
+    identifierData.idValue.push(idValue);
   })
 
   closeModal(identifierData)

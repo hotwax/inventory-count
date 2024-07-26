@@ -14,7 +14,7 @@
             <ion-item lines="none" class="ion-padding">
               <ion-label slot="start">
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->                
+                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
                 <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
                 <p>{{ currentCycleCount.countId }}</p>
               </ion-label>
@@ -29,12 +29,11 @@
           </div>
           <div class="filters">
             <ion-list class="ion-padding">
-
               <ion-item>
                 <ion-icon slot="start" :icon="cloudUploadOutline"/>
-                  <ion-label>{{ translate("Import CSV") }}</ion-label>
+                <ion-label>{{ translate("Import CSV") }}</ion-label>
                 <input @change="parse" ref="file" class="ion-hide" type="file" id="updateProductFile" :key="fileUploaded.toString()"/>
-                <label for="updateProductFile">{{ translate("Upload") }}</label>
+                <label for="updateProductFile" class="pointer">{{ translate("Upload") }}</label>
               </ion-item>
 
               <ion-item>
@@ -156,7 +155,7 @@
 
 <script setup lang="ts">
 import { translate } from "@/i18n";
-import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
+import ImportCsvModal from "@/components/ImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
@@ -234,7 +233,7 @@ async function parse(event: any) {
       fileColumns.value = Object.keys(content.value[0]);
       showToast(translate("File uploaded successfully"));
       fileUploaded.value =!fileUploaded.value; 
-      openDraftImportCsvModal();
+      openImportCsvModal();
     } else {
       showToast(translate("No new file upload. Please try again"));
     }
@@ -257,23 +256,22 @@ async function fetchCountItems() {
   }
 }
 
-async function openDraftImportCsvModal() {
-  const draftImportCsvModal = await modalController.create({
-    component: DraftImportCsvModal,
+async function openImportCsvModal() {
+  const importCsvModal = await modalController.create({
+    component: ImportCsvModal,
     componentProps: {
-      fileColumns : fileColumns.value ,
-      content : content.value , 
-      countId : props.inventoryCountImportId
+      fileColumns: fileColumns.value,
+      content: content.value, 
+      countId: props.inventoryCountImportId
     }
   })
- // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
-  draftImportCsvModal.onDidDismiss().then((result: any) => {
-      if (result?.data?.identifierData) {
-        findProductFromIdentifier(result.data.identifierData)
-      }
-    })
-
-  draftImportCsvModal.present();
+  // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
+  importCsvModal.onDidDismiss().then((result: any) => {
+    if (result?.data?.identifierData) {
+      findProductFromIdentifier(result.data.identifierData)
+    }
+  })
+  importCsvModal.present();
 }
     
 async function openSelectFacilityModal() {
@@ -384,14 +382,15 @@ async function findProduct() {
 }
 
 async function findProductFromIdentifier(payload: any) {
-
-  const filterValues = payload.map((item: any) => item.idValue).join(' OR ');
-  const filterString = `${payload[0].idType}: (${filterValues})`;
   
+  const idType = payload.idType;
+  const idValues = payload.idValue;
+  const filterString = `${idType}: (${idValues.join(' OR ')})`;
+
   try {
     const resp = await ProductService.fetchProducts({
       "filters": [filterString],
-      "viewSize": filterString.length
+      "viewSize": idValues.length
     })
 
     if (!hasError(resp) && resp.data.response?.docs?.length) {
@@ -399,12 +398,14 @@ async function findProductFromIdentifier(payload: any) {
       const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);
 
       // Filter payload products to only include items that have a matching product and are not already in the cycle count.
-      const filteredPayload = payload.filter((item: any) => {
-        const product = products.find((product: any) => product[item.idType] === item.idValue);
-        return product && !itemsAlreadyInCycleCount.includes(product.productId);
+      const filteredProducts = products.filter((product: any) => {
+        return idValues.includes(product[idType]) && !itemsAlreadyInCycleCount.includes(product.productId);
       });
-      await addProductToCount(filteredPayload, true);
-      showToast(translate("Added products to the cycle count out of.", {added: filteredPayload.length, total: payload.length}))
+
+      const productToAdd = filteredProducts.map((product: any) => ({ idType, idValue: product[idType] }));
+
+      await addProductToCount(productToAdd, true);
+      showToast(translate("Added products to the cycle count out of.", {added: productToAdd.length, total: idValues.length}))
     } else {
       throw resp.data
     }
@@ -419,12 +420,8 @@ async function addProductToCount(payload?: any, fromModal?: boolean) {
   if (!check) {
     // If product is not found in the searched string then do not make the api call
     // check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
-    if (!searchedProduct.value.productId ||!queryString.value) {
-      return;
-    }
-    if (isProductAvailableInCycleCount.value) {
-      return;
-    }
+    if (!searchedProduct.value.productId ||!queryString.value) return;
+    if (isProductAvailableInCycleCount.value) return;
   }
 
   let itemList;
@@ -509,6 +506,10 @@ async function updateCountStatus() {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.pointer {
+  cursor: pointer;
 }
 
 .item-search {
