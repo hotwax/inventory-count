@@ -61,14 +61,12 @@
           </template>
         </aside>
         <!--Product details-->
-        <main class="main" >
-          <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId">
-            <div @scroll="onScroll" class="image-scroll">
-              <div class="image" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+        <main @scroll="onScroll" class="main" >
+          <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+              <div class="image">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
               </div>
-            </div>
-            <div class="detail">
+              <div class="detail">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h1>
@@ -337,29 +335,27 @@ function updateFilteredItems() {
 
 // Handles scrolling event to update the current product and navigation state based on the product closest to the viewport center.
 const onScroll = (event) => {
+
   if (isScrolling) {
     clearTimeout(scrollTimeout);
   }
   isScrolling = true;
+  const main = event.target;
 
-  const imageScroll = event.target;
-  console.log(imageScroll);
   scrollTimeout = setTimeout(() => {
     isScrolling = false;
+    const products = Array.from(main.querySelectorAll('.product'));
 
-    const products = Array.from(imageScroll.querySelectorAll('.image'));
-    console.log('ptroo', products);
-    const viewportHeight = imageScroll.clientHeight;
+    const viewportHeight = main.clientHeight;
     const threshold = viewportHeight / 2;
 
     let currentProduct = null;
     let smallestDistance = Infinity;
-    
+
     products.forEach((product) => {
       const productRect = product.getBoundingClientRect();
       const productCenter = productRect.top + productRect.height / 2;
       const distanceFromCenter = Math.abs(productCenter - threshold);
-
       if (distanceFromCenter < smallestDistance) {
         smallestDistance = distanceFromCenter;
         currentProduct = product;
@@ -370,7 +366,6 @@ const onScroll = (event) => {
       const currentProductId = currentProduct.dataset.productId;
       const currentItemSeqId = currentProduct.dataset.seq;
       const currentIndex = filteredItems.value.findIndex((item) => item.productId === currentProductId && item.importItemSeqId === currentItemSeqId);
-
       if (currentIndex !== -1) {
         const currentProduct = filteredItems.value[currentIndex];
         store.dispatch("product/currentProduct", currentProduct);
@@ -524,10 +519,6 @@ async function discardRecount() {
 
 <style scoped>
 
-ion-content {
-  overflow: hidden;
-}
-
 .find {
   display: grid;
   height: 100%;
@@ -576,36 +567,26 @@ aside {
 main {
   height: 100%;
   overflow: auto;
-  /* scroll-behavior: smooth;
-  scroll-snap-type: y mandatory; */
-}
-
-.image-scroll {
-  overflow: auto;
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
+}
+
+.product {
+  display: grid;
+  height: 90vh;
+  grid: "image detail"
+         /1fr 2fr;
+  scroll-snap-stop: always;
+  scroll-snap-align: start;
 }
 
 .image {
   grid-area: image;
   margin-top: var(--spacer-lg);
   margin-right: var(--spacer-lg);
-  scroll-snap-stop: always;
-  scroll-snap-align: start; 
 }
-
-.product {
-  display: grid;
-  height: 100vh;
-  grid: "image detail"
-         /1fr 2fr;
-  /* scroll-snap-stop: always;
-  scroll-snap-align: start; */
-}
-
 
 .detail {
-  position: sticky;
   grid-area: detail;
   margin-top: var(--spacer-lg);
   display: grid;
@@ -633,9 +614,9 @@ main {
           / 375px;
     column-gap: var(--spacer-2xl);
   }
-
  .find >.filters {
     display: unset;
   }
 }
+
 </style>
