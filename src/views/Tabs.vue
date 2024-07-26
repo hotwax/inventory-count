@@ -3,7 +3,7 @@
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
-        <ion-tab-button tab="orders" href="/tabs/count">
+        <ion-tab-button tab="orders" @click="$router.push('/tabs/count')" href="/tabs/count">
           <ion-icon :icon="infiniteOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>

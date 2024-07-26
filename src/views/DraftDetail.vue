@@ -70,7 +70,7 @@
         </div>
 
         <div class="item-search">
-          <ion-item>
+          <ion-item lines="none">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-input
               :label="translate('Add product')"
@@ -80,6 +80,7 @@
               @ionInput="findProduct()"
               :debounce="1000"
               @keyup.enter="addProductToCount"
+              :helper-text="translate('Searching on SKU')"
             >
             </ion-input>
           </ion-item>
@@ -124,12 +125,12 @@
               </ion-chip>
               <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
             </div>
-            <div class="tablet">
+            <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
+            <!-- <div class="tablet">
               <ion-chip outline>
-                <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
                 <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
               </ion-chip>
-            </div>
+            </div> -->
             <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
               <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
             </ion-button>
@@ -157,9 +158,9 @@ import { translate } from "@/i18n";
 import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
-import { defineProps, ref, onMounted, nextTick, computed } from "vue"
+import { defineProps, ref, nextTick, computed } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
@@ -190,7 +191,7 @@ let queryString = ref("")
 let searchedProduct = ref({} as any)
 let isSearchingProduct = ref(false)
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {

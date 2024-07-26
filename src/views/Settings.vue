@@ -85,6 +85,30 @@
             </ion-select>
           </ion-item>
         </ion-card>
+      </section>
+      <hr />
+      <div class="section-header">
+        <h1>
+          {{ translate("App") }}
+          <p class="overline">{{ translate("Version:") + appVersion }}</p>
+        </h1>
+        <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
+      </div>
+      <section>
+        <!-- <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Timezone") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("The timezone you select is used to ensure automations you schedule are always accurate to the time you select.") }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>{{ userProfile && userProfile.timeZone ? userProfile.timeZone : "-" }}</ion-label>
+            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
+          </ion-item>
+        </ion-card> -->
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -109,30 +133,6 @@
           </ion-item>
         </ion-card>
       </section>
-      <hr />
-      <div class="section-header">
-        <h1>
-          {{ translate("App") }}
-          <p class="overline">{{ translate("Version:") + appVersion }}</p>
-        </h1>
-        <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
-      </div>
-      <!-- <section>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate("Timezone") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ translate("The timezone you select is used to ensure automations you schedule are always accurate to the time you select.") }}
-          </ion-card-content> -->
-          <!-- <ion-item lines="none">
-            <ion-label>{{ userProfile && userProfile.timeZone ? userProfile.timeZone : "-" }}</ion-label>
-            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
-          </ion-item> -->
-        <!-- </ion-card>
-      </section> -->
     </ion-content>
   </ion-page>
 </template>
