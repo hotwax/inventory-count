@@ -10,7 +10,7 @@ import { Settings } from "luxon";
 import { resetConfig } from "@/adapter"
 import { useAuthStore } from "@hotwax/dxp-components"
 import emitter from "@/event-bus"
-import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import { getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -136,15 +136,43 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit, dispatch }) {
+  async fetchFacilities({ commit, dispatch, state }) {
     let facilities: Array<any> = []
     try {
+      let associatedFacilityIds: Array<string> = []
+      let params = {}
+
+      if(!hasPermission("APP_DRAFT_VIEW")) {
+        const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
+          partyId: (state.current as any).partyId,
+          pageSize: 200
+        })
+
+        if(!hasError(associatedFacilitiesResp)) {
+          // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
+          // Considering that the facilities will always have a thruDate of the past.
+          associatedFacilityIds = associatedFacilitiesResp.data.filter((facility: any) => !facility.thruDate)?.map((facility: any) => facility.facilityId)
+        }
+
+        if(!associatedFacilityIds.length) {
+          throw "Failed to fetch facilities"
+        }
+
+        params = {
+          facilityId: associatedFacilityIds.join(","),
+          facilityId_op: "in",
+          pageSize: associatedFacilityIds.length,
+        }
+      }
+
+      // Making this call to fetch the facility details like name, as the above api does not return facility details, need to replace this once api has support to return facility details
       const resp = await UserService.fetchFacilities({
         parentTypeId: "VIRTUAL_FACILITY",
         parentTypeId_not: "Y",
         facilityTypeId: "VIRTUAL_FACILITY",
         facilityTypeId_not: "Y",
-        pageSize: 200
+        pageSize: 200,
+        ...params
       })
 
       if(!hasError(resp)) {

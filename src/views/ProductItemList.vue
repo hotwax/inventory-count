@@ -1,5 +1,5 @@
 <template>
-  <ion-item @click="selectedProduct(item)" button>
+  <ion-item :color="isCurrentProduct() ? 'light' : ''" @click="selectedProduct(item)" button>
     <ion-thumbnail slot="start">
       <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
@@ -9,18 +9,18 @@
       <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
-      {{ item.quantity ? item.quantity : "-" }} {{ translate("units") }}
+      {{ item.quantity === 0 ? 0 : item.quantity }} {{ translate("units") }}
     </ion-badge>
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
     </ion-note>
-    <ion-badge slot="end" v-else-if="item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+    <ion-badge slot="end" v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ item.quantity }} {{ translate("units") }}
     </ion-badge>
-    <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_ASSIGNED'">
+    <ion-note v-else-if="item.quantity === undefined || item.quantity === null && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}
     </ion-note>
-    <ion-note v-else-if="item.quantity > 0 && item.statusId === 'INV_COUNT_REVIEW'">
+    <ion-note v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_REVIEW'">
       {{ translate("pending review") }}
     </ion-note>
     <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_REVIEW'" color="warning">
@@ -39,14 +39,21 @@ import { getProductIdentificationValue } from "@/utils"
 
 const store = useStore();
 
-defineProps(['item'])
+const props = defineProps(['item'])
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
 
 async function selectedProduct(item: any) {
   // Making recount variable as false when clicking on the item so that the product details are displayed in the default state on initial load
   await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
+}
+
+// Method to display the item as selected by changing the ion-item color to light
+function isCurrentProduct() {
+  // Added check for itemStatusId as we may have the same product added multiple times in different status(like in case when request recount an item)
+  return currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId
 }
 </script>
 

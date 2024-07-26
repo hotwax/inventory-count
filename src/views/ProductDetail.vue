@@ -35,7 +35,7 @@
         <template v-else>
           <ion-list v-if="product.isRecounting">
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -67,10 +67,10 @@
               <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
             </ion-item>
             <!-- TODO: make the counted at information dynamic -->
-            <ion-item>
+            <!-- <ion-item>
               {{ translate("Counted at") }}
               <ion-label slot="end">{{ "-" }}</ion-label>
-            </ion-item>
+            </ion-item> -->
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
                 {{ translate("Current on hand") }}
@@ -88,7 +88,7 @@
           
           <ion-list v-else>
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -110,7 +110,7 @@
   </template>
 
   <script setup lang="ts">
-  import { computed, ref } from 'vue';
+  import { computed, onUpdated, ref } from 'vue';
   import { IonBadge, IonButton, IonInput, IonItem, IonLabel, IonList, alertController } from "@ionic/vue";
   import { translate } from '@/i18n'
   import { useStore } from 'vuex';
@@ -130,6 +130,16 @@
   const inputCount = ref('');
   const variance = ref(0);
 
+  // Clearning the local defined data variables to be cleared when the component is updated
+  onUpdated(() => {
+    inputCount.value = ""
+    variance.value = 0
+  })
+
+  function inputCountValidation(event: any) {
+    if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+  }
+
   async function calculateVariance() {
     if (!product.value || !inputCount.value) {
       variance.value = 0;
@@ -139,13 +149,18 @@
   }
 
   function getVariance(item: any, count?: any) {
-    const qty = item.quantity || 0
+    const qty = item.quantity
+    if(!qty) {
+      return 0;
+    }
+
     // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
     return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
   }
 
   async function saveCount() {
-    if (!product.value) {
+    if (!product.value || !inputCount.value) {
+      showToast(translate("Enter a count before saving changes"))
       return;
     }
     try {
@@ -159,6 +174,8 @@
       const resp = await CountService.updateCount(payload);
       if (!hasError(resp)) {
         product.value.quantity = inputCount.value
+        product.value.countedByGroupName = userProfile.value.userFullName
+        product.value.countedByUserLoginId = userProfile.value.username
         await store.dispatch('product/currentProduct', product.value);
         inputCount.value = ''; 
       } else {

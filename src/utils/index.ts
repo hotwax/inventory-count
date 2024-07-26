@@ -114,7 +114,7 @@ const getProductIdentificationValue = (productIdentifier: string, product: any) 
   let value = product[productIdentifier]
 
   // considered that the goodIdentification will always have values in the format "productIdentifier/value" and there will be no entry like "productIdentifier/"
-  const identification = product['goodIdentifications'].find((identification: string) => identification.startsWith(productIdentifier + "/"))
+  const identification = product['goodIdentifications']?.find((identification: string) => identification.startsWith(productIdentifier + "/"))
 
   if(identification) {
     const goodIdentification = identification.split('/')
