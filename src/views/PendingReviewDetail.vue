@@ -5,7 +5,7 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button :disabled="!filteredItems?.length" @click="selectAll()">
+          <ion-button :disabled="!filteredItems?.length || isAllItemsMarkedAsCompletedOrRejected" @click="selectAll()">
             <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
             <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
           </ion-button>
@@ -269,6 +269,8 @@ onIonViewWillLeave(() => {
 async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       currentCycleCount.value["items"] = resp.data.itemList.map((item: any) => ({ ...item, isChecked: false }))

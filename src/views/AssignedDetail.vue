@@ -226,6 +226,8 @@ async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
 
+    store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
+
     if(!hasError(resp) && resp.data?.itemList?.length) {
       currentCycleCount.value["items"] = resp.data.itemList
       store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
