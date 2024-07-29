@@ -191,7 +191,7 @@ let isSearchingProduct = ref(false)
 let timeoutId = ref()
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
-// Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the decounce effect thus the spinner is also displayed after the debounce
+// Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
 // effect is completed.
 watch(queryString, (value) => {
   const searchedString = value.trim()
