@@ -132,7 +132,7 @@
             </ion-item>
 
             <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
@@ -170,7 +170,7 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="acceptItem()">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
@@ -558,6 +558,11 @@ function updateCustomTime(event: any) {
   }).catch(err => {
     logger.info(err)
   })
+}
+
+// Method checks whether all the items selected all counted(having some quantity) or not, as we do not allow accepting those items on which quantity is not set
+function isSelectedItemsHasQuantity() {
+  return filteredItems.value?.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED" && item.isChecked).every((item: any) => item.quantity >= 0)
 }
 </script>
 
