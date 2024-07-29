@@ -385,39 +385,42 @@ async function findProductFromIdentifier(payload: any) {
   
   const idType = payload.idType;
   const idValues = payload.idValue;
-  const filterString = `${idType}: (${idValues.join(' OR ')})`;
+  const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
 
   try {
     const resp = await ProductService.fetchProducts({
       "filters": [filterString],
       "viewSize": idValues.length
     })
-
+    // We first fetch the products and then check whether they are available in the current count, instead of doing it in reverse order.
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       const products = resp.data.response.docs;
       const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);
 
       // Filter payload products to only include items that have a matching product and are not already in the cycle count.
       const filteredProducts = products.filter((product: any) => {
-        return idValues.includes(product[idType]) && !itemsAlreadyInCycleCount.includes(product.productId);
-      });
+        const identificationValue = getProductIdentificationValue(idType, product);
+        return idValues.includes(identificationValue) && !itemsAlreadyInCycleCount.includes(product.productId);
+      })
 
-      const productToAdd = filteredProducts.map((product: any) => ({ idType, idValue: product[idType] }));
+      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId }));
+      if(!productsToAdd) {
+        return showToast(translate("Failed to add product to count"))
+      }
 
-      await addProductToCount(productToAdd, true);
-      showToast(translate("Added products to the cycle count out of.", {added: productToAdd.length, total: idValues.length}))
+      await addProductToCount(productsToAdd);
+      showToast(translate("Added products to the cycle count out of.", {added: productsToAdd.length, total: idValues.length}))
     } else {
       throw resp.data
     }
   } catch(err) {
-    logger.error("Product not found", err)
+    logger.error("Failed to add products to count, as some products are not found.", err)
   }
 }
 
-async function addProductToCount(payload?: any, fromModal?: boolean) {
+async function addProductToCount(payload?: any) {
 
-  let check = fromModal || false;
-  if (!check) {
+  if (!payload.length) {
     // If product is not found in the searched string then do not make the api call
     // check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
     if (!searchedProduct.value.productId ||!queryString.value) return;

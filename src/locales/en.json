@@ -77,6 +77,7 @@
   "Facility needs to be associated with a product store to change this configuration.": "Facility needs to be associated with a product store to change this configuration.",
   "Facility": "Facility",
   "Failed to create cycle count": "Failed to create cycle count",
+  "Failed to add products to count, as some products are not found.": "Failed to add products to count, as some products are not found.",
   "Failed to re-assign cycle count": "Failed to re-assign cycle count",
   "Failed to update cycle count information": "Failed to update cycle count information",
   "Fetching cycle counts...": "Fetching cycle counts...",

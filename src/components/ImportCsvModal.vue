@@ -2,7 +2,7 @@
   <ion-header>
     <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="closeModal"> 
+        <ion-button @click="closeModal()"> 
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
@@ -61,12 +61,15 @@ import { showToast } from "@/utils";
 
 
 const props = defineProps(["fileColumns", "content", "countId"])
-const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
+const productIdentifications = ["productId", "SKU", "UPCA", "SHOPIFY_PROD_SKU", "SHOPIFY_PROD_ID"]
 
 const selectedIdentifier = ref('')
 const selectedColumn = ref('')
 
-function closeModal(identifierData: any) {
+function closeModal(identifierData: any = {}) {
+  if(!identifierData || !Object.keys(identifierData).length) {
+    modalController.dismiss({ dismissed: true});
+  }
   modalController.dismiss({ dismissed: true, identifierData });
 }
 
@@ -79,22 +82,21 @@ function saveImportData() {
     return showToast(translate("Please select the column that corresponds to the product identifier"));
   }
 
-  let identifierData: any = {};
-  props.content.forEach((row: any) => {
-    const idType = selectedIdentifier.value
-    const idValue = row[selectedColumn.value]
+  const idType = selectedIdentifier.value;
+  const idValues = props.content.map((row: any) => row[selectedColumn.value]);
 
-    if (!identifierData.idType) {
-      identifierData.idType = idType;
-      identifierData.idValue = [];
-    }
+  let identifierData = {
+    idType: idType,
+    idValue: idValues
+  };
 
-    identifierData.idValue.push(idValue);
-  })
-
-  closeModal(identifierData)
+  closeModal(identifierData);
 }
-
 
 </script>
     
+<style scoped>
+ ion-content {
+    --padding-bottom: 70px;
+  }
+</style>
