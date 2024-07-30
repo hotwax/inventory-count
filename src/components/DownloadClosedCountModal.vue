@@ -16,7 +16,7 @@
         <ion-label>{{ translate("Select fields") }}</ion-label>
       </ion-list-header>
       <ion-item>
-        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.countId">{{ translate("Count ID") }}</ion-checkbox>
+        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.countId" disabled>{{ translate("Count ID") }}</ion-checkbox>
       </ion-item>
       <ion-item>
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.countName">{{ translate("Count name") }}</ion-checkbox>
@@ -34,36 +34,28 @@
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.closedDate">{{ translate("Closed date") }}</ion-checkbox>
       </ion-item>
       <ion-item>
-        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.facility">{{ translate("Facility") }}</ion-checkbox>
+        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.facility" disabled>{{ translate("Facility") }}</ion-checkbox>
         <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityField" slot="end">
           <ion-select-option value="facilityId">Internal Id</ion-select-option>
           <ion-select-option value="externalId">External Id</ion-select-option>
           <ion-select-option value="facilityName">Facility name</ion-select-option>
         </ion-select>
       </ion-item>
-      <!-- <ion-item lines="inset">
-        <ion-checkbox justify="start" label-placement="end">{{ translate("Primary product ID") }}</ion-checkbox>
-        <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end">
-          <ion-select-option value="default">SKU</ion-select-option>
-          <ion-select-option>Product store ID</ion-select-option>
-          <ion-select-option>UPC</ion-select-option>
+      <ion-item lines="inset">
+        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.primaryProductId" disabled>{{ translate("Primary product ID") }}</ion-checkbox>
+        <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedPrimaryProductId">
+          <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item lines="inset">
+        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.secondaryProductId">{{ translate("Secondary product ID") }}</ion-checkbox>
+        <ion-select aria-label="secondaryProduct" interface="popover" value="default" slot="end" v-model="selectedSecondaryProductId">
+          <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
         </ion-select>
       </ion-item> 
       <ion-item lines="inset">
-        <ion-checkbox justify="start" label-placement="end">{{ translate("Secondary product ID") }}</ion-checkbox>
-        <ion-select aria-label="secondaryProduct" interface="popover" value="default" slot="end">
-          <ion-select-option value="default">Product ID</ion-select-option>
-          <ion-select-option>Product store ID</ion-select-option>
-        </ion-select>
-      </ion-item> 
-      <ion-item lines="inset">
-        <ion-checkbox justify="start" label-placement="end">{{ translate("Line status") }}</ion-checkbox>
-        <ion-select aria-label="lineStatus" interface="popover" value="all" slot="end">
-          <ion-select-option value="all">All</ion-select-option>
-          <ion-select-option>Counted</ion-select-option>
-          <ion-select-option>Pending</ion-select-option>
-        </ion-select>
-      </ion-item>  -->
+        <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.lineStatus">{{ translate("Line status") }}</ion-checkbox>
+      </ion-item>
       <ion-item>
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.expectedQuantity">{{ translate("Expected quantity") }}</ion-checkbox>
       </ion-item>
@@ -106,7 +98,7 @@ import {
 } from "@ionic/vue";
 import { computed, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { getDateWithOrdinalSuffix, showToast, hasError, jsonToCsv } from "@/utils";
+import { getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv } from "@/utils";
 import { CountService } from "@/services/CountService"
 import { translate } from '@/i18n';
 import { DateTime } from "luxon";
@@ -119,20 +111,27 @@ const cycleCountStats = computed(() => (id: string) => store.getters["count/getC
 const facilities = computed(() => store.getters["user/getFacilities"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
+const productIdentifications = ["productId", "SKU", "UPCA", "SHOPIFY_PROD_SKU", "SHOPIFY_PROD_ID"]
+
 const selectedFields: any = ref({
-  countId: false,
+  countId: true,
   countName: false,
   acceptedByUser: false,
   createdDate: false,
   lastSubmittedDate: false,
   closedDate: false,
-  facility: false,
+  facility: true,
   expectedQuantity: false,
   countedQuantity: false,
-  variance: false
+  variance: false,
+  primaryProductId: true,
+  secondaryProductId: false,
+  lineStatus: false
 });
-const selectedFacilityField = ref('facilityId');
 
+const selectedFacilityField: any = ref('facilityId');
+const selectedPrimaryProductId: any = ref('productId');
+const selectedSecondaryProductId: any = ref('productId');
 
 function closeModal() {
   modalController.dismiss({ dismissed: true});
@@ -172,7 +171,7 @@ async function fetchCycleCountItems(countId: any) {
   try {
     const resp = await CountService.fetchCycleCountItems(countId.inventoryCountImportId);
     if(!hasError(resp) && resp.data?.itemList?.length) {
-      return resp?.data;
+      return resp?.data.itemList;
     }
   } catch (err) {
     logger.error(err);
@@ -180,16 +179,20 @@ async function fetchCycleCountItems(countId: any) {
   }
 }
 
-function getExpectedCount(items: any) {
-  let totalItemsExpectedCount = 0;
-  items?.itemList.map((item: any) => {
-    totalItemsExpectedCount += parseInt(item.qoh || 0);
-  });
-  return totalItemsExpectedCount;
+async function fetchProducts(productIds: string){
+  try {
+    const resp = await store.dispatch("product/fetchProducts", { productIds });
+    if (!hasError(resp) && resp.data?.response.docs.length) {
+      return resp.data.response.docs;
+    }
+  } catch (err) {
+    logger.error(err);
+  }
+  return [];
 }
 
 async function downloadCSV() {
-
+  
   const facilityDetails = getFacilityDetails();
   
   const selectedFieldMappings: any = {
@@ -202,22 +205,28 @@ async function downloadCSV() {
     facility: "facilityId",
     expectedQuantity: "qoh",
     countedQuantity: "quantity",
-    variance: "varianceQuantityOnHand"
+    variance: "varianceQuantityOnHand",
+    primaryProductId: "primaryProductId",
+    secondaryProductId: "secondaryProductId",
+    lineStatus: "statusId"
   };
-
+  
   const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
-  console.log("selectedData", selectedData);
+  const downloadData: any = [];
 
-  if (!selectedData.length) {
-    showToast(translate('Please select at least one field to generate CSV'));
-    return;
-  }
-
-  const downloadData = await Promise.all(cycleCounts.value.map(async (count: any) => {
+  await Promise.all(cycleCounts.value.map(async (count: any) => {
     const cycleCountItems = await fetchCycleCountItems(count);
     const facility = facilityDetails[count.facilityId];
-    return cycleCountItems?.itemList.map((item: any) => {
+
+    if(!cycleCountItems?.length) return [];
+
+    const productIds = cycleCountItems.map((item: any) => item.productId);
+    const products = await fetchProducts(productIds);
+    
+    return cycleCountItems.map((item: any) => {
       const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
+        const product = products?.find((product: any) => product.productId === item.productId);
+
         if (property === 'createdDate') {
           details[property] = getDateWithOrdinalSuffix(count.createdDate);
         } else if (property === 'lastSubmittedDate') {
@@ -226,16 +235,19 @@ async function downloadCSV() {
           details[property] = getClosedDate(count);
         } else if (property === 'facility') {
           details[property] = facility[selectedFacilityField.value];
+        } else if (property === 'primaryProductId') {
+          details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
+        } else if (property === 'secondaryProductId') {
+          details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
         } else {
           details[property] = item[selectedFieldMappings[property]];
         }
         return details;
       }, {});
-      return cycleCountDetails
+
+      downloadData.push(cycleCountDetails);
     });
   }));
-
-  const flattenedData = downloadData.flat().filter((data: any) => data);
 
   const alert = await alertController.create({
     header: translate("Download closed counts"),
@@ -247,7 +259,7 @@ async function downloadCSV() {
       text: translate("Download"),
       handler: async () => {
         const fileName = `CycleCounts-${currentFacility.value.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
-        await jsonToCsv(flattenedData, { download: true, name: fileName });
+        await jsonToCsv(downloadData, { download: true, name: fileName });
         modalController.dismiss({ dismissed: true });
       }
     }]
