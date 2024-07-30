@@ -167,19 +167,35 @@ function getFacilityDetails() {
   }, {});
 }
 
-async function fetchCycleCountItems(countId: any) {
+async function fetchBulkCycleCountItems() {
+  let payload = {
+    statusId: "INV_COUNT_COMPLETED",
+    pageSize: 200,
+    pageIndex: 0
+  };
+
+  let allItems = [] as any;
+  let resp;
+
   try {
-    const resp = await CountService.fetchCycleCountItems(countId.inventoryCountImportId);
-    if(!hasError(resp) && resp.data?.itemList?.length) {
-      return resp?.data.itemList;
-    }
+    do {
+      resp = await CountService.fetchBulkCycleCountItems(payload);
+      if (!hasError(resp) && resp?.data.itemList.length) {
+        allItems = allItems.concat(resp.data.itemList);
+        payload.pageIndex++;
+      } else {
+        throw resp.data;
+      }
+    } while (resp.data.itemList.length >= payload.pageSize);
   } catch (err) {
     logger.error(err);
     return [];
   }
+
+  return allItems;
 }
 
-async function fetchProducts(productIds: string){
+async function fetchProducts(productIds: any){
   try {
     const resp = await store.dispatch("product/fetchProducts", { productIds });
     if (!hasError(resp) && resp.data?.response.docs.length) {
@@ -192,9 +208,7 @@ async function fetchProducts(productIds: string){
 }
 
 async function downloadCSV() {
-  
   const facilityDetails = getFacilityDetails();
-  
   const selectedFieldMappings: any = {
     countId: "inventoryCountImportId",
     countName: "countImportName",
@@ -210,43 +224,36 @@ async function downloadCSV() {
     secondaryProductId: "secondaryProductId",
     lineStatus: "statusId"
   };
-  
+
   const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
-  const downloadData: any = [];
+  
+  const cycleCountItems = await fetchBulkCycleCountItems();
+  const products = await fetchProducts([... new Set(cycleCountItems.map((item: any) => item.productId))]);
+  
+  const downloadData = await Promise.all(cycleCountItems.map(async (item: any) => {
+    const facility = facilityDetails[item?.facilityId];
+    const product = products?.find((product: any) => product.productId === item.productId);
 
-  await Promise.all(cycleCounts.value.map(async (count: any) => {
-    const cycleCountItems = await fetchCycleCountItems(count);
-    const facility = facilityDetails[count.facilityId];
-
-    if(!cycleCountItems?.length) return [];
-
-    const productIds = cycleCountItems.map((item: any) => item.productId);
-    const products = await fetchProducts(productIds);
-    
-    return cycleCountItems.map((item: any) => {
-      const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
-        const product = products?.find((product: any) => product.productId === item.productId);
-
-        if (property === 'createdDate') {
-          details[property] = getDateWithOrdinalSuffix(count.createdDate);
-        } else if (property === 'lastSubmittedDate') {
-          details[property] = getLastSubmittedDate(count);
-        } else if (property === 'closedDate') {
-          details[property] = getClosedDate(count);
-        } else if (property === 'facility') {
-          details[property] = facility[selectedFacilityField.value];
-        } else if (property === 'primaryProductId') {
-          details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
-        } else if (property === 'secondaryProductId') {
-          details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
-        } else {
-          details[property] = item[selectedFieldMappings[property]];
-        }
-        return details;
-      }, {});
-
-      downloadData.push(cycleCountDetails);
-    });
+    const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
+      if (property === 'createdDate') {
+        details[property] = getDateWithOrdinalSuffix(item.createdDate);
+      } else if (property === 'lastSubmittedDate') {
+        details[property] = getLastSubmittedDate(item);
+      } else if (property === 'closedDate') {
+        details[property] = getClosedDate(item);
+      } else if (property === 'facility') {
+        details[property] = facility[selectedFacilityField.value];
+      } else if (property === 'primaryProductId') {
+        details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
+      } else if (property === 'secondaryProductId') {
+        details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
+      } else {
+        details[property] = item[selectedFieldMappings[property]];
+      }
+      return details;
+    }, {});
+  
+    return cycleCountDetails;
   }));
 
   const alert = await alertController.create({
