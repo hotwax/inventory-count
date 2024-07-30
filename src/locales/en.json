@@ -46,6 +46,7 @@
   "complete": "complete",
   "Created date": "Created date",
   "Created": "Created",
+  "CSV data is missing or incorrect. Please check your file.": "CSV data is missing or incorrect. Please check your file.",
   "Cycle Count": "Cycle Count",
   "Cycle count not found": "Cycle count not found",
   "Current on hand": "Current on hand",

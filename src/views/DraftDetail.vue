@@ -267,7 +267,7 @@ async function openImportCsvModal() {
   })
   // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
   importCsvModal.onDidDismiss().then((result: any) => {
-    if (result?.data?.identifierData) {
+    if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
       findProductFromIdentifier(result.data.identifierData)
     }
   })
@@ -385,6 +385,11 @@ async function findProductFromIdentifier(payload: any) {
   
   const idType = payload.idType;
   const idValues = payload.idValue;
+
+  if(!idValues || !idValues.length) {
+    return showToast(translate("CS  V data is missing or incorrect. Please check your file."));
+  }
+
   const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
 
   try {
@@ -392,7 +397,9 @@ async function findProductFromIdentifier(payload: any) {
       "filters": [filterString],
       "viewSize": idValues.length
     })
-    // We first fetch the products and then check whether they are available in the current count, instead of doing it in reverse order.
+    // We first fetch the products and then check whether they are available in the current count, instead of doing it in reverse order, it reduces the number of checks and improve performance.
+    // This ensures that we have the most up-to-date product data and can accurately determine their presence in the current cycle count.
+
     if (!hasError(resp) && resp.data.response?.docs?.length) {
       const products = resp.data.response.docs;
       const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);

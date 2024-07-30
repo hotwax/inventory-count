@@ -67,9 +67,6 @@ const selectedIdentifier = ref('')
 const selectedColumn = ref('')
 
 function closeModal(identifierData: any = {}) {
-  if(!identifierData || !Object.keys(identifierData).length) {
-    modalController.dismiss({ dismissed: true});
-  }
   modalController.dismiss({ dismissed: true, identifierData });
 }
 
@@ -83,7 +80,7 @@ function saveImportData() {
   }
 
   const idType = selectedIdentifier.value;
-  const idValues = props.content.map((row: any) => row[selectedColumn.value]);
+  const idValues = props.content.map((row: any) => row[selectedColumn.value]).filter(data => data);
 
   let identifierData = {
     idType: idType,
