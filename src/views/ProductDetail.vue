@@ -18,7 +18,7 @@
         <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
           <ion-item>
             {{ translate("Counted") }}
-            <ion-label slot="end">{{ product.quantity !== null && product.quantity !== undefined ? product.quantity : '-'}}</ion-label>
+            <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
           </ion-item>
           <template v-if="productStoreSettings['showQoh']">
             <ion-item>
@@ -57,7 +57,7 @@
             </div>
           </ion-list>
 
-          <ion-list v-else-if="product.quantity >=0">
+          <ion-list v-else-if="product.quantity >= 0">
             <ion-item>
               {{ translate("Counted") }}
               <ion-label slot="end">{{ product.quantity }}</ion-label>
