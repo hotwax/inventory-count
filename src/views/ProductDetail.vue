@@ -35,7 +35,7 @@
         <template v-else>
           <ion-list v-if="product.isRecounting">
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" min="0" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -88,7 +88,7 @@
           
           <ion-list v-else>
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" min="0" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
