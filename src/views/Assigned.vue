@@ -5,7 +5,7 @@
       <ion-toolbar>
         <ion-title>{{ translate("Assigned")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
+          <ion-menu-button menu="filter">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
