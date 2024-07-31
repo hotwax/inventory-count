@@ -36,21 +36,20 @@
       <ion-item>
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.facility" disabled>{{ translate("Facility") }}</ion-checkbox>
         <ion-select aria-label="facilityField" interface="popover" v-model="selectedFacilityField" slot="end">
-          <ion-select-option value="facilityId">Internal Id</ion-select-option>
-          <ion-select-option value="externalId">External Id</ion-select-option>
-          <ion-select-option value="facilityName">Facility name</ion-select-option>
+          <ion-select-option value="facilityId">Internal ID</ion-select-option>
+          <ion-select-option value="externalId">External ID</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item lines="inset">
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.primaryProductId" disabled>{{ translate("Primary product ID") }}</ion-checkbox>
         <ion-select aria-label="primaryProduct" interface="popover" value="default" slot="end" v-model="selectedPrimaryProductId">
-          <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
+          <ion-select-option v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
         </ion-select>
       </ion-item>
       <ion-item lines="inset">
         <ion-checkbox justify="start" label-placement="end" v-model="selectedFields.secondaryProductId">{{ translate("Secondary product ID") }}</ion-checkbox>
         <ion-select aria-label="secondaryProduct" interface="popover" value="default" slot="end" v-model="selectedSecondaryProductId">
-          <ion-select-option v-for="identification in productIdentifications" :key="identification">{{ identification }}</ion-select-option>
+          <ion-select-option v-for="(value, identificationsType) in productIdentifications" :key="identificationsType" :value="value">{{ identificationsType }}</ion-select-option>
         </ion-select>
       </ion-item> 
       <ion-item lines="inset">
@@ -112,22 +111,27 @@ const facilities = computed(() => store.getters["user/getFacilities"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 
-const productIdentifications = ["productId", "SKU", "UPCA", "SHOPIFY_PROD_SKU", "SHOPIFY_PROD_ID"]
+const productIdentifications = {
+  "Internal ID": "productId",
+  "Internal Name": "internalName",
+  "SKU": "SKU",
+  "UPC": "UPCA"
+};
 
 const selectedFields: any = ref({
   countId: true,
-  countName: false,
-  acceptedByUser: false,
-  createdDate: false,
-  lastSubmittedDate: false,
-  closedDate: false,
+  countName: true,
+  acceptedByUser: true,
+  createdDate: true,
+  lastSubmittedDate: true,
+  closedDate: true,
   facility: true,
-  expectedQuantity: false,
-  countedQuantity: false,
-  variance: false,
+  expectedQuantity: true,
+  countedQuantity: true,
+  variance: true,
   primaryProductId: true,
-  secondaryProductId: false,
-  lineStatus: false
+  secondaryProductId: true,
+  lineStatus: true
 });
 
 const selectedFacilityField: any = ref('facilityId');
@@ -162,7 +166,6 @@ function getFacilityDetails() {
     details[facility.facilityId] = {
       facilityId: facility.facilityId,
       externalId: facility.externalId,
-      facilityName: facility.facilityName
     };
     return details;
   }, {});
@@ -256,6 +259,8 @@ async function downloadCSV() {
                 details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
               } else if (property === 'countName' && item.countImportName) {
                 details[property] = item.countImportName;
+              } else if (property === "lineStatus") {
+                details[property] = item.statusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.statusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.statusId;
               } else {
                 details[property] = item[selectedFieldMappings[property]];
               }
