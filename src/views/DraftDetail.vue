@@ -387,7 +387,7 @@ async function findProductFromIdentifier(payload: any) {
   const idValues = payload.idValue;
 
   if(!idValues || !idValues.length) {
-    return showToast(translate("CS  V data is missing or incorrect. Please check your file."));
+    return showToast(translate("CSV data is missing or incorrect. Please check your file."));
   }
 
   const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
