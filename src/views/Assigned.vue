@@ -54,7 +54,7 @@
 import { computed } from "vue";
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
 import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
 import Filters from "@/components/Filters.vue"
@@ -62,7 +62,7 @@ import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 
-onIonViewWillEnter(async () => {
+onIonViewDidEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_ASSIGNED"
   })

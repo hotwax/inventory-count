@@ -118,8 +118,8 @@ const actions: ActionTree<CountState, RootState> = {
     dispatch("fetchCycleCounts", { statusId })
   },
 
-  async clearQuery({ commit }, payload) {
-    commit(types.COUNT_QUERY_CLEARED, payload)
+  async clearQuery({ commit }) {
+    commit(types.COUNT_QUERY_CLEARED)
   },
 
   async fetchCycleCountsLists({ commit, state }, payload) {
