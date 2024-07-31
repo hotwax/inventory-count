@@ -77,8 +77,6 @@
               label-placement="floating"
               :clear-input="true"
               v-model="queryString"
-              @ionInput="findProduct()"
-              :debounce="1000"
               @keyup.enter="addProductToCount"
               :helper-text="translate('Searching on SKU')"
             >
@@ -160,7 +158,7 @@ import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
-import { defineProps, ref, nextTick, computed } from "vue"
+import { defineProps, ref, nextTick, computed, watch } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
@@ -194,7 +192,32 @@ let content = ref([]) as any
 let fileColumns = ref([]) as any 
 let uploadedFile = ref({}) as any
 const fileUploaded = ref(false);
- 
+ let timeoutId = ref()
+
+// Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
+// Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
+// effect is completed.
+watch(queryString, (value) => {
+  const searchedString = value.trim()
+
+  if(searchedString?.length) {
+    isSearchingProduct.value = true
+  } else {
+    searchedProduct.value = {}
+    isSearchingProduct.value = false
+  }
+
+  if(timeoutId.value) {
+    clearTimeout(timeoutId.value)
+  }
+
+  // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
+  timeoutId.value = setTimeout(() => {
+    if(searchedString?.length) findProduct()
+  }, 1000)
+
+}, { deep: true })
+
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
@@ -360,8 +383,6 @@ async function findProduct() {
     showToast(translate("Enter a valid product sku"));
     return;
   }
-
-  isSearchingProduct.value = true
 
   try {
     const resp = await ProductService.fetchProducts({
