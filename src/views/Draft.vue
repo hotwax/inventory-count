@@ -6,7 +6,7 @@
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Drafts") }}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="draft-filter" :disabled="!cycleCounts?.length">
+          <ion-menu-button menu="draft-filter">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -53,7 +53,7 @@ import {
   IonTitle,
   IonToolbar,
   alertController,
-  onIonViewWillEnter,
+  onIonViewDidEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
 import { addOutline, filterOutline } from "ionicons/icons";
@@ -63,12 +63,11 @@ import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { showToast } from "@/utils";
 import router from "@/router";
-import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 
-onIonViewWillEnter(async () => {
+onIonViewDidEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_CREATED"
   })

@@ -18,7 +18,7 @@
         <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
           <ion-item>
             {{ translate("Counted") }}
-          <ion-label slot="end">{{ product.quantity ? product.quantity : '-'}}</ion-label>
+            <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
           </ion-item>
           <template v-if="productStoreSettings['showQoh']">
             <ion-item>
@@ -35,7 +35,7 @@
         <template v-else>
           <ion-list v-if="product.isRecounting">
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" min="0" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
@@ -57,7 +57,7 @@
             </div>
           </ion-list>
 
-          <ion-list v-else-if="product.quantity">
+          <ion-list v-else-if="product.quantity >= 0">
             <ion-item>
               {{ translate("Counted") }}
               <ion-label slot="end">{{ product.quantity }}</ion-label>
@@ -88,7 +88,7 @@
           
           <ion-list v-else>
             <ion-item>
-              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+              <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" min="0" id="value" type="number" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
             </ion-item>
             <template v-if="productStoreSettings['showQoh']">
               <ion-item>
