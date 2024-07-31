@@ -1,6 +1,7 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
 import store from "@/store";
+import Papa from 'papaparse'
 
 const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
 const facilities: any = () => store.getters["user/getFacilities"]
@@ -123,4 +124,21 @@ const getProductIdentificationValue = (productIdentifier: string, product: any) 
   return value;
 }
 
-export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow }
+const parseCsv = async (file: File, options?: any) => {
+  return new Promise ((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results: any) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }

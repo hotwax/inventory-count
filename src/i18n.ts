@@ -27,11 +27,11 @@ const i18n = createI18n({
 
 // TODO Check if this is needed in updated versions
 // Currently this method is added to be used in ts files
-const translate = (key: string) => {
+const translate = (key: string, named?: any) => {
   if (!key) {
     return '';
   }
-  return i18n.global.t(key);
+  return i18n.global.t(key, named);
 };
 
 export { i18n as default, translate }
