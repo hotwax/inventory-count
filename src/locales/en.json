@@ -137,6 +137,7 @@
   "Please select at least one field to generate CSV": "Please select at least one field to generate CSV",
   "Please select a Product identifier": "Please select a Product identifier",
   "Please select the column that corresponds to the product identifier": "Please select the column that corresponds to the product identifier",
+  "Preparing file to downlaod...": "Preparing file to downlaod...",
   "Primary": "Primary",
   "Primary identifier": "Primary identifier",
   "Primary product ID": "Primary product ID",
