@@ -136,6 +136,8 @@ let filteredItems = ref([]);
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
   await fetchCycleCountItems();
+  selectedSegment.value = 'all';
+  queryString.value = '';
   updateFilteredItems();
   emitter.on("updateItemList", updateFilteredItems);
   await store.dispatch("product/currentProduct", itemsList.value[0])

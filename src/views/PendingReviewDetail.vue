@@ -5,7 +5,7 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button :disabled="!filteredItems?.length" @click="selectAll()">
+          <ion-button :disabled="!filteredItems?.length || isAllItemsMarkedAsCompletedOrRejected" @click="selectAll()">
             <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
             <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
           </ion-button>
@@ -132,7 +132,7 @@
             </ion-item>
 
             <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
@@ -170,7 +170,7 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="acceptItem()">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
             <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
@@ -269,6 +269,8 @@ onIonViewWillLeave(() => {
 async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       currentCycleCount.value["items"] = resp.data.itemList.map((item: any) => ({ ...item, isChecked: false }))
@@ -556,6 +558,11 @@ function updateCustomTime(event: any) {
   }).catch(err => {
     logger.info(err)
   })
+}
+
+// Method checks whether all the items selected all counted(having some quantity) or not, as we do not allow accepting those items on which quantity is not set
+function isSelectedItemsHasQuantity() {
+  return filteredItems.value?.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED" && item.isChecked).every((item: any) => item.quantity >= 0)
 }
 </script>
 
