@@ -195,7 +195,7 @@ onIonViewWillLeave(() => {
 async function readyForReview() {
   const alert = await alertController.create({
     header: translate("Submit for review"),
-    message: translate("Make sure you've reviewed the products and their counts before upload them for review."),
+    message: translate("Make sure you've reviewed the products and their counts before uploading them for review."),
     buttons: [{
       text: translate('Cancel'),
       role: 'cancel',
