@@ -66,12 +66,11 @@
         </div>
       </template>
 
-      <!-- TODO: need to implement support to download cycle counts, will be picked in second phase -->
-      <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openClosedCountModal">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button @click="openDownloadClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
-      </ion-fab> -->
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
@@ -81,6 +80,8 @@ import {
   IonButtons,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -89,15 +90,17 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  modalController,
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
+import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
+import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
@@ -127,9 +130,23 @@ function getAverageVariance() {
   // TODO: add support to display average variance
   return "-"
 }
+
+async function openDownloadClosedCountModal() {
+  const downloadClosedCountModal = await modalController.create({
+    component: DownloadClosedCountModal,
+    showBackdrop: false,
+  });
+
+  await downloadClosedCountModal.present();
+}
+
 </script>
 
 <style scoped>
+ion-content {
+  --padding-bottom: 80px;
+}
+
 .list-item {
   --columns-desktop: 6;
   border-bottom : 1px solid var(--ion-color-medium);
