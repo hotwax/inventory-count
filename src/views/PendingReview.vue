@@ -54,7 +54,7 @@
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
-import { computed, onUnmounted } from "vue"
+import { computed } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
@@ -66,11 +66,6 @@ onIonViewDidEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_REVIEW"
   })
-})
-
-// Using unmounted for clearning filters as we do not want to clear the filters when moving to and fro from details page, but using ionic hook for this will clear filter in the mentioned case
-onUnmounted(async () => {
-  await store.dispatch("count/clearQuery")
 })
 
 onIonViewWillLeave(async () => {
