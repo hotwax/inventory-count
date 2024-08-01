@@ -439,11 +439,15 @@ async function findProductFromIdentifier(payload: any) {
       await addProductToCount(productsToAdd);
       showToast(translate("Added products to the cycle count out of.", {added: productsToAdd.length, total: idValues.length}))
     } else {
-      throw resp.data
+      throw { toast: translate("No product found, please verify your CSV") };
     }
-  } catch(err) {
-    showToast(translate("No product found, please verify your CSV"))
-    logger.error("Failed to add products to count, as some products are not found.", err)
+  } catch(err: any) {
+    if (err.toast) {
+      showToast(err.toast);
+    } else {
+      showToast(translate("Failed to fetch the products."));
+    }
+    logger.error("Failed to add products to count", err);
   }
 }
 
