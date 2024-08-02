@@ -442,6 +442,7 @@ async function findProductFromIdentifier(payload: any) {
       throw resp.data
     }
   } catch(err) {
+    showToast(translate("Failed to add products to count, as some products are not found."));
     logger.error("Failed to add products to count, as some products are not found.", err)
   }
 }
