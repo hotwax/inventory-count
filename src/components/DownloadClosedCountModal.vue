@@ -110,6 +110,7 @@ const cycleCountStats = computed(() => (id: string) => store.getters["count/getC
 const facilities = computed(() => store.getters["user/getFacilities"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const query = computed(() => store.getters["count/getQuery"])
 
 const productIdentifications = {
   "Internal ID": "productId",
@@ -196,7 +197,19 @@ async function fetchBulkCycleCountItems() {
     return [];
   }
 
-  return allItems;
+  return query.value.facilityIds.length ? filterItemsByFacility(allItems) : allItems;
+}
+
+// Returns items filtered on facility
+// TODO: need to add this facility filter in the api itself
+function filterItemsByFacility(allItems: any) {
+  let filteredItems = [] as Array<any>
+
+  query.value.facilityIds.map((facilityId: any) => {
+    filteredItems.push(...allItems.filter((item: any) => item.facilityId === facilityId))
+  })
+
+  return filteredItems;
 }
 
 async function fetchProducts(productIds: any){
