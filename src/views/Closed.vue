@@ -67,7 +67,7 @@
       </template>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!cycleCounts.length" @click="openDownloadClosedCountModal">
+        <ion-fab-button :disabled="!cycleCounts?.length" @click="openDownloadClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
       </ion-fab>
