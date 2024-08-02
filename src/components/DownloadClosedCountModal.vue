@@ -127,12 +127,12 @@ const selectedFields: any = ref({
   lastSubmittedDate: true,
   closedDate: true,
   facility: true,
+  primaryProductId: true,
+  secondaryProductId: true,
+  lineStatus: true,
   expectedQuantity: true,
   countedQuantity: true,
   variance: true,
-  primaryProductId: true,
-  secondaryProductId: true,
-  lineStatus: true
 });
 
 const selectedFacilityField: any = ref('facilityId');
@@ -239,12 +239,12 @@ async function downloadCSV() {
           lastSubmittedDate: "lastSubmittedDate",
           closedDate: "closedDate",
           facility: "facilityId",
+          primaryProductId: "primaryProductId",
+          secondaryProductId: "secondaryProductId",
+          lineStatus: "statusId",
           expectedQuantity: "qoh",
           countedQuantity: "quantity",
           variance: "varianceQuantityOnHand",
-          primaryProductId: "primaryProductId",
-          secondaryProductId: "secondaryProductId",
-          lineStatus: "statusId"
         };
       
         const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
@@ -284,7 +284,7 @@ async function downloadCSV() {
           }      
         }));
 
-        const fileName = `CycleCounts-${currentFacility.value.facilityId}-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
+        const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
         await jsonToCsv(downloadData, { download: true, name: fileName });
         emitter.emit("dismissLoader")
       }
