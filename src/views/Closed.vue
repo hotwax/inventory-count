@@ -6,7 +6,7 @@
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
+          <ion-menu-button menu="filter">
             <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>
@@ -67,7 +67,7 @@
       </template>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openDownloadClosedCountModal">
+        <ion-fab-button :disabled="!cycleCounts.length" @click="openDownloadClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
       </ion-fab>
