@@ -457,7 +457,7 @@ async function addProductToCount(payload?: any) {
 
   let itemList;
   if (payload && payload.length) {
-    itemList = payload; 
+    itemList = payload.map((data: any) => ({ ...data, statusId: "INV_COUNT_CREATED" }));
   } else {
     itemList = [{
       idValue: searchedProduct.value.productId,
