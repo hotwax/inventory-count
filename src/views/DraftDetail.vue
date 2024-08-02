@@ -93,8 +93,8 @@
               <p class="overline">{{ translate("Search result") }}</p>
               {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
             </ion-label>
-            <ion-button slot="end" fill="clear" @click="addProductToCount">
-              <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
+            <ion-button slot="end" fill="clear" @click="addProductToCount" :color="isProductAvailableInCycleCount ? 'success' : 'primary'">
+              <ion-icon slot="icon-only" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
             </ion-button>
           </ion-item>
           <p v-else-if="queryString">{{ translate("No product found") }}</p>
@@ -129,8 +129,8 @@
                 <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
               </ion-chip>
             </div> -->
-            <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
-              <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+            <ion-button fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+              <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
             </ion-button>
           </div>
         </template>

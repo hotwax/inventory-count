@@ -171,13 +171,13 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
-            <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
+            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
+            <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
           <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
+            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
