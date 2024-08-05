@@ -25,7 +25,7 @@
               {{ translate("Current on hand") }}
               <ion-label slot="end">{{ product.qoh }}</ion-label>
             </ion-item>
-            <ion-item>
+            <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
               {{ translate("Variance") }}
               <ion-label slot="end">{{ getVariance(product) }}</ion-label>
             </ion-item>
@@ -76,7 +76,7 @@
                 {{ translate("Current on hand") }}
                 <ion-label slot="end">{{ product.qoh }}</ion-label>
               </ion-item>
-              <ion-item>
+              <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                 {{ translate("Variance") }}
                 <ion-label slot="end">{{ getVariance(product) }}</ion-label>
               </ion-item>
@@ -100,7 +100,7 @@
                 <ion-label slot="end">{{ variance }}</ion-label>
               </ion-item>
             </template>
-            <ion-button class="ion-margin" fill="outline" expand="block" @click="saveCount()">
+            <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="saveCount()">
               {{ translate("Save count") }}
             </ion-button>
           </ion-list>
