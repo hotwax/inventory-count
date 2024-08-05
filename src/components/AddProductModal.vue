@@ -31,7 +31,7 @@
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </template>
-    
+
     <div v-else-if="queryString && searched && !products.length" class="empty-state">
       <p>{{ translate("No product found") }}</p>
     </div>
@@ -87,8 +87,8 @@ async function handleSearch() {
     store.dispatch("product/clearProducts");
     return;
   }
-  searched.value = true;
   await getProducts();
+  searched.value = true;
 }
 
 async function getProducts( vSize?: any, vIndex?: any) {
