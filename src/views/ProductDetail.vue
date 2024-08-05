@@ -25,7 +25,7 @@
               {{ translate("Current on hand") }}
               <ion-label slot="end">{{ product.qoh }}</ion-label>
             </ion-item>
-            <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
+            <ion-item>
               {{ translate("Variance") }}
               <ion-label slot="end">{{ getVariance(product) }}</ion-label>
             </ion-item>
@@ -76,12 +76,12 @@
                 {{ translate("Current on hand") }}
                 <ion-label slot="end">{{ product.qoh }}</ion-label>
               </ion-item>
-              <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
+              <ion-item>
                 {{ translate("Variance") }}
                 <ion-label slot="end">{{ getVariance(product) }}</ion-label>
               </ion-item>
             </template>
-            <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+            <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
               {{ translate("Re-count") }}
             </ion-button>
           </ion-list>
@@ -150,12 +150,9 @@
 
   function getVariance(item: any, count?: any) {
     const qty = item.quantity
-    console.log('qqqq', qty);
-
     if(!qty) {
       return 0;
     }
-    console.log('qqqq', qty);
 
     // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
     return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
