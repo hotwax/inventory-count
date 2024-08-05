@@ -132,7 +132,6 @@
 
   // Clearning the local defined data variables to be cleared when the component is updated
   onUpdated(() => {
-    inputCount.value = ""
     variance.value = 0
   })
 
@@ -178,6 +177,7 @@
         product.value.countedByUserLoginId = userProfile.value.username
         await store.dispatch('product/currentProduct', product.value);
         inputCount.value = ''; 
+        product.value.isRecounting = false;
       } else {
         throw resp.data;
       }
@@ -200,7 +200,7 @@
       {
         text: translate('Re-count'),
         handler: () => {
-          inputCount.value = ''; 
+          inputCount.value = product.value.quantity; 
           product.value.isRecounting = true;
         }
       }]
@@ -220,7 +220,6 @@
         text: translate('Save Re-count'),
         handler: async () => {
           await saveCount(); 
-          product.value.isRecounting = false;
         }
       }]
     });
