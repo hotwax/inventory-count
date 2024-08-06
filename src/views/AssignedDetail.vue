@@ -106,10 +106,8 @@
               <ion-label>{{ getPartyName(item) }}</ion-label>
             </ion-chip>
 
-            <div class="tablet" v-else>
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline"></ion-icon>
-              </ion-item>
+            <div class="tablet ion-margin-end" v-else>
+              <ion-icon :icon="personCircleOutline"></ion-icon>
             </div>
 
             <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">

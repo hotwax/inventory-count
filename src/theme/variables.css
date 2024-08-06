@@ -293,5 +293,19 @@ section {
 }
 
 ion-input.name {
-  --background: var(--ion-color-light)
+  --background: var(--ion-color-light);
+}
+
+/* testing out new static attribute to make list items not appear clickable (need to move to theme package) */
+:hover [data-static = "true"] { 
+  --list-item-bg-hover: none;
+  background: initial;
+}
+
+/* default icon handling (need to move to theme package) */
+
+ion-icon {
+  font-size: 1.5rem;
+  color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.54);
+
 }

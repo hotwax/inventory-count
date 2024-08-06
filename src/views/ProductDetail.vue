@@ -254,10 +254,6 @@
     margin-right: var(--spacer-lg);
   }
 
-  .product-info > ion-list {
-    max-width: 400px;
-  }
-
   .product-image {
     text-align: center;
     margin-top: var(--spacer-lg);
