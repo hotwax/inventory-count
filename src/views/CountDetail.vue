@@ -69,11 +69,11 @@
               <div class="detail">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
-                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h1>
-                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
+                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
                 </ion-label>
                 <ion-item lines="none" v-if="filteredItems.length">
-                  <ion-label>{{ `${item.importItemSeqId}/${filteredItems.length}` }}</ion-label>
+                  <ion-label>{{ `${product.importItemSeqId}/${filteredItems.length}` }}</ion-label>
                 </ion-item>
 
                 <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
@@ -84,35 +84,35 @@
                   <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
                 </ion-button>
                 
-                <ion-badge slot="end" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
                   {{ translate("rejected") }}
                 </ion-badge>
               </ion-item>
-              <ion-list v-if="item.statusId !== 'INV_COUNT_CREATED' && item.statusId !== 'INV_COUNT_ASSIGNED'">
+              <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
-                <ion-label slot="end">{{ item.quantity ? item.quantity : '-'}}</ion-label>
+                <ion-label slot="end">{{ product.quantity ? product.quantity : '-'}}</ion-label>
                 </ion-item>
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ item.qoh }}</ion-label>
+                    <ion-label slot="end">{{ product.qoh }}</ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Variance") }}
-                    <ion-label slot="end">{{ getVariance(item) }}</ion-label>
+                    <ion-label slot="end">{{ getVariance(product) }}</ion-label>
                   </ion-item>
                 </template>
               </ion-list>
               <template v-else>
-                <ion-list v-if="item.isRecounting">
+                <ion-list v-if="product.isRecounting">
                   <ion-item>
                     <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
                   </ion-item>
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -129,14 +129,14 @@
                   </div>
                 </ion-list>
         
-                <ion-list v-else-if="item.quantity">
+                <ion-list v-else-if="product.quantity">
                   <ion-item>
                     {{ translate("Counted") }}
-                    <ion-label slot="end">{{ item.quantity }}</ion-label>
+                    <ion-label slot="end">{{ product.quantity }}</ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Counted by") }}
-                    <ion-label slot="end">{{ getPartyName(item)}}</ion-label>
+                    <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
                   </ion-item>
                   <!-- TODO: make the counted at information dynamic -->
                   <!-- <ion-item>
@@ -146,11 +146,11 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
-                      <ion-label slot="end">{{ getVariance(item) }}</ion-label>
+                      <ion-label slot="end">{{ getVariance(product) }}</ion-label>
                     </ion-item>
                   </template>
                   <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
@@ -165,7 +165,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ item.qoh }}</ion-label>
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -592,6 +592,8 @@ main {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: max-content;
+  position: fixed;
+  justify-self: end;
 }
 
 .detail > ion-item {
