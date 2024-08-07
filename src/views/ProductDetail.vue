@@ -81,7 +81,7 @@
                 <ion-label slot="end">{{ getVariance(product) }}</ion-label>
               </ion-item>
             </template>
-            <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+            <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
               {{ translate("Re-count") }}
             </ion-button>
           </ion-list>
