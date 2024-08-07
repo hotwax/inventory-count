@@ -209,6 +209,11 @@
   }
 
   async function openRecountSaveAlert() {
+    if (!inputCount.value) {
+      showToast(translate("Enter a count before saving changes"));
+      return;
+    }
+    
     const alert = await alertController.create({
       header: translate("Save re-count"),
       message: translate("Saving recount will replace the existing count for item."),
