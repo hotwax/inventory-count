@@ -77,7 +77,7 @@
               </ion-item>
               <ion-item lines="none">
                 <div slot="start"></div>
-                <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
+                <ion-range v-model="varianceThreshold"></ion-range>
               </ion-item>
             </div>
           </ion-list>
@@ -343,10 +343,6 @@ async function updateCountName() {
   }
 
   isCountNameUpdating.value = false
-}
-
-function updateVarianceThreshold(event: any) {
-  varianceThreshold.value = event.detail.value
 }
 
 function isItemReadyToAccept(item: any) {
