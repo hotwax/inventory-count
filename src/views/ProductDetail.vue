@@ -130,10 +130,10 @@
   const inputCount = ref('');
   const variance = ref(0);
 
-  // Clearning the local defined data variables to be cleared when the component is updated
+  // Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
   onUpdated(() => {
-    variance.value = 0
-  })
+    calculateVariance();
+  });
 
   function inputCountValidation(event: any) {
     if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
