@@ -99,7 +99,7 @@
                     {{ translate("Current on hand") }}
                     <ion-label slot="end">{{ product.qoh }}</ion-label>
                   </ion-item>
-                  <ion-item>
+                  <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                     {{ translate("Variance") }}
                     <ion-label slot="end">{{ getVariance(product) }}</ion-label>
                   </ion-item>
@@ -149,12 +149,12 @@
                       {{ translate("Current on hand") }}
                       <ion-label slot="end">{{ product.qoh }}</ion-label>
                     </ion-item>
-                    <ion-item>
+                    <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                       {{ translate("Variance") }}
                       <ion-label slot="end">{{ getVariance(product) }}</ion-label>
                     </ion-item>
                   </template>
-                  <ion-button class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
                     {{ translate("Re-count") }}
                   </ion-button>
                 </ion-list>
@@ -173,7 +173,7 @@
                       <ion-label slot="end">{{ variance }}</ion-label>
                     </ion-item>
                   </template>
-                  <ion-button class="ion-margin" expand="block" @click="saveCount()">
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount()">
                     {{ translate("Save count") }}
                   </ion-button>
                 </ion-list>
@@ -271,10 +271,9 @@ const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
 
-// Clearning the local defined data variables to be cleared when the component is updated
+// Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
 onUpdated(() => {
-  inputCount.value = ""
-  variance.value = 0
+  calculateVariance();
   isFirstItem.value = true
   isLastItem.value = false
 })
@@ -425,7 +424,8 @@ function getVariance(item , count) {
 }
 
 async function saveCount() {
-  if (!product.value) {
+  if (!inputCount.value) {
+    showToast(translate("Enter a count before saving changes"))
     return;
   }
   try {
@@ -443,6 +443,7 @@ async function saveCount() {
       product.value.countedByUserLoginId = userProfile.value.username
       await store.dispatch('product/currentProduct', product.value);
       inputCount.value = ''; 
+      product.value.isRecounting = false;
     } else {
       throw resp.data;
     }
@@ -465,7 +466,7 @@ async function openRecountAlert() {
     {
       text: translate('Re-count'),
       handler: () => {
-        inputCount.value = ''; 
+        inputCount.value = product.value.quantity; 
         product.value.isRecounting = true;
       }
     }]
@@ -474,6 +475,11 @@ async function openRecountAlert() {
 }
 
 async function openRecountSaveAlert() {
+  if (!inputCount.value) {
+    showToast(translate("Enter a count before saving changes"));
+    return;
+  }
+
   const alert = await alertController.create({
     header: translate("Save re-count"),
     message: translate("Saving recount will replace the existing count for item."),
@@ -485,7 +491,6 @@ async function openRecountSaveAlert() {
       text: translate('Save Re-count'),
       handler: async () => {
         await saveCount(); 
-        product.value.isRecounting = false;
       }
     }]
   });
