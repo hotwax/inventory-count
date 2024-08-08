@@ -72,6 +72,11 @@
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
                   <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
                 </ion-label>
+                
+                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                  {{ translate("rejected") }}
+                </ion-badge>
+
                 <ion-item lines="none" v-if="filteredItems.length">
                   <ion-label>{{ `${product.importItemSeqId}/${filteredItems.length}` }}</ion-label>
                 </ion-item>
@@ -83,10 +88,6 @@
                 <ion-button @click="showNextProduct" :disabled="isLastItem">
                   <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
                 </ion-button>
-                
-                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
-                  {{ translate("rejected") }}
-                </ion-badge>
               </ion-item>
               <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
@@ -208,7 +209,6 @@ import {
   IonHeader,
   IonFab,
   IonFabButton,
-  IonIcon,
   IonInput,
   IonLabel,
   IonPage,
@@ -587,6 +587,7 @@ aside {
 }
 
 main {
+  display: block;
   height: 100%;
   overflow: auto;
   scroll-behavior: smooth;
@@ -611,6 +612,7 @@ main {
 .detail {
   grid-area: detail;
   margin-top: var(--spacer-lg);
+  margin-right: var(--spacer-lg);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: max-content;
