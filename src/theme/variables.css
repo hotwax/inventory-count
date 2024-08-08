@@ -79,7 +79,6 @@ http://ionicframework.com/docs/theming/ */
   --spacer-xs: 0.5rem;
 }
 
-
 @media (prefers-color-scheme: dark) {
   /*
    * Dark Colors
@@ -267,7 +266,7 @@ main {
   justify-content: center;
   align-items: start;
   /* gap: var(--spacer-2xl); */
-  max-width: 1000px;
+  max-width: 100%;
 }
     
 section {

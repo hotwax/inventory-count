@@ -283,6 +283,7 @@ ion-card-header {
 
 main {
   margin: var(--spacer-base) auto 0;
+  display: flex;
 }
 
 .header {
