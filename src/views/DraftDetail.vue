@@ -29,13 +29,13 @@
           </div>
           <div class="filters">
             <ion-list class="ion-padding">
-              <!-- TODO: Will implement CSV import support in the next phase -->
-              <!-- <ion-item>
+              <ion-item>
                 <ion-icon slot="start" :icon="cloudUploadOutline"/>
                 <ion-label>{{ translate("Import CSV") }}</ion-label>
-                <input id="inputFile" class="ion-hide"/>
-                <label for="inputFile" @click="openDraftImportCsvModal">{{ translate("Upload") }}</label>
-              </ion-item> -->
+                <input @change="parse" ref="file" class="ion-hide" type="file" id="updateProductFile" :key="fileUploaded.toString()"/>
+                <label for="updateProductFile" class="pointer">{{ translate("Upload") }}</label>
+              </ion-item>
+
               <ion-item>
                 <ion-icon slot="start" :icon="calendarNumberOutline" />
                 <ion-label>{{ translate("Due date") }}</ion-label>
@@ -70,16 +70,15 @@
         </div>
 
         <div class="item-search">
-          <ion-item>
+          <ion-item lines="none">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-input
               :label="translate('Add product')"
               label-placement="floating"
               :clear-input="true"
               v-model="queryString"
-              @ionInput="findProduct()"
-              :debounce="1000"
               @keyup.enter="addProductToCount"
+              :helper-text="translate('Searching on SKU')"
             >
             </ion-input>
           </ion-item>
@@ -94,8 +93,8 @@
               <p class="overline">{{ translate("Search result") }}</p>
               {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
             </ion-label>
-            <ion-button slot="end" fill="clear" @click="addProductToCount">
-              <ion-icon slot="icon-only" :color="isProductAvailableInCycleCount ? 'success' : 'primary'" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
+            <ion-button slot="end" fill="clear" @click="addProductToCount" :color="isProductAvailableInCycleCount ? 'success' : 'primary'">
+              <ion-icon slot="icon-only" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
             </ion-button>
           </ion-item>
           <p v-else-if="queryString">{{ translate("No product found") }}</p>
@@ -130,8 +129,8 @@
                 <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
               </ion-chip>
             </div> -->
-            <ion-button fill="clear" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
-              <ion-icon slot="icon-only" color="medium" :icon="closeCircleOutline"/>
+            <ion-button fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+              <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
             </ion-button>
           </div>
         </template>
@@ -154,13 +153,13 @@
 
 <script setup lang="ts">
 import { translate } from "@/i18n";
-import DraftImportCsvModal from "@/components/DraftImportCsvModal.vue"
+import ImportCsvModal from "@/components/ImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
-import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController} from "@ionic/vue";
+import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
-import { defineProps, ref, onMounted, nextTick, computed } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast } from "@/utils";
+import { defineProps, ref, nextTick, computed, watch } from "vue"
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -189,8 +188,37 @@ let countName = ref("")
 let queryString = ref("")
 let searchedProduct = ref({} as any)
 let isSearchingProduct = ref(false)
+let content = ref([]) as any 
+let fileColumns = ref([]) as any 
+let uploadedFile = ref({}) as any
+const fileUploaded = ref(false);
+ let timeoutId = ref()
 
-onMounted(async () => {
+// Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
+// Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
+// effect is completed.
+watch(queryString, (value) => {
+  const searchedString = value.trim()
+
+  if(searchedString?.length) {
+    isSearchingProduct.value = true
+  } else {
+    searchedProduct.value = {}
+    isSearchingProduct.value = false
+  }
+
+  if(timeoutId.value) {
+    clearTimeout(timeoutId.value)
+  }
+
+  // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
+  timeoutId.value = setTimeout(() => {
+    if(searchedString?.length) findProduct()
+  }, 1000)
+
+}, { deep: true })
+
+onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {
@@ -214,6 +242,30 @@ onMounted(async () => {
   emitter.emit("dismissLoader")
 })
 
+onIonViewDidEnter(async() => {
+  uploadedFile.value = {}
+  content.value = []
+})
+
+async function parse(event: any) {
+  let file = event.target.files[0];
+  try {
+    if (file) { 
+      uploadedFile.value = file;
+      content.value = await parseCsv(uploadedFile.value);
+      fileColumns.value = Object.keys(content.value[0]);
+      showToast(translate("File uploaded successfully"));
+      fileUploaded.value =!fileUploaded.value; 
+      openImportCsvModal();
+    } else {
+      showToast(translate("No new file upload. Please try again"));
+    }
+  } catch {
+    content.value = []
+    showToast(translate("Please upload a valid csv to continue"));
+  }
+}
+
 async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
@@ -227,11 +279,22 @@ async function fetchCountItems() {
   }
 }
 
-async function openDraftImportCsvModal() {
-  const draftImportCsvModal = await modalController.create({
-    component: DraftImportCsvModal,
+async function openImportCsvModal() {
+  const importCsvModal = await modalController.create({
+    component: ImportCsvModal,
+    componentProps: {
+      fileColumns: fileColumns.value,
+      content: content.value, 
+      countId: props.inventoryCountImportId
+    }
   })
-  draftImportCsvModal.present();
+  // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
+  importCsvModal.onDidDismiss().then((result: any) => {
+    if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
+      findProductFromIdentifier(result.data.identifierData)
+    }
+  })
+  importCsvModal.present();
 }
     
 async function openSelectFacilityModal() {
@@ -321,8 +384,6 @@ async function findProduct() {
     return;
   }
 
-  isSearchingProduct.value = true
-
   try {
     const resp = await ProductService.fetchProducts({
       "filters": ['isVirtual: false', `sku: *${queryString.value}*`],
@@ -341,24 +402,74 @@ async function findProduct() {
   isSearchingProduct.value = false
 }
 
-async function addProductToCount() {
-  // If product is not found in the searched string then do not make the api call
-  // This check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
-  if(!searchedProduct.value.productId || !queryString.value) {
-    return;
+async function findProductFromIdentifier(payload: any) {
+  
+  const idType = payload.idType;
+  const idValues = payload.idValue;
+
+  if(!idValues || !idValues.length) {
+    return showToast(translate("CSV data is missing or incorrect. Please check your file."));
   }
 
-  if(isProductAvailableInCycleCount.value) {
-    return;
+  const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
+
+  try {
+    const resp = await ProductService.fetchProducts({
+      "filters": [filterString],
+      "viewSize": idValues.length
+    })
+    // We first fetch the products and then check whether they are available in the current count, instead of doing it in reverse order, it reduces the number of checks and improve performance.
+    // This ensures that we have the most up-to-date product data and can accurately determine their presence in the current cycle count.
+
+    if (!hasError(resp) && resp.data.response?.docs?.length) {
+      const products = resp.data.response.docs;
+      const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);
+
+      // Filter payload products to only include items that have a matching product and are not already in the cycle count.
+      const filteredProducts = products.filter((product: any) => {
+        const identificationValue = getProductIdentificationValue(idType, product);
+        return idValues.includes(identificationValue) && !itemsAlreadyInCycleCount.includes(product.productId);
+      })
+
+      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId }));
+      if(!productsToAdd) {
+        return showToast(translate("Failed to add product to count"))
+      }
+
+      await addProductToCount(productsToAdd);
+      showToast(translate("Added products to the cycle count out of.", {added: productsToAdd.length, total: idValues.length}))
+    } else {
+      throw resp.data
+    }
+  } catch(err) {
+    showToast(translate("Failed to add products to count, as some products are not found."));
+    logger.error("Failed to add products to count, as some products are not found.", err)
+  }
+}
+
+async function addProductToCount(payload?: any) {
+
+  if (!payload.length) {
+    // If product is not found in the searched string then do not make the api call
+    // check is only required to handle the case when user presses the enter key on the input and we do not have any result in the searchedProduct
+    if (!searchedProduct.value.productId ||!queryString.value) return;
+    if (isProductAvailableInCycleCount.value) return;
+  }
+
+  let itemList;
+  if (payload && payload.length) {
+    itemList = payload.map((data: any) => ({ ...data, statusId: "INV_COUNT_CREATED" }));
+  } else {
+    itemList = [{
+      idValue: searchedProduct.value.productId,
+      statusId: "INV_COUNT_CREATED"
+    }];
   }
 
   try {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
-      itemList: [{
-        idValue: searchedProduct.value.productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
+      itemList: itemList
     })
 
     if(!hasError(resp)) {
@@ -427,6 +538,10 @@ async function updateCountStatus() {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.pointer {
+  cursor: pointer;
 }
 
 .item-search {

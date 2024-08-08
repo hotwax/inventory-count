@@ -264,6 +264,9 @@ function getClosedDate(count) {
 </script> 
 
 <style scoped>
+section {
+  padding-bottom: 100px
+}
 
 ion-card {
   min-width: 400px;

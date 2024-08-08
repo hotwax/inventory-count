@@ -20,9 +20,10 @@
     "@hotwax/apps-theme": "^1.2.6",
     "@hotwax/dxp-components": "^1.14.0",
     "@hotwax/oms-api": "^1.14.0",
-    "@ionic/core": "^7.6.0",
-    "@ionic/vue": "^7.6.0",
-    "@ionic/vue-router": "^7.6.0",
+    "@ionic/core": "^7.8.6",
+    "@ionic/vue": "^7.8.6",
+    "@ionic/vue-router": "^7.8.6",
+    "@types/papaparse": "^5.3.1",
     "axios": "^0.21.1",
     "axios-cache-adapter": "^2.7.3",
     "boon-js": "^2.0.3",
@@ -41,7 +42,9 @@
   "devDependencies": {
     "@capacitor/cli": "^2.4.7",
     "@intlify/vue-i18n-loader": "^2.1.0",
+    "@types/file-saver": "^2.0.5",
     "@types/luxon": "^3.2.0",
+    "@types/papaparse": "5.3.1",
     "@typescript-eslint/eslint-plugin": "~5.26.0",
     "@typescript-eslint/parser": "~5.26.0",
     "@vue/cli-plugin-babel": "~5.0.8",
@@ -57,6 +60,8 @@
     "cypress": "^8.3.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
+    "file-saver": "^2.0.5",
+    "papaparse": "^5.3.1",
     "typescript": "~4.7.4",
     "vue-cli-plugin-i18n": "^1.0.1"
   }

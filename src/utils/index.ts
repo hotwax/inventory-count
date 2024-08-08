@@ -1,6 +1,9 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
 import store from "@/store";
+import { saveAs } from 'file-saver';
+import { JsonToCsvOption } from '@/types';
+import Papa from 'papaparse'
 
 const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
 const facilities: any = () => store.getters["user/getFacilities"]
@@ -113,7 +116,7 @@ const getProductIdentificationValue = (productIdentifier: string, product: any) 
   let value = product[productIdentifier]
 
   // considered that the goodIdentification will always have values in the format "productIdentifier/value" and there will be no entry like "productIdentifier/"
-  const identification = product['goodIdentifications'].find((identification: string) => identification.startsWith(productIdentifier + "/"))
+  const identification = product['goodIdentifications']?.find((identification: string) => identification.startsWith(productIdentifier + "/"))
 
   if(identification) {
     const goodIdentification = identification.split('/')
@@ -123,4 +126,35 @@ const getProductIdentificationValue = (productIdentifier: string, product: any) 
   return value;
 }
 
-export { showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow }
+const parseCsv = async (file: File, options?: any) => {
+  return new Promise ((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results: any) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
+  const csv = Papa.unparse(file, {
+    ...options.parse
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  if (options.download) {
+    saveAs(blob, options.name ? options.name : "default.csv");
+  }
+
+  return blob;
+};
+
+export { jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }

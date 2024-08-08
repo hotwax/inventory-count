@@ -5,8 +5,9 @@
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button @click="selectAll()">
-            <ion-icon slot="icon-only" :icon="checkboxOutline"/>
+          <ion-button :disabled="!filteredItems?.length || isAllItemsMarkedAsCompletedOrRejected" @click="selectAll()">
+            <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
+            <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
           </ion-button>
           <ion-button @click="addProduct()">
             <ion-icon slot="icon-only" :icon="addOutline" />
@@ -15,7 +16,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content class="main-content">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
@@ -34,10 +35,22 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip outline>
+            <ion-chip outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"></ion-icon>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
+            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+              <ion-content :force-overscroll="false">
+                <ion-datetime
+                  id="schedule-datetime"
+                  :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
+                  @ionChange="updateCustomTime($event)"
+                  :min="DateTime.now().toISO()"
+                  presentation="date"
+                  showDefaultButtons
+                />
+              </ion-content>
+            </ion-modal>
             <ion-chip outline>
               <ion-icon :icon="businessOutline"></ion-icon>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
@@ -64,14 +77,14 @@
               </ion-item>
               <ion-item lines="none">
                 <div slot="start"></div>
-                <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
+                <ion-range v-model="varianceThreshold"></ion-range>
               </ion-item>
             </div>
           </ion-list>
         </div>
 
         <div class="header border">
-          <ion-segment v-model="segmentSelected">
+          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
             <ion-segment-button value="all">
               <ion-label>{{ translate("All") }}</ion-label>
             </ion-segment-button>
@@ -96,7 +109,7 @@
               </ion-label>
             </ion-item>
 
-            <ion-label v-if="item.quantity">
+            <ion-label v-if="item.quantity >= 0">
               {{ item.quantity }} / {{ item.qoh }}
               <p>{{ translate("counted / systemic") }}</p>
             </ion-label>
@@ -106,7 +119,7 @@
               <p>{{ translate("systemic") }}</p>
             </ion-label>
 
-            <ion-label v-if="item.quantity">
+            <ion-label v-if="item.quantity >= 0">
               {{ +(item.quantity) - +(item.qoh) }}
               <p>{{ getPartyName(item) }}</p>
             </ion-label>
@@ -119,10 +132,10 @@
             </ion-item>
 
             <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="!item.quantity && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
                 <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
               </ion-button>
               <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
@@ -130,11 +143,9 @@
               </ion-button>
             </div>
 
-            <div>
-              <ion-item lines="none">
-                <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-                <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
-              </ion-item>
+            <div class="ion-margin-end">
+              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </div>
           </div>
         </template>
@@ -157,14 +168,14 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected" @click="acceptItem()">
-            <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
+            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
+            <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
           <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
+            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -173,18 +184,19 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
+import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, getDateTime } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
 import Image from "@/components/Image.vue"
+import { DateTime } from "luxon";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -198,9 +210,9 @@ const filteredItems = computed(() => {
   let items = currentCycleCount.value.items
 
   if(segmentSelected.value === "accept") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item))
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item) && item.itemStatusId === "INV_COUNT_CREATED")
   } else if(segmentSelected.value === "reject") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item))
+    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item) && item.itemStatusId === "INV_COUNT_CREATED")
   }
 
   return items
@@ -214,6 +226,7 @@ const isAllItemsMarkedAsCompletedOrRejected = computed(() => {
   return currentCycleCount.value.items?.every((item: any) => item.itemStatusId === "INV_COUNT_COMPLETED" || item.itemStatusId === "INV_COUNT_REJECTED")
 })
 
+const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
@@ -221,7 +234,7 @@ let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
 
-onMounted(async () => {
+onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   emitter.on("addProductToCount", addProductToCount);
 
@@ -247,13 +260,15 @@ onMounted(async () => {
   emitter.emit("dismissLoader")
 })
 
-onUnmounted(() => {
+onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
 })
 
 async function fetchCountItems() {
   try {
     const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       currentCycleCount.value["items"] = resp.data.itemList.map((item: any) => ({ ...item, isChecked: false }))
@@ -328,16 +343,14 @@ async function updateCountName() {
   isCountNameUpdating.value = false
 }
 
-function updateVarianceThreshold(event: any) {
-  varianceThreshold.value = event.detail.value
-}
-
 function isItemReadyToAccept(item: any) {
-  return item.quantity ? Math.round(Math.abs(((item.quantity - (item.qoh || 0)) / (item.qoh || 0)) * 100)) <= varianceThreshold.value : false
+  // If the items qoh/quantity is not available then we will consider that the variance percentage is 100%, as we are unable to identify the % without qoh/quantity. Thus if qoh/quantity is not present for an item
+  // then we will suggest it for acceptance only when variance threshold is set to 100%
+  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) <= varianceThreshold.value : item.quantity === undefined ? false : 100 <= varianceThreshold.value
 }
 
 function isItemReadyToReject(item: any) {
-  return item.quantity ? Math.round(Math.abs(((item.quantity - (item.qoh || 0)) / (item.qoh || 0)) * 100)) > varianceThreshold.value : false
+  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) > varianceThreshold.value : item.quantity === undefined ? false : 100 > varianceThreshold.value
 }
 
 function isItemCompletedOrRejected(item: any) {
@@ -349,8 +362,25 @@ function selectItem(checked: boolean, item: any) {
 }
 
 function selectAll() {
-  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not all the item to be marked as checked
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" ? true : false }))
+  // When all the items are already selected then unselect the items again
+  // Added check for every item selection as we need to check the items of the current segment, and filteredItems returns items based on current selected segment
+  if(areAllItemsSelected()) {
+    currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
+    return;
+  }
+
+  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not want all the items to be marked as checked
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" && ((segmentSelected.value === "accept" && isItemReadyToAccept(item)) || (segmentSelected.value === "reject" && isItemReadyToReject(item)) || segmentSelected.value === "all") ? true : false }))
+}
+
+function areAllItemsSelected(): boolean {
+  // Only checking for those items which are in created status
+  return filteredItems.value.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED").every((item: any) => item.isChecked)
+}
+
+function segmentChanged() {
+  // When changing the segment make the isChecked property again to false.
+  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
 }
 
 async function addProduct() {
@@ -499,6 +529,35 @@ async function acceptItem(item?: any) {
   }
   await fetchCountItems()
 }
+
+function openDateTimeModal() {
+  dateTimeModalOpen.value = true;
+}
+
+const handleDateTimeInput = (dateTimeValue: any) => {
+  // TODO Handle it in a better way
+  // Remove timezone and then convert to timestamp
+  // Current date time picker picks browser timezone and there is no supprt to change it
+  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
+  return DateTime.fromISO(dateTime).toMillis()
+}
+
+function updateCustomTime(event: any) {
+  const date = handleDateTimeInput(event.detail.value)
+  CountService.updateCycleCount({
+    inventoryCountImportId: currentCycleCount.value.countId,
+    dueDate: date
+  }).then(() => {
+    currentCycleCount.value.dueDate = date
+  }).catch(err => {
+    logger.info(err)
+  })
+}
+
+// Method checks whether all the items selected all counted(having some quantity) or not, as we do not allow accepting those items on which quantity is not set
+function isSelectedItemsHasQuantity() {
+  return filteredItems.value?.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED" && item.isChecked).every((item: any) => item.quantity >= 0)
+}
 </script>
 
 <style scoped>
@@ -534,7 +593,7 @@ ion-footer ion-buttons {
   padding-right: 80px;
 }
 
-ion-content {
+.main-content {
   --padding-bottom: 80px;
 }
 

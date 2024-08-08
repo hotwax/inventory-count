@@ -187,6 +187,12 @@
         </main>
       </div>
     </ion-content>
+
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
+      <ion-fab-button @click="readyForReview">
+        <ion-icon :icon="paperPlaneOutline" />
+      </ion-fab-button>
+    </ion-fab>
   </ion-page>
 </template>
 
@@ -200,6 +206,9 @@ import {
   IonItem,  
   IonList,
   IonHeader,
+  IonFab,
+  IonFabButton,
+  IonIcon,
   IonInput,
   IonLabel,
   IonPage,
@@ -220,6 +229,7 @@ import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
 import { getPartyName, getProductIdentificationValue, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
+import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 
@@ -272,6 +282,8 @@ onUpdated(() => {
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
   await fetchCycleCountItems();
+  selectedSegment.value = 'all';
+  queryString.value = '';
   updateFilteredItems();
   await store.dispatch("product/currentProduct", itemsList.value[0])
   updateNavigationState(0);
@@ -499,6 +511,32 @@ async function discardRecount() {
   await alert.present();
 }
 
+async function readyForReview() {
+  const alert = await alertController.create({
+    header: translate("Submit for review"),
+    message: translate("Make sure you've reviewed the products and their counts before upload them for review."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Submit'),
+      handler: async () => {
+        try {
+          await CountService.updateCycleCount({
+            inventoryCountImportId: props?.id,
+            statusId: "INV_COUNT_REVIEW"
+          })
+          router.push("/tabs/count")
+          showToast(translate("Count has been submitted for review"))
+        } catch(err) {
+          showToast(translate("Failed to submit cycle count for review"))
+        }
+      }
+    }]
+  });
+  await alert.present();
+}
 </script>
 
 <style scoped>

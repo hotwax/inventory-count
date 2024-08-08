@@ -5,7 +5,7 @@
       <ion-toolbar>
         <ion-title>{{ translate("Pending review")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
+          <ion-menu-button menu="filter">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
@@ -53,7 +53,7 @@
 <script setup lang="ts">
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewWillEnter } from "@ionic/vue";
+import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { computed } from "vue"
 import store from "@/store"
 import router from "@/router"
@@ -62,7 +62,7 @@ import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount,
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 
-onIonViewWillEnter(async () => {
+onIonViewDidEnter(async () => {
   await store.dispatch("count/fetchCycleCounts", {
     statusId: "INV_COUNT_REVIEW"
   })
@@ -70,7 +70,6 @@ onIonViewWillEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
-  await store.dispatch("count/clearQuery")
 })
 </script>
 
