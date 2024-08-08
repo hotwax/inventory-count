@@ -136,8 +136,7 @@
   });
 
   function inputCountValidation(event: any) {
-  const newValue = event.target.value + event.key;
-    if(/^0\d+/.test(newValue) || /[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+    if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
   }
 
   async function calculateVariance() {
