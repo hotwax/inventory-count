@@ -107,7 +107,7 @@
             </ion-chip>
 
             <div class="tablet ion-margin-end" v-else>
-              <ion-icon :icon="personCircleOutline"></ion-icon>
+              <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
             </div>
 
             <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">

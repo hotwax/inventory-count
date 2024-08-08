@@ -304,7 +304,7 @@ ion-input.name {
 
 /* default icon handling (need to move to theme package) */
 
-ion-icon {
+ion-icon.standalone-icon {
   font-size: 1.5rem;
   color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.54);
 

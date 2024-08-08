@@ -88,11 +88,11 @@
             <ion-segment-button value="all">
               <ion-label>{{ translate("All") }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button color="success" value="accept">
-              <ion-icon :icon="thermometerOutline"/>
+            <ion-segment-button value="accept">
+              <ion-icon color="success" :icon="thermometerOutline"/>
             </ion-segment-button>
-            <ion-segment-button color="danger" value="reject">
-              <ion-icon :icon="thermometerOutline"/>
+            <ion-segment-button value="reject">
+              <ion-icon color="danger" :icon="thermometerOutline"/>
             </ion-segment-button>
           </ion-segment>
         </div>
