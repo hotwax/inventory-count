@@ -63,10 +63,10 @@
         <!--Product details-->
         <main @scroll="onScroll" class="main" >
           <div class="product" v-for="item in filteredItems" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-              <div class="image">
-                <Image :src="getProduct(item.productId)?.mainImageUrl" />
-              </div>
-              <div class="detail">
+            <div class="image">
+              <Image :src="getProduct(item.productId)?.mainImageUrl" />
+            </div>
+            <div class="detail">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
@@ -212,7 +212,7 @@ import {
 } from '@ionic/vue';
 import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref, onUpdated, onMounted, nextTick } from 'vue';
+import { computed, defineProps, ref, onUpdated } from 'vue';
 import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
@@ -260,9 +260,6 @@ const inputCount = ref('');
 const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
-
-let isScrolling = false;
-let scrollTimeout;
 
 // Clearning the local defined data variables to be cleared when the component is updated
 onUpdated(() => {
@@ -333,47 +330,34 @@ function updateFilteredItems() {
   }  
 } 
 
-// Handles scrolling event to update the current product and navigation state based on the product closest to the viewport center.
+// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
+// and updates the current product state and navigation when a product intersects with the main element.
 const onScroll = (event) => {
-
-  if (isScrolling) {
-    clearTimeout(scrollTimeout);
-  }
-  isScrolling = true;
   const main = event.target;
+  const products = Array.from(main.querySelectorAll('.product'));
 
-  scrollTimeout = setTimeout(() => {
-    isScrolling = false;
-    const products = Array.from(main.querySelectorAll('.product'));
-
-    const viewportHeight = main.clientHeight;
-    const threshold = viewportHeight / 2;
-
-    let currentProduct = null;
-    let smallestDistance = Infinity;
-
-    products.forEach((product) => {
-      const productRect = product.getBoundingClientRect();
-      const productCenter = productRect.top + productRect.height / 2;
-      const distanceFromCenter = Math.abs(productCenter - threshold);
-      if (distanceFromCenter < smallestDistance) {
-        smallestDistance = distanceFromCenter;
-        currentProduct = product;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const productId = entry.target.dataset.productId;
+        const seqId = entry.target.dataset.seq;
+        const currentProduct = filteredItems.value.find((item) => item.productId === productId && item.importItemSeqId === seqId);
+        if (currentProduct) {
+          const currentIndex = filteredItems.value.indexOf(currentProduct);
+          store.dispatch("product/currentProduct", currentProduct);
+          updateNavigationState(currentIndex);
+          router.replace({ hash: `#${productId}-${seqId}` });
+        }
       }
     });
+  }, {
+    root: main,
+    threshold: 0.5, 
+  });
 
-    if (currentProduct) {
-      const currentProductId = currentProduct.dataset.productId;
-      const currentItemSeqId = currentProduct.dataset.seq;
-      const currentIndex = filteredItems.value.findIndex((item) => item.productId === currentProductId && item.importItemSeqId === currentItemSeqId);
-      if (currentIndex !== -1) {
-        const currentProduct = filteredItems.value[currentIndex];
-        store.dispatch("product/currentProduct", currentProduct);
-        updateNavigationState(currentIndex);
-        router.replace({ hash: `#${currentProductId}-${currentItemSeqId}` }); 
-      }
-    }
-  }, 100); 
+  products.forEach((product) => {
+    observer.observe(product);
+  });
 };
 
 // Add this function to update the navigation state
