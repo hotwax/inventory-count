@@ -130,11 +130,10 @@
   const inputCount = ref('');
   const variance = ref(0);
 
-  // Clearning the local defined data variables to be cleared when the component is updated
+  // Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
   onUpdated(() => {
-    inputCount.value = ""
-    variance.value = 0
-  })
+    calculateVariance();
+  });
 
   function inputCountValidation(event: any) {
     if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
@@ -159,7 +158,7 @@
   }
 
   async function saveCount() {
-    if (!product.value || !inputCount.value) {
+    if (!inputCount.value) {
       showToast(translate("Enter a count before saving changes"))
       return;
     }
@@ -178,6 +177,7 @@
         product.value.countedByUserLoginId = userProfile.value.username
         await store.dispatch('product/currentProduct', product.value);
         inputCount.value = ''; 
+        product.value.isRecounting = false;
       } else {
         throw resp.data;
       }
@@ -200,7 +200,7 @@
       {
         text: translate('Re-count'),
         handler: () => {
-          inputCount.value = ''; 
+          inputCount.value = product.value.quantity; 
           product.value.isRecounting = true;
         }
       }]
@@ -209,6 +209,11 @@
   }
 
   async function openRecountSaveAlert() {
+    if (!inputCount.value) {
+      showToast(translate("Enter a count before saving changes"));
+      return;
+    }
+    
     const alert = await alertController.create({
       header: translate("Save re-count"),
       message: translate("Saving recount will replace the existing count for item."),
@@ -220,7 +225,6 @@
         text: translate('Save Re-count'),
         handler: async () => {
           await saveCount(); 
-          product.value.isRecounting = false;
         }
       }]
     });
