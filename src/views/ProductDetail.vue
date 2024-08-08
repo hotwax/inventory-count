@@ -158,7 +158,7 @@
   }
 
   async function saveCount() {
-    if (!product.value || !inputCount.value) {
+    if (!inputCount.value) {
       showToast(translate("Enter a count before saving changes"))
       return;
     }
