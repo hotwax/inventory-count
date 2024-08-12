@@ -73,11 +73,11 @@
                   <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
                 </ion-label>
 
-                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
                   {{ translate("accepted") }}
                 </ion-badge>
                 
-                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
                   {{ translate("rejected") }}
                 </ion-badge>
 
