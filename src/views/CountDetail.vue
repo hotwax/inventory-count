@@ -79,7 +79,7 @@
               </ion-badge>
 
               <ion-item lines="none" v-if="filteredItems.length">
-                <ion-label>{{ `${product.importItemSeqId}/${filteredItems.length}` }}</ion-label>
+                <ion-label>{{ `${currentItemIndex + 1}/${filteredItems.length}` }}</ion-label>
               </ion-item>
 
               <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
@@ -241,6 +241,7 @@ const getProduct = computed(() => (id) => store.getters["product/getProduct"](id
 const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const currentItemIndex = computed(() => !product.value ? 0 : filteredItems.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
