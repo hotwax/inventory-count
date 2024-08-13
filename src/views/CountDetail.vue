@@ -72,8 +72,12 @@
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
                   <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
                 </ion-label>
+
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
+                  {{ translate("accepted") }}
+                </ion-badge>
                 
-                <ion-badge slot="end" v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
                   {{ translate("rejected") }}
                 </ion-badge>
 
@@ -92,7 +96,7 @@
               <ion-list v-if="product.statusId !== 'INV_COUNT_CREATED' && product.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
-                <ion-label slot="end">{{ product.quantity ? product.quantity : '-'}}</ion-label>
+                <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
                 </ion-item>
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
@@ -108,7 +112,7 @@
               <template v-else>
                 <ion-list v-if="product.isRecounting">
                   <ion-item>
-                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
                   </ion-item>
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
@@ -130,7 +134,7 @@
                   </div>
                 </ion-list>
         
-                <ion-list v-else-if="product.quantity">
+                <ion-list v-else-if="product.quantity >= 0">
                   <ion-item>
                     {{ translate("Counted") }}
                     <ion-label slot="end">{{ product.quantity }}</ion-label>
@@ -161,7 +165,7 @@
                 
                 <ion-list v-else>
                   <ion-item>
-                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" required @ionInput="calculateVariance"/>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
                   </ion-item>
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
@@ -287,6 +291,10 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value[0])
   updateNavigationState(0);
 })  
+
+function inputCountValidation(event) {
+  if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+}
 
 async function fetchCycleCountItems() {
   let payload = props?.id
