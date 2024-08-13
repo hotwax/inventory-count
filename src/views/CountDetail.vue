@@ -82,11 +82,11 @@
                 <ion-label>{{ `${currentItemIndex + 1}/${filteredItems.length}` }}</ion-label>
               </ion-item>
 
-              <ion-button @click="showPreviousProduct" :disabled="isFirstItem">
+              <ion-button @click="changeProduct('previous')" :disabled="isFirstItem">
                 <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
               </ion-button>
       
-              <ion-button @click="showNextProduct" :disabled="isLastItem">
+              <ion-button @click="changeProduct('next')" :disabled="isLastItem">
                 <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
               </ion-button>
             </ion-item>
@@ -271,6 +271,7 @@ const inputCount = ref('');
 const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
+const isScrolling = ref(false);
 
 // Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
 onUpdated(() => {
@@ -336,8 +337,8 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", filteredItems.value[0]);
-    updateNavigationState(0);
+    store.dispatch("product/currentProduct", product.value);
+    updateNavigationState(filteredItems.value.indexOf(product.value));
   } else {
     store.dispatch("product/currentProduct", null);
     isFirstItem.value = true
@@ -382,32 +383,22 @@ const updateNavigationState = (currentIndex) => {
   isLastItem.value = currentIndex === filteredItems.value.length - 1;
 };
 
-async function showPreviousProduct() {
-  const currentItemIndex = filteredItems.value.findIndex((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId);
-  let previousProduct;
-  if (currentItemIndex > 0) {
-    previousProduct = filteredItems.value[currentItemIndex - 1];
-    await store.dispatch("product/currentProduct", previousProduct);
-    updateNavigationState(currentItemIndex - 1);
-  }
-  const productEl = document.querySelector(`[data-seq="${previousProduct?.importItemSeqId}"]`);
-  if (productEl) {
-    productEl.scrollIntoView({ behavior: 'smooth' });
-  }
-}
+async function changeProduct(direction) {
+  if (isScrolling.value) return;
+  isScrolling.value = true;
 
-async function showNextProduct() {
   const currentItemIndex = filteredItems.value.findIndex((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId);
-  let nextProduct;
-  if (currentItemIndex < filteredItems.value.length - 1) {
-    nextProduct = filteredItems.value[currentItemIndex + 1];
-    await store.dispatch("product/currentProduct", nextProduct);
-    updateNavigationState(currentItemIndex + 1);
+  const index = (direction === 'next') ? currentItemIndex + 1 : currentItemIndex - 1;
+
+  if (index >= 0 && index < filteredItems.value.length) {
+    const product = filteredItems.value[index];
+    const productEl = document.querySelector(`[data-seq="${product.importItemSeqId}"]`);
+    if (productEl) productEl.scrollIntoView({ behavior: 'smooth' });
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await store.dispatch("product/currentProduct", product);
+    updateNavigationState(index);
   }
-  const productEl = document.querySelector(`[data-seq="${nextProduct?.importItemSeqId}"]`);
-  if (productEl) {
-    productEl.scrollIntoView({ behavior: 'smooth' });
-  }
+  isScrolling.value = false;
 }
 
 async function calculateVariance() {
@@ -452,7 +443,6 @@ async function saveCount() {
     } else {
       throw resp.data;
     }
-    await store.dispatch("count/fetchCycleCountItems", payload.inventoryCountImportId); 
     updateFilteredItems();
   } catch (err) {
     logger.error(err);
