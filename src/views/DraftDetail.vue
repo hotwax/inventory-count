@@ -267,8 +267,13 @@ async function parse(event: any) {
 }
 
 async function fetchCountItems() {
+  let payload = {
+    inventoryCountImportId : props?.inventoryCountImportId, 
+    pageSize: 100 
+  }
   try {
-    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+
+    const resp = await CountService.fetchCycleCountItems(payload)
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       currentCycleCount.value["items"] = resp.data.itemList

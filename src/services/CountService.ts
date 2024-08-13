@@ -25,10 +25,11 @@ const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => 
   })
 }
 
-const fetchCycleCountItems = async (inventoryCountImportId: string): Promise<any> => {
+const fetchCycleCountItems = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${inventoryCountImportId}/items`,
-    method: "GET"
+    url: `cycleCounts/${payload.inventoryCountImportId}/items`,
+    method: "GET",
+    params: payload
   })
 }
 

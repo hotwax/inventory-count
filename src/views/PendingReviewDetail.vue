@@ -265,8 +265,13 @@ onIonViewWillLeave(() => {
 })
 
 async function fetchCountItems() {
+  let payload = {
+    inventoryCountImportId : props?.inventoryCountImportId, 
+    pageSize: 100 
+  }
+
   try {
-    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+    const resp = await CountService.fetchCycleCountItems(payload)
 
     store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 
