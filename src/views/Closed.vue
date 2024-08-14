@@ -6,7 +6,7 @@
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter" :disabled="!cycleCounts?.length">
+          <ion-menu-button menu="filter">
             <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>
@@ -66,12 +66,11 @@
         </div>
       </template>
 
-      <!-- TODO: need to implement support to download cycle counts, will be picked in second phase -->
-      <!-- <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="openClosedCountModal">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button :disabled="!cycleCounts?.length" @click="openDownloadClosedCountModal">
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
-      </ion-fab> -->
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
@@ -81,6 +80,8 @@ import {
   IonButtons,
   IonChip,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonHeader,
   IonIcon,
   IonItem,
@@ -89,15 +90,17 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  modalController,
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
-import { computed, onUnmounted } from "vue"
+import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
+import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
+import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
@@ -107,11 +110,6 @@ onIonViewWillEnter(async () => {
     statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
     statusId_op: "in"
   })
-})
-
-// Using unmounted for clearning filters as we do not want to clear the filters when moving to and fro from details page, but using ionic hook for this will clear filter in the mentioned case
-onUnmounted(async () => {
-  await store.dispatch("count/clearQuery")
 })
 
 onIonViewWillLeave(async () => {
@@ -132,9 +130,23 @@ function getAverageVariance() {
   // TODO: add support to display average variance
   return "-"
 }
+
+async function openDownloadClosedCountModal() {
+  const downloadClosedCountModal = await modalController.create({
+    component: DownloadClosedCountModal,
+    showBackdrop: false,
+  });
+
+  await downloadClosedCountModal.present();
+}
+
 </script>
 
 <style scoped>
+ion-content {
+  --padding-bottom: 80px;
+}
+
 .list-item {
   --columns-desktop: 6;
   border-bottom : 1px solid var(--ion-color-medium);

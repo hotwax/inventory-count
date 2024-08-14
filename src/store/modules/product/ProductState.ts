@@ -4,5 +4,5 @@ export default interface ProductState {
   list: {
     total: number;
     items: any[];
-  }
+  },
 }

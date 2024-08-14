@@ -106,10 +106,8 @@
               <ion-label>{{ getPartyName(item) }}</ion-label>
             </ion-chip>
 
-            <div class="tablet" v-else>
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline"></ion-icon>
-              </ion-item>
+            <div class="tablet ion-margin-end" v-else>
+              <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
             </div>
 
             <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
@@ -223,8 +221,13 @@ onIonViewWillLeave(() => {
 })
 
 async function fetchCountItems() {
+  let payload = {
+    inventoryCountImportId : props?.inventoryCountImportId, 
+    pageSize: 100 
+  }
+
   try {
-    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+    const resp = await CountService.fetchCycleCountItems(payload)
 
     store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 

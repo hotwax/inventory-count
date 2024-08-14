@@ -18,8 +18,16 @@
           </ion-select>
         </ion-item>
         <ion-item button v-if="showAdditionalFilters().noFacility">
-          <ion-icon slot="start" :icon="removeCircleOutline"/>
+          <ion-icon slot="start" :icon="locateOutline"/>
           <ion-checkbox :value="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
+        </ion-item>
+
+        <ion-item button v-if="showAdditionalFilters().selectedFacilities">
+          <ion-icon slot="start" :icon="removeCircleOutline"/>
+          <ion-label>{{ getSelectedFacilities() }}</ion-label>
+          <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', [])">
+            <ion-icon slot="icon-only" :icon="closeOutline"/>
+          </ion-button>
         </ion-item>
 
         <ion-item-divider v-if="showAdditionalFilters().date">
@@ -125,7 +133,7 @@ import {
   IonToolbar
 } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { removeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline } from "ionicons/icons";
+import { closeOutline, removeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline, locateOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";
@@ -142,12 +150,27 @@ function openDateTimeModal() {
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
+    selectedFacilities: router.currentRoute.value.name === "Closed"
     // date: router.currentRoute.value.name === "Closed"
   }
 }
 
 async function updateQuery(key: string, value: any) {
   await store.dispatch("count/updateQuery", { key, value })
+}
+
+function getSelectedFacilities() {
+  let value = query.value.facilityIds
+
+  // Initially when adding a filter no value is selected thus returning "All facilities selected" as default value
+  if(!value.length) {
+    return "All facilities selected";
+  }
+  return facilities.value.map((facility: any) => {
+    if(value?.includes(facility.facilityId)) {
+      return facility.facilityName || facility.facilityId
+    }
+  }).filter((facility: any) => facility).join(", ")
 }
 
 function getSelectedValue() {

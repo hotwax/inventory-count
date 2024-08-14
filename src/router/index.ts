@@ -197,6 +197,16 @@ router.beforeEach((to, from) => {
       path: redirectToPath,
     }
   }
+
+  // Adding check to clear the filters in the router beforeEach as we have found specific cases when clearing the filters on page itself
+  // - If using unmounted hook to clear the filters on page, the ionViewDidEnter/WillEnter hook of `to` page runs before unmounted hook of `from` page, leading to fetch filtered records and then the filters are cleared
+  // - If using ionViewWillLeave/DidLeave hook to clear the filters, the filters are also cleared when moving to and fro from the details page of the same parent page, but in this case we do not want to clear the filters
+  //
+  // Added check that if the `to` page has the same url pattern as the `from` page and vice-versa then do not clear the filters, used this approach as parent and child page paths are identical
+  if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
+    store.dispatch("count/clearQuery")
+  }
 })
+
 
 export default router;

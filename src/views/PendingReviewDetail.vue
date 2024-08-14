@@ -77,7 +77,7 @@
               </ion-item>
               <ion-item lines="none">
                 <div slot="start"></div>
-                <ion-range :value="varianceThreshold" @ionChange="updateVarianceThreshold"></ion-range>
+                <ion-range v-model="varianceThreshold"></ion-range>
               </ion-item>
             </div>
           </ion-list>
@@ -143,11 +143,9 @@
               </ion-button>
             </div>
 
-            <div>
-              <ion-item lines="none">
-                <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-                <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
-              </ion-item>
+            <div class="ion-margin-end">
+              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </div>
           </div>
         </template>
@@ -171,13 +169,13 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
-            <ion-icon slot="icon-only" color="success" :icon="thumbsUpOutline"/>
+            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
           <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" color="warning" :icon="refreshOutline" />
+            <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
           <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" color="danger" :icon="thumbsDownOutline" />
+            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -267,8 +265,13 @@ onIonViewWillLeave(() => {
 })
 
 async function fetchCountItems() {
+  let payload = {
+    inventoryCountImportId : props?.inventoryCountImportId, 
+    pageSize: 100 
+  }
+
   try {
-    const resp = await CountService.fetchCycleCountItems(props.inventoryCountImportId as string)
+    const resp = await CountService.fetchCycleCountItems(payload)
 
     store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
 
@@ -343,10 +346,6 @@ async function updateCountName() {
   }
 
   isCountNameUpdating.value = false
-}
-
-function updateVarianceThreshold(event: any) {
-  varianceThreshold.value = event.detail.value
 }
 
 function isItemReadyToAccept(item: any) {
