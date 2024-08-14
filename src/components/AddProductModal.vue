@@ -10,8 +10,8 @@
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <ion-searchbar @ionFocus="selectSearchBarText($event)" v-model="queryString" :placeholder="translate('Search SKU or product name')" v-on:keyup.enter="queryString = $event.target.value; getProducts()" />
-    
+    <ion-searchbar v-model="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="handleSearch" @ionInput="handleInput"/>
+
     <template v-if="products.length">
       <ion-list v-for="product in products" :key="product.productId">
         <ion-item lines="none">
@@ -31,6 +31,10 @@
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </template>
+
+    <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
+      <p>{{ translate("No product found") }}</p>
+    </div>
     <div v-else class="empty-state">
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
       <p>{{ translate("Enter a SKU, or product name to search a product") }}</p>
@@ -60,7 +64,7 @@ import { computed, defineProps, onUnmounted, ref } from "vue";
 import { closeOutline, checkmarkCircle } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
-import { getProductIdentificationValue, showToast } from "@/utils"
+import { getProductIdentificationValue } from "@/utils"
 import emitter from "@/event-bus";
 import Image from "@/components/Image.vue"
 
@@ -71,10 +75,21 @@ const isScrollable = computed(() => store.getters["product/isScrollable"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 let queryString = ref('')
+const isSearching = ref(false);
 
 onUnmounted(() => {
   store.dispatch("product/clearProducts")
 })
+
+async function handleSearch() {
+  if (!queryString.value) {
+    isSearching.value = false; 
+    store.dispatch("product/clearProducts");
+    return;
+  }
+  await getProducts();
+  isSearching.value = true;
+}
 
 async function getProducts( vSize?: any, vIndex?: any) {
   const viewSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
@@ -84,12 +99,7 @@ async function getProducts( vSize?: any, vIndex?: any) {
     viewIndex,
     queryString: queryString.value
   }
-  if (queryString.value) {
-    await store.dispatch("product/findProduct", payload);
-  }
-  else {
-    showToast(translate("Enter product sku to search"))
-  }
+  await store.dispatch("product/findProduct", payload);
 }
 
 async function loadMoreProducts(event: any) {
@@ -109,10 +119,11 @@ function closeModal() {
   modalController.dismiss({ dismissed: true });
 }
 
-function selectSearchBarText(event: any) {
-  event.target.getInputElement().then((element: any) => {
-    element.select();
-  })
+function handleInput() {
+  if (!queryString.value) {
+    isSearching.value = false;
+    store.dispatch("product/clearProducts");
+  }
 }
 
 function isProductAvailableInCycleCount(id: string) {
