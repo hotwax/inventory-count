@@ -32,7 +32,7 @@
       </ion-infinite-scroll>
     </template>
 
-    <div v-else-if="queryString && searched && !products.length" class="empty-state">
+    <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
       <p>{{ translate("No product found") }}</p>
     </div>
     <div v-else class="empty-state">
@@ -75,7 +75,7 @@ const isScrollable = computed(() => store.getters["product/isScrollable"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 let queryString = ref('')
-const searched = ref(false);
+const isSearching = ref(false);
 
 onUnmounted(() => {
   store.dispatch("product/clearProducts")
@@ -83,12 +83,12 @@ onUnmounted(() => {
 
 async function handleSearch() {
   if (!queryString.value) {
-    searched.value = false; 
+    isSearching.value = false; 
     store.dispatch("product/clearProducts");
     return;
   }
   await getProducts();
-  searched.value = true;
+  isSearching.value = true;
 }
 
 async function getProducts( vSize?: any, vIndex?: any) {
@@ -121,7 +121,7 @@ function closeModal() {
 
 function handleInput() {
   if (!queryString.value) {
-    searched.value = false;
+    isSearching.value = false;
     store.dispatch("product/clearProducts");
   }
 }
