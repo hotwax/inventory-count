@@ -1,10 +1,22 @@
 export default interface UserState {
+  token: string;
+  current: object | null;
+  instanceUrl: string;
+  omsRedirectionInfo: {
+    url: string;
     token: string;
-    current: any;
-    currentFacility: object | null;
-    permissions: any;
-    pwaState: any;
-    instanceUrl: string;
-    config: any;
-    currentEComStore: any;
+  }
+  facilities: Array<any>;
+  currentFacility: any;
+  permissions: any;
+  productStores: Array<any>;
+  currentProductStore: any;
+  settings: {
+    forceScan: boolean,
+    showQoh: boolean,
+    productIdentificationPref: {
+      primaryId: string,
+      secondaryId: string
+    }
+  }
 }

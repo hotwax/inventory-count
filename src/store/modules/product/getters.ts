@@ -3,20 +3,21 @@ import ProductState from "./ProductState";
 import RootState from "../../RootState";
 
 const getters: GetterTree<ProductState, RootState> = {
-  getCurrent: (state) => {
-    return JSON.parse(JSON.stringify(state.current));
+  getProduct: (state) => (productId: string) => {
+    // Returning empty object so that it doesn't breaks the UI
+    return state.cached[productId] ? state.cached[productId] : {};
   },
-  getUploadProducts(state) {
-    return state.uploadProducts;
+  getCurrentProduct(state) {
+    return state.currentProduct
   },
-  getSearchProducts(state) {
-    return state.products.list;
+  getProducts: (state) => {
+    return state.list.items
   },
   isScrollable(state) {
     return (
-      state.products.list.length > 0 &&
-      state.products.list.length < state.products.total
+      state.list.items.length > 0 &&
+      state.list.items.length < state.list.total
     );
-  },
+  }
 };
 export default getters;

@@ -1,90 +1,126 @@
-import { api, client } from '@/adapter'
-import store from '@/store';
-import { hasError } from '@/utils'
-const login = async (username: string, password: string): Promise <any> => {
-  return api({
-    url: "login", 
-    method: "post",
-    data: {
-      'USERNAME': username, 
-      'PASSWORD': password
+import api, {client} from "@/api"
+import store from "@/store";
+import { hasError } from "@/utils";
+
+const login = async (token: string): Promise <any> => {
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  let api_key = ""
+
+  try {
+    const resp = await client({
+      url: "login", 
+      method: "post",
+      baseURL,
+      params: {
+        token
+      },
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }) as any;
+
+    if(!hasError(resp) && (resp.data.api_key || resp.data.token)) {
+      api_key = resp.data.api_key || resp.data.token
+    } else {
+      throw "Sorry, login failed. Please try again";
     }
-  });
+  } catch(err) {
+    return Promise.reject("Sorry, login failed. Please try again");
+  }
+  return Promise.resolve(api_key)
 }
 
 const getUserProfile = async (token: any): Promise<any> => {
-  const baseURL = store.getters['user/getBaseUrl'];
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
   try {
     const resp = await client({
-      url: "user-profile",
-      method: "get",
+      url: "user/profile",
+      method: "GET",
       baseURL,
       headers: {
-        Authorization:  'Bearer ' + token,
-        'Content-Type': 'application/json'
+        "api_key": token,
+        "Content-Type": "application/json"
       }
     });
-    if(hasError(resp)) return Promise.reject("Error getting user profile");
+    if(hasError(resp)) throw "Error getting user profile";
     return Promise.resolve(resp.data)
   } catch(error: any) {
     return Promise.reject(error)
   }
 }
 
-const checkPermission = async (payload: any): Promise <any>  => {
-  const baseURL = store.getters['user/getBaseUrl'];
+const getAvailableTimeZones = async (): Promise <any>  => {
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
   return client({
-    url: "checkPermission",
-    method: "post",
-    baseURL: baseURL,
-    ...payload
+    url: "user/getAvailableTimeZones",
+    method: "get",
+    baseURL,
+    cache: true
   });
 }
 
-const getQOHViewConfig = async (token: any, productStoreId: any): Promise<any> => {
-  // If the productStoreId is not provided, it may be case of facility not associated with any productStore
-  if (!productStoreId) {
-    return Promise.resolve({});
-  }
-
-  const baseURL = store.getters['user/getBaseUrl'];
-  try {
-    const params = {
-      "inputFields": {
-        "productStoreId": productStoreId,
-        "settingTypeEnumId": "INV_CNT_VIEW_QOH"
-      },
-      "filterByDate": 'Y',
-      "entityName": "ProductStoreSetting",
-      "fieldList": ["settingTypeEnumId", "settingValue", "fromDate"],
-      "viewSize": 1
-    }
-    const resp = await client({
-      url: "performFind",
-      method: "get",
-      params,
-      baseURL,
-      headers: {
-        Authorization:  'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    });
-    // In all cases we resolve to empty object, as default option would be to hide QOH
-    return Promise.resolve(!hasError(resp) && resp.data.docs?.length ? resp.data.docs[0] : {});
-  } catch(error: any) {
-    return Promise.resolve({})
-  }
-}
-const updateQOHViewConfig = async (payload: any): Promise<any> => {
+const fetchFacilities = async (payload: any): Promise <any>  => {
   return api({
-    url: "service/updateProductStoreSetting",
+    url: "facilities",
+    method: "GET",
+    params: payload
+  });
+}
+
+const fetchAssociatedFacilities = async (payload: any): Promise <any>  => {
+  return api({
+    url: `user/${payload.partyId}/facilities`,
+    method: "GET",
+    params: payload
+  });
+}
+
+const fetchProductStores = async (payload: any): Promise <any>  => {
+  return api({
+    url: "facilities/productStores",
+    method: "GET",
+    params: payload
+  });
+}
+
+const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "GET",
+    params: payload
+  });
+}
+
+const updateProductStoreSetting = async (payload: any): Promise <any>  => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
+    method: "POST",
+    data: payload
+  });
+}
+
+const createProductStoreSetting = async (payload: any): Promise<any> => {
+  return api({
+    url: `productStores/${payload.productStoreId}/settings`,
     method: "post",
     data: payload
   });
 }
 
-const getUserPermissions = async (payload: any, token: any): Promise<any> => {
-  const baseURL = store.getters['user/getBaseUrl'];
+const setUserTimeZone = async (payload: any): Promise <any>  => {
+  return api({
+    url: "setUserTimeZone",
+    method: "post",
+    data: payload
+  });
+}
+
+const getUserPermissions = async (payload: any, url: string, token: any): Promise<any> => {
+  // Currently, making this request in ofbiz
+  const baseURL = url.startsWith('http') ? url.includes('/api') ? url : `${url}/api/` : `https://${url}.hotwax.io/api/`;
   let serverPermissions = [] as any;
 
   // If the server specific permission list doesn't exist, getting server permissions will be of no use
@@ -171,50 +207,17 @@ const getUserPermissions = async (payload: any, token: any): Promise<any> => {
       return Promise.reject(error);
     }
 }
-const getCurrentEComStore = async (token: any, facilityId: any): Promise<any> => {
-  // If the facilityId is not provided, it may be case of user not associated with any facility or the logout
-  if (!facilityId) {
-    return Promise.resolve({});
-  }
-  const baseURL = store.getters['user/getBaseUrl'];
-  try {
-    const params = {
-      "inputFields": {
-        "facilityId": facilityId,
-      },
-      "fieldList": ["storeName", "productStoreId"], 
-      "entityName": "ProductStoreFacilityDetail",
-      "distinct": "Y",
-      "noConditionFind": "Y",
-      "filterByDate": 'Y',
-      "viewSize": 1
-
-    }   
-    const resp = await client({
-      url: "performFind",
-      method: "get",
-      params,
-      baseURL,
-      headers: {
-        Authorization:  'Bearer ' + token,
-        'Content-Type': 'application/json'
-      }
-    });
-    if (hasError(resp)) {
-      throw resp.data;
-    }   
-    return Promise.resolve(resp.data.docs?.length ? resp.data.docs[0] : {});
-  } catch(error: any) {
-    return Promise.resolve({})
-  }
-}
 
 export const UserService = {
-    login,
-    getCurrentEComStore,
-    getQOHViewConfig,
-    getUserPermissions,
-    getUserProfile,
-    checkPermission,
-    updateQOHViewConfig
+  createProductStoreSetting,
+  fetchAssociatedFacilities,
+  fetchFacilities,
+  fetchProductStores,
+  fetchProductStoreSettings,
+  getAvailableTimeZones,
+  getUserPermissions,
+  getUserProfile,
+  login,
+  updateProductStoreSetting,
+  setUserTimeZone,
 }

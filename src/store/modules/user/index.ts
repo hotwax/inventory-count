@@ -1,6 +1,6 @@
 import actions from './actions'
 import getters from './getters'
-import mutations from './mutations'
+import mutations from "./mutations";
 import { Module } from 'vuex'
 import UserState from './UserState'
 import RootState from '@/store/RootState'
@@ -8,19 +8,25 @@ import RootState from '@/store/RootState'
 const userModule: Module<UserState, RootState> = {
     namespaced: true,
     state: {
-      token: '',
-      current: {},
-      currentFacility: {},
-      instanceUrl: '',
-      permissions: [],
-      config: {
-        currentQOHViewConfig: {},
-        viewQOH: false
+      token: "",
+      current: null,
+      instanceUrl: "",
+      omsRedirectionInfo: {
+        url: "",
+        token: ""
       },
-      currentEComStore: {},
-      pwaState: {
-        updateExists: false,
-        registration: null,
+      facilities: [],
+      currentFacility: {},
+      permissions: [],
+      productStores: [],
+      currentProductStore: {},
+      settings: {
+        forceScan: false,
+        showQoh: false,
+        productIdentificationPref: {
+          primaryId: 'productId',
+          secondaryId: ''
+        },
       }
     },
     getters,

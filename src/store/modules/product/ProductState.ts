@@ -1,8 +1,8 @@
 export default interface ProductState {
-  current: any;
-  uploadProducts: any;
-  products: {
-    list: any;
+  cached: any;
+  currentProduct: any; 
+  list: {
     total: number;
-  }
+    items: any[];
+  },
 }

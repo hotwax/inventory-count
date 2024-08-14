@@ -1,119 +1,77 @@
-import { ProductService } from "@/services/ProductService";
 import { ActionTree } from 'vuex'
 import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
-import { hasError, showToast } from '@/utils'
-import { translate } from '@/i18n'
-import emitter from '@/event-bus'
-import { prepareProductQuery } from '@/utils/solrHelper'
-
+import { ProductService } from "@/services/ProductService"
+import { hasError, showToast } from '@/utils';
+import emitter from '@/event-bus';
+import { translate } from '@/i18n';
+import logger from '@/logger'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  // Find Product
-  async findProduct ({ commit, state, dispatch }, payload) {
+  async fetchProducts ( { commit, state }, { productIds }) {
+    const cachedProductIds = Object.keys(state.cached);
+    const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
 
-    // Show loader only when new query and not the infinite scroll
-    if (payload.viewIndex === 0) emitter.emit("presentLoader");
+    const productIdFilter = remainingProductIds.join(' OR ')
+
+    // If there are no products skip the API call
+    if (productIdFilter === '') return;
 
     let resp;
 
     try {
-      const params = {
-        ...payload,
-        filters: {
-          isVirtual: { value: 'false' },
-        }
+      resp = await ProductService.fetchProducts({
+        "filters": ['productId: (' + productIdFilter + ')'],
+        "viewSize": productIds.length
+      })
+      if (resp.status === 200 && !hasError(resp)) {
+        const products = resp.data.response.docs;
+        // Handled empty response in case of failed query
+        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       }
-      const productQueryPayload = prepareProductQuery(params)
-      resp = await ProductService.fetchProducts(productQueryPayload)
-
-      // resp.data.response.numFound tells the number of items in the response
-      if (resp.status === 200 && resp.data.response?.numFound > 0 && !hasError(resp)) {
-        let products = resp.data.response.docs;
-        const totalProductsCount = resp.data.response.numFound;
-
-        if (payload.viewIndex && payload.viewIndex > 0) products = state.products.list.concat(products)
-        commit(types.PRODUCT_SEARCH_UPDATED, { products: products, totalProductsCount: totalProductsCount })
-      } else if (payload.viewIndex == 0) {
-        dispatch('clearSearchProducts')
-      }
-      // Remove added loader only when new query and not the infinite scroll
-      if (payload.viewIndex === 0) emitter.emit("dismissLoader");
-    } catch(error){
-      console.error(error)
-      dispatch('clearSearchProducts')
-      showToast(translate("Something went wrong"));
+    } catch(err) {
+      logger.error("Failed to fetch products", err)
     }
     // TODO Handle specific error
     return resp;
   },
 
-  async removeItemFromUploadProducts( {commit}, payload) {
-    commit(types.PRODUCT_REMOVE_FROM_UPLD_PRDTS, {sku: payload});
+  async currentProduct ({ commit }, payload) {
+    commit(types.PRODUCT_CURRENT_UPDATED, payload)
   },
 
-  async clearUploadProducts ({ commit }) {
-    commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
-  },
-
-  async uploadInventoryCount({ commit }, payload) {
-    emitter.emit("presentLoader");
+  async findProduct({ commit, state }, payload) {
     let resp;
+    if (payload.viewIndex === 0) emitter.emit("presentLoader");
     try {
-      resp = await ProductService.importInventoryCount({
-        inventoryCountRegister: payload.inventoryCountRegister,
-        facilityId: payload.facilityId
-      });
+      resp = await ProductService.fetchProducts({
+        "filters": ['isVirtual: false', `sku: *${payload.queryString}*`],
+        "viewSize": payload.viewSize,
+        "viewIndex": payload.viewIndex
+      })
+      if (resp.status === 200 && resp.data.response?.docs.length > 0 && !hasError(resp)) {
+        let products = resp.data.response.docs;
+        const total = resp.data.response.numFound;
 
-      if (resp.status == 200 && !hasError(resp)) {
-        commit(types.PRODUCT_CLEAR_UPLD_PRDTS);
-        showToast(translate("Products inventory updated"))
+        if (payload.viewIndex && payload.viewIndex > 0) products = state.list.items.concat(products)
+        commit(types.PRODUCT_LIST_UPDATED, { products, total });
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
       } else {
-        showToast(translate("Something went wrong"))
+        throw resp.data.docs;
       }
-
-      emitter.emit("dismissLoader");
     } catch (error) {
-      console.error(error);
-      showToast(translate("Something went wrong"));
+      commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
+    } finally {
+      if (payload.viewIndex === 0) emitter.emit("dismissLoader");
     }
-
+    
     return resp;
   },
-  
-  async updateInventoryCount ({ commit }, payload) {
-    commit(types.PRODUCT_ADD_TO_UPLD_PRDTS, { product: payload })
-  },
 
-  clearSearchProducts({commit}){
-    commit(types.PRODUCT_SEARCH_UPDATED, { products: [], totalProductsCount: 0 })
-  },
-
-  async updateCurrentProduct ({ commit, state }, payload) {
-    // search in uploadProducts that if the clicked product is already in the upload list and set it as current product
-    const currentProduct = state.uploadProducts[payload]
-    if(currentProduct) {
-      commit(types.PRODUCT_CURRENT_UPDATED, { product: currentProduct })
-    } else {
-      // used sku as we are currently only using sku to search for the product
-      const params = {
-        filters: {
-          isVirtual: { value: 'false' },
-          sku: { value: payload }
-        }
-      }
-      const productQueryPayload = prepareProductQuery(params)
-
-      const resp = await ProductService.fetchProducts(productQueryPayload)
-
-      if(resp.status === 200 && !hasError(resp) && resp.data.response?.numFound > 0) {
-        commit(types.PRODUCT_CURRENT_UPDATED, { product: resp.data.response.docs[0] })
-      } else {
-        showToast(translate("Something went wrong"));
-      }
-    }
+  async clearProducts({ commit }) {
+    commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
   }
 }
 

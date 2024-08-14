@@ -6,21 +6,18 @@ import ProductState from './ProductState'
 import RootState from '../../RootState'
 
 const productModule: Module<ProductState, RootState> = {
-    namespaced: true,
-    state: {
-      current: {},
-      uploadProducts: {},
-      products: {
-        list: [],
-        total: 0
-      }
+  namespaced: true,
+  state: {
+    cached: {},
+    list: {
+      items: [],
+      total: 0
     },
-    getters,
-    actions,
-    mutations,
+    currentProduct: {}
+  },
+  getters,
+  actions,
+  mutations,
 }
 
 export default productModule;
-
-// TODO
-// store.registerModule('product', productModule);
