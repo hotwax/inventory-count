@@ -22,13 +22,17 @@
           <ion-checkbox :value="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
-        <ion-item button v-if="showAdditionalFilters().selectedFacilities">
-          <ion-icon slot="start" :icon="removeCircleOutline"/>
-          <ion-label>{{ getSelectedFacilities() }}</ion-label>
-          <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', [])">
-            <ion-icon slot="icon-only" :icon="closeOutline"/>
-          </ion-button>
-        </ion-item>
+        <template v-if="showAdditionalFilters().selectedFacilities">
+          <ion-item v-for="facilityId in query.facilityIds" :key="facilityId">
+            <ion-label>{{ getFacilityName(facilityId) }}</ion-label>
+            <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
+              <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
+            </ion-button>
+          </ion-item>
+          <ion-item v-show="!query.facilityIds.length">
+            <ion-label>{{ translate("All facilities selected") }}</ion-label>
+          </ion-item>
+        </template>
 
         <ion-item-divider v-if="showAdditionalFilters().date">
           <ion-label>{{ translate("Date") }}</ion-label>
@@ -133,7 +137,7 @@ import {
   IonToolbar
 } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { closeOutline, removeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline, locateOutline } from "ionicons/icons";
+import { closeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline, locateOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";
@@ -159,18 +163,8 @@ async function updateQuery(key: string, value: any) {
   await store.dispatch("count/updateQuery", { key, value })
 }
 
-function getSelectedFacilities() {
-  let value = query.value.facilityIds
-
-  // Initially when adding a filter no value is selected thus returning "All facilities selected" as default value
-  if(!value.length) {
-    return "All facilities selected";
-  }
-  return facilities.value.map((facility: any) => {
-    if(value?.includes(facility.facilityId)) {
-      return facility.facilityName || facility.facilityId
-    }
-  }).filter((facility: any) => facility).join(", ")
+function getFacilityName(facilityId: string) {
+  return facilities.value.find((facility: any) => facility.facilityId === facilityId)?.facilityName || facilityId
 }
 
 function getSelectedValue() {
