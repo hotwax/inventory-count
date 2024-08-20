@@ -7,6 +7,9 @@ const getters: GetterTree<ProductState, RootState> = {
     // Returning empty object so that it doesn't breaks the UI
     return state.cached[productId] ? state.cached[productId] : {};
   },
+  getCachedProducts(state) {
+    return state.cached ? state.cached : {}
+  },
   getCurrentProduct(state) {
     return state.currentProduct
   },
