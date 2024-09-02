@@ -18,7 +18,7 @@ import PendingReviewDetail from "@/views/PendingReviewDetail.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import Settings from "@/views/Settings.vue";
-import InventoryCountBulkImport from "@/views/InventoryCountBulkImport.vue"
+import BulkUpload from "@/views/BulkUpload.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -90,9 +90,9 @@ const routes: Array<RouteRecordRaw> = [
   },
   
   {
-    path: '/inventoryCountBulkImport',
+    path: '/bulkUpload',
     name: 'Draft bulk',
-    component: InventoryCountBulkImport,
+    component: BulkUpload,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_DRAFT_VIEW"

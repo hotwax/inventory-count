@@ -35,7 +35,7 @@
           <ion-fab-button @click="createCycleCount">
             <ion-icon :icon="documentOutline" />
           </ion-fab-button>
-          <ion-fab-button @click="router.push('/inventoryCountBulkImport')">
+          <ion-fab-button @click="router.push('/bulkUpload')">
             <ion-icon :icon="documentsOutline" />
           </ion-fab-button>
         </ion-fab-list>

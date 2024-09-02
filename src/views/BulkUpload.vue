@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" />
+        <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
         <ion-title>{{ translate("Draft bulk") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -86,12 +86,14 @@
 
 <script setup>
 import {
+  IonBackButton,
   IonButton,
   IonChip,
   IonContent,
   IonHeader,
   IonIcon,
   IonItem,
+  IonItemDivider,
   IonLabel,
   IonList,
   IonListHeader,
@@ -167,13 +169,13 @@ function getFilteredFields(fields, required = true) {
   }, {});
 }
 function getFileProcessingStatus(systemMessage) {
-  let processingStatus = "Waiting"
+  let processingStatus = "pending"
   if (systemMessage.statusId === 'SmsgConsumed') {
-    processingStatus = "Processed"
+    processingStatus = "processed"
   } else if (systemMessage.statusId === 'SmsgConsuming') {
-    processingStatus = "Processing"
+    processingStatus = "processing"
   } else if (systemMessage.statusId === 'SmsgCancelled') {
-    processingStatus = 'Cancelled'
+    processingStatus = 'cancelled'
   }
   return processingStatus;
 }
@@ -184,13 +186,13 @@ async function cancelUpload (systemMessage) {
       statusId: 'SmsgCancelled'
     });
     if (!hasError(resp)) {
-      showToast(translate('Count cancelled successfully'))
+      showToast(translate('Cycle count cancelled successfully.'))
       await store.dispatch('count/fetchCycleCountImportSystemMessages')
     } else {
       throw resp.data;
     }
   } catch (err) {
-    showToast(translate('Failed to cancel uploaded count'))
+    showToast(translate('Failed to cancel uploaded cycle count.'))
     logger.error(err);
   }
 }
@@ -202,14 +204,14 @@ async function parse(event) {
       fileName.value = file.name
       content.value = await parseCsv(uploadedFile.value);
       fileColumns.value = Object.keys(content.value[0]);
-      showToast(translate("File uploaded successfully"));
+      showToast(translate("File uploaded successfully."));
       fileUploaded.value =!fileUploaded.value; 
     } else {
-      showToast(translate("No new file upload. Please try again"));
+      showToast(translate("No new file upload. Please try again."));
     }
   } catch {
     content.value = []
-    showToast(translate("Please upload a valid inventory count csv to continue"));
+    showToast(translate("Please upload a valid csv to continue"));
   }
 }
 async function save(){
@@ -230,7 +232,7 @@ async function save(){
     }
   })
   const alert = await alertController.create({
-    header: translate("Upload Inventory Counts"),
+    header: translate("Bulk Upload Cycle Counts"),
     message: translate("Make sure all the columns are mapped correctly."),
     buttons: [
         {
@@ -255,7 +257,7 @@ async function save(){
                 throw resp.data
               }
               await store.dispatch('count/fetchCycleCountImportSystemMessages')
-              showToast(translate("The inventory counts file uploaded successfully"))
+              showToast(translate("The cycle counts file uploaded successfully."))
             }).catch(() => {
               showToast(translate("Something went wrong, please try again"));
             })
