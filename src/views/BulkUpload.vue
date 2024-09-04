@@ -151,8 +151,11 @@ onIonViewDidEnter(async() => {
 })
 
 function extractFilename(filePath) {
+  if (!filePath) {
+    return;
+  }
   // Get the part of the string after the last '/'
-  const filenameWithTimestamp = filePath.substring(filePath.lastIndexOf('/') + 1);
+  const filenameWithTimestamp = filePath?.substring(filePath?.lastIndexOf('/') + 1);
   
   // Use a regex to remove the timestamp and return the base filename
   const baseFilename = filenameWithTimestamp.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, '.csv');

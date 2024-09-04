@@ -117,7 +117,7 @@ const acceptItem = async (payload: any): Promise<any> => {
 
 const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
   return api({
-    url: `cycleCounts/bulkUpload`,
+    url: `cycleCounts/upload`,
     method: "post",
     ...payload
   });
