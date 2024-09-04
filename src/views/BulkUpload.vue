@@ -73,7 +73,7 @@
             <div class="system-message-action">
               <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
               <ion-button :disabled="systemMessage.statusId === 'SmsgCancelled'" slot="end" fill="clear" color="medium" @click="cancelUpload(systemMessage)">
-                <ion-icon slot="icon-only" :icon="trashOutline" />
+                <ion-icon slot="icon-only" :icon="trashBinOutline" />
               </ion-button>
             </div>
           </ion-item>
@@ -110,7 +110,7 @@ import {
   alertController,
   modalController
 } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, trashOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, trashBinOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
