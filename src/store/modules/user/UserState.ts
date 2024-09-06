@@ -11,6 +11,13 @@ export default interface UserState {
   permissions: any;
   productStores: Array<any>;
   currentProductStore: any;
+  fieldMappings: any;
+  currentMapping: {
+    id: string;
+    mappingType: string;
+    name: string;
+    value: object;
+  },
   settings: {
     forceScan: boolean,
     showQoh: boolean,

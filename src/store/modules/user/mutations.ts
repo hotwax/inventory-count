@@ -40,5 +40,17 @@ const mutations: MutationTree <UserState> = {
       (state.settings as any)[setting] = payload[setting]
     })
   },
+  [types.USER_FIELD_MAPPINGS_UPDATED] (state, payload) {
+    state.fieldMappings = payload;
+  },    
+  [types.USER_CURRENT_FIELD_MAPPING_UPDATED] (state, payload) {
+      state.currentMapping = payload
+  },
+  [types.USER_FIELD_MAPPING_CREATED] (state, payload) {
+      (state.fieldMappings as any)[payload.type][payload.id] = {
+          name: payload.name,
+          value: payload.value
+      };
+  }
 }
 export default mutations;

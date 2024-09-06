@@ -42,6 +42,13 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getProductStoreSettings(state) {
     return state.settings
+  },
+  getFieldMappings: (state) => (type?: string) => {
+    if (type) {
+        const fieldMapping = (state.fieldMappings as any)[type];
+        return fieldMapping ? fieldMapping : {} 
+    }
+    return state.fieldMappings;
   }
 }
 export default getters;

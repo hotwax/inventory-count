@@ -208,16 +208,61 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
     }
 }
 
+const createFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings",
+    method: "POST",
+    data: payload
+  });
+}
+
+const updateFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings/${payload.mappingPrefId}",
+    method: "POST",
+    data: payload
+  });
+}
+
+const deleteFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings/${payload.mappingPrefId}",
+    method: "DELETE",
+    data: payload
+  });
+}
+
+const getFieldMappings = async (payload: any): Promise <any> => {
+  let url = "dataManagerMappings?"
+
+  if (Array.isArray(payload.mappingPrefTypeEnumId)) {
+    url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId.join('&')}`
+  } else {
+    url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId}`
+  }
+  delete payload.mappingPrefTypeEnumId
+
+  return api({
+    url,
+    method: "GET",
+    param: payload
+  });
+}
+
 export const UserService = {
+  createFieldMapping,
   createProductStoreSetting,
+  deleteFieldMapping,
   fetchAssociatedFacilities,
   fetchFacilities,
   fetchProductStores,
   fetchProductStoreSettings,
   getAvailableTimeZones,
+  getFieldMappings,
   getUserPermissions,
   getUserProfile,
   login,
+  updateFieldMapping,
   updateProductStoreSetting,
   setUserTimeZone,
 }

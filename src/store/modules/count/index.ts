@@ -15,6 +15,7 @@ const countModule: Module<CountState, RootState> = {
       noFacility: false
     },
     stats: {},
+    cycleCountImportSystemMessages:[],
     cycleCounts: {
       list: [],
       isScrollable: true
