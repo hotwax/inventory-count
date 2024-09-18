@@ -396,7 +396,7 @@ async function findProduct() {
 
   try {
     const resp = await ProductService.fetchProducts({
-      "filters": ['isVirtual: false', `sku: *${queryString.value}*`],
+      "filters": ['isVirtual: false', `sku: ${queryString.value}`], // Made exact searching as when using fuzzy searching the products are not searched as expected
       "viewSize": 1 // as we only need a single record
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {
