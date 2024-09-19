@@ -14,10 +14,21 @@
       <ion-input :label="translate('Mapping name')" :placeholder="translate('Field mapping name')" v-model="mappingName" />
     </ion-item>
   
-    <ion-content class="ion-padding">
+    <ion-content>
       <div>
         <ion-list>
-          <ion-item :key="field" v-for="(fieldValues, field) in getFields()">
+          <ion-item-divider>
+            <ion-label>{{ translate("Required") }} </ion-label>
+          </ion-item-divider>
+          <ion-item :key="field" v-for="(fieldValues, field) in getFields(fields, true)">
+            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
+              <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item-divider>
+            <ion-label>{{ translate("Optional") }} </ion-label>
+          </ion-item-divider>
+          <ion-item :key="field" v-for="(fieldValues, field) in getFields(fields, false)">
             <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
@@ -42,13 +53,14 @@ import {
   IonHeader,
   IonIcon,
   IonInput,
+  IonItem,
+  IonItemDivider,
+  IonLabel,
   IonSelect,
   IonSelectOption,
   IonTitle,
   IonToolbar,
-  IonItem,
   IonList,
-  onIonViewDidEnter,
   modalController
 } from '@ionic/vue';
 
@@ -67,34 +79,43 @@ let mappingName = ref(null)
 let fieldMapping = ref ({})
 let fileColumns = ref([])
 let identificationTypeId = ref('SKU')
+const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
 
 onMounted(() => {
   fieldMapping.value = { ...props.seletedFieldMapping }
   fileColumns.value = Object.keys(props.content[0]);
 })
 
-function getFields() {
-  const fields = process.env["VUE_APP_MAPPING_" + props.mappingType];
-  return fields ? JSON.parse(fields) : {};
+function getFields(fields, required = true) {
+  return Object.keys(fields).reduce((result, key) => {
+    if (fields[key].required === required) {
+      result[key] = fields[key];
+    }
+    return result;
+  }, {});
 }
 function closeModal() {
   modalController.dismiss({ dismissed: true });
 }
 async function saveMapping() {
-  if(!mappingName.value) {
+  if(!mappingName.value || !mappingName.value.trim()) {
     showToast(translate("Enter mapping name"));
     return
   }
   if (!areAllFieldsSelected()) {
-    showToast(translate("Map all fields"));
+    showToast(translate("Map all required fields"));
     return
   }
   const id = generateUniqueMappingPrefId();
   await store.dispatch("user/createFieldMapping", { id, name: mappingName.value, value: fieldMapping.value, mappingType: props.mappingType })
   closeModal();
 }
+
 function areAllFieldsSelected() {
-  return Object.values(fieldMapping.value).every(field => field !== "");
+  const requiredFields = Object.keys(getFields(fields, true));
+  const selectedFields = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key] !== '')
+
+  return requiredFields.every(field => selectedFields.includes(field));
 }
 
 //Todo: Generating unique identifiers as we are currently storing in local storage. Need to remove it as we will be storing data on server.
@@ -104,3 +125,8 @@ function generateUniqueMappingPrefId() {
 }
 
 </script>
+<style scoped>
+  ion-content {
+    --padding-bottom: 80px;
+  }
+</style>

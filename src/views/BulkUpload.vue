@@ -23,7 +23,7 @@
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('INVCOUNT') ?? []" :key="index" @click="mapFields(mapping)" outline="true">
+            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('INVCOUNT') ?? []" :key="index" @click="mapFields(mapping, index)" :outline="selectedMappingId != index">
               {{ mapping.name }}
             </ion-chip>
           </div>
@@ -129,6 +129,7 @@ let fileName = ref(null)
 let content = ref([])
 let fieldMapping = ref({})
 let fileColumns = ref([])
+let selectedMappingId = ref(null)
 const fileUploaded = ref(false);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
 
@@ -154,6 +155,8 @@ function resetDefaults() {
   uploadedFile.value = {}
   content.value = []
   fileName.value = null
+  file.value.value = ''
+  selectedMappingId.value = null
 }
 function extractFilename(filePath) {
   if (!filePath) {
@@ -265,7 +268,6 @@ async function save(){
                 throw resp.data
               }
               resetDefaults()
-              file.value.value = ''
               await store.dispatch('count/fetchCycleCountImportSystemMessages')
               showToast(translate("The cycle counts file uploaded successfully."))
             }).catch(() => {
@@ -277,7 +279,7 @@ async function save(){
     });
   return alert.present();  
 }
-function mapFields(mapping) {
+function mapFields(mapping, mappingId) {
   const fieldMappingData = JSON.parse(JSON.stringify(mapping));
 
   // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
@@ -295,6 +297,7 @@ function mapFields(mapping) {
     }
   })
   fieldMapping.value = fieldMappingData.value;
+  selectedMappingId.value = mappingId
 }
 function areAllFieldsSelected() {
   const requiredFields = Object.keys(getFilteredFields(fields, true));
