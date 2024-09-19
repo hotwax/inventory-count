@@ -72,7 +72,7 @@
             </ion-label>
             <div class="system-message-action">
               <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button :disabled="systemMessage.statusId === 'SmsgCancelled'" slot="end" fill="clear" color="medium" @click="cancelUpload(systemMessage)">
+              <ion-button :disabled="systemMessage.statusId !== 'SmsgReceived'" slot="end" fill="clear" color="medium" @click="cancelUpload(systemMessage)">
                 <ion-icon slot="icon-only" :icon="trashBinOutline" />
               </ion-button>
             </div>
@@ -97,11 +97,8 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonMenuButton,
   IonNote,
   IonPage,
-  IonSegment,
-  IonSegmentButton,
   IonSelect,
   IonSelectOption,
   IonTitle,
@@ -149,7 +146,15 @@ onIonViewDidEnter(async() => {
   await store.dispatch('user/getFieldMappings')
   await store.dispatch('count/fetchCycleCountImportSystemMessages')
 })
-
+function resetDefaults() {
+  fieldMapping.value = Object.keys(fields).reduce((fieldMapping, field) => {
+    fieldMapping[field] = ""
+    return fieldMapping;
+  }, {})
+  uploadedFile.value = {}
+  content.value = []
+  fileName.value = null
+}
 function extractFilename(filePath) {
   if (!filePath) {
     return;
@@ -259,6 +264,8 @@ async function save(){
               if (hasError(resp)) {
                 throw resp.data
               }
+              resetDefaults()
+              file.value.value = ''
               await store.dispatch('count/fetchCycleCountImportSystemMessages')
               showToast(translate("The cycle counts file uploaded successfully."))
             }).catch(() => {
@@ -290,7 +297,10 @@ function mapFields(mapping) {
   fieldMapping.value = fieldMappingData.value;
 }
 function areAllFieldsSelected() {
-  return Object.values(fieldMapping).every(field => field !== "");
+  const requiredFields = Object.keys(getFilteredFields(fields, true));
+  const selectedFields = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key] !== '')
+
+  return requiredFields.every(field => selectedFields.includes(field));
 }
 async function addFieldMapping() {
   const createMappingModal = await modalController.create({
