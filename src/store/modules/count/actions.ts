@@ -186,7 +186,7 @@ const actions: ActionTree<CountState, RootState> = {
       const resp = await CountService.fetchCycleCountImportSystemMessages({
         systemMessageTypeId: "ImportInventoryCounts",
         initDate_from: fifteenMinutesEarlier.toMillis(),
-        orderByField: 'processedDate desc,initDate desc',
+        orderByField: 'initDate desc, processedDate desc',
         pageSize: 10
       })
       if (!hasError(resp)) {
