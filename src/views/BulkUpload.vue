@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
+        <ion-back-button slot="start" default-href="/draft" />
         <ion-title>{{ translate("Draft bulk") }}</ion-title>
       </ion-toolbar>
     </ion-header>
