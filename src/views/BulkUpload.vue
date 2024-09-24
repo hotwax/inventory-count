@@ -227,7 +227,7 @@ async function parse(event) {
 }
 async function save(){
   if (!areAllFieldsSelected()) {
-    showToast(translate("Select all the fields to continue"));
+    showToast(translate("Select all the required fields to continue"));
     return;
   }
 
