@@ -112,9 +112,30 @@
             </ion-list>
             <template v-else>
               <ion-list v-if="product.isRecounting">
-                <ion-item>
-                  <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
-                </ion-item>
+                <!-- force scan -->
+                <template v-if="productStoreSettings['forceScan']">
+                  <ion-item lines="none">
+                    <ion-label slot="start">
+                      {{ translate('Force scan enabled') }}
+                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                    </ion-label>
+                    <input type="text" class="hidden-input" v-model="scannedCount" ref="barcodeInput" @change="handleInput" @blur="handleBlur"/>
+                    <ion-button slot="end" expand="block" fill="outline" @click="focusInput">
+                      <ion-icon slot="start" :icon="cameraOutline" />
+                      {{ isInputFocused ? translate("Scanning") : translate("Scan") }}
+                    </ion-button>
+                  </ion-item>
+                  <ion-item>
+                    {{ translate("Count") }}
+                    <ion-label slot="end">{{ inputCount }}</ion-label>
+                  </ion-item>
+                </template>
+
+                <template v-else>
+                  <ion-item>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+                  </ion-item>
+                </template>
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
@@ -136,6 +157,14 @@
               </ion-list>
       
               <ion-list v-else-if="product.quantity >= 0">
+                <template v-if="productStoreSettings['forceScan']">
+                  <ion-item lines="none">
+                    <ion-label>
+                      {{ translate('Force scan enabled') }}
+                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                    </ion-label>
+                  </ion-item>
+                </template>
                 <ion-item>
                   {{ translate("Counted") }}
                   <ion-label slot="end">{{ product.quantity }}</ion-label>
@@ -165,9 +194,30 @@
               </ion-list>
               
               <ion-list v-else>
-                <ion-item>
-                  <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
-                </ion-item>
+                <!-- force scan -->
+                <template v-if="productStoreSettings['forceScan']">
+                  <ion-item lines="none">
+                    <ion-label slot="start">
+                      {{ translate('Force scan enabled') }}
+                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                    </ion-label>
+                    <input type="text" class="hidden-input" v-model="scannedCount" ref="barcodeInput" @change="handleInput" @blur="handleBlur"/>
+                    <ion-button slot="end" fill="outline" @click="focusInput">
+                      <ion-icon slot="start" :icon="cameraOutline" />
+                      {{ isInputFocused ? translate("Scanning") : translate("Scan") }}
+                    </ion-button>
+                  </ion-item>
+                  <ion-item>
+                    {{ translate("Count") }}
+                    <ion-label slot="end">{{ productStoreSettings['forceScan'] && inputCount === '' ? 0 : inputCount }}</ion-label>
+                  </ion-item>
+                </template>
+
+                <template v-else>
+                  <ion-item>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance" @keydown="inputCountValidation"/>
+                  </ion-item>
+                </template>              
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
@@ -178,7 +228,7 @@
                     <ion-label slot="end">{{ variance }}</ion-label>
                   </ion-item>
                 </template>
-                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount()">
+                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(product)">
                   {{ translate("Save count") }}
                 </ion-button>
               </ion-list>
@@ -223,7 +273,7 @@ import {
   onIonViewDidEnter,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
+import { cameraOutline, chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref, onUpdated } from 'vue';
 import { useStore } from "@/store";
@@ -242,6 +292,7 @@ const store = useStore();
 
 const product = computed(() => store.getters['product/getCurrentProduct']);
 const getProduct = computed(() => (id) => store.getters["product/getProduct"](id))
+const getCachedProducts = computed(() => store.getters["product/getCachedProducts"])
 const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
@@ -269,13 +320,17 @@ const props = defineProps(["id"]);
 let selectedSegment = ref('all');
 let cycleCount = ref([]);
 const queryString = ref('');
+const barcodeInput = ref(null);
 let filteredItems = ref([]);
 
 const inputCount = ref('');
+const scannedCount = ref('')
 const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
 const isScrolling = ref(false);
+const isInputFocused = ref(false)
+let previousItem = null;
 
 // Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
 onUpdated(() => {
@@ -290,9 +345,42 @@ onIonViewDidEnter(async() => {
   selectedSegment.value = 'all';
   queryString.value = '';
   updateFilteredItems();
+  previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   updateNavigationState(0);
 })  
+
+async function focusInput() {
+  barcodeInput.value.focus();
+  isInputFocused.value = true;
+}
+
+function handleBlur() {
+  isInputFocused.value = false;
+}
+
+async function handleInput(event) {
+  if (!isInputFocused.value) return; 
+  let sku = event.target.value;
+  const cachedProducts = getCachedProducts.value;
+  let scannedItem;
+
+  scannedItem = Object.keys(cachedProducts).find(productId => cachedProducts[productId].sku === sku);
+  if (!scannedItem) {
+    scannedItem = await findProduct(sku);
+  }
+  if (scannedItem) {
+    if (scannedItem === product.value.productId) {
+      inputCount.value++;
+      scannedCount.value = ''
+    } else {
+      showToast(translate('Scanned item does not match current product'));
+    }
+  } else {  
+    showToast(translate('Product not found'));
+  }
+  scannedCount.value = ''
+}
 
 function inputCountValidation(event) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
@@ -366,6 +454,12 @@ const onScroll = (event) => {
         const productId = entry.target.dataset.productId;
         const seqId = entry.target.dataset.seq;
         const currentProduct = filteredItems.value.find((item) => item.productId === productId && item.importItemSeqId === seqId);
+        
+        if(previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId) {
+          if(inputCount.value) saveCount(previousItem);
+        }
+        previousItem = currentProduct  // Update the previousItem variable with the current item
+
         if (currentProduct) {
           const currentIndex = filteredItems.value.indexOf(currentProduct);
           store.dispatch("product/currentProduct", currentProduct);
@@ -427,27 +521,27 @@ function getVariance(item , count) {
   return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
 }
 
-async function saveCount() {
+async function saveCount(item) {
   if (!inputCount.value) {
     showToast(translate("Enter a count before saving changes"))
     return;
   }
   try {
     const payload = {
-      inventoryCountImportId: product.value.inventoryCountImportId,
-      importItemSeqId: product.value.importItemSeqId,
-      productId: product.value.productId,
+      inventoryCountImportId: item.inventoryCountImportId,
+      importItemSeqId: item.importItemSeqId,
+      productId: item.productId,
       quantity: inputCount.value,
       countedByUserLoginId: userProfile.value.username
     };
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      product.value.quantity = inputCount.value
-      product.value.countedByGroupName = userProfile.value.userFullName
-      product.value.countedByUserLoginId = userProfile.value.username
-      await store.dispatch('product/currentProduct', product.value);
+      item.quantity = inputCount.value
+      item.countedByGroupName = userProfile.value.userFullName
+      item.countedByUserLoginId = userProfile.value.username
+      await store.dispatch('product/currentProduct', item);
       inputCount.value = ''; 
-      product.value.isRecounting = false;
+      item.isRecounting = false;
     } else {
       throw resp.data;
     }
@@ -493,7 +587,7 @@ async function openRecountSaveAlert() {
     {
       text: translate('Save Re-count'),
       handler: async () => {
-        await saveCount(); 
+        await saveCount(product.value); 
       }
     }]
   });
@@ -545,9 +639,38 @@ async function readyForReview() {
   });
   await alert.present();
 }
+
+async function findProduct(sku) {
+  if(!sku) {
+    showToast(translate("Scan a valid product sku"));
+    return;
+  }
+  let resp;
+  const viewSize = 1
+  const viewIndex = 0
+  try {
+    resp = await store.dispatch("product/findProduct", { queryString: sku,  viewSize, viewIndex})
+    if (!hasError(resp)) {
+      return resp;
+    } else {
+      throw resp.data
+    }
+  } catch(err) {
+    logger.error("Product not found", err)
+  }
+}
 </script>
 
 <style scoped>
+
+ion-list {
+  min-width: 400px;
+}
+
+.hidden-input {
+  position: absolute; 
+  opacity: 0
+}
 
 .find {
   display: grid;
