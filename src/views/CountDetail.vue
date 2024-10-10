@@ -345,7 +345,7 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", product.value);
+    store.dispatch("product/currentProduct", filteredItems.value[0]);
     updateNavigationState(filteredItems.value.indexOf(product.value));
   } else {
     store.dispatch("product/currentProduct", {});
