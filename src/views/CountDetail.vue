@@ -62,12 +62,12 @@
         </aside>
         <!--Product details-->
         <main class="main">
-          <div class="product" @scroll="onScroll">
+          <div class="product" @scroll="onScroll" v-if="filteredItems.length">
             <div class="image ion-padding-top" v-for="item in filteredItems" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
               <Image :src="getProduct(item.productId)?.mainImageUrl" />
             </div>
           </div>
-          <div class="detail">
+          <div class="detail" v-if="Object.keys(product)?.length">
             <ion-item lines="none">
               <ion-label class="ion-text-wrap">
                 <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
@@ -345,10 +345,10 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", product.value);
+    store.dispatch("product/currentProduct", filteredItems.value[0]);
     updateNavigationState(filteredItems.value.indexOf(product.value));
   } else {
-    store.dispatch("product/currentProduct", null);
+    store.dispatch("product/currentProduct", {});
     isFirstItem.value = true
     isLastItem.value = false
   }  
