@@ -345,7 +345,8 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", filteredItems.value[0]);
+    const item = filteredItems.value.find((item) => item.importItemSeqId === product.value.importItemSeqId)
+    store.dispatch("product/currentProduct", item ? product.value : filteredItems.value[0]);
     updateNavigationState(filteredItems.value.indexOf(product.value));
   } else {
     store.dispatch("product/currentProduct", {});
@@ -445,9 +446,9 @@ async function saveCount() {
       product.value.quantity = inputCount.value
       product.value.countedByGroupName = userProfile.value.userFullName
       product.value.countedByUserLoginId = userProfile.value.username
-      await store.dispatch('product/currentProduct', product.value);
       inputCount.value = ''; 
       product.value.isRecounting = false;
+      await store.dispatch('product/currentProduct', product.value);
     } else {
       throw resp.data;
     }
