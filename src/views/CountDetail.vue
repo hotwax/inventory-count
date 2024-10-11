@@ -67,7 +67,7 @@
               <Image :src="getProduct(item.productId)?.mainImageUrl" />
             </div>
           </div>
-          <div class="detail">
+          <div class="detail" v-if="Object.keys(product)?.length">
             <ion-item lines="none">
               <ion-label class="ion-text-wrap">
                 <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
@@ -345,10 +345,11 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", product.value);
-    updateNavigationState(filteredItems.value.indexOf(product.value));
+    const updatedProduct = Object.keys(product.value)?.length ? product.value : filteredItems.value[0]
+    store.dispatch("product/currentProduct", updatedProduct);
+    updateNavigationState(filteredItems.value.indexOf(updatedProduct));
   } else {
-    store.dispatch("product/currentProduct", null);
+    store.dispatch("product/currentProduct", {});
     isFirstItem.value = true
     isLastItem.value = false
   }  
@@ -445,9 +446,18 @@ async function saveCount() {
       product.value.quantity = inputCount.value
       product.value.countedByGroupName = userProfile.value.userFullName
       product.value.countedByUserLoginId = userProfile.value.username
-      await store.dispatch('product/currentProduct', product.value);
       inputCount.value = ''; 
       product.value.isRecounting = false;
+      const items = JSON.parse(JSON.stringify(itemsList.value))
+      items.map((item) => {
+        if(item.importItemSeqId === product.value?.importItemSeqId) {
+          item.quantity = product.value.quantity
+          item.countedByGroupName = userProfile.value.userFullName
+          item.countedByUserLoginId = userProfile.value.username
+        }
+      })
+      await store.dispatch('count/updateCycleCountItems', items);
+      await store.dispatch('product/currentProduct', product.value);
     } else {
       throw resp.data;
     }

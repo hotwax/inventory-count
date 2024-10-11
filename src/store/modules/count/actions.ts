@@ -17,7 +17,7 @@ const actions: ActionTree<CountState, RootState> = {
 
     const params = {
       ...payload,
-      pageSize: 100
+      pageSize: 200
     }
 
     if(state.query.facilityIds.length) {
@@ -176,9 +176,14 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_ITEMS_UPDATED, items)
   },
 
+  async updateCycleCountItems ({ commit }, payload) {
+    commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
+  },
+
   async clearCycleCountItems ({ commit }) {
     commit(types.COUNT_ITEMS_UPDATED, [])
   },
+
   async fetchCycleCountImportSystemMessages({commit} ,payload) {
     let systemMessages;
     try {
