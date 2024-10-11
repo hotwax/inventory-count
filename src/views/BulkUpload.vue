@@ -234,7 +234,7 @@ async function save(){
   const uploadedData = content.value.map(item => {
     return {
       countImportName: item[fieldMapping.value.countImportName],
-      statusId: item[fieldMapping.value.statusId],
+      statusId: item[fieldMapping.value.statusId] ? item[fieldMapping.value.statusId] : "INV_COUNT_CREATED",
       idValue: item[fieldMapping.value.productSku],
       idType: "SKU",
       dueDate: item[fieldMapping.value.dueDate],
