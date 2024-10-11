@@ -450,7 +450,11 @@ async function saveCount() {
       product.value.isRecounting = false;
       const items = JSON.parse(JSON.stringify(itemsList.value))
       items.map((item) => {
-        if(item.importItemSeqId === product.value?.importItemSeqId) item.quantity = product.value.quantity
+        if(item.importItemSeqId === product.value?.importItemSeqId) {
+          item.quantity = product.value.quantity
+          item.countedByGroupName = userProfile.value.userFullName
+          item.countedByUserLoginId = userProfile.value.username
+        }
       })
       await store.dispatch('count/updateCycleCountItems', items);
       await store.dispatch('product/currentProduct', product.value);

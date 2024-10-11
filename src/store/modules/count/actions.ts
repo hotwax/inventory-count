@@ -17,7 +17,7 @@ const actions: ActionTree<CountState, RootState> = {
 
     const params = {
       ...payload,
-      pageSize: 100
+      pageSize: 200
     }
 
     if(state.query.facilityIds.length) {
