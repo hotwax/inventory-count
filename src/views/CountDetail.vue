@@ -223,7 +223,7 @@ import {
   onIonViewDidEnter,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline, filter } from "ionicons/icons";
+import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref, onUpdated } from 'vue';
 import { useStore } from "@/store";
