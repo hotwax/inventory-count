@@ -139,19 +139,19 @@ onIonViewDidEnter(async() => {
   content.value = []
   fileName.value = null
   
-  fieldMapping.value = Object.keys(fields).reduce((fieldMapping, field) => {
-    fieldMapping[field] = ""
-    return fieldMapping;
-  }, {})
+  resetFieldMapping();
   file.value.value = null;
   await store.dispatch('user/getFieldMappings')
   await store.dispatch('count/fetchCycleCountImportSystemMessages')
 })
-function resetDefaults() {
+function resetFieldMapping() {
   fieldMapping.value = Object.keys(fields).reduce((fieldMapping, field) => {
     fieldMapping[field] = ""
     return fieldMapping;
   }, {})
+}
+function resetDefaults() {
+  resetFieldMapping();
   uploadedFile.value = {}
   content.value = []
   fileName.value = null
@@ -217,6 +217,7 @@ async function parse(event) {
       fileColumns.value = Object.keys(content.value[0]);
       showToast(translate("File uploaded successfully."));
       fileUploaded.value =!fileUploaded.value; 
+      resetFieldMapping();
     } else {
       showToast(translate("No new file upload. Please try again."));
     }
