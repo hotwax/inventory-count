@@ -216,7 +216,7 @@ async function parse(event) {
       content.value = await parseCsv(uploadedFile.value);
       fileColumns.value = Object.keys(content.value[0]);
       showToast(translate("File uploaded successfully."));
-      fileUploaded.value =!fileUploaded.value;
+      fileUploaded.value = !fileUploaded.value;
       selectedMappingId.value = null;
       resetFieldMapping();
     } else {
