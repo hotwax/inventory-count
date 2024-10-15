@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <Filters menu-id="filter" content-id="filter"/>
+    <Filters menu-id="assigned-filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Assigned")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter">
+          <ion-menu-button menu="assigned-filter">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>

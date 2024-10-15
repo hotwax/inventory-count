@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <Filters menu-id="draft-filter" content-id="draft-filter"/>
+    <Filters menu-id="draft-filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
@@ -13,7 +13,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content id="draft-filter">
+    <ion-content id="filter">
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>

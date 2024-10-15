@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <Filters menu-id="filter" content-id="filter"/>
+    <Filters menu-id="pending-review-filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Pending review")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter">
+          <ion-menu-button menu="pending-review-filter">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
