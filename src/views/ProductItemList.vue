@@ -1,5 +1,5 @@
 <template>
-  <ion-item v-if="currentProduct" :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
+  <ion-item v-if="currentProduct" :color="isCurrentProduct() ? '' : ''" button @click="navigateToDetail(item)">
     <ion-thumbnail slot="start">
       <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
