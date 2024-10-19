@@ -6,7 +6,7 @@
     <ion-label class="ion-text-wrap">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
       <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
-      <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+      <p class="secondary-product">{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
       {{ item.quantity === 0 ? 0 : item.quantity }} {{ translate("units") }}
@@ -99,5 +99,8 @@ ion-note {
 /* Using important as we have styling that overrides this, need to update the actual styling for this */
 .overline {
   color: var(--ion-color-danger) !important;
+}
+.secondary-product{
+  color: #666666 !important;
 }
 </style>
