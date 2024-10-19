@@ -531,11 +531,23 @@ async function acceptItem(item?: any) {
 
   const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
 
-  const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
-  if(isAnyRespHasError) {
-    showToast(translate("Some of the item(s) are failed to accept"))
+  const primary = (
+    getProductIdentificationValue(
+      productStoreSettings.value.productIdentificationPref.primaryId,
+      getProduct.value(item.productId)
+    )
+  );
+  const isAnyRespHasError = resp.some(
+    (response: any) => response.status === "rejected"
+  );
+  if (isAnyRespHasError) {
+    showToast(translate("Some of the item(s) are failed to accept"));
   } else {
-    showToast(translate("All of the item(s) are accepted"))
+    if (payloads.length === 1) {
+      showToast(translate(`Item: ${primary} has been accepted`));
+    } else {
+      showToast(translate("All items have been accepted"));
+    }
   }
   await fetchCountItems()
 }
