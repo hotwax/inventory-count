@@ -19,7 +19,7 @@
             <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
-            <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) }}</h2>
+            <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
             <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
           </ion-label>
           <ion-icon v-if="isProductAvailableInCycleCount(product.productId)" color="success" :icon="checkmarkCircle" />
@@ -73,6 +73,7 @@ const props = defineProps(["cycleCount"])
 const products = computed(() => store.getters["product/getProducts"])
 const isScrollable = computed(() => store.getters["product/isScrollable"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const getProduct = computed(() => (id: any) => store.getters["product/getProduct"](id))
 
 let queryString = ref('')
 const isSearching = ref(false);
