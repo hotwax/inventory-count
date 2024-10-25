@@ -249,12 +249,29 @@ const getFieldMappings = async (payload: any): Promise <any> => {
   });
 }
 
+const fetchGoodIdentificationTypes = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
+  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+
+  return await client({
+    url: "performFind",
+    method: "post",
+    baseURL,
+    data: payload,
+    headers: {
+      "Authorization":  'Bearer ' + omsRedirectionInfo.token,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 export const UserService = {
   createFieldMapping,
   createProductStoreSetting,
   deleteFieldMapping,
   fetchAssociatedFacilities,
   fetchFacilities,
+  fetchGoodIdentificationTypes,
   fetchProductStores,
   fetchProductStoreSettings,
   getAvailableTimeZones,

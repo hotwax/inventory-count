@@ -70,7 +70,7 @@
           <div class="detail" v-if="Object.keys(product)?.length">
             <ion-item lines="none">
               <ion-label class="ion-text-wrap">
-                <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
+                <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
                 <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
               </ion-label>
 

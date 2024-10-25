@@ -51,6 +51,9 @@ const mutations: MutationTree <UserState> = {
           name: payload.name,
           value: payload.value
       };
+  },
+  [types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED](state, payload = []) {
+    state.goodIdentificationTypes = payload.length ? payload : process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
   }
 }
 export default mutations;

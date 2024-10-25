@@ -49,6 +49,9 @@ const getters: GetterTree <UserState, RootState> = {
         return fieldMapping ? fieldMapping : {} 
     }
     return state.fieldMappings;
+  },
+  getGoodIdentificationTypes(state) {
+    return state.goodIdentificationTypes;
   }
 }
 export default getters;

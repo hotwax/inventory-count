@@ -25,5 +25,6 @@ export default interface UserState {
       primaryId: string,
       secondaryId: string
     }
-  }
+  },
+  goodIdentificationTypes: Array<string>;
 }

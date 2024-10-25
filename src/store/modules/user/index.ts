@@ -34,7 +34,8 @@ const userModule: Module<UserState, RootState> = {
           primaryId: 'productId',
           secondaryId: ''
         },
-      }
+      },
+      goodIdentificationTypes: []
     },
     getters,
     actions,

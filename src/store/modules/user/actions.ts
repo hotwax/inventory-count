@@ -106,6 +106,7 @@ const actions: ActionTree<UserState, RootState> = {
       primaryId: 'productId',
       secondaryId: ''
     }})
+    commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, [])
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
 
@@ -545,6 +546,31 @@ const actions: ActionTree<UserState, RootState> = {
       name: '',
       value: {}
     })
+  },
+
+  async fetchGoodIdentificationTypes({ commit }, parentTypeId = "HC_GOOD_ID_TYPE") {
+    let identificationTypes = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
+    const payload = {
+      "inputFields": {
+        parentTypeId
+      },
+      "fieldList": ["goodIdentificationTypeId", "description"],
+      "viewSize": 50,
+      "entityName": "GoodIdentificationType",
+    }
+    try {
+      const resp = await UserService.fetchGoodIdentificationTypes(payload)
+      if (!hasError(resp) && resp.data?.docs?.length) {
+        const identificationOptions = resp.data.docs?.map((fetchedGoodIdentificationType: any) => fetchedGoodIdentificationType.goodIdentificationTypeId) || [];
+        // Merge the arrays and remove duplicates
+        identificationTypes = Array.from(new Set([...identificationOptions, ...identificationTypes])).sort();
+      } else {
+        throw resp.data;
+      }
+    } catch (err) {
+      console.error('Failed to fetch the good identification types, setting default types')
+    }
+    commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, identificationTypes)
   }
 }
 export default actions;
