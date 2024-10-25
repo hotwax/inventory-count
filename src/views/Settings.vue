@@ -121,12 +121,12 @@
           </ion-card-content>
 
           <ion-item>
-            <ion-select :label="translate('Primary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+            <ion-select :label="translate('Primary')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
               <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
-            <ion-select :label="translate('Secondary Product Identifier')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+            <ion-select :label="translate('Secondary')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
               <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
               <ion-select-option value="">{{ translate("None") }}</ion-select-option>
             </ion-select>
