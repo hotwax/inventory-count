@@ -24,7 +24,7 @@ export default interface UserState {
     productIdentificationPref: {
       primaryId: string,
       secondaryId: string
-    },
+    }
   },
   goodIdentificationTypes: Array<string>;
 }
