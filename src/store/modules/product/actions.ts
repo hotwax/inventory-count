@@ -72,7 +72,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async clearProducts({ commit }) {
     commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
-  }
+  }  
 }
 
 export default actions;

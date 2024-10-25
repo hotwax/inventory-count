@@ -153,8 +153,6 @@ const store = useStore()
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
-const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
-
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
@@ -163,9 +161,11 @@ const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const currentProductStore = computed(() => store.getters["user/getCurrentProductStore"])
 const productStores = computed(() => store.getters["user/getProductStores"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const productIdentifications = computed(() => store.getters["user/getGoodIdentificationTypes"])
 
-onMounted(() => {
+onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
+  await store.dispatch("user/fetchGoodIdentificationTypes")
 })
 
 function logout() {
