@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title slot="start">{{ translate("Count name") }}</ion-title>
+        <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
         <ion-segment :value="selectedSegment" @ionChange="segmentChanged($event.detail.value)">
           <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
             <ion-label>{{ translate("Assigned") }}</ion-label>
