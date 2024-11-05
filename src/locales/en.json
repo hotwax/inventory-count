@@ -253,6 +253,7 @@
   "Some of the mapping fields are missing in the CSV:" : "Some of the mapping fields are missing in the CSV: {missingFields}",
   "Some of the item(s) are failed to accept": "Some of the item(s) are failed to accept",
   "Something went wrong": "Something went wrong",
+  "Something went wrong, please try again": "Something went wrong, please try again",
   "Something went wrong while login. Please contact administrator": "Something went wrong while login. Please contact administrator.",
   "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.": "Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.",
   "Status": "Status",
