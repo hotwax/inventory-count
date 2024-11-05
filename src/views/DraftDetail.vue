@@ -109,7 +109,7 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) }}</h2>
+                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
                 <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
             </ion-item>
@@ -352,10 +352,15 @@ async function editCountName() {
 }
 
 async function updateCountName() {
-  if(countName.value?.trim() && countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(!countName.value?.trim()) {
+    showToast(translate("Enter a valid cycle count name"))
+    return;
+  }
+
+  if(countName.value.trim() !== currentCycleCount.value.countName.trim()) {
     const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     if(inventoryCountImportId) {
-      currentCycleCount.value.countName = countName.value
+      currentCycleCount.value.countName = countName.value.trim()
     } else {
       countName.value = currentCycleCount.value.countName.trim()
     }
@@ -391,7 +396,7 @@ async function findProduct() {
 
   try {
     const resp = await ProductService.fetchProducts({
-      "filters": ['isVirtual: false', `sku: *${queryString.value}*`],
+      "filters": ['isVirtual: false', `sku: ${queryString.value}`], // Made exact searching as when using fuzzy searching the products are not searched as expected
       "viewSize": 1 // as we only need a single record
     })
     if (!hasError(resp) && resp.data.response?.docs?.length) {

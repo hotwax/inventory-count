@@ -208,16 +208,78 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
     }
 }
 
+const createFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings",
+    method: "POST",
+    data: payload
+  });
+}
+
+const updateFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings/${payload.mappingPrefId}",
+    method: "POST",
+    data: payload
+  });
+}
+
+const deleteFieldMapping = async (payload: any): Promise <any> => {
+  return api({
+    url: "dataManagerMappings/${payload.mappingPrefId}",
+    method: "DELETE",
+    data: payload
+  });
+}
+
+const getFieldMappings = async (payload: any): Promise <any> => {
+  let url = "dataManagerMappings?"
+
+  if (Array.isArray(payload.mappingPrefTypeEnumId)) {
+    url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId.join('&')}`
+  } else {
+    url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId}`
+  }
+  delete payload.mappingPrefTypeEnumId
+
+  return api({
+    url,
+    method: "GET",
+    param: payload
+  });
+}
+
+const fetchGoodIdentificationTypes = async (payload: any): Promise <any>  => {
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
+  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+
+  return await client({
+    url: "performFind",
+    method: "post",
+    baseURL,
+    data: payload,
+    headers: {
+      "Authorization":  'Bearer ' + omsRedirectionInfo.token,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 export const UserService = {
+  createFieldMapping,
   createProductStoreSetting,
+  deleteFieldMapping,
   fetchAssociatedFacilities,
   fetchFacilities,
+  fetchGoodIdentificationTypes,
   fetchProductStores,
   fetchProductStoreSettings,
   getAvailableTimeZones,
+  getFieldMappings,
   getUserPermissions,
   getUserProfile,
   login,
+  updateFieldMapping,
   updateProductStoreSetting,
   setUserTimeZone,
 }

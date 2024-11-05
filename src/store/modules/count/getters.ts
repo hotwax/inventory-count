@@ -20,6 +20,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getCycleCountItems(state) {
     return state.cycleCountItems
+  },
+  getCycleCountImportSystemMessages(state) {
+    return state.cycleCountImportSystemMessages
   }
 };
 

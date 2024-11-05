@@ -8,15 +8,16 @@ import emitter from "@/event-bus"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
+import { DateTime } from "luxon"
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
-    emitter.emit("presentLoader", { message: "Fetching cycle counts..." })
+    emitter.emit("presentLoader", { message: "Fetching cycle counts...", backdropDismiss: false })
     let counts: Array<any> = [], total = 0;
 
     const params = {
       ...payload,
-      pageSize: 100
+      pageSize: 200
     }
 
     if(state.query.facilityIds.length) {
@@ -175,9 +176,34 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_ITEMS_UPDATED, items)
   },
 
+  async updateCycleCountItems ({ commit }, payload) {
+    commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
+  },
+
   async clearCycleCountItems ({ commit }) {
     commit(types.COUNT_ITEMS_UPDATED, [])
-  }
+  },
+
+  async fetchCycleCountImportSystemMessages({commit} ,payload) {
+    let systemMessages;
+    try {
+      const fifteenMinutesEarlier = DateTime.now().minus({ minutes: 15 });
+      const resp = await CountService.fetchCycleCountImportSystemMessages({
+        systemMessageTypeId: "ImportInventoryCounts",
+        initDate_from: fifteenMinutesEarlier.toMillis(),
+        orderByField: 'initDate desc, processedDate desc',
+        pageSize: 10
+      })
+      if (!hasError(resp)) {
+        systemMessages = resp.data
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error(err)
+    }
+    commit(types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED, systemMessages)
+  },
 }	
 
 export default actions;	

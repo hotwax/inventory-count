@@ -115,12 +115,37 @@ const acceptItem = async (payload: any): Promise<any> => {
   })
 }
 
+const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
+  return api({
+    url: `cycleCounts/upload`,
+    method: "post",
+    ...payload
+  });
+}
+const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
+  return api({
+    url: `cycleCounts/systemMessages`,
+    method: "get",
+    params: payload
+  });
+}
+const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
+  return api({
+    url: `cycleCounts/systemMessages/${payload.systemMessageId}`,
+    method: "post",
+    data: payload
+  });
+}
+
 export const CountService = {
   acceptItem,
   addProductToCount,
+  bulkUploadInventoryCounts,
+  cancelCycleCountFileProcessing,
   createCycleCount,
   deleteCycleCountItem,
   fetchBulkCycleCountItems,
+  fetchCycleCountImportSystemMessages,
   fetchCycleCount,
   fetchCycleCountStats,
   fetchCycleCounts,

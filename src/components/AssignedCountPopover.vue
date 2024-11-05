@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || item.productId }}</ion-list-header>
+      <ion-list-header>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
       <ion-item :lines="item.quantity ? 'none' : 'full'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>

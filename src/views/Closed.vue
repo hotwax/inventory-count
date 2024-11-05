@@ -1,12 +1,12 @@
 <template>
   <ion-page>  
-    <Filters menu-id="filter" content-id="filter"/>
+    <Filters menu-id="closed-filter" content-id="filter"/>
     <ion-header>
       <ion-toolbar>
         <ion-menu-button slot="start" menu="start"/>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="filter">
+          <ion-menu-button menu="closed-filter">
             <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>

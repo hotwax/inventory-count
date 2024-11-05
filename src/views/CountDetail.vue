@@ -67,10 +67,10 @@
               <Image :src="getProduct(item.productId)?.mainImageUrl" />
             </div>
           </div>
-          <div class="detail">
+          <div class="detail" v-if="Object.keys(product)?.length">
             <ion-item lines="none">
               <ion-label class="ion-text-wrap">
-                <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) }}</h1>
+                <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
                 <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
               </ion-label>
 
@@ -433,10 +433,11 @@ function updateFilteredItems() {
     });
   }
   if (filteredItems.value.length > 0) {
-    store.dispatch("product/currentProduct", product.value);
-    updateNavigationState(filteredItems.value.indexOf(product.value));
+    const updatedProduct = Object.keys(product.value)?.length ? product.value : filteredItems.value[0]
+    store.dispatch("product/currentProduct", updatedProduct);
+    updateNavigationState(filteredItems.value.indexOf(updatedProduct));
   } else {
-    store.dispatch("product/currentProduct", null);
+    store.dispatch("product/currentProduct", {});
     isFirstItem.value = true
     isLastItem.value = false
   }  
@@ -521,27 +522,36 @@ function getVariance(item , count) {
   return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
 }
 
-async function saveCount(item) {
+async function saveCount(currentProduct) {
   if (!inputCount.value) {
     showToast(translate("Enter a count before saving changes"))
     return;
   }
   try {
     const payload = {
-      inventoryCountImportId: item.inventoryCountImportId,
-      importItemSeqId: item.importItemSeqId,
-      productId: item.productId,
+      inventoryCountImportId: currentProduct.inventoryCountImportId,
+      importItemSeqId: currentProduct.importItemSeqId,
+      productId: currentProduct.productId,
       quantity: inputCount.value,
       countedByUserLoginId: userProfile.value.username
     };
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      item.quantity = inputCount.value
-      item.countedByGroupName = userProfile.value.userFullName
-      item.countedByUserLoginId = userProfile.value.username
-      await store.dispatch('product/currentProduct', item);
+      currentProduct.quantity = inputCount.value
+      currentProduct.countedByGroupName = userProfile.value.userFullName
+      currentProduct.countedByUserLoginId = userProfile.value.username
+      currentProduct.isRecounting = false;
       inputCount.value = ''; 
-      item.isRecounting = false;
+      const items = JSON.parse(JSON.stringify(itemsList.value))
+      items.map((item) => {
+        if(item.importItemSeqId === currentProduct.importItemSeqId) {
+          item.quantity = currentProduct.quantity
+          item.countedByGroupName = userProfile.value.userFullName
+          item.countedByUserLoginId = userProfile.value.username
+        }
+      })
+      await store.dispatch('count/updateCycleCountItems', items);
+      await store.dispatch('product/currentProduct', currentProduct);
     } else {
       throw resp.data;
     }

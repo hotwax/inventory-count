@@ -20,6 +20,13 @@ const userModule: Module<UserState, RootState> = {
       permissions: [],
       productStores: [],
       currentProductStore: {},
+      fieldMappings: {},
+      currentMapping: {
+        id: '',
+        mappingType: '',
+        name: '',
+        value: {}
+      },
       settings: {
         forceScan: false,
         showQoh: false,
@@ -27,7 +34,8 @@ const userModule: Module<UserState, RootState> = {
           primaryId: 'productId',
           secondaryId: ''
         },
-      }
+      },
+      goodIdentificationTypes: []
     },
     getters,
     actions,

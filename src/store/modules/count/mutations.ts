@@ -28,6 +28,10 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_ITEMS_UPDATED] (state, payload) {
     state.cycleCountItems = payload
+  },
+  [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
+    state.cycleCountImportSystemMessages = payload
   }
+  
 }	
 export default mutations;	
