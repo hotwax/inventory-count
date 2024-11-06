@@ -157,14 +157,6 @@
               </ion-list>
       
               <ion-list v-else-if="product.quantity >= 0">
-                <template v-if="productStoreSettings['forceScan']">
-                  <ion-item lines="none">
-                    <ion-label>
-                      {{ translate('Force scan enabled') }}
-                      <p>{{ translate("Scan the barcode on each unit to increment the counted inventory") }}</p>
-                    </ion-label>
-                  </ion-item>
-                </template>
                 <ion-item>
                   {{ translate("Counted") }}
                   <ion-label slot="end">{{ product.quantity }}</ion-label>
@@ -209,7 +201,7 @@
                   </ion-item>
                   <ion-item>
                     <ion-label>{{ translate("Count") }}</ion-label>
-                    <ion-label slot="end">{{ productStoreSettings['forceScan'] && inputCount === '' ? 0 : inputCount }}</ion-label>
+                    <ion-label slot="end">{{ inputCount === '' ? 0 : inputCount }}</ion-label>
                   </ion-item>
                 </template>
 
@@ -361,18 +353,24 @@ function handleBlur() {
 
 async function handleInput(event) {
   if (!isInputFocused.value) return; 
-  let sku = event.target.value;
-  const cachedProducts = getCachedProducts.value;
-  let scannedItem;
 
-  scannedItem = Object.keys(cachedProducts).find(productId => cachedProducts[productId].sku === sku);
-  if (!scannedItem) {
-    scannedItem = await findProduct(sku);
+  let sku = event.target.value;
+  if(!sku) {
+    showToast(translate("Scan a valid product sku"));
+    return;
   }
-  if (scannedItem) {
-    if (scannedItem === product.value.productId) {
+
+  const cachedProducts = getCachedProducts.value;
+  let scannedItemId = Object.keys(cachedProducts).find(productId => cachedProducts[productId].sku === sku);
+  if (!scannedItemId) {
+    const product = await findProduct(sku);
+    if(product) {
+      scannedItemId = product.data.response?.docs[0]?.productId
+    }
+  }
+  if (scannedItemId) {
+    if (scannedItemId === product.value.productId) {
       inputCount.value++;
-      scannedCount.value = ''
     } else {
       showToast(translate('Scanned item does not match current product'));
     }
@@ -651,10 +649,8 @@ async function readyForReview() {
 }
 
 async function findProduct(sku) {
-  if(!sku) {
-    showToast(translate("Scan a valid product sku"));
-    return;
-  }
+  if(!sku) return;
+
   let resp;
   const viewSize = 1, viewIndex = 0;
 
