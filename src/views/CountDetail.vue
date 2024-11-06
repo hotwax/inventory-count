@@ -117,16 +117,16 @@
                   <ion-item lines="none">
                     <ion-label slot="start">
                       {{ translate('Force scan enabled') }}
-                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                      <p>{{ translate("Scan the barcode on each unit to increment the counted inventory") }}</p>
                     </ion-label>
                     <input type="text" class="hidden-input" v-model="scannedCount" ref="barcodeInput" @change="handleInput" @blur="handleBlur"/>
                     <ion-button slot="end" expand="block" fill="outline" @click="focusInput">
                       <ion-icon slot="start" :icon="cameraOutline" />
-                      {{ isInputFocused ? translate("Scanning") : translate("Scan") }}
+                      {{ translate( isInputFocused ? "Scanning" : "Scan") }}
                     </ion-button>
                   </ion-item>
                   <ion-item>
-                    {{ translate("Count") }}
+                    <ion-label>{{ translate("Count") }}</ion-label>
                     <ion-label slot="end">{{ inputCount }}</ion-label>
                   </ion-item>
                 </template>
@@ -161,7 +161,7 @@
                   <ion-item lines="none">
                     <ion-label>
                       {{ translate('Force scan enabled') }}
-                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                      <p>{{ translate("Scan the barcode on each unit to increment the counted inventory") }}</p>
                     </ion-label>
                   </ion-item>
                 </template>
@@ -199,16 +199,16 @@
                   <ion-item lines="none">
                     <ion-label slot="start">
                       {{ translate('Force scan enabled') }}
-                      <p>Scan the barcode on each unit to increment the counted inventory</p>
+                      <p>{{ translate("Scan the barcode on each unit to increment the counted inventory") }}</p>
                     </ion-label>
                     <input type="text" class="hidden-input" v-model="scannedCount" ref="barcodeInput" @change="handleInput" @blur="handleBlur"/>
                     <ion-button slot="end" fill="outline" @click="focusInput">
                       <ion-icon slot="start" :icon="cameraOutline" />
-                      {{ isInputFocused ? translate("Scanning") : translate("Scan") }}
+                      {{ translate( isInputFocused ? "Scanning" : "Scan") }}
                     </ion-button>
                   </ion-item>
                   <ion-item>
-                    {{ translate("Count") }}
+                    <ion-label>{{ translate("Count") }}</ion-label>
                     <ion-label slot="end">{{ productStoreSettings['forceScan'] && inputCount === '' ? 0 : inputCount }}</ion-label>
                   </ion-item>
                 </template>
@@ -656,8 +656,8 @@ async function findProduct(sku) {
     return;
   }
   let resp;
-  const viewSize = 1
-  const viewIndex = 0
+  const viewSize = 1, viewIndex = 0;
+
   try {
     resp = await store.dispatch("product/findProduct", { queryString: sku,  viewSize, viewIndex})
     if (!hasError(resp)) {
