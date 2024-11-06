@@ -42,6 +42,7 @@
                   :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
                   @ionChange="updateCustomTime($event)"
                   :min="DateTime.now().toISO()"
+                  :max="DateTime.now().plus({ years: 10 }).toISO()"
                   presentation="date"
                   showDefaultButtons
                 />
