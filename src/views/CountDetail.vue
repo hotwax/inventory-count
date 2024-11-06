@@ -434,8 +434,13 @@ function updateFilteredItems() {
     // As we want to get the index of the product, if we directly store the product in the updatedProduct variable it does not return the index
     // as both the object becomes different because of the reference, so if we have a product, then first finding it in the filtered list to have a common reference and then getting the index
     const updatedProduct = Object.keys(product.value)?.length ? filteredItems.value.find((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId) : filteredItems.value[0]
-    store.dispatch("product/currentProduct", updatedProduct);
-    updateNavigationState(filteredItems.value.indexOf(updatedProduct));
+    if (updatedProduct) {
+      store.dispatch("product/currentProduct", updatedProduct);
+      updateNavigationState(filteredItems.value.indexOf(updatedProduct));
+    } else {
+      store.dispatch("product/currentProduct", product.value);
+      updateNavigationState(0);
+    }
   } else {
     store.dispatch("product/currentProduct", {});
     isFirstItem.value = true
