@@ -24,7 +24,7 @@ const mutations: MutationTree <ProductState> = {
     state.list.items = payload.products
     state.list.total = payload.total
   },
-  [types.PRODUCT_CLEAR_CACHED] (state, payload) {
+  [types.PRODUCT_CLEAR_CACHED] (state) {
     state.cached = {}
   },
 }
