@@ -102,7 +102,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
     commit(types.USER_PRODUCT_STORES_UPDATED, [])
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, productIdentificationPref: {
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
       primaryId: 'productId',
       secondaryId: ''
     }})
@@ -264,14 +264,14 @@ const actions: ActionTree<UserState, RootState> = {
 
   async updateCurrentProductStore({ commit, dispatch }, productStore) {
     commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
     dispatch("getProductStoreSetting")
   },
 
   async getProductStoreSetting({ commit, state }, productStoreId?: string) {
     const payload = {
       "productStoreId": productStoreId ? productStoreId : state.currentProductStore.productStoreId,
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF",
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF,BARCODE_IDEN_PREF",
       "settingTypeEnumId_op": "in",
       "pageSize": 10
     }
@@ -291,10 +291,15 @@ const actions: ActionTree<UserState, RootState> = {
           if(setting.settingTypeEnumId === "PRDT_IDEN_PREF" && setting.settingValue) {
             settings["productIdentificationPref"] = JSON.parse(setting.settingValue)
           }
+
+          if(setting.settingTypeEnumId === "BARCODE_IDEN_PREF" && setting.settingValue) {
+            settings["barcodeIdentificationPref"] = setting.settingValue
+          }
           return settings
         }, {
           showQoh: false,
-          forceScan: false
+          forceScan: false,
+          barcodeIdentificationPref: "internalName"
         })
         commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, settings)
       }
@@ -311,7 +316,7 @@ const actions: ActionTree<UserState, RootState> = {
       fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": payload.enumId,
-      "settingValue": false
+      "settingValue": (payload.enumId === "BARCODE_IDEN_PREF") ? "internalName" : false
     }
 
     try {
@@ -322,7 +327,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: false })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: (payload.enumId === "BARCODE_IDEN_PREF") ? "internalName" : false })
     return fromDate;
   },
 
@@ -342,6 +347,10 @@ const actions: ActionTree<UserState, RootState> = {
 
     if(payload.key === "productIdentificationPref") {
       enumId = "PRDT_IDEN_PREF"
+    }
+
+    if(payload.key === "barcodeIdentificationPref") {
+      enumId = "BARCODE_IDEN_PREF"
     }
 
     let fromDate;
@@ -366,7 +375,7 @@ const actions: ActionTree<UserState, RootState> = {
       "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
-      "settingValue": JSON.stringify(payload.value)
+      "settingValue": payload.key !== "barcodeIdentificationPref" ? JSON.stringify(payload.value) : payload.value
     }
 
     try {

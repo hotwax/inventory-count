@@ -24,7 +24,8 @@ export default interface UserState {
     productIdentificationPref: {
       primaryId: string,
       secondaryId: string
-    }
+    },
+    barcodeIdentificationPref: string;
   },
   goodIdentificationTypes: Array<string>;
 }

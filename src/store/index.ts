@@ -17,7 +17,7 @@ import { setPermissions } from "@/authorization"
 const state: any = {}
 
 const persistState = createPersistedState({
-  paths: ["user"],
+  paths: ["user", "product.cached"],
   fetchBeforeUse: true
 })
 

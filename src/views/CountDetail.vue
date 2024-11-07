@@ -356,26 +356,18 @@ async function handleInput(event) {
 
   let sku = event.target.value;
   if(!sku) {
-    showToast(translate("Scan a valid product sku"));
+    showToast(translate("Scan a valid product barcode identifier"));
     return;
   }
 
   const cachedProducts = getCachedProducts.value;
-  let scannedItemId = Object.keys(cachedProducts).find(productId => cachedProducts[productId].sku === sku);
-  if (!scannedItemId) {
-    const product = await findProduct(sku);
-    if(product) {
-      scannedItemId = product.data.response?.docs[0]?.productId
-    }
-  }
-  if (scannedItemId) {
-    if (scannedItemId === product.value.productId) {
-      inputCount.value++;
-    } else {
-      showToast(translate('Scanned item does not match current product'));
-    }
-  } else {  
-    showToast(translate('Product not found'));
+  const barcodeIdentifer = productStoreSettings.value["barcodeIdentificationPref"];
+
+  const itemVal = getProductIdentificationValue(barcodeIdentifer, cachedProducts[product.value.productId])
+  if(itemVal === sku) {
+    inputCount.value++;
+  } else {
+    showToast(translate('Scanned item does not match current product')); 
   }
   scannedCount.value = ''
 }
