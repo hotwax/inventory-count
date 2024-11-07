@@ -34,6 +34,7 @@ const userModule: Module<UserState, RootState> = {
           primaryId: 'productId',
           secondaryId: ''
         },
+        barcodeIdentificationPref: ""
       },
       goodIdentificationTypes: []
     },
