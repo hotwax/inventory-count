@@ -264,7 +264,10 @@ const actions: ActionTree<UserState, RootState> = {
 
   async updateCurrentProductStore({ commit, dispatch }, productStore) {
     commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
+      primaryId: 'productId',
+      secondaryId: ''
+    } })
     dispatch("getProductStoreSetting")
   },
 
