@@ -354,8 +354,8 @@ function handleBlur() {
 async function handleInput(event) {
   if (!isInputFocused.value) return; 
 
-  let sku = event.target.value;
-  if(!sku) {
+  let scannedValue = event.target.value;
+  if(!scannedValue) {
     showToast(translate("Scan a valid product barcode identifier"));
     return;
   }
@@ -363,8 +363,8 @@ async function handleInput(event) {
   const cachedProducts = getCachedProducts.value;
   const barcodeIdentifer = productStoreSettings.value["barcodeIdentificationPref"];
 
-  const itemVal = getProductIdentificationValue(barcodeIdentifer, cachedProducts[product.value.productId])
-  if(itemVal === sku) {
+  const itemVal = getProductIdentificationValue(barcodeIdentifer, cachedProducts[product.value.productId]) ? getProductIdentificationValue(barcodeIdentifer, cachedProducts[product.value.productId]) : cachedProducts[product.value.productId]?.internalName
+  if(itemVal && itemVal === scannedValue) {
     inputCount.value++;
   } else {
     showToast(translate('Scanned item does not match current product')); 
