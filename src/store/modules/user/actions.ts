@@ -312,11 +312,18 @@ const actions: ActionTree<UserState, RootState> = {
     const eComStoreId = state.currentProductStore.productStoreId;
     const fromDate = Date.now()
 
+    let settingValue = false as any;
+    if(payload.enumId === "BARCODE_IDEN_PREF") settingValue = "internalName"
+    if(payload.enumId === "PRDT_IDEN_PREF") settingValue = JSON.stringify({
+      primaryId: 'productId',
+      secondaryId: ''
+    })
+
     const params = {
       fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": payload.enumId,
-      "settingValue": (payload.enumId === "BARCODE_IDEN_PREF") ? "internalName" : false
+      settingValue
     }
 
     try {
@@ -327,7 +334,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: (payload.enumId === "BARCODE_IDEN_PREF") ? "internalName" : false })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: settingValue })
     return fromDate;
   },
 
