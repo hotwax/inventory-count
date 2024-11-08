@@ -113,11 +113,7 @@
             <template v-else>
               <ion-list v-if="product.isRecounting">
                 <ion-item>
-                  {{ translate("Current count") }}
-                  <ion-label slot="end">{{ product.quantity }}</ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-input :label="translate('New Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance();hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                  <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance();hasUnsavedChanges=true" @keydown="inputCountValidation"/>
                 </ion-item>
 
                 <template v-if="productStoreSettings['showQoh']">
@@ -451,7 +447,7 @@ function updateFilteredItems() {
     store.dispatch("product/currentProduct", {});
     isFirstItem.value = true
     isLastItem.value = false
-  }  
+  }
 }
 
 // This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
@@ -566,6 +562,7 @@ async function saveCount(currentProduct) {
     } else {
       throw resp.data;
     }
+    hasUnsavedChanges.value = false;
     updateFilteredItems();
   } catch (err) {
     logger.error(err);
@@ -628,6 +625,7 @@ async function discardRecount() {
       handler: async () => {
         inputCount.value = ''; 
         product.value.isRecounting = false;
+        hasUnsavedChanges.value = false;
       }
     }]
   });
