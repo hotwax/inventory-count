@@ -303,8 +303,6 @@ onIonViewDidLeave(async() => {
 
 onBeforeRouteLeave(async (to) => {
   if(to.path === "/login") return;
-  console.log(hasUnsavedChanges.value);
-  
   if(!hasUnsavedChanges.value) return true;
   let leavePage = false;
 
