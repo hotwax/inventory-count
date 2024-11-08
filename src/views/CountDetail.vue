@@ -668,11 +668,6 @@ ion-list {
   min-width: 400px;
 }
 
-.hidden-input {
-  position: absolute; 
-  opacity: 0
-}
-
 .find {
   display: grid;
   height: 100%;
