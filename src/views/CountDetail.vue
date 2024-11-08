@@ -106,14 +106,14 @@
                 </ion-item>
                 <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                   {{ translate("Variance") }}
-                  <ion-label slot="end">{{ getVariance(product) }}</ion-label>
+                  <ion-label slot="end">{{ getVariance(product, false) }}</ion-label>
                 </ion-item>
               </template>
             </ion-list>
             <template v-else>
               <ion-list v-if="product.isRecounting">
                 <ion-item>
-                  <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance();hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                  <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
                 </ion-item>
 
                 <template v-if="productStoreSettings['showQoh']">
@@ -123,7 +123,7 @@
                   </ion-item>
                   <ion-item>
                     {{ translate("Variance") }}
-                    <ion-label slot="end">{{ variance }}</ion-label>
+                    <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
                   </ion-item>
                 </template>
                 <div class="ion-margin">
@@ -157,7 +157,7 @@
                   </ion-item>
                   <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                     {{ translate("Variance") }}
-                    <ion-label slot="end">{{ getVariance(product) }}</ion-label>
+                    <ion-label slot="end">{{ getVariance(product, false) }}</ion-label>
                   </ion-item>
                 </template>
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
@@ -167,7 +167,7 @@
               
               <ion-list v-else>
                 <ion-item>
-                  <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="calculateVariance();hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                  <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
                 </ion-item>
 
                 <template v-if="productStoreSettings['showQoh']">
@@ -177,7 +177,7 @@
                   </ion-item>
                   <ion-item>
                     {{ translate("Variance") }}
-                    <ion-label slot="end">{{ variance }}</ion-label>
+                    <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
                   </ion-item>
                 </template>
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(product)">
@@ -255,9 +255,9 @@ const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
     return cycleCountItems.value.itemList;
   } else if (selectedSegment.value === 'pending') {
-    return cycleCountItems.value.itemList.filter(item =>!item.quantity);
+    return cycleCountItems.value.itemList.filter(item =>(item.quantity === undefined || item.quantity === null));
   } else if (selectedSegment.value === 'counted') {
-    return cycleCountItems.value.itemList.filter(item => item.quantity);
+    return cycleCountItems.value.itemList.filter(item => item.quantity >= 0);
   } else if (selectedSegment.value === 'notCounted') {
     return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
@@ -275,7 +275,6 @@ let cycleCount = ref([]);
 const queryString = ref('');
 
 const inputCount = ref('');
-const variance = ref(0);
 const isFirstItem = ref(true);
 const isLastItem = ref(false);
 const isScrolling = ref(false);
@@ -284,7 +283,6 @@ let hasUnsavedChanges = ref(false);
 
 // Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
 onUpdated(() => {
-  calculateVariance();
   isFirstItem.value = true
   isLastItem.value = false
 })
@@ -511,22 +509,16 @@ async function changeProduct(direction) {
   isScrolling.value = false;
 }
 
-async function calculateVariance() {
-  if (!product.value || !inputCount.value) {
-    variance.value = 0;
-  } else {
-    variance.value = parseInt(inputCount.value) - parseInt(product.value.qoh) || 0;
-  }
-}
 
-function getVariance(item , count) {
+function getVariance(item , isRecounting) {
   const qty = item.quantity
-  if(!qty) {
+  if(isRecounting && inputCount.value === "") return 0;
+  if(!isRecounting && !qty && qty !== 0) {
     return 0;
   }
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
-  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(count ? count : qty) - parseInt(item.qoh)
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
 }
 
 async function saveCount(currentProduct) {
