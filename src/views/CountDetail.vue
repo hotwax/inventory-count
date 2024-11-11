@@ -308,7 +308,7 @@ onBeforeRouteLeave(async (to) => {
 
   const alert = await alertController.create({
     header: translate("Leave page"),
-    message: translate("Any edits made in the counted quanity on this page will be lost."),
+    message: translate("Any edits made in the counted quantity on this page will be lost."),
     buttons: [
       {
         text: translate("STAY"),
@@ -390,13 +390,9 @@ async function scanProduct() {
       return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
     });
 
-    if(!selectedItem) {
-      selectedItem = itemsList.value.find((item) => {
-        const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
-        return itemVal === queryString.value;
-      });
-    }
-  } else {
+  }
+
+  if(!selectedItem) {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
       return itemVal === queryString.value;
@@ -420,7 +416,7 @@ async function scanProduct() {
       }
     }, 0);
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED") {
-    if(!selectedItem.quantity || product.value.isRecounting) {
+    if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
     }
