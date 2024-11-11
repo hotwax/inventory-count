@@ -166,7 +166,11 @@
               </ion-list>
               
               <ion-list v-else>
-                <ion-item>
+                <ion-item v-if="product.itemStatusId === 'INV_COUNT_REJECTED' || product.itemStatusId === 'INV_COUNT_COMPLETED'">
+                  {{ translate("Counted") }}
+                  <ion-label slot="end">{{ product.quantity || "-" }}</ion-label>
+                </ion-item>
+                <ion-item v-else>
                   <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
                 </ion-item>
 
@@ -389,10 +393,9 @@ async function scanProduct() {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
       return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
     });
-
   }
 
-  if(!selectedItem) {
+  if(!selectedItem || !Object.keys(selectedItem).length) {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
       return itemVal === queryString.value;
