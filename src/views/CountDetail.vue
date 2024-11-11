@@ -91,7 +91,7 @@
                   <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
                 </ion-button>
 
-                <ion-button @click="changeProduct('next')" size="large" fill="clear" color="medium" class="ion-no-padding">
+                <ion-button @click="changeProduct('next')" :disabled="isLastItem" size="large" fill="clear" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
                 </ion-button>
               </ion-item>
@@ -286,12 +286,6 @@ const isLastItem = ref(false);
 const isScrolling = ref(false);
 let previousItem = {};
 let hasUnsavedChanges = ref(false);
-
-// Update variance value when component is updated, ensuring it's prefilled with correct value when page loads.
-onUpdated(() => {
-  isFirstItem.value = true
-  isLastItem.value = false
-})
 
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
