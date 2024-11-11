@@ -61,95 +61,45 @@
           </template>
         </aside>
         <!--Product details-->
-        <main class="main">
-          <div class="product" @scroll="onScroll">
-            <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-              <Image :src="getProduct(item.productId)?.mainImageUrl" />
+        <main :class="itemsList?.length ? 'product-detail' : ''">
+          <template v-if="itemsList?.length">
+            <div class="product" @scroll="onScroll">
+              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              </div>
             </div>
-          </div>
-          <div class="detail" v-if="Object.keys(product)?.length">
-            <ion-item lines="none">
-              <ion-label class="ion-text-wrap">
-                <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
-                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
-              </ion-label>
+            <div class="detail" v-if="Object.keys(product)?.length">
+              <ion-item lines="none">
+                <ion-label class="ion-text-wrap">
+                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
+                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
+                </ion-label>
 
-              <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
-                {{ translate("accepted") }}
-              </ion-badge>
-              
-              <ion-badge v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
-                {{ translate("rejected") }}
-              </ion-badge>
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
+                  {{ translate("accepted") }}
+                </ion-badge>
 
-              <ion-item lines="none" v-if="itemsList?.length">
-                <ion-label>{{ `${currentItemIndex + 1}/${itemsList.length}` }}</ion-label>
+                <ion-badge v-if="product.itemStatusId === 'INV_COUNT_REJECTED'" color="danger">
+                  {{ translate("rejected") }}
+                </ion-badge>
+
+                <ion-item lines="none" v-if="itemsList?.length">
+                  <ion-label>{{ `${currentItemIndex + 1}/${itemsList.length}` }}</ion-label>
+                </ion-item>
+
+                <ion-button @click="changeProduct('previous')" :disabled="isFirstItem" size="large" fill="clear" color="medium" class="ion-no-padding">
+                  <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
+                </ion-button>
+
+                <ion-button @click="changeProduct('next')" size="large" fill="clear" color="medium" class="ion-no-padding">
+                  <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
+                </ion-button>
               </ion-item>
-
-              <ion-button @click="changeProduct('previous')" :disabled="isFirstItem">
-                <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
-              </ion-button>
-      
-              <ion-button @click="changeProduct('next')" :disabled="isLastItem">
-                <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
-              </ion-button>
-            </ion-item>
-            <ion-list v-if="product?.statusId !== 'INV_COUNT_CREATED' && product?.statusId !== 'INV_COUNT_ASSIGNED'">
-              <ion-item>
-                {{ translate("Counted") }}
-              <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
-              </ion-item>
-              <template v-if="productStoreSettings['showQoh']">
-                <ion-item>
-                  {{ translate("Current on hand") }}
-                  <ion-label slot="end">{{ product.qoh }}</ion-label>
-                </ion-item>
-                <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
-                  {{ translate("Variance") }}
-                  <ion-label slot="end">{{ getVariance(product, false) }}</ion-label>
-                </ion-item>
-              </template>
-            </ion-list>
-            <template v-else>
-              <ion-list v-if="product.isRecounting">
-                <ion-item>
-                  <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                </ion-item>
-
-                <template v-if="productStoreSettings['showQoh']">
-                  <ion-item>
-                    {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ product.qoh }}</ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Variance") }}
-                    <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
-                  </ion-item>
-                </template>
-                <div class="ion-margin">
-                  <ion-button color="medium" fill="outline" @click="discardRecount()">
-                    {{ translate("Discard re-count") }}
-                  </ion-button>
-                  <ion-button fill="outline" @click="openRecountSaveAlert()">
-                    {{ translate("Save new count") }}
-                  </ion-button>
-                </div>
-              </ion-list>
-      
-              <ion-list v-else-if="product.quantity >= 0">
+              <ion-list v-if="product?.statusId !== 'INV_COUNT_CREATED' && product?.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
-                  <ion-label slot="end">{{ product.quantity }}</ion-label>
+                <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
                 </ion-item>
-                <ion-item>
-                  {{ translate("Counted by") }}
-                  <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
-                </ion-item>
-                <!-- TODO: make the counted at information dynamic -->
-                <!-- <ion-item>
-                  {{ translate("Counted at") }}
-                  <ion-label slot="end">{{ "-" }}</ion-label>
-                </ion-item> -->
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
@@ -160,37 +110,89 @@
                     <ion-label slot="end">{{ getVariance(product, false) }}</ion-label>
                   </ion-item>
                 </template>
-                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
-                  {{ translate("Re-count") }}
-                </ion-button>
               </ion-list>
-              
-              <ion-list v-else>
-                <ion-item v-if="product.itemStatusId === 'INV_COUNT_REJECTED' || product.itemStatusId === 'INV_COUNT_COMPLETED'">
-                  {{ translate("Counted") }}
-                  <ion-label slot="end">{{ product.quantity || "-" }}</ion-label>
-                </ion-item>
-                <ion-item v-else>
-                  <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                </ion-item>
+              <template v-else>
+                <ion-list v-if="product.isRecounting">
+                  <ion-item>
+                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                  </ion-item>
 
-                <template v-if="productStoreSettings['showQoh']">
+                  <template v-if="productStoreSettings['showQoh']">
+                    <ion-item>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    </ion-item>
+                    <ion-item>
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
+                    </ion-item>
+                  </template>
+                  <div class="ion-margin">
+                    <ion-button color="medium" fill="outline" @click="discardRecount()">
+                      {{ translate("Discard re-count") }}
+                    </ion-button>
+                    <ion-button fill="outline" @click="openRecountSaveAlert()">
+                      {{ translate("Save new count") }}
+                    </ion-button>
+                  </div>
+                </ion-list>
+
+                <ion-list v-else-if="product.quantity >= 0">
                   <ion-item>
-                    {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    {{ translate("Counted") }}
+                    <ion-label slot="end">{{ product.quantity }}</ion-label>
                   </ion-item>
                   <ion-item>
-                    {{ translate("Variance") }}
-                    <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
+                    {{ translate("Counted by") }}
+                    <ion-label slot="end">{{ getPartyName(product)}}</ion-label>
                   </ion-item>
-                </template>
-                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(product)">
-                  {{ translate("Save count") }}
-                </ion-button>
-              </ion-list>
-            </template>
-          </div>
-          <template v-if="!itemsList?.length">
+                  <!-- TODO: make the counted at information dynamic -->
+                  <!-- <ion-item>
+                    {{ translate("Counted at") }}
+                    <ion-label slot="end">{{ "-" }}</ion-label>
+                  </ion-item> -->
+                  <template v-if="productStoreSettings['showQoh']">
+                    <ion-item>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    </ion-item>
+                    <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ getVariance(product, false) }}</ion-label>
+                    </ion-item>
+                  </template>
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
+                    {{ translate("Re-count") }}
+                  </ion-button>
+                </ion-list>
+
+                <ion-list v-else>
+                  <ion-item v-if="product.itemStatusId === 'INV_COUNT_REJECTED' || product.itemStatusId === 'INV_COUNT_COMPLETED'">
+                    {{ translate("Counted") }}
+                    <ion-label slot="end">{{ product.quantity || "-" }}</ion-label>
+                  </ion-item>
+                  <ion-item v-else>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                  </ion-item>
+
+                  <template v-if="productStoreSettings['showQoh']">
+                    <ion-item>
+                      {{ translate("Current on hand") }}
+                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    </ion-item>
+                    <ion-item>
+                      {{ translate("Variance") }}
+                      <ion-label slot="end">{{ getVariance(product, true) }}</ion-label>
+                    </ion-item>
+                  </template>
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(product.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(product)">
+                    {{ translate("Save count") }}
+                  </ion-button>
+                </ion-list>
+              </template>
+            </div>
+          </template>
+          <template v-else>
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
@@ -230,7 +232,7 @@ import {
   onIonViewDidLeave,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
+import { chevronDownCircleOutline, chevronUpCircleOutline, chevronUpOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref, onUpdated } from 'vue';
 import { useStore } from "@/store";
@@ -700,7 +702,7 @@ aside {
   overflow-y: scroll;
 }
 
-main {
+.product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
   height: 100%;
