@@ -232,9 +232,9 @@ import {
   onIonViewDidLeave,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline, chevronUpOutline } from "ionicons/icons";
+import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref, onUpdated } from 'vue';
+import { computed, defineProps, ref } from 'vue';
 import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
