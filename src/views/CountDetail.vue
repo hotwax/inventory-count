@@ -11,7 +11,7 @@
         <aside class="filters">
           <div class="fixed-section">
             <ion-item lines="full">
-              <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
+              <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInput" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
             <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
               <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
@@ -292,6 +292,7 @@ const isLastItem = ref(false);
 const isScrolling = ref(false);
 let previousItem = {};
 let hasUnsavedChanges = ref(false);
+const barcodeInput = ref();
 
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
@@ -426,6 +427,8 @@ async function scanProduct() {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
+    } else if(selectedItem.quantity >= 0 && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED") {
+      this.openRecountAlert()
     }
   }
   queryString.value = ""
@@ -581,6 +584,9 @@ async function openRecountAlert() {
     }]
   });
   await alert.present();
+  alert.onDidDismiss().then(() => {
+    barcodeInput.value.$el.setFocus();
+  })
 }
 
 async function openRecountSaveAlert() {
