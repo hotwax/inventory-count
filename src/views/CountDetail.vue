@@ -522,7 +522,7 @@ function getVariance(item , isRecounting) {
 
 async function saveCount(currentProduct) {
   if (!inputCount.value && inputCount.value !== 0) {
-    showToast(translate("Enter a count before saving changes"))
+    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
     return;
   }
   try {
@@ -582,7 +582,7 @@ async function openRecountAlert() {
 
 async function openRecountSaveAlert() {
   if (!inputCount.value && inputCount.value !== 0) {
-    showToast(translate("Enter a count before saving changes"));
+    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"));
     return;
   }
 
