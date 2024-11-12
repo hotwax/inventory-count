@@ -9,13 +9,13 @@
       <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
-      {{ item.quantity === 0 ? 0 : item.quantity }} {{ translate("units") }}
+      {{ (!item.quantity && item.quantity !== 0) ? translate("not counted") : translate("units", { count: item.quantity }) }}
     </ion-badge>
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
     </ion-note>
     <ion-badge slot="end" v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_ASSIGNED'">
-      {{ item.quantity }} {{ translate("units") }}
+      {{ translate("units", { count: item.quantity }) }}
     </ion-badge>
     <ion-note v-else-if="item.quantity === undefined || item.quantity === null && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}
