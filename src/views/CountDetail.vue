@@ -302,6 +302,7 @@ onIonViewDidEnter(async() => {
 
 onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
+  store.dispatch("product/currentProduct", {});
 })
 
 onBeforeRouteLeave(async (to) => {
@@ -403,6 +404,7 @@ async function scanProduct() {
 
   if(!selectedItem) {
     showToast(translate("Scanned item is not present in the count."))
+    queryString.value = ""
     return;
   }
 
@@ -423,6 +425,7 @@ async function scanProduct() {
       inputCount.value++
     }
   }
+  queryString.value = ""
 }
 
 function updateFilteredItems() {
