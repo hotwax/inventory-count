@@ -49,7 +49,7 @@ const productStoreSettings = computed(() => store.getters["user/getProductStoreS
 const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
 
 onMounted(() => {
-  if (currentProduct.value) {
+  if (Object.keys(currentProduct.value).length) {
     navigateToDetail(currentProduct.value);
   }
 })

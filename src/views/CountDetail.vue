@@ -115,6 +115,9 @@
                 <ion-list v-if="product.isRecounting">
                   <ion-item>
                     <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
+                      <ion-icon :icon="closeOutline" stot="icon-only" />
+                    </ion-button>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
@@ -173,6 +176,9 @@
                   </ion-item>
                   <ion-item v-else>
                     <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
+                      <ion-icon :icon="closeOutline" stot="icon-only" />
+                    </ion-button>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
@@ -232,7 +238,7 @@ import {
   onIonViewDidLeave,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
+import { chevronDownCircleOutline, chevronUpCircleOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from 'vue';
 import { useStore } from "@/store";
@@ -299,6 +305,7 @@ onIonViewDidEnter(async() => {
 
 onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
+  store.dispatch("product/currentProduct", {});
 })
 
 onBeforeRouteLeave(async (to) => {
@@ -400,6 +407,7 @@ async function scanProduct() {
 
   if(!selectedItem) {
     showToast(translate("Scanned item is not present in the count."))
+    queryString.value = ""
     return;
   }
 
@@ -420,6 +428,7 @@ async function scanProduct() {
       inputCount.value++
     }
   }
+  queryString.value = ""
 }
 
 function updateFilteredItems() {
@@ -515,8 +524,8 @@ function getVariance(item , isRecounting) {
 }
 
 async function saveCount(currentProduct) {
-  if (!inputCount.value) {
-    showToast(translate("Enter a count before saving changes"))
+  if (!inputCount.value && inputCount.value !== 0) {
+    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
     return;
   }
   try {
@@ -566,7 +575,7 @@ async function openRecountAlert() {
     {
       text: translate('Re-count'),
       handler: () => {
-        inputCount.value = 0; 
+        inputCount.value = product.value.quantity; 
         product.value.isRecounting = true;
       }
     }]
@@ -575,8 +584,8 @@ async function openRecountAlert() {
 }
 
 async function openRecountSaveAlert() {
-  if (!inputCount.value) {
-    showToast(translate("Enter a count before saving changes"));
+  if (!inputCount.value && inputCount.value !== 0) {
+    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"));
     return;
   }
 
