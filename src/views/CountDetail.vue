@@ -114,12 +114,10 @@
               <template v-else>
                 <ion-list v-if="product.isRecounting">
                   <ion-item>
-                    <ion-input :label="translate('New Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                  </ion-item>
-
-                  <ion-item>
-                    {{ translate("Current count") }}
-                    <ion-label slot="end">{{ product.quantity }}</ion-label>
+                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
+                      <ion-icon :icon="closeOutline" stot="icon-only" />
+                    </ion-button>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
@@ -237,7 +235,7 @@ import {
   onIonViewDidLeave,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline } from "ionicons/icons";
+import { chevronDownCircleOutline, chevronUpCircleOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from 'vue';
 import { useStore } from "@/store";
@@ -571,7 +569,7 @@ async function openRecountAlert() {
     {
       text: translate('Re-count'),
       handler: () => {
-        inputCount.value = 0; 
+        inputCount.value = product.value.quantity; 
         product.value.isRecounting = true;
       }
     }]
