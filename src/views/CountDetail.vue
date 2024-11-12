@@ -428,7 +428,7 @@ async function scanProduct() {
       hasUnsavedChanges.value = true;
       inputCount.value++
     } else if(selectedItem.quantity >= 0 && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED") {
-      this.openRecountAlert()
+      openRecountAlert()
     }
   }
   queryString.value = ""
