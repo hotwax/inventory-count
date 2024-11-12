@@ -87,12 +87,12 @@
                   <ion-label>{{ `${currentItemIndex + 1}/${itemsList.length}` }}</ion-label>
                 </ion-item>
 
-                <ion-button @click="changeProduct('previous')" :disabled="isFirstItem" size="large" fill="clear" color="medium" class="ion-no-padding">
-                  <ion-icon slot="icon-only" :icon="chevronUpCircleOutline"></ion-icon>
+                <ion-button @click="changeProduct('previous')" :disabled="isFirstItem" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                  <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
                 </ion-button>
 
-                <ion-button @click="changeProduct('next')" :disabled="isLastItem" size="large" fill="clear" color="medium" class="ion-no-padding">
-                  <ion-icon slot="icon-only" :icon="chevronDownCircleOutline"></ion-icon>
+                <ion-button @click="changeProduct('next')" :disabled="isLastItem" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                  <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
               <ion-list v-if="product?.statusId !== 'INV_COUNT_CREATED' && product?.statusId !== 'INV_COUNT_ASSIGNED'">
@@ -238,7 +238,7 @@ import {
   onIonViewDidLeave,
   alertController
 } from '@ionic/vue';
-import { chevronDownCircleOutline, chevronUpCircleOutline, closeOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from 'vue';
 import { useStore } from "@/store";
