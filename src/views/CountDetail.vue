@@ -577,7 +577,7 @@ async function openRecountAlert() {
     },
     {
       text: translate('Re-count'),
-      handler: async () => {
+      handler: () => {
         inputCount.value = product.value.quantity; 
         product.value.isRecounting = true;
       }
