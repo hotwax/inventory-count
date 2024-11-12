@@ -73,6 +73,7 @@ const productIdentifications = computed(() => store.getters["user/getGoodIdentif
 
 onIonViewWillEnter(async () => {
   await store.dispatch("user/getProductStoreSetting")
+  await store.dispatch("user/fetchGoodIdentificationTypes")
 })
 
 function updateProductStoreSetting(event: any, key: string) {

@@ -423,12 +423,13 @@ async function scanProduct() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
+    inputCount.value = ""
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
     } else if(selectedItem.quantity >= 0 && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED") {
-      this.openRecountAlert()
+      openRecountAlert()
     }
   }
   queryString.value = ""
