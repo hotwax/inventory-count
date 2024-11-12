@@ -534,7 +534,7 @@ async function saveCount(currentProduct) {
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
       inputCount.value = ''; 
-      const items = JSON.parse(JSON.stringify(itemsList.value))
+      const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
           item.quantity = currentProduct.quantity
