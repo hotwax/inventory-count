@@ -416,7 +416,6 @@ async function scanProduct() {
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
   if(!isAlreadySelected) {
     hasUnsavedChanges.value = false;
-    await store.dispatch('product/currentProduct', { ...selectedItem, isRecounting: false });
     router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
     setTimeout(() => {
       const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
@@ -468,7 +467,7 @@ const onScroll = (event) => {
         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
         
         if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
-          if(inputCount.value) saveCount(previousItem);
+          if(inputCount.value) saveCount(previousItem, true);
         }
         previousItem = currentProduct  // Update the previousItem variable with the current item
 
@@ -526,7 +525,7 @@ function getVariance(item , isRecounting) {
   return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
 }
 
-async function saveCount(currentProduct) {
+async function saveCount(currentProduct, isScrollEvent = false) {
   isScanningInProgress.value = true;
   if (!inputCount.value && inputCount.value !== 0) {
     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
@@ -557,7 +556,7 @@ async function saveCount(currentProduct) {
         }
       })
       await store.dispatch('count/updateCycleCountItems', items);
-      await store.dispatch('product/currentProduct', currentProduct);
+      if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
     } else {
       throw resp.data;
     }
