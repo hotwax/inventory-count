@@ -61,7 +61,6 @@ onMounted(() => {
  * It also handles the challenge of scrolling to an element on a page that is being navigated to and scroll smoothly.
  **/
 async function navigateToDetail(item: any) {
-  await store.dispatch('product/currentProduct', { ...item, isRecounting: false });
   router.replace({ hash: `#${item.productId}-${item.importItemSeqId}` }); 
   setTimeout(() => {
     const element = document.getElementById(`${item.productId}-${item.importItemSeqId}`);
