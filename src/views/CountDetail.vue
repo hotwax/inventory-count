@@ -293,6 +293,7 @@ const isScrolling = ref(false);
 let previousItem = {};
 let hasUnsavedChanges = ref(false);
 const barcodeInput = ref();
+let isScanningInProgress = ref(false);
 
 onIonViewDidEnter(async() => {  
   await fetchCycleCount();
@@ -466,7 +467,7 @@ const onScroll = (event) => {
         const seqId = entry.target.dataset.seq;
         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
         
-        if(previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId) {
+        if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
           if(inputCount.value) saveCount(previousItem);
         }
         previousItem = currentProduct  // Update the previousItem variable with the current item
@@ -475,7 +476,6 @@ const onScroll = (event) => {
           const currentIndex = itemsList.value?.indexOf(currentProduct);
           store.dispatch("product/currentProduct", currentProduct);
           updateNavigationState(currentIndex);
-          router.replace({ hash: `#${productId}-${seqId}` });
           product.value.isRecounting = false;
         }
       }
@@ -527,8 +527,10 @@ function getVariance(item , isRecounting) {
 }
 
 async function saveCount(currentProduct) {
+  isScanningInProgress.value = true;
   if (!inputCount.value && inputCount.value !== 0) {
     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
+    isScanningInProgress.value = false;
     return;
   }
   try {
@@ -565,6 +567,7 @@ async function saveCount(currentProduct) {
     logger.error(err);
     showToast(translate("Something went wrong, please try again"));
   }
+  isScanningInProgress.value = false
 }
 
 async function openRecountAlert() {
