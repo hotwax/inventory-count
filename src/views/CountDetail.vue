@@ -303,6 +303,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   updateNavigationState(0);
+  barcodeInput.value?.$el?.setFocus();
 })  
 
 onIonViewDidLeave(async() => {
