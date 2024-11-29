@@ -85,10 +85,4 @@ async function fetchCycleCountImportErrors () {
     logger.error(err);
   }
 }
-
 </script>
-<style scoped>
-  ion-content {
-    --padding-bottom: 80px;
-  }
-</style>
