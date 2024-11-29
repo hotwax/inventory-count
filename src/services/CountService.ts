@@ -137,6 +137,22 @@ const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
   });
 }
 
+const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
+  return api({
+    url: `cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
+    method: "get",
+    data: payload
+  });
+}
+
+const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
+  return api({
+    url: `cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
+    method: "get",
+    data: payload
+  });
+}
+
 export const CountService = {
   acceptItem,
   addProductToCount,
@@ -145,7 +161,9 @@ export const CountService = {
   createCycleCount,
   deleteCycleCountItem,
   fetchBulkCycleCountItems,
+  fetchCycleCountImportErrors,
   fetchCycleCountImportSystemMessages,
+  fetchCycleCountUploadedFileData,
   fetchCycleCount,
   fetchCycleCountStats,
   fetchCycleCounts,
