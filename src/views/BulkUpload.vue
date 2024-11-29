@@ -211,22 +211,47 @@ async function parse(event) {
   const file = event.target.files[0];
   try {
     if (file) {
+      // Set the uploaded file and display the file name
       uploadedFile.value = file;
-      fileName.value = file.name
+      fileName.value = file.name;
+
+      // Clear previous content before parsing a new file
+      content.value = [];
+
+      // Attempt to parse the file
       content.value = await parseCsv(uploadedFile.value);
-      fileColumns.value = Object.keys(content.value[0]);
-      showToast(translate("File uploaded successfully."));
-      fileUploaded.value = !fileUploaded.value;
-      selectedMappingId.value = null;
-      resetFieldMapping();
+
+      // Check if the parsed content is valid
+      if (content.value && content.value.length > 0) {
+        fileColumns.value = Object.keys(content.value[0]);
+        showToast(translate("File uploaded successfully."));
+        fileUploaded.value = !fileUploaded.value;
+        selectedMappingId.value = null;
+        resetFieldMapping();
+      } else {
+        // Handle case where the file is parsed but contains no data
+        throw new Error("Parsed content is empty or invalid.");
+      }
     } else {
       showToast(translate("No new file upload. Please try again."));
     }
-  } catch {
-    content.value = []
-    showToast(translate("Please upload a valid csv to continue"));
+  } catch (error) {
+    // Ensure the file name is displayed even if the parsing fails
+    if (file) {
+      fileName.value = file.name;
+    }
+
+    // Reset content to prevent retaining any invalid data
+    content.value = [0];
+
+    // Log the error for debugging
+    console.error("Error parsing file:", error);
+
+    // Show a toast message indicating the file upload failed
+    showToast(translate("Please upload a valid CSV to continue."));
   }
 }
+
 async function save(){
   if (!areAllFieldsSelected()) {
     showToast(translate("Select all the required fields to continue"));
