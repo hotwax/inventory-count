@@ -234,7 +234,7 @@ async function downloadCSV() {
         const selectedFieldMappings: any = {
           countId: "inventoryCountImportId",
           countName: "countImportName",
-          acceptedByUser: "uploadedByUserLogin",
+          acceptedByUser: "acceptedByUserLoginId",
           createdDate: "createdDate",
           lastSubmittedDate: "lastSubmittedDate",
           closedDate: "closedDate",
