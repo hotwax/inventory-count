@@ -192,7 +192,7 @@ const actions: ActionTree<CountState, RootState> = {
         systemMessageTypeId: "ImportInventoryCounts",
         initDate_from: twentyFourHoursEarlier.toMillis(),
         orderByField: 'initDate desc, processedDate desc',
-        pageSize: 20
+        pageSize: 100
       })
       if (!hasError(resp)) {
         systemMessages = resp.data
