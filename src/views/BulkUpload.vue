@@ -72,8 +72,8 @@
             </ion-label>
             <div class="system-message-action">
               <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button :disabled="systemMessage.statusId !== 'SmsgReceived'" slot="end" fill="clear" color="medium" @click="cancelUpload(systemMessage)">
-                <ion-icon slot="icon-only" :icon="trashBinOutline" />
+              <ion-button slot="end" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
           </ion-item>
@@ -105,20 +105,19 @@ import {
   IonToolbar,
   onIonViewDidEnter,
   alertController,
-  modalController
+  modalController,
+  popoverController
 } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, trashBinOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, trashBinOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router'
 import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
 import { CountService } from "@/services/CountService"
-import logger from "@/logger";
+import CycleCountUploadActionPopover from "@/components/CycleCountUploadActionPopover.vue"
 
 const store = useStore();
-const router = useRouter()
 
 const fieldMappings = computed(() => store.getters["user/getFieldMappings"])
 const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"])
@@ -187,26 +186,25 @@ function getFileProcessingStatus(systemMessage) {
     processingStatus = "processing"
   } else if (systemMessage.statusId === 'SmsgCancelled') {
     processingStatus = 'cancelled'
+  } else if (systemMessage.statusId === 'SmsgError') {
+    processingStatus = 'error'
   }
   return processingStatus;
 }
-async function cancelUpload (systemMessage) {
-  try {
-    const resp = await CountService.cancelCycleCountFileProcessing({
-      systemMessageId: systemMessage.systemMessageId,
-      statusId: 'SmsgCancelled'
-    });
-    if (!hasError(resp)) {
-      showToast(translate('Cycle count cancelled successfully.'))
-      await store.dispatch('count/fetchCycleCountImportSystemMessages')
-    } else {
-      throw resp.data;
-    }
-  } catch (err) {
-    showToast(translate('Failed to cancel uploaded cycle count.'))
-    logger.error(err);
-  }
+
+async function openUploadActionPopover(event, systemMessage){
+  const popover = await popoverController.create({
+    component: CycleCountUploadActionPopover,
+    event,
+    componentProps: {
+      systemMessage,
+      fileName: extractFilename(systemMessage.messageText)
+    },
+    showBackdrop: false,
+  });
+  await popover.present();
 }
+
 async function parse(event) {
   const file = event.target.files[0];
   try {

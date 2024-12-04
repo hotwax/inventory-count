@@ -157,4 +157,11 @@ const jsonToCsv = (file: any, options: JsonToCsvOption = {}) => {
   return blob;
 };
 
-export { jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }
+const downloadCsv = (csv: any, fileName: any) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  saveAs(blob, fileName ? fileName : "CycleCountImport.csv");
+
+  return blob;
+};
+
+export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }

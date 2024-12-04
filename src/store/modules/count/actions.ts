@@ -187,12 +187,12 @@ const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCountImportSystemMessages({commit} ,payload) {
     let systemMessages;
     try {
-      const fifteenMinutesEarlier = DateTime.now().minus({ minutes: 15 });
+      const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
       const resp = await CountService.fetchCycleCountImportSystemMessages({
         systemMessageTypeId: "ImportInventoryCounts",
-        initDate_from: fifteenMinutesEarlier.toMillis(),
+        initDate_from: twentyFourHoursEarlier.toMillis(),
         orderByField: 'initDate desc, processedDate desc',
-        pageSize: 10
+        pageSize: 100
       })
       if (!hasError(resp)) {
         systemMessages = resp.data
