@@ -58,7 +58,7 @@
           </ion-item>
         </ion-list>
 
-        <ion-button :disabled="!content.length" color="medium" @click="save" expand="block">
+        <ion-button :disabled="!content.length || isUploadDisabled" color="medium" @click="save" expand="block">
           {{ translate("Upload") }}
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
@@ -130,6 +130,7 @@ let fieldMapping = ref({})
 let fileColumns = ref([])
 let selectedMappingId = ref(null)
 const fileUploaded = ref(false);
+const isUploadDisabled = ref(true);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
 
 
@@ -288,8 +289,12 @@ function mapFields(mapping, mappingId) {
   const missingFields = Object.values(fieldMappingData.value).filter(field => {
     if(!csvFields.includes(field)) return field;
   });
-
-  if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
+  if(missingFields.length) {
+    isUploadDisabled.value = true
+    showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
+  } else {
+    isUploadDisabled.value = false;
+  }
 
   Object.keys(fieldMappingData).map((key) => {
     if(!csvFields.includes(fieldMappingData.value[key])){
