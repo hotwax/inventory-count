@@ -54,13 +54,13 @@ const actions: ActionTree<CountState, RootState> = {
         throw "Failed to fetch the counts"
       }
     } catch(err) {
+      isScrollable = false
       if(payload.pageIndex == 0) {
         counts = []
-        isScrollable = false
       }
       logger.error(err)
     }
-    commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable})
+    commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
   },
 
   async fetchCycleCountStats({ commit }, inventoryCountImportIds) {

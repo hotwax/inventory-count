@@ -93,7 +93,7 @@ import router from "@/router";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const isScrollable = computed(() => store.getters["count/isCountListScrollable"])
+const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
 const query = computed(() => store.getters["count/getQuery"])
 
 const isScrollingEnabled = ref(false);

@@ -76,7 +76,7 @@ import Filters from "@/components/Filters.vue"
 import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
-const isScrollable = computed(() => store.getters["count/isCountListScrollable"])
+const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
 const query = computed(() => store.getters["count/getQuery"])
 
 const isScrollingEnabled = ref(false);
