@@ -250,7 +250,7 @@ const actions: ActionTree<UserState, RootState> = {
         productStores = Object.values(productStoresResp)
       }
     } catch(err) {
-      logger.error("Failed to fetch facilities")
+      logger.error("Failed to fetch product stores")
     }
 
     // Updating current facility with a default first facility when fetching facilities on login
