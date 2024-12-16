@@ -182,6 +182,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
     } catch(err) {
       logger.error("Failed to fetch facilities")
+      throw err
     }
 
     // Updating current facility with a default first facility when fetching facilities on login
