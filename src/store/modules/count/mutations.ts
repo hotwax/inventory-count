@@ -15,7 +15,8 @@ const mutations: MutationTree <CountState> = {
     state.query = {
       facilityIds: [],
       noFacility: false,
-      queryString: ''
+      queryString: '',
+      sortBy: ''
     }
   },
   [types.COUNT_STATS_UPDATED](state, payload) {

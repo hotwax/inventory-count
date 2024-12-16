@@ -17,6 +17,8 @@ const actions: ActionTree<CountState, RootState> = {
     const params = {
       ...payload,
     }
+    // TODO: Currently, the search functionality works only on the count name. Once the API supports searching across 
+    // multiple fields, we should include the count ID in the search parameters.
     if(state.query.queryString.length) {
       params["countImportName"] = state.query.queryString
       params["countImportName_op"] = "contains"
@@ -34,6 +36,10 @@ const actions: ActionTree<CountState, RootState> = {
       } else {
         params["facilityId_op"] = "empty"
       }
+    }
+
+    if(state.query.sortBy) {
+      params["orderByField"] = state.query.sortBy
     }
 
     try {
