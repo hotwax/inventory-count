@@ -15,7 +15,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <section>
-        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQuery('queryString', $event.target.value)" />
+        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
       </section>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
@@ -149,8 +149,8 @@ function enableScrolling() {
   }
 }
 
-async function updateQuery(key: string, value: any) {
-  await store.dispatch("count/updateQuery", { key, value })
+async function updateQueryString(key: string, value: any) {
+  await store.dispatch("count/updateQueryString", { key, value })
   fetchClosedCycleCounts();
 }
 

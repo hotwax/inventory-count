@@ -127,7 +127,11 @@ const actions: ActionTree<CountState, RootState> = {
     } else if(router.currentRoute.value.name === "Closed") {
       statusId = "INV_COUNT_COMPLETED"
     }
-    dispatch("fetchCycleCounts", { statusId })
+    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
+  },
+
+  async updateQueryString({ commit }, payload) {
+    commit(types.COUNT_QUERY_UPDATED, payload)
   },
 
   async clearQuery({ commit }) {
