@@ -25,8 +25,8 @@
         <ion-item lines="none">
           <ion-icon slot="start" :icon="swapVerticalOutline" />
           <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
-            <ion-select-option value="dueDate desc">{{ translate("Due date - Farthest to nearest") }}</ion-select-option>
-            <ion-select-option value="dueDate asc">{{ translate("Due date - Nearest to farthest") }}</ion-select-option>
+            <ion-select-option value="dueDate desc">{{ translate("Farthest due") }}</ion-select-option>
+            <ion-select-option value="dueDate asc">{{ translate("Nearest due") }}</ion-select-option>
             <ion-select-option value="countImportName asc">{{ translate("Name - A to Z") }}</ion-select-option>
             <ion-select-option value="countImportName desc">{{ translate("Name - Z to A") }}</ion-select-option>
           </ion-select>
