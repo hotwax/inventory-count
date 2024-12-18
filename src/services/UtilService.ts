@@ -1,4 +1,5 @@
-import { api } from '@/adapter';
+import api, {client} from '@/api';
+import store from '@/store';
 
 const fetchVarianceReasons = async (payload: any): Promise<any> => {
   return api({
@@ -16,7 +17,62 @@ function getOrdinalSuffix(day: any) {
   return 'th';
 }
 
+const fetchFacilities = async (payload: any): Promise<any> => {
+  return api({
+    url: "facilities",
+    method: "GET",
+    params: payload
+  })
+}
+
+const createBulCycleCounts = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/bulk`,
+    method: "POST",
+    data: payload
+  })
+}
+
+const fetchFacilityGroups = async (payload: any): Promise<any> => {
+  const token = store.getters["user/getUserToken"]
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+
+  return client({
+    url: "facilityGroups",
+    baseURL,
+    method: "GET",
+    params: payload,
+    headers: {
+      "api_key": token,
+      "Content-Type": "application/json"
+    }
+  })
+}
+
+const fetchGroupFacilities = async (payload: any): Promise<any> => {
+  const token = store.getters["user/getUserToken"]
+  const url = store.getters["user/getBaseUrl"]
+  
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+
+  return client({
+    url: `facilityGroups/${payload.facilityGroupId}/facilities`,
+    baseURL,
+    method: "GET",
+    params: payload,
+    headers: {
+      "api_key": token,
+      "Content-Type": "application/json"
+    }
+  })
+}
+
 export const UtilService = {
+  createBulCycleCounts,
+  fetchFacilities,
+  fetchFacilityGroups,
+  fetchGroupFacilities,
   fetchVarianceReasons,
   getOrdinalSuffix
 }

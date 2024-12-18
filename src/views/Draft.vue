@@ -38,6 +38,9 @@
           <ion-fab-button @click="router.push('/bulkUpload')">
             <ion-icon :icon="documentsOutline" />
           </ion-fab-button>
+          <ion-fab-button @click="router.push('/hard-count')">
+            <ion-icon color="warning" :icon="shieldCheckmarkOutline" />
+          </ion-fab-button>
         </ion-fab-list>
       </ion-fab>
 
@@ -66,7 +69,7 @@ import {
   onIonViewDidEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { addOutline, documentOutline, documentsOutline, filterOutline } from "ionicons/icons";
+import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"

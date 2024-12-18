@@ -19,6 +19,7 @@ import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import Settings from "@/views/Settings.vue";
 import BulkUpload from "@/views/BulkUpload.vue"
+import HardCount from "@/views/HardCount.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -102,6 +103,15 @@ const routes: Array<RouteRecordRaw> = [
     path: '/draft',
     name: 'Draft',
     component: Draft,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
+    path: '/hard-count',
+    name: 'Hard Count',
+    component: HardCount,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_DRAFT_VIEW"

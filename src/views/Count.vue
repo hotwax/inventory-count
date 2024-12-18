@@ -24,14 +24,21 @@
         </template>
         <section v-else-if="cycleCount.length">
           <template v-if="selectedSegment === 'assigned'">
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)" button>
+            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
               <ion-card-header>
-                <ion-card-title>
-                  {{ count.countImportName }}
-                  <ion-label>
-                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                  </ion-label>
-                </ion-card-title>
+                <div>
+                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
+                    <ion-label color="warning" class="overline">
+                      {{ translate("HARD COUNT") }}
+                    </ion-label>
+                  </ion-card-subtitle>
+                  <ion-card-title>
+                    {{ count.countImportName }}
+                    <ion-label>
+                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
+                    </ion-label>
+                  </ion-card-title>
+                </div>
                 <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
               </ion-card-header>
               <ion-item lines="none">
@@ -43,7 +50,7 @@
             </ion-card>
           </template> 
           <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)">
+            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
@@ -68,7 +75,7 @@
             </ion-card>
           </template>
           <template v-else>
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count.inventoryCountImportId)" button>
+            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
               <ion-card-header>
                 <ion-card-title>
                   {{ count.countImportName }}
@@ -228,8 +235,8 @@ async function segmentChanged(value) {
   isLoading.value = false;
 }
 
-function navigateToStoreView(countId) {
-  router.push(`/tabs/count-detail/${countId}`)
+function navigateToStoreView(count) {
+  router.push((count.countTypeEnumId === "HARD_COUNT") ? `/tabs/hard-count-detail/${count.inventoryCountImportId}` : `/tabs/count-detail/${count.inventoryCountImportId}`);
 }
 
 function getStatusIdForCountsToBeFetched() {

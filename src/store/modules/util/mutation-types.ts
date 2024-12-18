@@ -1,0 +1,2 @@
+export const SN_UTIL = 'util'
+export const UTIL_FACILITY_GROUPS_UPDATED = SN_UTIL + '/FACILITY_GROUPS_UPDATED'
