@@ -52,7 +52,6 @@ const actions: ActionTree<CountState, RootState> = {
         }
         total = resp.data.length
         dispatch("fetchCycleCountStats", counts.map((count: any) => count.inventoryCountImportId))
-
         // Determine if more data can be fetched
         isScrollable = resp.data.length >= payload.pageSize
       } else {
@@ -61,9 +60,7 @@ const actions: ActionTree<CountState, RootState> = {
       }
     } catch(err) {
       isScrollable = false
-      if(payload.pageIndex == 0) {
-        counts = []
-      }
+      if(payload.pageIndex == 0) counts = []
       logger.error(err)
     }
     commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
