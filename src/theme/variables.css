@@ -242,6 +242,11 @@ http://ionicframework.com/docs/theming/ */
   .list-item {
     padding: var(--spacer-sm) 0;
   }
+
+  ion-searchbar.searchbar {
+    padding-top: var(--spacer-base);
+    padding-inline: var(--spacer-sm)
+  }
 }
 
 .empty-state {

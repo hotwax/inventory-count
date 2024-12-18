@@ -4,7 +4,6 @@ import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
 import { hasError, showToast } from "@/utils"
-import emitter from "@/event-bus"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -12,12 +11,17 @@ import { DateTime } from "luxon"
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
-    emitter.emit("presentLoader", { message: "Fetching cycle counts...", backdropDismiss: false })
-    let counts: Array<any> = [], total = 0;
+    let counts = state.list ? JSON.parse(JSON.stringify(state.list)) : [], total = 0;
+    let isScrollable = true
 
     const params = {
       ...payload,
-      pageSize: 200
+    }
+    // TODO: Currently, the search functionality works only on the count name. Once the API supports searching across 
+    // multiple fields, we should include the count ID in the search parameters.
+    if(state.query.queryString.length) {
+      params["countImportName"] = state.query.queryString
+      params["countImportName_op"] = "contains"
     }
 
     if(state.query.facilityIds.length) {
@@ -34,22 +38,32 @@ const actions: ActionTree<CountState, RootState> = {
       }
     }
 
+    if(state.query.sortBy) {
+      params["orderByField"] = state.query.sortBy
+    }
+
     try {
       const resp = await CountService.fetchCycleCounts(params);
-
       if(!hasError(resp) && resp.data.length > 0) {
-        counts = resp.data
+        if(payload.pageIndex && payload.pageIndex > 0) {
+          counts = counts.concat(resp.data)
+        } else {
+          counts = resp.data
+        }
         total = resp.data.length
-
-        dispatch("fetchCycleCountStats", counts.map((count) => count.inventoryCountImportId))
+        dispatch("fetchCycleCountStats", counts.map((count: any) => count.inventoryCountImportId))
+        // Determine if more data can be fetched
+        isScrollable = resp.data.length >= payload.pageSize
       } else {
+        if (payload.pageIndex > 0) isScrollable = false
         throw "Failed to fetch the counts"
       }
     } catch(err) {
+      isScrollable = false
+      if(payload.pageIndex == 0) counts = []
       logger.error(err)
     }
-    commit(types.COUNT_LIST_UPDATED, { counts, total })
-    emitter.emit("dismissLoader")
+    commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
   },
 
   async fetchCycleCountStats({ commit }, inventoryCountImportIds) {
@@ -116,7 +130,11 @@ const actions: ActionTree<CountState, RootState> = {
     } else if(router.currentRoute.value.name === "Closed") {
       statusId = "INV_COUNT_COMPLETED"
     }
-    dispatch("fetchCycleCounts", { statusId })
+    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
+  },
+
+  async updateQueryString({ commit }, payload) {
+    commit(types.COUNT_QUERY_UPDATED, payload)
   },
 
   async clearQuery({ commit }) {
