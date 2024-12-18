@@ -5,8 +5,8 @@ export default interface CountState {
   query: {
     facilityIds: Array<string>,
     noFacility: boolean,
-    queryString: any,
-    sortBy: any
+    queryString: string,
+    sortBy: string
   },
   stats: any;
   cycleCounts: any;

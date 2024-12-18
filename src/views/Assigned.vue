@@ -48,16 +48,8 @@
         </div>
       </ion-list>
 
-      <ion-infinite-scroll
-        ref="infiniteScrollRef"
-        @ionInfinite="loadMoreCycleCounts($event)"
-        threshold="100px"
-        v-show="isScrollable"
-      >
-        <ion-infinite-scroll-content
-          loading-spinner="crescent"
-          :loading-text="translate('Loading')"
-        />
+      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </ion-content>
   </ion-page>
