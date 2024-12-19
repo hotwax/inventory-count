@@ -136,7 +136,7 @@ const dateTimeModalOpen = ref(false);
 const isAutoAssignEnabled = ref(false);
 const isScrollingEnabled = ref(false);
 const isScrollable = ref(true);
-const contentRef = ref("") as any;
+const contentRef = ref("") as Ref<any>;
 const countNameRef = ref("") as Ref<any>;
 const infiniteScrollRef = ref("");
 
