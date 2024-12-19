@@ -61,7 +61,7 @@
             <ion-segment-button value="group">
               <ion-label>{{ translate("Group") }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="individual" layout="icon-start">
+            <ion-segment-button value="individual">
               <ion-label>{{ translate("Individual") }}</ion-label>
             </ion-segment-button>
           </ion-segment>
