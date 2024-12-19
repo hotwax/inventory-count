@@ -20,6 +20,7 @@
       <ion-list v-else class="list">
         <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
           <ion-label>
+            <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
             {{ count.countImportName }}
             <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>

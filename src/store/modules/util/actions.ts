@@ -19,7 +19,7 @@ const actions: ActionTree<UtilState, RootState> = {
         throw resp
       }
     } catch(err) {
-      logger.error("Failed to fetch facility", err)
+      logger.error("Failed to fetch facility groups", err)
     }
     commit(types.UTIL_FACILITY_GROUPS_UPDATED, facilityGroups);
   }

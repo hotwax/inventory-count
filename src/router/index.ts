@@ -120,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/hard-count',
-    name: 'Hard Count',
+    name: 'HardCount',
     component: HardCount,
     beforeEnter: authGuard,
     meta: {

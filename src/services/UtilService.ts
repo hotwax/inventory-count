@@ -25,9 +25,9 @@ const fetchFacilities = async (payload: any): Promise<any> => {
   })
 }
 
-const createBulCycleCounts = async (payload: any): Promise<any> => {
+const createBulkCycleCounts = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/bulk`,
+    url: "cycleCounts/bulk",
     method: "POST",
     data: payload
   })
@@ -69,7 +69,7 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
 }
 
 export const UtilService = {
-  createBulCycleCounts,
+  createBulkCycleCounts,
   fetchFacilities,
   fetchFacilityGroups,
   fetchGroupFacilities,

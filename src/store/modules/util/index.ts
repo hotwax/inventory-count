@@ -8,8 +8,7 @@ import UtilState from './UtilState'
 const utilModule: Module<UtilState, RootState> = {
   namespaced: true,
   state: {
-    facilityGroups: [],
-    facilities: []
+    facilityGroups: []
   },
   getters,
   actions,
