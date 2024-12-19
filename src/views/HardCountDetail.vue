@@ -98,6 +98,7 @@
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
+
               <ion-list v-if="!currentProduct.scannedId && currentProduct.statusId !== 'INV_COUNT_CREATED' && currentProduct.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
@@ -114,61 +115,54 @@
                   </ion-item>
                 </template>
               </ion-list>
+
               <template v-else>
-                <ion-list v-if="currentProduct.isRecounting">
+                <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
                   <ion-item>
                     <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
-                      <ion-icon :icon="closeOutline" stot="icon-only" />
-                    </ion-button>
                   </ion-item>
 
-                  <template v-if="productStoreSettings['showQoh']">
-                    <ion-item>
-                      {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ currentProduct.qoh }}</ion-label>
-                    </ion-item>
-                    <ion-item>
-                      {{ translate("Variance") }}
-                      <ion-label slot="end">{{ getVariance(currentProduct, true) }}</ion-label>
-                    </ion-item>
-                  </template>
-                  <div class="ion-margin">
-                    <ion-button color="medium" fill="outline" @click="discardRecount()">
-                      {{ translate("Discard re-count") }}
-                    </ion-button>
-                    <ion-button fill="outline" @click="openRecountSaveAlert()">
-                      {{ translate("Save new count") }}
-                    </ion-button>
-                  </div>
-                </ion-list>
-
-                <ion-list v-else-if="currentProduct.quantity >= 0">
                   <ion-item>
                     {{ translate("Counted") }}
-                    <ion-label slot="end">{{ currentProduct.quantity }}</ion-label>
+                    <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.quantity : currentProduct.scannedCount }}</ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Counted by") }}
-                    <ion-label slot="end">{{ getPartyName(currentProduct)}}</ion-label>
+                    <ion-label slot="end">{{ getPartyName(currentProduct) }}</ion-label>
                   </ion-item>
-                  <!-- TODO: make the counted at information dynamic -->
-                  <!-- <ion-item>
-                    {{ translate("Counted at") }}
-                    <ion-label slot="end">{{ "-" }}</ion-label>
-                  </ion-item> -->
+
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ currentProduct.qoh }}</ion-label>
+                      <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.qoh : "-" }}</ion-label>
                     </ion-item>
                     <ion-item v-if="currentProduct.itemStatusId !== 'INV_COUNT_REJECTED'">
                       {{ translate("Variance") }}
-                      <ion-label slot="end">{{ getVariance(currentProduct, false) }}</ion-label>
+                      <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getVariance(currentProduct, false) : "-" }}</ion-label>
                     </ion-item>
                   </template>
-                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" fill="outline" expand="block" @click="openRecountAlert()">
-                    {{ translate("Re-count") }}
+
+                  <ion-list-header>
+                    {{ translate("New count") }}
+                  </ion-list-header>
+
+                  <ion-radio-group v-model="selectedCountUpdateType">
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="new">
+                        <ion-label>
+                          {{ translate("Add to existing count") }}
+                        </ion-label>
+                      </ion-radio>
+                    </ion-item>
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="replace">
+                        <ion-label>{{ translate("Replace existing count") }}</ion-label>
+                      </ion-radio>
+                    </ion-item>
+                  </ion-radio-group>
+
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(currentProduct)">
+                    {{ translate("Save count") }}
                   </ion-button>
                 </ion-list>
 
@@ -179,19 +173,16 @@
                   </ion-item>
                   <ion-item v-else>
                     <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
-                      <ion-icon :icon="closeOutline" stot="icon-only" />
-                    </ion-button>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ currentProduct.qoh }}</ion-label>
+                      <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.qoh : "-" }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
-                      <ion-label slot="end">{{ getVariance(currentProduct, true) }}</ion-label>
+                      <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getVariance(currentProduct, true) : "-" }}</ion-label>
                     </ion-item>
                   </template>
                   <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(currentProduct)">
@@ -227,12 +218,15 @@ import {
   IonIcon,
   IonItem,  
   IonList,
+  IonListHeader,
   IonHeader,
   IonFab,
   IonFabButton,
   IonInput,
   IonLabel,
   IonPage,
+  IonRadio,
+  IonRadioGroup,
   IonSegment,
   IonSegmentButton,
   IonTitle,
@@ -267,7 +261,7 @@ const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProdu
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
     return cycleCountItems.value.itemList;
-  } else if(selectedSegment.value === "pending") {
+  } else if(selectedSegment.value === "unmatched") {
     return cycleCountItems.value.itemList.filter((item: any) => item.isMatchNotFound);
   } else if(selectedSegment.value === "counted") {
     return cycleCountItems.value.itemList.filter((item: any) => item.quantity >= 0 || (item.itemStatusId === "INV_COUNT_REJECTED" || item.itemStatusId === "INV_COUNT_COMPLETED"));
@@ -291,8 +285,10 @@ let previousItem = {} as any;
 const barcodeInputRef = ref();
 const inputCount = ref("") as any;
 const isScrolling = ref(false);
-const isScanningInProgress = ref(false);
+const is = ref(false);
 const hasUnsavedChanges = ref(false) as any;
+const selectedCountUpdateType = ref("new");
+let isScanningInProgress = ref(false);
 
 
 onIonViewDidEnter(async() => {  
@@ -301,7 +297,6 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
 })
-
 
 async function fetchCycleCount() {
   emitter.emit("presentLoader");
@@ -353,6 +348,7 @@ async function changeProduct(direction: string) {
 }
 
 async function scanProduct() {
+  let isNewlyAdded = false;
   if(!queryString.value) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
@@ -379,11 +375,15 @@ async function scanProduct() {
     selectedItem = itemsList.value.find((item: any) => item.scannedId === queryString.value)
   }
 
-  if(!selectedItem) {
-    addProductToItemsList();
-    showToast(translate("Scanned item is not present in the count."))
-    queryString.value = ""
-    return;
+  if(!selectedItem || !Object.keys(selectedItem).length) {
+    if(selectedSegment.value === "all" && cycleCount.value.statusId === "INV_COUNT_ASSIGNED") {
+      selectedItem = await addProductToItemsList();
+      isNewlyAdded = true
+    } else {
+      showToast(translate("Scanned item is not present in the count."))
+      queryString.value = ""
+      return;
+    }
   }
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
@@ -396,11 +396,122 @@ async function scanProduct() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
-  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED") {
+  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED" && !isNewlyAdded) {
     inputCount.value++;
+  }
+  if(itemsList.value.length === 1) {
+    store.dispatch("product/currentProduct", selectedItem)
+    previousItem = selectedItem
   }
   queryString.value = ""
 }
+
+async function addProductToItemsList() {
+  const newItem = {
+    scannedId: queryString.value,
+    isMatching: true,
+    itemStatusId: "INV_COUNT_CREATED",
+    statusId: "INV_COUNT_ASSIGNED"
+  }
+
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  items.push(newItem);
+  await store.dispatch("count/updateCycleCountItems", items);
+  findProductFromIdentifier(queryString.value);
+  return newItem;
+}
+
+async function findProductFromIdentifier(scannedValue: string) {
+  const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
+  const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
+
+  let importItemSeqId = "";
+
+  if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+
+  items.map((item: any) => {
+    if(item.scannedId === scannedValue) {
+      if(importItemSeqId) {
+        item["importItemSeqId"] = importItemSeqId
+        item["isMatchNotFound"] = false
+      } else {
+        item["isMatchNotFound"] = true
+      }
+    }
+    item.isMatching = false;
+  })
+
+  if(updatedProduct.scannedId === scannedValue) {
+    if(importItemSeqId) {
+      updatedProduct["importItemSeqId"] = importItemSeqId
+      updatedProduct["isMatchNotFound"] = false
+    } else {
+      updatedProduct["isMatchNotFound"] = true
+    }
+    updatedProduct["isMatching"] = false
+  }
+  updatedProduct.isMatching = false;
+  updatedProduct.isMatchNotFound = true;
+
+  await store.dispatch('count/updateCycleCountItems', items);
+  await store.dispatch("product/currentProduct", updatedProduct);
+}
+
+async function addProductToCount(productId: any) {
+  try {
+    const resp = await CountService.addProductToCount({
+      inventoryCountImportId: cycleCount.value.inventoryCountImportId,
+      itemList: [{
+        idValue: productId,
+        statusId: "INV_COUNT_CREATED"
+      }]
+    })
+
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      console.log(resp);
+      
+      return resp.data.itemList[0].importItemSeqId
+    }
+  } catch(err) {
+    logger.error("Failed to add product to count", err)
+  }
+  return 0;
+}
+
+// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
+// and updates the current product state and navigation when a product intersects with the main element.
+const onScroll = (event: any) => {
+  const main = event.target;
+  const products = Array.from(main.querySelectorAll('.image'));
+  const observer = new IntersectionObserver((entries) => {  
+    entries.forEach((entry: any) => {
+      if(entry.isIntersecting) {
+        const dataset = entry.target.dataset
+        let product = {} as any;
+        if(dataset.ismatching || dataset.isMatchNotFound) {
+          product = itemsList.value.find((item: any) => item.scannedId === dataset.scannedId);
+        } else {
+          product = itemsList.value?.find((item: any) => item.productId === dataset.productId && item.importItemSeqId === dataset.seq);
+        }
+        if(!isScanningInProgress.value && (isItemAlreadyAdded(previousItem) ? (previousItem.productId !== product.productId || previousItem.importItemSeqId !== product.importItemSeqId) : (previousItem.scannedId !== product.scannedId))) {
+          if(inputCount.value) saveCount(previousItem, true);
+        }
+
+        // previousItem = currentProduct  // Update the previousItem variable with the current item
+        if(product) {
+          store.dispatch("product/currentProduct", product);
+        }
+      }
+    });
+  }, {
+    root: main,
+    threshold: 0.5, 
+  });
+  products.forEach((product: any) => {
+    observer.observe(product);
+  });
+};
 
 function getVariance(item: any , isRecounting: boolean) {
   const qty = item.quantity
@@ -411,6 +522,97 @@ function getVariance(item: any , isRecounting: boolean) {
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
   return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
+}
+
+async function saveCount(currentProduct: any, isScrollEvent = false) {
+  if (!inputCount.value && inputCount.value !== 0) {
+    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
+    isScanningInProgress.value = false;
+    return;
+  }
+
+  isScanningInProgress.value = true;
+  if(!isItemAlreadyAdded(currentProduct)) {
+    const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
+    let currentItem = {};
+    items.map((item: any) => {
+      if(item.scannedId === currentProduct.scannedId) {
+        const prevCount = currentProduct.scannedCount ? currentProduct.scannedCount : 0
+
+        item.countedByUserLoginId = userProfile.value.username
+        if(selectedCountUpdateType.value === "new") item.scannedCount = inputCount.value
+        else item.scannedCount = inputCount.value + prevCount
+        currentItem = item;
+      }
+    })
+    await store.dispatch('count/updateCycleCountItems', items);
+    if(!isScrollEvent) await store.dispatch('product/currentProduct', currentItem);
+    inputCount.value = ""; 
+    isScanningInProgress.value = false;
+    return;
+  }
+ 
+  try {
+    const payload = {
+      inventoryCountImportId: currentProduct.inventoryCountImportId,
+      importItemSeqId: currentProduct.importItemSeqId,
+      productId: currentProduct.productId,
+      quantity: selectedCountUpdateType.value === "all" ? inputCount.value : inputCount.value + (currentProduct.quantity || 0),
+      countedByUserLoginId: userProfile.value.username
+    };
+    const resp = await CountService.updateCount(payload);
+    if (!hasError(resp)) {
+      currentProduct.quantity = inputCount.value
+      currentProduct.countedByGroupName = userProfile.value.userFullName
+      currentProduct.countedByUserLoginId = userProfile.value.username
+      currentProduct.isRecounting = false;
+      inputCount.value = ''; 
+      const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+      items.map((item: any) => {
+        if(item.importItemSeqId === currentProduct.importItemSeqId) {
+          item.quantity = currentProduct.quantity
+          item.countedByGroupName = userProfile.value.userFullName
+          item.countedByUserLoginId = userProfile.value.username
+        }
+      })
+      await store.dispatch('count/updateCycleCountItems', items);
+      if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
+    } else {
+      throw resp.data;
+    }
+    hasUnsavedChanges.value = false;
+  } catch (err) {
+    logger.error(err);
+    showToast(translate("Something went wrong, please try again"));
+  }
+  isScanningInProgress.value = false
+}
+
+async function readyForReview() {
+  const alert = await alertController.create({
+    header: translate("Submit for review"),
+    message: translate("Make sure you've reviewed the products and their counts before uploading them for review."),
+    buttons: [{
+      text: translate('Cancel'),
+      role: 'cancel',
+    },
+    {
+      text: translate('Submit'),
+      handler: async () => {
+        try {
+          await CountService.updateCycleCount({
+            inventoryCountImportId: props?.id,
+            statusId: "INV_COUNT_REVIEW"
+          })
+          router.push("/tabs/count")
+          showToast(translate("Count has been submitted for review"))
+        } catch(err) {
+          showToast(translate("Failed to submit cycle count for review"))
+        }
+      }
+    }]
+  });
+  await alert.present();
 }
 
 function isItemAlreadyAdded(product: any) {

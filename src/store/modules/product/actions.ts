@@ -3,10 +3,10 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { ProductService } from "@/services/ProductService"
-import { hasError, showToast } from '@/utils';
+import { hasError } from '@/utils';
 import emitter from '@/event-bus';
-import { translate } from '@/i18n';
 import logger from '@/logger'
+import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
@@ -68,6 +68,30 @@ const actions: ActionTree<ProductState, RootState> = {
     }
     
     return resp;
+  },
+
+  async fetchProductByIdentification ( { commit, state }, payload) {
+    const cachedProductIds = Object.keys(state.cached);
+    if(cachedProductIds.includes(payload.scannedValue)) return;
+
+    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    let resp;
+
+    try {
+      resp = await ProductService.fetchProducts({
+        "filters": [`goodIdentifications: ${productStoreSettings["barcodeIdentificationPref"]}/${payload.scannedValue}`],
+        "viewSize": 1
+      })
+      if(resp.status === 200 && !hasError(resp)) {
+        const products = resp.data.response.docs;
+        // Handled empty response in case of failed query
+        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+        return resp.data.response.docs[0]
+      }
+    } catch(err) {
+      logger.error("Failed to fetch products", err)
+    }
+    return {};
   },
 
   async clearProducts({ commit }) {
