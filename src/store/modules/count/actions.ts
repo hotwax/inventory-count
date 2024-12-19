@@ -160,20 +160,22 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountItems({commit} ,payload) {
-    let items;
+    let items = [] as any, resp;
     try {
-      const resp = await CountService.fetchCycleCountItems(payload)
-      if(!hasError(resp)) {
-        items = resp.data
-
-        this.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
-      } else {
-        throw resp.data;
-      }
+      do {
+        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100 })
+        if(!hasError(resp) && resp.data?.itemList?.length) {
+          items = items.concat(resp.data.itemList)
+        } else {
+          throw resp.data;
+        }
+      } while(resp.data.itemList?.length >= 100)
     } catch (err: any) {
       logger.error(err)
     }
-    commit(types.COUNT_ITEMS_UPDATED, items)
+
+    this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+    commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   },
 
   async updateCycleCountItems ({ commit }, payload) {
