@@ -17,11 +17,8 @@
               <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
             </ion-label>
 
-            <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="toggleCountNameUpdation()">
-              {{ translate("Rename") }}
-            </ion-button>
-            <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="toggleCountNameUpdation()">
-              {{ translate("Save") }}
+            <ion-button slot="end" color="medium" fill="outline" size="small" @click="toggleCountNameUpdation()">
+              {{ translate(isCountNameUpdating ? "Save" : "Rename") }}
             </ion-button>
           </ion-item>
           <ion-item lines="none">
@@ -61,7 +58,7 @@
       <div class="header">
         <div class="search">
           <ion-segment v-model="selectedSegment" @ionChange="handleSegmentChange()">
-            <ion-segment-button value="group" layout="icon-start">
+            <ion-segment-button value="group">
               <ion-label>{{ translate("Group") }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="individual" layout="icon-start">
@@ -79,13 +76,13 @@
             </ion-radio-group>
           </ion-list>
           <div v-else>
-            <ion-searchbar v-model="queryString" @keyup.enter="fetchFacilities()" />
+            <ion-searchbar v-model="queryString" :placeholder="translate('Search facilities')" @keyup.enter="fetchFacilities()" />
 
             <ion-list>
               <ion-list-header>{{ translate("Select facilities to hard count") }}</ion-list-header>
 
               <ion-item v-for="facility in facilities" :key="facility.facilityId">
-                <ion-checkbox :modelValue="selectedFacilityIds.includes(facility.facilityId)" @ionChange="toggleFacilitySelection(facility.facilityId)">
+                <ion-checkbox :checked="selectedFacilityIds.includes(facility.facilityId)" @ionChange="toggleFacilitySelection(facility.facilityId)">
                   <ion-label>
                     {{ facility.facilityName ? facility.facilityName : facility.facilityId }}
                     <p>{{ facility.facilityId }}</p>
@@ -119,7 +116,7 @@
 import { translate } from "@/i18n";
 import { calendarNumberOutline, checkmarkDoneOutline, storefrontOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonCheckbox, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar, onIonViewWillEnter} from "@ionic/vue";
-import { ref, nextTick, computed } from "vue"
+import { ref, nextTick, computed, Ref } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, showToast } from "@/utils";
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -127,20 +124,20 @@ import store from "@/store";
 import router from "@/router"
 import { UtilService } from "@/services/UtilService";
 
-const countName = ref(`Hard count - ${DateTime.now().toFormat('dd-MM-yyyy')}`);
+const countName = ref(`Hard count - ${DateTime.now().toFormat('dd-MM-yyyy hh:mm:ss')}`);
 const selectedSegment = ref("group");
-const dueDate = ref("") as any;
+const dueDate = ref("") as Ref<number | string>;
 const queryString = ref("");
 const selectedFacilityGroupId = ref("");
 const facilities = ref([]) as any;
-const selectedFacilityIds = ref([]) as any;
+const selectedFacilityIds = ref([]) as Ref<string[]>;
 const isCountNameUpdating = ref(false);
 const dateTimeModalOpen = ref(false);
 const isAutoAssignEnabled = ref(false);
 const isScrollingEnabled = ref(false);
 const isScrollable = ref(true);
 const contentRef = ref("") as any;
-const countNameRef = ref("") as any;
+const countNameRef = ref("") as Ref<any>;
 const infiniteScrollRef = ref("");
 
 const facilityGroups = computed(() => store.getters["util/getFacilityGroups"])
@@ -165,7 +162,7 @@ async function saveCount() {
     countTypeEnumId: "HARD_COUNT"
   } as any;
 
-  if(dueDate.value) count = { ...count, dueDate: dueDate.value };
+  if(dueDate.value) count["dueDate"] = dueDate.value;
 
   if(selectedSegment.value === "group") {
     try {
@@ -185,19 +182,16 @@ async function saveCount() {
       }
     } catch(error) {
       logger.error(error);
+      showToast(translate("Failed to create cycle counts due to missing association of facilities."))
+      return;
     }
   } else {
     facilityIds = selectedFacilityIds.value
   }
 
-  if(!facilityIds.length) {
-    showToast(translate("Failed to create cycle counts."))
-    return;
-  }
-
   facilityIds.map((facilityId: any) => cycleCounts.push({ ...count, facilityId }))
   try {
-    resp = await UtilService.createBulCycleCounts({ inventoryCountImports: cycleCounts })
+    resp = await UtilService.createBulkCycleCounts({ inventoryCountImports: cycleCounts })
     if(!hasError(resp)) {
       showToast(translate("Cycle counts created successfully."))
       router.push("/draft");
