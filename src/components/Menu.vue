@@ -68,7 +68,7 @@ export default defineComponent({
         url: "/draft",
         iosIcon: createOutline,
         mdIcon: createOutline,
-        childRoutes: ["/draft/", "/bulkUpload"],
+        childRoutes: ["/draft/", "/bulkUpload", "/hard-count"],
         meta: {
           permissionId: "APP_DRAFT_VIEW"
         }

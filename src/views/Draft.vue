@@ -20,6 +20,7 @@
       <ion-list v-else class="list">
         <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
           <ion-label>
+            <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
             {{ count.countImportName }}
             <p>{{ count.inventoryCountImportId }}</p>
           </ion-label>
@@ -37,6 +38,9 @@
           </ion-fab-button>
           <ion-fab-button @click="router.push('/bulkUpload')">
             <ion-icon :icon="documentsOutline" />
+          </ion-fab-button>
+          <ion-fab-button @click="router.push('/hard-count')">
+            <ion-icon color="warning" :icon="shieldCheckmarkOutline" />
           </ion-fab-button>
         </ion-fab-list>
       </ion-fab>
@@ -66,7 +70,7 @@ import {
   onIonViewDidEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { addOutline, documentOutline, documentsOutline, filterOutline } from "ionicons/icons";
+import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { computed } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"

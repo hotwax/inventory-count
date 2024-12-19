@@ -7,6 +7,7 @@ import actions from "./actions";
 import userModule from "./modules/user";
 import productModule from "./modules/product";
 import countModule from "./modules/count";
+import utilModule from "./modules/util";
 import { setPermissions } from "@/authorization"
 
 
@@ -32,6 +33,7 @@ const store = createStore<RootState>({
     user: userModule,
     product: productModule,
     count: countModule,
+    util: utilModule,
   },
 })
 
