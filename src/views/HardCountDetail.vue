@@ -76,6 +76,7 @@
                 </ion-label>
                 <ion-label class="ion-text-wrap" v-else>
                   <h1>{{ currentProduct.scannedId }}</h1>
+                  <p>{{ translate(currentProduct.isMatching ? "matching..." : "no match found") }}</p>
                 </ion-label>
 
                 <ion-badge v-if="currentProduct.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
