@@ -506,10 +506,11 @@ function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValu
       } else {
         item["isMatchNotFound"] = true
       }
+      item.isMatching = false;
     }
-    item.isMatching = false;
   })
 
+  store.dispatch('count/updateCycleCountItems', items);
   if(updatedProduct.scannedId === scannedValue) {
     if(importItemSeqId) {
       updatedProduct["importItemSeqId"] = importItemSeqId
@@ -518,13 +519,7 @@ function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValu
     } else {
       updatedProduct["isMatchNotFound"] = true
     }
-    updatedProduct["isMatching"] = false
-  }
-  updatedProduct.isMatching = false;
-  updatedProduct.isMatchNotFound = true;
-
-  store.dispatch('count/updateCycleCountItems', items);
-  if(updatedProduct.scannedId === scannedValue) {
+    updatedProduct.isMatching = false;
     store.dispatch("product/currentProduct", updatedProduct);
   }
 }
