@@ -104,7 +104,7 @@
               <ion-list v-if="!currentProduct.scannedId && currentProduct.statusId !== 'INV_COUNT_CREATED' && currentProduct.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
-                <ion-label slot="end">{{ currentProduct.quantity || currentProduct.quantity === 0 ? currentProduct.quantity : '-'}}</ion-label>
+                  <ion-label slot="end">{{ currentProduct.quantity || currentProduct.quantity === 0 ? currentProduct.quantity : '-'}}</ion-label>
                 </ion-item>
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
@@ -238,7 +238,7 @@ import {
   alertController,
   modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, closeOutline, cloudOfflineOutline, paperPlaneOutline, restaurantOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, ref } from "vue";
 import { useStore } from "@/store";
@@ -360,7 +360,7 @@ async function fetchCycleCount() {
 }
 
 function handleSegmentChange() {
-  if(itemsList.value.length > 0) {
+  if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : itemsList.value[0]
     if(!updatedProduct) {
       updatedProduct = itemsList.value[0];
@@ -495,38 +495,38 @@ async function findProductFromIdentifier(scannedValue: string ) {
 
 function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
-    const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
-  
-    items.map((item: any) => {
-      if(item.scannedId === scannedValue) {
-        if(importItemSeqId) {
-          item["importItemSeqId"] = importItemSeqId
-          item["productId"] = product.productId
-          item["isMatchNotFound"] = false
-        } else {
-          item["isMatchNotFound"] = true
-        }
-      }
-      item.isMatching = false;
-    })
-  
-    if(updatedProduct.scannedId === scannedValue) {
-      if(importItemSeqId) {
-        updatedProduct["importItemSeqId"] = importItemSeqId
-        updatedProduct["productId"] = product.oroductId
-        updatedProduct["isMatchNotFound"] = false
-      } else {
-        updatedProduct["isMatchNotFound"] = true
-      }
-      updatedProduct["isMatching"] = false
-    }
-    updatedProduct.isMatching = false;
-    updatedProduct.isMatchNotFound = true;
+  const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
 
-    store.dispatch('count/updateCycleCountItems', items);
-    if(updatedProduct.scannedId === scannedValue) {
-      store.dispatch("product/currentProduct", updatedProduct);
+  items.map((item: any) => {
+    if(item.scannedId === scannedValue) {
+      if(importItemSeqId) {
+        item["importItemSeqId"] = importItemSeqId
+        item["productId"] = product.productId
+        item["isMatchNotFound"] = false
+      } else {
+        item["isMatchNotFound"] = true
+      }
     }
+    item.isMatching = false;
+  })
+
+  if(updatedProduct.scannedId === scannedValue) {
+    if(importItemSeqId) {
+      updatedProduct["importItemSeqId"] = importItemSeqId
+      updatedProduct["productId"] = product.oroductId
+      updatedProduct["isMatchNotFound"] = false
+    } else {
+      updatedProduct["isMatchNotFound"] = true
+    }
+    updatedProduct["isMatching"] = false
+  }
+  updatedProduct.isMatching = false;
+  updatedProduct.isMatchNotFound = true;
+
+  store.dispatch('count/updateCycleCountItems', items);
+  if(updatedProduct.scannedId === scannedValue) {
+    store.dispatch("product/currentProduct", updatedProduct);
+  }
 }
 
 async function addProductToCount(productId: any) {
@@ -629,6 +629,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       quantity: selectedCountUpdateType.value === "all" ? inputCount.value : inputCount.value + (currentProduct.quantity || 0),
       countedByUserLoginId: userProfile.value.username
     };
+
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
       currentProduct.quantity = inputCount.value
