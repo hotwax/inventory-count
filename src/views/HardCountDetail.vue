@@ -70,6 +70,7 @@
 
             <div class="detail">
               <ion-item lines="none">
+                <ion-icon v-if="!isItemAlreadyAdded(currentProduct)" :icon="cloudOfflineOutline" slot="start" />
                 <ion-label class="ion-text-wrap" v-if="currentProduct.productId">
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(currentProduct.productId)) || getProduct(currentProduct.productId).productName }}</h1>
                   <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(currentProduct.productId)) }}</p>
@@ -237,7 +238,7 @@ import {
   alertController,
   modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, closeOutline, paperPlaneOutline, restaurantOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, closeOutline, cloudOfflineOutline, paperPlaneOutline, restaurantOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, ref } from "vue";
 import { useStore } from "@/store";
