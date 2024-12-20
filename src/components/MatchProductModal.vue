@@ -6,11 +6,11 @@
           <ion-icon slot="icon-only" :icon="closeOutline" />
         </ion-button>
       </ion-buttons>
-      <ion-title>{{ translate("Add product") }}</ion-title>
+      <ion-title>{{ translate("Match product") }}</ion-title>
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <ion-searchbar v-model="queryString" :placeholder="translate('Search SKU or product name')" @keyup.enter="handleSearch" @ionInput="handleInput"/>
+    <ion-searchbar v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="handleSearch" />
 
     <template v-if="products.length">
       <ion-radio-group v-model="selectedProductId">
@@ -64,7 +64,7 @@ import {
   IonToolbar,
   modalController,
 } from "@ionic/vue";
-import { computed, defineProps, ref } from "vue";
+import { computed, defineProps, Ref, ref } from "vue";
 import { closeOutline, saveOutline } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
@@ -81,7 +81,7 @@ const products = ref([]) as any;
 
 let queryString = ref('');
 const isSearching = ref(false);
-const selectedProductId = ref("") as any;
+const selectedProductId = ref("") as Ref<string>;
 
 async function handleSearch() {
   if(!queryString.value) {
@@ -115,12 +115,6 @@ function closeModal(payload = {}) {
 
 function save() {
   closeModal({ selectedProduct: products.value.find((product: any) => product.productId === selectedProductId) })
-}
-
-function handleInput() {
-  if(!queryString.value) {
-    isSearching.value = false;
-  }
 }
 
 function isProductAvailableInCycleCount(id: string) {

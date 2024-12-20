@@ -119,7 +119,7 @@
               <template v-else>
                 <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
                   <ion-item>
-                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                   </ion-item>
 
                   <ion-item>
@@ -172,7 +172,7 @@
                     <ion-label slot="end">{{ currentProduct.quantity || "-" }}</ion-label>
                   </ion-item>
                   <ion-item v-else>
-                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
@@ -248,6 +248,7 @@ import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
+import { onBeforeRouteLeave } from 'vue-router';
 
 const store = useStore();
 
@@ -286,7 +287,6 @@ const barcodeInputRef = ref();
 const inputCount = ref("") as any;
 const isScrolling = ref(false);
 const is = ref(false);
-const hasUnsavedChanges = ref(false) as any;
 const selectedCountUpdateType = ref("new");
 let isScanningInProgress = ref(false);
 
@@ -297,6 +297,49 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
 })
+
+onIonViewDidLeave(async() => {
+  await store.dispatch('count/updateCycleCountItems', []);
+  store.dispatch("product/currentProduct", {});
+})
+
+onBeforeRouteLeave(async (to) => {
+  if(to.path === "/login") return;
+  if(!hasUnsavedChanges()) return true;
+  let leavePage = false;
+
+  const alert = await alertController.create({
+    header: translate("Leave page"),
+    message: translate("Any edits made in the counted quantity on this page will be lost."),
+    buttons: [
+      {
+        text: translate("STAY"),
+        handler: () => {
+          leavePage = false
+        }
+      },
+      {
+        text: translate("LEAVE"),
+        handler: () => {
+          leavePage = true
+        },
+      },
+    ],
+  });
+
+  alert.present();
+  const data = await alert.onDidDismiss()
+  // If clicking backdrop just close the modal and do not redirect the user to previous page
+  if(data?.role === "backdrop") {
+    return false;
+  }
+
+  return leavePage
+})
+
+function hasUnsavedChanges() {
+  return inputCount.value >= 0 || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
+}
 
 async function fetchCycleCount() {
   emitter.emit("presentLoader");
@@ -388,7 +431,6 @@ async function scanProduct() {
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
-    hasUnsavedChanges.value = false;
     router.replace({ hash: isItemAlreadyAdded(selectedItem) ? `#${selectedItem.productId}-${selectedItem.importItemSeqId}` : `#${selectedItem.scannedId}` }); 
     setTimeout(() => {
       const element = document.getElementById(isItemAlreadyAdded(selectedItem) ? `${selectedItem.productId}-${selectedItem.importItemSeqId}` : selectedItem.scannedId);
@@ -605,7 +647,6 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
     } else {
       throw resp.data;
     }
-    hasUnsavedChanges.value = false;
   } catch (err) {
     logger.error(err);
     showToast(translate("Something went wrong, please try again"));
