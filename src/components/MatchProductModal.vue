@@ -84,7 +84,7 @@ const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
 
 async function handleSearch() {
-  if(!queryString.value) {
+  if(!queryString.value.trim()) {
     isSearching.value = false; 
     return;
   }
@@ -96,7 +96,7 @@ async function getProducts() {
   let productsList = [] as any;
   try {
     const resp = await ProductService.fetchProducts({
-      "keyword": queryString.value,
+      "keyword": queryString.value.trim(),
       "viewSize": 100
     })
     if(!hasError(resp)) {

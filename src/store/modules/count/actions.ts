@@ -160,15 +160,16 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountItems({commit} ,payload) {
-    let items = [] as any, resp;
+    let items = [] as any, resp, pageIndex = 0;
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100 })
+        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100, pageIndex })
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
         } else {
           throw resp.data;
         }
+        pageIndex++;
       } while(resp.data.itemList?.length >= 100)
     } catch (err: any) {
       logger.error(err)
