@@ -90,18 +90,18 @@
                 </ion-checkbox>
               </ion-item>
             </ion-list>
+
+            <ion-infinite-scroll
+              @ionInfinite="loadMoreFacilities($event)"
+              threshold="100px"
+              v-show="selectedSegment === 'individual' && isScrollable"
+              ref="infiniteScrollRef"
+            >
+              <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+            </ion-infinite-scroll>
           </div>
         </div>
       </div>
-
-      <ion-infinite-scroll
-        @ionInfinite="loadMoreFacilities($event)"
-        threshold="100px"
-        v-show="selectedSegment === 'individual' && isScrollable"
-        ref="infiniteScrollRef"
-      >
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
-      </ion-infinite-scroll>
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
@@ -244,7 +244,7 @@ async function loadMoreFacilities(event: any) {
     await event.target.complete();
   }
 
-  fetchFacilities(
+  await fetchFacilities(
     undefined,
     Math.ceil(
       facilities.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)
@@ -271,6 +271,7 @@ async function toggleCountNameUpdation() {
 function handleSegmentChange() {
   selectedFacilityIds.value = [];
   selectedFacilityGroupId.value = "";
+  queryString.value = "";
 }
 
 function enableScrolling() {

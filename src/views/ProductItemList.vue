@@ -3,10 +3,13 @@
     <ion-thumbnail slot="start">
       <Image :src="getProduct(item.productId).mainImageUrl"/>
     </ion-thumbnail>
-    <ion-label class="ion-text-wrap">
+    <ion-label class="ion-text-wrap" v-if="item.productId">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
       <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
       <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+    </ion-label>
+    <ion-label class="ion-text-wrap" v-else>
+      <h2>{{ item.scannedId }}</h2>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
       {{ (!item.quantity && item.quantity !== 0) ? translate("not counted") : translate("units", { count: item.quantity }) }}
@@ -14,8 +17,8 @@
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
     </ion-note>
-    <ion-badge slot="end" v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_ASSIGNED'">
-      {{ translate("units", { count: item.quantity }) }}
+    <ion-badge slot="end" v-else-if="item.statusId === 'INV_COUNT_ASSIGNED' && ((item.quantity !== undefined && item.quantity !== null) || (item.scannedCount !== undefined && item.scannedCount !== null))">
+      {{ translate("units", { count: isItemAlreadyAdded(item) ? item.quantity : item.scannedCount }) }}
     </ion-badge>
     <ion-note v-else-if="item.quantity === undefined || item.quantity === null && item.statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}
@@ -61,9 +64,9 @@ onMounted(() => {
  * It also handles the challenge of scrolling to an element on a page that is being navigated to and scroll smoothly.
  **/
 async function navigateToDetail(item: any) {
-  router.replace({ hash: `#${item.productId}-${item.importItemSeqId}` }); 
+  router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
   setTimeout(() => {
-    const element = document.getElementById(`${item.productId}-${item.importItemSeqId}`);
+    const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
@@ -73,9 +76,12 @@ async function navigateToDetail(item: any) {
 // Method to display the item as selected by changing the ion-item color to light
 function isCurrentProduct() {
   // Added check for itemStatusId as we may have the same product added multiple times in different status(like in case when request recount an item)
-  return currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId && currentProduct.value.importItemSeqId === props.item.importItemSeqId
+  return isItemAlreadyAdded(currentProduct.value) ? (currentProduct.value.productId == props.item.productId && currentProduct.value.itemStatusId === props.item.itemStatusId && currentProduct.value.importItemSeqId === props.item.importItemSeqId) : currentProduct.value.scannedId === props.item.scannedId
 }
 
+function isItemAlreadyAdded(product: any) {
+  return product.productId && product.importItemSeqId;
+}
 </script>
 
 <style scoped>

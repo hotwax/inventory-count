@@ -351,11 +351,7 @@ function inputCountValidation(event) {
 }
 
 async function fetchCycleCountItems() {
-  let payload = {
-    inventoryCountImportId : props?.id, 
-    pageSize: 100 
-  }
-  await store.dispatch("count/fetchCycleCountItems", payload); 
+  await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id }); 
 }
 
 async function fetchCycleCount() {
