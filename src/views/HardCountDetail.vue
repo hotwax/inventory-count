@@ -247,9 +247,7 @@ import { getPartyName, getProductIdentificationValue, hasError, showToast } from
 import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
-import { onBeforeRouteLeave } from "vue-router";
-import { ProductService } from "@/services/ProductService";
-import MatchProductModal from "@/components/matchProductModal.vue";
+import MatchProductModal from "@/components/MatchProductModal.vue";
 
 const store = useStore();
 
