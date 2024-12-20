@@ -185,8 +185,8 @@
                       <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getVariance(currentProduct, true) : "-" }}</ion-label>
                     </ion-item>
                   </template>
-                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(currentProduct)">
-                    {{ translate("Save count") }}
+                  <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
+                    {{ translate(currentProduct.isMatchNotFound ? "Match product" : "Save count") }}
                   </ion-button>
                 </ion-list>
               </template>
@@ -233,9 +233,10 @@ import {
   IonToolbar,
   onIonViewDidEnter,
   onIonViewDidLeave,
-  alertController
+  alertController,
+  modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, closeOutline, paperPlaneOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, closeOutline, paperPlaneOutline, restaurantOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, ref } from "vue";
 import { useStore } from "@/store";
@@ -248,6 +249,7 @@ import Image from "@/components/Image.vue";
 import router from "@/router";
 import { onBeforeRouteLeave } from "vue-router";
 import { ProductService } from "@/services/ProductService";
+import MatchProductModal from "@/components/matchProductModal.vue";
 
 const store = useStore();
 
@@ -406,6 +408,24 @@ async function scanProduct() {
   queryString.value = ""
 }
 
+async function matchProduct(currentProduct: any) {
+  const addProductModal = await modalController.create({
+    component: MatchProductModal,
+    componentProps: { items: cycleCountItems.value.itemList },
+    showBackdrop: false,
+  });
+
+  addProductModal.onDidDismiss().then(async (result) => {
+    if(result.data.selectedProduct) {
+      const product = result.data.selectedProduct
+      const importItemSeqId = await addProductToCount(product.productId)
+      updateCurrentItemInList(importItemSeqId, product.productId, currentProduct.scannedId);
+    }
+  })
+
+  addProductModal.present();
+}
+
 async function addProductToItemsList() {
   const newItem = {
     scannedId: queryString.value,
@@ -421,41 +441,50 @@ async function addProductToItemsList() {
   return newItem;
 }
 
-async function findProductFromIdentifier(scannedValue: string) {
+async function findProductFromIdentifier(scannedValue: string ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
-  const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
-
   let importItemSeqId = "";
-
   if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
 
-  items.map((item: any) => {
-    if(item.scannedId === scannedValue) {
-      if(importItemSeqId) {
-        item["importItemSeqId"] = importItemSeqId
-        item["isMatchNotFound"] = false
-      } else {
-        item["isMatchNotFound"] = true
+  setTimeout(() => {
+    updateCurrentItemInList(importItemSeqId, product, scannedValue);
+  }, 1000)
+}
+
+function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
+    const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
+  
+    items.map((item: any) => {
+      if(item.scannedId === scannedValue) {
+        if(importItemSeqId) {
+          item["importItemSeqId"] = importItemSeqId
+          item["productId"] = product.productId
+          item["isMatchNotFound"] = false
+        } else {
+          item["isMatchNotFound"] = true
+        }
       }
+      item.isMatching = false;
+    })
+  
+    if(updatedProduct.scannedId === scannedValue) {
+      if(importItemSeqId) {
+        updatedProduct["importItemSeqId"] = importItemSeqId
+        updatedProduct["productId"] = product.oroductId
+        updatedProduct["isMatchNotFound"] = false
+      } else {
+        updatedProduct["isMatchNotFound"] = true
+      }
+      updatedProduct["isMatching"] = false
     }
-    item.isMatching = false;
-  })
+    updatedProduct.isMatching = false;
+    updatedProduct.isMatchNotFound = true;
 
-  if(updatedProduct.scannedId === scannedValue) {
-    if(importItemSeqId) {
-      updatedProduct["importItemSeqId"] = importItemSeqId
-      updatedProduct["isMatchNotFound"] = false
-    } else {
-      updatedProduct["isMatchNotFound"] = true
+    store.dispatch('count/updateCycleCountItems', items);
+    if(updatedProduct.scannedId === scannedValue) {
+      store.dispatch("product/currentProduct", updatedProduct);
     }
-    updatedProduct["isMatching"] = false
-  }
-  updatedProduct.isMatching = false;
-  updatedProduct.isMatchNotFound = true;
-
-  await store.dispatch('count/updateCycleCountItems', items);
-  await store.dispatch("product/currentProduct", updatedProduct);
 }
 
 async function addProductToCount(productId: any) {
@@ -469,8 +498,6 @@ async function addProductToCount(productId: any) {
     })
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
-      console.log(resp);
-      
       return resp.data.itemList[0].importItemSeqId
     }
   } catch(err) {
@@ -498,7 +525,7 @@ const onScroll = (event: any) => {
           if(inputCount.value) saveCount(previousItem, true);
         }
 
-        // previousItem = currentProduct  // Update the previousItem variable with the current item
+        previousItem = currentProduct  // Update the previousItem variable with the current item
         if(product) {
           store.dispatch("product/currentProduct", product);
         }
