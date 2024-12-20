@@ -22,6 +22,7 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
+              <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
               {{ count.countImportName }}
               <p>{{ count.inventoryCountImportId }}</p>
             </ion-label>

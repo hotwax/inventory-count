@@ -182,6 +182,7 @@ const actions: ActionTree<UserState, RootState> = {
       }
     } catch(err) {
       logger.error("Failed to fetch facilities")
+      throw err
     }
 
     // Updating current facility with a default first facility when fetching facilities on login
@@ -210,7 +211,7 @@ const actions: ActionTree<UserState, RootState> = {
           facility.productStore = resp.data[0]
         }
       } catch(err) {
-        logger.error("Failed to fetch facilities for product store")
+        logger.error("Failed to fetch product stores for facility")
       }
     }
 
@@ -250,7 +251,7 @@ const actions: ActionTree<UserState, RootState> = {
         productStores = Object.values(productStoresResp)
       }
     } catch(err) {
-      logger.error("Failed to fetch facilities")
+      logger.error("Failed to fetch product stores")
     }
 
     // Updating current facility with a default first facility when fetching facilities on login

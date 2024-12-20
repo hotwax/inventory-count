@@ -288,10 +288,9 @@ function mapFields(mapping, mappingId) {
   const missingFields = Object.values(fieldMappingData.value).filter(field => {
     if(!csvFields.includes(field)) return field;
   });
-
   if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
 
-  Object.keys(fieldMappingData).map((key) => {
+  Object.keys(fieldMappingData.value).map((key) => {
     if(!csvFields.includes(fieldMappingData.value[key])){
       fieldMappingData.value[key] = "";
     }
