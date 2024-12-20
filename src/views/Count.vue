@@ -128,16 +128,9 @@
           <p class="empty-state">{{ translate("No cycle counts found") }}</p>
         </template>
       </main>
-      <ion-infinite-scroll
-        @ionInfinite="loadMoreCycleCount($event)"
-        threshold="100px"
-        v-show="isScrollable"
-        ref="infiniteScrollRef"
-      >
-        <ion-infinite-scroll-content
-          loading-spinner="crescent"
-          :loading-text="translate('Loading')"
-        />
+
+      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </ion-content>
   </ion-page>

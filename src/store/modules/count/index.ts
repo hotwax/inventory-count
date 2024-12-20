@@ -10,9 +10,12 @@ const countModule: Module<CountState, RootState> = {
   state: {
     list: [],
     total: 0,
+    isScrollable: true,
     query: {
       facilityIds: [],
-      noFacility: false
+      noFacility: false,
+      queryString: '',
+      sortBy: 'dueDate desc'
     },
     stats: {},
     cycleCountImportSystemMessages:[],

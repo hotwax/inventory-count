@@ -13,7 +13,8 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content id="filter">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
+      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -72,6 +73,10 @@
           <ion-icon :icon="cloudDownloadOutline" />
         </ion-fab-button>
       </ion-fab>
+
+      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+      </ion-infinite-scroll>
     </ion-content>
   </ion-page>
 </template>
@@ -86,9 +91,12 @@ import {
   IonHeader,
   IonIcon,
   IonItem,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonLabel,
   IonMenuButton,
   IonPage,
+  IonSearchbar,
   IonTitle,
   IonToolbar,
   modalController,
@@ -96,7 +104,7 @@ import {
   onIonViewWillLeave
 } from "@ionic/vue";
 import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
-import { computed } from "vue"
+import { computed, ref } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
 import store from "@/store";
@@ -105,17 +113,63 @@ import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
+const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
+const query = computed(() => store.getters["count/getQuery"])
+
+const isScrollingEnabled = ref(false);
+const contentRef = ref({}) as any
+const infiniteScrollRef = ref({}) as any
 
 onIonViewWillEnter(async () => {
-  await store.dispatch("count/fetchCycleCounts", {
-    statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
-    statusId_op: "in"
-  })
+  await fetchClosedCycleCounts()
 })
 
 onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList")
 })
+
+function enableScrolling() {
+  const parentElement = contentRef.value.$el
+  const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+  if(distanceFromInfinite < 0) {
+    isScrollingEnabled.value = false;
+  } else {
+    isScrollingEnabled.value = true;
+  }
+}
+
+async function updateQueryString(key: string, value: any) {
+  await store.dispatch("count/updateQueryString", { key, value })
+  fetchClosedCycleCounts();
+}
+
+async function loadMoreCycleCounts(event: any) {
+  if(!(isScrollingEnabled.value && isScrollable.value)) {
+    await event.target.complete();
+    return
+  }
+  fetchClosedCycleCounts(
+    undefined,
+    Math.ceil(
+      cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)
+    ).toString()
+  ).then(async () => {
+    await event.target.complete()})
+}
+
+async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
+  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
+  const pageIndex = vIndex ? vIndex : 0;
+  const payload = {
+    pageSize,
+    pageIndex,
+    statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
+    statusId_op: "in"
+  }
+  await store.dispatch("count/fetchCycleCounts", payload)
+}
 
 function getClosedDate(count: any) {
   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory

@@ -6,6 +6,7 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_LIST_UPDATED](state, payload) {
     state.list = payload.counts
     state.total = payload.total
+    state.isScrollable = payload.isScrollable;
   },
   [types.COUNT_QUERY_UPDATED](state, payload) {
     (state.query as any)[payload.key] = payload.value
@@ -13,7 +14,9 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_QUERY_CLEARED](state) {
     state.query = {
       facilityIds: [],
-      noFacility: false
+      noFacility: false,
+      queryString: '',
+      sortBy: 'dueDate desc'
     }
   },
   [types.COUNT_STATS_UPDATED](state, payload) {
