@@ -295,8 +295,7 @@ const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 
 onIonViewDidEnter(async() => {  
-  await fetchCycleCount();
-  await fetchCycleCountItems();
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
@@ -346,10 +345,6 @@ onBeforeRouteLeave(async (to) => {
 
 function inputCountValidation(event) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
-}
-
-async function fetchCycleCountItems() {
-  await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id }); 
 }
 
 async function fetchCycleCount() {
@@ -463,7 +458,6 @@ const onScroll = (event) => {
         previousItem = currentProduct  // Update the previousItem variable with the current item
 
         if (currentProduct) {
-          const currentIndex = itemsList.value?.indexOf(currentProduct);
           store.dispatch("product/currentProduct", currentProduct);
           product.value.isRecounting = false;
         }
