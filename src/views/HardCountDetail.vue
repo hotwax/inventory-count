@@ -365,7 +365,7 @@ async function scanProduct() {
       selectedItem = await addProductToItemsList();
       isNewlyAdded = true
     } else {
-      showToast(translate("Scanned item is not present in the count."))
+      showToast(translate("Scanned item is not present in the count. To add new product move to All Segment."))
       queryString.value = ""
       return;
     }
@@ -433,7 +433,6 @@ async function addProductToCount(productId: any) {
   }
   return 0;
 }
-
 
 function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
