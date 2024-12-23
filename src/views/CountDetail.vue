@@ -92,7 +92,7 @@
                   <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
                 </ion-button>
 
-                <ion-button @click="changeProduct('next')" :disabled="currentItemIndex = itemsList.length - 1" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                <ion-button @click="changeProduct('next')" :disabled="currentItemIndex === itemsList.length - 1" fill="outline" shape="round" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>

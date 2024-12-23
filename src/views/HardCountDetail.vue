@@ -440,7 +440,7 @@ async function updateCurrentItemInList(importItemSeqId: any, product: any, scann
   if(updatedProduct.scannedId === scannedValue) {
     if(importItemSeqId) {
       updatedProduct["importItemSeqId"] = importItemSeqId
-      updatedProduct["productId"] = product.oroductId
+      updatedProduct["productId"] = product.productId
       updatedProduct["isMatchNotFound"] = false
     } else {
       updatedProduct["isMatchNotFound"] = true
