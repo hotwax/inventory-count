@@ -88,11 +88,11 @@
                   <ion-label>{{ `${currentItemIndex + 1}/${itemsList.length}` }}</ion-label>
                 </ion-item>
 
-                <ion-button @click="changeProduct('previous')" :disabled="isFirstItem" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                <ion-button @click="changeProduct('previous')" :disabled="currentItemIndex === 0" fill="outline" shape="round" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
                 </ion-button>
 
-                <ion-button @click="changeProduct('next')" :disabled="isLastItem" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                <ion-button @click="changeProduct('next')" :disabled="currentItemIndex === itemsList.length - 1" fill="outline" shape="round" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
@@ -288,8 +288,6 @@ let cycleCount = ref([]);
 const queryString = ref('');
 
 const inputCount = ref('');
-const isFirstItem = ref(true);
-const isLastItem = ref(false);
 const isScrolling = ref(false);
 let previousItem = {};
 let hasUnsavedChanges = ref(false);
@@ -297,13 +295,11 @@ const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 
 onIonViewDidEnter(async() => {  
-  await fetchCycleCount();
-  await fetchCycleCountItems();
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
-  updateNavigationState(0);
   barcodeInput.value?.$el?.setFocus();
 })  
 
@@ -349,10 +345,6 @@ onBeforeRouteLeave(async (to) => {
 
 function inputCountValidation(event) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
-}
-
-async function fetchCycleCountItems() {
-  await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id }); 
 }
 
 async function fetchCycleCount() {
@@ -439,15 +431,11 @@ function updateFilteredItems() {
     const updatedProduct = Object.keys(product.value)?.length ? itemsList.value.find((item) => item.productId === product.value.productId && item.importItemSeqId === product.value.importItemSeqId) : itemsList.value[0]
     if (updatedProduct) {
       store.dispatch("product/currentProduct", updatedProduct);
-      updateNavigationState(itemsList.value.indexOf(updatedProduct));
     } else {
       store.dispatch("product/currentProduct", itemsList.value[0]);
-      updateNavigationState(0);
     }
   } else {
     store.dispatch("product/currentProduct", {});
-    isFirstItem.value = true
-    isLastItem.value = false
   }
 }
 
@@ -470,9 +458,7 @@ const onScroll = (event) => {
         previousItem = currentProduct  // Update the previousItem variable with the current item
 
         if (currentProduct) {
-          const currentIndex = itemsList.value?.indexOf(currentProduct);
           store.dispatch("product/currentProduct", currentProduct);
-          updateNavigationState(currentIndex);
           product.value.isRecounting = false;
         }
       }
@@ -485,12 +471,6 @@ const onScroll = (event) => {
   products.forEach((product) => {
     observer.observe(product);
   });
-};
-
-// Add this function to update the navigation state
-const updateNavigationState = (currentIndex) => {
-  isFirstItem.value = currentIndex === 0;
-  isLastItem.value = currentIndex === itemsList.value.length - 1;
 };
 
 async function changeProduct(direction) {
@@ -506,7 +486,6 @@ async function changeProduct(direction) {
     if (productEl) productEl.scrollIntoView({ behavior: 'smooth' });
     await new Promise(resolve => setTimeout(resolve, 500));
     await store.dispatch("product/currentProduct", product);
-    updateNavigationState(index);
   }
   isScrolling.value = false;
 }

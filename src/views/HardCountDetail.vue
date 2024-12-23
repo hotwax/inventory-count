@@ -106,7 +106,7 @@
 
                 <ion-radio-group v-model="selectedCountUpdateType">
                   <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="new">
+                    <ion-radio justify="start" label-placement="end" value="add">
                       <ion-label>
                         {{ translate("Add to existing count") }}
                       </ion-label>
@@ -119,8 +119,8 @@
                   </ion-item>
                 </ion-radio-group>
 
-                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="saveCount(currentProduct)">
-                  {{ translate("Save count") }}
+                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
+                  {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
               </ion-list>
 
@@ -143,8 +143,8 @@
                     <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getVariance(currentProduct, true) : "-" }}</ion-label>
                   </ion-item>
                 </template>
-                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
-                  {{ translate(currentProduct.isMatchNotFound ? "Match product" : "Save count") }}
+                <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
+                  {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
               </ion-list>
             </div>
@@ -234,7 +234,7 @@ const selectedSegment = ref("all");
 let previousItem = {} as any;
 const barcodeInputRef = ref();
 const inputCount = ref("") as any;
-const selectedCountUpdateType = ref("new");
+const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 
@@ -321,13 +321,7 @@ async function changeProduct(direction: string) {
 
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
-    let productEl = {} as any;
-    if(isItemAlreadyAdded(product)) {
-      productEl = document.querySelector(`[data-seq="${product.importItemSeqId}"]`);
-    } else {
-      productEl = document.getElementById(product.scannedId);
-    }
-    if(productEl) productEl.scrollIntoView({ behavior: 'smooth' });
+    scrollToProduct(product);
     await new Promise(resolve => setTimeout(resolve, 500));
     await store.dispatch("product/currentProduct", product);
   }
@@ -373,13 +367,7 @@ async function scanProduct() {
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
-    router.replace({ hash: isItemAlreadyAdded(selectedItem) ? `#${selectedItem.productId}-${selectedItem.importItemSeqId}` : `#${selectedItem.scannedId}` }); 
-    setTimeout(() => {
-      const element = document.getElementById(isItemAlreadyAdded(selectedItem) ? `${selectedItem.productId}-${selectedItem.importItemSeqId}` : selectedItem.scannedId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 0);
+    scrollToProduct(selectedItem);
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
     inputCount.value++;
   }
@@ -388,6 +376,16 @@ async function scanProduct() {
     previousItem = selectedItem
   }
   queryString.value = ""
+}
+
+function scrollToProduct(product: any) {
+  router.replace({ hash: isItemAlreadyAdded(product) ? `#${product.productId}-${product.importItemSeqId}` : `#${product.scannedId}` }); 
+  setTimeout(() => {
+    const element = document.getElementById(isItemAlreadyAdded(product) ? `${product.productId}-${product.importItemSeqId}` : product.scannedId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 0);
 }
 
 async function addProductToItemsList() {
@@ -434,9 +432,42 @@ async function addProductToCount(productId: any) {
   return 0;
 }
 
-function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
+async function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
+  let prevItem = {} as any, hasErrorSavingCount = false;
+
+  if(updatedProduct.scannedId === scannedValue) {
+    if(importItemSeqId) {
+      updatedProduct["importItemSeqId"] = importItemSeqId
+      updatedProduct["productId"] = product.productId
+      updatedProduct["isMatchNotFound"] = false
+    } else {
+      updatedProduct["isMatchNotFound"] = true
+    }
+    updatedProduct["isMatching"] = false;
+    store.dispatch("product/currentProduct", updatedProduct);
+  } else if(importItemSeqId) {
+    prevItem = items.find((item: any) => item.scannedId === scannedValue);
+
+    if(prevItem && prevItem?.scannedCount >= 0) {
+      try {
+        const resp = await CountService.updateCount({
+          inventoryCountImportId: cycleCount.value.inventoryCountImportId,
+          importItemSeqId,
+          productId: product.productId,
+          quantity: prevItem.scannedCount,
+          countedByUserLoginId: userProfile.value.username
+        })
+  
+        if(hasError(resp)) {
+          hasErrorSavingCount = true;
+        }
+      } catch(error) {
+        logger.error(error)
+      }
+    }
+  }
 
   items.map((item: any) => {
     if(item.scannedId === scannedValue) {
@@ -447,22 +478,12 @@ function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValu
       } else {
         item["isMatchNotFound"] = true
       }
-      item.isMatching = false;
+      item["isMatching"] = false;
+      if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) delete item["scannedCount"]
     }
   })
 
   store.dispatch('count/updateCycleCountItems', items);
-  if(updatedProduct.scannedId === scannedValue) {
-    if(importItemSeqId) {
-      updatedProduct["importItemSeqId"] = importItemSeqId
-      updatedProduct["productId"] = product.oroductId
-      updatedProduct["isMatchNotFound"] = false
-    } else {
-      updatedProduct["isMatchNotFound"] = true
-    }
-    updatedProduct.isMatching = false;
-    store.dispatch("product/currentProduct", updatedProduct);
-  }
 }
 
 async function readyForReview() {
@@ -542,7 +563,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         const prevCount = currentProduct.scannedCount ? currentProduct.scannedCount : 0
 
         item.countedByUserLoginId = userProfile.value.username
-        if(selectedCountUpdateType.value === "new") item.scannedCount = inputCount.value
+        if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
         else item.scannedCount = inputCount.value + prevCount
         currentItem = item;
       }
@@ -620,7 +641,7 @@ function getVariance(item: any , isRecounting: boolean) {
 }
 
 function hasUnsavedChanges() {
-  return inputCount.value >= 0 || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
+  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
 }
 
 function isItemAlreadyAdded(product: any) {
