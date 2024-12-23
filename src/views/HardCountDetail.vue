@@ -393,7 +393,8 @@ async function addProductToItemsList() {
     scannedId: queryString.value,
     isMatching: true,
     itemStatusId: "INV_COUNT_CREATED",
-    statusId: "INV_COUNT_ASSIGNED"
+    statusId: "INV_COUNT_ASSIGNED",
+    inventoryCountImportId: cycleCount.value.inventoryCountImportId
   }
 
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
@@ -432,12 +433,12 @@ async function addProductToCount(productId: any) {
   return 0;
 }
 
-async function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string) {
+async function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string, isMatchedUpdate = false) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
   let prevItem = {} as any, hasErrorSavingCount = false;
 
-  if(updatedProduct.scannedId === scannedValue) {
+  if(updatedProduct.scannedId === scannedValue && !isMatchedUpdate) {
     if(importItemSeqId) {
       updatedProduct["importItemSeqId"] = importItemSeqId
       updatedProduct["productId"] = product.productId
@@ -447,7 +448,7 @@ async function updateCurrentItemInList(importItemSeqId: any, product: any, scann
     }
     updatedProduct["isMatching"] = false;
     store.dispatch("product/currentProduct", updatedProduct);
-  } else if(importItemSeqId) {
+  } else if(importItemSeqId && isMatchedUpdate) {
     prevItem = items.find((item: any) => item.scannedId === scannedValue);
 
     if(prevItem && prevItem?.scannedCount >= 0) {
@@ -462,6 +463,11 @@ async function updateCurrentItemInList(importItemSeqId: any, product: any, scann
   
         if(hasError(resp)) {
           hasErrorSavingCount = true;
+          updatedProduct["isMatching"] = false;
+          updatedProduct["isMatchNotFound"] = false
+          updatedProduct["importItemSeqId"] = importItemSeqId
+          updatedProduct["productId"] = product.productId
+          updatedProduct["productId"] = updatedProduct.scannedCount
         }
       } catch(error) {
         logger.error(error)
@@ -479,7 +485,10 @@ async function updateCurrentItemInList(importItemSeqId: any, product: any, scann
         item["isMatchNotFound"] = true
       }
       item["isMatching"] = false;
-      if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) delete item["scannedCount"]
+      if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) {
+        item["quantity"] = item.scannedCount
+        delete item["scannedCount"]
+      }
     }
   })
 
@@ -622,7 +631,7 @@ async function matchProduct(currentProduct: any) {
     if(result.data.selectedProduct) {
       const product = result.data.selectedProduct
       const importItemSeqId = await addProductToCount(product.productId)
-      updateCurrentItemInList(importItemSeqId, product.productId, currentProduct.scannedId);
+      updateCurrentItemInList(importItemSeqId, product, currentProduct.scannedId, true);
     }
   })
 

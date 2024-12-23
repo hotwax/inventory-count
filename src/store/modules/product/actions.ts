@@ -94,6 +94,10 @@ const actions: ActionTree<ProductState, RootState> = {
     return {};
   },
 
+  async addProductToCached({ commit }, payload) {
+    commit(types.PRODUCT_ADD_TO_CACHED, payload);
+  },
+
   async clearProducts({ commit }) {
     commit(types.PRODUCT_LIST_UPDATED, { products: [], total: 0 });
   },

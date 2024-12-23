@@ -72,13 +72,16 @@ import { getProductIdentificationValue, hasError } from "@/utils"
 import Image from "@/components/Image.vue"
 import { ProductService } from "@/services/ProductService";
 import logger from "@/logger";
+
 const props = defineProps(["items"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const getProduct = computed(() => (id: any) => store.getters["product/getProduct"](id))
+
 const products = ref([]) as any;
 let queryString = ref('');
 const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
+
 async function handleSearch() {
   if(!queryString.value.trim()) {
     isSearching.value = false; 
@@ -106,7 +109,9 @@ function closeModal(payload = {}) {
   modalController.dismiss({ dismissed: true, ...payload });
 }
 function save() {
-  closeModal({ selectedProduct: products.value.find((product: any) => product.productId === selectedProductId) })
+  const selectedProduct = products.value.find((product: any) => product.productId === selectedProductId.value)
+  store.dispatch("product/addProductToCached", selectedProduct);
+  closeModal({ selectedProduct })
 }
 function isProductAvailableInCycleCount(id: string) {
   return props.items.some((item: any) => item.productId === id && item.itemStatusId !== "INV_COUNT_REJECTED")
