@@ -478,8 +478,8 @@ async function updateCurrentItemInList(importItemSeqId: any, product: any, scann
       } else {
         item["isMatchNotFound"] = true
       }
+      item["isMatching"] = false;
       if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) delete item["scannedCount"]
-      updatedProduct["isMatching"] = false;
     }
   })
 
