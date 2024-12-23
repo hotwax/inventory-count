@@ -106,7 +106,7 @@
 
                 <ion-radio-group v-model="selectedCountUpdateType">
                   <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="new">
+                    <ion-radio justify="start" label-placement="end" value="add">
                       <ion-label>
                         {{ translate("Add to existing count") }}
                       </ion-label>
@@ -234,7 +234,7 @@ const selectedSegment = ref("all");
 let previousItem = {} as any;
 const barcodeInputRef = ref();
 const inputCount = ref("") as any;
-const selectedCountUpdateType = ref("new");
+const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 
@@ -563,7 +563,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         const prevCount = currentProduct.scannedCount ? currentProduct.scannedCount : 0
 
         item.countedByUserLoginId = userProfile.value.username
-        if(selectedCountUpdateType.value === "new") item.scannedCount = inputCount.value
+        if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
         else item.scannedCount = inputCount.value + prevCount
         currentItem = item;
       }
