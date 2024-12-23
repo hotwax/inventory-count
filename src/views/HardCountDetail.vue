@@ -622,7 +622,7 @@ async function matchProduct(currentProduct: any) {
     if(result.data.selectedProduct) {
       const product = result.data.selectedProduct
       const importItemSeqId = await addProductToCount(product.productId)
-      updateCurrentItemInList(importItemSeqId, product.productId, currentProduct.scannedId);
+      updateCurrentItemInList(importItemSeqId, product, currentProduct.scannedId);
     }
   })
 

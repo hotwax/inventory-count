@@ -106,7 +106,7 @@ function closeModal(payload = {}) {
   modalController.dismiss({ dismissed: true, ...payload });
 }
 function save() {
-  closeModal({ selectedProduct: products.value.find((product: any) => product.productId === selectedProductId) })
+  closeModal({ selectedProduct: products.value.find((product: any) => product.productId === selectedProductId.value) })
 }
 function isProductAvailableInCycleCount(id: string) {
   return props.items.some((item: any) => item.productId === id && item.itemStatusId !== "INV_COUNT_REJECTED")
