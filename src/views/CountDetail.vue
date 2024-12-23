@@ -71,6 +71,7 @@
             <div class="detail" v-if="Object.keys(product)?.length">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
+                  <p class="overline" v-if="product.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
                   <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
                   <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
                 </ion-label>
@@ -351,11 +352,7 @@ function inputCountValidation(event) {
 }
 
 async function fetchCycleCountItems() {
-  let payload = {
-    inventoryCountImportId : props?.id, 
-    pageSize: 100 
-  }
-  await store.dispatch("count/fetchCycleCountItems", payload); 
+  await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id }); 
 }
 
 async function fetchCycleCount() {

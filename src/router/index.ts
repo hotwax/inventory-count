@@ -20,6 +20,7 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import Settings from "@/views/Settings.vue";
 import BulkUpload from "@/views/BulkUpload.vue"
 import HardCount from "@/views/HardCount.vue"
+import HardCountDetail from "@/views/HardCountDetail.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -77,6 +78,15 @@ const routes: Array<RouteRecordRaw> = [
         path: 'count-detail/:id',
         name: 'CountDetail',
         component: CountDetail,
+        props: true,
+        meta: {
+          permissionId: "APP_COUNT_VIEW"
+        }
+      },
+      {
+        path: 'hard-count-detail/:id',
+        name: 'HardCountDetail',
+        component: HardCountDetail,
         props: true,
         meta: {
           permissionId: "APP_COUNT_VIEW"
