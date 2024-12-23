@@ -511,7 +511,7 @@ const onScroll = (event: any) => {
           if(inputCount.value) saveCount(previousItem, true);
         }
 
-        previousItem = currentProduct  // Update the previousItem variable with the current item
+        previousItem = currentProduct.value  // Update the previousItem variable with the current item
         if(product) {
           store.dispatch("product/currentProduct", product);
         }
