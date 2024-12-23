@@ -641,7 +641,7 @@ function getVariance(item: any , isRecounting: boolean) {
 }
 
 function hasUnsavedChanges() {
-  return inputCount.value >= 0 || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
+  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
 }
 
 function isItemAlreadyAdded(product: any) {
