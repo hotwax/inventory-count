@@ -11,10 +11,8 @@ const mutations: MutationTree <ProductState> = {
     }
   },
   [types.PRODUCT_ADD_TO_CACHED] (state, payload) {
-    if (payload.products) {
-      payload.products.forEach((product: any) => {
-        state.cached[product.productId] = product
-      });
+    if(payload.productId) {
+      state.cached[payload.productId] = payload
     }
   },
   [types.PRODUCT_CURRENT_UPDATED] (state, payload) {
