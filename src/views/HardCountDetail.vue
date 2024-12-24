@@ -433,7 +433,7 @@ async function addProductToCount(productId: any) {
 
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
       if(!hasError(resp)) {
-        newProduct = resp.data[0];
+        newProduct = resp.data.itemList[0];
       } else {
         throw resp;
       }

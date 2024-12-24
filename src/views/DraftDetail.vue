@@ -269,21 +269,24 @@ async function parse(event: any) {
 }
 
 async function fetchCountItems() {
-  let payload = {
-    inventoryCountImportId : props?.inventoryCountImportId, 
-    pageSize: 100 
-  }
+  let items = [] as any, resp, pageIndex = 0;
+
   try {
-
-    const resp = await CountService.fetchCycleCountItems(payload)
-
-    if(!hasError(resp) && resp.data?.itemList?.length) {
-      currentCycleCount.value["items"] = resp.data.itemList
-      store.dispatch("product/fetchProducts", { productIds: [...new Set(resp.data.itemList.map((item: any) => item.productId))] })
-    }
+    do {
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
+      if(!hasError(resp) && resp.data?.itemList?.length) {
+        items = items.concat(resp.data.itemList)
+        pageIndex++;
+      } else {
+        throw resp.data;
+      }
+    } while(resp.data.itemList?.length >= 100)
   } catch(err) {
-    logger.error()
+    logger.error(err)
   }
+
+  currentCycleCount.value["items"] = items
+  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
 }
 
 async function openImportCsvModal() {
