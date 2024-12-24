@@ -589,13 +589,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: selectedCountUpdateType.value === "all" ? inputCount.value : inputCount.value + (currentProduct.quantity || 0),
+      quantity: selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0),
       countedByUserLoginId: userProfile.value.username
     };
 
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = inputCount.value
+      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
@@ -603,7 +603,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item: any) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
-          item.quantity = currentProduct.quantity
+          item.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
           item.countedByGroupName = userProfile.value.userFullName
           item.countedByUserLoginId = userProfile.value.username
         }
