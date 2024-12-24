@@ -10,6 +10,7 @@
     </ion-label>
     <ion-label class="ion-text-wrap" v-else>
       <h2>{{ item.scannedId }}</h2>
+      <p>{{ translate(item.isMatching ? "matching..." : "no match found") }}</p>
     </ion-label>
     <ion-badge slot="end" color="danger" v-if="item.itemStatusId === 'INV_COUNT_REJECTED'">
       {{ (!item.quantity && item.quantity !== 0) ? translate("not counted") : translate("units", { count: item.quantity }) }}

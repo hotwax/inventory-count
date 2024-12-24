@@ -109,7 +109,7 @@
                     <ion-item>
                       <ion-radio justify="start" label-placement="end" value="add">
                         <ion-label>
-                          {{ translate("Add to existing count") }}
+                          {{ transl0ate("Add to existing count") }}
                         </ion-label>
                       </ion-radio>
                     </ion-item>
