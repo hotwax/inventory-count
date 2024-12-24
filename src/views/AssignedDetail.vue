@@ -238,7 +238,6 @@ async function fetchCountItems() {
     } while(resp.data.itemList?.length >= 100)
   } catch(err) {
     logger.error(err)
-    return;
   }
 
   currentCycleCount.value["items"] = items
