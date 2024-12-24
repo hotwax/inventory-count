@@ -408,7 +408,7 @@ async function addProductToItemsList() {
 
 async function findProductFromIdentifier(scannedValue: string ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let newItem = "";
+  let newItem = {} as any;
   if(product?.productId) newItem = await addProductToCount(product.productId)
 
   setTimeout(() => {
@@ -433,7 +433,6 @@ async function addProductToCount(productId: any) {
 
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
       if(!hasError(resp)) {
-        console.log(resp);
         newProduct = resp.data[0];
       } else {
         throw resp;
