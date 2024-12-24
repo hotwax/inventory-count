@@ -408,17 +408,19 @@ async function addProductToItemsList() {
 
 async function findProductFromIdentifier(scannedValue: string ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let importItemSeqId = "";
-  if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+  let newItem = "";
+  if(product?.productId) newItem = await addProductToCount(product.productId)
 
   setTimeout(() => {
-    updateCurrentItemInList(importItemSeqId, product, scannedValue);
+    updateCurrentItemInList(newItem, scannedValue);
   }, 1000)
 }
 
 async function addProductToCount(productId: any) {
+  let resp = {} as any, newProduct = {} as any;
+
   try {
-    const resp = await CountService.addProductToCount({
+    resp = await CountService.addProductToCount({
       inventoryCountImportId: cycleCount.value.inventoryCountImportId,
       itemList: [{
         idValue: productId,
@@ -427,72 +429,57 @@ async function addProductToCount(productId: any) {
     })
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
-      return resp.data.itemList[0].importItemSeqId
+      const importItemSeqId = resp.data.itemList[0].importItemSeqId
+
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+      if(!hasError(resp)) {
+        console.log(resp);
+        newProduct = resp.data[0];
+      } else {
+        throw resp;
+      }
+    } else {
+      throw resp;
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
   }
-  return 0;
+  return newProduct;
 }
 
-async function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string, isMatchedUpdate = false) {
+async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
-  let prevItem = {} as any, hasErrorSavingCount = false;
 
-  if(updatedProduct.scannedId === scannedValue && !isMatchedUpdate) {
-    if(importItemSeqId) {
-      updatedProduct["importItemSeqId"] = importItemSeqId
-      updatedProduct["productId"] = product.productId
-      updatedProduct["isMatchNotFound"] = false
-    } else {
-      updatedProduct["isMatchNotFound"] = true
-    }
-    updatedProduct["isMatching"] = false;
-    store.dispatch("product/currentProduct", updatedProduct);
-  } else if(importItemSeqId && isMatchedUpdate) {
-    prevItem = items.find((item: any) => item.scannedId === scannedValue);
+  let updatedItem = items.find((item: any) => item.scannedId === scannedValue);
+  updatedItem = { ...updatedItem, ...newItem, isMatching: false }
+  updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
-    if(prevItem && prevItem?.scannedCount >= 0) {
-      try {
-        const resp = await CountService.updateCount({
-          inventoryCountImportId: cycleCount.value.inventoryCountImportId,
-          importItemSeqId,
-          productId: product.productId,
-          quantity: prevItem.scannedCount,
-          countedByUserLoginId: userProfile.value.username
-        })
-  
-        if(hasError(resp)) {
-          hasErrorSavingCount = true;
-          updatedProduct["isMatching"] = false;
-          updatedProduct["isMatchNotFound"] = false
-          updatedProduct["importItemSeqId"] = importItemSeqId
-          updatedProduct["productId"] = product.productId
-          updatedProduct["productId"] = updatedProduct.scannedCount
-        }
-      } catch(error) {
-        logger.error(error)
+  if(updatedItem && updatedItem.scannedId !== updatedProduct.scannedId && updatedItem?.scannedCount) {
+    try {
+      const resp = await CountService.updateCount({
+        inventoryCountImportId: cycleCount.value.inventoryCountImportId,
+        importItemSeqId: updatedItem?.importItemSeqId,
+        productId: updatedItem.productId,
+        quantity: updatedItem.scannedCount,
+        countedByUserLoginId: userProfile.value.username
+      })
+
+      if(hasError(resp)) {
+        updatedItem["quantity"] = updatedItem.scannedCount
+        delete updatedItem["scannedCount"];
       }
+    } catch(error) {
+      logger.error(error)
     }
   }
 
-  items.map((item: any) => {
-    if(item.scannedId === scannedValue) {
-      if(importItemSeqId) {
-        item["importItemSeqId"] = importItemSeqId
-        item["productId"] = product.productId
-        item["isMatchNotFound"] = false
-      } else {
-        item["isMatchNotFound"] = true
-      }
-      item["isMatching"] = false;
-      if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) {
-        item["quantity"] = item.scannedCount
-        delete item["scannedCount"]
-      }
-    }
-  })
+  if(updatedProduct.scannedId === updatedItem.scannedId) {
+    store.dispatch("product/currentProduct", updatedItem);
+  }
+
+  const currentItemIndex = items.findIndex((item: any) => item.scannedId === updatedItem.scannedId);
+  items[currentItemIndex] = updatedItem
 
   store.dispatch('count/updateCycleCountItems', items);
 }
@@ -632,8 +619,8 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data.selectedProduct) {
       const product = result.data.selectedProduct
-      const importItemSeqId = await addProductToCount(product.productId)
-      updateCurrentItemInList(importItemSeqId, product, currentProduct.scannedId, true);
+      const newItem = await addProductToCount(product.productId)
+      updateCurrentItemInList(newItem, currentProduct.scannedId);
     }
   })
 
