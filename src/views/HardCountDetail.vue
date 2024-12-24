@@ -76,7 +76,7 @@
               </ion-item>
 
               <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
-                <ion-item>
+                <ion-item v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
                   <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                 </ion-item>
 
@@ -100,24 +100,26 @@
                   </ion-item>
                 </template>
 
-                <ion-list-header>
-                  {{ translate("New count") }}
-                </ion-list-header>
+                <template v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
+                  <ion-list-header>
+                    {{ translate("New count") }}
+                  </ion-list-header>
 
-                <ion-radio-group v-model="selectedCountUpdateType">
-                  <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="add">
-                      <ion-label>
-                        {{ translate("Add to existing count") }}
-                      </ion-label>
-                    </ion-radio>
-                  </ion-item>
-                  <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="replace">
-                      <ion-label>{{ translate("Replace existing count") }}</ion-label>
-                    </ion-radio>
-                  </ion-item>
-                </ion-radio-group>
+                  <ion-radio-group v-model="selectedCountUpdateType">
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="add">
+                        <ion-label>
+                          {{ translate("Add to existing count") }}
+                        </ion-label>
+                      </ion-radio>
+                    </ion-item>
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="replace">
+                        <ion-label>{{ translate("Replace existing count") }}</ion-label>
+                      </ion-radio>
+                    </ion-item>
+                  </ion-radio-group>
+                </template>
 
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
