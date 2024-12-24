@@ -76,7 +76,7 @@
               </ion-item>
 
               <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
-                <ion-item>
+                <ion-item v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
                   <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                 </ion-item>
 
@@ -100,24 +100,26 @@
                   </ion-item>
                 </template>
 
-                <ion-list-header>
-                  {{ translate("New count") }}
-                </ion-list-header>
+                <template v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
+                  <ion-list-header>
+                    {{ translate("New count") }}
+                  </ion-list-header>
 
-                <ion-radio-group v-model="selectedCountUpdateType">
-                  <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="add">
-                      <ion-label>
-                        {{ translate("Add to existing count") }}
-                      </ion-label>
-                    </ion-radio>
-                  </ion-item>
-                  <ion-item>
-                    <ion-radio justify="start" label-placement="end" value="replace">
-                      <ion-label>{{ translate("Replace existing count") }}</ion-label>
-                    </ion-radio>
-                  </ion-item>
-                </ion-radio-group>
+                  <ion-radio-group v-model="selectedCountUpdateType">
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="add">
+                        <ion-label>
+                          {{ translate("Add to existing count") }}
+                        </ion-label>
+                      </ion-radio>
+                    </ion-item>
+                    <ion-item>
+                      <ion-radio justify="start" label-placement="end" value="replace">
+                        <ion-label>{{ translate("Replace existing count") }}</ion-label>
+                      </ion-radio>
+                    </ion-item>
+                  </ion-radio-group>
+                </template>
 
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
@@ -258,7 +260,7 @@ onBeforeRouteLeave(async (to) => {
 
   const alert = await alertController.create({
     header: translate("Leave page"),
-    message: translate("Any edits made in the counted quantity on this page will be lost."),
+    message: translate("There are some unmatched or unsaved changes in this count. Any edits made in the counted quantity on this page will be lost."),
     buttons: [
       {
         text: translate("STAY"),
@@ -406,17 +408,19 @@ async function addProductToItemsList() {
 
 async function findProductFromIdentifier(scannedValue: string ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let importItemSeqId = "";
-  if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+  let newItem = {} as any;
+  if(product?.productId) newItem = await addProductToCount(product.productId)
 
   setTimeout(() => {
-    updateCurrentItemInList(importItemSeqId, product, scannedValue);
+    updateCurrentItemInList(newItem, scannedValue);
   }, 1000)
 }
 
 async function addProductToCount(productId: any) {
+  let resp = {} as any, newProduct = {} as any;
+
   try {
-    const resp = await CountService.addProductToCount({
+    resp = await CountService.addProductToCount({
       inventoryCountImportId: cycleCount.value.inventoryCountImportId,
       itemList: [{
         idValue: productId,
@@ -425,72 +429,56 @@ async function addProductToCount(productId: any) {
     })
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
-      return resp.data.itemList[0].importItemSeqId
+      const importItemSeqId = resp.data.itemList[0].importItemSeqId
+
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+      if(!hasError(resp)) {
+        newProduct = resp.data[0];
+      } else {
+        throw resp;
+      }
+    } else {
+      throw resp;
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
   }
-  return 0;
+  return newProduct;
 }
 
-async function updateCurrentItemInList(importItemSeqId: any, product: any, scannedValue: string, isMatchedUpdate = false) {
+async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
-  let prevItem = {} as any, hasErrorSavingCount = false;
 
-  if(updatedProduct.scannedId === scannedValue && !isMatchedUpdate) {
-    if(importItemSeqId) {
-      updatedProduct["importItemSeqId"] = importItemSeqId
-      updatedProduct["productId"] = product.productId
-      updatedProduct["isMatchNotFound"] = false
-    } else {
-      updatedProduct["isMatchNotFound"] = true
-    }
-    updatedProduct["isMatching"] = false;
-    store.dispatch("product/currentProduct", updatedProduct);
-  } else if(importItemSeqId && isMatchedUpdate) {
-    prevItem = items.find((item: any) => item.scannedId === scannedValue);
+  let updatedItem = items.find((item: any) => item.scannedId === scannedValue);
+  updatedItem = { ...updatedItem, ...newItem, isMatching: false }
+  updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
-    if(prevItem && prevItem?.scannedCount >= 0) {
-      try {
-        const resp = await CountService.updateCount({
-          inventoryCountImportId: cycleCount.value.inventoryCountImportId,
-          importItemSeqId,
-          productId: product.productId,
-          quantity: prevItem.scannedCount,
-          countedByUserLoginId: userProfile.value.username
-        })
-  
-        if(hasError(resp)) {
-          hasErrorSavingCount = true;
-          updatedProduct["isMatching"] = false;
-          updatedProduct["isMatchNotFound"] = false
-          updatedProduct["importItemSeqId"] = importItemSeqId
-          updatedProduct["productId"] = product.productId
-          updatedProduct["productId"] = updatedProduct.scannedCount
-        }
-      } catch(error) {
-        logger.error(error)
+  if(updatedItem && updatedItem.scannedId !== updatedProduct.scannedId && updatedItem?.scannedCount) {
+    try {
+      const resp = await CountService.updateCount({
+        inventoryCountImportId: cycleCount.value.inventoryCountImportId,
+        importItemSeqId: updatedItem?.importItemSeqId,
+        productId: updatedItem.productId,
+        quantity: updatedItem.scannedCount,
+        countedByUserLoginId: userProfile.value.username
+      })
+
+      if(hasError(resp)) {
+        updatedItem["quantity"] = updatedItem.scannedCount
+        delete updatedItem["scannedCount"];
       }
+    } catch(error) {
+      logger.error(error)
     }
   }
 
-  items.map((item: any) => {
-    if(item.scannedId === scannedValue) {
-      if(importItemSeqId) {
-        item["importItemSeqId"] = importItemSeqId
-        item["productId"] = product.productId
-        item["isMatchNotFound"] = false
-      } else {
-        item["isMatchNotFound"] = true
-      }
-      item["isMatching"] = false;
-      if(prevItem && Object.keys(prevItem)?.length && !hasErrorSavingCount) {
-        item["quantity"] = item.scannedCount
-        delete item["scannedCount"]
-      }
-    }
-  })
+  if(updatedProduct.scannedId === updatedItem.scannedId) {
+    store.dispatch("product/currentProduct", updatedItem);
+  }
+
+  const currentItemIndex = items.findIndex((item: any) => item.scannedId === updatedItem.scannedId);
+  items[currentItemIndex] = updatedItem
 
   store.dispatch('count/updateCycleCountItems', items);
 }
@@ -589,13 +577,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: selectedCountUpdateType.value === "all" ? inputCount.value : inputCount.value + (currentProduct.quantity || 0),
+      quantity: selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0),
       countedByUserLoginId: userProfile.value.username
     };
 
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = inputCount.value
+      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
@@ -603,7 +591,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item: any) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
-          item.quantity = currentProduct.quantity
+          item.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
           item.countedByGroupName = userProfile.value.userFullName
           item.countedByUserLoginId = userProfile.value.username
         }
@@ -630,8 +618,8 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data.selectedProduct) {
       const product = result.data.selectedProduct
-      const importItemSeqId = await addProductToCount(product.productId)
-      updateCurrentItemInList(importItemSeqId, product, currentProduct.scannedId, true);
+      const newItem = await addProductToCount(product.productId)
+      updateCurrentItemInList(newItem, currentProduct.scannedId);
     }
   })
 
@@ -650,7 +638,7 @@ function getVariance(item: any , isRecounting: boolean) {
 }
 
 function hasUnsavedChanges() {
-  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
+  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.some((item: any) => item.scannedCount);
 }
 
 function isItemAlreadyAdded(product: any) {
