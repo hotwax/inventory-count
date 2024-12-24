@@ -258,7 +258,7 @@ onBeforeRouteLeave(async (to) => {
 
   const alert = await alertController.create({
     header: translate("Leave page"),
-    message: translate("Any edits made in the counted quantity on this page will be lost."),
+    message: translate("There are some unmatched or unsaved changes in this count. Any edits made in the counted quantity on this page will be lost."),
     buttons: [
       {
         text: translate("STAY"),
@@ -650,7 +650,7 @@ function getVariance(item: any , isRecounting: boolean) {
 }
 
 function hasUnsavedChanges() {
-  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.find((item: any) => item.scannedCount && !item.isMatchNotFound);
+  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.some((item: any) => item.scannedCount);
 }
 
 function isItemAlreadyAdded(product: any) {
