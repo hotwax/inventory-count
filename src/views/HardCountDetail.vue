@@ -566,7 +566,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
 
         item.countedByUserLoginId = userProfile.value.username
         if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
-        else item.scannedCount = inputCount.value + prevCount
+        else item.scannedCount = Number(inputCount.value) + Number(prevCount)
         currentItem = item;
       }
     })
@@ -621,7 +621,7 @@ async function matchProduct(currentProduct: any) {
   });
 
   addProductModal.onDidDismiss().then(async (result) => {
-    if(result.data.selectedProduct) {
+    if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
       const newItem = await addProductToCount(product.productId)
       updateCurrentItemInList(newItem, currentProduct.scannedId);
