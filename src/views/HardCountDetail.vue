@@ -251,6 +251,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
+  selectedCountUpdateType.value = productStoreSettings.value["recountUpdateBehaviour"];
 })
 
 onIonViewDidLeave(async() => {
@@ -319,6 +320,7 @@ function handleSegmentChange() {
     store.dispatch("product/currentProduct", {});
   }
   inputCount.value = ""
+  selectedCountUpdateType.value = productStoreSettings.value["recountUpdateBehaviour"];
 }
 
 async function changeProduct(direction: string) {
@@ -519,6 +521,7 @@ async function readyForReview() {
 // This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
 // and updates the current product state and navigation when a product intersects with the main element.
 const onScroll = (event: any) => {
+  selectedCountUpdateType.value = productStoreSettings.value["recountUpdateBehaviour"];
   const main = event.target;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
