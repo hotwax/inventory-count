@@ -107,15 +107,19 @@
 
                   <ion-radio-group v-model="selectedCountUpdateType">
                     <ion-item>
-                      <ion-radio justify="start" label-placement="end" value="add">
+                      <ion-radio label-placement="end" value="add">
                         <ion-label>
                           {{ translate("Add to existing count") }}
+                          <ion-note v-if="inputCount">+ {{ inputCount }}</ion-note>
                         </ion-label>
                       </ion-radio>
                     </ion-item>
                     <ion-item>
-                      <ion-radio justify="start" label-placement="end" value="replace">
-                        <ion-label>{{ translate("Replace existing count") }}</ion-label>
+                      <ion-radio label-placement="end" value="replace">
+                        <ion-label>
+                          {{ translate("Replace existing count") }}
+                          <ion-note v-if="inputCount"><span class="line-through">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.quantity : currentProduct.scannedCount }}</span> {{ inputCount }}</ion-note>
+                        </ion-label>
                       </ion-radio>
                     </ion-item>
                   </ion-radio-group>
@@ -183,6 +187,7 @@ import {
   IonFabButton,
   IonInput,
   IonLabel,
+  IonNote,
   IonPage,
   IonRadio,
   IonRadioGroup,
@@ -742,6 +747,25 @@ aside {
 
 .detail > ion-item {
   grid-column: span 2;
+}
+
+/* 
+  We are not able to show the count using ion-note at the right of the ion-radio when used inside of the ion-item because of it's default css 
+  The following CSS is used to override the default ion-radio styles when placed inside an ion-item. 
+  This customization ensures that the count displayed in the right slot is properly styled and aligned.
+*/
+ion-radio > ion-label {
+  display: flex !important;
+  flex: 1;
+  justify-content: space-between;
+}
+
+ion-radio::part(label) {
+  flex: 1;
+}
+
+.line-through {
+  text-decoration: line-through;
 }
 
 @media (max-width: 991px) {
