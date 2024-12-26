@@ -107,15 +107,19 @@
 
                   <ion-radio-group v-model="selectedCountUpdateType">
                     <ion-item>
-                      <ion-radio justify="start" label-placement="end" value="add">
+                      <ion-radio label-placement="end" value="add">
                         <ion-label>
                           {{ translate("Add to existing count") }}
+                          <ion-note v-if="inputCount">+ {{ inputCount }}</ion-note>
                         </ion-label>
                       </ion-radio>
                     </ion-item>
                     <ion-item>
-                      <ion-radio justify="start" label-placement="end" value="replace">
-                        <ion-label>{{ translate("Replace existing count") }}</ion-label>
+                      <ion-radio label-placement="end" value="replace">
+                        <ion-label>
+                          {{ translate("Replace existing count") }}
+                          <ion-note v-if="inputCount"><span class="line-through">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.quantity : currentProduct.scannedCount }}</span> {{ inputCount }}</ion-note>
+                        </ion-label>
                       </ion-radio>
                     </ion-item>
                   </ion-radio-group>
@@ -183,6 +187,7 @@ import {
   IonFabButton,
   IonInput,
   IonLabel,
+  IonNote,
   IonPage,
   IonRadio,
   IonRadioGroup,
@@ -305,7 +310,7 @@ async function fetchCycleCount() {
 
 function handleSegmentChange() {
   if(itemsList.value.length) {
-    let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : itemsList.value[0]
+    let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
       updatedProduct = itemsList.value[0];
     }
@@ -313,6 +318,7 @@ function handleSegmentChange() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
+  inputCount.value = ""
 }
 
 async function changeProduct(direction: string) {
@@ -561,7 +567,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
 
         item.countedByUserLoginId = userProfile.value.username
         if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
-        else item.scannedCount = inputCount.value + prevCount
+        else item.scannedCount = Number(inputCount.value) + Number(prevCount)
         currentItem = item;
       }
     })
@@ -616,7 +622,7 @@ async function matchProduct(currentProduct: any) {
   });
 
   addProductModal.onDidDismiss().then(async (result) => {
-    if(result.data.selectedProduct) {
+    if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
       const newItem = await addProductToCount(product.productId)
       updateCurrentItemInList(newItem, currentProduct.scannedId);
@@ -742,6 +748,25 @@ aside {
 
 .detail > ion-item {
   grid-column: span 2;
+}
+
+/* 
+  We are not able to show the count using ion-note at the right of the ion-radio when used inside of the ion-item because of it's default css 
+  The following CSS is used to override the default ion-radio styles when placed inside an ion-item. 
+  This customization ensures that the count displayed in the right slot is properly styled and aligned.
+*/
+ion-radio > ion-label {
+  display: flex !important;
+  flex: 1;
+  justify-content: space-between;
+}
+
+ion-radio::part(label) {
+  flex: 1;
+}
+
+.line-through {
+  text-decoration: line-through;
 }
 
 @media (max-width: 991px) {
