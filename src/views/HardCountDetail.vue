@@ -310,7 +310,7 @@ async function fetchCycleCount() {
 
 function handleSegmentChange() {
   if(itemsList.value.length) {
-    let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : itemsList.value[0]
+    let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
       updatedProduct = itemsList.value[0];
     }
@@ -318,6 +318,7 @@ function handleSegmentChange() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
+  inputCount.value = ""
 }
 
 async function changeProduct(direction: string) {
