@@ -587,7 +587,6 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
-      inputCount.value = ''; 
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item: any) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
@@ -596,6 +595,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
           item.countedByUserLoginId = userProfile.value.username
         }
       })
+      inputCount.value = '';
       await store.dispatch('count/updateCycleCountItems', items);
       if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
     } else {
