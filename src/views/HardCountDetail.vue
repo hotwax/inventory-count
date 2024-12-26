@@ -590,7 +590,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item: any) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
-          item.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
+          item.quantity = currentProduct.quantity
           item.countedByGroupName = userProfile.value.userFullName
           item.countedByUserLoginId = userProfile.value.username
         }
