@@ -26,6 +26,7 @@ export default interface UserState {
       secondaryId: string
     },
     barcodeIdentificationPref: string;
+    recountUpdateBehaviour: string;
   },
   goodIdentificationTypes: Array<string>;
 }

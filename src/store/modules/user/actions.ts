@@ -102,7 +102,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_FACILITIES_UPDATED, [])
     commit(types.USER_CURRENT_FACILITY_UPDATED, {})
     commit(types.USER_PRODUCT_STORES_UPDATED, [])
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", recountUpdateBehaviour: "add", productIdentificationPref: {
       primaryId: 'productId',
       secondaryId: ''
     }})
@@ -265,7 +265,7 @@ const actions: ActionTree<UserState, RootState> = {
 
   async updateCurrentProductStore({ commit, dispatch }, productStore) {
     commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", recountUpdateBehaviour: "add", productIdentificationPref: {
       primaryId: 'productId',
       secondaryId: ''
     } })
@@ -275,7 +275,7 @@ const actions: ActionTree<UserState, RootState> = {
   async getProductStoreSetting({ commit, state }, productStoreId?: string) {
     const payload = {
       "productStoreId": productStoreId ? productStoreId : state.currentProductStore.productStoreId,
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF,BARCODE_IDEN_PREF",
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF,BARCODE_IDEN_PREF,RECOUNT_UPDT_BEHAV",
       "settingTypeEnumId_op": "in",
       "pageSize": 10
     }
@@ -299,11 +299,17 @@ const actions: ActionTree<UserState, RootState> = {
           if(setting.settingTypeEnumId === "BARCODE_IDEN_PREF" && setting.settingValue) {
             settings["barcodeIdentificationPref"] = setting.settingValue
           }
+
+          if(setting.settingTypeEnumId === "RECOUNT_UPDT_BEHAV" && setting.settingValue) {
+            settings["recountUpdateBehaviour"] = setting.settingValue
+          }
+
           return settings
         }, {
           showQoh: false,
           forceScan: false,
-          barcodeIdentificationPref: "internalName"
+          barcodeIdentificationPref: "internalName",
+          recountUpdateBehaviour: "add"
         })
         commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, settings)
       }
@@ -362,6 +368,10 @@ const actions: ActionTree<UserState, RootState> = {
 
     if(payload.key === "barcodeIdentificationPref") {
       enumId = "BARCODE_IDEN_PREF"
+    }
+
+    if(payload.key === "recountUpdateBehaviour") {
+      enumId = "RECOUNT_UPDT_BEHAVE"
     }
 
     let fromDate;
