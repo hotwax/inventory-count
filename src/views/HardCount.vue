@@ -67,28 +67,38 @@
           </ion-segment>
 
           <ion-list v-if="selectedSegment === 'group'">
-            <ion-list-header>{{ translate("Select a facility group to hard count") }}</ion-list-header>
+            <template v-if="facilityGroups?.length">
+              <ion-list-header>{{ translate("Select a facility group to hard count") }}</ion-list-header>
 
-            <ion-radio-group v-model="selectedFacilityGroupId">
-              <ion-item v-for="group in facilityGroups" :key="group.facilityGroupId">
-                <ion-radio :value="group.facilityGroupId">{{ group.facilityGroupName }}</ion-radio>
-              </ion-item>
-            </ion-radio-group>
+              <ion-radio-group v-model="selectedFacilityGroupId">
+                <ion-item v-for="group in facilityGroups" :key="group.facilityGroupId">
+                  <ion-radio :value="group.facilityGroupId">{{ group.facilityGroupName }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </template>
+            <div v-else class="empty-state">
+              <p>{{ translate("No facility group found.") }}</p>
+            </div>
           </ion-list>
           <div v-else>
             <ion-searchbar v-model="queryString" :placeholder="translate('Search facilities')" @keyup.enter="fetchFacilities()" />
 
             <ion-list>
-              <ion-list-header>{{ translate("Select facilities to hard count") }}</ion-list-header>
+              <template v-if="facilities?.length">
+                <ion-list-header>{{ translate("Select facilities to hard count") }}</ion-list-header>
 
-              <ion-item v-for="facility in facilities" :key="facility.facilityId">
-                <ion-checkbox :checked="selectedFacilityIds.includes(facility.facilityId)" @ionChange="toggleFacilitySelection(facility.facilityId)">
-                  <ion-label>
-                    {{ facility.facilityName ? facility.facilityName : facility.facilityId }}
-                    <p>{{ facility.facilityId }}</p>
-                  </ion-label>
-                </ion-checkbox>
-              </ion-item>
+                <ion-item v-for="facility in facilities" :key="facility.facilityId">
+                  <ion-checkbox :checked="selectedFacilityIds.includes(facility.facilityId)" @ionChange="toggleFacilitySelection(facility.facilityId)">
+                    <ion-label>
+                      {{ facility.facilityName ? facility.facilityName : facility.facilityId }}
+                      <p>{{ facility.facilityId }}</p>
+                    </ion-label>
+                  </ion-checkbox>
+                </ion-item>
+              </template>
+              <div v-else class="empty-state">
+                <p>{{ translate("No facility found.") }}</p>
+              </div>
             </ion-list>
 
             <ion-infinite-scroll
@@ -115,7 +125,7 @@
 <script setup lang="ts">
 import { translate } from "@/i18n";
 import { calendarNumberOutline, checkmarkDoneOutline, storefrontOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonCheckbox, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar, onIonViewWillEnter} from "@ionic/vue";
+import { IonBackButton, IonButton, IonCheckbox, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSegment, IonSegmentButton, IonTitle, IonToggle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave} from "@ionic/vue";
 import { ref, nextTick, computed, Ref } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, showToast } from "@/utils";
 import logger from "@/logger"
@@ -124,7 +134,7 @@ import store from "@/store";
 import router from "@/router"
 import { UtilService } from "@/services/UtilService";
 
-const countName = ref(`Hard count - ${DateTime.now().toFormat('dd-MM-yyyy hh:mm:ss')}`);
+const countName = ref("");
 const selectedSegment = ref("group");
 const dueDate = ref("") as Ref<number | string>;
 const queryString = ref("");
@@ -143,7 +153,16 @@ const infiniteScrollRef = ref("");
 const facilityGroups = computed(() => store.getters["util/getFacilityGroups"])
 
 onIonViewWillEnter(async () => {
+  countName.value = `Hard count - ${DateTime.now().toFormat('dd-MM-yyyy hh:mm:ss')}`;
   await Promise.allSettled([store.dispatch("util/fetchFacilityGroups"), fetchFacilities()]);
+})
+
+onIonViewWillLeave(() => {
+  selectedFacilityGroupId.value = "";
+  selectedFacilityIds.value = [];
+  selectedSegment.value = "group";
+  dueDate.value = "";
+  isAutoAssignEnabled.value = false;
 })
 
 async function saveCount() {
