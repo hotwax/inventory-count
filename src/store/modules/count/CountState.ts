@@ -11,5 +11,6 @@ export default interface CountState {
   stats: any;
   cycleCounts: any;
   cycleCountItems: any;
-  cycleCountImportSystemMessages: Array<any>
+  cycleCountImportSystemMessages: Array<any>;
+  defaultRecountUpdateBehaviour: String;
 }

@@ -26,6 +26,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getCycleCountImportSystemMessages(state) {
     return state.cycleCountImportSystemMessages
+  },
+  getDefaultRecountUpdateBehaviour(state) {
+    return state.defaultRecountUpdateBehaviour
   }
 };
 
