@@ -273,7 +273,7 @@ async function downloadCSV() {
               } else if (property === 'countName' && item.countImportName) {
                 details[property] = item.countImportName;
               } else if (property === "lineStatus") {
-                details[property] = item.statusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.statusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.statusId;
+                details[property] = item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.itemStatusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.itemStatusId;
               } else {
                 details[property] = item[selectedFieldMappings[property]];
               }
