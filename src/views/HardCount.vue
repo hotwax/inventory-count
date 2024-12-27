@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content" ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+    <ion-content class="main-content" ref="contentRef" :scroll-events="true" @ionScroll="selectedSegment === 'individual' ? enableScrolling() : ''">
       <div class="header">
         <div class="search">
           <ion-item lines="none" class="ion-padding">
