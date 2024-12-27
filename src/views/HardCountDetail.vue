@@ -221,6 +221,7 @@ const getProduct = computed(() => (id: any) => store.getters["product/getProduct
 const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]);
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 
 const itemsList = computed(() => {
@@ -251,6 +252,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
+  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
 })
 
 onIonViewDidLeave(async() => {
@@ -319,6 +321,7 @@ function handleSegmentChange() {
     store.dispatch("product/currentProduct", {});
   }
   inputCount.value = ""
+  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
 }
 
 async function changeProduct(direction: string) {
@@ -548,6 +551,7 @@ const onScroll = (event: any) => {
   products.forEach((product: any) => {
     observer.observe(product);
   });
+  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
 };
 
 async function saveCount(currentProduct: any, isScrollEvent = false) {

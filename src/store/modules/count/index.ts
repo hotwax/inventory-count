@@ -23,7 +23,8 @@ const countModule: Module<CountState, RootState> = {
       list: [],
       isScrollable: true
     },
-    cycleCountItems: {}
+    cycleCountItems: {},
+    defaultRecountUpdateBehaviour: "add"
   },
   getters,
   actions,
