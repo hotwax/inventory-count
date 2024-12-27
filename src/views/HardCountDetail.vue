@@ -463,18 +463,25 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   updatedItem = { ...updatedItem, ...newItem, isMatching: false }
   updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
+  let newCount = "" as any;
   if(updatedItem && updatedItem.scannedId !== updatedProduct.scannedId && updatedItem?.scannedCount) {
+    newCount = updatedItem.scannedCount
+  } else if(selectedSegment.value === "unmatched") {
+    newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
+  }
+
+  if(newCount) {
     try {
       const resp = await CountService.updateCount({
         inventoryCountImportId: cycleCount.value.inventoryCountImportId,
         importItemSeqId: updatedItem?.importItemSeqId,
         productId: updatedItem.productId,
-        quantity: updatedItem.scannedCount,
+        quantity: newCount,
         countedByUserLoginId: userProfile.value.username
       })
-
-      if(hasError(resp)) {
-        updatedItem["quantity"] = updatedItem.scannedCount
+  
+      if(!hasError(resp)) {
+        updatedItem["quantity"] = newCount
         delete updatedItem["scannedCount"];
       }
     } catch(error) {
@@ -629,7 +636,7 @@ async function matchProduct(currentProduct: any) {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
       const newItem = await addProductToCount(product.productId)
-      updateCurrentItemInList(newItem, currentProduct.scannedId);
+      await updateCurrentItemInList(newItem, currentProduct.scannedId);
     }
   })
 
