@@ -12,7 +12,12 @@
   <ion-content>
     <ion-searchbar v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="handleSearch" />
 
-    <template v-if="products.length">
+    <div v-if="isLoading" class="empty-state">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Searching for", { queryString }) }}</ion-label>
+    </div>
+
+    <template v-else-if="products.length">
       <ion-radio-group v-model="selectedProductId">
         <ion-item v-for="product in products" :key="product.productId">
           <ion-thumbnail slot="start">
@@ -30,7 +35,7 @@
     </template>
 
     <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
-      <p>{{ translate("No product found") }}</p>
+      <p>{{ translate("No results found for", { queryString }) }}</p>
     </div>
     <div v-else class="empty-state">
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -59,6 +64,7 @@ import {
   IonRadio,
   IonRadioGroup,
   IonSearchbar,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
@@ -81,6 +87,7 @@ const products = ref([]) as any;
 let queryString = ref('');
 const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
+const isLoading = ref(false);
 
 async function handleSearch() {
   if(!queryString.value.trim()) {
@@ -91,6 +98,7 @@ async function handleSearch() {
   isSearching.value = true;
 }
 async function getProducts() {
+  isLoading.value = true;
   let productsList = [] as any;
   try {
     const resp = await ProductService.fetchProducts({
@@ -104,6 +112,7 @@ async function getProducts() {
     logger.error("Failed to fetch products", err)
   }
   products.value = productsList
+  isLoading.value = false;
 }
 function closeModal(payload = {}) {
   modalController.dismiss({ dismissed: true, ...payload });
