@@ -92,7 +92,6 @@ import {
   IonSelectOption,
   IonTitle,
   IonToolbar,
-  alertController,
   modalController
 } from "@ionic/vue";
 import emitter from "@/event-bus"
@@ -108,7 +107,6 @@ import store from "@/store";
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const facilities = computed(() => store.getters["user/getFacilities"])
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const query = computed(() => store.getters["count/getQuery"])
 
@@ -217,80 +215,66 @@ async function fetchProducts(productIds: any){
 }
 
 async function downloadCSV() {
-  const alert = await alertController.create({
-    header: translate("Download closed counts"),
-    message: translate("Are you sure you want to download the cycle counts?"),
-    buttons: [{
-      text: translate("Cancel"),
-      role: 'cancel',
-    }, {
-      text: translate("Download"),
-      handler: async () => {
-        await modalController.dismiss({ dismissed: true });
-        await alert.dismiss();
-        emitter.emit("presentLoader", { message: "Preparing file to downlaod...", backdropDismiss: true });
-
-        const facilityDetails = getFacilityDetails();
-        const selectedFieldMappings: any = {
-          countId: "inventoryCountImportId",
-          countName: "countImportName",
-          acceptedByUser: "acceptedByUserLoginId",
-          createdDate: "createdDate",
-          lastSubmittedDate: "lastSubmittedDate",
-          closedDate: "closedDate",
-          facility: "facilityId",
-          primaryProductId: "primaryProductId",
-          secondaryProductId: "secondaryProductId",
-          lineStatus: "statusId",
-          expectedQuantity: "qoh",
-          countedQuantity: "quantity",
-          variance: "varianceQuantityOnHand",
-        };
-      
-        const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
-        
-        const cycleCountItems = await fetchBulkCycleCountItems();
-        await fetchProducts([... new Set(cycleCountItems.map((item: any) => item.productId))]);
-        
-        const downloadData = await Promise.all(cycleCountItems.map(async (item: any) => {
-          const facility = facilityDetails[item?.facilityId];
-          const product = getProduct.value(item.productId)
-      
-          if(product.productId) {
-            const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
-              if (property === 'createdDate') {
-                details[property] = getDateWithOrdinalSuffix(item.createdDate);
-              } else if (property === 'lastSubmittedDate') {
-                details[property] = getLastSubmittedDate(item);
-              } else if (property === 'closedDate') {
-                details[property] = getClosedDate(item);
-              } else if (property === 'facility') {
-                details[property] = facility[selectedFacilityField.value];
-              } else if (property === 'primaryProductId') {
-                details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
-              } else if (property === 'secondaryProductId') {
-                details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
-              } else if (property === 'countName' && item.countImportName) {
-                details[property] = item.countImportName;
-              } else if (property === "lineStatus") {
-                details[property] = item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.itemStatusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.itemStatusId;
-              } else {
-                details[property] = item[selectedFieldMappings[property]];
-              }
-              return details;
-            }, {});
-          
-            return cycleCountDetails;
-          }      
-        }));
-
-        const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
-        await jsonToCsv(downloadData, { download: true, name: fileName });
-        emitter.emit("dismissLoader")
-      }
-    }]
-  });
-  return alert.present();
+  await modalController.dismiss({ dismissed: true });
+  emitter.emit("presentLoader", { message: "Preparing file to downlaod...", backdropDismiss: true });
+  
+  const facilityDetails = getFacilityDetails();
+  const selectedFieldMappings: any = {
+    countId: "inventoryCountImportId",
+    countName: "countImportName",
+    acceptedByUser: "acceptedByUserLoginId",
+    createdDate: "createdDate",
+    lastSubmittedDate: "lastSubmittedDate",
+    closedDate: "closedDate",
+    facility: "facilityId",
+    primaryProductId: "primaryProductId",
+    secondaryProductId: "secondaryProductId",
+    lineStatus: "statusId",
+    expectedQuantity: "qoh",
+    countedQuantity: "quantity",
+    variance: "varianceQuantityOnHand",
+  };
+  
+  const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
+  
+  const cycleCountItems = await fetchBulkCycleCountItems();
+  await fetchProducts([... new Set(cycleCountItems.map((item: any) => item.productId))]);
+  
+  const downloadData = await Promise.all(cycleCountItems.map(async (item: any) => {
+    const facility = facilityDetails[item?.facilityId];
+    const product = getProduct.value(item.productId)
+  
+    if(product.productId) {
+      const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
+        if (property === 'createdDate') {
+          details[property] = getDateWithOrdinalSuffix(item.createdDate);
+        } else if (property === 'lastSubmittedDate') {
+          details[property] = getLastSubmittedDate(item);
+        } else if (property === 'closedDate') {
+          details[property] = getClosedDate(item);
+        } else if (property === 'facility') {
+          details[property] = facility[selectedFacilityField.value];
+        } else if (property === 'primaryProductId') {
+          details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
+        } else if (property === 'secondaryProductId') {
+          details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
+        } else if (property === 'countName' && item.countImportName) {
+          details[property] = item.countImportName;
+        } else if (property === "lineStatus") {
+          details[property] = item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.itemStatusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.itemStatusId;
+        } else {
+          details[property] = item[selectedFieldMappings[property]];
+        }
+        return details;
+      }, {});
+    
+      return cycleCountDetails;
+    }      
+  }));
+  
+  const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
+  await jsonToCsv(downloadData, { download: true, name: fileName });
+  emitter.emit("dismissLoader")
 }
 </script>
 
