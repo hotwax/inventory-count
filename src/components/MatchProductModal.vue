@@ -18,8 +18,15 @@
           <ion-thumbnail slot="start">
             <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
+          <template v-if="isProductAvailableInCycleCount(product.productId)">
+            <ion-label>
+              <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
+              <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
+            </ion-label>
+            <ion-icon  color="success" :icon="checkmarkCircle" />
+          </template>
 
-          <ion-radio :value="product.productId" :disabled="isProductAvailableInCycleCount(product.productId)">
+          <ion-radio :value="product.productId" v-else>
             <ion-label>
               <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
               <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
@@ -65,7 +72,7 @@ import {
   modalController,
 } from "@ionic/vue";
 import { computed, defineProps, Ref, ref } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { checkmarkCircle, closeOutline, saveOutline } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
 import { getProductIdentificationValue, hasError } from "@/utils"
