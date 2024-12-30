@@ -34,7 +34,7 @@
           
           <ion-label>
             <!-- TODO: make it dynamic currently not getting stats correctly -->
-            {{ getCycleCountStats(count.inventoryCountImportId) }}
+            {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
             <p>{{ translate("counted") }}</p>
           </ion-label>
 
