@@ -4,6 +4,11 @@
       <ion-toolbar>
         <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
         <ion-title>{{ cycleCount.countImportName }}</ion-title>
+        <ion-buttons slot="end" v-if="currentProduct && !isItemAlreadyAdded(currentProduct)">
+          <ion-button fill="clear" @click="removeCountItem(currentProduct)">
+            <ion-icon :icon="trashOutline" slot="icon-only" />
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -178,6 +183,7 @@ import {
   IonContent,
   IonBadge, 
   IonButton, 
+  IonButtons,
   IonIcon,
   IonItem,  
   IonList,
@@ -200,7 +206,7 @@ import {
   alertController,
   modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, ref } from "vue";
 import { useStore } from "@/store";
@@ -337,6 +343,17 @@ async function changeProduct(direction: string) {
     await store.dispatch("product/currentProduct", product);
   }
   isScrolling.value = false;
+}
+
+function removeCountItem(current: any) {
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  const currentItemIndex = items.findIndex((item: any) => item.scannedId === current.scannedId);
+
+  const newCurrent = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : (currentItemIndex - 1)];
+  const updatedItems = items.filter((item: any) => item.scannedId !== current.scannedId);
+
+  store.dispatch("count/updateCycleCountItems", updatedItems);
+  store.dispatch("product/currentProduct", newCurrent ? newCurrent : {})
 }
 
 async function scanProduct() {
