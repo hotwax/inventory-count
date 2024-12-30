@@ -95,7 +95,8 @@ async function getProducts() {
   try {
     const resp = await ProductService.fetchProducts({
       "keyword": queryString.value.trim(),
-      "viewSize": 100
+      "viewSize": 100,
+      "filters": ['isVirtual: false', 'isVariant: true'],
     })
     if(!hasError(resp)) {
       productsList = resp.data.response.docs;
