@@ -153,7 +153,7 @@
         </template>
 
         <p v-else class="empty-state">
-          {{ translate("No items found") }}
+          {{ translate("No items added to count") }}
         </p>
       </template>
       <template v-else>

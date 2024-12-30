@@ -47,7 +47,7 @@
           </ion-chip>
 
           <ion-label>
-            {{ getCycleCountStats(count.inventoryCountImportId) }}
+            {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
             <p>{{ translate("products counted") }}</p>
           </ion-label>
 

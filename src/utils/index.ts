@@ -92,9 +92,13 @@ function timeFromNow(time: any) {
   return DateTime.local().plus(timeDiff).toRelative();
 }
 
-function getCycleCountStats(id: string) {
+function getCycleCountStats(id: string, isHardCount = false) {
   const stats = cycleCountStats(id)
-  return stats ? `${stats.itemCounted}/${stats.totalItems}` : "0/0"
+  if(stats) {
+    return isHardCount ? `${stats.itemCounted}` : `${stats.itemCounted}/${stats.totalItems}`
+  } else {
+    return isHardCount ? "0" : "0/0"
+  }
 }
 
 function getFacilityName(id: string) {
