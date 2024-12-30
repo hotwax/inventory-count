@@ -52,12 +52,19 @@
           <template v-else-if="selectedSegment === 'pendingReview'">
             <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
               <ion-card-header>
-                <ion-card-title>
-                  {{ count.countImportName }}
-                  <ion-label>
-                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                  </ion-label>
-                </ion-card-title>
+                <div>
+                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
+                    <ion-label color="warning" class="overline">
+                      {{ translate("HARD COUNT") }}
+                    </ion-label>
+                  </ion-card-subtitle>
+                  <ion-card-title>
+                    {{ count.countImportName }}
+                    <ion-label>
+                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
+                    </ion-label>
+                  </ion-card-title>
+                </div>
                 <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
               </ion-card-header>
               <ion-item>
@@ -77,12 +84,19 @@
           <template v-else>
             <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
               <ion-card-header>
-                <ion-card-title>
-                  {{ count.countImportName }}
-                  <ion-label>
-                    <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                  </ion-label>
-                </ion-card-title>
+                <div>
+                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
+                    <ion-label color="warning" class="overline">
+                      {{ translate("HARD COUNT") }}
+                    </ion-label>
+                  </ion-card-subtitle>
+                  <ion-card-title>
+                    {{ count.countImportName }}
+                    <ion-label>
+                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
+                    </ion-label>
+                  </ion-card-title>
+                </div>
                 <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
               </ion-card-header>
               <div class="header">
@@ -140,6 +154,7 @@
 import {
   IonCard,
   IonCardHeader,
+  IonCardSubtitle,
   IonCardTitle,
   IonContent,
   IonHeader,
