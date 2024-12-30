@@ -92,7 +92,6 @@ import {
   IonSelectOption,
   IonTitle,
   IonToolbar,
-  alertController,
   modalController
 } from "@ionic/vue";
 import emitter from "@/event-bus"
@@ -108,7 +107,6 @@ import store from "@/store";
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const facilities = computed(() => store.getters["user/getFacilities"])
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const query = computed(() => store.getters["count/getQuery"])
 
