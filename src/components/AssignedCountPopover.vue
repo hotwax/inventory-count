@@ -2,11 +2,11 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
-      <ion-item :lines="item.quantity ? 'none' : 'full'">
+      <ion-item :lines="isRemoveItemEligible(item) ? 'full' : 'none'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>
       </ion-item>
-      <ion-item v-if="!item.quantity" lines="none" button @click="updateItem('remove')">
+      <ion-item v-if="isRemoveItemEligible(item)" lines="none" button @click="updateItem('remove')">
         <ion-label>{{ translate("Remove from count")}}</ion-label>
         <ion-icon slot="end" :icon="removeCircleOutline"/>
       </ion-item>
@@ -38,5 +38,9 @@ const productStoreSettings = computed(() => store.getters["user/getProductStoreS
 
 function updateItem(action: string) {
   popoverController.dismiss({ itemAction: action })
+}
+
+function isRemoveItemEligible(item: any) {
+  return item.itemStatusId !== 'INV_COUNT_REJECTED' && item.itemStatusId !== 'INV_COUNT_COMPLETED' && !item.quantity;
 }
 </script>
