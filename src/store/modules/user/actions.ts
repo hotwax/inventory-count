@@ -204,7 +204,8 @@ const actions: ActionTree<UserState, RootState> = {
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y",
           facilityId: facility.facilityId,
-          pageSize: 1
+          pageSize: 1,
+          orderByField: "sequenceNum asc, storeName asc"
         })
 
         if(!hasError(resp) && resp.data.length > 0) {
@@ -230,7 +231,8 @@ const actions: ActionTree<UserState, RootState> = {
         parentFacilityTypeId_not: "Y",
         facilityTypeId: "VIRTUAL_FACILITY",
         facilityTypeId_not: "Y",
-        pageSize: 200
+        pageSize: 200,
+        orderByField: "sequenceNum asc, storeName asc"
       })
 
       if(!hasError(resp)) {
