@@ -12,14 +12,26 @@
   <ion-content>
     <ion-searchbar v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="handleSearch" />
 
-    <template v-if="products.length">
+    <div v-if="isLoading" class="empty-state">
+      <ion-spinner name="crescent" />
+      <ion-label>{{ translate("Searching for", { queryString }) }}</ion-label>
+    </div>
+
+    <template v-else-if="products.length">
       <ion-radio-group v-model="selectedProductId">
         <ion-item v-for="product in products" :key="product.productId">
           <ion-thumbnail slot="start">
             <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
+          <template v-if="isProductAvailableInCycleCount(product.productId)">
+            <ion-label>
+              <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
+              <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
+            </ion-label>
+            <ion-icon  color="success" :icon="checkmarkCircle" />
+          </template>
 
-          <ion-radio :value="product.productId" :disabled="isProductAvailableInCycleCount(product.productId)">
+          <ion-radio :value="product.productId" v-else>
             <ion-label>
               <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
               <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
@@ -30,7 +42,7 @@
     </template>
 
     <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
-      <p>{{ translate("No product found") }}</p>
+      <p>{{ translate("No results found for", { queryString }) }}</p>
     </div>
     <div v-else class="empty-state">
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -59,13 +71,14 @@ import {
   IonRadio,
   IonRadioGroup,
   IonSearchbar,
+  IonSpinner,
   IonThumbnail,
   IonTitle,
   IonToolbar,
   modalController,
 } from "@ionic/vue";
 import { computed, defineProps, Ref, ref } from "vue";
-import { closeOutline, saveOutline } from "ionicons/icons";
+import { checkmarkCircle, closeOutline, saveOutline } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
 import { getProductIdentificationValue, hasError } from "@/utils"
@@ -81,6 +94,7 @@ const products = ref([]) as any;
 let queryString = ref('');
 const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
+const isLoading = ref(false);
 
 async function handleSearch() {
   if(!queryString.value.trim()) {
@@ -91,11 +105,13 @@ async function handleSearch() {
   isSearching.value = true;
 }
 async function getProducts() {
+  isLoading.value = true;
   let productsList = [] as any;
   try {
     const resp = await ProductService.fetchProducts({
       "keyword": queryString.value.trim(),
-      "viewSize": 100
+      "viewSize": 100,
+      "filters": ['isVirtual: false', 'isVariant: true'],
     })
     if(!hasError(resp)) {
       productsList = resp.data.response.docs;
@@ -104,6 +120,7 @@ async function getProducts() {
     logger.error("Failed to fetch products", err)
   }
   products.value = productsList
+  isLoading.value = false;
 }
 function closeModal(payload = {}) {
   modalController.dismiss({ dismissed: true, ...payload });

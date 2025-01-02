@@ -65,7 +65,7 @@
                     </ion-label>
                   </ion-card-title>
                 </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
+                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
               </ion-card-header>
               <ion-item>
                 {{ translate("Due date") }}
@@ -97,7 +97,7 @@
                     </ion-label>
                   </ion-card-title>
                 </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId) }} {{ translate("items counted") }}</ion-note>
+                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
               </ion-card-header>
               <div class="header">
                 <div class="search">

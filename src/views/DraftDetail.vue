@@ -99,7 +99,7 @@
               <ion-icon slot="icon-only" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
             </ion-button>
           </ion-item>
-          <p v-else-if="queryString">{{ translate("No product found") }}</p>
+          <p v-else-if="queryString">{{ translate("No items added to count") }}</p>
         </div>
 
         <hr />

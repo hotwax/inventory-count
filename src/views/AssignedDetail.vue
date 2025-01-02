@@ -56,7 +56,7 @@
           </div>
           <div class="filters ion-padding">
             <ion-list>
-              <ion-item>
+              <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
@@ -118,7 +118,7 @@
           </div>
         </template>
         <p v-else class="empty-state">
-          {{ translate("No items found") }}
+          {{ translate("No items added to count") }}
         </p>
       </template>
       <template v-else>

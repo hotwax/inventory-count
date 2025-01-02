@@ -24,7 +24,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId" :item="item"/>
           </template>
           <template v-else>
             <div class="empty-state">
