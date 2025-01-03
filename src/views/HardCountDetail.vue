@@ -481,7 +481,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
   let newCount = "" as any;
-  if(updatedItem && updatedItem.scannedId !== updatedProduct.scannedId && updatedItem?.scannedCount) {
+  if(updatedItem && updatedItem?.scannedCount) {
     newCount = updatedItem.scannedCount
   } else if(selectedSegment.value === "unmatched" && (inputCount.value || updatedItem.scannedCount)) {
     newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
@@ -500,7 +500,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
       if(!hasError(resp)) {
         updatedItem["quantity"] = newCount
         delete updatedItem["scannedCount"];
-        inputCount.value = ""
+        if(selectedSegment.value === "unmatched") inputCount.value = ""
       }
     } catch(error) {
       logger.error(error)
