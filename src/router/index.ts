@@ -84,7 +84,7 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'hard-count-detail/:id',
+        path: 'count-detail/hard/:id',
         name: 'HardCountDetail',
         component: HardCountDetail,
         props: true,
