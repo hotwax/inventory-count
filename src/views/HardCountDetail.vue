@@ -212,7 +212,6 @@ import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
-import { onBeforeRouteLeave } from 'vue-router';
 
 const store = useStore();
 
@@ -253,46 +252,39 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+  window.addEventListener('beforeunload', handleBeforeUnload);
 })
 
 onIonViewDidLeave(async() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+  await handleBeforeUnload();
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
 })
 
-onBeforeRouteLeave(async (to) => {
-  if(to.path === "/login") return;
-  if(!hasUnsavedChanges()) return true;
-  let leavePage = false;
-
-  const alert = await alertController.create({
-    header: translate("Leave page"),
-    message: translate("There are some unmatched or unsaved changes in this count. Any edits made in the counted quantity on this page will be lost."),
-    buttons: [
-      {
-        text: translate("STAY"),
-        handler: () => {
-          leavePage = false
-        }
-      },
-      {
-        text: translate("LEAVE"),
-        handler: () => {
-          leavePage = true
-        },
-      },
-    ],
-  });
-
-  alert.present();
-  const data = await alert.onDidDismiss()
-  // If clicking backdrop just close the modal and do not redirect the user to previous page
-  if(data?.role === "backdrop") {
-    return false;
+async function handleBeforeUnload() {
+  if(inputCount.value && isItemAlreadyAdded(currentProduct.value)) {
+    await saveCount(currentProduct.value);
+    inputCount.value = "";
   }
 
-  return leavePage
-})
+  const updatedProducts = [] as any;
+  cycleCountItems.value.itemList.map((item: any) => {
+    let newItem = {} as any;
+
+    if(item.isMatchNotFound || item.isMatching) {
+      newItem = { ...item, isMatching: false, isMatchNotFound: true }
+      if(newItem.scannedId === currentProduct.value.scannedId) {
+        newItem = { ...newItem, scannedCount: inputCount.value }
+        inputCount.value = ""
+      }
+    }
+
+    if(Object.keys(newItem)?.length) updatedProducts.push(newItem)
+  })
+
+  store.dispatch("count/updateCachedUnmatchedProducts", { id: cycleCount.value.inventoryCountImportId, updatedProducts });
+}
 
 async function fetchCycleCount() {
   emitter.emit("presentLoader");
@@ -455,7 +447,7 @@ async function addProductToCount(productId: any) {
   return newProduct;
 }
 
-async function updateCurrentItemInList(newItem: any, scannedValue: string) {
+async function updateCurrentItemInList(newItem: any, scannedValue: string) {  
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
 
