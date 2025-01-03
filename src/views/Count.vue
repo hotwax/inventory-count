@@ -229,7 +229,7 @@ async function segmentChanged(value) {
 }
 
 function navigateToStoreView(count) {
-  router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/tabs/hard-count-detail/${count.inventoryCountImportId}` : `/tabs/count-detail/${count.inventoryCountImportId}`);
+  router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/tabs/count-detail/hard/${count.inventoryCountImportId}` : `/tabs/count-detail/${count.inventoryCountImportId}`);
 }
 
 function getStatusIdForCountsToBeFetched() {
