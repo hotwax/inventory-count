@@ -30,7 +30,7 @@
                 <ion-segment-button value="all">
                   <ion-label>{{ translate("ALL") }}</ion-label>
                 </ion-segment-button>
-                <ion-segment-button value="notCounted">
+                <ion-segment-button value="notCounted" v-if="cycleCount?.countTypeEnumId !== 'HARD_COUNT'">
                   <ion-label>{{ translate("NOT COUNTED") }}</ion-label>
                 </ion-segment-button>
                 <ion-segment-button value="counted">
