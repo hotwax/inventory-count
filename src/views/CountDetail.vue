@@ -271,7 +271,7 @@ const itemsList = computed(() => {
     return cycleCountItems.value.itemList.filter(item =>(item.quantity === undefined || item.quantity === null) && item.itemStatusId === "INV_COUNT_CREATED");
   } else if (selectedSegment.value === 'counted') {
     return cycleCountItems.value.itemList.filter(item => item.quantity >= 0 || (item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'));
-  } else if (cycleCount?.value.countTypeEnumId !== 'HARD_COUNT' && selectedSegment.value === 'notCounted') {
+  } else if (selectedSegment.value === 'notCounted') {
     return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
