@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-back-button default-href="/tabs/count" slot="start"></ion-back-button>
         <ion-title>{{ cycleCount.countImportName }}</ion-title>
-        <ion-buttons slot="end" v-if="currentProduct && !isItemAlreadyAdded(currentProduct)">
+        <ion-buttons slot="end" v-if="currentProduct && currentProduct.isMatchNotFound">
           <ion-button fill="clear" @click="removeCountItem(currentProduct)">
             <ion-icon :icon="trashOutline" slot="icon-only" />
           </ion-button>
