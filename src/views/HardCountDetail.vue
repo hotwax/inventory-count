@@ -349,11 +349,11 @@ function removeCountItem(current: any) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   const currentItemIndex = items.findIndex((item: any) => item.scannedId === current.scannedId);
 
-  const newCurrent = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : (currentItemIndex - 1)];
+  const updatedProduct = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : 0];
   const updatedItems = items.filter((item: any) => item.scannedId !== current.scannedId);
 
   store.dispatch("count/updateCycleCountItems", updatedItems);
-  store.dispatch("product/currentProduct", newCurrent ? newCurrent : {})
+  store.dispatch("product/currentProduct", updatedProduct ? updatedProduct : {})
 }
 
 async function scanProduct() {
