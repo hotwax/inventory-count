@@ -530,6 +530,7 @@ async function readyForReview() {
             statusId: "INV_COUNT_REVIEW"
           })
           router.push("/tabs/count")
+          store.dispatch('count/clearCurrentCountFromCachedUnmatchedProducts', props.id);
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))
