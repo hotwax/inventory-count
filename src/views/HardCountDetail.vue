@@ -281,7 +281,11 @@ async function handleBeforeUnload() {
     if(item.isMatchNotFound || item.isMatching) {
       newItem = { ...item, isMatching: false, isMatchNotFound: true }
       if(newItem.scannedId === currentProduct.value.scannedId) {
-        newItem = { ...newItem, scannedCount: inputCount.value }
+        if(newItem?.scannedCount) {
+          newItem = { ...newItem, scannedCount: selectedCountUpdateType.value === "replace" ? inputCount.value : (Number(inputCount.value) + Number(newItem.scannedCount)) }
+        } else {
+          newItem = { ...newItem, scannedCount: inputCount.value }
+        }
         inputCount.value = ""
       }
     }
