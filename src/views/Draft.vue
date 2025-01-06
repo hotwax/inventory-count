@@ -84,11 +84,13 @@ import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { showToast } from "@/utils";
 import router from "@/router";
+import { DateTime } from "luxon";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
 const query = computed(() => store.getters["count/getQuery"])
+const userProfile = computed(() => store.getters["user/getUserProfile"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -179,7 +181,9 @@ async function createCycleCount() {
       // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
       await store.dispatch("count/createCycleCount", {
         countImportName: name,
-        statusId: "INV_COUNT_CREATED"
+        statusId: "INV_COUNT_CREATED",
+        uploadedByUserLogin: userProfile.value.username,
+        createdDate: DateTime.now().toMillis()
       })
     }
   })

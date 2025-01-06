@@ -151,6 +151,7 @@ const countNameRef = ref("") as Ref<any>;
 const infiniteScrollRef = ref("");
 
 const facilityGroups = computed(() => store.getters["util/getFacilityGroups"])
+const userProfile = computed(() => store.getters["user/getUserProfile"])
 
 onIonViewWillEnter(async () => {
   countName.value = `Hard count - ${DateTime.now().toFormat('dd-MM-yyyy hh:mm:ss')}`;
@@ -178,7 +179,9 @@ async function saveCount() {
   let count = {
     countImportName: countName.value,
     statusId: isAutoAssignEnabled.value ? "INV_COUNT_ASSIGNED" : "INV_COUNT_CREATED",
-    countTypeEnumId: "HARD_COUNT"
+    countTypeEnumId: "HARD_COUNT",
+    uploadedByUserLogin: userProfile.value.username,
+    createdDate: DateTime.now().toMillis()
   } as any;
 
   if(dueDate.value) count["dueDate"] = dueDate.value;

@@ -29,7 +29,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId" :item="item"/>
+            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
           </template>
           <template v-else>
             <div class="empty-state">
@@ -42,7 +42,7 @@
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length">
             <div class="product" @scroll="onScroll">
-              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
+              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
               </div>
             </div>
@@ -473,7 +473,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
   let newCount = "" as any;
-  if(updatedItem && updatedItem.scannedId !== updatedProduct.scannedId && updatedItem?.scannedCount) {
+  if(updatedItem && updatedItem?.scannedCount) {
     newCount = updatedItem.scannedCount
   } else if(selectedSegment.value === "unmatched" && (inputCount.value || updatedItem.scannedCount)) {
     newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
@@ -492,7 +492,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
       if(!hasError(resp)) {
         updatedItem["quantity"] = newCount
         delete updatedItem["scannedCount"];
-        inputCount.value = ""
+        if(selectedSegment.value === "unmatched") inputCount.value = ""
       }
     } catch(error) {
       logger.error(error)
