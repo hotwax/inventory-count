@@ -274,26 +274,26 @@ async function handleBeforeUnload() {
     inputCount.value = "";
   }
 
-  const updatedProducts = [] as any;
+  const unmatchedProducts = [] as any;
   cycleCountItems.value.itemList.map((item: any) => {
-    let newItem = {} as any;
+    let unmatchedItem = {} as any;
 
     if(item.isMatchNotFound || item.isMatching) {
-      newItem = { ...item, isMatching: false, isMatchNotFound: true }
-      if(newItem.scannedId === currentProduct.value.scannedId) {
-        if(newItem?.scannedCount) {
-          newItem = { ...newItem, scannedCount: selectedCountUpdateType.value === "replace" ? inputCount.value : (Number(inputCount.value) + Number(newItem.scannedCount)) }
+      unmatchedItem = { ...item, isMatching: false, isMatchNotFound: true }
+      if(unmatchedItem.scannedId === currentProduct.value.scannedId) {
+        if(unmatchedItem?.scannedCount) {
+          unmatchedItem = { ...unmatchedItem, scannedCount: selectedCountUpdateType.value === "replace" ? inputCount.value : (Number(inputCount.value) + Number(unmatchedItem.scannedCount)) }
         } else {
-          newItem = { ...newItem, scannedCount: inputCount.value }
+          unmatchedItem = { ...unmatchedItem, scannedCount: inputCount.value }
         }
         inputCount.value = ""
       }
     }
 
-    if(Object.keys(newItem)?.length) updatedProducts.push(newItem)
+    if(Object.keys(unmatchedItem)?.length) unmatchedProducts.push(unmatchedItem)
   })
 
-  store.dispatch("count/updateCachedUnmatchedProducts", { id: cycleCount.value.inventoryCountImportId, updatedProducts });
+  store.dispatch("count/updateCachedUnmatchedProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
 }
 
 async function fetchCycleCount() {
@@ -668,10 +668,6 @@ function getVariance(item: any , isRecounting: boolean) {
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
   return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
-}
-
-function hasUnsavedChanges() {
-  return (inputCount.value && inputCount.value >= 0) || cycleCountItems.value.itemList.some((item: any) => item.scannedCount);
 }
 
 function isItemAlreadyAdded(product: any) {

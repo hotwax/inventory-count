@@ -232,7 +232,7 @@ const actions: ActionTree<CountState, RootState> = {
 
   async updateCachedUnmatchedProducts({commit, state}, payload) {
     const cachedUnmatchedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchedProducts));
-    cachedUnmatchedProducts[payload.id] = payload.updatedProducts;
+    cachedUnmatchedProducts[payload.id] = payload.unmatchedProducts;
     commit(types.COUNT_CACHED_UNMATCHED_PRODUCTS_UPDATED, cachedUnmatchedProducts)
   },
 
