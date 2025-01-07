@@ -350,6 +350,7 @@ function removeCountItem(current: any) {
 
   store.dispatch("count/updateCycleCountItems", updatedItems);
   store.dispatch("product/currentProduct", updatedProduct ? updatedProduct : {})
+  if(updatedProduct) scrollToProduct(updatedProduct);
 }
 
 async function scanProduct() {
