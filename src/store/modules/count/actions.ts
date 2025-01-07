@@ -67,7 +67,7 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountStats({ commit, state }, inventoryCountImportIds) {
-    const cachedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchedProducts))
+    const cachedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts))
     try {
       const resp = await CountService.fetchCycleCountStats({ inventoryCountImportIds });
 
@@ -180,7 +180,7 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountItems({commit, state} ,payload) {
-    const cachedProducts = state.cachedUnmatchedProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchedProducts[payload.inventoryCountImportId])) : [];
+    const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
     let items = [] as any, resp, pageIndex = 0;
 
     try {
@@ -230,16 +230,16 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED, systemMessages)
   },
 
-  async updateCachedUnmatchedProducts({commit, state}, payload) {
-    const cachedUnmatchedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchedProducts));
-    cachedUnmatchedProducts[payload.id] = payload.unmatchedProducts;
-    commit(types.COUNT_CACHED_UNMATCHED_PRODUCTS_UPDATED, cachedUnmatchedProducts)
+  async updateCachedUnmatchProducts({commit, state}, payload) {
+    const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
+    cachedUnmatchProducts[payload.id] = payload.unmatchedProducts;
+    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
   },
 
-  async clearCurrentCountFromCachedUnmatchedProducts({commit, state}, id) {
-    const cachedUnmatchedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchedProducts));
-    delete cachedUnmatchedProducts[id]
-    commit(types.COUNT_CACHED_UNMATCHED_PRODUCTS_UPDATED, cachedUnmatchedProducts)
+  async clearCurrentCountFromCachedUnmatchProducts({commit, state}, id) {
+    const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
+    delete cachedUnmatchProducts[id]
+    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
   },
 }	
 

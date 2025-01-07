@@ -35,8 +35,8 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
     state.cycleCountImportSystemMessages = payload
   },
-  [types.COUNT_CACHED_UNMATCHED_PRODUCTS_UPDATED] (state, payload) {
-    state.cachedUnmatchedProducts = payload
+  [types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED] (state, payload) {
+    state.cachedUnmatchProducts = payload
   }
   
 }	

@@ -293,7 +293,7 @@ async function handleBeforeUnload() {
     if(Object.keys(unmatchedItem)?.length) unmatchedProducts.push(unmatchedItem)
   })
 
-  store.dispatch("count/updateCachedUnmatchedProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
 }
 
 async function fetchCycleCount() {
@@ -531,7 +531,7 @@ async function readyForReview() {
             statusId: "INV_COUNT_REVIEW"
           })
           router.push("/tabs/count")
-          store.dispatch('count/clearCurrentCountFromCachedUnmatchedProducts', props.id);
+          store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))

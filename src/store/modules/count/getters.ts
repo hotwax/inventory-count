@@ -30,8 +30,8 @@ const getters: GetterTree<CountState, RootState> = {
   getDefaultRecountUpdateBehaviour(state) {
     return state.defaultRecountUpdateBehaviour
   },
-  getCachedUnmatchedProducts: (state) => (id: string) => {
-    return state.cachedUnmatchedProducts[id]
+  getCachedUnmatchProducts: (state) => (id: string) => {
+    return state.cachedUnmatchProducts[id]
   }
 };
 
