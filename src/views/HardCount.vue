@@ -299,6 +299,11 @@ function handleSegmentChange() {
   selectedFacilityIds.value = [];
   selectedFacilityGroupId.value = "";
   queryString.value = "";
+  if(selectedSegment.value === "group") {
+    facilities.value = []
+  } else {
+    fetchFacilities()
+  }
 }
 
 function enableScrolling() {
