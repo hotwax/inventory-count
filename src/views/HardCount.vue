@@ -167,6 +167,11 @@ onIonViewWillLeave(() => {
 })
 
 async function saveCount() {
+  if(!countName.value.trim()) {
+    showToast(translate("Enter a valid cycle count name"))
+    return;
+  }
+
   if(selectedSegment.value === "group" && !selectedFacilityGroupId.value) {
     showToast(translate("Please select a facility group."))
     return;
