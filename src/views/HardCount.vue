@@ -167,6 +167,11 @@ onIonViewWillLeave(() => {
 })
 
 async function saveCount() {
+  if(!countName.value.trim()) {
+    showToast(translate("Enter a valid cycle count name"))
+    return;
+  }
+
   if(selectedSegment.value === "group" && !selectedFacilityGroupId.value) {
     showToast(translate("Please select a facility group."))
     return;
@@ -177,7 +182,7 @@ async function saveCount() {
 
   let resp = {} as any, facilityIds = [], cycleCounts = [] as any;
   let count = {
-    countImportName: countName.value,
+    countImportName: countName.value.trim(),
     statusId: isAutoAssignEnabled.value ? "INV_COUNT_ASSIGNED" : "INV_COUNT_CREATED",
     countTypeEnumId: "HARD_COUNT",
     uploadedByUserLogin: userProfile.value.username,
