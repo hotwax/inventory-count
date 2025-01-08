@@ -66,7 +66,8 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
   },
 
-  async fetchCycleCountStats({ commit }, inventoryCountImportIds) {
+  async fetchCycleCountStats({ commit, state }, inventoryCountImportIds) {
+    const cachedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts))
     try {
       const resp = await CountService.fetchCycleCountStats({ inventoryCountImportIds });
 
@@ -74,6 +75,7 @@ const actions: ActionTree<CountState, RootState> = {
 
         // Sorting the statusHistory based on statusDate, as in response we are getting this information sorted on statusId
         resp.data.importStats.map((stats: any) => {
+          stats["totalItems"] = stats["totalItems"] + (cachedProducts[stats.inventoryCountImportId]?.length || 0)
           stats.statusHistory.sort((a: any, b: any) => {
             if(a["statusDate"] === b["statusDate"]) return 0;
 
@@ -177,7 +179,8 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_UPDATED, {})
   },
 
-  async fetchCycleCountItems({commit} ,payload) {
+  async fetchCycleCountItems({commit, state} ,payload) {
+    const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
     let items = [] as any, resp, pageIndex = 0;
 
     try {
@@ -194,6 +197,7 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+    if(cachedProducts?.length) items = items.concat(cachedProducts)
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   },
 
@@ -224,6 +228,18 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
     commit(types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED, systemMessages)
+  },
+
+  async updateCachedUnmatchProducts({commit, state}, payload) {
+    const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
+    cachedUnmatchProducts[payload.id] = payload.unmatchedProducts;
+    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
+  },
+
+  async clearCurrentCountFromCachedUnmatchProducts({commit, state}, id) {
+    const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
+    delete cachedUnmatchProducts[id]
+    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
   },
 }	
 

@@ -24,7 +24,8 @@ const countModule: Module<CountState, RootState> = {
       isScrollable: true
     },
     cycleCountItems: {},
-    defaultRecountUpdateBehaviour: "add"
+    defaultRecountUpdateBehaviour: "add",
+    cachedUnmatchProducts: {}
   },
   getters,
   actions,
