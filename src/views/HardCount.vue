@@ -182,7 +182,7 @@ async function saveCount() {
 
   let resp = {} as any, facilityIds = [], cycleCounts = [] as any;
   let count = {
-    countImportName: countName.value,
+    countImportName: countName.value.trim(),
     statusId: isAutoAssignEnabled.value ? "INV_COUNT_ASSIGNED" : "INV_COUNT_CREATED",
     countTypeEnumId: "HARD_COUNT",
     uploadedByUserLogin: userProfile.value.username,
