@@ -42,7 +42,7 @@
     </template>
 
     <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
-      <p>{{ translate("No results found for", { queryString }) }}</p>
+      <p>{{ translate("No results found for", { queryString: prevSearchedQuery }) }}</p>
     </div>
     <div v-else class="empty-state">
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -95,6 +95,7 @@ let queryString = ref('');
 const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
 const isLoading = ref(false);
+const prevSearchedQuery = ref("");
 
 async function handleSearch() {
   if(!queryString.value.trim()) {
@@ -120,6 +121,7 @@ async function getProducts() {
     logger.error("Failed to fetch products", err)
   }
   products.value = productsList
+  prevSearchedQuery.value = queryString.value
   isLoading.value = false;
 }
 function closeModal(payload = {}) {

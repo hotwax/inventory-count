@@ -253,12 +253,14 @@ let isScanningInProgress = ref(false);
 
 
 onIonViewDidEnter(async() => {  
+  emitter.emit("presentLoader");
   await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
+  emitter.emit("dismissLoader")
 })
 
 onIonViewDidLeave(async() => {
@@ -297,7 +299,6 @@ async function handleBeforeUnload() {
 }
 
 async function fetchCycleCount() {
-  emitter.emit("presentLoader");
   try {
     const resp = await CountService.fetchCycleCount(props?.id)
     if(!hasError(resp)) {
@@ -309,7 +310,6 @@ async function fetchCycleCount() {
     logger.error(err)
     showToast(translate("Something went wrong"))
   }
-  emitter.emit("dismissLoader")
 }
 
 function handleSegmentChange() {
