@@ -417,7 +417,7 @@ async function scanProduct() {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
-    } else if(selectedItem.quantity >= 0 && selectedItem.itemStatusId !== "INV_COUNT_REJECTED" && selectedItem.itemStatusId !== "INV_COUNT_COMPLETED") {
+    } else if(selectedItem.quantity >= 0) {
       openRecountAlert()
     }
   }
