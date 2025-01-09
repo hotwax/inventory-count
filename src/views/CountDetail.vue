@@ -270,6 +270,7 @@ const itemsList = computed(() => {
   } else if (selectedSegment.value === 'pending') {
     return cycleCountItems.value.itemList.filter(item =>(item.quantity === undefined || item.quantity === null) && item.itemStatusId === "INV_COUNT_CREATED");
   } else if (selectedSegment.value === 'counted') {
+    // Based on discussion, item with rejected and completed status should be shown in the counted segment
     return cycleCountItems.value.itemList.filter(item => item.quantity >= 0 || (item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'));
   } else if (selectedSegment.value === 'notCounted') {
     return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
