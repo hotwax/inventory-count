@@ -259,12 +259,12 @@ async function updateCountName() {
   }
 
   if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
-    const inventoryCountImportId = await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
-    if(inventoryCountImportId) {
+    await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
+    .then(() => {
       currentCycleCount.value.countName = countName.value.trim()
-    } else {
+    }).catch(() => {
       countName.value = currentCycleCount.value.countName.trim()
-    }
+    })
   }
 
   isCountNameUpdating.value = false
