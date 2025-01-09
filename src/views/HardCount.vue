@@ -22,7 +22,7 @@
             </ion-button>
           </ion-item>
           <ion-item lines="none">
-            <ion-label>{{ translate("Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will defaulted to 0 on hand.") }}</ion-label>
+            <ion-label>{{ translate("Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will be defaulted to 0 on hand.") }}</ion-label>
           </ion-item>
 
           
@@ -238,7 +238,8 @@ async function fetchFacilities(vSize?: any, vIndex?: any) {
     facilityTypeId: "VIRTUAL_FACILITY",
     facilityTypeId_not: "Y",
     parentTypeId: "VIRTUAL_FACILITY",
-    parentTypeId_not: "Y"
+    parentTypeId_not: "Y",
+    orderByField: "facilityName"
   } as any;
 
   if(queryString.value.trim()) {

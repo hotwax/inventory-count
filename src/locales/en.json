@@ -126,7 +126,7 @@
   "Group": "Group",
   "Hard Count": "Hard Count",
   "HARD COUNT": "HARD COUNT",
-  "Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will defaulted to 0 on hand.": "Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will defaulted to 0 on hand.",
+  "Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will be defaulted to 0 on hand.": "Hard counts are used when conducting large scale full counts at facilities. Products are not added to hard counts before they’re assigned. Facilities will count everything they have in stock. Anything they don’t count will be defaulted to 0 on hand.",
   "If a file includes multiple facilities, a count is created for every facility. All items with no facility location will be added to the same count.": "If a file includes multiple facilities, a count is created for every facility. All items with no facility location will be added to the same count.",
   "Import CSV": "Import CSV",
   "Import Error": "Import Error",
