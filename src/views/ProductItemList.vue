@@ -70,6 +70,8 @@ async function navigateToDetail(item: any) {
     const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      store.dispatch("product/currentProduct", item);
     }
   }, 0);
 }
