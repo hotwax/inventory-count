@@ -77,6 +77,7 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
+                <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
                 <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
                 <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
@@ -408,6 +409,14 @@ function updateCustomTime(event: any) {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.status-success {
+  color: var(--ion-color-success);
+}
+
+.status-danger {
+  color: var(--ion-color-danger);
 }
 
 @media (max-width: 991px) {
