@@ -295,12 +295,14 @@ const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 
 onIonViewDidEnter(async() => {  
+  emitter.emit("presentLoader");
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
+  emitter.emit("dismissLoader")
 })  
 
 onIonViewDidLeave(async() => {
@@ -348,7 +350,6 @@ function inputCountValidation(event) {
 }
 
 async function fetchCycleCount() {
-  emitter.emit("presentLoader");
   let payload = props?.id
   let resp
   try {
@@ -362,7 +363,6 @@ async function fetchCycleCount() {
     logger.error(err)
     showToast(translate("Something went wrong"))
   }
-  emitter.emit("dismissLoader")
   return;
 }
 
