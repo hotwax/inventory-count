@@ -19,7 +19,7 @@
         </ion-item>
         <ion-item button v-if="showAdditionalFilters().noFacility">
           <ion-icon slot="start" :icon="locateOutline"/>
-          <ion-checkbox :value="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
+          <ion-checkbox v-model="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
         <ion-item lines="none">
