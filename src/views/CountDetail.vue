@@ -253,6 +253,7 @@ import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
+import { useWebSocketComposables } from '@/composables/useWebSocketComposables';
 
 const store = useStore();
 
@@ -263,6 +264,8 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const webSocketUrl = computed(() => store.getters["user/getWebSocketUrl"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -282,6 +285,8 @@ const itemsList = computed(() => {
     return [];
   }
 });
+
+const { registerListener } = useWebSocketComposables(webSocketUrl.value);
 
 const props = defineProps(["id"]);
 let selectedSegment = ref('all');
@@ -303,6 +308,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
+  registerListener(currentFacility.value.facilityId, handleNewMessage);
   emitter.emit("dismissLoader")
 })  
 
@@ -638,6 +644,27 @@ async function readyForReview() {
   });
   await alert.present();
 }
+
+function handleNewMessage(jsonObj) {
+  const updatedItem = jsonObj.message
+  if(updatedItem.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  const currentItemIndex = items.findIndex((item) => item.productId === updatedItem.productId && item.importItemSeqId === updatedItem.importItemSeqId);  
+
+  if(currentItemIndex !== -1) {
+    items[currentItemIndex] = updatedItem
+  } else {
+    store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+    items.push(updatedItem)
+  }
+
+  store.dispatch('count/updateCycleCountItems', items);
+  if(product.value.productId === updatedItem.productId) {
+    store.dispatch('product/currentProduct', updatedItem);
+  }
+}
+
 </script>
 
 <style scoped>

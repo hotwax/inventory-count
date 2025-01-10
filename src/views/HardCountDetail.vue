@@ -218,6 +218,7 @@ import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
+import { useWebSocketComposables } from '@/composables/useWebSocketComposables';
 
 const store = useStore();
 
@@ -228,6 +229,8 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const webSocketUrl = computed(() => store.getters["user/getWebSocketUrl"])
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -238,6 +241,8 @@ const itemsList = computed(() => {
     return [];
   }
 });
+
+const { registerListener } = useWebSocketComposables(webSocketUrl.value);
 
 const props = defineProps(["id"]);
 const cycleCount = ref({}) as any;
@@ -250,7 +255,7 @@ const inputCount = ref("") as any;
 const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
-
+const productIdAdding = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -260,6 +265,7 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
+  registerListener(currentFacility.value.facilityId, handleNewMessage);
   emitter.emit("dismissLoader")
 })
 
@@ -432,7 +438,10 @@ async function addProductToItemsList() {
 async function findProductFromIdentifier(scannedValue: string ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
   let newItem = {} as any;
-  if(product?.productId) newItem = await addProductToCount(product.productId)
+  if(product?.productId) {
+    productIdAdding.value = product.productId
+    newItem = await addProductToCount(product.productId)
+  }
 
   setTimeout(() => {
     updateCurrentItemInList(newItem, scannedValue);
@@ -512,6 +521,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   items[currentItemIndex] = updatedItem
 
   store.dispatch('count/updateCycleCountItems', items);
+  productIdAdding.value = ""
 }
 
 async function readyForReview() {
@@ -651,12 +661,34 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
+      productIdAdding.value = product.productId
       const newItem = await addProductToCount(product.productId)
       await updateCurrentItemInList(newItem, currentProduct.scannedId);
     }
   })
 
   addProductModal.present();
+}
+
+function handleNewMessage(jsonObj: any) {
+  const updatedItem = jsonObj.message
+  if(updatedItem.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+  if(productIdAdding.value === updatedItem.productId) return;
+
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  const currentItemIndex = items.findIndex((item: any) => item.productId === updatedItem.productId && item.importItemSeqId === updatedItem.importItemSeqId);  
+
+  if(currentItemIndex !== -1) {
+    items[currentItemIndex] = updatedItem
+  } else {
+    store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+    items.push(updatedItem)
+  }
+
+  store.dispatch('count/updateCycleCountItems', items);
+  if(currentProduct.value.productId === updatedItem.productId) {
+    store.dispatch('product/currentProduct', updatedItem);
+  }
 }
 
 function getVariance(item: any , isRecounting: boolean) {
