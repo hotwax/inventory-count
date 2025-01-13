@@ -17,7 +17,7 @@
       <ion-label>{{ translate("Searching for", { queryString }) }}</ion-label>
     </div>
 
-    <template v-else-if="products.length">
+    <template v-else-if="isSearching && products.length">
       <ion-radio-group v-model="selectedProductId">
         <ion-item v-for="product in products" :key="product.productId">
           <ion-thumbnail slot="start">
@@ -41,7 +41,7 @@
       </ion-radio-group>
     </template>
 
-    <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
+    <div v-else-if="prevSearchedQuery && isSearching && !products.length" class="empty-state">
       <p>{{ translate("No results found for", { queryString: prevSearchedQuery }) }}</p>
     </div>
     <div v-else class="empty-state">
