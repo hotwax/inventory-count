@@ -284,6 +284,8 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
+  items = items.sort((item1: any, item2: any) => (item1.parentProductName < item2.parentProductName ? -1 : item1.parentProductName > item2.parentProductName ? 1 : 0));
+
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
 }

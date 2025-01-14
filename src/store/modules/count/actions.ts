@@ -196,6 +196,9 @@ const actions: ActionTree<CountState, RootState> = {
       } catch(err: any) {
       logger.error(err)
     }
+
+    items = items.sort((item1: any, item2: any) => (item1.parentProductName < item2.parentProductName ? -1 : item1.parentProductName > item2.parentProductName ? 1 : 0));
+
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     if(cachedProducts?.length) items = items.concat(cachedProducts)
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
