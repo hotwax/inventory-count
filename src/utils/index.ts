@@ -168,4 +168,14 @@ const downloadCsv = (csv: any, fileName: any) => {
   return blob;
 };
 
-export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }
+function sortListByField(list: any, field = "parentProductName") {
+  return list.sort((a: any, b: any) => {
+    if (!a[field] && b[field]) return 1;  // If 'item1' has no field, it goes after 'item2'
+    if (a[field] && !b[field]) return -1; // If 'item2' has no field, it goes after 'item1'
+    if (a[field] < b[field]) return -1;   // Normal alphabetical sorting
+    if (a[field] > b[field]) return 1;    // Normal alphabetical sorting
+    return 0;                             // If fields are equal
+  });
+}
+
+export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }

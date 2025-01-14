@@ -297,7 +297,7 @@ let isScanningInProgress = ref(false);
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false })])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]

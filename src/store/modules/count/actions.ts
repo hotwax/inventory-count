@@ -3,7 +3,7 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast } from "@/utils"
+import { hasError, showToast, sortListByField } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -197,7 +197,7 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
 
-    items = items.sort((item1: any, item2: any) => (item1.parentProductName < item2.parentProductName ? -1 : item1.parentProductName > item2.parentProductName ? 1 : 0));
+    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     if(cachedProducts?.length) items = items.concat(cachedProducts)
