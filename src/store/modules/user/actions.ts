@@ -70,7 +70,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       await dispatch("fetchFacilities")
-      await dispatch("fetchProductStores")
+      if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
       emitter.emit("dismissLoader")
     } catch (err: any) {

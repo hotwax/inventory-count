@@ -263,6 +263,7 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -298,7 +299,7 @@ const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting")])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
