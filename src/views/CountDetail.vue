@@ -298,7 +298,7 @@ const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true })])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting")])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
@@ -376,7 +376,7 @@ function selectSearchBarText(event) {
 }
 
 async function scanProduct() {
-  if(!queryString.value) {
+  if(!queryString.value.trim()) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
   }
@@ -389,14 +389,14 @@ async function scanProduct() {
   if(cycleCount.value.statusId === 'INV_COUNT_ASSIGNED') {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
-      return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
+      return itemVal === queryString.value.trim() && item.itemStatusId === "INV_COUNT_CREATED";
     });
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
-      return itemVal === queryString.value;
+      return itemVal === queryString.value.trim();
     });
   }
 

@@ -255,7 +255,7 @@ const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false })])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false }), store.dispatch("user/getProductStoreSetting")])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
@@ -357,7 +357,7 @@ function removeCountItem(current: any) {
 
 async function scanProduct() {
   let isNewlyAdded = false;
-  if(!queryString.value) {
+  if(!queryString.value.trim()) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
   }
@@ -367,18 +367,18 @@ async function scanProduct() {
 
   selectedItem = itemsList.value.find((item: any) => {
     const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, getProduct.value(item.productId)) : item.internalName;
-    return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
+    return itemVal === queryString.value.trim() && item.itemStatusId === "INV_COUNT_CREATED";
   });
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
     selectedItem = itemsList.value.find((item: any) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, getProduct.value(item.productId)) : item.internalName;
-      return itemVal === queryString.value;
+      return itemVal === queryString.value.trim();
     });
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
-    selectedItem = itemsList.value.find((item: any) => item.scannedId === queryString.value)
+    selectedItem = itemsList.value.find((item: any) => item.scannedId === queryString.value.trim())
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
@@ -417,7 +417,7 @@ function scrollToProduct(product: any) {
 
 async function addProductToItemsList() {
   const newItem = {
-    scannedId: queryString.value,
+    scannedId: queryString.value.trim(),
     isMatching: true,
     itemStatusId: "INV_COUNT_CREATED",
     statusId: "INV_COUNT_ASSIGNED",
@@ -428,7 +428,7 @@ async function addProductToItemsList() {
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
   initializeObserver()
-  findProductFromIdentifier(queryString.value);
+  findProductFromIdentifier(queryString.value.trim());
   return newItem;
 }
 
