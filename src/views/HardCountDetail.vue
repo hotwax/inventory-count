@@ -41,7 +41,7 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
-            <div class="product" @scroll="onScroll">
+            <div class="product" @scroll="onScroll" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
               </div>
@@ -250,6 +250,7 @@ const inputCount = ref("") as any;
 const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
+const scrollingContainerRef = ref();
 
 
 onIonViewDidEnter(async() => {  
@@ -260,6 +261,7 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
+  initializeObserver()
   emitter.emit("dismissLoader")
 })
 
@@ -425,6 +427,7 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
+  initializeObserver()
   findProductFromIdentifier(queryString.value);
   return newItem;
 }
@@ -544,8 +547,12 @@ async function readyForReview() {
 
 // This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
 // and updates the current product state and navigation when a product intersects with the main element.
-const onScroll = (event: any) => {
-  const main = event.target;
+const onScroll = () => {
+  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+};
+
+function initializeObserver() {
+  const main = scrollingContainerRef.value;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
     entries.forEach((entry: any) => {
@@ -561,8 +568,8 @@ const onScroll = (event: any) => {
           if(inputCount.value) saveCount(previousItem, true);
         }
 
-        previousItem = currentProduct.value  // Update the previousItem variable with the current item
         if(product) {
+          previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
         }
       }
@@ -573,9 +580,8 @@ const onScroll = (event: any) => {
   });
   products.forEach((product: any) => {
     observer.observe(product);
-  });
-  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-};
+  }); 
+}
 
 async function saveCount(currentProduct: any, isScrollEvent = false) {
   if (!inputCount.value && inputCount.value !== 0) {
