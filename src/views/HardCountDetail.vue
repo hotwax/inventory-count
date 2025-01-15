@@ -255,7 +255,7 @@ const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false })])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false }), store.dispatch("user/getProductStoreSetting")])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();

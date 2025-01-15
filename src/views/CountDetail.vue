@@ -298,7 +298,7 @@ const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true })])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting")])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
