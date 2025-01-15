@@ -547,7 +547,7 @@ async function readyForReview() {
 
 // This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
 // and updates the current product state and navigation when a product intersects with the main element.
-const onScroll = (event: any) => {
+const onScroll = () => {
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
 };
 
