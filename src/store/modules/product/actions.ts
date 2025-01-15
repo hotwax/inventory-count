@@ -73,7 +73,7 @@ const actions: ActionTree<ProductState, RootState> = {
   async fetchProductByIdentification ( { commit, state }, payload) {
     const cachedProductIds = Object.keys(state.cached);
     if(cachedProductIds.includes(payload.scannedValue)) return;
-    const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : {}
+    const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
 
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
