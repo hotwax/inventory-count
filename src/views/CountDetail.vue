@@ -63,7 +63,7 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length">
-            <div class="product" @scroll="onScroll">
+            <div class="product" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
               </div>
@@ -294,6 +294,7 @@ let previousItem = {};
 let hasUnsavedChanges = ref(false);
 const barcodeInput = ref();
 let isScanningInProgress = ref(false);
+const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -303,6 +304,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
+  initializeObserver()
   emitter.emit("dismissLoader")
 })  
 
@@ -440,10 +442,8 @@ function updateFilteredItems() {
   }
 }
 
-// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
-// and updates the current product state and navigation when a product intersects with the main element.
-const onScroll = (event) => {
-  const main = event.target;
+function initializeObserver() {
+  const main = scrollingContainerRef.value;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {
@@ -472,7 +472,7 @@ const onScroll = (event) => {
   products.forEach((product) => {
     observer.observe(product);
   });
-};
+}
 
 async function changeProduct(direction) {
   if (isScrolling.value) return;
