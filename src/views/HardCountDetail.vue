@@ -327,7 +327,7 @@ function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-  initializeObserver()
+  setTimeout(() => { initializeObserver() }, 500);
 }
 
 async function changeProduct(direction: string) {

@@ -441,7 +441,7 @@ function updateFilteredItems() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
-  initializeObserver()
+  setTimeout(() => { initializeObserver() }, 500);
 }
 
 function initializeObserver() {
