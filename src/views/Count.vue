@@ -124,7 +124,7 @@
                   <ion-item>
                     {{ translate("Rejected") }}
                     <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }}</p>
+                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item>
