@@ -241,7 +241,7 @@ import {
 } from '@ionic/vue';
 import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, nextTick, ref } from 'vue';
 import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
@@ -428,7 +428,7 @@ async function scanProduct() {
   queryString.value = ""
 }
 
-function updateFilteredItems() {
+async function updateFilteredItems() {
   if (itemsList.value.length > 0) {
     // As we want to get the index of the product, if we directly store the product in the updatedProduct variable it does not return the index
     // as both the object becomes different because of the reference, so if we have a product, then first finding it in the filtered list to have a common reference and then getting the index
@@ -441,7 +441,8 @@ function updateFilteredItems() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
-  setTimeout(() => { initializeObserver() }, 500);
+  await nextTick();
+  initializeObserver()
 }
 
 function initializeObserver() {

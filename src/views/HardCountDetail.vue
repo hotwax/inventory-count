@@ -208,7 +208,7 @@ import {
 } from "@ionic/vue";
 import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
-import { computed, defineProps, ref } from "vue";
+import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
@@ -315,7 +315,7 @@ async function fetchCycleCount() {
   }
 }
 
-function handleSegmentChange() {
+async function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -327,7 +327,8 @@ function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-  setTimeout(() => { initializeObserver() }, 500);
+  await nextTick();
+  initializeObserver()
 }
 
 async function changeProduct(direction: string) {
