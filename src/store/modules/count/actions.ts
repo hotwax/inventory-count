@@ -159,11 +159,11 @@ const actions: ActionTree<CountState, RootState> = {
 
         // Fetching stats information for the counts
         this.dispatch("count/fetchCycleCountStats", resp.data.map((count: any) => count.inventoryCountImportId))
-
-        if(resp.data.length == payload.pageSize) isScrollable = true
-        else isScrollable = false
+        // Determine if more data can be fetched
+        isScrollable = resp.data.length >= payload.pageSize
       } else {
-        throw resp.data;
+        if (payload.pageIndex > 0) isScrollable = false
+        throw "Failed to fetch the counts list"
       }
     } catch (err: any) {
       if(payload.pageIndex == 0) {
