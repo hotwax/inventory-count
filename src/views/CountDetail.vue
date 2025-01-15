@@ -441,6 +441,7 @@ function updateFilteredItems() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
+  initializeObserver()
 }
 
 function initializeObserver() {
