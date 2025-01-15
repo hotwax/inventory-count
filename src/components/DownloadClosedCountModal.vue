@@ -243,8 +243,7 @@ async function downloadCSV() {
   const downloadData = await Promise.all(cycleCountItems.map(async (item: any) => {
     const facility = facilityDetails[item?.facilityId];
     const product = getProduct.value(item.productId)
-  
-    if(product.productId) {
+
       const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
         if (property === 'createdDate') {
           details[property] = getDateWithOrdinalSuffix(item.createdDate);
@@ -255,8 +254,8 @@ async function downloadCSV() {
         } else if (property === 'facility') {
           details[property] = facility[selectedFacilityField.value];
         } else if (property === 'primaryProductId') {
-          details[property] = getProductIdentificationValue(selectedPrimaryProductId.value, product);
-        } else if (property === 'secondaryProductId') {
+          details[property] = product.productId ? getProductIdentificationValue(selectedPrimaryProductId.value, product) : item.productId;
+        } else if (product.productId && property === 'secondaryProductId') {
           details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
         } else if (property === 'countName' && item.countImportName) {
           details[property] = item.countImportName;
@@ -267,9 +266,8 @@ async function downloadCSV() {
         }
         return details;
       }, {});
-    
+
       return cycleCountDetails;
-    }      
   }));
   
   const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
