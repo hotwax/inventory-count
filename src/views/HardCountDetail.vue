@@ -41,13 +41,13 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
-            <div class="product" v-if="isScrollingAnimationEnabled" @scroll="onScroll" ref="scrollingContainerRef">
-              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
-                <Image :src="getProduct(item.productId)?.mainImageUrl" />
-              </div>
-            </div>
-            <div class="product" v-else>
-              <div class="image ion-padding-top">
+            <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
+              <template v-if="isScrollingAnimationEnabled">
+                <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
+                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                </div>
+              </template>
+              <div v-else class="image ion-padding-top">
                 <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" />
               </div>
             </div>
@@ -211,7 +211,7 @@ import {
   alertController,
   modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, save, trashOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
@@ -332,7 +332,7 @@ async function fetchCycleCount() {
   }
 }
 
-function handleSegmentChange() {
+async function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -344,6 +344,10 @@ function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+  if(isScrollingAnimationEnabled) {
+    await nextTick();
+    initializeObserver()
+  }
 }
 
 async function changeProduct(direction: string) {
