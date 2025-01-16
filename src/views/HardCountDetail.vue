@@ -430,7 +430,11 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
-  if(itemsList.value?.length) initializeObserver()
+  if(itemsList.value?.length) {
+    setTimeout(() => {
+      initializeObserver()
+    }, 0);
+  }
   findProductFromIdentifier(queryString.value.trim());
   return newItem;
 }
