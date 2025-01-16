@@ -240,10 +240,10 @@ http://ionicframework.com/docs/theming/ */
 
 @media (min-width: 991px) {
   .list-item {
-    padding: var(--spacer-sm) 0;
+    padding-block: var(--spacer-sm);
   }
 
-  ion-searchbar.searchbar {
+  .searchbar {
     padding-top: var(--spacer-base);
     padding-inline: var(--spacer-sm)
   }

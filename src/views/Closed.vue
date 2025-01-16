@@ -14,12 +14,12 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
       <template v-else>
-        <div class="header">
+        <div class="header searchbar">
+          <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
           <ion-item lines="full">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-label>{{ translate("Counts closed") }}</ion-label>
