@@ -29,7 +29,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item" />
+            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
           </template>
           <template v-else>
             <div class="empty-state">
@@ -270,7 +270,6 @@ onIonViewDidEnter(async() => {
   window.addEventListener('beforeunload', handleBeforeUnload);
   if(isScrollingAnimationEnabled) initializeObserver()
   emitter.emit("dismissLoader")
-
   emitter.on("handleProductClick", handleProductClick)
 })
 

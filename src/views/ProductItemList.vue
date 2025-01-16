@@ -67,7 +67,9 @@ onMounted(() => {
  **/
 async function navigateToDetail(item: any) {
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  if(props.item.countTypeEnumId === "HARD_COUNT" && isScrollingAnimationEnabled) {
+  if(props.item.countTypeEnumId === "HARD_COUNT" && !isScrollingAnimationEnabled) {
+    emitter.emit("handleProductClick", item)
+  } else {
     setTimeout(() => {
       const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
       if (element) {
@@ -76,8 +78,6 @@ async function navigateToDetail(item: any) {
         store.dispatch("product/currentProduct", item);
       }
     }, 0);
-  } else {
-    emitter.emit("handleProductClick", item)
   }
 }
 
