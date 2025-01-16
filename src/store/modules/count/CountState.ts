@@ -14,4 +14,5 @@ export default interface CountState {
   cycleCountImportSystemMessages: Array<any>;
   defaultRecountUpdateBehaviour: String;
   cachedUnmatchProducts: any;
+  closedCycleCountsTotal: any;
 }

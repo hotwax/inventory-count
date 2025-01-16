@@ -66,6 +66,37 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
   },
 
+  async fetchClosedCycleCountsTotal({ commit, state }) {
+    const params = {
+      statusId: "INV_COUNT_COMPLETED"
+    } as any;
+    // TODO: Currently, the search functionality works only on the count name. Once the API supports searching across 
+    // multiple fields, we should include the count ID in the search parameters.
+    if(state.query.queryString.length) {
+      params["countImportName"] = state.query.queryString
+      params["countImportName_op"] = "contains"
+    }
+
+    if(state.query.facilityIds.length) {
+      params["facilityId"] = state.query.facilityIds.join(",")
+      params["facilityId_op"] = "in"
+    }
+
+    let total = "";
+    try {
+      const resp = await CountService.fetchCycleCountsTotal(params);
+      if(!hasError(resp)) {
+        total = resp.data.count;
+      } else {
+        throw resp;
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+
+    commit(types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED, total)
+  },
+
   async fetchCycleCountStats({ commit, state }, inventoryCountImportIds) {
     const cachedProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts))
     try {
@@ -133,6 +164,7 @@ const actions: ActionTree<CountState, RootState> = {
       statusId = "INV_COUNT_COMPLETED"
     }
     dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
+    if(payload.key === "facilityIds") dispatch("fetchClosedCycleCountsTotal")
   },
 
   async updateQueryString({ commit }, payload) {
