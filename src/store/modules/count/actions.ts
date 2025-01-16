@@ -82,7 +82,7 @@ const actions: ActionTree<CountState, RootState> = {
       params["facilityId_op"] = "in"
     }
 
-    let total = "";
+    let total = -1;
     try {
       const resp = await CountService.fetchCycleCountsTotal(params);
       if(!hasError(resp)) {

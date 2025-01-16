@@ -23,7 +23,7 @@
           <ion-item lines="full">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-label>{{ translate("Counts closed") }}</ion-label>
-            <ion-label slot="end">{{ closedCycleCountsTotal ? closedCycleCountsTotal : "-" }}</ion-label>
+            <ion-label slot="end">{{ (closedCycleCountsTotal !== -1) ? closedCycleCountsTotal : "-" }}</ion-label>
           </ion-item>
           <ion-item lines="full">
             <ion-icon slot="start" :icon="thermometerOutline"/>
