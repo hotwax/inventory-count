@@ -204,7 +204,7 @@ ion-content {
 }
 
 .list-item {
-  --columns-desktop: 6;
+  --columns-desktop: 7;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
