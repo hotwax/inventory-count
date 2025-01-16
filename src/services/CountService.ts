@@ -153,6 +153,14 @@ const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
   });
 }
 
+const fetchCycleCountsTotal = async (payload: any): Promise<any> => {
+  return api({
+    url: "cycleCounts/count",
+    method: "get",
+    params: payload
+  })
+}
+
 export const CountService = {
   acceptItem,
   addProductToCount,
@@ -168,6 +176,7 @@ export const CountService = {
   fetchCycleCountStats,
   fetchCycleCounts,
   fetchCycleCountItems,
+  fetchCycleCountsTotal,
   recountItems,
   updateCount,
   updateCycleCount,
