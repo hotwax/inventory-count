@@ -262,8 +262,8 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
-  initializeObserver()
   emitter.emit("dismissLoader")
+  if(itemsList.value.length) initializeObserver()
 })
 
 onIonViewDidLeave(async() => {
