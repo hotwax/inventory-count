@@ -305,8 +305,8 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
-  initializeObserver()
   emitter.emit("dismissLoader")
+  if(itemsList.value?.length) initializeObserver()
 })  
 
 onIonViewDidLeave(async() => {
@@ -442,7 +442,7 @@ async function updateFilteredItems() {
     store.dispatch("product/currentProduct", {});
   }
   await nextTick();
-  initializeObserver()
+  if(itemsList.value?.length) initializeObserver()
 }
 
 function initializeObserver() {
