@@ -29,7 +29,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
+            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item" />
           </template>
           <template v-else>
             <div class="empty-state">
@@ -41,9 +41,14 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
-            <div class="product" @scroll="onScroll" ref="scrollingContainerRef">
+            <div class="product" v-if="isScrollingAnimationEnabled" @scroll="onScroll" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              </div>
+            </div>
+            <div class="product" v-else>
+              <div class="image ion-padding-top">
+                <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" />
               </div>
             </div>
 
@@ -206,7 +211,7 @@ import {
   alertController,
   modalController
 } from "@ionic/vue";
-import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, trashOutline } from "ionicons/icons";
+import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, save, trashOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
@@ -252,6 +257,7 @@ const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
+const isScrollingAnimationEnabled = process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED ? JSON.parse(process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED) : false;
 
 
 onIonViewDidEnter(async() => {  
@@ -262,8 +268,10 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
-  initializeObserver()
+  if(isScrollingAnimationEnabled) initializeObserver()
   emitter.emit("dismissLoader")
+
+  emitter.on("handleProductClick", handleProductClick)
 })
 
 onIonViewDidLeave(async() => {
@@ -271,6 +279,7 @@ onIonViewDidLeave(async() => {
   await handleBeforeUnload();
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
+  emitter.off("handleProductClick", handleProductClick)
 })
 
 async function handleBeforeUnload() {
@@ -301,6 +310,14 @@ async function handleBeforeUnload() {
   store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
 }
 
+function handleProductClick(item: any) {
+  if(item) {
+    if(inputCount.value) saveCount(currentProduct.value, true)
+    store.dispatch("product/currentProduct", item);
+    previousItem = item
+  }
+}
+
 async function fetchCycleCount() {
   try {
     const resp = await CountService.fetchCycleCount(props?.id)
@@ -315,7 +332,7 @@ async function fetchCycleCount() {
   }
 }
 
-async function handleSegmentChange() {
+function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -327,8 +344,6 @@ async function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-  await nextTick();
-  initializeObserver()
 }
 
 async function changeProduct(direction: string) {
@@ -339,9 +354,14 @@ async function changeProduct(direction: string) {
 
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
-    scrollToProduct(product);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await store.dispatch("product/currentProduct", product);
+    if(isScrollingAnimationEnabled) {
+      scrollToProduct(product);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await store.dispatch("product/currentProduct", product);
+    } else {
+      if(inputCount.value) saveCount(currentProduct.value, true)
+      await store.dispatch("product/currentProduct", product);
+    }
   }
   isScrolling.value = false;
 }
@@ -397,7 +417,13 @@ async function scanProduct() {
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
-    scrollToProduct(selectedItem);
+    if(isScrollingAnimationEnabled) {
+      scrollToProduct(selectedItem);
+    } else {
+      if(inputCount.value) saveCount(currentProduct.value, true)
+      store.dispatch("product/currentProduct", selectedItem)
+      previousItem = selectedItem
+    }
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
     inputCount.value++;
   }
@@ -430,7 +456,7 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
-  initializeObserver()
+  if(isScrollingAnimationEnabled) initializeObserver()
   findProductFromIdentifier(queryString.value.trim());
   return newItem;
 }
@@ -548,8 +574,6 @@ async function readyForReview() {
   await alert.present();
 }
 
-// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
-// and updates the current product state and navigation when a product intersects with the main element.
 const onScroll = () => {
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
 };
