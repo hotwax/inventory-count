@@ -174,7 +174,7 @@ async function fetchBulkCycleCountItems() {
   let payload = {
     statusId: "INV_COUNT_COMPLETED",
     pageSize: 200,
-    facilityIds: query.value.facilityIds,
+    facilityId: query.value.facilityIds,
     pageIndex: 0
   };
 
