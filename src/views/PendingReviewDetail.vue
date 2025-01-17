@@ -485,14 +485,30 @@ async function recountItem(item?: any) {
 
 async function completeCount() {
   try {
-    await CountService.updateCycleCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      statusId: "INV_COUNT_COMPLETED"
+    const resp = await CountService.fetchCycleCountItemsCount({
+      inventoryCountImportId: props?.inventoryCountImportId,
+      statusId: "INV_COUNT_CREATED",
     })
-    router.push("/closed")
-    showToast(translate("Count has been marked as completed"))
+
+    if(!hasError(resp) && resp.data?.count > 0) {
+      await fetchCountItems();
+      showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
+      return;
+    }
+
+    try {
+      await CountService.updateCycleCount({
+        inventoryCountImportId: currentCycleCount.value.countId,
+        statusId: "INV_COUNT_COMPLETED"
+      })
+      router.push("/closed")
+      showToast(translate("Count has been marked as completed"))
+    } catch(err) {
+      showToast(translate("Failed to complete cycle count"))
+    }
   } catch(err) {
     showToast(translate("Failed to complete cycle count"))
+    logger.error(err)
   }
 }
 
