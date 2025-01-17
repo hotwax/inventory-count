@@ -492,7 +492,7 @@ async function completeCount() {
 
     if(!hasError(resp) && resp.data?.count > 0) {
       await fetchCountItems();
-      showToast(translate("Cannot complete count as some items are still in created state. Please review the refreshed item list and try again."))
+      showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
       return;
     }
 
@@ -507,6 +507,7 @@ async function completeCount() {
       showToast(translate("Failed to complete cycle count"))
     }
   } catch(err) {
+    showToast(translate("Failed to complete cycle count"))
     logger.error(err)
   }
 }
