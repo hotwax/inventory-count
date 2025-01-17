@@ -486,8 +486,8 @@ async function recountItem(item?: any) {
 async function completeCount() {
   try {
     const resp = await CountService.fetchCycleCountItemStatus({
-      inventoryCountImportId : props?.inventoryCountImportId,
-      statusId : "INV_COUNT_CREATED",
+      inventoryCountImportId: props?.inventoryCountImportId,
+      statusId: "INV_COUNT_CREATED",
     })
 
     if(!hasError(resp) && resp.data?.count > 0) {
