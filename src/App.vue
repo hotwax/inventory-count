@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onBeforeMount, onUnmounted, ref } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import { initialise, resetConfig } from '@/adapter'
@@ -65,13 +65,7 @@ function dismissLoader() {
   }
 }
 
-onMounted(async () => {
-  loader.value = await loadingController
-    .create({
-      message: translate("Click the backdrop to dismiss."),
-      translucent: true,
-      backdropDismiss: true
-    });
+onBeforeMount(async () => {
   emitter.on("presentLoader", presentLoader);
   emitter.on("dismissLoader", dismissLoader);
 
