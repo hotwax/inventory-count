@@ -65,7 +65,7 @@ function dismissLoader() {
   }
 }
 
-onBeforeMount(async () => {
+onBeforeMount(() => {
   emitter.on("presentLoader", presentLoader);
   emitter.on("dismissLoader", dismissLoader);
 })
