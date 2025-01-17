@@ -503,6 +503,7 @@ async function completeCount() {
         inventoryCountImportId: currentCycleCount.value.countId,
         statusId: "INV_COUNT_COMPLETED"
       })
+      emitter.emit("dismissLoader")
       router.push("/closed")
       showToast(translate("Count has been marked as completed"))
     } catch(err) {
