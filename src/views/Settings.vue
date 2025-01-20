@@ -141,7 +141,7 @@
           </ion-card-header>
 
           <ion-card-content>
-            {{ translate("Allow the scrolling animation to be shown in hard count.") }}
+            {{ translate("Enable the scrolling animation on the hard count's detail page.") }}
           </ion-card-content>
 
           <ion-item lines="none">
