@@ -145,7 +145,7 @@
           </ion-card-content>
 
           <ion-item lines="none">
-            <ion-toggle label-placement="start" :checked="isScrollingAnimationEnabled" @click.prevent="updateScrollingAnimationPreference()">{{ translate("Enable animation") }}</ion-toggle>
+            <ion-toggle label-placement="start" v-model="isScrollingAnimationEnabled" @click.prevent="updateScrollingAnimationPreference($event)">{{ translate("Enable animation") }}</ion-toggle>
           </ion-item>
         </ion-card>
       </section>
@@ -208,7 +208,9 @@ async function setProductStore(event: any) {
   await store.dispatch("user/updateCurrentProductStore", productStore)
 }
 
-function updateScrollingAnimationPreference() {
+function updateScrollingAnimationPreference(event: any) {
+  event.stopImmediatePropagation();
+
   store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
 }
 
