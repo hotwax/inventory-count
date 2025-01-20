@@ -56,29 +56,11 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"
-                      show-default-buttons
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal> 
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'thru')">{{ query["createdDate"]["thru"] ? formatDateTime(query["createdDate"]["thru"]) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"
-                      show-default-buttons
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>               
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'from')">{{ query["createdDate"]["from"] ? formatDateTime(query["createdDate"]["from"]) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>
@@ -91,35 +73,26 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>       
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'thru')">{{ query["closedDate"]["thru"] ? formatDateTime(query["closedDate"]["thru"]) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>               
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'from')">{{ query["closedDate"]["from"] ? formatDateTime(query["closedDate"]["from"]) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>  
         </ion-accordion-group>
+        <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="closeDateTimeModal">
+          <ion-content force-overscroll="false">
+            <ion-datetime 
+              :value="currentDateTimeValue"
+              show-default-buttons
+              presentation="date"
+              @ionChange="updateDateTimeFilter($event.detail.value)"
+              :show-clear-button="currentDateTimeValue ? true : false"
+            />
+          </ion-content>
+        </ion-modal>
       </ion-list>
     </ion-content> 
   </ion-menu>
@@ -151,21 +124,51 @@ import { closeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOu
 import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";
+import { DateTime } from "luxon";
 
 const dateTimeModalOpen = ref(false)
+const currentFilter = ref("");
+const currentDateTimeValue = ref("") as any;
 
 const facilities = computed(() => store.getters["user/getFacilities"])
 const query = computed(() => store.getters["count/getQuery"])
 
-function openDateTimeModal() {
+function openDateTimeModal(dateType: any, dateRange: any) {
+  currentFilter.value = `${dateType}_${dateRange}`;
+  currentDateTimeValue.value = query.value[dateType][dateRange] ? DateTime.fromMillis(query.value[dateType][dateRange]).toISO() : DateTime.now()
   dateTimeModalOpen.value = true;
+}
+
+function closeDateTimeModal() {
+  currentFilter.value = "";
+  dateTimeModalOpen.value = false;
+}
+
+async function updateDateTimeFilter(date: any) {
+  if (!date) dateTimeModalOpen.value = false;
+
+  const dateType = currentFilter.value.split("_")[0]
+  const dateRange = currentFilter.value.split("_")[1]
+  const payload = {
+    key: dateType,
+    value: {
+      ...query.value[dateType],
+      [dateRange]: DateTime.fromISO(date).toMillis()
+    }
+  }
+  await store.dispatch("count/updateQuery", payload)
+}
+
+function formatDateTime(date: number) {
+  const dateTime = DateTime.fromMillis(date);
+  return dateTime.toFormat("dd'th' MMM yyyy");
 }
 
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
-    selectedFacilities: router.currentRoute.value.name === "Closed"
-    // date: router.currentRoute.value.name === "Closed"
+    selectedFacilities: router.currentRoute.value.name === "Closed",
+    date: router.currentRoute.value.name === "Closed"
   }
 }
 

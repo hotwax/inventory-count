@@ -15,7 +15,9 @@ const countModule: Module<CountState, RootState> = {
       facilityIds: [],
       noFacility: false,
       queryString: '',
-      sortBy: 'dueDate desc'
+      sortBy: 'dueDate desc',
+      createdDate: {},
+      closedDate: {}
     },
     stats: {},
     cycleCountImportSystemMessages:[],
