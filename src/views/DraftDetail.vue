@@ -448,7 +448,9 @@ async function findProductFromIdentifier(payload: any) {
         return idValues.includes(identificationValue) && !itemsAlreadyInCycleCount.includes(product.productId);
       })
 
-      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId }));
+      // Passing both productId and idValue for the backend compatibility
+      // idValue will be removed in the future.
+      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId, productId: product.productId }));
       if(!productsToAdd) {
         return showToast(translate("Failed to add product to count"))
       }
@@ -482,7 +484,10 @@ async function addProductToCount(payload?: any) {
     itemList = payload.map((data: any) => ({ ...data, statusId: "INV_COUNT_CREATED" }));
   } else {
     itemList = [{
+      // Passing both productId and idValue for the backend compatibility
+      // idValue will be removed in the future.
       idValue: searchedProduct.value.productId,
+      productId: searchedProduct.value.productId,
       statusId: "INV_COUNT_CREATED"
     }];
   }
