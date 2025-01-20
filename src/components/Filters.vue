@@ -55,12 +55,12 @@
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'thru')">{{ query["createdDate"]["thru"] ? formatDateTime(query["createdDate"]["thru"]) : translate("Date") }}</ion-button>
-              </ion-item>
-              <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
                 <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'from')">{{ query["createdDate"]["from"] ? formatDateTime(query["createdDate"]["from"]) : translate("Date") }}</ion-button>
+              </ion-item>
+              <ion-item>
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'thru')">{{ query["createdDate"]["thru"] ? formatDateTime(query["createdDate"]["thru"]) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>
@@ -72,12 +72,12 @@
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'thru')">{{ query["closedDate"]["thru"] ? formatDateTime(query["closedDate"]["thru"]) : translate("Date") }}</ion-button>
-              </ion-item>
-              <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
                 <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'from')">{{ query["closedDate"]["from"] ? formatDateTime(query["closedDate"]["from"]) : translate("Date") }}</ion-button>
+              </ion-item>
+              <ion-item>
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'thru')">{{ query["closedDate"]["thru"] ? formatDateTime(query["closedDate"]["thru"]) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>  
@@ -86,10 +86,10 @@
           <ion-content force-overscroll="false">
             <ion-datetime 
               :value="currentDateTimeValue"
+              show-clear-button
               show-default-buttons
               presentation="date"
               @ionChange="updateDateTimeFilter($event.detail.value)"
-              :show-clear-button="currentDateTimeValue ? true : false"
             />
           </ion-content>
         </ion-modal>
