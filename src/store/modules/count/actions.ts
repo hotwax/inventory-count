@@ -231,7 +231,7 @@ const actions: ActionTree<CountState, RootState> = {
     if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-    if(payload.hasCachedProducts) {
+    if(payload.isHardCount) {
       const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
       if(cachedProducts?.length) items = items.concat(cachedProducts)
     }
