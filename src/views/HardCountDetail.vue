@@ -469,17 +469,18 @@ async function addProductToItemsList() {
       initializeObserver()
     }, 0);
   }
-  findProductFromIdentifier(queryString.value.trim());
+  findProductFromIdentifier(queryString.value.trim(), newItem);
   return newItem;
 }
 
-async function findProductFromIdentifier(scannedValue: string ) {
+async function findProductFromIdentifier(scannedValue: string, newItem: any ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let newItem = {} as any;
-  if(product?.productId) newItem = await addProductToCount(product.productId)
+  let importItemSeqId = "" as any;
+
+  if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
 
   setTimeout(() => {
-    updateCurrentItemInList(newItem, scannedValue);
+    updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
   }, 1000)
 }
 
@@ -500,20 +501,21 @@ async function addProductToCount(productId: any) {
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       const importItemSeqId = resp.data.itemList[0].importItemSeqId
+      return importItemSeqId
 
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
-      if(!hasError(resp)) {
-        newProduct = resp.data.itemList[0];
-      } else {
-        throw resp;
-      }
+      // resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+      // if(!hasError(resp)) {
+      //   newProduct = resp.data.itemList[0];
+      // } else {
+      //   throw resp;
+      // }
     } else {
       throw resp;
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
   }
-  return newProduct;
+  return "";
 }
 
 async function updateCurrentItemInList(newItem: any, scannedValue: string) {  
@@ -700,8 +702,8 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
-      const newItem = await addProductToCount(product.productId)
-      await updateCurrentItemInList(newItem, currentProduct.scannedId);
+      const importItemSeqId = await addProductToCount(product.productId)
+      await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
     }
   })
 
