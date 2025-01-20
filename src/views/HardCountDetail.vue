@@ -475,13 +475,23 @@ async function addProductToItemsList() {
 
 async function findProductFromIdentifier(scannedValue: string, newItem: any ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let importItemSeqId = "" as any;
 
-  if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+  if(productStoreSettings.value['showQoh']) {
+    let updatedItem = {} as any;
+    if(product?.productId) updatedItem = await addProductToCount(product.productId)
 
-  setTimeout(() => {
-    updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
-  }, 1000)
+    setTimeout(() => {
+      updateCurrentItemInList(updatedItem, scannedValue);
+    }, 1000)
+  } else {
+    let importItemSeqId = "" as any;
+    if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+  
+    setTimeout(() => {
+      updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
+    }, 1000)
+  }
+
 }
 
 async function addProductToCount(productId: any) {
@@ -501,14 +511,19 @@ async function addProductToCount(productId: any) {
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       const importItemSeqId = resp.data.itemList[0].importItemSeqId
-      return importItemSeqId
 
-      // resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
-      // if(!hasError(resp)) {
-      //   newProduct = resp.data.itemList[0];
-      // } else {
-      //   throw resp;
-      // }
+      if(productStoreSettings.value['showQoh']) {
+        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+        if(!hasError(resp)) {
+          newProduct = resp.data.itemList[0];
+          return newProduct
+        } else {
+          throw resp;
+        }
+      } else {
+        return importItemSeqId
+      }
+
     } else {
       throw resp;
     }
@@ -702,8 +717,13 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
-      const importItemSeqId = await addProductToCount(product.productId)
-      await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
+      if(productStoreSettings.value['showQoh']) {
+        const newItem = await addProductToCount(product.productId)
+        await updateCurrentItemInList(newItem, currentProduct.scannedId);
+      } else {
+        const importItemSeqId = await addProductToCount(product.productId)
+        await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
+      }
     }
   })
 
