@@ -212,9 +212,8 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountItems({commit, state} ,payload) {
-    const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
     let items = [] as any, resp, pageIndex = 0;
-
+    
     try {
       do {
         resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100, pageIndex })
@@ -232,7 +231,10 @@ const actions: ActionTree<CountState, RootState> = {
     if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-    if(cachedProducts?.length) items = items.concat(cachedProducts)
+    if(payload.hasCachedProducts) {
+      const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
+      if(cachedProducts?.length) items = items.concat(cachedProducts)
+    }
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   },
 
