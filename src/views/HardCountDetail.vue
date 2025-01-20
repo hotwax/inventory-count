@@ -269,7 +269,6 @@ onIonViewDidEnter(async() => {
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
   emitter.emit("dismissLoader")
-  console.log(isScrollingAnimationEnabled.value);
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
 
