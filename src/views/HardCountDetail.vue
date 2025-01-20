@@ -47,7 +47,7 @@
                   <Image :src="getProduct(item.productId)?.mainImageUrl" />
                 </div>
               </template>
-              <div v-else class="image ion-padding-top">
+              <div v-else class="image ion-padding-top" :key="currentProduct.importItemSeqId">
                 <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" />
               </div>
             </div>
@@ -257,7 +257,7 @@ const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
-const isScrollingAnimationEnabled = process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED ? JSON.parse(process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED) : false;
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 
 onIonViewDidEnter(async() => {  
@@ -269,8 +269,10 @@ onIonViewDidEnter(async() => {
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
   emitter.emit("dismissLoader")
-  if(isScrollingAnimationEnabled && itemsList.value?.length) initializeObserver()
+  console.log(isScrollingAnimationEnabled.value);
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
+
 })
 
 onIonViewDidLeave(async() => {
@@ -343,7 +345,7 @@ async function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-  if(isScrollingAnimationEnabled && itemsList.value?.length) {
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
     await nextTick();
     initializeObserver()
   }
@@ -357,7 +359,7 @@ async function changeProduct(direction: string) {
 
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
-    if(isScrollingAnimationEnabled) {
+    if(isScrollingAnimationEnabled.value) {
       scrollToProduct(product);
       await new Promise(resolve => setTimeout(resolve, 500));
       await store.dispatch("product/currentProduct", product);
@@ -420,7 +422,7 @@ async function scanProduct() {
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
-    if(isScrollingAnimationEnabled) {
+    if(isScrollingAnimationEnabled.value) {
       scrollToProduct(selectedItem);
     } else {
       if(inputCount.value) saveCount(currentProduct.value, true)
@@ -459,7 +461,7 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
-  if(isScrollingAnimationEnabled && itemsList.value?.length) {
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
     setTimeout(() => {
       initializeObserver()
     }, 0);

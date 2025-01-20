@@ -52,6 +52,9 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getGoodIdentificationTypes(state) {
     return state.goodIdentificationTypes;
+  },
+  isScrollingAnimationEnabled(state) {
+    return state.isScrollingAnimationEnabled
   }
 }
 export default getters;

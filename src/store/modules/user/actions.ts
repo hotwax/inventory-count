@@ -593,6 +593,10 @@ const actions: ActionTree<UserState, RootState> = {
       console.error('Failed to fetch the good identification types, setting default types')
     }
     commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, identificationTypes)
-  }
+  },
+
+  async updateScrollingAnimationPreference({commit}, payload) {
+    commit(types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED, payload)
+  },
 }
 export default actions;

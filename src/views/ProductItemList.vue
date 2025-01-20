@@ -47,8 +47,8 @@ const router = useRouter();
 const store = useStore();
 const props = defineProps(['item']);
 
-const isScrollingAnimationEnabled = process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED ? JSON.parse(process.env.VUE_APP_SCROLLING_ANIMATION_ENABLED) : false;
 
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
@@ -67,8 +67,10 @@ onMounted(() => {
  **/
 async function navigateToDetail(item: any) {
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  if(props.item.countTypeEnumId === "HARD_COUNT" && !isScrollingAnimationEnabled) {
-    emitter.emit("handleProductClick", item)
+  if(props.item.countTypeEnumId === "HARD_COUNT" && !isScrollingAnimationEnabled.value) {
+    if(props.item.importItemSeqId === item.importItemSeqId) {
+      emitter.emit("handleProductClick", item)
+    }
   } else {
     setTimeout(() => {
       const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);

@@ -54,6 +54,9 @@ const mutations: MutationTree <UserState> = {
   },
   [types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED](state, payload = []) {
     state.goodIdentificationTypes = payload.length ? payload : process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
+  },
+  [types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED] (state, payload) {
+    state.isScrollingAnimationEnabled = payload
   }
 }
 export default mutations;

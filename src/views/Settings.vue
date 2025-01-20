@@ -132,13 +132,29 @@
             </ion-select>
           </ion-item>
         </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Scrolling animation") }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ translate("Allow the scrolling animation to be shown in hard count.") }}
+          </ion-card-content>
+
+          <ion-item lines="none">
+            <ion-toggle label-placement="start" :checked="isScrollingAnimationEnabled" @click.prevent="updateScrollingAnimationPreference()">{{ translate("Enable animation") }}</ion-toggle>
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
 import Image from "@/components/Image.vue"
@@ -162,6 +178,7 @@ const currentProductStore = computed(() => store.getters["user/getCurrentProduct
 const productStores = computed(() => store.getters["user/getProductStores"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const productIdentifications = computed(() => store.getters["user/getGoodIdentificationTypes"])
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
@@ -189,6 +206,10 @@ async function setProductStore(event: any) {
   const productStoreId = event.detail.value
   const productStore = productStores.value.find((store: any) => store.productStoreId === productStoreId)
   await store.dispatch("user/updateCurrentProductStore", productStore)
+}
+
+function updateScrollingAnimationPreference() {
+  store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
 }
 
 function setProductIdentificationPref(value: string, id: string) {
