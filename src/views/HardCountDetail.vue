@@ -258,11 +258,12 @@ const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const isSubmittingForReview = ref(false);
 
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
@@ -307,7 +308,10 @@ async function handleBeforeUnload() {
     if(Object.keys(unmatchedItem)?.length) unmatchedProducts.push(unmatchedItem)
   })
 
-  store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  if(!isSubmittingForReview.value && unmatchedProducts?.length) {
+    store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  }
+  isSubmittingForReview.value = false
 }
 
 function handleProductClick(item: any) {
@@ -573,6 +577,7 @@ async function readyForReview() {
             inventoryCountImportId: props?.id,
             statusId: "INV_COUNT_REVIEW"
           })
+          isSubmittingForReview.value = true;
           router.push("/tabs/count")
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
