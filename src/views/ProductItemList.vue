@@ -67,7 +67,7 @@ onMounted(() => {
  **/
 async function navigateToDetail(item: any) {
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  if(props.item.countTypeEnumId === "HARD_COUNT" && !isScrollingAnimationEnabled.value) {
+  if((props.item.countTypeEnumId === "HARD_COUNT" || props.item.scannedId) && !isScrollingAnimationEnabled.value) {
     if(props.item.importItemSeqId === item.importItemSeqId) {
       emitter.emit("handleProductClick", item)
     }
