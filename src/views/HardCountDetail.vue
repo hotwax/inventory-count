@@ -577,8 +577,8 @@ async function readyForReview() {
             inventoryCountImportId: props?.id,
             statusId: "INV_COUNT_REVIEW"
           })
-          router.push("/tabs/count")
           isSubmittingForReview.value = true;
+          router.push("/tabs/count")
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
