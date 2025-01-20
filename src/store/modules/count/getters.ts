@@ -32,6 +32,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getCachedUnmatchProducts: (state) => (id: string) => {
     return state.cachedUnmatchProducts[id]
+  },
+  getClosedCycleCountsTotal(state) {
+    return state.closedCycleCountsTotal
   }
 };
 

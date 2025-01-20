@@ -268,8 +268,8 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
-  if(isScrollingAnimationEnabled) initializeObserver()
   emitter.emit("dismissLoader")
+  if(isScrollingAnimationEnabled && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
 })
 
@@ -343,7 +343,7 @@ async function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-  if(isScrollingAnimationEnabled) {
+  if(isScrollingAnimationEnabled && itemsList.value?.length) {
     await nextTick();
     initializeObserver()
   }
@@ -459,7 +459,11 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
-  if(isScrollingAnimationEnabled) initializeObserver()
+  if(isScrollingAnimationEnabled && itemsList.value?.length) {
+    setTimeout(() => {
+      initializeObserver()
+    }, 0);
+  }
   findProductFromIdentifier(queryString.value.trim());
   return newItem;
 }

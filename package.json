@@ -1,6 +1,6 @@
 {
   "name": "inventory-count",
-  "version": "2.5.4",
+  "version": "2.6.1",
   "private": true,
   "description": "HotWax Commece Inventory Count App",
   "scripts": {
