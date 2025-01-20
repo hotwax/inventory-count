@@ -41,13 +41,14 @@ import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
 import { getProductIdentificationValue } from "@/utils"
 import { useRouter } from 'vue-router';
+import emitter from '@/event-bus';
 
 const router = useRouter();
-
 const store = useStore();
+const props = defineProps(['item']);
 
-const props = defineProps(['item'])
 
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentProduct = computed(() => store.getters["product/getCurrentProduct"])
@@ -66,14 +67,20 @@ onMounted(() => {
  **/
 async function navigateToDetail(item: any) {
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  setTimeout(() => {
-    const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      store.dispatch("product/currentProduct", item);
+  if((props.item.countTypeEnumId === "HARD_COUNT" || props.item.scannedId) && !isScrollingAnimationEnabled.value) {
+    if(props.item.importItemSeqId === item.importItemSeqId) {
+      emitter.emit("handleProductClick", item)
     }
-  }, 0);
+  } else {
+    setTimeout(() => {
+      const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        store.dispatch("product/currentProduct", item);
+      }
+    }, 0);
+  }
 }
 
 // Method to display the item as selected by changing the ion-item color to light
