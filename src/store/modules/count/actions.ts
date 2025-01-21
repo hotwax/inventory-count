@@ -3,7 +3,7 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, sortListByField } from "@/utils"
+import { convertIsoToMillis, hasError, showToast, sortListByField } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -45,23 +45,23 @@ const actions: ActionTree<CountState, RootState> = {
     if(state.query.createdDate) {
       // created before date
       if(state.query.createdDate?.thru) {
-        params["createdDate_thru"] = state.query.createdDate?.thru
+        params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate.thru)
       }
       // created after date
       if(state.query.createdDate?.from) {
-        params["createdDate_from"] = state.query.createdDate?.from
-      } 
+        params["createdDate_from"] = convertIsoToMillis(state.query.createdDate.from)
+      }
     }
 
     if(state.query.closedDate) {
       // closed before date
       if(state.query.closedDate?.thru) {
-        params["closedDate_thru"] = state.query.closedDate?.thru
+        params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate.thru)
       }
       // closed after date
       if(state.query.closedDate?.from) {
-        params["closedDate_from"] = state.query.closedDate?.from
-      } 
+        params["closedDate_from"] = convertIsoToMillis(state.query.closedDate.from)
+      }
     }
 
     try {

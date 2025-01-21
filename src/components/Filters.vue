@@ -135,7 +135,7 @@ const query = computed(() => store.getters["count/getQuery"])
 
 function openDateTimeModal(dateType: any, dateRange: any) {
   currentFilter.value = `${dateType}_${dateRange}`;
-  currentDateTimeValue.value = query.value[dateType][dateRange] ? DateTime.fromMillis(query.value[dateType][dateRange]).toISO() : DateTime.now()
+  currentDateTimeValue.value = query.value[dateType][dateRange] ? query.value[dateType][dateRange] : DateTime.now()
   dateTimeModalOpen.value = true;
 }
 
@@ -153,14 +153,14 @@ async function updateDateTimeFilter(date: any) {
     key: dateType,
     value: {
       ...query.value[dateType],
-      [dateRange]: DateTime.fromISO(date).toMillis()
+      [dateRange]: date
     }
   }
   await store.dispatch("count/updateQuery", payload)
 }
 
-function formatDateTime(date: number) {
-  const dateTime = DateTime.fromMillis(date);
+function formatDateTime(date: any) {
+  const dateTime = DateTime.fromISO(date);
   return dateTime.toFormat("dd'th' MMM yyyy");
 }
 

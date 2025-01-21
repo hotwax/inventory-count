@@ -55,6 +55,10 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
+function convertIsoToMillis(isoDate: any) {
+  return DateTime.fromISO(isoDate).toMillis();
+}
+
 const getDerivedStatusForCount = (count: any) => {
   const countStats = cycleCountStats(count.inventoryCountImportId)
 
@@ -178,4 +182,4 @@ function sortListByField(list: any, field = "parentProductName") {
   });
 }
 
-export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }
+export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }
