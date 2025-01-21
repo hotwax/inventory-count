@@ -42,26 +42,22 @@ const actions: ActionTree<CountState, RootState> = {
       params["orderByField"] = state.query.sortBy
     }
 
-    if(state.query.createdDate) {
-      // created before date
-      if(state.query.createdDate?.thru) {
-        params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate.thru)
-      }
-      // created after date
-      if(state.query.createdDate?.from) {
-        params["createdDate_from"] = convertIsoToMillis(state.query.createdDate.from)
-      }
+    // created before date
+    if(state.query.createdDate?.thru) {
+      params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate.thru)
+    }
+    // created after date
+    if(state.query.createdDate?.from) {
+      params["createdDate_from"] = convertIsoToMillis(state.query.createdDate.from)
     }
 
-    if(state.query.closedDate) {
-      // closed before date
-      if(state.query.closedDate?.thru) {
-        params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate.thru)
-      }
-      // closed after date
-      if(state.query.closedDate?.from) {
-        params["closedDate_from"] = convertIsoToMillis(state.query.closedDate.from)
-      }
+    // closed before date
+    if(state.query.closedDate?.thru) {
+      params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate.thru)
+    }
+    // closed after date
+    if(state.query.closedDate?.from) {
+      params["closedDate_from"] = convertIsoToMillis(state.query.closedDate.from)
     }
 
     try {
