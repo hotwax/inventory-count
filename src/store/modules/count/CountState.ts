@@ -7,8 +7,7 @@ export default interface CountState {
     noFacility: boolean,
     queryString: string,
     sortBy: string,
-    createdDate: any
-    closedDate: any,
+    dateFilter: any
   },
   stats: any;
   cycleCounts: any;

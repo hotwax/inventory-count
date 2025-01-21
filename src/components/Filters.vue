@@ -56,11 +56,11 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'from')">{{ query["createdDate"]["from"] ? formatDateTime(query["createdDate"]["from"]) : translate("Date") }}</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate_from')">{{ query.dateFilter.createdDate_from ? formatDateTime(query.dateFilter.createdDate_from) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate', 'thru')">{{ query["createdDate"]["thru"] ? formatDateTime(query["createdDate"]["thru"]) : translate("Date") }}</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate_thru')">{{ query.dateFilter.createdDate_thru ? formatDateTime(query.dateFilter.createdDate_thru) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>
@@ -73,11 +73,11 @@
             <div slot="content">
               <ion-item>
                 <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'from')">{{ query["closedDate"]["from"] ? formatDateTime(query["closedDate"]["from"]) : translate("Date") }}</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate_from')">{{ query.dateFilter.closedDate_from ? formatDateTime(query.dateFilter.closedDate_from) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
                 <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate', 'thru')">{{ query["closedDate"]["thru"] ? formatDateTime(query["closedDate"]["thru"]) : translate("Date") }}</ion-button>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate_thru')">{{ query.dateFilter.closedDate_thru ? formatDateTime(query.dateFilter.closedDate_thru) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>  
@@ -89,6 +89,8 @@
               show-clear-button
               show-default-buttons
               presentation="date"
+              :min="getMinDate()"
+              :max="getMaxDate()" 
               @ionChange="updateDateTimeFilter($event.detail.value)"
             />
           </ion-content>
@@ -133,10 +135,20 @@ const currentDateTimeValue = ref("") as any;
 const facilities = computed(() => store.getters["user/getFacilities"])
 const query = computed(() => store.getters["count/getQuery"])
 
-function openDateTimeModal(dateType: any, dateRange: any) {
-  currentFilter.value = `${dateType}_${dateRange}`;
-  currentDateTimeValue.value = query.value[dateType][dateRange] ? query.value[dateType][dateRange] : DateTime.now()
+function openDateTimeModal(dateKey: string) {
+  currentFilter.value = dateKey;
+  currentDateTimeValue.value = query.value.dateFilter[dateKey] ? query.value.dateFilter[dateKey] : DateTime.now();
   dateTimeModalOpen.value = true;
+}
+
+function getMinDate() {
+  const afterDate = query.value.dateFilter.closedDate_from || query.value.dateFilter.createdDate_from;
+  return afterDate ? DateTime.fromISO(afterDate).toISO() : undefined;
+}
+
+function getMaxDate() {
+  const beforeDate = query.value.dateFilter.closedDate_thru || query.value.dateFilter.createdDate_thru;
+  return beforeDate ? DateTime.fromISO(beforeDate).toISO() : undefined;
 }
 
 function closeDateTimeModal() {
@@ -145,17 +157,20 @@ function closeDateTimeModal() {
 }
 
 async function updateDateTimeFilter(date: any) {
-  if (!date) dateTimeModalOpen.value = false;
+  if(!date) dateTimeModalOpen.value = false;
 
-  const dateType = currentFilter.value.split("_")[0]
-  const dateRange = currentFilter.value.split("_")[1]
-  const payload = {
-    key: dateType,
-    value: {
-      ...query.value[dateType],
-      [dateRange]: date
-    }
+  const dateKey = currentFilter.value;
+
+  if(date === query.value.dateFilter[dateKey]) {
+    dateTimeModalOpen.value = false;
+    return;
   }
+
+  const payload = {
+    key: dateKey,
+    value: date
+  }
+
   await store.dispatch("count/updateQuery", payload)
 }
 

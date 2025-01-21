@@ -55,8 +55,8 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
-function convertIsoToMillis(isoDate: any) {
-  return DateTime.fromISO(isoDate).toMillis();
+function convertIsoToMillis(isoDate: any, timezone?: string) {
+  return timezone === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
 }
 
 const getDerivedStatusForCount = (count: any) => {
