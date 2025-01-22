@@ -324,7 +324,7 @@ function handleProductClick(item: any) {
 
 async function fetchCycleCount() {
   try {
-    const resp = await CountService.fetchCycleCount(props?.id)
+    const resp = await CountService.fetchCycleCount({inventoryCountImportId: props?.id})
     if(!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {

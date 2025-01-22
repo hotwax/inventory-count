@@ -167,7 +167,7 @@ async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
+    statusId: "INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
     statusId_op: "in"
   }
   await store.dispatch("count/fetchCycleCounts", payload)
