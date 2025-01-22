@@ -65,7 +65,7 @@
             </div>
           </ion-accordion>
 
-          <ion-accordion>
+          <ion-accordion v-if="router.currentRoute.value.name === 'Closed'">
             <ion-item slot="header" lines="full">
               <ion-icon slot="start" :icon="gitPullRequestOutline"/>
               <ion-label class="ion-text-wrap">{{ translate("Closed") }}</ion-label>
@@ -127,6 +127,7 @@ import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";
 import { DateTime } from "luxon";
+import { getDateWithOrdinalSuffix } from "@/utils";
 
 const dateTimeModalOpen = ref(false)
 const currentDateFilter = ref("");
@@ -159,10 +160,12 @@ function getMinDate() {
 function getMaxDate() {
   const dateFilterKey = currentDateFilter.value;
 
-  if(dateFilterKey === 'closedDate_from') {
+  if(dateFilterKey === 'closedDate_from' || dateFilterKey === 'createdDate_from') {
+    return DateTime.now().toISODate();
+  } else if(dateFilterKey === 'closedDate_thru') {
     const beforeDateClosed = query.value.closedDate_thru;
     return beforeDateClosed ? DateTime.fromISO(beforeDateClosed).toISO() : undefined;
-  } else if(dateFilterKey === 'createdDate_from') {
+  } else if(dateFilterKey === 'createdDate_thru') {
     const beforeDateCreated = query.value.createdDate_thru;
     return beforeDateCreated ? DateTime.fromISO(beforeDateCreated).toISO() : undefined;
   }
@@ -193,14 +196,14 @@ async function updateDateTimeFilter(date: any) {
 
 function formatDateTime(date: any) {
   const dateTime = DateTime.fromISO(date);
-  return dateTime.toFormat("dd'th' MMM yyyy");
+  return getDateWithOrdinalSuffix(dateTime.toMillis());
 }
 
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
     selectedFacilities: router.currentRoute.value.name === "Closed",
-    date: router.currentRoute.value.name === "Closed"
+    date: router.currentRoute.value.name !== "Draft"
   }
 }
 
