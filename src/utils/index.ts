@@ -55,6 +55,7 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
+// Converts ISO date to milliseconds at start or end of day, considering timezone
 function convertIsoToMillis(isoDate: any, timezone?: string) {
   return timezone === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
 }

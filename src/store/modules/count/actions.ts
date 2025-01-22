@@ -41,21 +41,22 @@ const actions: ActionTree<CountState, RootState> = {
     if(state.query.sortBy) {
       params["orderByField"] = state.query.sortBy
     }
-    // created before date
-    if (state.query.dateFilter.closedDate_thru) {
-      params["closedDate_thru"] = convertIsoToMillis(state.query.dateFilter.closedDate_thru, "thru");
-    }
+
     // created after date
-    if (state.query.dateFilter.createdDate_from) {
-      params["createdDate_from"] = convertIsoToMillis(state.query.dateFilter.createdDate_from, "from");
+    if(state.query.createdDate_from) {
+      params["createdDate_from"] = convertIsoToMillis(state.query.createdDate_from, "from");
     }
-    // closed before date
-    if (state.query.dateFilter.closedDate_thru) {
-      params["closedDate_thru"] = convertIsoToMillis(state.query.dateFilter.closedDate_thru, "thru");
+    // created before date
+    if(state.query.createdDate_thru) {
+      params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate_thru, "thru");
     }
     // closed after date
-    if (state.query.dateFilter.closedDate_from) {
-      params["closedDate_from"] = convertIsoToMillis(state.query.dateFilter.closedDate_from, "from");
+    if(state.query.closedDate_from) {
+      params["closedDate_from"] = convertIsoToMillis(state.query.closedDate_from, "from");
+    }
+    // closed before date
+    if(state.query.closedDate_thru) {
+      params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate_thru, "thru");
     }
 
     try {
