@@ -156,18 +156,14 @@ function getMinDate() {
   return undefined;
 }
 
-// Returns the maximum allowed date for the current date filter, ensuring it is not after the "thru" date for closed or created dates.
+// Returns the maximum allowed date for the current filter, restricting "After" dates to today and allowing "Before" dates without restriction.
 function getMaxDate() {
   const dateFilterKey = currentDateFilter.value;
 
   if(dateFilterKey === 'closedDate_from' || dateFilterKey === 'createdDate_from') {
     return DateTime.now().toISODate();
-  } else if(dateFilterKey === 'closedDate_thru') {
-    const beforeDateClosed = query.value.closedDate_thru;
-    return beforeDateClosed ? DateTime.fromISO(beforeDateClosed).toISO() : undefined;
-  } else if(dateFilterKey === 'createdDate_thru') {
-    const beforeDateCreated = query.value.createdDate_thru;
-    return beforeDateCreated ? DateTime.fromISO(beforeDateCreated).toISO() : undefined;
+  } else if(dateFilterKey === 'closedDate_thru' || dateFilterKey === 'createdDate_thru') {
+    return undefined;
   }
   return undefined;
 }
