@@ -40,6 +40,9 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED] (state, payload) {
     state.closedCycleCountsTotal = payload
+  },
+  [types.COUNT_ITEMS_COUNT_TOTAL_UPDATED] (state, payload) {
+    state.cycleCountItemsCount = payload
   }
   
 }	

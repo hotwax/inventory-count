@@ -68,10 +68,11 @@
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item>
+              <!-- Todo: need backend api to fetch count variance information -->
+              <!-- <ion-item>
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-              </ion-item>
+              </ion-item> -->
               <ion-item lines="none">
                 <ion-icon slot="start" :icon="thermometerOutline"/>
                 <ion-label>{{ translate("Item variance threshold") }}</ion-label>
@@ -162,13 +163,16 @@
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
+      <ion-fab-button @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
     
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
+        <ion-buttons>
+          <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />
+        </ion-buttons>
         <ion-buttons slot="end">
           <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
             <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
@@ -199,6 +203,7 @@ import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
+import { DxpPagination } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -207,7 +212,7 @@ const props = defineProps({
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-
+const totalCountItems = computed(() => store.getters["count/getCycleCountItemsCount"])
 const filteredItems = computed(() => {
   let items = currentCycleCount.value.items
 
@@ -235,6 +240,8 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
+const pageSize = process.env.VUE_APP_VIEW_SIZE ? JSON.parse(process.env.VUE_APP_VIEW_SIZE) : 20;
+let pageIndex = 0;
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -253,7 +260,7 @@ onIonViewWillEnter(async () => {
       }
 
       countName.value = resp.data.countImportName
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     }
   } catch(err) {
     logger.error()
@@ -266,28 +273,27 @@ onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
 })
 
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
+async function fetchCountItems(index?: any) {
+  let items = [] as any;
 
   try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
+    const resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize, pageIndex: index ? index : 0 })
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      items = resp.data.itemList
+    } else {
+      throw resp.data;
+    }
   } catch(err) {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
-
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+}
+
+function updatePageIndex(index: any) {
+  pageIndex = index;
+  fetchCountItems(index);
 }
 
 async function addProductToCount(productId: any) {
@@ -310,8 +316,8 @@ async function addProductToCount(productId: any) {
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
-      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
+      pageIndex = 0;
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
@@ -441,7 +447,7 @@ async function updateItemStatus(statusId: string, item?: any) {
     })
 
     if(!hasError(resp)) {
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(pageIndex), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     } else {
       throw resp.data
     }
@@ -475,7 +481,7 @@ async function recountItem(item?: any) {
     })
 
     if(!hasError(resp)) {
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(pageIndex), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     } else {
       throw resp.data
     }
@@ -496,7 +502,7 @@ async function completeCount() {
 
     if(!hasError(resp) && resp.data?.count > 0) {
       showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
       emitter.emit("dismissLoader")
       return;
     }
@@ -566,7 +572,7 @@ async function acceptItem(item?: any) {
   } else {
     showToast(translate("All of the item(s) are accepted"))
   }
-  await fetchCountItems()
+  await Promise.allSettled([fetchCountItems(pageIndex), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
 }
 
 function openDateTimeModal() {

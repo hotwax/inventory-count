@@ -242,6 +242,24 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
   },
 
+  async fetchCycleCountItemsCount ({ commit }, inventoryCountImportId) {
+    let total = 0;
+    try {
+      const resp = await CountService.fetchCycleCountItemsCount({
+        inventoryCountImportId: inventoryCountImportId,
+      })
+  
+      if(!hasError(resp)) {
+        total = resp.data.count
+      } else {
+        throw resp
+      }
+    } catch(error: any) {
+      logger.error(error);
+    }
+    commit(types.COUNT_ITEMS_COUNT_TOTAL_UPDATED, total)
+  },
+
   async clearCycleCountItems ({ commit }) {
     commit(types.COUNT_ITEMS_UPDATED, [])
   },

@@ -145,6 +145,14 @@
       </template>
     </ion-content>
 
+    <ion-footer v-if="totalCountItems">
+      <ion-toolbar>
+        <ion-buttons>
+          <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
+
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
       <ion-fab-button @click="updateCountStatus">
         <ion-icon :icon="sendOutline" />
@@ -158,7 +166,7 @@ import { translate } from "@/i18n";
 import ImportCsvModal from "@/components/ImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
+import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv, sortListByField } from "@/utils";
@@ -169,6 +177,7 @@ import store from "@/store";
 import { ProductService } from "@/services/ProductService";
 import router from "@/router"
 import Image from "@/components/Image.vue"
+import { DxpPagination } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -176,7 +185,7 @@ const props = defineProps({
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-
+const totalCountItems = computed(() => store.getters["count/getCycleCountItemsCount"])
 const isProductAvailableInCycleCount = computed(() => {
   if(!searchedProduct.value.productId) return false
   return currentCycleCount.value.items?.some((item: any) => item.productId == searchedProduct.value.productId)
@@ -194,7 +203,9 @@ let content = ref([]) as any
 let fileColumns = ref([]) as any 
 let uploadedFile = ref({}) as any
 const fileUploaded = ref(false);
- let timeoutId = ref()
+let timeoutId = ref()
+const pageSize = process.env.VUE_APP_VIEW_SIZE ? JSON.parse(process.env.VUE_APP_VIEW_SIZE) : 20;
+let pageIndex = 0;
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -235,7 +246,7 @@ onIonViewWillEnter(async () => {
       }
 
       countName.value = resp.data.countImportName
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId)])
     }
   } catch(err) {
     logger.error()
@@ -268,27 +279,27 @@ async function parse(event: any) {
   }
 }
 
-async function fetchCountItems() {
-  let items = [] as any, resp, pageIndex = 0;
+async function fetchCountItems(index? : any) {
+  let items = [] as any;
 
   try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
+    const resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize, pageIndex: index ? index : 0 })
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      items = resp.data.itemList
+    } else {
+      throw resp.data;
+    }
   } catch(err) {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
-
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+}
+
+function updatePageIndex(index: any) {
+  pageIndex = index;
+  fetchCountItems(index);
 }
 
 async function openImportCsvModal() {
@@ -500,8 +511,8 @@ async function addProductToCount(payload?: any) {
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
-      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
+      pageIndex = 0
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount")])
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)

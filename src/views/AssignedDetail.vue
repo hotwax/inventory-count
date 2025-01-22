@@ -60,10 +60,11 @@
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item>
+              <!-- Todo: need backend api for fetching variance on page load -->
+              <!-- <ion-item>
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-              </ion-item>
+              </ion-item> -->
             </ion-list>
           </div>
         </div>
@@ -129,6 +130,14 @@
       </template>
     </ion-content>
 
+    <ion-footer v-if="totalCountItems">
+      <ion-toolbar>
+        <ion-buttons>
+          <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
+
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
       <ion-fab-button @click="updateCountStatus">
         <ion-icon :icon="lockClosedOutline" />
@@ -141,7 +150,7 @@
 import { computed, defineProps, nextTick, ref } from "vue";
 import { translate } from '@/i18n'
 import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, lockClosedOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController, onIonViewWillLeave } from "@ionic/vue";
+import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController, onIonViewWillLeave } from "@ionic/vue";
 import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
@@ -152,6 +161,7 @@ import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
+import { DxpPagination } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -160,12 +170,15 @@ const props = defineProps({
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const totalCountItems = computed(() => store.getters["count/getCycleCountItemsCount"])
 
 const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
 let countName = ref("")
+const pageSize = process.env.VUE_APP_VIEW_SIZE ? JSON.parse(process.env.VUE_APP_VIEW_SIZE) : 20;
+let pageIndex = 0;
 
 async function addProductToCount(productId: any) {
   if(!productId) {
@@ -187,8 +200,8 @@ async function addProductToCount(productId: any) {
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
-      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
+      pageIndex = 0
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
@@ -213,7 +226,7 @@ onIonViewWillEnter(async () => {
       }
 
       countName.value = resp.data.countImportName
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     }
   } catch(err) {
     logger.error()
@@ -226,20 +239,16 @@ onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
 })
 
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
+async function fetchCountItems(index?: any) {
+  let items = [] as any;
 
   try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
+    const resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize, pageIndex: index ? index : 0 })
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      items = resp.data.itemList
+    } else {
+      throw resp.data;
+    }
   } catch(err) {
     logger.error(err)
   }
@@ -248,6 +257,11 @@ async function fetchCountItems() {
 
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+}
+
+function updatePageIndex(index: any) {
+  pageIndex = index;
+  fetchCountItems(index);
 }
 
 async function editCountName() {
