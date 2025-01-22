@@ -32,7 +32,7 @@
           </ion-item>
         </div>
 
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" @click="router.push(`/closed/${count.inventoryCountImportId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
@@ -110,6 +110,7 @@ import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
 import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue";
+import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))

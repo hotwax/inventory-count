@@ -98,6 +98,7 @@ export default defineComponent({
         url: "/closed",
         iosIcon: receiptOutline,
         mdIcon: receiptOutline,
+        childRoutes: ["/closed/"],
         meta: {
           permissionId: "APP_CLOSED_VIEW"
         }
