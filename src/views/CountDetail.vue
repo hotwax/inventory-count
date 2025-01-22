@@ -354,9 +354,10 @@ function inputCountValidation(event) {
 }
 
 async function fetchCycleCount() {
+  let payload = props?.id
   let resp
   try {
-    resp = await CountService.fetchCycleCount({inventoryCountImportId: props?.id})
+    resp = await CountService.fetchCycleCount(payload)
     if (!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {

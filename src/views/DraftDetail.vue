@@ -224,7 +224,7 @@ onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {
-    const resp = await CountService.fetchCycleCount({inventoryCountImportId: props.inventoryCountImportId})
+    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
     if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data.statusId === "INV_COUNT_CREATED") {
       currentCycleCount.value = {

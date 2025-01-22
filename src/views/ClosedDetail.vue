@@ -120,9 +120,9 @@ onIonViewWillEnter(async () => {
 
   currentCycleCount.value = {}
   try {
-    const resp = await CountService.fetchCycleCount({inventoryCountImportId: props.inventoryCountImportId, statusId: "INV_COUNT_COMPLETED,INV_COUNT_REJECTED", statusId_op: "in"})
+    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId) {
+    if(!hasError(resp) && resp.data?.inventoryCountImportId && ["INV_COUNT_COMPLETED", "INV_COUNT_REJECTED"].includes(resp.data?.statusId)) {
       currentCycleCount.value = {
         countName: resp.data.countImportName,
         countId: resp.data.inventoryCountImportId,
