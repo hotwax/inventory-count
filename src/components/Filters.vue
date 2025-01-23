@@ -55,71 +55,46 @@
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"
-                      show-default-buttons
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal> 
+                <ion-label>{{ translate("After") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate_from')">{{ query.createdDate_from ? formatDateTime(query.createdDate_from) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
-                <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"
-                      show-default-buttons
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>               
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('createdDate_thru')">{{ query.createdDate_thru ? formatDateTime(query.createdDate_thru) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>
 
-          <ion-accordion>
+          <ion-accordion v-if="router.currentRoute.value.name === 'Closed'">
             <ion-item slot="header" lines="full">
               <ion-icon slot="start" :icon="gitPullRequestOutline"/>
               <ion-label class="ion-text-wrap">{{ translate("Closed") }}</ion-label>
             </ion-item>
             <div slot="content">
               <ion-item>
-                <ion-label>{{ translate("Before") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>       
+                <ion-label>{{ translate("After") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate_from')">{{ query.closedDate_from ? formatDateTime(query.closedDate_from) : translate("Date") }}</ion-button>
               </ion-item>
               <ion-item>
-                <ion-label>{{ translate("After") }}</ion-label>
-                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">Date</ion-button>
-                <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-                  <ion-content force-overscroll="false">
-                    <ion-datetime    
-                      id="schedule-datetime"        
-                      show-default-buttons 
-                      hour-cycle="h23"
-                      value="3rd March 2024"
-                    />
-                  </ion-content>
-                </ion-modal>               
+                <ion-label>{{ translate("Before") }}</ion-label>
+                <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal('closedDate_thru')">{{ query.closedDate_thru ? formatDateTime(query.closedDate_thru) : translate("Date") }}</ion-button>
               </ion-item>
             </div>
           </ion-accordion>  
         </ion-accordion-group>
+        <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="closeDateTimeModal">
+          <ion-content force-overscroll="false">
+            <ion-datetime 
+              :value="currentDateFilterValue"
+              show-clear-button
+              show-default-buttons
+              presentation="date"
+              :min="getMinDate()"
+              :max="getMaxDate()" 
+              @ionChange="updateDateTimeFilter($event.detail.value)"
+            />
+          </ion-content>
+        </ion-modal>
       </ion-list>
     </ion-content> 
   </ion-menu>
@@ -151,21 +126,80 @@ import { closeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOu
 import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";
+import { DateTime } from "luxon";
+import { getDateWithOrdinalSuffix } from "@/utils";
 
 const dateTimeModalOpen = ref(false)
+const currentDateFilter = ref("");
+const currentDateFilterValue = ref("") as any;
 
 const facilities = computed(() => store.getters["user/getFacilities"])
 const query = computed(() => store.getters["count/getQuery"])
 
-function openDateTimeModal() {
+function openDateTimeModal(dateFilterKey: string) {
+  currentDateFilter.value = dateFilterKey;
+  currentDateFilterValue.value = query.value[dateFilterKey] ? query.value[dateFilterKey] : DateTime.now();
   dateTimeModalOpen.value = true;
+}
+
+// Returns the minimum allowed date for the current date filter, ensuring it is not before the "from" date for closed or created dates.
+function getMinDate() {
+  const dateFilterKey = currentDateFilter.value;
+
+  if(dateFilterKey === 'closedDate_thru') {
+    const afterDateClosed = query.value.closedDate_from;
+    return afterDateClosed ? DateTime.fromISO(afterDateClosed).toISO() : undefined;
+  } else if(dateFilterKey === 'createdDate_thru') {
+    const afterDateCreated = query.value.createdDate_from;
+    return afterDateCreated ? DateTime.fromISO(afterDateCreated).toISO() : undefined;
+  }
+  return undefined;
+}
+
+// Returns the maximum allowed date for the current filter, restricting "After" dates to today and allowing "Before" dates without restriction.
+function getMaxDate() {
+  const dateFilterKey = currentDateFilter.value;
+
+  if(dateFilterKey === 'closedDate_from' || dateFilterKey === 'createdDate_from') {
+    return DateTime.now().toISODate();
+  } else if(dateFilterKey === 'closedDate_thru' || dateFilterKey === 'createdDate_thru') {
+    return undefined;
+  }
+  return undefined;
+}
+
+function closeDateTimeModal() {
+  currentDateFilter.value = "";
+  dateTimeModalOpen.value = false;
+}
+
+async function updateDateTimeFilter(date: any) {
+  if(!date) dateTimeModalOpen.value = false;
+
+  const dateFilterKey = currentDateFilter.value;
+
+  if(date === query.value[dateFilterKey]) {
+    dateTimeModalOpen.value = false;
+    return;
+  }
+
+  const payload = {
+    key: dateFilterKey,
+    value: date
+  }
+  await store.dispatch("count/updateQuery", payload)
+}
+
+function formatDateTime(date: any) {
+  const dateTime = DateTime.fromISO(date);
+  return getDateWithOrdinalSuffix(dateTime.toMillis());
 }
 
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
-    selectedFacilities: router.currentRoute.value.name === "Closed"
-    // date: router.currentRoute.value.name === "Closed"
+    selectedFacilities: router.currentRoute.value.name === "Closed",
+    date: router.currentRoute.value.name !== "Draft"
   }
 }
 

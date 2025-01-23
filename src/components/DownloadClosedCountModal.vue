@@ -174,6 +174,7 @@ async function fetchBulkCycleCountItems() {
   let payload = {
     statusId: "INV_COUNT_COMPLETED",
     pageSize: 200,
+    facilityId: query.value.facilityIds,
     pageIndex: 0
   };
 
@@ -195,19 +196,7 @@ async function fetchBulkCycleCountItems() {
     return [];
   }
 
-  return query.value.facilityIds.length ? filterItemsByFacility(allItems) : allItems;
-}
-
-// Returns items filtered on facility
-// TODO: need to add this facility filter in the api itself
-function filterItemsByFacility(allItems: any) {
-  let filteredItems = [] as Array<any>
-
-  query.value.facilityIds.map((facilityId: any) => {
-    filteredItems.push(...allItems.filter((item: any) => item.facilityId === facilityId))
-  })
-
-  return filteredItems;
+  return allItems;
 }
 
 async function fetchProducts(productIds: any){
