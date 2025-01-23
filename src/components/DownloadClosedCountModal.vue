@@ -219,9 +219,9 @@ async function fetchBulkCycleCountItems() {
   }
 
   if(!counts.length) return [];
-  let countItems = [] as any;
+  let countItems = [] as any, count = {} as any;
 
-  const responses = await Promise.allSettled(counts.map(async (count: any) => {
+  for(count of counts) {
     let items = [] as any, resp, index = 0;
     try {
       do {
@@ -237,12 +237,9 @@ async function fetchBulkCycleCountItems() {
       logger.error(err)
     }
 
-    return items
-  }))
+    countItems = countItems.concat(items);
+  }
 
-  responses.map((response: any) => {
-    if(response.status === "fulfilled") countItems = countItems.concat(response.value);
-  })
   return countItems
 }
 
