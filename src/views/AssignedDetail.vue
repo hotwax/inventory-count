@@ -130,7 +130,7 @@
       </template>
     </ion-content>
 
-    <ion-footer v-if="totalCountItems">
+    <ion-footer v-if="currentCycleCount.inventoryCountImportId && totalCountItems">
       <ion-toolbar>
         <ion-buttons>
           <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />

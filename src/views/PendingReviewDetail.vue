@@ -170,7 +170,7 @@
     
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
-        <ion-buttons>
+        <ion-buttons v-if="totalCountItems">
           <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />
         </ion-buttons>
         <ion-buttons slot="end">
