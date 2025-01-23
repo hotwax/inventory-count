@@ -95,7 +95,7 @@ import {
   modalController
 } from "@ionic/vue";
 import emitter from "@/event-bus"
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
 import { convertIsoToMillis, getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv, showToast } from "@/utils";
 import { CountService } from "@/services/CountService"
