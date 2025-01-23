@@ -95,9 +95,9 @@ import {
   modalController
 } from "@ionic/vue";
 import emitter from "@/event-bus"
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv } from "@/utils";
+import { convertIsoToMillis, getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv, showToast } from "@/utils";
 import { CountService } from "@/services/CountService"
 import { translate } from '@/i18n';
 import { DateTime } from "luxon";
@@ -171,32 +171,79 @@ function getFacilityDetails() {
 }
 
 async function fetchBulkCycleCountItems() {
-  let payload = {
-    statusId: "INV_COUNT_COMPLETED",
-    pageSize: 200,
-    facilityId: query.value.facilityIds,
-    pageIndex: 0
-  };
+  let resp = {} as any, counts = [] as any, pageIndex = 0;
+  const pageSize = process.env.VUE_APP_VIEW_SIZE ? JSON.parse(process.env.VUE_APP_VIEW_SIZE) : 20;
+  const params = {
+    statusId: "INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
+    statusId_op: "in",
+    facilityId: query.value.facilityIds.join(","),
+    facilityId_op: "in",
+    pageSize,
+    pageIndex
+  } as any;
 
-  let allItems = [] as any;
-  let resp;
+  if(query.value.queryString.length) {
+    params["countImportName"] = query.value.queryString
+    params["countImportName_op"] = "contains"
+  }
+
+  // created after date
+  if(query.value.createdDate_from) {
+    params["createdDate_from"] = convertIsoToMillis(query.value.createdDate_from, "from");
+  }
+  // created before date
+  if(query.value.createdDate_thru) {
+    params["createdDate_thru"] = convertIsoToMillis(query.value.createdDate_thru, "thru");
+  }
+  // closed after date
+  if(query.value.closedDate_from) {
+    params["closedDate_from"] = convertIsoToMillis(query.value.closedDate_from, "from");
+  }
+  // closed before date
+  if(query.value.closedDate_thru) {
+    params["closedDate_thru"] = convertIsoToMillis(query.value.closedDate_thru, "thru");
+  }
 
   try {
     do {
-      resp = await CountService.fetchBulkCycleCountItems(payload);
-      if (!hasError(resp) && resp?.data.itemList.length) {
-        allItems = allItems.concat(resp.data.itemList);
-        payload.pageIndex++;
+      resp = await CountService.fetchCycleCounts(params);
+      if(!hasError(resp) && resp.data?.length) {
+        counts = counts.concat(resp.data)
+        pageIndex++;
       } else {
-        throw resp.data;
+        throw resp
       }
-    } while (resp.data.itemList.length >= payload.pageSize);
-  } catch (err) {
-    logger.error(err);
-    return [];
+    } while(resp.data.length >= pageSize)
+  } catch(err) {
+    logger.error(err)
   }
 
-  return allItems;
+  if(!counts.length) return [];
+  let countItems = [] as any;
+
+  const responses = await Promise.allSettled(counts.map(async (count: any) => {
+    let items = [] as any, resp, index = 0;
+    try {
+      do {
+        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : count.inventoryCountImportId, pageSize: 200, pageIndex: index })
+        if(!hasError(resp) && resp.data?.itemList?.length) {
+          items = items.concat(resp.data.itemList)
+          index++;
+        } else {
+          throw resp.data;
+        }
+      } while(resp.data.itemList?.length >= 200)
+    } catch(err) {
+      logger.error(err)
+    }
+
+    return items
+  }))
+
+  responses.map((response: any) => {
+    if(response.status === "fulfilled") countItems = countItems.concat(response.value);
+  })
+  return countItems
 }
 
 async function fetchProducts(productIds: any){
@@ -204,6 +251,16 @@ async function fetchProducts(productIds: any){
 }
 
 async function downloadCSV() {
+  if(!query.value.facilityIds?.length) {
+    showToast(translate("Please select atleast one facility in filters."))
+    return;
+  }
+
+  if(!(query.value.createdDate_from && query.value.createdDate_thru) && !(query.value.closedDate_from && query.value.closedDate_thru)) {
+    showToast(translate("Please select atleast one of the date filter range."))
+    return;
+  }
+
   await modalController.dismiss({ dismissed: true });
   emitter.emit("presentLoader", { message: "Preparing file to downlaod...", backdropDismiss: true });
   
