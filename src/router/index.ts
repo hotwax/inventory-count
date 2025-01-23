@@ -21,6 +21,7 @@ import Settings from "@/views/Settings.vue";
 import BulkUpload from "@/views/BulkUpload.vue"
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
+import ClosedDetail from "@/views/ClosedDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -180,6 +181,16 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Closed',
     component: Closed,  
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
+  },
+  {
+    path: '/closed/:inventoryCountImportId',
+    name: 'ClosedDetail',
+    component: ClosedDetail,
+    beforeEnter: authGuard,
+    props: true,
     meta: {
       permissionId: "APP_CLOSED_VIEW"
     }
