@@ -225,7 +225,7 @@ async function fetchBulkCycleCountItems() {
     let items = [] as any, resp, index = 0;
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : count.inventoryCountImportId, pageSize: 200, pageIndex: index })
+        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : count.inventoryCountImportId, pageSize: 100, pageIndex: index })
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
           index++;
