@@ -232,7 +232,7 @@ async function fetchBulkCycleCountItems() {
         } else {
           throw resp.data;
         }
-      } while(resp.data.itemList?.length >= 200)
+      } while(resp.data.itemList?.length >= 100)
     } catch(err) {
       logger.error(err)
     }
