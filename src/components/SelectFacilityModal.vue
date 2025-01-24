@@ -80,7 +80,7 @@ function closeModal(value = "") {
 
 function filterFacilities() {
   if(queryString.value.trim()) {
-    filteredFacilities.value = facilities.value.filter((facility: any) => facility.facilityName.toLowerCase().includes(queryString.value.toLowerCase()) || facility.facilityId.toLowerCase().includes(queryString.value.toLowerCase()))
+    filteredFacilities.value = facilities.value.filter((facility: any) => facility.facilityName?.toLowerCase().includes(queryString.value.toLowerCase()) || facility.facilityId.toLowerCase().includes(queryString.value.toLowerCase()))
   } else {
     filteredFacilities.value = facilities.value
   }

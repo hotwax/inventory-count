@@ -204,6 +204,8 @@
   "Please provide a valid barcode identifier.": "Please provide a valid barcode identifier.",
   "Please select at least one field to generate CSV": "Please select at least one field to generate CSV",
   "Please select a Product identifier": "Please select a Product identifier",
+  "Please select atleast one facility in filters.": "Please select atleast one facility in filters.",
+  "Please select atleast one of the date filter range.": "Please select atleast one of the date filter range.",
   "Please select the column that corresponds to the product identifier": "Please select the column that corresponds to the product identifier",
   "Preparing file to downlaod...": "Preparing file to downlaod...",
   "Primary": "Primary",
