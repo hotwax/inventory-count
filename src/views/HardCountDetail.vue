@@ -85,7 +85,7 @@
                 </ion-button>
               </ion-item>
 
-              <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
+              <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount || currentProduct.quantity === 0 || currentProduct.scannedCount === 0">
                 <ion-item v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
                   <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                 </ion-item>
