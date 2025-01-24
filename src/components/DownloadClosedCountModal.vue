@@ -235,6 +235,7 @@ async function fetchBulkCycleCountItems() {
       } while(resp.data.itemList?.length >= 100)
     } catch(err) {
       logger.error(err)
+      items = []
     }
 
     countItems = countItems.concat(items);
