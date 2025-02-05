@@ -174,7 +174,7 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { getCycleCountStats, getDateWithOrdinalSuffix } from "@/utils"
+import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
 
 const store = useStore();
 const router = useRouter()
@@ -183,6 +183,7 @@ const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
+const facilities = computed(() => store.getters["user/getFacilities"])
 
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
@@ -224,6 +225,10 @@ async function loadMoreCycleCount(event) {
 }
 
 async function fetchCycleCounts(vSize, vIndex) {
+  if(!facilities.value.length) {
+    showToast(translate("No facility is associated with this user"));
+    return;
+  }
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
   const facilityId = currentFacility.value?.facilityId
