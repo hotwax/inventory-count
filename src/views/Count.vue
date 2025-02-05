@@ -224,7 +224,7 @@ async function loadMoreCycleCount(event) {
 }
 
 async function fetchCycleCounts(vSize, vIndex) {
-  if(!currentFacility.value.length) {
+  if(!currentFacility.value?.facilityId) {
     showToast(translate("No facility is associated with this user"));
     return;
   }
