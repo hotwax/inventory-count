@@ -183,7 +183,6 @@ const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
-const facilities = computed(() => store.getters["user/getFacilities"])
 
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
@@ -225,7 +224,7 @@ async function loadMoreCycleCount(event) {
 }
 
 async function fetchCycleCounts(vSize, vIndex) {
-  if(!facilities.value.length) {
+  if(!currentFacility.value.length) {
     showToast(translate("No facility is associated with this user"));
     return;
   }
