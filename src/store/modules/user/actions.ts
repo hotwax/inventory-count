@@ -61,15 +61,15 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.timeZone) {
         Settings.defaultZone = userProfile.timeZone;
       }
-      setPermissions(appPermissions);
-      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
 
-      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key })
+      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key, isAdminUser: hasPermission("APP_DRAFT_VIEW") })
       if(!facilities.length) throw "Unable to login. User is not associated with any facility"
 
+      setPermissions(appPermissions);
       if(omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
       }
+      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
@@ -145,7 +145,7 @@ const actions: ActionTree<UserState, RootState> = {
       let associatedFacilityIds: Array<string> = []
       let params = {}
 
-      if(!hasPermission("APP_DRAFT_VIEW")) {
+      if(!payload.isAdminUser) {
         const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
           partyId: payload.partyId,
           pageSize: 200
