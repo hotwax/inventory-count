@@ -55,6 +55,11 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
+// Converts ISO date to milliseconds at start or end of day, considering timezone
+function convertIsoToMillis(isoDate: any, rangeSuffix?: string) {
+  return rangeSuffix === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
+}
+
 const getDerivedStatusForCount = (count: any) => {
   const countStats = cycleCountStats(count.inventoryCountImportId)
 
@@ -178,4 +183,4 @@ function sortListByField(list: any, field = "parentProductName") {
   });
 }
 
-export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }
+export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }
