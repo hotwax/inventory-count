@@ -62,20 +62,21 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.timeZone;
       }
 
+      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key, isAdminUser: hasPermission("APP_DRAFT_VIEW") })
+      if(!facilities.length) throw "Unable to login. User is not associated with any facility"
+
       setPermissions(appPermissions);
       if(omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
       }
+      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
-      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
-      await dispatch("fetchFacilities")
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
-      showToast(translate(err));
       logger.error("error", err);
       return Promise.reject(new Error(err))
     }
@@ -138,17 +139,17 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit, dispatch, state }) {
+  async fetchFacilities({ commit, dispatch }, payload) {
     let facilities: Array<any> = []
     try {
       let associatedFacilityIds: Array<string> = []
       let params = {}
 
-      if(!hasPermission("APP_DRAFT_VIEW")) {
+      if(!payload.isAdminUser) {
         const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
-          partyId: (state.current as any).partyId,
+          partyId: payload.partyId,
           pageSize: 200
-        })
+        }, payload.token)
 
         if(!hasError(associatedFacilitiesResp)) {
           // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
@@ -175,14 +176,13 @@ const actions: ActionTree<UserState, RootState> = {
         facilityTypeId_not: "Y",
         pageSize: 200,
         ...params
-      })
+      }, payload.token)
 
       if(!hasError(resp)) {
         facilities = resp.data
       }
     } catch(err) {
       logger.error("Failed to fetch facilities")
-      throw err
     }
 
     // Updating current facility with a default first facility when fetching facilities on login
@@ -191,6 +191,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     commit(types.USER_FACILITIES_UPDATED, facilities)
+    return facilities
   },
 
   async updateCurrentFacility({ commit, dispatch }, facility) {

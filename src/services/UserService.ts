@@ -62,19 +62,35 @@ const getAvailableTimeZones = async (): Promise <any>  => {
   });
 }
 
-const fetchFacilities = async (payload: any): Promise <any>  => {
-  return api({
+const fetchFacilities = async (payload: any, token: any): Promise <any>  => {
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
+
+  return client({
     url: "facilities",
     method: "GET",
-    params: payload
+    baseURL,
+    params: payload,
+    headers: {
+      "api_key": token,
+      "Content-Type": "application/json"
+    }
   });
 }
 
-const fetchAssociatedFacilities = async (payload: any): Promise <any>  => {
-  return api({
+const fetchAssociatedFacilities = async (payload: any, token: any): Promise <any>  => {
+  const url = store.getters["user/getBaseUrl"]
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
+  
+  return client({
     url: `user/${payload.partyId}/facilities`,
     method: "GET",
-    params: payload
+    baseURL,
+    params: payload,
+    headers: {
+      "api_key": token,
+      "Content-Type": "application/json"
+    }
   });
 }
 
