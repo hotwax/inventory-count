@@ -62,6 +62,9 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.timeZone;
       }
 
+      const facilities = await dispatch("fetchFacilities")
+      if(!facilities.length) throw "Unable to login. User is not assocaited with any facility"
+
       setPermissions(appPermissions);
       if(omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
@@ -69,13 +72,11 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
-      await dispatch("fetchFacilities")
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
-      showToast(translate(err));
       logger.error("error", err);
       return Promise.reject(new Error(err))
     }
@@ -182,7 +183,6 @@ const actions: ActionTree<UserState, RootState> = {
       }
     } catch(err) {
       logger.error("Failed to fetch facilities")
-      throw err
     }
 
     // Updating current facility with a default first facility when fetching facilities on login
@@ -191,6 +191,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     commit(types.USER_FACILITIES_UPDATED, facilities)
+    return facilities
   },
 
   async updateCurrentFacility({ commit, dispatch }, facility) {
