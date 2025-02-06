@@ -61,17 +61,17 @@ const actions: ActionTree<UserState, RootState> = {
       if (userProfile.timeZone) {
         Settings.defaultZone = userProfile.timeZone;
       }
-
-      const facilities = await dispatch("fetchFacilities")
-      if(!facilities.length) throw "Unable to login. User is not assocaited with any facility"
-
       setPermissions(appPermissions);
+      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
+
+      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key })
+      if(!facilities.length) throw "Unable to login. User is not associated with any facility"
+
       if(omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
       }
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
-      commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
       emitter.emit("dismissLoader")
@@ -139,7 +139,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
   },
 
-  async fetchFacilities({ commit, dispatch, state }) {
+  async fetchFacilities({ commit, dispatch }, payload) {
     let facilities: Array<any> = []
     try {
       let associatedFacilityIds: Array<string> = []
@@ -147,9 +147,9 @@ const actions: ActionTree<UserState, RootState> = {
 
       if(!hasPermission("APP_DRAFT_VIEW")) {
         const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
-          partyId: (state.current as any).partyId,
+          partyId: payload.partyId,
           pageSize: 200
-        })
+        }, payload.token)
 
         if(!hasError(associatedFacilitiesResp)) {
           // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
@@ -176,7 +176,7 @@ const actions: ActionTree<UserState, RootState> = {
         facilityTypeId_not: "Y",
         pageSize: 200,
         ...params
-      })
+      }, payload.token)
 
       if(!hasError(resp)) {
         facilities = resp.data
