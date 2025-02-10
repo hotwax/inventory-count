@@ -381,10 +381,7 @@ function removeCountItem(current: any) {
   const updatedItems = items.filter((item: any) => item.scannedId !== current.scannedId);
   store.dispatch("count/updateCycleCountItems", updatedItems);
   
-  let updatedProduct
-  if(updatedItems.length !== 0){
-    updatedProduct = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : 0];
-  }
+  const updatedProduct = updatedItems[(currentItemIndex < updatedItems.length - 1) ? currentItemIndex : 0];
   store.dispatch("product/currentProduct", updatedProduct ? updatedProduct : {})
   if(updatedProduct) scrollToProduct(updatedProduct);
 }
