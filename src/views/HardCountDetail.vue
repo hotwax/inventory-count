@@ -308,7 +308,7 @@ async function handleBeforeUnload() {
     if(Object.keys(unmatchedItem)?.length) unmatchedProducts.push(unmatchedItem)
   })
 
-  if(!isSubmittingForReview.value && unmatchedProducts?.length) {
+  if(!isSubmittingForReview.value) {
     store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
   }
   isSubmittingForReview.value = false
