@@ -310,8 +310,8 @@ async function handleBeforeUnload() {
 
   if(!isSubmittingForReview.value && unmatchedProducts?.length) {
     store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
-  }else{
-    store.dispatch("count/clearCurrentCountFromCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId })
+  } else {
+    store.dispatch("count/clearCurrentCountFromCachedUnmatchProducts", cycleCount.value.inventoryCountImportId )
   }
   isSubmittingForReview.value = false
 }
