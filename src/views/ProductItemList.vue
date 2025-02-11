@@ -117,6 +117,6 @@ ion-note {
 }
 
 .secondary-identifier {
-  color: #666666 !important;
+  color: var(--ion-color-medium-shade) !important;
 }
 </style>
