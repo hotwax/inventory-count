@@ -10,14 +10,14 @@
     </ion-toolbar>
   </ion-header>
   <ion-content>
-    <ion-searchbar v-model="queryString" :placeholder="translate('Search product')" @keyup.enter="handleSearch" />
+    <ion-searchbar :value="queryString" :placeholder="translate('Search product')" @keyup.enter="queryString = $event.target.value; handleSearch()" />
 
     <div v-if="isLoading" class="empty-state">
       <ion-spinner name="crescent" />
       <ion-label>{{ translate("Searching for", { queryString }) }}</ion-label>
     </div>
 
-    <template v-else-if="products.length">
+    <template v-else-if="isSearching && products.length">
       <ion-radio-group v-model="selectedProductId">
         <ion-item v-for="product in products" :key="product.productId">
           <ion-thumbnail slot="start">
@@ -42,7 +42,7 @@
     </template>
 
     <div v-else-if="queryString && isSearching && !products.length" class="empty-state">
-      <p>{{ translate("No results found for", { queryString: prevSearchedQuery }) }}</p>
+      <p>{{ translate("No results found for", { queryString }) }}</p>
     </div>
     <div v-else class="empty-state">
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -95,7 +95,6 @@ let queryString = ref('');
 const isSearching = ref(false);
 const selectedProductId = ref("") as Ref<string>;
 const isLoading = ref(false);
-const prevSearchedQuery = ref("");
 
 async function handleSearch() {
   if(!queryString.value.trim()) {
@@ -121,7 +120,6 @@ async function getProducts() {
     logger.error("Failed to fetch products", err)
   }
   products.value = productsList
-  prevSearchedQuery.value = queryString.value
   isLoading.value = false;
 }
 function closeModal(payload = {}) {
