@@ -310,6 +310,8 @@ async function handleBeforeUnload() {
 
   if(!isSubmittingForReview.value && unmatchedProducts?.length) {
     store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  } else {
+    store.dispatch("count/clearCurrentCountFromCachedUnmatchProducts", cycleCount.value.inventoryCountImportId)
   }
   isSubmittingForReview.value = false
 }
@@ -378,10 +380,10 @@ function removeCountItem(current: any) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   const currentItemIndex = items.findIndex((item: any) => item.scannedId === current.scannedId);
 
-  const updatedProduct = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : 0];
   const updatedItems = items.filter((item: any) => item.scannedId !== current.scannedId);
-
   store.dispatch("count/updateCycleCountItems", updatedItems);
+  
+  const updatedProduct = updatedItems[(currentItemIndex < updatedItems.length - 1) ? currentItemIndex : 0];
   store.dispatch("product/currentProduct", updatedProduct ? updatedProduct : {})
   if(updatedProduct) scrollToProduct(updatedProduct);
 }

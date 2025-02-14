@@ -292,8 +292,10 @@ const actions: ActionTree<CountState, RootState> = {
 
   async clearCurrentCountFromCachedUnmatchProducts({commit, state}, id) {
     const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
-    delete cachedUnmatchProducts[id]
-    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
+    if(Object.hasOwn(cachedUnmatchProducts, id)) {
+      delete cachedUnmatchProducts[id]
+      commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
+    }
   },
 }	
 
