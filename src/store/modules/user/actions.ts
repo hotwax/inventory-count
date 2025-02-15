@@ -53,7 +53,6 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      emitter.emit("presentLoader", { message: "Logging in...", backdropDismiss: false })
       const api_key = await UserService.login(token)
 
       const userProfile = await UserService.getUserProfile(api_key);
@@ -74,9 +73,7 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
-      emitter.emit("dismissLoader")
     } catch (err: any) {
-      emitter.emit("dismissLoader")
       logger.error("error", err);
       return Promise.reject(new Error(err))
     }
@@ -85,8 +82,8 @@ const actions: ActionTree<UserState, RootState> = {
   /**
   * Logout user
   */
-  async logout({ commit, dispatch }) {
-    emitter.emit('presentLoader', { message: 'Logging out', backdropDismiss: false })
+  async logout({ commit, dispatch }, payload = { isUserUnauthorised: false }) {
+    if(!payload.isUserUnauthorised) emitter.emit('presentLoader', { message: 'Logging out', backdropDismiss: false })
 
     const authStore = useAuthStore()
 
