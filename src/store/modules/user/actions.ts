@@ -62,7 +62,7 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.timeZone;
       }
 
-      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key, isAdminUser: hasPermission("APP_DRAFT_VIEW") })
+      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key, isAdminUser: appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW" ) })
       if(!facilities.length) throw "Unable to login. User is not associated with any facility"
 
       setPermissions(appPermissions);
