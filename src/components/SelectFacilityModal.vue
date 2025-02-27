@@ -12,18 +12,23 @@
 
   <ion-content>
     <ion-searchbar @keyup.enter="queryString = $event.target.value; filterFacilities()" />
-    <ion-list>
-      <ion-radio-group v-model="selectedFacilityId">
-        <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
-          <ion-radio :value="facility.facilityId" label-placement="end" justify="start">
-            <ion-label>
-              {{ facility.facilityName }}
-              <p>{{ facility.facilityId }}</p>
-            </ion-label>
-          </ion-radio>
-        </ion-item>
-      </ion-radio-group>
-    </ion-list>
+    <ion-radio-group v-model="selectedFacilityId">
+      <ion-list>
+        <div class="empty-state" v-if="!filteredFacilities.length">
+          <p>{{ translate("No facilities found") }}</p>
+        </div>
+        <div v-else>
+          <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
+            <ion-radio :value="facility.facilityId" label-placement="end" justify="start">
+              <ion-label>
+                {{ facility.facilityName }}
+                <p>{{ facility.facilityId }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </div>
+      </ion-list>
+    </ion-radio-group>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button @click="updateFacility()" :disabled="!isFacilityUpdated">
