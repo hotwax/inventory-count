@@ -11,7 +11,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar @keyup.enter="queryString = $event.target.value; filterFacilities()" />
+    <ion-searchbar ref="input" @keyup.enter="queryString = $event.target.value; filterFacilities()" />
     <ion-list>
       <ion-radio-group v-model="selectedFacilityId">
         <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
@@ -68,10 +68,14 @@ const isFacilityUpdated = computed(() => {
 let filteredFacilities = ref([] as Array<any>)
 let queryString = ref("")
 let selectedFacilityId = ref("")
+const input = ref();
 
 onMounted(() => {
   filteredFacilities.value = facilities.value
   selectedFacilityId.value = props.currentCycleCount.facilityId
+  setTimeout(() => {
+    input.value.$el.setFocus();
+  }, 200)
 })
 
 function closeModal(value = "") {
