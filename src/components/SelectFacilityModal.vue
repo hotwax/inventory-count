@@ -13,7 +13,7 @@
   <ion-content>
     <ion-searchbar @keyup.enter="queryString = $event.target.value; filterFacilities()" />
     <div class="empty-state" v-if="!filteredFacilities.length">
-        <p>{{ translate("No facilities found") }}</p>
+      <p>{{ translate("No facilities found") }}</p>
     </div>
     <ion-list v-else>
       <ion-radio-group v-model="selectedFacilityId">
