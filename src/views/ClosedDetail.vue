@@ -89,12 +89,20 @@
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
       </template>
     </ion-content>
+
+    <ion-footer v-if="currentCycleCount.inventoryCountImportId && totalCountItems">
+      <ion-toolbar>
+        <ion-buttons>
+          <DxpPagination :itemsPerPage="pageSize" :totalItems="totalCountItems" @updatePageIndex="updatePageIndex" />
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
+import { IonBadge, IonBackButton, IonButtons, IonChip, IonContent, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from "vue";
 import store from "@/store"
@@ -103,6 +111,7 @@ import emitter from '@/event-bus';
 import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, sortListByField } from "@/utils"
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
+import { DxpPagination } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -111,9 +120,12 @@ const props = defineProps({
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const totalCountItems = computed(() => store.getters["count/getCycleCountItemsCount"])
 
 const currentCycleCount = ref({}) as any
 let countName = ref("")
+const pageSize = process.env.VUE_APP_VIEW_SIZE ? JSON.parse(process.env.VUE_APP_VIEW_SIZE) : 20;
+let pageIndex = 0;
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -131,7 +143,7 @@ onIonViewWillEnter(async () => {
       }
 
       countName.value = resp.data.countImportName
-      await fetchCountItems();
+      await Promise.allSettled([fetchCountItems(), store.dispatch("count/fetchCycleCountItemsCount", props.inventoryCountImportId), store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])])
     }
   } catch(err) {
     logger.error()
@@ -139,28 +151,27 @@ onIonViewWillEnter(async () => {
   emitter.emit("dismissLoader")
 })
 
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
+async function fetchCountItems(index?: any) {
+  let items = [] as any;
 
   try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
+    const resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize, pageIndex: index ? index : 0 })
+    if(!hasError(resp) && resp.data?.itemList?.length) {
+      items = resp.data.itemList
+    } else {
+      throw resp.data;
+    }
   } catch(err) {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
-
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+}
+
+function updatePageIndex(index: any) {
+  pageIndex = index;
+  fetchCountItems(index);
 }
 
 function getVarianceInformation() {
