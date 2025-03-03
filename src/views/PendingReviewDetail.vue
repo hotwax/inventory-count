@@ -440,16 +440,16 @@ async function updateItemStatus(statusId: string, item?: any) {
       itemList
     })
 
-    const itemCount = itemList.length
+    const itemsCount = itemList.length
     if (!hasError(resp)) {
-      showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
+      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'counts were' : 'count was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate(`Failed to update ${itemList.length > 1 ? 'counts' : 'count'}`))
+    showToast(translate(`Failed to update ${itemList.length > 1 ? 'items' : 'item'}`))
     logger.error("Failed to update items", err)
   }
 }
