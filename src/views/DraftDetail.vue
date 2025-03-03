@@ -332,7 +332,10 @@ async function openSelectFacilityModal() {
     }
   })
 
-  selectFacilityModal.present();
+  selectFacilityModal.present().then(() => {
+    const searchBar: any = document.querySelector('#facilitySearchBar');
+    searchBar?.setFocus();
+  });
 }
 
 function openDateTimeModal() {
