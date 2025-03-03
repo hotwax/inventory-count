@@ -350,7 +350,7 @@ async function updateCountName() {
     return;
   }
 
-  if(countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
     await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     .then(() => {
       currentCycleCount.value.countName = countName.value.trim()
