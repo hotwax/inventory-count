@@ -19,7 +19,7 @@
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else class="list">
-        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
+        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="openDraft(count.inventoryCountImportId)">
           <ion-label>
             <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
             {{ count.countImportName }}
@@ -189,6 +189,15 @@ async function createCycleCount() {
   })
 
   return createCountAlert.present();
+}
+
+function openDraft(importId: string) {
+  // workaround to close fab as no official working method in docs 
+    const fab = document.querySelector('ion-fab');
+    if (fab) {
+      fab.activated = false;
+    }
+  router.push(`/draft/${importId}`) // navigate to the draft
 }
 </script>
 
