@@ -440,14 +440,16 @@ async function updateItemStatus(statusId: string, item?: any) {
       itemList
     })
 
-    if(!hasError(resp)) {
+    const itemCount = itemList.length
+    if (!hasError(resp)) {
+      showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate("Failed to update items"))
+    showToast(translate(`Failed to update ${itemList.length > 1 ? 'counts' : 'count'}`))
     logger.error("Failed to update items", err)
   }
 }
@@ -474,14 +476,16 @@ async function recountItem(item?: any) {
       importItemSeqIds
     })
 
-    if(!hasError(resp)) {
+    const itemCount = importItemSeqIds.length
+    if (!hasError(resp)) {
+      showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} recounted.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate("Failed to recount items"))
+    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'counts' : 'count'}`))
     logger.error("Failed to recount items", err)
   }
 }
@@ -561,10 +565,12 @@ async function acceptItem(item?: any) {
   const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
 
   const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
+
+  const itemCount = payloads.length
   if(isAnyRespHasError) {
-    showToast(translate("Some of the item(s) are failed to accept"))
+    showToast(translate(`Some of the ${itemCount > 1 ? 'counts were' : 'count was'} failed to accept`))
   } else {
-    showToast(translate("All of the item(s) are accepted"))
+    showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} accepted`))
   }
   await fetchCountItems()
 }
