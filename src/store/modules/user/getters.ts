@@ -59,6 +59,9 @@ const getters: GetterTree <UserState, RootState> = {
       baseURL = baseURL.replace(/https?:\/\/|\/api|\/+/g, "");
     }
     return `ws://${baseURL}/notws?api_key=${state.token}`;
+  },
+  isScrollingAnimationEnabled(state) {
+    return state.isScrollingAnimationEnabled
   }
 }
 export default getters;

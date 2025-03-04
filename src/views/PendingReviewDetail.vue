@@ -193,7 +193,7 @@ import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, getDateTime } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, getDateTime, sortListByField } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
@@ -284,6 +284,8 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
+  items = sortListByField(items, "parentProductName");
+
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
 }
@@ -298,7 +300,10 @@ async function addProductToCount(productId: any) {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
       itemList: [{
+        // Passing both productId and idValue for the backend compatibility
+        // idValue will be removed in the future.
         idValue: productId,
+        productId,
         statusId: "INV_COUNT_CREATED"
       }]
     })
@@ -345,7 +350,7 @@ async function updateCountName() {
     return;
   }
 
-  if(countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
     await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     .then(() => {
       currentCycleCount.value.countName = countName.value.trim()
@@ -482,16 +487,36 @@ async function recountItem(item?: any) {
 }
 
 async function completeCount() {
+  emitter.emit("presentLoader");
   try {
-    await CountService.updateCycleCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      statusId: "INV_COUNT_COMPLETED"
+    const resp = await CountService.fetchCycleCountItemsCount({
+      inventoryCountImportId: props?.inventoryCountImportId,
+      statusId: "INV_COUNT_CREATED",
     })
-    router.push("/closed")
-    showToast(translate("Count has been marked as completed"))
+
+    if(!hasError(resp) && resp.data?.count > 0) {
+      showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
+      await fetchCountItems();
+      emitter.emit("dismissLoader")
+      return;
+    }
+
+    try {
+      await CountService.updateCycleCount({
+        inventoryCountImportId: currentCycleCount.value.countId,
+        statusId: "INV_COUNT_COMPLETED"
+      })
+      emitter.emit("dismissLoader")
+      router.push("/closed")
+      showToast(translate("Count has been marked as completed"))
+    } catch(err) {
+      showToast(translate("Failed to complete cycle count"))
+    }
   } catch(err) {
     showToast(translate("Failed to complete cycle count"))
+    logger.error(err)
   }
+  emitter.emit("dismissLoader")
 }
 
 async function reassignCount() {

@@ -3,7 +3,7 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast } from "@/utils"
+import { convertIsoToMillis, hasError, showToast, sortListByField } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -42,6 +42,23 @@ const actions: ActionTree<CountState, RootState> = {
       params["orderByField"] = state.query.sortBy
     }
 
+    // created after date
+    if(state.query.createdDate_from) {
+      params["createdDate_from"] = convertIsoToMillis(state.query.createdDate_from, "from");
+    }
+    // created before date
+    if(state.query.createdDate_thru) {
+      params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate_thru, "thru");
+    }
+    // closed after date
+    if(state.query.closedDate_from) {
+      params["closedDate_from"] = convertIsoToMillis(state.query.closedDate_from, "from");
+    }
+    // closed before date
+    if(state.query.closedDate_thru) {
+      params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate_thru, "thru");
+    }
+
     try {
       const resp = await CountService.fetchCycleCounts(params);
       if(!hasError(resp) && resp.data.length > 0) {
@@ -64,6 +81,37 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
     commit(types.COUNT_LIST_UPDATED, { counts, total , isScrollable })
+  },
+
+  async fetchClosedCycleCountsTotal({ commit, state }) {
+    const params = {
+      statusId: "INV_COUNT_COMPLETED"
+    } as any;
+    // TODO: Currently, the search functionality works only on the count name. Once the API supports searching across 
+    // multiple fields, we should include the count ID in the search parameters.
+    if(state.query.queryString.length) {
+      params["countImportName"] = state.query.queryString
+      params["countImportName_op"] = "contains"
+    }
+
+    if(state.query.facilityIds.length) {
+      params["facilityId"] = state.query.facilityIds.join(",")
+      params["facilityId_op"] = "in"
+    }
+
+    let total = "";
+    try {
+      const resp = await CountService.fetchCycleCountsTotal(params);
+      if(!hasError(resp)) {
+        total = resp.data.count;
+      } else {
+        throw resp;
+      }
+    } catch(err) {
+      logger.error(err)
+    }
+
+    commit(types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED, total)
   },
 
   async fetchCycleCountStats({ commit, state }, inventoryCountImportIds) {
@@ -133,6 +181,7 @@ const actions: ActionTree<CountState, RootState> = {
       statusId = "INV_COUNT_COMPLETED"
     }
     dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
+    if(payload.key === "facilityIds") dispatch("fetchClosedCycleCountsTotal")
   },
 
   async updateQueryString({ commit }, payload) {
@@ -159,11 +208,11 @@ const actions: ActionTree<CountState, RootState> = {
 
         // Fetching stats information for the counts
         this.dispatch("count/fetchCycleCountStats", resp.data.map((count: any) => count.inventoryCountImportId))
-
-        if(resp.data.length == payload.pageSize) isScrollable = true
-        else isScrollable = false
+        // Determine if more data can be fetched
+        isScrollable = resp.data.length >= payload.pageSize
       } else {
-        throw resp.data;
+        if (payload.pageIndex > 0) isScrollable = false
+        throw "Failed to fetch the counts list"
       }
     } catch (err: any) {
       if(payload.pageIndex == 0) {
@@ -180,9 +229,8 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   async fetchCycleCountItems({commit, state} ,payload) {
-    const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
     let items = [] as any, resp, pageIndex = 0;
-
+    
     try {
       do {
         resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100, pageIndex })
@@ -196,8 +244,14 @@ const actions: ActionTree<CountState, RootState> = {
       } catch(err: any) {
       logger.error(err)
     }
+
+    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
+
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-    if(cachedProducts?.length) items = items.concat(cachedProducts)
+    if(payload.isHardCount) {
+      const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
+      if(cachedProducts?.length) items = items.concat(cachedProducts)
+    }
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   },
 
@@ -238,8 +292,10 @@ const actions: ActionTree<CountState, RootState> = {
 
   async clearCurrentCountFromCachedUnmatchProducts({commit, state}, id) {
     const cachedUnmatchProducts = JSON.parse(JSON.stringify(state.cachedUnmatchProducts));
-    delete cachedUnmatchProducts[id]
-    commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
+    if(Object.hasOwn(cachedUnmatchProducts, id)) {
+      delete cachedUnmatchProducts[id]
+      commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
+    }
   },
 }	
 

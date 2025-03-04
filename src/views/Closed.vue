@@ -14,25 +14,24 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+      <div class="header searchbar">
+        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+        <ion-item lines="full">
+          <ion-icon slot="start" :icon="listOutline"/>
+          <ion-label>{{ translate("Counts closed") }}</ion-label>
+          <ion-label slot="end">{{ (closedCycleCountsTotal || closedCycleCountsTotal === 0) ? closedCycleCountsTotal : "-" }}</ion-label>
+        </ion-item>
+        <ion-item lines="full">
+          <ion-icon slot="start" :icon="thermometerOutline"/>
+          <ion-label>{{ translate("Average variance") }}</ion-label>
+          <ion-label slot="end">{{ getAverageVariance() }}</ion-label>
+        </ion-item>
+      </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
       <template v-else>
-        <div class="header">
-          <ion-item lines="full">
-            <ion-icon slot="start" :icon="listOutline"/>
-            <ion-label>{{ translate("Counts closed") }}</ion-label>
-            <ion-label slot="end">{{ cycleCounts.length }}</ion-label>
-          </ion-item>
-          <ion-item lines="full">
-            <ion-icon slot="start" :icon="thermometerOutline"/>
-            <ion-label>{{ translate("Average variance") }}</ion-label>
-            <ion-label slot="end">{{ getAverageVariance() }}</ion-label>
-          </ion-item>
-        </div>
-
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" @click="router.push(`/closed/${count.inventoryCountImportId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
@@ -110,18 +109,20 @@ import Filters from "@/components/Filters.vue"
 import store from "@/store";
 import { getCycleCountStats, getDateWithOrdinalSuffix, getFacilityName } from "@/utils";
 import DownloadClosedCountModal from "@/components/DownloadClosedCountModal.vue";
+import router from "@/router"
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
 const query = computed(() => store.getters["count/getQuery"])
+const closedCycleCountsTotal = computed(() => store.getters["count/getClosedCycleCountsTotal"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
 onIonViewWillEnter(async () => {
-  await fetchClosedCycleCounts()
+  await Promise.allSettled([fetchClosedCycleCounts(), store.dispatch("count/fetchClosedCycleCountsTotal")])
 })
 
 onIonViewWillLeave(async () => {
@@ -142,7 +143,7 @@ function enableScrolling() {
 
 async function updateQueryString(key: string, value: any) {
   await store.dispatch("count/updateQueryString", { key, value })
-  fetchClosedCycleCounts();
+  await Promise.allSettled([fetchClosedCycleCounts(), store.dispatch("count/fetchClosedCycleCountsTotal")])
 }
 
 async function loadMoreCycleCounts(event: any) {
@@ -165,7 +166,7 @@ async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    statusId: "INV_COUNT_CLOSED,INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
+    statusId: "INV_COUNT_COMPLETED,INV_COUNT_REJECTED",
     statusId_op: "in"
   }
   await store.dispatch("count/fetchCycleCounts", payload)
@@ -203,7 +204,7 @@ ion-content {
 }
 
 .list-item {
-  --columns-desktop: 6;
+  --columns-desktop: 7;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 

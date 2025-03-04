@@ -124,7 +124,7 @@
                   <ion-item>
                     {{ translate("Rejected") }}
                     <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }}</p>
+                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount }}</p>
                     </ion-label>
                   </ion-item>
                   <ion-item>
@@ -174,7 +174,7 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { getCycleCountStats, getDateWithOrdinalSuffix } from "@/utils"
+import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
 
 const store = useStore();
 const router = useRouter()
@@ -224,6 +224,10 @@ async function loadMoreCycleCount(event) {
 }
 
 async function fetchCycleCounts(vSize, vIndex) {
+  if(!currentFacility.value?.facilityId) {
+    showToast(translate("No facility is associated with this user"));
+    return;
+  }
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
   const facilityId = currentFacility.value?.facilityId

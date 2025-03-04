@@ -63,7 +63,7 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length">
-            <div class="product" @scroll="onScroll">
+            <div class="product" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
               </div>
@@ -241,7 +241,7 @@ import {
 } from '@ionic/vue';
 import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref } from 'vue';
+import { computed, defineProps, nextTick, ref } from 'vue';
 import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
@@ -299,10 +299,11 @@ let previousItem = {};
 let hasUnsavedChanges = ref(false);
 const barcodeInput = ref();
 let isScanningInProgress = ref(false);
+const scrollingContainerRef = ref();
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
@@ -310,6 +311,7 @@ onIonViewDidEnter(async() => {
   barcodeInput.value?.$el?.setFocus();
   registerListener(currentFacility.value.facilityId, handleNewMessage);
   emitter.emit("dismissLoader")
+  if(itemsList.value?.length) initializeObserver()
 })  
 
 onIonViewDidLeave(async() => {
@@ -380,7 +382,7 @@ function selectSearchBarText(event) {
 }
 
 async function scanProduct() {
-  if(!queryString.value) {
+  if(!queryString.value.trim()) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
   }
@@ -393,14 +395,14 @@ async function scanProduct() {
   if(cycleCount.value.statusId === 'INV_COUNT_ASSIGNED') {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
-      return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
+      return itemVal === queryString.value.trim() && item.itemStatusId === "INV_COUNT_CREATED";
     });
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
     selectedItem = itemsList.value.find((item) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, cachedProducts[item.productId]) : item.internalName;
-      return itemVal === queryString.value;
+      return itemVal === queryString.value.trim();
     });
   }
 
@@ -431,7 +433,7 @@ async function scanProduct() {
   queryString.value = ""
 }
 
-function updateFilteredItems() {
+async function updateFilteredItems() {
   if (itemsList.value.length > 0) {
     // As we want to get the index of the product, if we directly store the product in the updatedProduct variable it does not return the index
     // as both the object becomes different because of the reference, so if we have a product, then first finding it in the filtered list to have a common reference and then getting the index
@@ -444,12 +446,12 @@ function updateFilteredItems() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
+  await nextTick();
+  if(itemsList.value?.length) initializeObserver()
 }
 
-// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
-// and updates the current product state and navigation when a product intersects with the main element.
-const onScroll = (event) => {
-  const main = event.target;
+function initializeObserver() {
+  const main = scrollingContainerRef.value;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {
@@ -478,7 +480,7 @@ const onScroll = (event) => {
   products.forEach((product) => {
     observer.observe(product);
   });
-};
+}
 
 async function changeProduct(direction) {
   if (isScrolling.value) return;

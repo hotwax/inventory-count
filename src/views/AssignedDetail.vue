@@ -146,7 +146,7 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getProductIdentificationValue } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getProductIdentificationValue, sortListByField } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
@@ -177,7 +177,10 @@ async function addProductToCount(productId: any) {
     const resp = await CountService.addProductToCount({
       inventoryCountImportId: currentCycleCount.value.countId,
       itemList: [{
+        // Passing both productId and idValue for the backend compatibility
+        // idValue will be removed in the future.
         idValue: productId,
+        productId,
         statusId: "INV_COUNT_CREATED"
       }]
     })
@@ -240,6 +243,8 @@ async function fetchCountItems() {
   } catch(err) {
     logger.error(err)
   }
+
+  items = sortListByField(items, "parentProductName");
 
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })

@@ -41,9 +41,14 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
-            <div class="product" @scroll="onScroll">
-              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
-                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+            <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
+              <template v-if="isScrollingAnimationEnabled">
+                <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
+                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                </div>
+              </template>
+              <div v-else class="image ion-padding-top" :key="currentProduct.importItemSeqId">
+                <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" />
               </div>
             </div>
 
@@ -80,7 +85,7 @@
                 </ion-button>
               </ion-item>
 
-              <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount">
+              <ion-list v-if="currentProduct.quantity || currentProduct.scannedCount || currentProduct.quantity === 0 || currentProduct.scannedCount === 0">
                 <ion-item v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)">
                   <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                 </ion-item>
@@ -208,7 +213,7 @@ import {
 } from "@ionic/vue";
 import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOutline, trashOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
-import { computed, defineProps, ref } from "vue";
+import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
@@ -256,10 +261,14 @@ const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
 const productIdAdding = ref();
+const scrollingContainerRef = ref();
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const isSubmittingForReview = ref(false);
+
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id })])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
@@ -267,6 +276,9 @@ onIonViewDidEnter(async() => {
   window.addEventListener('beforeunload', handleBeforeUnload);
   registerListener(currentFacility.value.facilityId, handleNewMessage);
   emitter.emit("dismissLoader")
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
+  emitter.on("handleProductClick", handleProductClick)
+
 })
 
 onIonViewDidLeave(async() => {
@@ -274,6 +286,7 @@ onIonViewDidLeave(async() => {
   await handleBeforeUnload();
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
+  emitter.off("handleProductClick", handleProductClick)
 })
 
 async function handleBeforeUnload() {
@@ -301,7 +314,20 @@ async function handleBeforeUnload() {
     if(Object.keys(unmatchedItem)?.length) unmatchedProducts.push(unmatchedItem)
   })
 
-  store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  if(!isSubmittingForReview.value && unmatchedProducts?.length) {
+    store.dispatch("count/updateCachedUnmatchProducts", { id: cycleCount.value.inventoryCountImportId, unmatchedProducts });
+  } else {
+    store.dispatch("count/clearCurrentCountFromCachedUnmatchProducts", cycleCount.value.inventoryCountImportId)
+  }
+  isSubmittingForReview.value = false
+}
+
+function handleProductClick(item: any) {
+  if(item) {
+    if(inputCount.value) saveCount(currentProduct.value, true)
+    store.dispatch("product/currentProduct", item);
+    previousItem = item
+  }
 }
 
 async function fetchCycleCount() {
@@ -318,7 +344,7 @@ async function fetchCycleCount() {
   }
 }
 
-function handleSegmentChange() {
+async function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -330,6 +356,10 @@ function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
+    await nextTick();
+    initializeObserver()
+  }
 }
 
 async function changeProduct(direction: string) {
@@ -340,9 +370,14 @@ async function changeProduct(direction: string) {
 
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
-    scrollToProduct(product);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await store.dispatch("product/currentProduct", product);
+    if(isScrollingAnimationEnabled.value) {
+      scrollToProduct(product);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await store.dispatch("product/currentProduct", product);
+    } else {
+      if(inputCount.value) saveCount(currentProduct.value, true)
+      await store.dispatch("product/currentProduct", product);
+    }
   }
   isScrolling.value = false;
 }
@@ -351,17 +386,17 @@ function removeCountItem(current: any) {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   const currentItemIndex = items.findIndex((item: any) => item.scannedId === current.scannedId);
 
-  const updatedProduct = items[(currentItemIndex < items.length - 1) ? (currentItemIndex + 1) : 0];
   const updatedItems = items.filter((item: any) => item.scannedId !== current.scannedId);
-
   store.dispatch("count/updateCycleCountItems", updatedItems);
+  
+  const updatedProduct = updatedItems[(currentItemIndex < updatedItems.length - 1) ? currentItemIndex : 0];
   store.dispatch("product/currentProduct", updatedProduct ? updatedProduct : {})
   if(updatedProduct) scrollToProduct(updatedProduct);
 }
 
 async function scanProduct() {
   let isNewlyAdded = false;
-  if(!queryString.value) {
+  if(!queryString.value.trim()) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
   }
@@ -371,18 +406,18 @@ async function scanProduct() {
 
   selectedItem = itemsList.value.find((item: any) => {
     const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, getProduct.value(item.productId)) : item.internalName;
-    return itemVal === queryString.value && item.itemStatusId === "INV_COUNT_CREATED";
+    return itemVal === queryString.value.trim() && item.itemStatusId === "INV_COUNT_CREATED";
   });
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
     selectedItem = itemsList.value.find((item: any) => {
       const itemVal = barcodeIdentifier ? getProductIdentificationValue(barcodeIdentifier, getProduct.value(item.productId)) : item.internalName;
-      return itemVal === queryString.value;
+      return itemVal === queryString.value.trim();
     });
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
-    selectedItem = itemsList.value.find((item: any) => item.scannedId === queryString.value)
+    selectedItem = itemsList.value.find((item: any) => item.scannedId === queryString.value.trim())
   }
 
   if(!selectedItem || !Object.keys(selectedItem).length) {
@@ -398,7 +433,13 @@ async function scanProduct() {
 
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
-    scrollToProduct(selectedItem);
+    if(isScrollingAnimationEnabled.value) {
+      scrollToProduct(selectedItem);
+    } else {
+      if(inputCount.value) saveCount(currentProduct.value, true)
+      store.dispatch("product/currentProduct", selectedItem)
+      previousItem = selectedItem
+    }
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
     inputCount.value++;
   }
@@ -421,7 +462,7 @@ function scrollToProduct(product: any) {
 
 async function addProductToItemsList() {
   const newItem = {
-    scannedId: queryString.value,
+    scannedId: queryString.value.trim(),
     isMatching: true,
     itemStatusId: "INV_COUNT_CREATED",
     statusId: "INV_COUNT_ASSIGNED",
@@ -431,21 +472,40 @@ async function addProductToItemsList() {
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
   items.push(newItem);
   await store.dispatch("count/updateCycleCountItems", items);
-  findProductFromIdentifier(queryString.value);
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
+    setTimeout(() => {
+      initializeObserver()
+    }, 0);
+  }
+  findProductFromIdentifier(queryString.value.trim(), newItem);
   return newItem;
 }
 
-async function findProductFromIdentifier(scannedValue: string ) {
+async function findProductFromIdentifier(scannedValue: string, newItem: any ) {
   const product = await store.dispatch("product/fetchProductByIdentification", { scannedValue })
-  let newItem = {} as any;
-  if(product?.productId) {
-    productIdAdding.value = product.productId
-    newItem = await addProductToCount(product.productId)
+
+  if(productStoreSettings.value['showQoh']) {
+    let updatedItem = {} as any;
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      updatedItem = await addProductToCount(product.productId)
+    }
+
+    setTimeout(() => {
+      updateCurrentItemInList(updatedItem, scannedValue);
+    }, 1000)
+  } else {
+    let importItemSeqId = "" as any;
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      importItemSeqId = await addProductToCount(product.productId)
+    }
+  
+    setTimeout(() => {
+      updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
+    }, 1000)
   }
 
-  setTimeout(() => {
-    updateCurrentItemInList(newItem, scannedValue);
-  }, 1000)
 }
 
 async function addProductToCount(productId: any) {
@@ -455,7 +515,10 @@ async function addProductToCount(productId: any) {
     resp = await CountService.addProductToCount({
       inventoryCountImportId: cycleCount.value.inventoryCountImportId,
       itemList: [{
+        // Passing both productId and idValue for the backend compatibility
+        // idValue will be removed in the future.
         idValue: productId,
+        productId,
         statusId: "INV_COUNT_CREATED"
       }]
     })
@@ -463,19 +526,25 @@ async function addProductToCount(productId: any) {
     if(!hasError(resp) && resp.data?.itemList?.length) {
       const importItemSeqId = resp.data.itemList[0].importItemSeqId
 
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
-      if(!hasError(resp)) {
-        newProduct = resp.data.itemList[0];
+      if(productStoreSettings.value['showQoh']) {
+        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+        if(!hasError(resp)) {
+          newProduct = resp.data.itemList[0];
+          return newProduct
+        } else {
+          throw resp;
+        }
       } else {
-        throw resp;
+        return importItemSeqId
       }
+
     } else {
       throw resp;
     }
   } catch(err) {
     logger.error("Failed to add product to count", err)
   }
-  return newProduct;
+  return "";
 }
 
 async function updateCurrentItemInList(newItem: any, scannedValue: string) {  
@@ -540,6 +609,7 @@ async function readyForReview() {
             inventoryCountImportId: props?.id,
             statusId: "INV_COUNT_REVIEW"
           })
+          isSubmittingForReview.value = true;
           router.push("/tabs/count")
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
@@ -552,10 +622,12 @@ async function readyForReview() {
   await alert.present();
 }
 
-// This function observes the scroll event on the main element, creates an IntersectionObserver to track when products come into view, 
-// and updates the current product state and navigation when a product intersects with the main element.
-const onScroll = (event: any) => {
-  const main = event.target;
+const onScroll = () => {
+  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+};
+
+function initializeObserver() {
+  const main = scrollingContainerRef.value;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
     entries.forEach((entry: any) => {
@@ -571,8 +643,8 @@ const onScroll = (event: any) => {
           if(inputCount.value) saveCount(previousItem, true);
         }
 
-        previousItem = currentProduct.value  // Update the previousItem variable with the current item
         if(product) {
+          previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
         }
       }
@@ -583,9 +655,8 @@ const onScroll = (event: any) => {
   });
   products.forEach((product: any) => {
     observer.observe(product);
-  });
-  selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
-};
+  }); 
+}
 
 async function saveCount(currentProduct: any, isScrollEvent = false) {
   if (!inputCount.value && inputCount.value !== 0) {
@@ -662,8 +733,13 @@ async function matchProduct(currentProduct: any) {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
       productIdAdding.value = product.productId
-      const newItem = await addProductToCount(product.productId)
-      await updateCurrentItemInList(newItem, currentProduct.scannedId);
+      if(productStoreSettings.value['showQoh']) {
+        const newItem = await addProductToCount(product.productId)
+        await updateCurrentItemInList(newItem, currentProduct.scannedId);
+      } else {
+        const importItemSeqId = await addProductToCount(product.productId)
+        await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
+      }
     }
   })
 

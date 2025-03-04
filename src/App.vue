@@ -1,5 +1,5 @@
 <template>
-  <ion-app v-if="!$router.currentRoute.value.fullPath.includes('/tabs/') && hasPermission(Actions.APP_DRAFT_VIEW)">
+  <ion-app v-if="!$router.currentRoute.value.fullPath.includes('/login') && !$router.currentRoute.value.fullPath.includes('/tabs/') && hasPermission(Actions.APP_DRAFT_VIEW)">
     <IonSplitPane content-id="main-content" when="lg">
       <Menu />
       <ion-router-outlet id="main-content"></ion-router-outlet>
@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/vue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { loadingController } from '@ionic/vue';
 import emitter from "@/event-bus"
 import { initialise, resetConfig } from '@/adapter'
@@ -65,16 +65,12 @@ function dismissLoader() {
   }
 }
 
-onMounted(async () => {
-  loader.value = await loadingController
-    .create({
-      message: translate("Click the backdrop to dismiss."),
-      translucent: true,
-      backdropDismiss: true
-    });
+onBeforeMount(() => {
   emitter.on("presentLoader", presentLoader);
   emitter.on("dismissLoader", dismissLoader);
+})
 
+onMounted(async () => {
   if (userProfile.value) {
     // Luxon timezone should be set with the user's selected timezone
     userProfile.value.timeZone && (Settings.defaultZone = userProfile.value.timeZone);

@@ -36,7 +36,8 @@ const userModule: Module<UserState, RootState> = {
         },
         barcodeIdentificationPref: ""
       },
-      goodIdentificationTypes: []
+      goodIdentificationTypes: [],
+      isScrollingAnimationEnabled: false
     },
     getters,
     actions,

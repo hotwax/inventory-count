@@ -55,6 +55,11 @@ const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
 
+// Converts ISO date to milliseconds at start or end of day, considering timezone
+function convertIsoToMillis(isoDate: any, rangeSuffix?: string) {
+  return rangeSuffix === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
+}
+
 const getDerivedStatusForCount = (count: any) => {
   const countStats = cycleCountStats(count.inventoryCountImportId)
 
@@ -168,4 +173,14 @@ const downloadCsv = (csv: any, fileName: any) => {
   return blob;
 };
 
-export { downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv }
+function sortListByField(list: any, field = "parentProductName") {
+  return list.sort((a: any, b: any) => {
+    if (!a[field] && b[field]) return 1;  // If 'item1' has no field, it goes after 'item2'
+    if (a[field] && !b[field]) return -1; // If 'item2' has no field, it goes after 'item1'
+    if (a[field] < b[field]) return -1;   // Normal alphabetical sorting
+    if (a[field] > b[field]) return 1;    // Normal alphabetical sorting
+    return 0;                             // If fields are equal
+  });
+}
+
+export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, timeFromNow, parseCsv, sortListByField }

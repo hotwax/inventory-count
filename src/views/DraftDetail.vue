@@ -161,7 +161,7 @@ import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutli
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv, sortListByField } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -285,6 +285,8 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
+  items = sortListByField(items, "parentProductName");
+
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
 }
@@ -330,7 +332,10 @@ async function openSelectFacilityModal() {
     }
   })
 
-  selectFacilityModal.present();
+  selectFacilityModal.present().then(() => {
+    const searchBar: any = document.querySelector('#facilitySearchBar');
+    searchBar?.setFocus();
+  });
 }
 
 function openDateTimeModal() {
@@ -362,7 +367,7 @@ async function updateCountName() {
     return;
   }
 
-  if(countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
     await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     .then(() => {
       currentCycleCount.value.countName = countName.value.trim()
@@ -446,7 +451,9 @@ async function findProductFromIdentifier(payload: any) {
         return idValues.includes(identificationValue) && !itemsAlreadyInCycleCount.includes(product.productId);
       })
 
-      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId }));
+      // Passing both productId and idValue for the backend compatibility
+      // idValue will be removed in the future.
+      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId, productId: product.productId }));
       if(!productsToAdd) {
         return showToast(translate("Failed to add product to count"))
       }
@@ -480,7 +487,10 @@ async function addProductToCount(payload?: any) {
     itemList = payload.map((data: any) => ({ ...data, statusId: "INV_COUNT_CREATED" }));
   } else {
     itemList = [{
+      // Passing both productId and idValue for the backend compatibility
+      // idValue will be removed in the future.
       idValue: searchedProduct.value.productId,
+      productId: searchedProduct.value.productId,
       statusId: "INV_COUNT_CREATED"
     }];
   }

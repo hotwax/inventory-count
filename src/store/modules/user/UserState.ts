@@ -28,4 +28,5 @@ export default interface UserState {
     barcodeIdentificationPref: string;
   },
   goodIdentificationTypes: Array<string>;
+  isScrollingAnimationEnabled: boolean;
 }

@@ -16,13 +16,16 @@ const mutations: MutationTree <CountState> = {
       facilityIds: [],
       noFacility: false,
       queryString: '',
-      sortBy: 'dueDate desc'
+      sortBy: 'dueDate desc',
+      createdDate_from: '',
+      createdDate_thru: '',
+      closedDate_from: '',
+      closedDate_thru: ''
     }
   },
   [types.COUNT_STATS_UPDATED](state, payload) {
     payload.map((count: any) => {
-      // Parsing the id as in api response we are getting the id in the format `"\"100255\""`
-      state.stats[JSON.parse(count.inventoryCountImportId)] = count
+      state.stats[count.inventoryCountImportId] = count
     })
   },
   [types.COUNT_UPDATED] (state, payload) {
@@ -37,6 +40,9 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED] (state, payload) {
     state.cachedUnmatchProducts = payload
+  },
+  [types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED] (state, payload) {
+    state.closedCycleCountsTotal = payload
   }
   
 }	
