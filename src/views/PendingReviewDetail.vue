@@ -476,9 +476,9 @@ async function recountItem(item?: any) {
       importItemSeqIds
     })
 
-    const itemCount = importItemSeqIds.length
+    const itemsCount = importItemSeqIds.length
     if (!hasError(resp)) {
-      showToast(translate(`${itemCount} ${itemCount > 1 ? 'count items were' : 'count item was'} recounted.`))
+      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} recounted.`))
       await fetchCountItems();
     } else {
       throw resp.data
@@ -566,11 +566,11 @@ async function acceptItem(item?: any) {
 
   const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
 
-  const itemCount = payloads.length
+  const itemsCount = payloads.length
   if(isAnyRespHasError) {
-    showToast(translate(`Some of the ${itemCount > 1 ? 'count items were' : 'count item was'} failed to accept`))
+    showToast(translate(`Failed to accept ${itemsCount > 1 ? 'count items' : 'count item'}`))
   } else {
-    showToast(translate(`${itemCount} ${itemCount > 1 ? 'count items were' : 'count item was'} accepted`))
+    showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} accepted`))
   }
   await fetchCountItems()
 }
