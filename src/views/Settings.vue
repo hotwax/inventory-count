@@ -132,6 +132,8 @@
             </ion-select>
           </ion-item>
         </ion-card>
+        <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
+        <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
 
         <ion-card>
           <ion-card-header>
@@ -164,6 +166,7 @@ import { goToOms } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
+import ForceScanCard from "@/components/ForceScanCard.vue";
 
 const store = useStore()
 const appVersion = ref("")
