@@ -11,7 +11,7 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar @keyup.enter="queryString = $event.target.value; filterFacilities()" />
+    <ion-searchbar id="facilitySearchBar" @keyup.enter="queryString = $event.target.value; filterFacilities()" />
     <div class="empty-state" v-if="!filteredFacilities.length">
       <p>{{ translate("No facilities found") }}</p>
     </div>
