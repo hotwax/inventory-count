@@ -134,13 +134,13 @@
             </ion-item>
 
             <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+              <ion-button :disabled="isAccepting || isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+              <ion-button :disabled="isRecounting || isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
                 <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+              <ion-button :disabled="isUpdatingStatus || isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
                 <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
               </ion-button>
             </div>
@@ -170,13 +170,13 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAccepting || isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
             <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isRecounting || isAnyItemSelected" @click="recountItem()">
             <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isUpdatingStatus || isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
             <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
         </ion-buttons>
@@ -235,6 +235,9 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
+const isAccepting = ref(false);
+const isRecounting = ref(false);
+const isUpdatingStatus = ref(false);
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -413,6 +416,7 @@ async function addProduct() {
 }
 
 async function updateItemStatus(statusId: string, item?: any) {
+  isUpdatingStatus.value = true;
   let itemList: Array<any> = []
   if(item) {
     itemList = [{
@@ -431,6 +435,7 @@ async function updateItemStatus(statusId: string, item?: any) {
   }
 
   if(!itemList.length) {
+    isUpdatingStatus.value = false;
     return;
   }
 
@@ -440,19 +445,23 @@ async function updateItemStatus(statusId: string, item?: any) {
       itemList
     })
 
-    if(!hasError(resp)) {
+    const itemsCount = itemList.length
+    if (!hasError(resp)) {
+      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate("Failed to update items"))
+    showToast(translate(`Failed to update ${itemList.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to update items", err)
   }
+  isUpdatingStatus.value = false;
 }
 
 async function recountItem(item?: any) {
+  isRecounting.value = true;
   let importItemSeqIds: Array<string> = []
   if(item) {
     importItemSeqIds = [item.importItemSeqId]
@@ -465,6 +474,7 @@ async function recountItem(item?: any) {
   }
 
   if(!importItemSeqIds.length) {
+    isRecounting.value = false;
     return;
   }
 
@@ -474,16 +484,19 @@ async function recountItem(item?: any) {
       importItemSeqIds
     })
 
-    if(!hasError(resp)) {
+    const itemsCount = importItemSeqIds.length
+    if (!hasError(resp)) {
+      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} recounted.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate("Failed to recount items"))
+    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to recount items", err)
   }
+  isRecounting.value = false;
 }
 
 async function completeCount() {
@@ -533,6 +546,7 @@ async function reassignCount() {
 }
 
 async function acceptItem(item?: any) {
+  isAccepting.value = true;
   const payloads = []
   if(item) {
     payloads.push({
@@ -561,12 +575,15 @@ async function acceptItem(item?: any) {
   const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
 
   const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
+
+  const itemsCount = payloads.length
   if(isAnyRespHasError) {
-    showToast(translate("Some of the item(s) are failed to accept"))
+    showToast(translate(`Failed to accept ${itemsCount > 1 ? 'count items' : 'count item'}`))
   } else {
-    showToast(translate("All of the item(s) are accepted"))
+    showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} accepted`))
   }
   await fetchCountItems()
+  isAccepting.value = false;
 }
 
 function openDateTimeModal() {
