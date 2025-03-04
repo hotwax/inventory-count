@@ -223,6 +223,7 @@ import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
+import { useWebSocketComposables } from '@/composables/useWebSocketComposables';
 
 const store = useStore();
 
@@ -234,6 +235,7 @@ const productStoreSettings = computed(() => store.getters["user/getProductStoreS
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const webSocketUrl = computed(() => store.getters["user/getWebSocketUrl"])
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -244,6 +246,8 @@ const itemsList = computed(() => {
     return [];
   }
 });
+
+const { registerListener } = useWebSocketComposables(webSocketUrl.value);
 
 const props = defineProps(["id"]);
 const cycleCount = ref({}) as any;
@@ -256,6 +260,7 @@ const inputCount = ref("") as any;
 const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
+const productIdAdding = ref();
 const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const isSubmittingForReview = ref(false);
@@ -269,6 +274,7 @@ onIonViewDidEnter(async() => {
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
+  registerListener(currentFacility.value.facilityId, handleNewMessage);
   emitter.emit("dismissLoader")
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
@@ -480,14 +486,20 @@ async function findProductFromIdentifier(scannedValue: string, newItem: any ) {
 
   if(productStoreSettings.value['showQoh']) {
     let updatedItem = {} as any;
-    if(product?.productId) updatedItem = await addProductToCount(product.productId)
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      updatedItem = await addProductToCount(product.productId)
+    }
 
     setTimeout(() => {
       updateCurrentItemInList(updatedItem, scannedValue);
     }, 1000)
   } else {
     let importItemSeqId = "" as any;
-    if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      importItemSeqId = await addProductToCount(product.productId)
+    }
   
     setTimeout(() => {
       updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
@@ -578,6 +590,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   items[currentItemIndex] = updatedItem
 
   store.dispatch('count/updateCycleCountItems', items);
+  productIdAdding.value = ""
 }
 
 async function readyForReview() {
@@ -719,6 +732,7 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
+      productIdAdding.value = product.productId
       if(productStoreSettings.value['showQoh']) {
         const newItem = await addProductToCount(product.productId)
         await updateCurrentItemInList(newItem, currentProduct.scannedId);
@@ -730,6 +744,27 @@ async function matchProduct(currentProduct: any) {
   })
 
   addProductModal.present();
+}
+
+function handleNewMessage(jsonObj: any) {
+  const updatedItem = jsonObj.message
+  if(updatedItem.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+  if(productIdAdding.value === updatedItem.productId) return;
+
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  const currentItemIndex = items.findIndex((item: any) => item.productId === updatedItem.productId && item.importItemSeqId === updatedItem.importItemSeqId);  
+
+  if(currentItemIndex !== -1) {
+    items[currentItemIndex] = updatedItem
+  } else {
+    store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+    items.push(updatedItem)
+  }
+
+  store.dispatch('count/updateCycleCountItems', items);
+  if(currentProduct.value.productId === updatedItem.productId) {
+    store.dispatch('product/currentProduct', updatedItem);
+  }
 }
 
 function getVariance(item: any , isRecounting: boolean) {
