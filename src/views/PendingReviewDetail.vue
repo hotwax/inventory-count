@@ -442,14 +442,14 @@ async function updateItemStatus(statusId: string, item?: any) {
 
     const itemsCount = itemList.length
     if (!hasError(resp)) {
-      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'counts were' : 'count was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
+      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate(`Failed to update ${itemList.length > 1 ? 'items' : 'item'}`))
+    showToast(translate(`Failed to update ${itemList.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to update items", err)
   }
 }
@@ -478,14 +478,14 @@ async function recountItem(item?: any) {
 
     const itemCount = importItemSeqIds.length
     if (!hasError(resp)) {
-      showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} recounted.`))
+      showToast(translate(`${itemCount} ${itemCount > 1 ? 'count items were' : 'count item was'} recounted.`))
       await fetchCountItems();
     } else {
       throw resp.data
     }
 
   } catch(err) {
-    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'counts' : 'count'}`))
+    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to recount items", err)
   }
 }
@@ -568,9 +568,9 @@ async function acceptItem(item?: any) {
 
   const itemCount = payloads.length
   if(isAnyRespHasError) {
-    showToast(translate(`Some of the ${itemCount > 1 ? 'counts were' : 'count was'} failed to accept`))
+    showToast(translate(`Some of the ${itemCount > 1 ? 'count items were' : 'count item was'} failed to accept`))
   } else {
-    showToast(translate(`${itemCount} ${itemCount > 1 ? 'counts were' : 'count was'} accepted`))
+    showToast(translate(`${itemCount} ${itemCount > 1 ? 'count items were' : 'count item was'} accepted`))
   }
   await fetchCountItems()
 }
