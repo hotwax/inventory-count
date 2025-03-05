@@ -11,7 +11,7 @@
         <ion-item-divider>
           <ion-label>{{ translate("Facility") }}</ion-label>
         </ion-item-divider>
-        <ion-item>
+        <ion-item :disabled="query.noFacility">
           <ion-icon slot="start" :icon="businessOutline"/>
           <ion-select multiple interface="popover" :value="query.facilityIds" :selected-text="getSelectedValue()" :label="translate('Assigned to')" :placeholder="translate('Select facility')" @ionChange="updateQuery('facilityIds', $event.detail.value)">
             <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">{{ facility.facilityName }}</ion-select-option>
@@ -19,7 +19,7 @@
         </ion-item>
         <ion-item button v-if="showAdditionalFilters().noFacility">
           <ion-icon slot="start" :icon="locateOutline"/>
-          <ion-checkbox v-model="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
+          <ion-checkbox v-model="query.noFacility" :disabled="query.facilityIds?.length" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
         <ion-item lines="none">
