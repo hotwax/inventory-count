@@ -209,6 +209,22 @@ async function parse(event) {
   const file = event.target.files[0];
   try {
     if (file) {
+      const fileExtension = file.name.split('.')[1];      
+      // Added n file extension check
+      if(fileExtension !== 'csv'){
+        console.log("Not a csv file.")
+        showToast(translate("Please upload a csv file only."));
+        return;
+      }
+      
+      resetDefaults();
+      console.log(uploadedFile.value.size);
+      if(uploadedFile.value != {}){
+        console.log("There is already a file");
+        // return;
+      }else{
+        console.log("There is no file");
+      }
       uploadedFile.value = file;
       fileName.value = file.name
       content.value = await parseCsv(uploadedFile.value);
