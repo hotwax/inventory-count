@@ -185,7 +185,10 @@ async function createCycleCount() {
         uploadedByUserLogin: userProfile.value.username,
         createdDate: DateTime.now().toMillis()
       })
-      router.push(`/draft/${inventoryCountImportId}`)
+
+      if (inventoryCountImportId) {
+        router.push(`/draft/${inventoryCountImportId}`)
+      }
     }
   })
 
