@@ -150,18 +150,18 @@ const actions: ActionTree<CountState, RootState> = {
 
   async createCycleCount({ dispatch }, payload) {
     try {
-      const resp = await CountService.createCycleCount(payload);  
-          
+      const resp = await CountService.createCycleCount(payload);
+
       if(!hasError(resp) && resp.data.inventoryCountImportId) {
         showToast(translate("Cycle Count created successfully"))       
         return resp.data.inventoryCountImportId
       } else {
         throw "Failed to create cycle count"
-        return undefined
       }
     } catch(err) {
-      logger.error(err)           
+      logger.error(err)
       showToast(translate("Failed to create cycle count"))
+      return undefined
     }
   },
 
