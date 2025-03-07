@@ -209,6 +209,11 @@ async function parse(event) {
   const file = event.target.files[0];
   try {
     if (file) {
+      if (uploadedFile.value && file.name === uploadedFile.value.name && file.lastModified === uploadedFile.value.lastModified) {        
+        showToast(translate("No new file uploaded. Please try again."))
+        event.target.value = ''
+        return;
+      }
       uploadedFile.value = file;
       fileName.value = file.name
       content.value = await parseCsv(uploadedFile.value);
@@ -217,8 +222,7 @@ async function parse(event) {
       fileUploaded.value = !fileUploaded.value;
       selectedMappingId.value = null;
       resetFieldMapping();
-    } else {
-      showToast(translate("No new file upload. Please try again."));
+      event.target.value = ''
     }
   } catch {
     content.value = []
