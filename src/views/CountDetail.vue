@@ -297,6 +297,10 @@ const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 
+const isAddButtonDisabled = computed(() => {
+  return selectedSegment.value === 'accepted' || selectedSegment.value === 'rejected';
+});
+
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
