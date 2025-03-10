@@ -47,9 +47,4 @@ function updateProductStoreSetting(event: any, key: string) {
 function setBarcodeIdentificationPref(value: any) {
   store.dispatch("user/setProductStoreSetting", { key: "barcodeIdentificationPref", value })
 }
-
-onMounted(async () => {
-  await store.dispatch("user/getProductStoreSetting")
-  await store.dispatch("user/fetchGoodIdentificationTypes")
-})
 </script>
