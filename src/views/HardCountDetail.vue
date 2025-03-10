@@ -259,6 +259,8 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const isSubmittingForReview = ref(false);
+const isAnimationInProgress = ref(false);
+const productInAnimation = ref({}) as any;
 
 
 onIonViewDidEnter(async() => {  
@@ -272,7 +274,7 @@ onIonViewDidEnter(async() => {
   emitter.emit("dismissLoader")
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
-
+  emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 onIonViewDidLeave(async() => {
@@ -281,6 +283,7 @@ onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("handleProductClick", handleProductClick)
+  emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 async function handleBeforeUnload() {
@@ -338,6 +341,11 @@ async function fetchCycleCount() {
   }
 }
 
+function updateAnimatingProduct(item: any) {
+  isAnimationInProgress.value = true;
+  productInAnimation.value = item;
+}
+
 async function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
@@ -350,6 +358,11 @@ async function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+  if(isAnimationInProgress.value) {
+    store.dispatch("product/currentProduct", productInAnimation.value);
+    isAnimationInProgress.value = false;
+    productInAnimation.value = {}
+  }
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
     await nextTick();
     initializeObserver()
@@ -449,6 +462,7 @@ function scrollToProduct(product: any) {
   setTimeout(() => {
     const element = document.getElementById(isItemAlreadyAdded(product) ? `${product.productId}-${product.importItemSeqId}` : product.scannedId);
     if (element) {
+      updateAnimatingProduct(product)
       element.scrollIntoView({ behavior: 'smooth' });
     }
   }, 0);
@@ -633,6 +647,10 @@ function initializeObserver() {
         if(product) {
           previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
+          if(isAnimationInProgress.value && product.productId === productInAnimation.value.productId) {
+            isAnimationInProgress.value = false;
+            productInAnimation.value = {}
+          }
         }
       }
     });
