@@ -35,6 +35,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getClosedCycleCountsTotal(state) {
     return state.closedCycleCountsTotal
+  },
+  getCycleCountItemsCount(state) {
+    return state.cycleCountItemsCount
   }
 };
 
