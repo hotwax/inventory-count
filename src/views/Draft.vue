@@ -14,7 +14,17 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+      <div class="header searchbar">
+        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+        <ion-item lines="none">
+          <ion-icon slot="start" :icon="swapVerticalOutline" />
+          <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
+            <ion-select-option value="createdDate desc">{{ translate("Created date") }}</ion-select-option>
+            <ion-select-option value="dueDate desc">{{ translate("Due date") }}</ion-select-option>
+            <ion-select-option value="countImportName asc">{{ translate("Alphabetic") }}</ion-select-option>
+          </ion-select> 
+        </ion-item>
+      </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -77,7 +87,7 @@ import {
   onIonViewDidEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline } from "ionicons/icons";
+import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, ref } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
@@ -194,6 +204,10 @@ async function createCycleCount() {
 
   return createCountAlert.present();
 }
+
+async function updateQuery(key: string, value: any) {
+  await store.dispatch("count/updateQuery", { key, value })
+}
 </script>
 
 <style scoped>
@@ -203,5 +217,10 @@ async function createCycleCount() {
 ion-note {
   align-self: center;
   padding: 0;
+}
+.header {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 </style>
