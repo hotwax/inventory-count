@@ -37,7 +37,7 @@
           <ion-fab-button @click="createCycleCount">
             <ion-icon :icon="documentOutline" />
           </ion-fab-button>
-          <ion-fab-button @click="router.push('/bulkUpload')">
+          <ion-fab-button @click="router.replace('/bulkUpload')">
             <ion-icon :icon="documentsOutline" />
           </ion-fab-button>
           <ion-fab-button @click="router.push('/hard-count')">
