@@ -260,7 +260,7 @@ async function parse(event: any) {
       fileUploaded.value =!fileUploaded.value; 
       openImportCsvModal();
     } else {
-      showToast(translate("No new file uploaded. Please try again"));
+      showToast(translate("No new file uploaded. Please try again."));
     }
   } catch {
     content.value = []
