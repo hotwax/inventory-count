@@ -61,7 +61,7 @@ import { showToast } from "@/utils";
 
 
 const props = defineProps(["fileColumns", "content", "countId"])
-const productIdentifications = ["productId", "SKU", "UPCA", "SHOPIFY_PROD_SKU", "SHOPIFY_PROD_ID"]
+const productIdentifications = ["productId", "SKU", "UPCA", "SHOPIFY_PROD_ID"]
 
 const selectedIdentifier = ref('')
 const selectedColumn = ref('')
