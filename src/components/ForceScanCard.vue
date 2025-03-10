@@ -32,7 +32,7 @@ import {
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import store from "@/store";
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { hasPermission } from "@/authorization"
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
