@@ -16,16 +16,25 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
         <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+        <ion-item lines="none">
+          <ion-icon slot="start" :icon="swapVerticalOutline" />
+          <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
+            <ion-select-option value="createdDate desc">{{ translate("Created date") }}</ion-select-option>
+            <ion-select-option value="dueDate desc">{{ translate("Due date") }}</ion-select-option>
+            <ion-select-option value="countImportName asc">{{ translate("Alphabetic") }}</ion-select-option>
+          </ion-select> 
+        </ion-item>
         <ion-item lines="full">
           <ion-icon slot="start" :icon="listOutline"/>
           <ion-label>{{ translate("Counts closed") }}</ion-label>
           <ion-label slot="end">{{ (closedCycleCountsTotal || closedCycleCountsTotal === 0) ? closedCycleCountsTotal : "-" }}</ion-label>
         </ion-item>
-        <ion-item lines="full">
+        <!-- Currently the average variance does not work, so commenting it out for now -->
+        <!-- <ion-item lines="full">
           <ion-icon slot="start" :icon="thermometerOutline"/>
           <ion-label>{{ translate("Average variance") }}</ion-label>
           <ion-label slot="end">{{ getAverageVariance() }}</ion-label>
-        </ion-item>
+        </ion-item> -->
       </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
@@ -96,13 +105,15 @@ import {
   IonMenuButton,
   IonPage,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonTitle,
   IonToolbar,
   modalController,
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, thermometerOutline } from "ionicons/icons";
+import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, ref } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"
@@ -196,6 +207,9 @@ async function openDownloadClosedCountModal() {
   await downloadClosedCountModal.present();
 }
 
+async function updateQuery(key: string, value: any) {
+  await store.dispatch("count/updateQuery", { key, value })
+}
 </script>
 
 <style scoped>
@@ -215,6 +229,7 @@ ion-content {
 .header {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: center;
   gap: 10px;
 }
 </style>
