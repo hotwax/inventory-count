@@ -13,7 +13,17 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+      <div class="header searchbar">
+        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+        <ion-item lines="none">
+          <ion-icon slot="start" :icon="swapVerticalOutline" />
+          <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
+            <ion-select-option value="createdDate desc">{{ translate("Created date") }}</ion-select-option>
+            <ion-select-option value="dueDate desc">{{ translate("Due date") }}</ion-select-option>
+            <ion-select-option value="countImportName asc">{{ translate("Alphabetic") }}</ion-select-option>
+          </ion-select> 
+        </ion-item>
+      </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -59,8 +69,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { translate } from '@/i18n'
-import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
+import { filterOutline, storefrontOutline, swapVerticalOutline } from "ionicons/icons";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
 import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
 import Filters from "@/components/Filters.vue"
@@ -122,6 +132,10 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
   }
   await store.dispatch("count/fetchCycleCounts", payload)
 }
+
+async function updateQuery(key: string, value: any) {
+  await store.dispatch("count/updateQuery", { key, value })
+}
 </script>
 
 <style scoped>
@@ -132,5 +146,12 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
 
 .list-item > ion-item {
   width: 100%;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  gap: var(--spacer-xs);
 }
 </style>

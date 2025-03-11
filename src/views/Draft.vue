@@ -81,6 +81,8 @@ import {
   IonNote,
   IonPage,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonTitle,
   IonToolbar,
   alertController,
@@ -221,6 +223,7 @@ ion-note {
 .header {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  align-items: center;
+  gap: var(--spacer-xs);
 }
 </style>
