@@ -134,13 +134,13 @@
             </ion-item>
 
             <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+              <ion-button :disabled="isUpdatingItem[item.importItemSeqId] || isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
                 <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+              <ion-button :disabled="isUpdatingItem[item.importItemSeqId] || isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
                 <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
               </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+              <ion-button :disabled="isUpdatingItem[item.importItemSeqId] || isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
                 <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
               </ion-button>
             </div>
@@ -170,16 +170,16 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || !isSelectedItemsHasQuantity() || isAnyItemUpdating" @click="acceptItem()">
             <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || isAnyItemUpdating" @click="recountItem()">
             <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || isAnyItemUpdating" @click="updateItemStatus('INV_COUNT_REJECTED')">
             <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
-        </ion-buttons>
+          </ion-buttons>
       </ion-toolbar>
     </ion-footer>
   </ion-page>
@@ -235,6 +235,11 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
+const isUpdatingItem = ref<{ [key: string]: boolean }>({});
+const isUpdatingItemsInBulk = ref(false);
+const isAnyItemUpdating = computed(() => {
+  return Object.values(isUpdatingItem.value).some((isUpdating) => isUpdating);
+});
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -415,13 +420,16 @@ async function addProduct() {
 async function updateItemStatus(statusId: string, item?: any) {
   let itemList: Array<any> = []
   if(item) {
+    isUpdatingItem.value[item.importItemSeqId] = true;
     itemList = [{
       importItemSeqId: item.importItemSeqId,
       statusId
     }]
   } else {
+    isUpdatingItemsInBulk.value = true;
     currentCycleCount.value.items.map((item: any) => {
       if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
         itemList.push({
           importItemSeqId: item.importItemSeqId,
           statusId
@@ -431,6 +439,7 @@ async function updateItemStatus(statusId: string, item?: any) {
   }
 
   if(!itemList.length) {
+    resetUpdatingState(item);
     return;
   }
 
@@ -447,14 +456,37 @@ async function updateItemStatus(statusId: string, item?: any) {
     } else {
       throw resp.data
     }
-
   } catch(err) {
     showToast(translate(`Failed to update ${itemList.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to update items", err)
+  } finally {
+    resetUpdatingState(item);
   }
 }
 
+function resetUpdatingState(item?: any) {
+  if (item) {
+    isUpdatingItem.value[item.importItemSeqId] = false;
+  } else {
+    isUpdatingItemsInBulk.value = false;
+    currentCycleCount.value.items.forEach((item: any) => {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    });
+  }
+}  
+
 async function recountItem(item?: any) {
+  if (item) {
+    isUpdatingItem.value[item.importItemSeqId] = true;
+  } else {
+    isUpdatingItemsInBulk.value = true;
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
+      }
+    })
+  }
+
   let importItemSeqIds: Array<string> = []
   if(item) {
     importItemSeqIds = [item.importItemSeqId]
@@ -467,6 +499,11 @@ async function recountItem(item?: any) {
   }
 
   if(!importItemSeqIds.length) {
+    if (item) {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    } else {
+      isUpdatingItemsInBulk.value = false;
+    }
     return;
   }
 
@@ -488,6 +525,14 @@ async function recountItem(item?: any) {
     showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'count items' : 'count item'}`))
     logger.error("Failed to recount items", err)
   }
+  if (item) {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    } else {
+      isUpdatingItemsInBulk.value = false;
+      currentCycleCount.value.items.forEach((item: any) => {
+        isUpdatingItem.value[item.importItemSeqId] = false;
+      });
+    }
 }
 
 async function completeCount() {
@@ -537,6 +582,17 @@ async function reassignCount() {
 }
 
 async function acceptItem(item?: any) {
+  if (item) {
+    isUpdatingItem.value[item.importItemSeqId] = true;
+  } else {
+    isUpdatingItemsInBulk.value = true;
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
+      }
+    })
+  }
+
   const payloads = []
   if(item) {
     payloads.push({
@@ -573,6 +629,15 @@ async function acceptItem(item?: any) {
     showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} accepted`))
   }
   await fetchCountItems()
+  
+  if (item) {
+    isUpdatingItem.value[item.importItemSeqId] = false;
+  } else {
+    isUpdatingItemsInBulk.value = false;
+    currentCycleCount.value.items.forEach((item: any) => {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    });
+  }
 }
 
 function openDateTimeModal() {
