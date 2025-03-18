@@ -179,12 +179,16 @@ async function createCycleCount() {
 
     if(name) {
       // When initially creating the cycleCount we are just assigning it a name, all the other params are updated from the details page
-      await store.dispatch("count/createCycleCount", {
+      const inventoryCountImportId = await store.dispatch("count/createCycleCount", {
         countImportName: name,
         statusId: "INV_COUNT_CREATED",
         uploadedByUserLogin: userProfile.value.username,
         createdDate: DateTime.now().toMillis()
       })
+
+      if (inventoryCountImportId) {
+        router.push(`/draft/${inventoryCountImportId}`)
+      }
     }
   })
 
