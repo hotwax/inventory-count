@@ -117,7 +117,7 @@ const updateCount = async (payload: any): Promise<any> => {
 
 const acceptItem = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}/approve`,
+    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}/accept`,
     method: "POST",
     data: payload
   })
