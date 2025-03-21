@@ -186,6 +186,7 @@ const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrolli
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
   await store.dispatch("user/fetchGoodIdentificationTypes")
+  await store.dispatch("user/getProductStoreSetting")
 })
 
 function logout() {
