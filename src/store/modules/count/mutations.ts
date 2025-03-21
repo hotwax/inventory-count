@@ -16,7 +16,7 @@ const mutations: MutationTree <CountState> = {
       facilityIds: [],
       noFacility: false,
       queryString: '',
-      sortBy: 'dueDate desc',
+      sortBy: 'createdDate desc',
       createdDate_from: '',
       createdDate_thru: '',
       closedDate_from: '',
