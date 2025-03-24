@@ -55,6 +55,13 @@ const getters: GetterTree <UserState, RootState> = {
   },
   isScrollingAnimationEnabled(state) {
     return state.isScrollingAnimationEnabled
-  }
+  },
+  getWebSocketUrl(state) {
+    let baseURL = state.instanceUrl
+    if(baseURL.startsWith("http")) {
+      baseURL = baseURL.replace(/https?:\/\/|\/api|\/+/g, "");
+    }
+    return `ws://${baseURL}/notws?api_key=${state.token}`;
+  },
 }
 export default getters;
