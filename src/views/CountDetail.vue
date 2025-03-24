@@ -253,6 +253,7 @@ import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
+import { registerTopicListener } from '@/websocket';
 
 const store = useStore();
 
@@ -305,6 +306,7 @@ onIonViewDidEnter(async() => {
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
+  registerTopicListener(handleNewMessage);
   emitter.emit("dismissLoader")
   if(itemsList.value?.length) initializeObserver()
 })  
@@ -640,6 +642,23 @@ async function readyForReview() {
     }]
   });
   await alert.present();
+}
+
+function handleNewMessage(jsonObj) {
+  const updatedItem = jsonObj.message
+  if(updatedItem.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+  const currentItemIndex = items.findIndex((item) => item.productId === updatedItem.productId && item.importItemSeqId === updatedItem.importItemSeqId);  
+  if(currentItemIndex !== -1) {
+    items[currentItemIndex] = updatedItem
+  } else {
+    store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+    items.push(updatedItem)
+  }
+  store.dispatch('count/updateCycleCountItems', items);
+  if(product.value.productId === updatedItem.productId) {
+    store.dispatch('product/currentProduct', updatedItem);
+  }
 }
 </script>
 

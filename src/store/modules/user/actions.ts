@@ -11,13 +11,15 @@ import { resetConfig } from "@/adapter"
 import { useAuthStore } from "@hotwax/dxp-components"
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import { closeWebSocket, initWebSocket } from "@/websocket";
+import store from "@/store"
 
 const actions: ActionTree<UserState, RootState> = {
 
     /**
   * Login user and return token
   */
-  async login ({ commit, dispatch }, payload) {
+  async login ({ commit, dispatch, state }, payload) {
     try {
 
       // TODO: implement support for permission check
@@ -74,6 +76,9 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
+
+      const url = store.getters["user/getWebSocketUrl"];
+      initWebSocket(url, state.currentFacility.facilityId)
       emitter.emit("dismissLoader")
     } catch (err: any) {
       emitter.emit("dismissLoader")
@@ -111,6 +116,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
 
+    closeWebSocket()
     emitter.emit('dismissLoader')
   },
 
