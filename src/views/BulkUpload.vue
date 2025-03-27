@@ -217,8 +217,6 @@ async function parse(event) {
       fileUploaded.value = !fileUploaded.value;
       selectedMappingId.value = null;
       resetFieldMapping();
-    } else {
-      showToast(translate("No new file upload. Please try again."));
     }
   } catch {
     content.value = []
