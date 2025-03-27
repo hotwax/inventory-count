@@ -1,6 +1,6 @@
 {
-  "appId": "co.hotwax.inventorycount",
-  "appName": "inventory-count",
+  "appId": "co.hotwax.cyclecount",
+  "appName": "cycle-count",
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "dist",
