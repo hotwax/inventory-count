@@ -272,9 +272,9 @@ const itemsList = computed(() => {
     return cycleCountItems.value.itemList.filter(item =>(item.quantity === undefined || item.quantity === null) && item.itemStatusId === "INV_COUNT_CREATED");
   } else if (selectedSegment.value === 'counted') {
     // Based on discussion, item with rejected and completed status should be shown in the counted segment
-    return cycleCountItems.value.itemList.filter(item => item.quantity >= 0 || (item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'));
+    return cycleCountItems.value.itemList.filter(item => (item.quantity >= 0 ) && ((item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'|| item.itemStatusId === "INV_COUNT_CREATED")));
   } else if (selectedSegment.value === 'notCounted') {
-    return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
+    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
