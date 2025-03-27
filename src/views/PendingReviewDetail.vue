@@ -170,16 +170,16 @@
     <ion-footer v-if="currentCycleCount.inventoryCountImportId">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
+          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || !isSelectedItemsHasQuantity() || isAnyItemUpdating" @click="acceptItem()">
             <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isUpdatingItemsInBulk || isAnyItemSelected" @click="recountItem()">
+          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || isAnyItemUpdating" @click="recountItem()">
             <ion-icon slot="icon-only" :icon="refreshOutline" />
           </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
+          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isUpdatingItemsInBulk || isAnyItemSelected || isAnyItemUpdating" @click="updateItemStatus('INV_COUNT_REJECTED')">
             <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
           </ion-button>
-        </ion-buttons>
+          </ion-buttons>
       </ion-toolbar>
     </ion-footer>
   </ion-page>
@@ -237,6 +237,9 @@ let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
 const isUpdatingItem = ref<{ [key: string]: boolean }>({});
 const isUpdatingItemsInBulk = ref(false);
+const isAnyItemUpdating = computed(() => {
+  return Object.values(isUpdatingItem.value).some((isUpdating) => isUpdating);
+});
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
@@ -426,6 +429,7 @@ async function updateItemStatus(statusId: string, item?: any) {
     isUpdatingItemsInBulk.value = true;
     currentCycleCount.value.items.map((item: any) => {
       if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
         itemList.push({
           importItemSeqId: item.importItemSeqId,
           statusId
@@ -465,6 +469,9 @@ function resetUpdatingState(item?: any) {
     isUpdatingItem.value[item.importItemSeqId] = false;
   } else {
     isUpdatingItemsInBulk.value = false;
+    currentCycleCount.value.items.forEach((item: any) => {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    });
   }
 }  
 
@@ -473,6 +480,11 @@ async function recountItem(item?: any) {
     isUpdatingItem.value[item.importItemSeqId] = true;
   } else {
     isUpdatingItemsInBulk.value = true;
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
+      }
+    })
   }
 
   let importItemSeqIds: Array<string> = []
@@ -517,6 +529,9 @@ async function recountItem(item?: any) {
       isUpdatingItem.value[item.importItemSeqId] = false;
     } else {
       isUpdatingItemsInBulk.value = false;
+      currentCycleCount.value.items.forEach((item: any) => {
+        isUpdatingItem.value[item.importItemSeqId] = false;
+      });
     }
 }
 
@@ -571,6 +586,11 @@ async function acceptItem(item?: any) {
     isUpdatingItem.value[item.importItemSeqId] = true;
   } else {
     isUpdatingItemsInBulk.value = true;
+    currentCycleCount.value.items.map((item: any) => {
+      if(item.isChecked) {
+        isUpdatingItem.value[item.importItemSeqId] = true;
+      }
+    })
   }
 
   const payloads = []
@@ -614,6 +634,9 @@ async function acceptItem(item?: any) {
     isUpdatingItem.value[item.importItemSeqId] = false;
   } else {
     isUpdatingItemsInBulk.value = false;
+    currentCycleCount.value.items.forEach((item: any) => {
+      isUpdatingItem.value[item.importItemSeqId] = false;
+    });
   }
 }
 
