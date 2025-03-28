@@ -105,7 +105,7 @@ import {
   onIonViewWillEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline, swapVerticalOutline } from "ionicons/icons";
+import { cloudDownloadOutline, filterOutline, listOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"

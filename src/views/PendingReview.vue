@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { translate } from '@/i18n'
-import { filterOutline, storefrontOutline, swapVerticalOutline } from "ionicons/icons";
+import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar,IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { computed, ref } from "vue"
 import store from "@/store"

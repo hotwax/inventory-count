@@ -81,7 +81,7 @@ import {
   onIonViewDidEnter,
   onIonViewWillLeave
 } from "@ionic/vue";
-import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline, swapVerticalOutline } from "ionicons/icons";
+import { addOutline, documentOutline, documentsOutline, filterOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { computed, ref } from "vue"
 import { translate } from "@/i18n";
 import Filters from "@/components/Filters.vue"

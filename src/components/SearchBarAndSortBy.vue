@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonContent, IonIcon, IonItem, IonSearchbar, IonSelect, IonSelectOption } from "@ionic/vue";
+import { IonIcon, IonItem, IonSearchbar, IonSelect, IonSelectOption } from "@ionic/vue";
 import { swapVerticalOutline } from "ionicons/icons";
 import { computed, defineEmits } from "vue"
 import { translate } from "@/i18n";
