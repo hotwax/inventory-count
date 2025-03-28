@@ -15,15 +15,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
-        <ion-item lines="none">
-          <ion-icon slot="start" :icon="swapVerticalOutline" />
-          <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
-            <ion-select-option value="createdDate desc">{{ translate("Created date") }}</ion-select-option>
-            <ion-select-option value="dueDate desc">{{ translate("Due date") }}</ion-select-option>
-            <ion-select-option value="countImportName asc">{{ translate("Alphabetic") }}</ion-select-option>
-          </ion-select> 
-        </ion-item>
+        <SearchBarAndSortBy @emitUpdateQueryString="updateQueryString" />
       </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
@@ -97,6 +89,7 @@ import store from "@/store";
 import { showToast } from "@/utils";
 import router from "@/router";
 import { DateTime } from "luxon";
+import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
@@ -128,8 +121,7 @@ function enableScrolling() {
   }
 }
 
-async function updateQueryString(key: string, value: any) {
-  await store.dispatch("count/updateQueryString", { key, value })
+async function updateQueryString() {
   fetchDraftCycleCounts();
 }
 
