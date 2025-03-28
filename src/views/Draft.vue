@@ -72,9 +72,6 @@ import {
   IonMenuButton,
   IonNote,
   IonPage,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
   IonTitle,
   IonToolbar,
   alertController,
@@ -94,7 +91,6 @@ import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
-const query = computed(() => store.getters["count/getQuery"])
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 
 const isScrollingEnabled = ref(false);
@@ -207,11 +203,5 @@ async function createCycleCount() {
 ion-note {
   align-self: center;
   padding: 0;
-}
-.header {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  align-items: center;
-  gap: var(--spacer-xs);
 }
 </style>

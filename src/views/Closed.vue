@@ -96,9 +96,6 @@ import {
   IonLabel,
   IonMenuButton,
   IonPage,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
   IonTitle,
   IonToolbar,
   modalController,
@@ -118,7 +115,6 @@ import router from "@/router"
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
-const query = computed(() => store.getters["count/getQuery"])
 const closedCycleCountsTotal = computed(() => store.getters["count/getClosedCycleCountsTotal"])
 
 const isScrollingEnabled = ref(false);
@@ -215,9 +211,6 @@ ion-content {
 }
 
 .header {
-  display: grid;
   grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  gap: var(--spacer-xs);
 }
 </style>
