@@ -15,13 +15,13 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <SearchBarAndSortBy @emitUpdateQueryString="updateQueryString" />
+        <SearchBarAndSortBy @queryStringUpdated="queryStringUpdated" />
         <ion-item lines="full">
           <ion-icon slot="start" :icon="listOutline"/>
           <ion-label>{{ translate("Counts closed") }}</ion-label>
           <ion-label slot="end">{{ (closedCycleCountsTotal || closedCycleCountsTotal === 0) ? closedCycleCountsTotal : "-" }}</ion-label>
         </ion-item>
-        <!-- Currently the average variance does not work, so commenting it out for now -->
+        <!-- TODO: Need to add support to display average variance, currently the we do not have data for the same -->
         <!-- <ion-item lines="full">
           <ion-icon slot="start" :icon="thermometerOutline"/>
           <ion-label>{{ translate("Average variance") }}</ion-label>
@@ -145,7 +145,7 @@ function enableScrolling() {
   }
 }
 
-async function updateQueryString() {
+async function queryStringUpdated() {
   await Promise.allSettled([fetchClosedCycleCounts(), store.dispatch("count/fetchClosedCycleCountsTotal")])
 }
 

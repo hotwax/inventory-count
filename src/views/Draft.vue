@@ -15,7 +15,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <SearchBarAndSortBy @emitUpdateQueryString="updateQueryString" />
+        <SearchBarAndSortBy @queryStringUpdated="queryStringUpdated" />
       </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
@@ -121,7 +121,7 @@ function enableScrolling() {
   }
 }
 
-async function updateQueryString() {
+async function queryStringUpdated() {
   fetchDraftCycleCounts();
 }
 

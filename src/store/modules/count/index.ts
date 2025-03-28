@@ -15,7 +15,7 @@ const countModule: Module<CountState, RootState> = {
       facilityIds: [],
       noFacility: false,
       queryString: '',
-      sortBy: 'createdDate desc',
+      sortBy: 'dueDate desc',
       createdDate_from: '',
       createdDate_thru: '',
       closedDate_from: '',
