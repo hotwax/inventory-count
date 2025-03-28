@@ -198,10 +198,6 @@ async function openDownloadClosedCountModal() {
 
   await downloadClosedCountModal.present();
 }
-
-async function updateQuery(key: string, value: any) {
-  await store.dispatch("count/updateQuery", { key, value })
-}
 </script>
 
 <style scoped>

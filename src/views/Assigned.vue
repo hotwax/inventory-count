@@ -124,10 +124,6 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
   }
   await store.dispatch("count/fetchCycleCounts", payload)
 }
-
-async function updateQuery(key: string, value: any) {
-  await store.dispatch("count/updateQuery", { key, value })
-}
 </script>
 
 <style scoped>

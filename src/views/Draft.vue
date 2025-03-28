@@ -198,10 +198,6 @@ async function createCycleCount() {
 
   return createCountAlert.present();
 }
-
-async function updateQuery(key: string, value: any) {
-  await store.dispatch("count/updateQuery", { key, value })
-}
 </script>
 
 <style scoped>
