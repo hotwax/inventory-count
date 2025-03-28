@@ -273,6 +273,13 @@ main {
   /* gap: var(--spacer-2xl); */
   max-width: 100%;
 }
+
+.header {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  gap: var(--spacer-xs);
+}
     
 section {
   display: grid;
