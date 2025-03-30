@@ -29,10 +29,8 @@
           </div>
         </ion-list>   
 
-        <ion-list>
-          <ion-list-header>{{ translate("Select the following columns from the uploaded CSV") }}</ion-list-header>
-
-          <ion-item-divider>
+        <ion-list class="field-mappings">
+          <ion-item-divider color="light">
             <ion-label>{{ translate("Required") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)">
@@ -44,7 +42,7 @@
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item-divider>
+          <ion-item-divider color="light">
             <ion-label>{{ translate("Optional") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)">
@@ -70,9 +68,9 @@
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
               {{ extractFilename(systemMessage.messageText) }}
             </ion-label>
-            <div class="system-message-action">
-              <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button slot="end" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+            <div slot="end" class="system-message-action">
+              <ion-note>{{ getFileProcessingStatus(systemMessage) }}</ion-note>
+              <ion-button fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -312,14 +310,28 @@ async function addFieldMapping() {
 </script> 
 <style scoped>
 .main {
-  max-width: 732px;
+  max-width: 560px;
   margin: var(--spacer-sm) auto 0; 
 }
-.system-message-section {
-  margin-bottom: 16px;
+
+.field-mappings {
+  border: 1px solid var(--ion-color-medium);
+  border-radius: 8px;
+  margin-block: var(--spacer-lg);
 }
-.system-message-action {
-  display: flex;
-  align-items: center;
+
+.field-mappings ion-select::part(label) {
+  max-width: 100%;
+}
+
+.field-mappings ion-select ion-label {
+  padding-block: var(--spacer-xs)
+}
+
+.system-message-section {
+  margin-bottom: var(--spacer-sm);
+}
+.system-message-action>ion-button {
+  vertical-align: middle;
 }
 </style>
