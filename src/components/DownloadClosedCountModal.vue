@@ -171,10 +171,10 @@ onMounted(async () => {
 
       })
     } else if(!resp[0]?.preferenceKey) {
+      // Make all the fields selected, if no user preference is found
       markAllFieldsSelected();
       const mappedData: Array<string> = generateMappedData(Object.keys(selectedFields.value))
       await UserService.createUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string, mappedData.join(","));
-      // Make all the fields selected, if no user preference is found
     }
   } catch(err) {
     // Make all the fields selected, if no user preference is found
