@@ -143,7 +143,7 @@ const savedFieldMappings = ref("")
 onMounted(async () => {
   const userId = userProfile.value.partyId
   try {
-    const resp = await UserService.getUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_INVCOUNT as string);
+    const resp = await UserService.getUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string);
 
     if(resp.length && resp[0].preferenceValue) {
       savedFieldMappings.value = resp[0].preferenceValue
@@ -171,9 +171,10 @@ onMounted(async () => {
 
       })
     } else if(!resp[0]?.preferenceKey) {
-      await UserService.createUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_INVCOUNT as string, "");
-      // Make all the fields selected, if no user preference is found
       markAllFieldsSelected();
+      const mappedData: Array<string> = generateMappedData(Object.keys(selectedFields.value))
+      await UserService.createUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string, mappedData.join(","));
+      // Make all the fields selected, if no user preference is found
     }
   } catch(err) {
     // Make all the fields selected, if no user preference is found
@@ -372,11 +373,8 @@ async function downloadCSV() {
   emitter.emit("dismissLoader")
 }
 
-async function updateMappingPreference() {
-  // Only fields those are selected by the user
-  const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
-
-  const mappedData: Array<string> = selectedData.map((key: string) => {
+function generateMappedData(data: any) {
+  return data.map((key: string) => {
     if(key === "facility") {
       return `facility:${selectedFacilityField.value}`
     }
@@ -391,6 +389,13 @@ async function updateMappingPreference() {
 
     return key;
   })
+}
+
+async function updateMappingPreference() {
+  // Only fields those are selected by the user
+  const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
+
+  const mappedData: Array<string> = generateMappedData(selectedData)
 
   // No changes have been made in the mappings, so no need to update the user preference
   if(savedFieldMappings.value === mappedData.join(",")) {
@@ -398,7 +403,7 @@ async function updateMappingPreference() {
   }
 
   try {
-    await UserService.updateUserPreference(userProfile.value.partyId, process.env.VUE_APP_DOWNLOAD_MAPPING_INVCOUNT as string, mappedData.join(","))
+    await UserService.updateUserPreference(userProfile.value.partyId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string, mappedData.join(","))
   } catch(err) {
     logger.error("Failed to update user preference for mapping")
   }
