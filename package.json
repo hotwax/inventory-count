@@ -1,8 +1,8 @@
 {
-  "name": "inventory-count",
+  "name": "cycle-count",
   "version": "2.7.1",
   "private": true,
-  "description": "HotWax Commece Inventory Count App",
+  "description": "HotWax Commece Cycle Count App",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",

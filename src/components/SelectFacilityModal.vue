@@ -11,8 +11,11 @@
   </ion-header>
 
   <ion-content>
-    <ion-searchbar @keyup.enter="queryString = $event.target.value; filterFacilities()" />
-    <ion-list>
+    <ion-searchbar id="facilitySearchBar" @keyup.enter="queryString = $event.target.value; filterFacilities()" />
+    <div class="empty-state" v-if="!filteredFacilities.length">
+      <p>{{ translate("No facilities found") }}</p>
+    </div>
+    <ion-list v-else>
       <ion-radio-group v-model="selectedFacilityId">
         <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
           <ion-radio :value="facility.facilityId" label-placement="end" justify="start">

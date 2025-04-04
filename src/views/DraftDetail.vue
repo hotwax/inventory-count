@@ -259,8 +259,6 @@ async function parse(event: any) {
       showToast(translate("File uploaded successfully"));
       fileUploaded.value =!fileUploaded.value; 
       openImportCsvModal();
-    } else {
-      showToast(translate("No new file upload. Please try again"));
     }
   } catch {
     content.value = []
@@ -332,7 +330,10 @@ async function openSelectFacilityModal() {
     }
   })
 
-  selectFacilityModal.present();
+  selectFacilityModal.present().then(() => {
+    const searchBar: any = document.querySelector('#facilitySearchBar');
+    searchBar?.setFocus();
+  });
 }
 
 function openDateTimeModal() {
@@ -364,7 +365,7 @@ async function updateCountName() {
     return;
   }
 
-  if(countName.value.trim() !== currentCycleCount.value.countName.trim()) {
+  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
     await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
     .then(() => {
       currentCycleCount.value.countName = countName.value.trim()

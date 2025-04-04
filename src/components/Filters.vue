@@ -11,7 +11,7 @@
         <ion-item-divider>
           <ion-label>{{ translate("Facility") }}</ion-label>
         </ion-item-divider>
-        <ion-item>
+        <ion-item :disabled="query.noFacility">
           <ion-icon slot="start" :icon="businessOutline"/>
           <ion-select multiple interface="popover" :value="query.facilityIds" :selected-text="getSelectedValue()" :label="translate('Assigned to')" :placeholder="translate('Select facility')" @ionChange="updateQuery('facilityIds', $event.detail.value)">
             <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">{{ facility.facilityName }}</ion-select-option>
@@ -19,7 +19,7 @@
         </ion-item>
         <ion-item button v-if="showAdditionalFilters().noFacility">
           <ion-icon slot="start" :icon="locateOutline"/>
-          <ion-checkbox v-model="query.noFacility" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
+          <ion-checkbox v-model="query.noFacility" :disabled="query.facilityIds?.length" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
         <ion-item lines="none">
@@ -32,17 +32,15 @@
           </ion-select>
         </ion-item>
 
-        <template v-if="showAdditionalFilters().selectedFacilities">
-          <ion-item v-for="facilityId in query.facilityIds" :key="facilityId">
-            <ion-label>{{ getFacilityName(facilityId) }}</ion-label>
-            <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
-              <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
-            </ion-button>
-          </ion-item>
-          <ion-item v-show="!query.facilityIds.length">
-            <ion-label>{{ translate("All facilities selected") }}</ion-label>
-          </ion-item>
-        </template>
+        <ion-item v-for="facilityId in query.facilityIds" :key="facilityId">
+          <ion-label>{{ getFacilityName(facilityId) }}</ion-label>
+          <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
+            <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
+          </ion-button>
+        </ion-item>
+        <ion-item v-show="!query.facilityIds.length">
+          <ion-label>{{ translate("All facilities selected") }}</ion-label>
+        </ion-item>
 
         <ion-item-divider v-if="showAdditionalFilters().date">
           <ion-label>{{ translate("Date") }}</ion-label>
@@ -198,7 +196,6 @@ function formatDateTime(date: any) {
 function showAdditionalFilters() {
   return {
     noFacility: router.currentRoute.value.name === "Draft",
-    selectedFacilities: router.currentRoute.value.name === "Closed",
     date: router.currentRoute.value.name !== "Draft"
   }
 }
