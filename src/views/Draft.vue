@@ -29,7 +29,7 @@
         </ion-item>
       </ion-list>
 
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab ref="fabRef" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button>
           <ion-icon :icon="addOutline" />
         </ion-fab-button>
@@ -95,6 +95,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
+const fabRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await fetchDraftCycleCounts()
@@ -196,10 +197,10 @@ async function createCycleCount() {
 }
 
 function openDraft(importId: string) {
-  // workaround to close fab as no official working method in docs 
-    const fab = document.querySelector('ion-fab');
+  // accessing fab using ref and using fab close method
+    const fab = fabRef.value.$el;
     if (fab) {
-      fab.activated = false;
+      fab.close();
     }
   router.push(`/draft/${importId}`) // navigate to the draft
 }
