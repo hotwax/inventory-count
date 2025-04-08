@@ -15,7 +15,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <SearchBarAndSortBy @queryStringUpdated="queryStringUpdated" />
+        <SearchBarAndSortBy />
         <ion-item lines="full">
           <ion-icon slot="start" :icon="listOutline"/>
           <ion-label>{{ translate("Counts closed") }}</ion-label>
@@ -139,10 +139,6 @@ function enableScrolling() {
   } else {
     isScrollingEnabled.value = true;
   }
-}
-
-async function queryStringUpdated() {
-  await Promise.allSettled([fetchClosedCycleCounts(), store.dispatch("count/fetchClosedCycleCountsTotal")])
 }
 
 async function loadMoreCycleCounts(event: any) {

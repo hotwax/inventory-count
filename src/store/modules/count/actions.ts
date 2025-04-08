@@ -179,11 +179,7 @@ const actions: ActionTree<CountState, RootState> = {
       statusId = "INV_COUNT_COMPLETED"
     }
     dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
-    if(payload.key === "facilityIds") dispatch("fetchClosedCycleCountsTotal")
-  },
-
-  async updateQueryString({ commit }, payload) {
-    commit(types.COUNT_QUERY_UPDATED, payload)
+    if(payload.key === "facilityIds" && router.currentRoute.value.name === "Closed") dispatch("fetchClosedCycleCountsTotal")
   },
 
   async clearQuery({ commit }) {
