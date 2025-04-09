@@ -4,8 +4,8 @@
     <ion-item lines="none">
       <ion-icon slot="start" :icon="swapVerticalOutline" />
       <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
-        <ion-select-option value="dueDate desc">{{ translate("Due date") }}</ion-select-option>
-        <ion-select-option value="createdDate desc">{{ translate("Created date") }}</ion-select-option>
+        <ion-select-option value="dueDate asc">{{ translate("Due date") }}</ion-select-option>
+        <ion-select-option value="createdDate asc">{{ translate("Created date") }}</ion-select-option>
         <ion-select-option value="countImportName asc">{{ translate("Alphabetic") }}</ion-select-option>
       </ion-select> 
     </ion-item>
