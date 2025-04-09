@@ -276,11 +276,17 @@ main {
 
 .header {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   align-items: center;
   gap: var(--spacer-xs);
 }
-    
+
+@media (max-width: 991px) {
+  .header {
+    grid-template-columns: 1fr;
+  }
+}
+
 section {
   display: grid;
   /* grid-template-columns: minmax(400px); */

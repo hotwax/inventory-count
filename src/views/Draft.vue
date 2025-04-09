@@ -14,9 +14,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <div class="header searchbar">
-        <SearchBarAndSortBy />
-      </div>
+      <SearchBarAndSortBy />
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>

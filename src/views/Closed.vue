@@ -14,7 +14,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <div class="header searchbar">
+      <div class="closed-header">
         <SearchBarAndSortBy />
         <ion-item lines="full">
           <ion-icon slot="start" :icon="listOutline"/>
@@ -206,7 +206,23 @@ ion-content {
   width: 100%;
 }
 
+.closed-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.closed-header > ion-item {
+  padding-top: var(--spacer-base);
+  padding-inline: var(--spacer-sm);
+}
+
 .header {
-  grid-template-columns: repeat(3, 1fr);
+  grid-column: span 2;
+}
+
+@media (max-width: 991px) {
+  .closed-header {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
