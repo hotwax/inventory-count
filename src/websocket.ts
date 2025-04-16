@@ -1,4 +1,6 @@
 import { reactive } from 'vue';
+import store from '@/store';
+import { WebSocketService } from './services/WebSocketService';
 
 const state = reactive({
   webSocket: null,
@@ -63,21 +65,27 @@ function initWebSocket(webSocketUrl: string, facilityId: string) {
 }
 
 // Subscribe to facility topic
-function subscribeToFacility(topic: string) {
+async function subscribeToFacility(topic: string) {
+  const userId = store.getters["user/getUserProfile"]?.userId;
   if(!state.webSocket) {
     connectWebSocket();
   }
 
-  if(state.currentTopic !== topic) {
-    if(state.currentTopic && state.webSocket.readyState === WebSocket.OPEN) {
-      state.webSocket.send(`unsubscribe:${state.currentTopic}`);
-    }
+  if(state.currentTopic && state.currentTopic !== topic && state.webSocket.readyState === WebSocket.OPEN) {
+    WebSocketService.deleteNotificationTopicUser({ topic: state.currentTopic, userId });
+    state.webSocket.send(`unsubscribe:${state.currentTopic}`);
+  }
 
-    state.currentTopic = topic;
+  state.currentTopic = topic;
 
-    if(state.webSocket.readyState === WebSocket.OPEN) {
-      state.webSocket.send(`subscribe:${topic}`);
+  if(state.webSocket.readyState === WebSocket.OPEN) {
+    const isUserSubscribed = await WebSocketService.checkIfUserSubscribedToTopic({ topic, userId })
+    console.log(isUserSubscribed);
+    
+    if(!isUserSubscribed) {
+      await WebSocketService.createNotificationTopicUser({ topic, userId, allNotifications: "Y" })
     }
+    state.webSocket.send(`subscribe:${topic}`);
   }
 }
 
