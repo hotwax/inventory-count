@@ -28,12 +28,12 @@ import '@hotwax/apps-theme';
 
 import i18n from './i18n'
 import store from './store'
-import permissionPlugin from '@/authorization';
+import permissionPlugin, { Actions, hasPermission } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components'
 import { login, logout, loader } from './user-utils';
-import { getConfig, getAvailableTimeZones, getProductIdentificationPref, initialise, setProductIdentificationPref, setUserTimeZone } from '@/adapter';
+import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference, getUserFacilities } from '@/adapter';
 import localeMessages from './locales';
 
 const app = createApp(App)
@@ -49,17 +49,25 @@ const app = createApp(App)
     actions: permissionActions
   })
   .use(dxpComponents, {
+    Actions,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
     login,
     logout,
     loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
+    fetchGoodIdentificationTypes,
     getConfig,
+    getEComStores,
+    getEComStoresByFacility,
     getProductIdentificationPref,
+    getUserPreference,
     initialise,
     localeMessages,
     setProductIdentificationPref,
+    getUserFacilities,
+    setUserPreference,
     getAvailableTimeZones,
+    hasPermission,
     setUserTimeZone,
   });
 

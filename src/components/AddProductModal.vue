@@ -19,8 +19,8 @@
             <Image :src="product.mainImageUrl" />
           </ion-thumbnail>
           <ion-label>
-            <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
-            <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
+            <h2>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) : product.productName }}</h2>
+            <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>            
           </ion-label>
           <ion-icon v-if="isProductAvailableInCycleCount(product.productId)" color="success" :icon="checkmarkCircle" />
           <ion-button v-else fill="outline" @click="addToCycleCount(product)">{{ translate("Add to count") }}</ion-button>
@@ -64,15 +64,16 @@ import { computed, defineProps, onUnmounted, ref } from "vue";
 import { closeOutline, checkmarkCircle } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
-import { getProductIdentificationValue } from "@/utils"
 import emitter from "@/event-bus";
 import Image from "@/components/Image.vue"
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 
 const props = defineProps(["cycleCount"])
 
+const productIdentificationStore = useProductIdentificationStore();
+
 const products = computed(() => store.getters["product/getProducts"])
 const isScrollable = computed(() => store.getters["product/isScrollable"])
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const getProduct = computed(() => (id: any) => store.getters["product/getProduct"](id))
 
 let queryString = ref('')

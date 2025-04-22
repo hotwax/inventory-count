@@ -111,8 +111,8 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>           
               </ion-label>
             </ion-item>
             <ion-label>
@@ -161,7 +161,7 @@ import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutli
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getProductIdentificationValue, showToast, parseCsv, sortListByField } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast, parseCsv, sortListByField } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -169,13 +169,15 @@ import store from "@/store";
 import { ProductService } from "@/services/ProductService";
 import router from "@/router"
 import Image from "@/components/Image.vue"
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
 })
 
+const productIdentificationStore = useProductIdentificationStore();
+
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const isProductAvailableInCycleCount = computed(() => {
   if(!searchedProduct.value.productId) return false

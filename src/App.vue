@@ -21,6 +21,9 @@ import { translate } from "@/i18n"
 import { Settings } from 'luxon'
 import Menu from '@/components/Menu.vue';
 import { Actions, hasPermission } from '@/authorization'
+import { getProductStoreId } from './utils';
+import logger from './logger';
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])
@@ -31,8 +34,7 @@ const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_
 
 initialise({
   token: userToken.value,
-  instanceUrl: instanceUrl.value,
-  cacheMaxAge: maxAge,
+  instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""), // TODO: remove component replace logic once we start storing the oms url in state without component name  cacheMaxAge: maxAge,
   events: {
     responseError: () => {
       setTimeout(() => dismissLoader(), 100);
@@ -40,7 +42,8 @@ initialise({
     queueTask: (payload: any) => {
       emitter.emit("queueTask", payload);
     }
-  }
+  },
+  systemType: "MOQUI"
 })
 
 async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
@@ -74,6 +77,12 @@ onMounted(async () => {
   if (userProfile.value) {
     // Luxon timezone should be set with the user's selected timezone
     userProfile.value.timeZone && (Settings.defaultZone = userProfile.value.timeZone);
+  }
+
+  if(userToken.value && getProductStoreId()) {
+    // Get product identification from api using dxp-component
+    await useProductIdentificationStore().getIdentificationPref(getProductStoreId())
+      .catch((error: any) => logger.error(error));
   }
 })
 
