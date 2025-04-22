@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) : item.productName }}</ion-list-header>
+      <ion-list-header>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
       <ion-item :lines="isRemoveItemEligible(item) ? 'full' : 'none'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>

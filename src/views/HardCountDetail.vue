@@ -56,7 +56,7 @@
               <ion-item lines="none">
                 <ion-icon v-if="!isItemAlreadyAdded(currentProduct)" :icon="cloudOfflineOutline" slot="start" />
                 <ion-label class="ion-text-wrap" v-if="currentProduct.productId">
-                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(currentProduct.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(currentProduct.productId)) : currentProduct.productName }}
+                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(currentProduct.productId)) || getProduct(currentProduct.productId).productName }}
                   <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(currentProduct.productId)) }}</p>
                 </ion-label>
                 <ion-label class="ion-text-wrap" v-else>

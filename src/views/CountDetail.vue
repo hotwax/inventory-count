@@ -72,7 +72,7 @@
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <p class="overline" v-if="product.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
-                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) : product.productName }}
+                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
                   <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>            
                 </ion-label>
 

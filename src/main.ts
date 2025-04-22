@@ -33,7 +33,7 @@ import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components'
 import { login, logout, loader } from './user-utils';
-import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference, getUserFacilities } from '@/adapter';
+import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getUserFacilities, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference } from '@/adapter';
 import localeMessages from './locales';
 
 const app = createApp(App)
@@ -56,19 +56,19 @@ const app = createApp(App)
     loader,
     appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
     fetchGoodIdentificationTypes,
+    getAvailableTimeZones,
     getConfig,
     getEComStores,
     getEComStoresByFacility,
     getProductIdentificationPref,
+    getUserFacilities,
     getUserPreference,
+    hasPermission,
     initialise,
     localeMessages,
     setProductIdentificationPref,
-    getUserFacilities,
     setUserPreference,
-    getAvailableTimeZones,
-    hasPermission,
-    setUserTimeZone,
+    setUserTimeZone
   });
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters

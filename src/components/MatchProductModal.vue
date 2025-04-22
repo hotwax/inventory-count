@@ -25,7 +25,7 @@
           </ion-thumbnail>
           <template v-if="isProductAvailableInCycleCount(product.productId)">
             <ion-label>
-              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) : product.productName }}
+              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
               <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>        
             </ion-label>
             <ion-icon  color="success" :icon="checkmarkCircle" />
@@ -33,7 +33,7 @@
 
           <ion-radio :value="product.productId" v-else>
             <ion-label>
-              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) ? getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) : product.productName }}
+              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
               <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>     
             </ion-label>
           </ion-radio>
