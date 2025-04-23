@@ -85,7 +85,8 @@ const actions: ActionTree<CountState, RootState> = {
 
   async fetchClosedCycleCountsTotal({ commit, state }) {
     const params = {
-      statusId: "INV_COUNT_COMPLETED"
+      statusId: "INV_COUNT_COMPLETED, INV_COUNT_REJECTED",
+      statusId_op: "in"
     } as any;
     // TODO: Currently, the search functionality works only on the count name. Once the API supports searching across 
     // multiple fields, we should include the count ID in the search parameters.
@@ -97,6 +98,23 @@ const actions: ActionTree<CountState, RootState> = {
     if(state.query.facilityIds.length) {
       params["facilityId"] = state.query.facilityIds.join(",")
       params["facilityId_op"] = "in"
+    }
+
+    // created after date
+    if(state.query.createdDate_from) {
+      params["createdDate_from"] = convertIsoToMillis(state.query.createdDate_from, "from");
+    }
+    // created before date
+    if(state.query.createdDate_thru) {
+      params["createdDate_thru"] = convertIsoToMillis(state.query.createdDate_thru, "thru");
+    }
+    // closed after date
+    if(state.query.closedDate_from) {
+      params["closedDate_from"] = convertIsoToMillis(state.query.closedDate_from, "from");
+    }
+    // closed before date
+    if(state.query.closedDate_thru) {
+      params["closedDate_thru"] = convertIsoToMillis(state.query.closedDate_thru, "thru");
     }
 
     let total = "";
@@ -176,10 +194,11 @@ const actions: ActionTree<CountState, RootState> = {
     } else if(router.currentRoute.value.name === "Assigned") {
       statusId = "INV_COUNT_ASSIGNED"
     } else if(router.currentRoute.value.name === "Closed") {
-      statusId = "INV_COUNT_COMPLETED"
+      statusId = "INV_COUNT_COMPLETED, INV_COUNT_REJECTED"
     }
-    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId })
-    if(payload.key === "facilityIds") dispatch("fetchClosedCycleCountsTotal")
+    // Conditionally append 'statusId_op' operator to support multiple status IDs filtering
+    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId, ...(statusId.includes(',') && { statusId_op: "in" })})
+    if(payload.key && statusId.includes("INV_COUNT_COMPLETED")) dispatch("fetchClosedCycleCountsTotal")
   },
 
   async updateQueryString({ commit }, payload) {
