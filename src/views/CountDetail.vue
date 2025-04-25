@@ -644,20 +644,34 @@ async function readyForReview() {
   await alert.present();
 }
 
-function handleNewMessage(jsonObj) {
-  const updatedItem = jsonObj.message
-  if(updatedItem.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
-  const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
-  const currentItemIndex = items.findIndex((item) => item.productId === updatedItem.productId && item.importItemSeqId === updatedItem.importItemSeqId);  
-  if(currentItemIndex !== -1) {
-    items[currentItemIndex] = updatedItem
-  } else {
-    store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
-    items.push(updatedItem)
-  }
-  store.dispatch('count/updateCycleCountItems', items);
-  if(product.value.productId === updatedItem.productId) {
-    store.dispatch('product/currentProduct', updatedItem);
+async function handleNewMessage(jsonObj) {
+  let isNewItemAdded = false;
+  const message = jsonObj.message
+  if(message.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+
+  if(message["importItemSeqId"]) {
+    const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+    const currentItemIndex = items.findIndex((item) => item.importItemSeqId === message.importItemSeqId);  
+    let updatedItem = {}
+    if(currentItemIndex !== -1) {
+      updatedItem = { ...items[currentItemIndex], quantity: message.quantity }
+      items[currentItemIndex] = updatedItem
+    } else {
+      updatedItem = await CountService.fetchCycleCountItem({ inventoryCountImportId: message.inventoryCountImportId, importItemSeqId: message.importItemSeqId })
+      if(updatedItem?.productId) {
+        store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+        items.push(updatedItem)
+        isNewItemAdded = true
+      }
+    }
+    store.dispatch('count/updateCycleCountItems', items);
+    if(isNewItemAdded) initializeObserver()
+    if(product.value.importItemSeqId === message.importItemSeqId) {
+      store.dispatch('product/currentProduct', updatedItem);
+    }
+  } else if(message["statusId"]) {
+    router.push("/tabs/count")
+    showToast(translate("Following count is submitted for review. Hence redirecting to the list page."))
   }
 }
 </script>
