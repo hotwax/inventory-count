@@ -793,7 +793,7 @@ async function handleNewMessage(jsonObj: any) {
     }
   } else if(message["statusId"]) {
     router.push("/tabs/count")
-    showToast(translate("Following count is submitted for review. Hence redirecting to the list page."))
+    showToast(translate("Following count is submitted for review. Hence redirecting to the counts list page."))
   }
 }
 </script>
