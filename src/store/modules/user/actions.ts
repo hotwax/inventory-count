@@ -107,6 +107,7 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, [])
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
+    this.dispatch('product/clearCachedProducts')
 
     emitter.emit('dismissLoader')
   },
