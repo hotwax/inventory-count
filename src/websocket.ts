@@ -19,7 +19,7 @@ function connectWebSocket() {
 
   state.webSocket = new WebSocket(state.webSocketUrl);
 
-  state.webSocket.onopen = () => s{
+  state.webSocket.onopen = () => {
     state.tryReopenCount = 0;
 
     if(state.currentTopic) {
