@@ -669,7 +669,7 @@ async function handleNewMessage(jsonObj) {
     if(product.value.importItemSeqId === message.importItemSeqId) {
       store.dispatch('product/currentProduct', updatedItem);
     }
-  } else if(message["statusId"]) {
+  } else if(message["statusId"] === "INV_COUNT_REVIEW") {
     router.push("/tabs/count")
     showToast(translate("Following count is submitted for review. Hence redirecting to the counts list page."))
   }

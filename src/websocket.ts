@@ -19,8 +19,7 @@ function connectWebSocket() {
 
   state.webSocket = new WebSocket(state.webSocketUrl);
 
-  state.webSocket.onopen = () => {
-    console.info('WebSocket connected');
+  state.webSocket.onopen = () => s{
     state.tryReopenCount = 0;
 
     if(state.currentTopic) {
@@ -36,7 +35,6 @@ function connectWebSocket() {
   };
 
   state.webSocket.onclose = () => {
-    console.warn('WebSocket closed, retrying...');
     retryWebSocket();
   };
 
