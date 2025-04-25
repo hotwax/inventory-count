@@ -1,6 +1,6 @@
 {
   "name": "cycle-count",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "private": true,
   "description": "HotWax Commece Cycle Count App",
   "scripts": {
