@@ -86,11 +86,7 @@ const checkIfUserSubscribedToTopic = async (params: any): Promise<any> => {
       params
     }) as any
 
-    console.log(resp);
-    
     if(!hasError(resp) && resp.data?.length) {
-      console.log('entered');
-      
       return true;
     } else {
       throw resp;

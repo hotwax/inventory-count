@@ -780,8 +780,6 @@ async function handleNewMessage(jsonObj: any) {
       items[currentItemIndex] = updatedItem
     } else {
       updatedItem = await CountService.fetchCycleCountItem({ inventoryCountImportId: message.inventoryCountImportId, importItemSeqId: message.importItemSeqId })
-      console.log('updated', updatedItem);
-      
       if(updatedItem?.productId) {
         store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
         items.push(updatedItem)

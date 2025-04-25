@@ -80,8 +80,6 @@ async function subscribeToFacility(topic: string) {
 
   if(state.webSocket.readyState === WebSocket.OPEN) {
     const isUserSubscribed = await WebSocketService.checkIfUserSubscribedToTopic({ topic, userId })
-    console.log(isUserSubscribed);
-    
     if(!isUserSubscribed) {
       await WebSocketService.createNotificationTopicUser({ topic, userId, allNotifications: "Y" })
     }

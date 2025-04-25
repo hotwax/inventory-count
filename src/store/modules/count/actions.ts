@@ -222,6 +222,10 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_UPDATED, {cycleCount: counts, isScrollable})
   },
   
+  async updateCycleCountsList ({ commit, state }, payload) {
+    commit(types.COUNT_UPDATED, { cycleCount: payload, isScrollable: state.cycleCounts.isScrollable })
+  },
+
   async clearCycleCounts ({ commit }) {
     commit(types.COUNT_UPDATED, {})
   },

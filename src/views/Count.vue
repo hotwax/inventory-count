@@ -175,6 +175,7 @@ import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
 import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
+import { registerTopicListener } from '@/websocket';
 
 const store = useStore();
 const router = useRouter()
@@ -193,6 +194,7 @@ let isLoading = ref(false);
 onIonViewDidEnter(async() => {
   isLoading.value = true;
   await fetchCycleCounts();
+  registerTopicListener(handleNewMessage);
   isLoading.value = false;
 })
 
@@ -279,6 +281,15 @@ function getClosedDate(count) {
 
   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+}
+
+async function handleNewMessage(jsonObj) {
+  const message = jsonObj.message
+  if(currentFacility.value.facilityId === message.facilityId && message["statusId"]) {
+    let countsList = JSON.parse(JSON.stringify(cycleCount.value))
+    countsList = countsList.filter((count) => !((count.inventoryCountImportId === message.inventoryCountImportId) && (count.statusId !== message.statusId)))
+    store.dispatch("count/updateCycleCountsList", countsList)
+  } 
 }
 </script> 
 
