@@ -189,15 +189,17 @@ const actions: ActionTree<CountState, RootState> = {
     // After updating query we need to fetch the counts and thus need to pass the statusId for the counts to be fetched
     // hence added check to decide the statusId on the basis of currently selected router
     let statusId = "INV_COUNT_CREATED"
+    let statusId_op = "equals"
     if(router.currentRoute.value.name === "PendingReview") {
       statusId = "INV_COUNT_REVIEW"
     } else if(router.currentRoute.value.name === "Assigned") {
       statusId = "INV_COUNT_ASSIGNED"
     } else if(router.currentRoute.value.name === "Closed") {
-      statusId = "INV_COUNT_COMPLETED, INV_COUNT_REJECTED"
+      statusId = "INV_COUNT_COMPLETED, INV_COUNT_REJECTED",
+      statusId_op = "in"
     }
-    // Conditionally append 'statusId_op' operator to support multiple status IDs filtering
-    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId, ...(statusId.includes(',') && { statusId_op: "in" })})
+    // append 'statusId_op' operator to support multiple status IDs filtering & equals for single status ID
+    dispatch("fetchCycleCounts", { pageSize: process.env.VUE_APP_VIEW_SIZE, pageIndex: 0, statusId, statusId_op })
     if(payload.key && statusId.includes("INV_COUNT_COMPLETED")) dispatch("fetchClosedCycleCountsTotal")
   },
 
