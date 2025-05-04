@@ -21,10 +21,13 @@ import { translate } from "@/i18n"
 import { Settings } from 'luxon'
 import Menu from '@/components/Menu.vue';
 import { Actions, hasPermission } from '@/authorization'
+import { initWebSocket } from '@/websocket';
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])
 const instanceUrl = computed(() => store.getters["user/getInstanceUrl"])
+const webSocketUrl = computed(() => store.getters["user/getWebSocketUrl"])
+const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const loader = ref(null) as any
 const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
@@ -74,6 +77,9 @@ onMounted(async () => {
   if (userProfile.value) {
     // Luxon timezone should be set with the user's selected timezone
     userProfile.value.timeZone && (Settings.defaultZone = userProfile.value.timeZone);
+  }
+  if(userToken.value && webSocketUrl.value) {
+    initWebSocket(webSocketUrl.value, currentFacility.value.facilityId)
   }
 })
 

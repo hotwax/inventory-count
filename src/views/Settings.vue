@@ -166,6 +166,7 @@ import { goToOms } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
+import { subscribeToFacility } from "@/websocket";
 import ForceScanCard from "@/components/ForceScanCard.vue";
 
 const store = useStore()
@@ -204,6 +205,7 @@ async function setFacility(event: CustomEvent) {
   const facilityId = event.detail.value
   const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
   await store.dispatch("user/updateCurrentFacility", facility)
+  subscribeToFacility(currentFacility.value.facilityId)
 }
 
 async function setProductStore(event: any) {

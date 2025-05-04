@@ -11,13 +11,16 @@ import { resetConfig } from "@/adapter"
 import { useAuthStore } from "@hotwax/dxp-components"
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import { closeWebSocket, initWebSocket } from "@/websocket";
+import store from "@/store"
+import { WebSocketService } from "@/services/WebSocketService"
 
 const actions: ActionTree<UserState, RootState> = {
 
     /**
   * Login user and return token
   */
-  async login ({ commit, dispatch }, payload) {
+  async login ({ commit, dispatch, state }, payload) {
     try {
 
       // TODO: implement support for permission check
@@ -73,6 +76,14 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_UPDATED, userProfile);
       if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
       await dispatch('getFieldMappings')
+
+      const topics = await WebSocketService.fetchAllNotificationTopics({ pageSize: 200 });
+      const topicsToAdd = facilities.filter((facility: any) => !topics.includes(facility.facilityId)).map((facility: any) => { return {topic: facility.facilityId} });
+      if(topicsToAdd.length) await WebSocketService.createNotificationTopic(topicsToAdd);
+
+      const url = store.getters["user/getWebSocketUrl"];
+      initWebSocket(url, state.currentFacility.facilityId)
+      emitter.emit("dismissLoader")
     } catch (err: any) {
       logger.error("error", err);
       return Promise.reject(new Error(err))
@@ -109,6 +120,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('count/clearCycleCountItems')
     this.dispatch('product/clearCachedProducts')
 
+    closeWebSocket()
     emitter.emit('dismissLoader')
   },
 
@@ -185,7 +197,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     // Updating current facility with a default first facility when fetching facilities on login
     if(facilities.length) {
-      dispatch("updateCurrentFacility", facilities[0])
+      await dispatch("updateCurrentFacility", facilities[0])
     }
 
     commit(types.USER_FACILITIES_UPDATED, facilities)

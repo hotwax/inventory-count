@@ -223,6 +223,7 @@ import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
+import { registerTopicListener } from "@/websocket";
 
 const store = useStore();
 
@@ -259,6 +260,7 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const isSubmittingForReview = ref(false);
+const productIdAdding = ref();
 
 
 onIonViewDidEnter(async() => {  
@@ -271,6 +273,7 @@ onIonViewDidEnter(async() => {
   window.addEventListener('beforeunload', handleBeforeUnload);
   emitter.emit("dismissLoader")
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
+  registerTopicListener(handleNewMessage);
   emitter.on("handleProductClick", handleProductClick)
 
 })
@@ -480,15 +483,19 @@ async function findProductFromIdentifier(scannedValue: string, newItem: any ) {
 
   if(productStoreSettings.value['showQoh']) {
     let updatedItem = {} as any;
-    if(product?.productId) updatedItem = await addProductToCount(product.productId)
-
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      updatedItem = await addProductToCount(product.productId)
+    }
     setTimeout(() => {
       updateCurrentItemInList(updatedItem, scannedValue);
     }, 1000)
   } else {
     let importItemSeqId = "" as any;
-    if(product?.productId) importItemSeqId = await addProductToCount(product.productId)
-  
+    if(product?.productId) {
+      productIdAdding.value = product.productId
+      importItemSeqId = await addProductToCount(product.productId)
+    }  
     setTimeout(() => {
       updateCurrentItemInList({...newItem, importItemSeqId, ...product}, scannedValue);
     }, 1000)
@@ -578,6 +585,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   items[currentItemIndex] = updatedItem
 
   store.dispatch('count/updateCycleCountItems', items);
+  productIdAdding.value = ""
 }
 
 async function readyForReview() {
@@ -719,6 +727,7 @@ async function matchProduct(currentProduct: any) {
   addProductModal.onDidDismiss().then(async (result) => {
     if(result.data?.selectedProduct) {
       const product = result.data.selectedProduct
+      productIdAdding.value = product.productId
       if(productStoreSettings.value['showQoh']) {
         const newItem = await addProductToCount(product.productId)
         await updateCurrentItemInList(newItem, currentProduct.scannedId);
@@ -755,6 +764,37 @@ function selectSearchBarText(event: any) {
 
 function inputCountValidation(event: any) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== "Backspace") event.preventDefault();
+}
+
+async function handleNewMessage(jsonObj: any) {
+  let isNewItemAdded = false;
+  const message = jsonObj.message
+  if(message.inventoryCountImportId !== cycleCount.value.inventoryCountImportId) return;
+
+  if(message["importItemSeqId"]) {
+    const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+    const currentItemIndex = items.findIndex((item) => item.importItemSeqId === message.importItemSeqId);  
+    let updatedItem = {}
+    if(currentItemIndex !== -1) {
+      updatedItem = { ...items[currentItemIndex], quantity: message.quantity }
+      items[currentItemIndex] = updatedItem
+    } else {
+      updatedItem = await CountService.fetchCycleCountItem({ inventoryCountImportId: message.inventoryCountImportId, importItemSeqId: message.importItemSeqId })
+      if(updatedItem?.productId) {
+        store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
+        items.push(updatedItem)
+        isNewItemAdded = true
+      }
+    }
+    await store.dispatch('count/updateCycleCountItems', items);
+    if(isNewItemAdded) initializeObserver()
+    if(currentProduct.value.importItemSeqId === message.importItemSeqId) {
+      store.dispatch('product/currentProduct', updatedItem);
+    }
+  } else if(message["statusId"] === "INV_COUNT_REVIEW") {
+    router.push("/tabs/count")
+    showToast(translate("Following count is submitted for review. Hence redirecting to the counts list page."))
+  }
 }
 </script>
 
