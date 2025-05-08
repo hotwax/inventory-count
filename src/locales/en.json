@@ -302,7 +302,7 @@
   "SKU": "SKU",
   "Failed to accept count item": "Failed to accept {count} count item",
   "Failed to accept count items": "Failed to accept {count} count items",
-  "Failed to upload the file.": "Failed to upload the file.",
+  "Failed to upload the file, please try again": "Failed to upload the file, please try again",
   "Some of the item(s) are failed to accept": "Some of the item(s) are failed to accept",
   "Some of the mapping fields are missing in the CSV:": "Some of the mapping fields are missing in the CSV: {missingFields}",
   "Something went wrong": "Something went wrong",

@@ -264,7 +264,7 @@ async function save(){
     }
   } catch(err) {
     logger.error(err)
-    showToast(translate("Failed to upload the file."));
+    showToast(translate("Failed to upload the file, please try again"));
   }
 }
 function mapFields(mapping, mappingId) {
