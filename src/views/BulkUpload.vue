@@ -104,7 +104,6 @@ import {
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
-  alertController,
   modalController,
   popoverController
 } from '@ionic/vue';
