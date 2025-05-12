@@ -123,7 +123,6 @@ const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_A
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 onMounted(async () => {
@@ -154,13 +153,6 @@ function updateScrollingAnimationPreference(event: any) {
   event.stopImmediatePropagation();
 
   store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
-}
-
-function setProductIdentificationPref(value: string, id: string) {
-  store.dispatch("user/setProductStoreSetting", { key: "productIdentificationPref", value: {
-    ...productStoreSettings.value["productIdentificationPref"],
-    [id]: value
-  }})
 }
 
 function getDateTime(time: any) {

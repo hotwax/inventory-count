@@ -10,7 +10,7 @@ import { Settings } from "luxon";
 import { resetConfig, updateToken, updateInstanceUrl } from "@/adapter"
 import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotwax/dxp-components"
 import emitter from "@/event-bus"
-import { getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
 
 const actions: ActionTree<UserState, RootState> = {

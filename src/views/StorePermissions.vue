@@ -48,11 +48,15 @@ import { translate } from '@/i18n'
 import store from "@/store";
 import { computed } from "vue";
 import ForceScanCard from "@/components/ForceScanCard.vue";
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
+
+const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 onIonViewWillEnter(async () => {
   await store.dispatch("user/getProductStoreSetting")
+  productIdentificationStore.prepareProductIdentifierOptions();
 })
 
 function updateProductStoreSetting(event: any, key: string) {
