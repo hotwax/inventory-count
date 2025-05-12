@@ -22,16 +22,6 @@
           <ion-checkbox v-model="query.noFacility" :disabled="query.facilityIds?.length" @ionChange="updateQuery('noFacility', $event.detail.checked)">{{ translate("No facility") }}</ion-checkbox>
         </ion-item>
 
-        <ion-item lines="none">
-          <ion-icon slot="start" :icon="swapVerticalOutline" />
-          <ion-select :label="translate('Sort by')" :value="query.sortBy" @ionChange="updateQuery('sortBy', $event.detail.value)" interface="popover">
-            <ion-select-option value="dueDate desc">{{ translate("Farthest due") }}</ion-select-option>
-            <ion-select-option value="dueDate asc">{{ translate("Nearest due") }}</ion-select-option>
-            <ion-select-option value="countImportName asc">{{ translate("Name - A to Z") }}</ion-select-option>
-            <ion-select-option value="countImportName desc">{{ translate("Name - Z to A") }}</ion-select-option>
-          </ion-select>
-        </ion-item>
-
         <ion-item v-for="facilityId in query.facilityIds" :key="facilityId">
           <ion-label>{{ getFacilityName(facilityId) }}</ion-label>
           <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
@@ -120,7 +110,7 @@ import {
   IonToolbar
 } from "@ionic/vue";
 import { computed, ref } from "vue";
-import { closeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline, locateOutline, swapVerticalOutline } from "ionicons/icons";
+import { closeCircleOutline, businessOutline, gitBranchOutline, gitPullRequestOutline, locateOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import store from "@/store";
 import router from "@/router";

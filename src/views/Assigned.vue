@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+      <SearchBarAndSortBy />
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -60,15 +60,15 @@
 import { computed, ref } from "vue";
 import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
 import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
 import Filters from "@/components/Filters.vue"
 import router from "@/router"
+import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
-const query = computed(() => store.getters["count/getQuery"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -92,11 +92,6 @@ function enableScrolling() {
   } else {
     isScrollingEnabled.value = true;
   }
-}
-
-async function updateQueryString(key: string, value: any) {
-  await store.dispatch("count/updateQueryString", { key, value })
-  fetchAssignedCycleCount();
 }
 
 async function loadMoreCycleCounts(event: any) {

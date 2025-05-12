@@ -297,6 +297,8 @@ let hasUnsavedChanges = ref(false);
 const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
+const isAnimationInProgress = ref(false);
+const productInAnimation = ref({});
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -308,11 +310,13 @@ onIonViewDidEnter(async() => {
   barcodeInput.value?.$el?.setFocus();
   emitter.emit("dismissLoader")
   if(itemsList.value?.length) initializeObserver()
+  emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
 onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
+  emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 onBeforeRouteLeave(async (to) => {
@@ -352,6 +356,11 @@ onBeforeRouteLeave(async (to) => {
 
 function inputCountValidation(event) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+}
+
+function updateAnimatingProduct(item) {
+  isAnimationInProgress.value = true;
+  productInAnimation.value = item;
 }
 
 async function fetchCycleCount() {
@@ -415,6 +424,8 @@ async function scanProduct() {
     setTimeout(() => {
       const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
       if (element) {
+        isAnimationInProgress.value = true;
+        productInAnimation.value = selectedItem
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
@@ -444,6 +455,11 @@ async function updateFilteredItems() {
   }
   await nextTick();
   if(itemsList.value?.length) initializeObserver()
+  if(isAnimationInProgress.value) {
+    store.dispatch("product/currentProduct", productInAnimation.value);
+    isAnimationInProgress.value = false;
+    productInAnimation.value = {}
+  }
 }
 
 function initializeObserver() {
@@ -465,6 +481,10 @@ function initializeObserver() {
         if (currentProduct) {
           store.dispatch("product/currentProduct", currentProduct);
           product.value.isRecounting = false;
+          if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
+            isAnimationInProgress.value = false
+            productInAnimation.value = {}
+          }
         }
       }
     });
