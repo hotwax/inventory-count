@@ -160,7 +160,7 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-  async updateCurrentFacility({ commit, dispatch }, facility) {
+  async updateCurrentFacility({ dispatch }, facility) {
     const previousEComStoreId = getProductStoreId()
     const userProfile = store.getters["user/getUserProfile"]
     await useUserStore().getEComStoresByFacility(facility.facilityId);
@@ -218,7 +218,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
   },
 
-  async createProductStoreSetting({ commit, state }, payload) {
+  async createProductStoreSetting({ commit }, payload) {
     const eComStoreId = getProductStoreId();
     const fromDate = Date.now()
 
