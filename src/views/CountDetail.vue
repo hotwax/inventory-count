@@ -115,10 +115,7 @@
               <template v-else>
                 <ion-list v-if="product.isRecounting">
                   <ion-item>
-                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
-                      <ion-icon :icon="closeOutline" stot="icon-only" />
-                    </ion-button>
+                    <ion-input :label="translate('Count')" :disabled="productStoreSettings['forceScan']" :placeholder="translate('submit physical count')" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation" clear-input="true"/>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
@@ -176,10 +173,7 @@
                     <ion-label slot="end">{{ product.quantity || "-" }}</ion-label>
                   </ion-item>
                   <ion-item v-else>
-                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation"/>
-                    <ion-button slot="end" fill="clear" size="default" class="ion-no-padding" @click="inputCount = 0">
-                      <ion-icon :icon="closeOutline" stot="icon-only" />
-                    </ion-button>
+                    <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @ionInput="hasUnsavedChanges=true" @keydown="inputCountValidation" clear-input="true"/>
                   </ion-item>
 
                   <template v-if="productStoreSettings['showQoh']">
