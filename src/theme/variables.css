@@ -241,6 +241,7 @@ http://ionicframework.com/docs/theming/ */
 @media (min-width: 991px) {
   .list-item {
     padding-block: var(--spacer-sm);
+    padding-inline-end: var(--spacer-sm);
   }
 
   .searchbar {
