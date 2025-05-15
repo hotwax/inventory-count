@@ -72,8 +72,8 @@
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <p class="overline" v-if="product.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
-                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
-                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
+                  <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>            
                 </ion-label>
 
                 <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
@@ -247,14 +247,16 @@ import { hasError } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
-import { getPartyName, getProductIdentificationValue, showToast } from '@/utils';
+import { getPartyName, getProductStoreId, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
 import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
+import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 
 const store = useStore();
+const productIdentificationStore = useProductIdentificationStore();
 
 const product = computed(() => store.getters['product/getCurrentProduct']);
 const getProduct = computed(() => (id) => store.getters["product/getProduct"](id))
@@ -263,7 +265,6 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -301,7 +302,7 @@ const productInAnimation = ref({});
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]

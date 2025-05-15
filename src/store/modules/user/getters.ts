@@ -25,20 +25,8 @@ const getters: GetterTree <UserState, RootState> = {
   getOmsRedirectionInfo(state) {
     return state.omsRedirectionInfo;
   },
-  getFacilities(state) {
-    return state.facilities;
-  },
-  getCurrentFacility(state) {
-    return state.currentFacility;
-  },
   getUserPermissions (state) {
     return state.permissions;
-  },
-  getProductStores(state) {
-    return state.productStores
-  },
-  getCurrentProductStore(state) {
-    return state.currentProductStore
   },
   getProductStoreSettings(state) {
     return state.settings
@@ -49,9 +37,6 @@ const getters: GetterTree <UserState, RootState> = {
         return fieldMapping ? fieldMapping : {} 
     }
     return state.fieldMappings;
-  },
-  getGoodIdentificationTypes(state) {
-    return state.goodIdentificationTypes;
   },
   isScrollingAnimationEnabled(state) {
     return state.isScrollingAnimationEnabled

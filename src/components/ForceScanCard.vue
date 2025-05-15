@@ -13,7 +13,7 @@
     </ion-item>
     <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
       <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
-        <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
+        <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
       </ion-select>
     </ion-item>
   </ion-card>
@@ -34,10 +34,13 @@ import { translate } from '@/i18n'
 import store from "@/store";
 import { computed } from "vue";
 import { hasPermission } from "@/authorization"
+import { useProductIdentificationStore } from "@hotwax/dxp-components";
+
+const productIdentificationStore = useProductIdentificationStore();
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-const productIdentifications = computed(() => store.getters["user/getGoodIdentificationTypes"])
+const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions)
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();

@@ -62,46 +62,6 @@ const getAvailableTimeZones = async (): Promise <any>  => {
   });
 }
 
-const fetchFacilities = async (payload: any, token: any): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
-
-  return client({
-    url: "facilities",
-    method: "GET",
-    baseURL,
-    params: payload,
-    headers: {
-      "api_key": token,
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-const fetchAssociatedFacilities = async (payload: any, token: any): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
-  
-  return client({
-    url: `user/${payload.partyId}/facilities`,
-    method: "GET",
-    baseURL,
-    params: payload,
-    headers: {
-      "api_key": token,
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-const fetchProductStores = async (payload: any): Promise <any>  => {
-  return api({
-    url: "facilities/productStores",
-    method: "GET",
-    params: payload
-  });
-}
-
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
     url: `productStores/${payload.productStoreId}/settings`,
@@ -265,22 +225,6 @@ const getFieldMappings = async (payload: any): Promise <any> => {
   });
 }
 
-const fetchGoodIdentificationTypes = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-
-  return await client({
-    url: "performFind",
-    method: "post",
-    baseURL,
-    data: payload,
-    headers: {
-      "Authorization":  'Bearer ' + omsRedirectionInfo.token,
-      'Content-Type': 'application/json'
-    }
-  });
-}
-
 const createUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
   const url = store.getters["user/getBaseUrl"]
   const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
@@ -366,10 +310,6 @@ export const UserService = {
   createProductStoreSetting,
   createUserPreference,
   deleteFieldMapping,
-  fetchAssociatedFacilities,
-  fetchFacilities,
-  fetchGoodIdentificationTypes,
-  fetchProductStores,
   fetchProductStoreSettings,
   getAvailableTimeZones,
   getFieldMappings,

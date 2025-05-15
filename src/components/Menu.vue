@@ -55,8 +55,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      isUserAuthenticated: 'user/isUserAuthenticated',
-      currentFacility: 'user/getCurrentFacility',
+      isUserAuthenticated: 'user/isUserAuthenticated'
     })
   },
   setup() {

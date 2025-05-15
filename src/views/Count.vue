@@ -175,13 +175,15 @@ import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
 import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
+import { useUserStore } from '@hotwax/dxp-components';
 
 const store = useStore();
 const router = useRouter()
+const userStore = useUserStore();
 
 const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const currentFacility = computed(() => userStore.getCurrentFacility)
 const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
 
 const selectedSegment = ref("assigned");

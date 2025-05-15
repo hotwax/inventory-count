@@ -51,8 +51,8 @@
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
             </ion-item>
 
@@ -100,17 +100,19 @@ import { computed, defineProps, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, sortListByField } from "@/utils"
+import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, sortListByField } from "@/utils"
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 
 const props = defineProps({
   inventoryCountImportId: String
 })
 
+const productIdentificationStore = useProductIdentificationStore();
+
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const currentCycleCount = ref({}) as any
 let countName = ref("")
