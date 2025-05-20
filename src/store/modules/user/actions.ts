@@ -280,6 +280,12 @@ const actions: ActionTree<UserState, RootState> = {
       isSettingExists = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
     }
 
+    if(!isSettingExists) {
+      showToast(translate("Failed to update Store preference."))
+      commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: prefValue })
+      return;
+    }
+
     const params = {
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
