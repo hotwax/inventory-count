@@ -220,13 +220,12 @@ const actions: ActionTree<UserState, RootState> = {
 
   async createProductStoreSetting({ commit }, payload) {
     const eComStoreId = getProductStoreId();
-    const fromDate = Date.now()
+    let isSettingExists = false;
 
     let settingValue = false as any;
     if(payload.enumId === "BARCODE_IDEN_PREF") settingValue = "internalName"
 
     const params = {
-      fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": payload.enumId,
       settingValue
@@ -234,6 +233,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     try {
       await UserService.createProductStoreSetting(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -241,7 +241,7 @@ const actions: ActionTree<UserState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: settingValue })
-    return fromDate;
+    return isSettingExists;
   },
 
   async setProductStoreSetting({ commit, dispatch, state }, payload) {
@@ -262,26 +262,25 @@ const actions: ActionTree<UserState, RootState> = {
       enumId = "BARCODE_IDEN_PREF"
     }
 
-    let fromDate;
+    let isSettingExists = false;
 
     try {
       const resp = await UserService.fetchProductStoreSettings({
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": enumId
       })
-      if(!hasError(resp) && resp.data.length) {
-        fromDate = resp.data[0]?.fromDate
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
+        isSettingExists = true;
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
       "settingValue": payload.key !== "barcodeIdentificationPref" ? JSON.stringify(payload.value) : payload.value
