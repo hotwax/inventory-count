@@ -33,7 +33,7 @@ const loader = ref(null) as any
 
 initialise({
   token: userToken.value,
-  instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""), // TODO: remove component replace logic once we start storing the oms url in state without component name  cacheMaxAge: maxAge,
+  instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""), // TODO: remove component replace logic once we start storing the oms url in state without component name
   events: {
     responseError: () => {
       setTimeout(() => dismissLoader(), 100);
