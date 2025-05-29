@@ -3,14 +3,15 @@ import { ActionTree } from "vuex"
 import RootState from "@/store/RootState"
 import UserState from "./UserState"
 import * as types from "./mutation-types"
-import { hasError, showToast } from "@/utils"
+import { getProductStoreId, hasError, showToast } from "@/utils"
 import logger from "@/logger"
 import { translate } from "@/i18n"
 import { Settings } from "luxon";
-import { resetConfig } from "@/adapter"
-import { useAuthStore } from "@hotwax/dxp-components"
+import { resetConfig, updateToken, updateInstanceUrl } from "@/adapter"
+import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotwax/dxp-components"
 import emitter from "@/event-bus"
-import { getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
+import store from "@/store"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -61,17 +62,43 @@ const actions: ActionTree<UserState, RootState> = {
         Settings.defaultZone = userProfile.timeZone;
       }
 
-      const facilities = await dispatch("fetchFacilities",{ partyId: userProfile.partyId, token: api_key, isAdminUser: appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW" ) })
+      // Update dxp state, as we need to set updated token and oms in dxp
+      const authStore = useAuthStore()
+      authStore.$patch({
+        token: { value: api_key, expiration: authStore.token.expiration as any },
+        oms
+      })
+
+      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
+      const facilities = await useUserStore().getUserFacilities(isAdminUser ? "" : userProfile.partyId, "", isAdminUser, {
+        parentTypeId: "VIRTUAL_FACILITY",
+        parentTypeId_not: "Y",
+        facilityTypeId: "VIRTUAL_FACILITY",
+        facilityTypeId_not: "Y"
+      });
+      await useUserStore().getFacilityPreference("SELECTED_FACILITY", userProfile?.userId)
       if(!facilities.length) throw "Unable to login. User is not associated with any facility"
+      const currentFacility: any = useUserStore().getCurrentFacility
+      isAdminUser ? await useUserStore().getEComStores() : await useUserStore().getEComStoresByFacility(currentFacility?.facilityId)
+      await useUserStore().getEComStorePreference("SELECTED_BRAND", userProfile?.userId)
+      const preferredStore: any = useUserStore().getCurrentEComStore
 
       setPermissions(appPermissions);
       if(omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
       }
+
+      updateToken(api_key);
+
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       commit(types.USER_INFO_UPDATED, userProfile);
-      if(hasPermission("APP_DRAFT_VIEW")) await dispatch("fetchProductStores")
+
+      // Get product identification from api using dxp-component
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+      .catch((error) => logger.error(error));
+    
+      await dispatch("getProductStoreSetting")
       await dispatch('getFieldMappings')
     } catch (err: any) {
       logger.error("error", err);
@@ -86,6 +113,7 @@ const actions: ActionTree<UserState, RootState> = {
     if(!payload.isUserUnauthorised) emitter.emit('presentLoader', { message: 'Logging out', backdropDismiss: false })
 
     const authStore = useAuthStore()
+    const userStore = useUserStore()
 
     // TODO add any other tasks if need
     commit(types.USER_END_SESSION)
@@ -96,15 +124,9 @@ const actions: ActionTree<UserState, RootState> = {
 
     // reset plugin state on logout
     authStore.$reset()
+    userStore.$reset()
 
-    commit(types.USER_FACILITIES_UPDATED, [])
-    commit(types.USER_CURRENT_FACILITY_UPDATED, {})
-    commit(types.USER_PRODUCT_STORES_UPDATED, [])
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
-      primaryId: 'productId',
-      secondaryId: ''
-    }})
-    commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, [])
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
     this.dispatch('product/clearCachedProducts')
@@ -135,148 +157,35 @@ const actions: ActionTree<UserState, RootState> = {
   */
   setUserInstanceUrl({ commit }, payload) {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
+    updateInstanceUrl(payload)
   },
 
-  async fetchFacilities({ commit, dispatch }, payload) {
-    let facilities: Array<any> = []
-    try {
-      let associatedFacilityIds: Array<string> = []
-      let params = {}
+  async updateCurrentFacility({ dispatch }, facility) {
+    const previousEComStoreId = getProductStoreId()
+    const userProfile = store.getters["user/getUserProfile"]
+    await useUserStore().getEComStoresByFacility(facility.facilityId);
+    await useUserStore().getEComStorePreference('SELECTED_BRAND', userProfile.userId);
+    const preferredStore: any = useUserStore().getCurrentEComStore
 
-      if(!payload.isAdminUser) {
-        const associatedFacilitiesResp = await UserService.fetchAssociatedFacilities({
-          partyId: payload.partyId,
-          pageSize: 200
-        }, payload.token)
-
-        if(!hasError(associatedFacilitiesResp)) {
-          // Filtering facilities on which thruDate is set, as we are unable to pass thruDate check in the api payload
-          // Considering that the facilities will always have a thruDate of the past.
-          associatedFacilityIds = associatedFacilitiesResp.data.filter((facility: any) => !facility.thruDate)?.map((facility: any) => facility.facilityId)
-        }
-
-        if(!associatedFacilityIds.length) {
-          throw "Failed to fetch facilities"
-        }
-
-        params = {
-          facilityId: associatedFacilityIds.join(","),
-          facilityId_op: "in",
-          pageSize: associatedFacilityIds.length,
-        }
-      }
-
-      // Making this call to fetch the facility details like name, as the above api does not return facility details, need to replace this once api has support to return facility details
-      const resp = await UserService.fetchFacilities({
-        parentTypeId: "VIRTUAL_FACILITY",
-        parentTypeId_not: "Y",
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_not: "Y",
-        pageSize: 200,
-        ...params
-      }, payload.token)
-
-      if(!hasError(resp)) {
-        facilities = resp.data
-      }
-    } catch(err) {
-      logger.error("Failed to fetch facilities")
+    if(previousEComStoreId !== preferredStore.productStoreId) {
+      dispatch("getProductStoreSetting", preferredStore.productStoreId)
+      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+      .catch((error) => logger.error(error));
     }
-
-    // Updating current facility with a default first facility when fetching facilities on login
-    if(facilities.length) {
-      dispatch("updateCurrentFacility", facilities[0])
-    }
-
-    commit(types.USER_FACILITIES_UPDATED, facilities)
-    return facilities
   },
 
-  async updateCurrentFacility({ commit, dispatch }, facility) {
-    if(!facility.productStore) {
-      // Fetching productStore for the facility and storing it in the facility, as we want to manage the productStores separately as well
-      // Thus to not have any conflicts in the information, saving the productStores on facility
-      try {
-        const resp = await UserService.fetchProductStores({
-          parentFacilityTypeId: "VIRTUAL_FACILITY",
-          parentFacilityTypeId_not: "Y",
-          facilityTypeId: "VIRTUAL_FACILITY",
-          facilityTypeId_not: "Y",
-          facilityId: facility.facilityId,
-          pageSize: 1,
-          orderByField: "sequenceNum asc, storeName asc"
-        })
+  async updateCurrentProductStore({ commit, dispatch }, selectedProductStore) {
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
 
-        if(!hasError(resp) && resp.data.length > 0) {
-          facility.productStore = resp.data[0]
-        }
-      } catch(err) {
-        logger.error("Failed to fetch product stores for facility")
-      }
-    }
-
-    if(facility?.productStore?.productStoreId) {
-      dispatch("getProductStoreSetting", facility.productStore.productStoreId)
-    }
-
-    commit(types.USER_CURRENT_FACILITY_UPDATED, facility)
+    await useProductIdentificationStore().getIdentificationPref(selectedProductStore.productStoreId)
+      .catch((error) => logger.error(error));
+    dispatch("getProductStoreSetting", selectedProductStore?.productStoreId);
   },
 
-  async fetchProductStores({ commit, dispatch }) {
-    let productStores: Array<any> = []
-    try {
-      const resp = await UserService.fetchProductStores({
-        parentFacilityTypeId: "VIRTUAL_FACILITY",
-        parentFacilityTypeId_not: "Y",
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_not: "Y",
-        pageSize: 200,
-        orderByField: "sequenceNum asc, storeName asc"
-      })
-
-      if(!hasError(resp)) {
-        const productStoresResp = resp.data.reduce((productStores: any, data: any) => {
-          // TODO: Added this check as we are getting duplicate productStores in resp
-          if(productStores[data.productStoreId]) {
-            return productStores
-          }
-
-          productStores[data.productStoreId] = {
-            productStoreId: data.productStoreId,
-            storeName: data.storeName,
-            facilityId: data.facilityId
-          }
-          return productStores
-        }, {})
-
-        productStores = Object.values(productStoresResp)
-      }
-    } catch(err) {
-      logger.error("Failed to fetch product stores")
-    }
-
-    // Updating current facility with a default first facility when fetching facilities on login
-    if(productStores.length) {
-      commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStores[0])
-      dispatch("getProductStoreSetting")
-    }
-
-    commit(types.USER_PRODUCT_STORES_UPDATED, productStores)
-  },
-
-  async updateCurrentProductStore({ commit, dispatch }, productStore) {
-    commit(types.USER_CURRENT_PRODUCT_STORE_UPDATED, productStore)
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", productIdentificationPref: {
-      primaryId: 'productId',
-      secondaryId: ''
-    } })
-    dispatch("getProductStoreSetting")
-  },
-
-  async getProductStoreSetting({ commit, state }, productStoreId?: string) {
+  async getProductStoreSetting({ commit }, productStoreId?: string) {
     const payload = {
-      "productStoreId": productStoreId ? productStoreId : state.currentProductStore.productStoreId,
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,PRDT_IDEN_PREF,BARCODE_IDEN_PREF",
+      "productStoreId": productStoreId ? productStoreId : getProductStoreId(),
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,BARCODE_IDEN_PREF",
       "settingTypeEnumId_op": "in",
       "pageSize": 10
     }
@@ -291,10 +200,6 @@ const actions: ActionTree<UserState, RootState> = {
 
           if(setting.settingTypeEnumId === "INV_FORCE_SCAN" && setting.settingValue) {
             settings["forceScan"] = JSON.parse(setting.settingValue)
-          }
-
-          if(setting.settingTypeEnumId === "PRDT_IDEN_PREF" && setting.settingValue) {
-            settings["productIdentificationPref"] = JSON.parse(setting.settingValue)
           }
 
           if(setting.settingTypeEnumId === "BARCODE_IDEN_PREF" && setting.settingValue) {
@@ -313,19 +218,14 @@ const actions: ActionTree<UserState, RootState> = {
     }
   },
 
-  async createProductStoreSetting({ commit, state }, payload) {
-    const eComStoreId = state.currentProductStore.productStoreId;
-    const fromDate = Date.now()
+  async createProductStoreSetting({ commit }, payload) {
+    const eComStoreId = getProductStoreId();
+    let isSettingExists = false;
 
     let settingValue = false as any;
     if(payload.enumId === "BARCODE_IDEN_PREF") settingValue = "internalName"
-    if(payload.enumId === "PRDT_IDEN_PREF") settingValue = JSON.stringify({
-      primaryId: 'productId',
-      secondaryId: ''
-    })
 
     const params = {
-      fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": payload.enumId,
       settingValue
@@ -333,6 +233,7 @@ const actions: ActionTree<UserState, RootState> = {
 
     try {
       await UserService.createProductStoreSetting(params) as any
+      isSettingExists = true
     } catch(err) {
       console.error(err)
     }
@@ -340,11 +241,11 @@ const actions: ActionTree<UserState, RootState> = {
     // not checking for resp success and fail case as every time we need to update the state with the
     // default value when creating a scan setting
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: settingValue })
-    return fromDate;
+    return isSettingExists;
   },
 
   async setProductStoreSetting({ commit, dispatch, state }, payload) {
-    const eComStoreId = state.currentProductStore.productStoreId;
+    const eComStoreId = getProductStoreId();
     let prefValue = (state.settings as any)[payload.key]
 
     let enumId = "";
@@ -357,34 +258,35 @@ const actions: ActionTree<UserState, RootState> = {
       enumId = "INV_FORCE_SCAN"
     }
 
-    if(payload.key === "productIdentificationPref") {
-      enumId = "PRDT_IDEN_PREF"
-    }
-
     if(payload.key === "barcodeIdentificationPref") {
       enumId = "BARCODE_IDEN_PREF"
     }
 
-    let fromDate;
+    let isSettingExists = false;
 
     try {
       const resp = await UserService.fetchProductStoreSettings({
-        "productStoreId": state.currentProductStore.productStoreId,
+        "productStoreId": getProductStoreId(),
         "settingTypeEnumId": enumId
       })
-      if(!hasError(resp) && resp.data.length) {
-        fromDate = resp.data[0]?.fromDate
+      if(!hasError(resp) && resp.data[0]?.settingTypeEnumId) {
+        isSettingExists = true;
       }
     } catch(err) {
       console.error(err)
     }
 
-    if(!fromDate) {
-      fromDate = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
+    if(!isSettingExists) {
+      isSettingExists = await dispatch("createProductStoreSetting", { key: payload.key, enumId });
+    }
+
+    if(!isSettingExists) {
+      showToast(translate("Failed to update Store preference."))
+      commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { [payload.key]: prefValue })
+      return;
     }
 
     const params = {
-      "fromDate": fromDate,
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
       "settingValue": payload.key !== "barcodeIdentificationPref" ? JSON.stringify(payload.value) : payload.value
@@ -567,31 +469,6 @@ const actions: ActionTree<UserState, RootState> = {
       name: '',
       value: {}
     })
-  },
-
-  async fetchGoodIdentificationTypes({ commit }, parentTypeId = "HC_GOOD_ID_TYPE") {
-    let identificationTypes = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
-    const payload = {
-      "inputFields": {
-        parentTypeId
-      },
-      "fieldList": ["goodIdentificationTypeId", "description"],
-      "viewSize": 50,
-      "entityName": "GoodIdentificationType",
-    }
-    try {
-      const resp = await UserService.fetchGoodIdentificationTypes(payload)
-      if (!hasError(resp) && resp.data?.docs?.length) {
-        const identificationOptions = resp.data.docs?.map((fetchedGoodIdentificationType: any) => fetchedGoodIdentificationType.goodIdentificationTypeId) || [];
-        // Merge the arrays and remove duplicates
-        identificationTypes = Array.from(new Set([...identificationOptions, ...identificationTypes])).sort();
-      } else {
-        throw resp.data;
-      }
-    } catch (err) {
-      console.error('Failed to fetch the good identification types, setting default types')
-    }
-    commit(types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED, identificationTypes)
   },
 
   async updateScrollingAnimationPreference({commit}, payload) {

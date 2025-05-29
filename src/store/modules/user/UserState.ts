@@ -6,11 +6,7 @@ export default interface UserState {
     url: string;
     token: string;
   }
-  facilities: Array<any>;
-  currentFacility: any;
   permissions: any;
-  productStores: Array<any>;
-  currentProductStore: any;
   fieldMappings: any;
   currentMapping: {
     id: string;
@@ -21,12 +17,7 @@ export default interface UserState {
   settings: {
     forceScan: boolean,
     showQoh: boolean,
-    productIdentificationPref: {
-      primaryId: string,
-      secondaryId: string
-    },
     barcodeIdentificationPref: string;
   },
-  goodIdentificationTypes: Array<string>;
   isScrollingAnimationEnabled: boolean;
 }

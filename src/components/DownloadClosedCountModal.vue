@@ -104,10 +104,12 @@ import { DateTime } from "luxon";
 import logger from "@/logger";
 import store from "@/store";
 import { UserService } from "@/services/UserService";
+import { useUserStore } from "@hotwax/dxp-components";
 
+const userStore = useUserStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const facilities = computed(() => store.getters["user/getFacilities"])
+const facilities = computed(() => userStore.getFacilites)
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const query = computed(() => store.getters["count/getQuery"])
 const userProfile = computed(() => store.getters["user/getUserProfile"])
