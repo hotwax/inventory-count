@@ -265,6 +265,7 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const isFirstScanCountEnabled = computed(() => store.getters["count/getFirstScanCountSetting"]);
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
