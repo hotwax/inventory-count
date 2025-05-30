@@ -235,6 +235,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
+const isFirstScanCountEnabled = computed(() => store.getters["count/getFirstScanCountSetting"]);
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -448,7 +449,8 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
+  } 
+  if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && ((isFirstScanCountEnabled.value && !isAlreadySelected) || (isAlreadySelected && !isNewlyAdded))) {
     inputCount.value++;
   }
   if(itemsList.value.length === 1) {
