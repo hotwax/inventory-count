@@ -316,6 +316,9 @@ const actions: ActionTree<CountState, RootState> = {
       commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
     }
   },
+  updateFirstScanCountSetting({ commit }, payload) {
+    commit(types.COUNT_ON_FIRST_SCAN_UPDATED, payload)
+  }
 }	
 
 export default actions;	
