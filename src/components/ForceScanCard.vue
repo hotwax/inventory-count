@@ -11,7 +11,7 @@
         {{ translate("Require barcode scanning") }}
       </ion-toggle>
     </ion-item>
-    <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
+    <ion-item v-if="!router.currentRoute.value.fullPath.includes('/tabs/')" lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
       <ion-toggle v-model="isFirstScanCountEnabled" @click.prevent="toggleFirstScanCount($event)">
         {{ translate("Count on first scan") }}
       </ion-toggle>
@@ -38,6 +38,7 @@ import {
 import { translate } from '@/i18n'
 import store from "@/store";
 import { computed } from "vue";
+import router from "@/router";
 import { hasPermission } from "@/authorization"
 import { useProductIdentificationStore } from "@hotwax/dxp-components";
 
