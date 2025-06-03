@@ -300,6 +300,7 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const scannedItem = ref({});
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -416,6 +417,8 @@ async function scanProduct() {
     showToast(translate("Scanned item is not present in the count."))
     queryString.value = ""
     return;
+  } else {
+    scannedItem.value = selectedItem
   }
 
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
@@ -486,6 +489,11 @@ function initializeObserver() {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
+        }
+        // update the input count when the fist scan count is enabled and the current product matches the scanned item
+        if(isFirstScanCountEnabled.value && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+          hasUnsavedChanges.value = true;
+          inputCount.value++;
         }
       }
     });
