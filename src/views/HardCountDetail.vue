@@ -667,7 +667,7 @@ function initializeObserver() {
             productInAnimation.value = {}
           }
         }
-        // update the inputCount when the fist scan count is enabled and scrolling animation ia enabled
+        // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
         if(isFirstScanCountEnabled.value && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
           inputCount.value++;  
         }
