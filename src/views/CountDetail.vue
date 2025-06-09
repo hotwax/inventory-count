@@ -490,7 +490,7 @@ function initializeObserver() {
             productInAnimation.value = {}
           }
         }
-        // update the input count when the fist scan count is enabled and the current product matches the scanned item
+        // update the input count when the first scan count is enabled and the current product matches the scanned item
         if(isFirstScanCountEnabled.value && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
           hasUnsavedChanges.value = true;
           inputCount.value++;
