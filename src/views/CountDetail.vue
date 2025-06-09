@@ -265,6 +265,7 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const isFirstScanCountEnabled = computed(() => store.getters["count/getFirstScanCountSetting"]);
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -299,6 +300,7 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const scannedItem = ref({});
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -415,6 +417,8 @@ async function scanProduct() {
     showToast(translate("Scanned item is not present in the count."))
     queryString.value = ""
     return;
+  } else {
+    scannedItem.value = selectedItem
   }
 
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
@@ -485,6 +489,11 @@ function initializeObserver() {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
+        }
+        // update the input count when the first scan count is enabled and the current product matches the scanned item
+        if(isFirstScanCountEnabled.value && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+          hasUnsavedChanges.value = true;
+          inputCount.value++;
         }
       }
     });
