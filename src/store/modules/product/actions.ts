@@ -10,33 +10,74 @@ import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  async fetchProducts ( { commit, state }, { productIds }) {
-    const cachedProductIds = Object.keys(state.cached);
-    const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
+  // async fetchProducts ( { commit, state }, { productIds }) {
+  //   const cachedProductIds = Object.keys(state.cached);
+  //   const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
 
-    const productIdFilter = remainingProductIds.join(' OR ')
+  //   const productIdFilter = remainingProductIds.join(' OR ')
 
-    // If there are no products skip the API call
-    if (productIdFilter === '') return;
+  //   // If there are no products skip the API call
+  //   if (productIdFilter === '') return;
 
-    let resp;
+  //   let resp;
 
+  //   try {
+  //     resp = await ProductService.fetchProducts({
+  //       "filters": ['productId: (' + productIdFilter + ')'],
+  //       "viewSize": productIds.length
+  //     })
+  //     if (resp.status === 200 && !hasError(resp)) {
+  //       const products = resp.data.response.docs;
+  //       // Handled empty response in case of failed query
+  //       if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+  //     }
+  //   } catch(err) {
+  //     logger.error("Failed to fetch products", err)
+  //   }
+  //   // TODO Handle specific error
+  //   return resp;
+  // },
+
+  async fetchProducts({ commit, state }, { productIds }) {
+    console.log('productIds :', productIds);
+    // const cachedProductIds = Object.keys(state.cached);
+    // const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
+  
+    // if (remainingProductIds.length === 0) return;
+  
+    const batchSize = 100;
+    const allFetchedProducts = [];
+    let index = 0;
+  
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": ['productId: (' + productIdFilter + ')'],
-        "viewSize": productIds.length
-      })
-      if (resp.status === 200 && !hasError(resp)) {
-        const products = resp.data.response.docs;
-        // Handled empty response in case of failed query
-        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      do {
+        const batchIds = productIds.slice(index, index + batchSize);
+        const productIdFilter = batchIds.join(' OR ');
+  
+        const resp = await ProductService.fetchProducts({
+          filters: ['productId: (' + productIdFilter + ')'],
+          viewSize: batchIds.length
+        });
+  
+        if (resp.status === 200 && !hasError(resp)) {
+          const products = resp.data.response.docs;
+          if (products?.length) {
+            allFetchedProducts.push(...products);
+          }
+        }
+  
+        index += batchSize;
+      } while (index < productIds.length);
+  
+      if (allFetchedProducts.length) {
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: allFetchedProducts });
       }
-    } catch(err) {
-      logger.error("Failed to fetch products", err)
+  
+    } catch (err) {
+      logger.error("Failed to fetch products", err);
     }
-    // TODO Handle specific error
-    return resp;
   },
+  
 
   async currentProduct ({ commit }, payload) {
     commit(types.PRODUCT_CURRENT_UPDATED, payload)
