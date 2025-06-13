@@ -312,6 +312,7 @@ const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
 const scrollerRef = ref(null);
+const imageScrollerRef = ref(null);
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -322,7 +323,7 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
   emitter.emit("dismissLoader")
-  if(itemsList.value?.length) initializeObserver()
+  // if(itemsList.value?.length) initializeObserver()
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
@@ -372,6 +373,9 @@ function inputCountValidation(event) {
 }
 
 function updateAnimatingProduct(item) {
+  const itemIndex = itemsList.value.findIndex(product => product.productId === item.productId && product.importItemSeqId === item.importItemSeqId);
+  // await nextTick();
+  imageScrollerRef.value.scrollToItem(itemIndex);
   isAnimationInProgress.value = true;
   productInAnimation.value = item;
 }
@@ -435,29 +439,11 @@ async function scanProduct() {
     hasUnsavedChanges.value = false;
     
     // Find the index of the selected item
-    const itemIndex = itemsList.value.findIndex(item => 
-      item.productId === selectedItem.productId && 
-      item.importItemSeqId === selectedItem.importItemSeqId
-    );
-
-    if (itemIndex !== -1 && scrollerRef.value) {
-      // First update the current product
+    const itemIndex = itemsList.value.findIndex(item => item.productId === selectedItem.productId && item.importItemSeqId === selectedItem.importItemSeqId);
+    if(itemIndex !== -1 && scrollerRef.value) {
       await store.dispatch("product/currentProduct", selectedItem);
-      
-      // // Force the scroller to render the item by temporarily adjusting the buffer
-      // const originalBuffer = scrollerRef.value.buffer;
-      // console.log(originalBuffer)
-      // scrollerRef.value.buffer = Math.max(originalBuffer, itemIndex);
-      // console.log(scrollerRef.value.buffer)
-      
-      // Scroll to the item
       await nextTick();
       scrollerRef.value.scrollToItem(itemIndex);
-      
-      // Reset the buffer after scrolling
-      // setTimeout(() => {
-      //   scrollerRef.value.buffer = originalBuffer;
-      // }, 100);
     }
   } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
@@ -484,7 +470,7 @@ async function updateFilteredItems() {
     store.dispatch("product/currentProduct", {});
   }
   await nextTick();
-  if(itemsList.value?.length) initializeObserver()
+  // if(itemsList.value?.length) initializeObserver()
   if(isAnimationInProgress.value) {
     store.dispatch("product/currentProduct", productInAnimation.value);
     isAnimationInProgress.value = false;
@@ -492,41 +478,41 @@ async function updateFilteredItems() {
   }
 }
 
-function initializeObserver() {
-  const main = scrollingContainerRef.value;
-  const products = Array.from(main.querySelectorAll('.image'));
+// function initializeObserver() {
+//   const main = scrollingContainerRef.value;
+//   const products = Array.from(main.querySelectorAll('.image'));
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const productId = entry.target.dataset.productId;
-        const seqId = entry.target.dataset.seq;
-        const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
+//   const observer = new IntersectionObserver((entries) => {
+//     entries.forEach((entry) => {
+//       if (entry.isIntersecting) {
+//         const productId = entry.target.dataset.productId;
+//         const seqId = entry.target.dataset.seq;
+//         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
         
-        if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
-          if(inputCount.value) saveCount(previousItem, true);
-        }
-        previousItem = currentProduct  // Update the previousItem variable with the current item
+//         if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
+//           if(inputCount.value) saveCount(previousItem, true);
+//         }
+//         previousItem = currentProduct  // Update the previousItem variable with the current item
 
-        if (currentProduct) {
-          store.dispatch("product/currentProduct", currentProduct);
-          product.value.isRecounting = false;
-          if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
-            isAnimationInProgress.value = false
-            productInAnimation.value = {}
-          }
-        }
-      }
-    });
-  }, {
-    root: main,
-    threshold: 0.5, 
-  });
+//         if (currentProduct) {
+//           store.dispatch("product/currentProduct", currentProduct);
+//           product.value.isRecounting = false;
+//           if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
+//             isAnimationInProgress.value = false
+//             productInAnimation.value = {}
+//           }
+//         }
+//       }
+//     });
+//   }, {
+//     root: main,
+//     threshold: 0.5, 
+//   });
 
-  products.forEach((product) => {
-    observer.observe(product);
-  });
-}
+//   products.forEach((product) => {
+//     observer.observe(product);
+//   });
+// }
 
 async function changeProduct(direction) {
   if (isScrolling.value) return;

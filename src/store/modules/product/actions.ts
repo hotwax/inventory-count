@@ -10,69 +10,35 @@ import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  // async fetchProducts ( { commit, state }, { productIds }) {
-  //   const cachedProductIds = Object.keys(state.cached);
-  //   const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
-
-  //   const productIdFilter = remainingProductIds.join(' OR ')
-
-  //   // If there are no products skip the API call
-  //   if (productIdFilter === '') return;
-
-  //   let resp;
-
-  //   try {
-  //     resp = await ProductService.fetchProducts({
-  //       "filters": ['productId: (' + productIdFilter + ')'],
-  //       "viewSize": productIds.length
-  //     })
-  //     if (resp.status === 200 && !hasError(resp)) {
-  //       const products = resp.data.response.docs;
-  //       // Handled empty response in case of failed query
-  //       if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
-  //     }
-  //   } catch(err) {
-  //     logger.error("Failed to fetch products", err)
-  //   }
-  //   // TODO Handle specific error
-  //   return resp;
-  // },
-
   async fetchProducts({ commit, state }, { productIds }) {
-    console.log('productIds :', productIds);
-    // const cachedProductIds = Object.keys(state.cached);
-    // const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
-  
-    // if (remainingProductIds.length === 0) return;
-  
-    const batchSize = 100;
-    const allFetchedProducts = [];
+    const cachedProductIds = Object.keys(state.cached);
+    const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
+    if(remainingProductIds.length === 0) return;
+    const batchSize = 100, allFetchedProducts = [];
     let index = 0;
   
     try {
       do {
-        const batchIds = productIds.slice(index, index + batchSize);
-        const productIdFilter = batchIds.join(' OR ');
+        const batch = remainingProductIds.slice(index, index + batchSize);
+        const productIdFilter = batch.join(' OR ');
   
         const resp = await ProductService.fetchProducts({
           filters: ['productId: (' + productIdFilter + ')'],
-          viewSize: batchIds.length
+          viewSize: batch.length
         });
   
-        if (resp.status === 200 && !hasError(resp)) {
+        if(resp.status === 200 && !hasError(resp)) {
           const products = resp.data.response.docs;
-          if (products?.length) {
+          if(products?.length) {
             allFetchedProducts.push(...products);
           }
         }
-  
         index += batchSize;
-      } while (index < productIds.length);
+      } while (index < remainingProductIds.length);
   
-      if (allFetchedProducts.length) {
+      if(allFetchedProducts.length) {
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: allFetchedProducts });
       }
-  
     } catch (err) {
       logger.error("Failed to fetch products", err);
     }
