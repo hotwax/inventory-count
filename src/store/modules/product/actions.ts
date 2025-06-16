@@ -44,7 +44,6 @@ const actions: ActionTree<ProductState, RootState> = {
     }
   },
   
-
   async currentProduct ({ commit }, payload) {
     commit(types.PRODUCT_CURRENT_UPDATED, payload)
   },

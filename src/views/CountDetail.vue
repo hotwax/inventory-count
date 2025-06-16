@@ -740,8 +740,7 @@ ion-list {
 }
 
 .image {
-  grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
