@@ -73,8 +73,15 @@ async function navigateToDetail(item: any) {
       emitter.emit("handleProductClick", item)
     }
   } else {
-    emitter.emit("updateAnimatingProduct", item)
-    store.dispatch("product/currentProduct", item);
+    setTimeout(() => {
+      const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
+      if (element) {
+        emitter.emit("updateAnimatingProduct", item);
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        store.dispatch("product/currentProduct", item);
+      }
+    }, 0);
   }
 }
 

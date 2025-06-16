@@ -69,15 +69,11 @@
         <!--Product details-->
         <main :class="itemsList?.length ? 'product-detail' : ''">
           <template v-if="itemsList?.length">
-            <DynamicScroller ref="imageScrollerRef" class="product" :items="itemsList" :min-item-size="100" key-field="importItemSeqId" :buffer="3" :prerender="2">
-              <template v-slot="{ item, index, active }">
-                  <DynamicScrollerItem class="image" :item="item" :active="active" :index="index" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-                    <div class="ion-padding-top">
-                        <Image :src="getProduct(item.productId)?.mainImageUrl" />
-                    </div>
-                  </DynamicScrollerItem>
-              </template>
-            </DynamicScroller>
+            <div class="product" ref="scrollingContainerRef">
+              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              </div>
+            </div>
             <div class="detail" v-if="Object.keys(product)?.length">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
@@ -312,7 +308,6 @@ const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
 const scrollerRef = ref(null);
-const imageScrollerRef = ref(null);
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -323,7 +318,7 @@ onIonViewDidEnter(async() => {
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
   emitter.emit("dismissLoader")
-  // if(itemsList.value?.length) initializeObserver()
+  if(itemsList.value?.length) initializeObserver()
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
@@ -373,9 +368,6 @@ function inputCountValidation(event) {
 }
 
 function updateAnimatingProduct(item) {
-  const itemIndex = itemsList.value.findIndex(product => product.productId === item.productId && product.importItemSeqId === item.importItemSeqId);
-  // await nextTick();
-  imageScrollerRef.value.scrollToItem(itemIndex);
   isAnimationInProgress.value = true;
   productInAnimation.value = item;
 }
@@ -437,11 +429,13 @@ async function scanProduct() {
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
   if(!isAlreadySelected) {
     hasUnsavedChanges.value = false;
-    
+    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
     // Find the index of the selected item
     const itemIndex = itemsList.value.findIndex(item => item.productId === selectedItem.productId && item.importItemSeqId === selectedItem.importItemSeqId);
     if(itemIndex !== -1 && scrollerRef.value) {
       await store.dispatch("product/currentProduct", selectedItem);
+      isAnimationInProgress.value = true;
+      productInAnimation.value = selectedItem
       await nextTick();
       scrollerRef.value.scrollToItem(itemIndex);
     }
@@ -470,7 +464,7 @@ async function updateFilteredItems() {
     store.dispatch("product/currentProduct", {});
   }
   await nextTick();
-  // if(itemsList.value?.length) initializeObserver()
+  if(itemsList.value?.length) initializeObserver()
   if(isAnimationInProgress.value) {
     store.dispatch("product/currentProduct", productInAnimation.value);
     isAnimationInProgress.value = false;
@@ -478,41 +472,41 @@ async function updateFilteredItems() {
   }
 }
 
-// function initializeObserver() {
-//   const main = scrollingContainerRef.value;
-//   const products = Array.from(main.querySelectorAll('.image'));
+function initializeObserver() {
+  const main = scrollingContainerRef.value;
+  const products = Array.from(main.querySelectorAll('.image'));
 
-//   const observer = new IntersectionObserver((entries) => {
-//     entries.forEach((entry) => {
-//       if (entry.isIntersecting) {
-//         const productId = entry.target.dataset.productId;
-//         const seqId = entry.target.dataset.seq;
-//         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const productId = entry.target.dataset.productId;
+        const seqId = entry.target.dataset.seq;
+        const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
         
-//         if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
-//           if(inputCount.value) saveCount(previousItem, true);
-//         }
-//         previousItem = currentProduct  // Update the previousItem variable with the current item
+        if(!isScanningInProgress.value && (previousItem.productId !== currentProduct.productId || previousItem.importItemSeqId !== currentProduct.importItemSeqId)) {
+          if(inputCount.value) saveCount(previousItem, true);
+        }
+        previousItem = currentProduct  // Update the previousItem variable with the current item
 
-//         if (currentProduct) {
-//           store.dispatch("product/currentProduct", currentProduct);
-//           product.value.isRecounting = false;
-//           if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
-//             isAnimationInProgress.value = false
-//             productInAnimation.value = {}
-//           }
-//         }
-//       }
-//     });
-//   }, {
-//     root: main,
-//     threshold: 0.5, 
-//   });
+        if (currentProduct) {
+          store.dispatch("product/currentProduct", currentProduct);
+          product.value.isRecounting = false;
+          if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
+            isAnimationInProgress.value = false
+            productInAnimation.value = {}
+          }
+        }
+      }
+    });
+  }, {
+    root: main,
+    threshold: 0.5, 
+  });
 
-//   products.forEach((product) => {
-//     observer.observe(product);
-//   });
-// }
+  products.forEach((product) => {
+    observer.observe(product);
+  });
+}
 
 async function changeProduct(direction) {
   if (isScrolling.value) return;
