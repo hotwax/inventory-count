@@ -29,7 +29,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <DynamicScroller ref="scrollerRef" class="scroller" :items="itemsListForScroller" :min-item-size="80" key-field="itemKey" :buffer="200">
+            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsListForScroller" :min-item-size="80" key-field="itemKey" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
                   <ProductItemList :item="item"/>
@@ -224,14 +224,13 @@ import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
 import ProductItemList from "@/views/ProductItemList.vue";
-import { getPartyName, getProductStoreId, hasError, showToast } from "@/utils";
+import { getPartyName, getProductStoreId, hasError, showToast, scrollToCurrentItem } from "@/utils";
 import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -271,7 +270,7 @@ const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrolli
 const isSubmittingForReview = ref(false);
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
-
+const virtualScrollerRef = ref("") as any;
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -456,6 +455,7 @@ async function scanProduct() {
       if(inputCount.value) saveCount(currentProduct.value, true)
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
+      nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
     }
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
     inputCount.value++;
@@ -474,6 +474,7 @@ function scrollToProduct(product: any) {
     if (element) {
       updateAnimatingProduct(product)
       element.scrollIntoView({ behavior: 'smooth' });
+      nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
     }
   }, 0);
 }
@@ -661,6 +662,7 @@ function initializeObserver() {
             isAnimationInProgress.value = false;
             productInAnimation.value = {}
           }
+          nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
         }
       }
     });
@@ -852,7 +854,7 @@ ion-list {
 
 .image {
   grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -890,7 +892,7 @@ ion-radio::part(label) {
 }
 
 /* Ensures the virtual scroller fills the available space between the header for proper scrolling */
-.scroller {
+.virtual-scroller {
   height: calc(100vh - 150px);
   overflow: auto;
 }
