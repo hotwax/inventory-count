@@ -429,16 +429,15 @@ async function scanProduct() {
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
   if(!isAlreadySelected) {
     hasUnsavedChanges.value = false;
-    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
-    // Find the index of the selected item
-    const itemIndex = itemsList.value.findIndex(item => item.productId === selectedItem.productId && item.importItemSeqId === selectedItem.importItemSeqId);
-    if(itemIndex !== -1 && scrollerRef.value) {
-      await store.dispatch("product/currentProduct", selectedItem);
-      isAnimationInProgress.value = true;
-      productInAnimation.value = selectedItem
-      await nextTick();
-      scrollerRef.value.scrollToItem(itemIndex);
-    }
+    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` });
+    setTimeout(() => {
+      const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
+      if (element) {
+        isAnimationInProgress.value = true;
+        productInAnimation.value = selectedItem
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 0);
   } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
@@ -758,6 +757,12 @@ ion-list {
   grid-column: span 2;
 }
 
+/* Ensures the virtual scroller fills the available space between the header for proper scrolling */
+.scroller {
+  height: calc(100vh - 150px);
+  overflow: auto;
+}
+
 @media (max-width: 991px) {
   .product {
     grid: "image"
@@ -777,11 +782,6 @@ ion-list {
  .find >.filters {
     display: unset;
   }
-}
-
-.scroller {
-  height: calc(100vh - 180px);
-  overflow: auto;
 }
 
 </style>

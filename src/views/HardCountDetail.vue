@@ -29,7 +29,13 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
+            <DynamicScroller ref="scrollerRef" class="scroller" :items="itemsListForScroller" :min-item-size="80" key-field="itemKey" :buffer="200">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
+                  <ProductItemList :item="item"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
           <template v-else>
             <div class="empty-state">
@@ -224,6 +230,8 @@ import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -235,6 +243,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
+const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -823,10 +832,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -882,6 +887,12 @@ ion-radio::part(label) {
 
 .line-through {
   text-decoration: line-through;
+}
+
+/* Ensures the virtual scroller fills the available space between the header for proper scrolling */
+.scroller {
+  height: calc(100vh - 150px);
+  overflow: auto;
 }
 
 @media (max-width: 991px) {
