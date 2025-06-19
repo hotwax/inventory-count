@@ -12,7 +12,7 @@
       </ion-toolbar>
     </ion-header>
  
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
@@ -54,7 +54,7 @@
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
           </div>
-          <div class="filters ion-padding">
+          <div class="filters">
             <ion-list>
               <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
                 <ion-label>{{ translate("Progress") }}</ion-label>
@@ -71,52 +71,58 @@
         <hr/>
 
         <template v-if="currentCycleCount.items?.length">
-          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
-              </ion-thumbnail>
-              <ion-label>
-                <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
-              </ion-label>
-            </ion-item>
+          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+                <div class="list-item">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getProduct(item.productId).mainImageUrl"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
+                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
+                    </ion-label>
+                  </ion-item>
 
-            <ion-label>
-              {{ item.qoh }}
-              <p>{{ translate("QoH") }}</p>
-            </ion-label>
+                  <ion-label>
+                    {{ item.qoh }}
+                    <p>{{ translate("QoH") }}</p>
+                  </ion-label>
 
-            <template v-if="item.quantity >=0 ">
-              <ion-label>
-                {{ item.quantity }}
-                <p>{{ translate("counted") }}</p>
-              </ion-label>
+                  <template v-if="item.quantity >=0 ">
+                    <ion-label>
+                      {{ item.quantity }}
+                      <p>{{ translate("counted") }}</p>
+                    </ion-label>
 
-              <ion-label>
-                {{ +(item.quantity) - +(item.qoh) }}
-                <p>{{ translate("variance") }}</p>
-              </ion-label>
-            </template>
+                    <ion-label>
+                      {{ +(item.quantity) - +(item.qoh) }}
+                      <p>{{ translate("variance") }}</p>
+                    </ion-label>
+                  </template>
 
-            <ion-chip outline class="tablet grid-span-columns" v-else>
-              <ion-label>{{ translate("count pending") }}</ion-label>
-            </ion-chip>
+                  <ion-chip outline class="tablet grid-span-columns" v-else>
+                    <ion-label>{{ translate("count pending") }}</ion-label>
+                  </ion-chip>
 
-            <ion-chip outline v-if="item.quantity >= 0">
-              <ion-icon :icon="personCircleOutline"/>
-              <ion-label>{{ getPartyName(item) }}</ion-label>
-            </ion-chip>
+                  <ion-chip outline v-if="item.quantity >= 0">
+                    <ion-icon :icon="personCircleOutline"/>
+                    <ion-label>{{ getPartyName(item) }}</ion-label>
+                  </ion-chip>
 
-            <div class="tablet ion-margin-end" v-else>
-              <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
-            </div>
+                  <div class="tablet ion-margin-end" v-else>
+                    <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
+                  </div>
 
-            <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
-              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-            </ion-button>
-          </div>
+                  <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                  </ion-button>
+                </div>
+              </DynamicScrollerItem>
+            </template>          
+          </DynamicScroller>
         </template>
         <p v-else class="empty-state">
           {{ translate("No items added to count") }}
@@ -153,6 +159,7 @@ import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -424,6 +431,10 @@ function updateCustomTime(event: any) {
 
 .status-danger {
   color: var(--ion-color-danger);
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 220px;
 }
 
 @media (max-width: 991px) {

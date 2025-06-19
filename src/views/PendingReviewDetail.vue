@@ -16,7 +16,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
@@ -63,7 +63,7 @@
             </ion-chip>
           </div>
           <ion-list>
-            <div class="filters ion-padding">
+            <div class="filters">
               <ion-item>
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
@@ -100,56 +100,62 @@
         </div>
 
         <template v-if="filteredItems?.length">
-          <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-              </ion-label>
-            </ion-item>
+          <DynamicScroller class="virtual-scroller" :items="filteredItems" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+                <div class="list-item">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getProduct(item.productId).mainImageUrl"/>
+                    </ion-thumbnail>
+                    <ion-label class="ion-text-wrap">
+                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    </ion-label>
+                  </ion-item>
 
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh }}
-              <p>{{ translate("counted / systemic") }}</p>
-            </ion-label>
+                  <ion-label v-if="item.quantity >= 0">
+                    {{ item.quantity }} / {{ item.qoh }}
+                    <p>{{ translate("counted / systemic") }}</p>
+                  </ion-label>
 
-            <ion-label v-else>
-              {{ item.qoh }}
-              <p>{{ translate("systemic") }}</p>
-            </ion-label>
+                  <ion-label v-else>
+                    {{ item.qoh }}
+                    <p>{{ translate("systemic") }}</p>
+                  </ion-label>
 
-            <ion-label v-if="item.quantity >= 0">
-              {{ +(item.quantity) - +(item.qoh) }}
-              <p>{{ getPartyName(item) }}</p>
-            </ion-label>
+                  <ion-label v-if="item.quantity >= 0">
+                    {{ +(item.quantity) - +(item.qoh) }}
+                    <p>{{ getPartyName(item) }}</p>
+                  </ion-label>
 
-            <ion-item lines="none" v-else>
-              <ion-label class="ion-text-center">
-                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-              </ion-label>
-            </ion-item>
+                  <ion-item lines="none" v-else>
+                    <ion-label class="ion-text-center">
+                      <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+                      <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+                    </ion-label>
+                  </ion-item>
 
-            <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
-                <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
-                <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
-                <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-              </ion-button>
-            </div>
+                  <div class="tablet">
+                    <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
+                      <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
+                    </ion-button>
+                    <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
+                      <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
+                    </ion-button>
+                    <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
+                      <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
+                    </ion-button>
+                  </div>
 
-            <div class="ion-margin-end">
-              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
-            </div>
-          </div>
+                  <div class="ion-margin-end">
+                    <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+                    <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+                  </div>
+                </div>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </template>
 
         <p v-else class="empty-state">
@@ -200,6 +206,7 @@ import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -643,6 +650,10 @@ ion-footer ion-buttons {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 400px;
 }
 
 @media (max-width: 991px) {

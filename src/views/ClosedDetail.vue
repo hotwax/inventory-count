@@ -7,7 +7,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
@@ -29,7 +29,7 @@
           </div>
 
           <ion-list>
-            <div class="filters ion-padding">
+            <div class="filters">
               <ion-item>
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
@@ -45,42 +45,48 @@
         <hr/>
 
         <template v-if="currentCycleCount.items?.length">
-          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-              </ion-label>
-            </ion-item>
+          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+                <div class="list-item">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getProduct(item.productId).mainImageUrl"/>
+                    </ion-thumbnail>
+                    <ion-label class="ion-text-wrap">
+                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                    </ion-label>
+                  </ion-item>
 
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh }}
-              <p>{{ translate("counted / systemic") }}</p>
-            </ion-label>
+                  <ion-label v-if="item.quantity >= 0">
+                    {{ item.quantity }} / {{ item.qoh }}
+                    <p>{{ translate("counted / systemic") }}</p>
+                  </ion-label>
 
-            <ion-label v-else>
-              {{ item.qoh }}
-              <p>{{ translate("systemic") }}</p>
-            </ion-label>
+                  <ion-label v-else>
+                    {{ item.qoh }}
+                    <p>{{ translate("systemic") }}</p>
+                  </ion-label>
 
-            <ion-label v-if="item.quantity >= 0">
-              {{ +(item.quantity) - +(item.qoh) }}
-              <p>{{ getPartyName(item) }}</p>
-            </ion-label>
-            <ion-item lines="none" v-else>
-              <ion-label class="ion-text-center">
-                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-              </ion-label>
-            </ion-item>
+                  <ion-label v-if="item.quantity >= 0">
+                    {{ +(item.quantity) - +(item.qoh) }}
+                    <p>{{ getPartyName(item) }}</p>
+                  </ion-label>
+                  <ion-item lines="none" v-else>
+                    <ion-label class="ion-text-center">
+                      <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+                      <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+                    </ion-label>
+                  </ion-item>
 
-            <div class="ion-margin-end">
-              <ion-badge :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-            </div>
-          </div>
+                  <div class="ion-margin-end">
+                    <ion-badge :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+                  </div>
+                </div>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </template>
 
         <p v-else class="empty-state">{{ translate("No items added to count") }}</p>
@@ -104,6 +110,7 @@ import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, time
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -211,6 +218,10 @@ function getProgress() {
 /* To remove overlapping of fab button with footer buttons */
 ion-footer ion-buttons {
   padding-right: 80px;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 220px;
 }
 
 .main-content {

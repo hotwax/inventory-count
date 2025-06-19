@@ -891,10 +891,8 @@ ion-radio::part(label) {
   text-decoration: line-through;
 }
 
-/* Ensures the virtual scroller fills the available space between the header for proper scrolling */
 .virtual-scroller {
-  height: calc(100vh - 150px);
-  overflow: auto;
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {
