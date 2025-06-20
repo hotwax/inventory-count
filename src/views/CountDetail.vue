@@ -52,7 +52,13 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index">
+                  <ProductItemList :item="item"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
           <template v-else>
             <div class="empty-state">
@@ -243,17 +249,17 @@ import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/ico
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from 'vue';
 import { useStore } from "@/store";
-import { hasError } from '@/utils'
+import { getPartyName, getProductStoreId, hasError, showToast, scrollToCurrentItem } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
-import { getPartyName, getProductStoreId, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
 import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -299,6 +305,7 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const virtualScrollerRef = ref("");
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -427,6 +434,7 @@ async function scanProduct() {
         isAnimationInProgress.value = true;
         productInAnimation.value = selectedItem
         element.scrollIntoView({ behavior: 'smooth' });
+        nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
       }
     }, 0);
   } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
@@ -485,6 +493,7 @@ function initializeObserver() {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
+          nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
         }
       }
     });
@@ -711,10 +720,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -734,8 +739,7 @@ aside {
 }
 
 .image {
-  grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -751,6 +755,10 @@ aside {
 
 .detail > ion-item {
   grid-column: span 2;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {

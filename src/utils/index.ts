@@ -188,4 +188,10 @@ const getProductStoreId = () => {
   return currentEComStore.productStoreId
 };
 
-export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+const scrollToCurrentItem = (virtualScrollerRef: any, currentItemIndex: number) => {
+  if(virtualScrollerRef?.value && currentItemIndex !== -1) {
+    virtualScrollerRef.value.scrollToItem(currentItemIndex);
+  }
+};
+
+export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField, scrollToCurrentItem }

@@ -26,6 +26,9 @@ import '@ionic/vue/css/display.css';
 import './theme/variables.css';
 import '@hotwax/apps-theme';
 
+/* vue virtual scroller css */
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
+
 import i18n from './i18n'
 import store from './store'
 import permissionPlugin, { Actions, hasPermission } from '@/authorization';
