@@ -19,12 +19,12 @@ const actions: ActionTree<ProductState, RootState> = {
   
     try {
       do {
-        const batch = remainingProductIds.slice(index, index + batchSize);
-        const productIdFilter = batch.join(' OR ');
+        const productIdBatch = remainingProductIds.slice(index, index + batchSize);
+        const productIdFilter = productIdBatch.join(' OR ');
   
         const resp = await ProductService.fetchProducts({
           filters: ['productId: (' + productIdFilter + ')'],
-          viewSize: batch.length
+          viewSize: productIdBatch.length
         });
   
         if(resp.status === 200 && !hasError(resp)) {

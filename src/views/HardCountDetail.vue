@@ -29,7 +29,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsListForScroller" :min-item-size="80" key-field="itemKey" :buffer="400">
+            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsListForScroller" key-field="itemKey" :min-item-size="80" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
                   <ProductItemList :item="item"/>
