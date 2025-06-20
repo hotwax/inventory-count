@@ -52,7 +52,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsList" :min-item-size="80" key-field="importItemSeqId" :buffer="400">
+            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index">
                   <ProductItemList :item="item"/>
@@ -427,7 +427,7 @@ async function scanProduct() {
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
   if(!isAlreadySelected) {
     hasUnsavedChanges.value = false;
-    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` });
+    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
     setTimeout(() => {
       const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
       if (element) {
@@ -757,10 +757,8 @@ ion-list {
   grid-column: span 2;
 }
 
-/* Ensures the virtual scroller fills the available space between the header for proper scrolling */
 .virtual-scroller {
-  height: calc(100vh - 150px);
-  overflow: auto;
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {

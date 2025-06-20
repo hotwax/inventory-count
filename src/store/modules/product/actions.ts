@@ -43,7 +43,7 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch products", err);
     }
   },
-  
+
   async currentProduct ({ commit }, payload) {
     commit(types.PRODUCT_CURRENT_UPDATED, payload)
   },
