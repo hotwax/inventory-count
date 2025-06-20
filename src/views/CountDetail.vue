@@ -300,6 +300,10 @@ const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
 
+const isAddButtonDisabled = computed(() => {
+  return selectedSegment.value === 'accepted' || selectedSegment.value === 'rejected';
+});
+
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
