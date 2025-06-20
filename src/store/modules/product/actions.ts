@@ -14,7 +14,7 @@ const actions: ActionTree<ProductState, RootState> = {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
     if(remainingProductIds.length === 0) return;
-    const batchSize = 100, allFetchedProducts = [];
+    const batchSize = 250, allFetchedProducts = [];
     let index = 0;
   
     try {
