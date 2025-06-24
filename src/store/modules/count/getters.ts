@@ -1,7 +1,6 @@
 import { GetterTree } from "vuex";
 import CountState from "./CountState";
 import RootState from "../../RootState";
-import { getCycleCountStats } from "@/utils";
 
 const getters: GetterTree<CountState, RootState> = {
   getCounts(state) {
