@@ -16,7 +16,7 @@
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
-            <ion-item lines="none">
+            <ion-item :disabled="isLoadingItems" lines="none">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
@@ -32,11 +32,11 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip outline @click="openDateTimeModal">
+            <ion-chip :disabled="isLoadingItems" outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"/>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
-            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+            <ion-modal :disabled="isLoadingItems" class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   id="schedule-datetime"
@@ -49,18 +49,18 @@
                 />
               </ion-content>
             </ion-modal>
-            <ion-chip outline>
+            <ion-chip :disabled="isLoadingItems" outline>
               <ion-icon :icon="businessOutline"/>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
           </div>
           <div class="filters ion-padding">
             <ion-list>
-              <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
+              <ion-item :disabled="isLoadingItems" v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
               </ion-item>
@@ -69,7 +69,10 @@
         </div>
 
         <hr/>
-
+        
+        <template v-if="isLoadingItems">
+          <ProgressBar />
+        </template>
         <template v-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
             <ion-item lines="none">
@@ -118,7 +121,7 @@
             </ion-button>
           </div>
         </template>
-        <p v-else class="empty-state">
+        <p v-else-if="!isLoadingItems" class="empty-state">
           {{ translate("No items added to count") }}
         </p>
       </template>
@@ -153,6 +156,7 @@ import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -168,6 +172,7 @@ const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
 let countName = ref("")
+let isLoadingItems = ref(true)
 
 async function addProductToCount(productId: any) {
   if(!productId) {
@@ -199,7 +204,7 @@ async function addProductToCount(productId: any) {
 }
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
+  isLoadingItems.value = true;
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}
@@ -221,11 +226,12 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
-onIonViewWillLeave(() => {
+onIonViewWillLeave(async() => {
   emitter.off("addProductToCount", addProductToCount)
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function fetchCountItems() {
@@ -237,6 +243,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
         pageIndex++;
       } else {
         throw resp.data;

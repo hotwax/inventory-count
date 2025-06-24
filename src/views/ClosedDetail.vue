@@ -11,18 +11,18 @@
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
-            <ion-item lines="none">
+            <ion-item :disabled="isLoadingItems" lines="none">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1>{{ currentCycleCount.countName }}</h1>
                 <p>{{ currentCycleCount.countId }}</p>
               </ion-label>
             </ion-item>
-            <ion-chip outline>
+            <ion-chip :disabled="isLoadingItems" outline>
               <ion-icon :icon="calendarClearOutline"></ion-icon>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
-            <ion-chip outline>
+            <ion-chip :disabled="isLoadingItems" outline>
               <ion-icon :icon="businessOutline"></ion-icon>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
@@ -30,11 +30,11 @@
 
           <ion-list>
             <div class="filters ion-padding">
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
               </ion-item>
@@ -44,6 +44,9 @@
 
         <hr/>
 
+        <template v-if="isLoadingItems">
+          <ProgressBar />
+        </template>
         <template v-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
             <ion-item lines="none">
@@ -83,7 +86,7 @@
           </div>
         </template>
 
-        <p v-else class="empty-state">{{ translate("No items added to count") }}</p>
+        <p v-else-if="!isLoadingItems" class="empty-state">{{ translate("No items added to count") }}</p>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
@@ -94,7 +97,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter } from "@ionic/vue";
+import { IonBackButton, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, ref } from "vue";
 import store from "@/store"
@@ -104,6 +107,7 @@ import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, time
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -116,9 +120,10 @@ const getProduct = computed(() => (id: string) => store.getters["product/getProd
 
 const currentCycleCount = ref({}) as any
 let countName = ref("")
+let isLoadingItems = ref(true)
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
+  isLoadingItems.value = true;
 
   currentCycleCount.value = {}
   try {
@@ -138,7 +143,11 @@ onIonViewWillEnter(async () => {
   } catch(err) {
     logger.error()
   }
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+})
+
+onIonViewWillLeave(async() => {
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function fetchCountItems() {
@@ -150,6 +159,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
         pageIndex++;
       } else {
         throw resp.data;

@@ -11,7 +11,7 @@
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search">
-            <ion-item lines="none" class="ion-padding">
+            <ion-item :disabled="isLoadingItems" lines="none" class="ion-padding">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
@@ -30,14 +30,14 @@
           </div>
           <div class="filters">
             <ion-list class="ion-padding">
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-icon slot="start" :icon="cloudUploadOutline"/>
                 <ion-label>{{ translate("Import CSV") }}</ion-label>
                 <input @change="parse" ref="file" class="ion-hide" type="file" id="updateProductFile" :key="fileUploaded.toString()"/>
                 <label for="updateProductFile" class="pointer">{{ translate("Upload") }}</label>
               </ion-item>
 
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-icon slot="start" :icon="calendarNumberOutline" />
                 <ion-label>{{ translate("Due date") }}</ion-label>
                 <ion-button slot="end" size="small" class="date-time-button" @click="openDateTimeModal">{{ currentCycleCount.dueDate ? getDateWithOrdinalSuffix(currentCycleCount.dueDate) : translate("Select date") }}</ion-button>
@@ -55,7 +55,7 @@
                   </ion-content>
                 </ion-modal>
               </ion-item>
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-icon slot="start" :icon="businessOutline"/>
                 <ion-label>{{ translate("Facility") }}</ion-label>
                 <ion-label v-if="currentCycleCount.facilityId" slot="end">{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
@@ -72,7 +72,7 @@
         </div>
 
         <div class="item-search">
-          <ion-item lines="none">
+          <ion-item :disabled="isLoadingItems" lines="none">
             <ion-icon slot="start" :icon="listOutline"/>
             <ion-input
               :label="translate('Add product')"
@@ -103,7 +103,10 @@
         </div>
 
         <hr />
-
+        
+        <template v-if="isLoadingItems">
+          <ProgressBar />
+        </template>
         <template v-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
             <ion-item lines="none">
@@ -136,7 +139,7 @@
             </ion-button>
           </div>
         </template>
-        <template v-else>
+        <template v-else-if="!isLoadingItems">
           <p class="empty-state">{{ translate("No items added to count") }}</p>
         </template>
       </template>
@@ -158,7 +161,7 @@ import { translate } from "@/i18n";
 import ImportCsvModal from "@/components/ImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast, parseCsv, sortListByField } from "@/utils";
@@ -170,6 +173,7 @@ import { ProductService } from "@/services/ProductService";
 import router from "@/router"
 import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -197,6 +201,7 @@ let fileColumns = ref([]) as any
 let uploadedFile = ref({}) as any
 const fileUploaded = ref(false);
  let timeoutId = ref()
+let isLoadingItems = ref(true)
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -223,7 +228,7 @@ watch(queryString, (value) => {
 }, { deep: true })
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
+  isLoadingItems.value = true;
   currentCycleCount.value = {}
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
@@ -243,12 +248,16 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
 onIonViewDidEnter(async() => {
   uploadedFile.value = {}
   content.value = []
+})
+
+onIonViewWillLeave(async() => {
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function parse(event: any) {
@@ -276,6 +285,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
         pageIndex++;
       } else {
         throw resp.data;

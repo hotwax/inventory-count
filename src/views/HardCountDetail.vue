@@ -16,10 +16,10 @@
       <div class="find">
         <aside class="filters">
           <div class="fixed-section">
-            <ion-item lines="full">
+            <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInputRef" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment v-model="selectedSegment" @ionChange="handleSegmentChange()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="handleSegmentChange()">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>
@@ -29,9 +29,9 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
+            <ProductItemList :disabled="isLoadingItems" v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
           </template>
-          <template v-else>
+          <template v-else-if="!isLoadingItems">
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
@@ -39,8 +39,11 @@
         </aside>
 
         <!--Product details-->
-        <main :class="itemsList?.length ? 'product-detail' : ''">
-          <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
+        <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
+          <template v-if="isLoadingItems">
+            <ProgressBar/>
+          </template>
+          <template v-else-if="itemsList?.length && Object.keys(currentProduct)?.length">
             <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
               <template v-if="isScrollingAnimationEnabled">
                 <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
@@ -224,6 +227,7 @@ import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -262,17 +266,18 @@ const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrolli
 const isSubmittingForReview = ref(false);
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
-
+const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  emitter.emit("presentLoader");
+  isLoadingItems.value = true;
   await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+  await nextTick(); // Wait for DOM update
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   emitter.on("handleProductClick", handleProductClick)
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
@@ -285,6 +290,7 @@ onIonViewDidLeave(async() => {
   store.dispatch("product/currentProduct", {});
   emitter.off("handleProductClick", handleProductClick)
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function handleBeforeUnload() {

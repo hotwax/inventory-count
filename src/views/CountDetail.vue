@@ -10,10 +10,10 @@
       <div class="find">
         <aside class="filters">
           <div class="fixed-section">
-            <ion-item lines="full">
+            <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInput" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="updateFilteredItems()">
               <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
                 <ion-segment-button value="all">
                   <ion-label>{{ translate("ALL") }}</ion-label>
@@ -52,17 +52,20 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+            <ProductItemList :disabled="isLoadingItems" v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
           </template>
-          <template v-else>
+          <template v-else-if="!isLoadingItems">
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
           </template>
         </aside>
         <!--Product details-->
-        <main :class="itemsList?.length ? 'product-detail' : ''">
-          <template v-if="itemsList?.length">
+        <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
+          <template v-if="isLoadingItems">
+            <ProgressBar/>
+          </template>
+          <template v-else-if="itemsList?.length">
             <div class="product" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
@@ -254,6 +257,7 @@ import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -299,16 +303,18 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  emitter.emit("presentLoader");
+  isLoadingItems.value = true;
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+  await nextTick(); // Wait for DOM update
   if(itemsList.value?.length) initializeObserver()
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
@@ -317,6 +323,7 @@ onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 onBeforeRouteLeave(async (to) => {

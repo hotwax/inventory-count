@@ -20,7 +20,7 @@
       <template v-if="currentCycleCount.inventoryCountImportId">
         <div class="header">
           <div class="search ion-padding">
-            <ion-item lines="none">
+            <ion-item :disabled="isLoadingItems" lines="none">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
@@ -36,11 +36,11 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip outline @click="openDateTimeModal">
+            <ion-chip :disabled="isLoadingItems" outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"></ion-icon>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
-            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+            <ion-modal :disabled="isLoadingItems" class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   id="schedule-datetime"
@@ -53,31 +53,31 @@
                 />
               </ion-content>
             </ion-modal>
-            <ion-chip outline>
+            <ion-chip :disabled="isLoadingItems" outline>
               <ion-icon :icon="businessOutline"></ion-icon>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
-            <ion-chip outline @click="reassignCount">
+            <ion-chip :disabled="isLoadingItems" outline @click="reassignCount">
               <ion-icon :icon="playBackOutline"></ion-icon>
               <ion-label>{{ translate("Re-assign") }}</ion-label>
             </ion-chip>
           </div>
           <ion-list>
             <div class="filters ion-padding">
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item>
+              <ion-item :disabled="isLoadingItems">
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
               </ion-item>
-              <ion-item lines="none">
+              <ion-item :disabled="isLoadingItems" lines="none">
                 <ion-icon slot="start" :icon="thermometerOutline"/>
                 <ion-label>{{ translate("Item variance threshold") }}</ion-label>
                 <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
               </ion-item>
-              <ion-item lines="none">
+              <ion-item :disabled="isLoadingItems" lines="none">
                 <div slot="start"></div>
                 <ion-range v-model="varianceThreshold"></ion-range>
               </ion-item>
@@ -86,7 +86,7 @@
         </div>
 
         <div class="header border">
-          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
+          <ion-segment :disabled="isLoadingItems" v-model="segmentSelected" @ionChange="segmentChanged">
             <ion-segment-button value="all">
               <ion-label>{{ translate("All") }}</ion-label>
             </ion-segment-button>
@@ -99,6 +99,9 @@
           </ion-segment>
         </div>
 
+        <template v-if="isLoadingItems">
+          <ProgressBar />
+        </template>
         <template v-if="filteredItems?.length">
           <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
             <ion-item lines="none">
@@ -152,7 +155,7 @@
           </div>
         </template>
 
-        <p v-else class="empty-state">
+        <p v-else-if="!isLoadingItems" class="empty-state">
           {{ translate("No items added to count") }}
         </p>
       </template>
@@ -162,7 +165,7 @@
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
+      <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -200,6 +203,7 @@ import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -238,9 +242,10 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
+let isLoadingItems = ref(true)
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
+  isLoadingItems.value = true;
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}
@@ -262,11 +267,12 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
-onIonViewWillLeave(() => {
+onIonViewWillLeave(async() => {
   emitter.off("addProductToCount", addProductToCount)
+  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function fetchCountItems() {
@@ -278,6 +284,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
         pageIndex++;
       } else {
         throw resp.data;
