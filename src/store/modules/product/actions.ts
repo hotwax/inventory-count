@@ -13,8 +13,8 @@ const actions: ActionTree<ProductState, RootState> = {
   async fetchProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
-    if(remainingProductIds.length === 0) return;
-    const batchSize = 250, allFetchedProducts = [];
+    if(remainingProductIds.length) return;
+    const batchSize = 250, fetchedProducts = [];
     let index = 0;
   
     try {
@@ -27,17 +27,17 @@ const actions: ActionTree<ProductState, RootState> = {
           viewSize: productIdBatch.length
         });
   
-        if(resp.status === 200 && !hasError(resp)) {
+        if(!hasError(resp)) {
           const products = resp.data.response.docs;
           if(products?.length) {
-            allFetchedProducts.push(...products);
+            fetchedProducts.push(...products);
           }
         }
         index += batchSize;
       } while (index < remainingProductIds.length);
   
-      if(allFetchedProducts.length) {
-        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: allFetchedProducts });
+      if(fetchedProducts.length) {
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: fetchedProducts });
       }
     } catch (err) {
       logger.error("Failed to fetch products", err);
