@@ -74,52 +74,52 @@
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :active="active" :index="index">
-                <div class="list-item">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(item.productId).mainImageUrl"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
-                    </ion-label>
-                  </ion-item>
+          <div class="list-item">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
+              </ion-label>
+            </ion-item>
 
-                  <ion-label>
-                    {{ item.qoh }}
-                    <p>{{ translate("QoH") }}</p>
-                  </ion-label>
+            <ion-label>
+              {{ item.qoh }}
+              <p>{{ translate("QoH") }}</p>
+            </ion-label>
 
-                  <template v-if="item.quantity >=0 ">
-                    <ion-label>
-                      {{ item.quantity }}
-                      <p>{{ translate("counted") }}</p>
-                    </ion-label>
+            <template v-if="item.quantity >=0 ">
+              <ion-label>
+                {{ item.quantity }}
+                <p>{{ translate("counted") }}</p>
+              </ion-label>
 
-                    <ion-label>
-                      {{ +(item.quantity) - +(item.qoh) }}
-                      <p>{{ translate("variance") }}</p>
-                    </ion-label>
-                  </template>
+              <ion-label>
+                {{ +(item.quantity) - +(item.qoh) }}
+                <p>{{ translate("variance") }}</p>
+              </ion-label>
+            </template>
 
-                  <ion-chip outline class="tablet grid-span-columns" v-else>
-                    <ion-label>{{ translate("count pending") }}</ion-label>
-                  </ion-chip>
+            <ion-chip outline class="tablet grid-span-columns" v-else>
+              <ion-label>{{ translate("count pending") }}</ion-label>
+            </ion-chip>
 
-                  <ion-chip outline v-if="item.quantity >= 0">
-                    <ion-icon :icon="personCircleOutline"/>
-                    <ion-label>{{ getPartyName(item) }}</ion-label>
-                  </ion-chip>
+            <ion-chip outline v-if="item.quantity >= 0">
+              <ion-icon :icon="personCircleOutline"/>
+              <ion-label>{{ getPartyName(item) }}</ion-label>
+            </ion-chip>
 
-                  <div class="tablet ion-margin-end" v-else>
-                    <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
-                  </div>
+            <div class="tablet ion-margin-end" v-else>
+              <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
+            </div>
 
-                  <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
-                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>
-                </div>
+            <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
+              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+            </ion-button>
+          </div>
               </DynamicScrollerItem>
             </template>          
           </DynamicScroller>
