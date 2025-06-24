@@ -108,36 +108,36 @@
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :active="active" :index="index">
-                <div class="list-item">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(item.productId).mainImageUrl"/>
-                    </ion-thumbnail>
-                    <ion-label class="ion-text-wrap">
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>           
-                    </ion-label>
-                  </ion-item>
-                  <ion-label>
-                    {{ item.qoh }}
-                    <p>{{ translate("QoH") }}</p>
-                  </ion-label>
-                  <div class="tablet">
-                    <ion-chip outline>
-                      <ion-label>{{ getDateWithOrdinalSuffix(item.lastCountedDate) }}</ion-label>
-                    </ion-chip>
-                    <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
-                  </div>
-                  <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
-                  <!-- <div class="tablet">
-                    <ion-chip outline>
-                      <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
-                    </ion-chip>
-                  </div> -->
-                  <ion-button fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
-                    <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
-                  </ion-button>
-                </div>
+          <div class="list-item">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label class="ion-text-wrap">
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>           
+              </ion-label>
+            </ion-item>
+            <ion-label>
+              {{ item.qoh }}
+              <p>{{ translate("QoH") }}</p>
+            </ion-label>
+            <div class="tablet">
+              <ion-chip outline>
+                <ion-label>{{ getDateWithOrdinalSuffix(item.lastCountedDate) }}</ion-label>
+              </ion-chip>
+              <ion-label class="config-label">{{ translate("last counted") }}</ion-label>
+            </div>
+            <!-- TODO: make it dynamic, as currently we are not getting rejection history information in any of the api -->
+            <!-- <div class="tablet">
+              <ion-chip outline>
+                <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
+              </ion-chip>
+            </div> -->
+            <ion-button fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+              <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
+            </ion-button>
+          </div>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>

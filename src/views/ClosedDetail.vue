@@ -48,42 +48,42 @@
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :active="active" :index="index">
-                <div class="list-item">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(item.productId).mainImageUrl"/>
-                    </ion-thumbnail>
-                    <ion-label class="ion-text-wrap">
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-                    </ion-label>
-                  </ion-item>
+          <div class="list-item">
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="getProduct(item.productId).mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label class="ion-text-wrap">
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+              </ion-label>
+            </ion-item>
 
-                  <ion-label v-if="item.quantity >= 0">
-                    {{ item.quantity }} / {{ item.qoh }}
-                    <p>{{ translate("counted / systemic") }}</p>
-                  </ion-label>
+            <ion-label v-if="item.quantity >= 0">
+              {{ item.quantity }} / {{ item.qoh }}
+              <p>{{ translate("counted / systemic") }}</p>
+            </ion-label>
 
-                  <ion-label v-else>
-                    {{ item.qoh }}
-                    <p>{{ translate("systemic") }}</p>
-                  </ion-label>
+            <ion-label v-else>
+              {{ item.qoh }}
+              <p>{{ translate("systemic") }}</p>
+            </ion-label>
 
-                  <ion-label v-if="item.quantity >= 0">
-                    {{ +(item.quantity) - +(item.qoh) }}
-                    <p>{{ getPartyName(item) }}</p>
-                  </ion-label>
-                  <ion-item lines="none" v-else>
-                    <ion-label class="ion-text-center">
-                      <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                      <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-                    </ion-label>
-                  </ion-item>
+            <ion-label v-if="item.quantity >= 0">
+              {{ +(item.quantity) - +(item.qoh) }}
+              <p>{{ getPartyName(item) }}</p>
+            </ion-label>
+            <ion-item lines="none" v-else>
+              <ion-label class="ion-text-center">
+                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
+                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+              </ion-label>
+            </ion-item>
 
-                  <div class="ion-margin-end">
-                    <ion-badge :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-                  </div>
-                </div>
+            <div class="ion-margin-end">
+              <ion-badge :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
+            </div>
+          </div>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
