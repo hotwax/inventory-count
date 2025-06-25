@@ -13,7 +13,7 @@ const actions: ActionTree<ProductState, RootState> = {
   async fetchProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
-    if(remainingProductIds.length) return;
+    if(!remainingProductIds.length) return;
     const batchSize = 250, fetchedProducts = [];
     let index = 0;
   
