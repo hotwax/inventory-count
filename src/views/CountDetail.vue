@@ -249,10 +249,11 @@ import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/ico
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from 'vue';
 import { useStore } from "@/store";
-import { getPartyName, getProductStoreId, hasError, showToast } from '@/utils'
+import { hasError } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
+import { getPartyName, getProductStoreId, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
 import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
@@ -738,6 +739,7 @@ ion-list {
 }
 
 .image {
+  grid-area: image;
   height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
