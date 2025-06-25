@@ -224,7 +224,7 @@ import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
 import ProductItemList from "@/views/ProductItemList.vue";
-import { getPartyName, getProductStoreId, hasError, showToast, scrollToCurrentItem } from "@/utils";
+import { getPartyName, getProductStoreId, hasError, showToast } from "@/utils";
 import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
@@ -455,7 +455,6 @@ async function scanProduct() {
       if(inputCount.value) saveCount(currentProduct.value, true)
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
-      nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
     }
   } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
     inputCount.value++;
@@ -474,7 +473,6 @@ function scrollToProduct(product: any) {
     if (element) {
       updateAnimatingProduct(product)
       element.scrollIntoView({ behavior: 'smooth' });
-      nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
     }
   }, 0);
 }
@@ -662,7 +660,6 @@ function initializeObserver() {
             isAnimationInProgress.value = false;
             productInAnimation.value = {}
           }
-          nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
         }
       }
     });

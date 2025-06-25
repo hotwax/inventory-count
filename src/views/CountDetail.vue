@@ -249,7 +249,7 @@ import { chevronDownOutline, chevronUpOutline, closeOutline } from "ionicons/ico
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from 'vue';
 import { useStore } from "@/store";
-import { getPartyName, getProductStoreId, hasError, showToast, scrollToCurrentItem } from '@/utils'
+import { getPartyName, getProductStoreId, hasError, showToast } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
@@ -434,7 +434,6 @@ async function scanProduct() {
         isAnimationInProgress.value = true;
         productInAnimation.value = selectedItem
         element.scrollIntoView({ behavior: 'smooth' });
-        nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
       }
     }, 0);
   } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
@@ -493,7 +492,6 @@ function initializeObserver() {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
-          nextTick(() => scrollToCurrentItem(virtualScrollerRef, currentItemIndex.value))
         }
       }
     });
