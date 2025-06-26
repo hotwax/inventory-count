@@ -18,9 +18,10 @@
 
     <ion-content class="main-content">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search ion-padding">
-            <ion-item :disabled="isLoadingItems" lines="none">
+            <ion-item lines="none">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
@@ -36,11 +37,11 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip :disabled="isLoadingItems" outline @click="openDateTimeModal">
+            <ion-chip outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"></ion-icon>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
-            <ion-modal :disabled="isLoadingItems" class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   id="schedule-datetime"
@@ -53,31 +54,31 @@
                 />
               </ion-content>
             </ion-modal>
-            <ion-chip :disabled="isLoadingItems" outline>
+            <ion-chip outline>
               <ion-icon :icon="businessOutline"></ion-icon>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
-            <ion-chip :disabled="isLoadingItems" outline @click="reassignCount">
+            <ion-chip outline @click="reassignCount">
               <ion-icon :icon="playBackOutline"></ion-icon>
               <ion-label>{{ translate("Re-assign") }}</ion-label>
             </ion-chip>
           </div>
           <ion-list>
             <div class="filters ion-padding">
-              <ion-item :disabled="isLoadingItems">
+              <ion-item>
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item :disabled="isLoadingItems">
+              <ion-item>
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
               </ion-item>
-              <ion-item :disabled="isLoadingItems" lines="none">
+              <ion-item lines="none">
                 <ion-icon slot="start" :icon="thermometerOutline"/>
                 <ion-label>{{ translate("Item variance threshold") }}</ion-label>
                 <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
               </ion-item>
-              <ion-item :disabled="isLoadingItems" lines="none">
+              <ion-item lines="none">
                 <div slot="start"></div>
                 <ion-range v-model="varianceThreshold"></ion-range>
               </ion-item>
@@ -86,7 +87,7 @@
         </div>
 
         <div class="header border">
-          <ion-segment :disabled="isLoadingItems" v-model="segmentSelected" @ionChange="segmentChanged">
+          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
             <ion-segment-button value="all">
               <ion-label>{{ translate("All") }}</ion-label>
             </ion-segment-button>
@@ -98,6 +99,7 @@
             </ion-segment-button>
           </ion-segment>
         </div>
+        </template>
 
         <template v-if="isLoadingItems">
           <ProgressBar />

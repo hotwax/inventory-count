@@ -14,9 +14,10 @@
  
     <ion-content class="main-content">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search ion-padding">
-            <ion-item :disabled="isLoadingItems" lines="none">
+            <ion-item lines="none">
               <ion-label slot="start">
                 <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                 <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
@@ -32,11 +33,11 @@
                 {{ translate("Save") }}
               </ion-button>
             </ion-item>
-            <ion-chip :disabled="isLoadingItems" outline @click="openDateTimeModal">
+            <ion-chip outline @click="openDateTimeModal">
               <ion-icon :icon="calendarClearOutline"/>
               <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
             </ion-chip>
-            <ion-modal :disabled="isLoadingItems" class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
+            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   id="schedule-datetime"
@@ -49,18 +50,18 @@
                 />
               </ion-content>
             </ion-modal>
-            <ion-chip :disabled="isLoadingItems" outline>
+            <ion-chip outline>
               <ion-icon :icon="businessOutline"/>
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
           </div>
           <div class="filters ion-padding">
             <ion-list>
-              <ion-item :disabled="isLoadingItems" v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
+              <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
               </ion-item>
-              <ion-item :disabled="isLoadingItems">
+              <ion-item>
                 <ion-label>{{ translate("Variance") }}</ion-label>
                 <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
               </ion-item>
@@ -69,6 +70,7 @@
         </div>
 
         <hr/>
+        </template>
         
         <template v-if="isLoadingItems">
           <ProgressBar />
@@ -133,7 +135,7 @@
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button @click="updateCountStatus">
+      <ion-fab-button :disabled="isLoadingItems" @click="updateCountStatus">
         <ion-icon :icon="lockClosedOutline" />
       </ion-fab-button>
     </ion-fab>
