@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { IonItem, IonLabel, IonProgressBar, IonNote } from '@ionic/vue';
+import { IonLabel, IonProgressBar, IonNote } from '@ionic/vue';
 import { computed, onMounted } from 'vue';
 import { useStore } from "@/store";
 import { useRoute } from 'vue-router';
