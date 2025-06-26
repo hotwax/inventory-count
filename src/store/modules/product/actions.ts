@@ -12,7 +12,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async fetchProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
-    const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId));
+    const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
     if(!remainingProductIds.length) return;
     const batchSize = 250, fetchedProducts = [];
     let index = 0;
@@ -39,8 +39,8 @@ const actions: ActionTree<ProductState, RootState> = {
       if(fetchedProducts.length) {
         commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: fetchedProducts });
       }
-    } catch (err) {
-      logger.error("Failed to fetch products", err);
+    } catch(err) {
+      logger.error("Failed to fetch products", err)
     }
   },
 
