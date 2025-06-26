@@ -102,7 +102,7 @@
         <template v-if="isLoadingItems">
           <ProgressBar />
         </template>
-        <template v-if="filteredItems?.length">
+        <template v-else-if="filteredItems?.length">
           <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
@@ -155,7 +155,7 @@
           </div>
         </template>
 
-        <p v-else-if="!isLoadingItems" class="empty-state">
+        <p v-else class="empty-state">
           {{ translate("No items added to count") }}
         </p>
       </template>
@@ -245,7 +245,6 @@ let varianceThreshold = ref(40)
 let isLoadingItems = ref(true)
 
 onIonViewWillEnter(async () => {
-  isLoadingItems.value = true;
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}

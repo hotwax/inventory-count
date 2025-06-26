@@ -269,7 +269,6 @@ const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  isLoadingItems.value = true;
   await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})

@@ -47,7 +47,7 @@
         <template v-if="isLoadingItems">
           <ProgressBar />
         </template>
-        <template v-if="currentCycleCount.items?.length">
+        <template v-else-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
@@ -86,7 +86,7 @@
           </div>
         </template>
 
-        <p v-else-if="!isLoadingItems" class="empty-state">{{ translate("No items added to count") }}</p>
+        <p v-else class="empty-state">{{ translate("No items added to count") }}</p>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
@@ -123,8 +123,6 @@ let countName = ref("")
 let isLoadingItems = ref(true)
 
 onIonViewWillEnter(async () => {
-  isLoadingItems.value = true;
-
   currentCycleCount.value = {}
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)

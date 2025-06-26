@@ -306,7 +306,6 @@ const productInAnimation = ref({});
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  isLoadingItems.value = true;
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
