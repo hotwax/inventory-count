@@ -247,7 +247,7 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_UPDATED, {})
   },
 
-  async fetchCycleCountItems({commit, state, dispatch} ,payload) {
+  async fetchCycleCountItems({commit, state} ,payload) {
     let items = [] as any, resp, pageIndex = 0;
     
     try {
@@ -256,7 +256,6 @@ const actions: ActionTree<CountState, RootState> = {
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
           // dispatch progress update after each batch
-          dispatch("updateCycleCountItemsProgress", items.length)
           commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
         } else {
           throw resp.data;
@@ -279,10 +278,6 @@ const actions: ActionTree<CountState, RootState> = {
 
   async updateCycleCountItems ({ commit }, payload) {
     commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
-  },
-
-  updateCycleCountItemsProgress({ commit }, payload) {
-    commit(types.COUNT_ITEMS_PROGRESS_UPDATED, payload)
   },
 
   async clearCycleCountItems ({ commit }) {

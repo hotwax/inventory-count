@@ -19,5 +19,4 @@ export default interface CountState {
   defaultRecountUpdateBehaviour: String;
   cachedUnmatchProducts: any;
   closedCycleCountsTotal: any;
-  cycleCountItemsProgress: number
 }

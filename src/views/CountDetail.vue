@@ -63,7 +63,7 @@
         <!--Product details-->
         <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
           <template v-if="isLoadingItems">
-            <ProgressBar/>
+            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
           </template>
           <template v-else-if="itemsList?.length">
             <div class="product" ref="scrollingContainerRef">
@@ -306,6 +306,7 @@ const productInAnimation = ref({});
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
+  await store.dispatch('count/updateCycleCountItems', []);
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
@@ -322,7 +323,6 @@ onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
-  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 onBeforeRouteLeave(async (to) => {
@@ -470,6 +470,7 @@ async function updateFilteredItems() {
 
 function initializeObserver() {
   const main = scrollingContainerRef.value;
+  if(!main) return;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {

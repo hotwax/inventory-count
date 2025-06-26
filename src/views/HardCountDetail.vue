@@ -41,7 +41,7 @@
         <!--Product details-->
         <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
           <template v-if="isLoadingItems">
-            <ProgressBar/>
+            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
           </template>
           <template v-else-if="itemsList?.length && Object.keys(currentProduct)?.length">
             <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
@@ -269,6 +269,7 @@ const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
+  await store.dispatch('count/updateCycleCountItems', []);
   await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
@@ -289,7 +290,6 @@ onIonViewDidLeave(async() => {
   store.dispatch("product/currentProduct", {});
   emitter.off("handleProductClick", handleProductClick)
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
-  await store.dispatch('count/updateCycleCountItemsProgress', 0)
 })
 
 async function handleBeforeUnload() {
@@ -635,6 +635,7 @@ const onScroll = () => {
 
 function initializeObserver() {
   const main = scrollingContainerRef.value;
+  if(!main) return;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
     entries.forEach((entry: any) => {

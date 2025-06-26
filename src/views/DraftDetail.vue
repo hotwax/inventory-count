@@ -107,7 +107,7 @@
         </template>
         
         <template v-if="isLoadingItems">
-          <ProgressBar />
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
         </template>
         <template v-else-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
@@ -204,6 +204,7 @@ let uploadedFile = ref({}) as any
 const fileUploaded = ref(false);
  let timeoutId = ref()
 let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -258,7 +259,7 @@ onIonViewDidEnter(async() => {
 })
 
 onIonViewWillLeave(async() => {
-  await store.dispatch('count/updateCycleCountItemsProgress', 0)
+  cycleCountItemsProgress.value = 0
 })
 
 async function parse(event: any) {
@@ -286,7 +287,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
-        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;

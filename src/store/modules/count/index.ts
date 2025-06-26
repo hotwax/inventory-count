@@ -30,8 +30,7 @@ const countModule: Module<CountState, RootState> = {
     cycleCountItems: {},
     defaultRecountUpdateBehaviour: "add",
     cachedUnmatchProducts: {},
-    closedCycleCountsTotal: "",
-    cycleCountItemsProgress: 0
+    closedCycleCountsTotal: ""
   },
   getters,
   actions,

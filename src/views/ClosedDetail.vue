@@ -47,7 +47,7 @@
         </template>
 
         <template v-if="isLoadingItems">
-          <ProgressBar />
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
         </template>
         <template v-else-if="currentCycleCount.items?.length">
           <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
@@ -123,6 +123,7 @@ const getProduct = computed(() => (id: string) => store.getters["product/getProd
 const currentCycleCount = ref({}) as any
 let countName = ref("")
 let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
 
 onIonViewWillEnter(async () => {
   currentCycleCount.value = {}
@@ -147,7 +148,7 @@ onIonViewWillEnter(async () => {
 })
 
 onIonViewWillLeave(async() => {
-  await store.dispatch('count/updateCycleCountItemsProgress', 0)
+  cycleCountItemsProgress.value = 0
 })
 
 async function fetchCountItems() {
@@ -159,7 +160,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
-        await store.dispatch("count/updateCycleCountItemsProgress", items.length)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;
