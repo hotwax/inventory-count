@@ -258,7 +258,7 @@ onIonViewDidEnter(async() => {
   content.value = []
 })
 
-onIonViewWillLeave(async() => {
+onIonViewWillLeave(() => {
   cycleCountItemsProgress.value = 0
 })
 

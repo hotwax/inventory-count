@@ -231,7 +231,7 @@ onIonViewWillEnter(async () => {
   isLoadingItems.value = false;
 })
 
-onIonViewWillLeave(async() => {
+onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
   cycleCountItemsProgress.value = 0
 })

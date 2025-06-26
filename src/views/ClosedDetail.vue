@@ -147,7 +147,7 @@ onIonViewWillEnter(async () => {
   isLoadingItems.value = false;
 })
 
-onIonViewWillLeave(async() => {
+onIonViewWillLeave(() => {
   cycleCountItemsProgress.value = 0
 })
 
