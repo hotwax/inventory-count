@@ -145,7 +145,7 @@
           <p class="empty-state">{{ translate("No items added to count") }}</p>
         </template>
       </template>
-      <template v-else>
+      <template v-else-if="!isLoadingItems">
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
       </template>
     </ion-content>
