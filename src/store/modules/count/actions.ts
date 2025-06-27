@@ -252,14 +252,14 @@ const actions: ActionTree<CountState, RootState> = {
     
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 100, pageIndex })
+        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 200, pageIndex })
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
         } else {
           throw resp.data;
         }
         pageIndex++;
-      } while(resp.data.itemList?.length >= 100)
+      } while(resp.data.itemList?.length >= 200)
       } catch(err: any) {
       logger.error(err)
     }
