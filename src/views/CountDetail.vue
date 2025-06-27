@@ -52,7 +52,7 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <DynamicScroller ref="virtualScrollerRef" class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <DynamicScroller class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index">
                   <ProductItemList :item="item"/>
@@ -306,7 +306,6 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
-const virtualScrollerRef = ref("");
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
