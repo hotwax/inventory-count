@@ -29,7 +29,13 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList :disabled="isLoadingItems" v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
+            <DynamicScroller class="virtual-scroller" :items="itemsListForScroller" key-field="itemKey" :min-item-size="80" :buffer="400">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
+                  <ProductItemList :disabled="isLoadingItems" :item="item"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
           <template v-else-if="!isLoadingItems">
             <div class="empty-state">
@@ -227,6 +233,7 @@ import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
@@ -239,6 +246,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
+const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -829,10 +837,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -845,6 +849,7 @@ aside {
   height: 90vh;
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
+  will-change: scroll-position; /* Hint to browser about scrolling */
 }
 
 .product::-webkit-scrollbar { 
@@ -853,7 +858,7 @@ aside {
 
 .image {
   grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -888,6 +893,10 @@ ion-radio::part(label) {
 
 .line-through {
   text-decoration: line-through;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {

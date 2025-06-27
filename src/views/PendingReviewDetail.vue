@@ -16,7 +16,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
         <template v-if="!isLoadingItems">
         <div class="header">
@@ -64,7 +64,7 @@
             </ion-chip>
           </div>
           <ion-list>
-            <div class="filters ion-padding">
+            <div class="filters">
               <ion-item>
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
@@ -105,7 +105,10 @@
           <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
         </template>
         <template v-else-if="filteredItems?.length">
-          <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
+          <DynamicScroller class="virtual-scroller" :items="filteredItems" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+          <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
@@ -155,6 +158,9 @@
               <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </div>
           </div>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </template>
 
         <p v-else class="empty-state">
@@ -205,6 +211,7 @@ import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
@@ -283,7 +290,7 @@ async function fetchCountItems() {
 
   try {
     do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 200, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
         cycleCountItemsProgress.value = items.length
@@ -291,7 +298,7 @@ async function fetchCountItems() {
       } else {
         throw resp.data;
       }
-    } while(resp.data.itemList?.length >= 100)
+    } while(resp.data.itemList?.length >= 200)
   } catch(err) {
     logger.error(err)
   }
@@ -652,6 +659,10 @@ ion-footer ion-buttons {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 400px;
 }
 
 @media (max-width: 991px) {
