@@ -255,6 +255,8 @@ const actions: ActionTree<CountState, RootState> = {
         resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 200, pageIndex })
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
+          // dispatch progress update after each batch
+          commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
         } else {
           throw resp.data;
         }

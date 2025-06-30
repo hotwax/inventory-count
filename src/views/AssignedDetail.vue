@@ -14,6 +14,7 @@
  
     <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search ion-padding">
             <ion-item lines="none">
@@ -69,8 +70,12 @@
         </div>
 
         <hr/>
-
-        <template v-if="currentCycleCount.items?.length">
+        </template>
+        
+        <template v-if="isLoadingItems">
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+        </template>
+        <template v-else-if="currentCycleCount.items?.length">
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :active="active" :index="index">
@@ -128,7 +133,7 @@
           {{ translate("No items added to count") }}
         </p>
       </template>
-      <template v-else>
+      <template v-else-if="!isLoadingItems">
         <p class="empty-state">
           {{ translate("Cycle count not found") }}
         </p>
@@ -136,7 +141,7 @@
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button @click="updateCountStatus">
+      <ion-fab-button :disabled="isLoadingItems" @click="updateCountStatus">
         <ion-icon :icon="lockClosedOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -160,6 +165,7 @@ import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -175,6 +181,8 @@ const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
 let countName = ref("")
+let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
 
 async function addProductToCount(productId: any) {
   if(!productId) {
@@ -206,7 +214,6 @@ async function addProductToCount(productId: any) {
 }
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}
@@ -228,11 +235,12 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
 onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
+  cycleCountItemsProgress.value = 0
 })
 
 async function fetchCountItems() {
@@ -244,6 +252,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 200, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;
