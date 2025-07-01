@@ -8,6 +8,7 @@ import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
 import { DateTime } from "luxon"
+import store from "@/store";
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
@@ -247,30 +248,52 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_UPDATED, {})
   },
 
-  async fetchCycleCountItems({commit, state} ,payload) {
+  // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
+  async fetchCycleCountItems({commit, state} ,params) {
     let items = [] as any, resp, pageIndex = 0;
+    const productStoreSettings = store.getters["user/getProductStoreSettings"];
     
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 200, pageIndex })
-        if(!hasError(resp) && resp.data?.itemList?.length) {
-          items = items.concat(resp.data.itemList)
+        const payload = {
+          "customParametersMap": {
+            "inventoryCountImportId": params.inventoryCountImportId,
+            "pageIndex": pageIndex,
+            "pageSize": 100
+          },
+          "selectedEntity": "co.hotwax.warehouse.InventoryCountImportItem",
+        }
+        resp = await CountService.fetchCycleCountItems({ ...payload })
+        if(!hasError(resp) && resp.data.entityValueList?.length) {
+          items = items.concat(resp.data.entityValueList)
           // dispatch progress update after each batch
           commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
         } else {
           throw resp.data;
         }
         pageIndex++;
-      } while(resp.data.itemList?.length >= 200)
+      } while(resp.data.entityValueList?.length >= 100)
       } catch(err: any) {
       logger.error(err)
     }
-
-    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
-
+    // Renaming 'statusId' to 'itemStatusId'
+    items.forEach((item: any) => { item.itemStatusId = item.statusId; delete item.statusId; });
+    // Fetch product stock if QOH display is enabled in store settings.
+    if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-    if(payload.isHardCount) {
-      const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
+
+    // If sorting is required, attach parentProductName and sort the list
+    if(params.isSortingRequired) {
+      const productList = store.getters["product/getCachedProducts"];
+      items.forEach((item: any) => {
+        const product = productList?.[item.productId];
+        if(product?.parentProductName) item.parentProductName = product.parentProductName;
+      });
+      items = sortListByField(items, "parentProductName");
+    }
+
+    if(params.isHardCount) {
+      const cachedProducts = state.cachedUnmatchProducts[params.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[params.inventoryCountImportId])) : [];
       if(cachedProducts?.length) items = items.concat(cachedProducts)
     }
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })

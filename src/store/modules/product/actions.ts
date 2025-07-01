@@ -3,6 +3,7 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { ProductService } from "@/services/ProductService"
+import { useUserStore } from "@hotwax/dxp-components"
 import { hasError } from '@/utils';
 import emitter from '@/event-bus';
 import logger from '@/logger'
@@ -100,6 +101,30 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch products", err)
     }
     return {};
+  },
+
+  async fetchProductStock({ commit, state }, productId) {
+    // Return early if stock data for this productId already exists
+    if(productId in state.productStock) return;
+
+    const currentFacility: any = useUserStore().getCurrentFacility
+    let productQoh = [];
+
+    try {
+      const resp = await ProductService.fetchProductStock({
+        facilityId: currentFacility.facilityId,
+        productId: productId
+      });
+
+      if(!hasError(resp)) {
+        productQoh = resp.data;
+      } else {
+        throw resp;
+      }
+    } catch (err) {
+      logger.error("Failed to fetch product stock", err);
+    }
+    commit(types.PRODUCT_STOCK_UPDATED, { [productId]: productQoh?.qoh });
   },
 
   async addProductToCached({ commit }, payload) {

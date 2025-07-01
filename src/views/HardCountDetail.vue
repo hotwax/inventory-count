@@ -32,7 +32,7 @@
             <DynamicScroller class="virtual-scroller" :items="itemsListForScroller" key-field="itemKey" :min-item-size="80" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
-                  <ProductItemList :disabled="isLoadingItems" :item="item"/>
+                  <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/>
                 </DynamicScrollerItem>
               </template>
             </DynamicScroller>
@@ -111,7 +111,7 @@
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.qoh : "-" }}</ion-label>
+                    <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getProductStock(currentProduct.productId) ?? "-" : "-" }}</ion-label>
                   </ion-item>
                   <ion-item v-if="currentProduct.itemStatusId !== 'INV_COUNT_REJECTED'">
                     {{ translate("Variance") }}
@@ -161,7 +161,7 @@
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? currentProduct.qoh : "-" }}</ion-label>
+                    <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getProductStock(currentProduct.productId) ?? "-" : "-" }}</ion-label>
                   </ion-item>
                   <ion-item>
                     {{ translate("Variance") }}
@@ -247,6 +247,7 @@ const productStoreSettings = computed(() => store.getters["user/getProductStoreS
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
+const getProductStock = computed(() => (id: any) => store.getters["product/getProductStock"](id));
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -278,7 +279,7 @@ const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/updateCycleCountItems', []);
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
@@ -644,10 +645,13 @@ const onScroll = () => {
 function initializeObserver() {
   const main = scrollingContainerRef.value;
   if(!main) return;
+  let timeoutId = null as any;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
     entries.forEach((entry: any) => {
       if(entry.isIntersecting) {
+        if(timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
         const dataset = entry.target.dataset
         let product = {} as any;
         if(dataset.ismatching || dataset.isMatchNotFound) {
@@ -662,11 +666,16 @@ function initializeObserver() {
         if(product) {
           previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
+          // Fetch product stock only for the current product if showQoh is enabled
+          if(productStoreSettings.value['showQoh']) {
+            store.dispatch("product/fetchProductStock", product.productId);
+          }
           if(isAnimationInProgress.value && product.productId === productInAnimation.value.productId) {
             isAnimationInProgress.value = false;
             productInAnimation.value = {}
           }
         }
+        }, 100);
       }
     });
   }, {
@@ -773,7 +782,7 @@ function getVariance(item: any , isRecounting: boolean) {
   }
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
-  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(getProductStock.value(item.productId) ?? 0)
 }
 
 function isItemAlreadyAdded(product: any) {

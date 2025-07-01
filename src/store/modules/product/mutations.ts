@@ -25,5 +25,8 @@ const mutations: MutationTree <ProductState> = {
   [types.PRODUCT_CACHED_CLEARED] (state) {
     state.cached = {}
   },
+  [types.PRODUCT_STOCK_UPDATED] (state, payload) {
+    state.productStock = { ...state.productStock, ...payload }
+  }
 }
 export default mutations;

@@ -1,4 +1,6 @@
 import api from '@/api';
+import { client } from '@/api';
+import store from '@/store';
 import logger from '@/logger';
 import { hasError } from '@/utils';
 
@@ -25,12 +27,21 @@ const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => 
   })
 }
 
-const fetchCycleCountItems = async (payload: any): Promise<any> => {
-  return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items`,
-    method: "GET",
-    params: payload
-  })
+const fetchCycleCountItems = async (payload: any): Promise <any>  => {
+  const url = store.getters["user/getBaseUrl"];
+  const token = store.getters["user/getUserToken"]
+  const baseURL = url.startsWith("http") ? (url.includes("/rest/s1/inventory-cycle-count") ? url.replace("/inventory-cycle-count", "") : `${url}/rest/s1`) : `https://${url}.hotwax.io/rest/s1`;
+
+  return await client({
+    url: `/oms/entityData`,
+    method: "POST",
+    baseURL,
+    data: payload,
+    headers: {
+      Api_Key: token,
+      'Content-Type': 'application/json'
+    }
+  });
 }
 
 const fetchCycleCountItemsCount = async (payload: any): Promise<any> => {
