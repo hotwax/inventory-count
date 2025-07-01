@@ -249,7 +249,7 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
-  async fetchCycleCountItems({commit, state} ,params) {
+  async fetchCycleCountItemsView({commit, state} ,params) {
     let items = [] as any, resp, pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
     
@@ -263,7 +263,7 @@ const actions: ActionTree<CountState, RootState> = {
           },
           "selectedEntity": "co.hotwax.warehouse.InventoryCountImportItem",
         }
-        resp = await CountService.fetchCycleCountItems({ ...payload })
+        resp = await CountService.fetchCycleCountItemsView({ ...payload })
         if(!hasError(resp) && resp.data.entityValueList?.length) {
           items = items.concat(resp.data.entityValueList)
           // dispatch progress update after each batch

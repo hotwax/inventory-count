@@ -27,10 +27,18 @@ const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => 
   })
 }
 
-const fetchCycleCountItems = async (payload: any): Promise <any>  => {
+const fetchCycleCountItems = async (payload: any): Promise<any> => {
+  return api({
+    url: `cycleCounts/${payload.inventoryCountImportId}/items`,
+    method: "GET",
+    params: payload
+  })
+}
+
+const fetchCycleCountItemsView = async (payload: any): Promise <any>  => {
   const url = store.getters["user/getBaseUrl"];
   const token = store.getters["user/getUserToken"]
-  const baseURL = url.startsWith("http") ? (url.includes("/rest/s1/inventory-cycle-count") ? url.replace("/inventory-cycle-count", "") : `${url}/rest/s1`) : `https://${url}.hotwax.io/rest/s1`;
+  const baseURL = url.startsWith("http") ? url.includes("/rest/s1/inventory-cycle-count") ? url.replace("/inventory-cycle-count", "") : `${url}/rest/s1` : `https://${url}.hotwax.io/rest/s1`;
 
   return await client({
     url: `/oms/entityData`,
@@ -195,6 +203,7 @@ export const CountService = {
   fetchCycleCountStats,
   fetchCycleCounts,
   fetchCycleCountItems,
+  fetchCycleCountItemsView,
   fetchCycleCountItemsCount,
   fetchCycleCountsTotal,
   recountItems,
