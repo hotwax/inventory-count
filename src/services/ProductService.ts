@@ -1,4 +1,3 @@
-import api from '@/api';
 import { client } from '@/api';
 import store from '@/store';
 

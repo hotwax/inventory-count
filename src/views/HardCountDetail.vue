@@ -667,7 +667,7 @@ function initializeObserver() {
           previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
           // Fetch product stock only for the current product if showQoh is enabled
-          if(productStoreSettings.value['showQoh']) {
+          if(productStoreSettings.value['showQoh'] && product.productId) {
             store.dispatch("product/fetchProductStock", product.productId);
           }
           if(isAnimationInProgress.value && product.productId === productInAnimation.value.productId) {
