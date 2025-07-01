@@ -12,8 +12,9 @@
       </ion-toolbar>
     </ion-header>
  
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search ion-padding">
             <ion-item lines="none">
@@ -54,7 +55,7 @@
               <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
             </ion-chip>
           </div>
-          <div class="filters ion-padding">
+          <div class="filters">
             <ion-list>
               <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
                 <ion-label>{{ translate("Progress") }}</ion-label>
@@ -69,17 +70,24 @@
         </div>
 
         <hr/>
-
-        <template v-if="currentCycleCount.items?.length">
-          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
+        </template>
+        
+        <template v-if="isLoadingItems">
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+        </template>
+        <template v-else-if="currentCycleCount.items?.length">
+          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+          <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
                 <Image :src="getProduct(item.productId).mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
                 <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
               </ion-label>
             </ion-item>
 
@@ -117,12 +125,15 @@
               <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
             </ion-button>
           </div>
+              </DynamicScrollerItem>
+            </template>          
+          </DynamicScroller>
         </template>
         <p v-else class="empty-state">
           {{ translate("No items added to count") }}
         </p>
       </template>
-      <template v-else>
+      <template v-else-if="!isLoadingItems">
         <p class="empty-state">
           {{ translate("Cycle count not found") }}
         </p>
@@ -130,7 +141,7 @@
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button @click="updateCountStatus">
+      <ion-fab-button :disabled="isLoadingItems" @click="updateCountStatus">
         <ion-icon :icon="lockClosedOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -146,26 +157,32 @@ import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
 import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getProductIdentificationValue, sortListByField } from "@/utils"
+import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, sortListByField } from "@/utils"
 import emitter from '@/event-bus';
 import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
 })
 
+const productIdentificationStore = useProductIdentificationStore();
+
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
 const countNameRef = ref()
 let isCountNameUpdating = ref(false)
 let countName = ref("")
+let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
 
 async function addProductToCount(productId: any) {
   if(!productId) {
@@ -197,7 +214,6 @@ async function addProductToCount(productId: any) {
 }
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}
@@ -219,11 +235,12 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
 onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
+  cycleCountItemsProgress.value = 0
 })
 
 async function fetchCountItems() {
@@ -232,14 +249,15 @@ async function fetchCountItems() {
 
   try {
     do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 200, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;
       }
-    } while(resp.data.itemList?.length >= 100)
+    } while(resp.data.itemList?.length >= 200)
   } catch(err) {
     logger.error(err)
   }
@@ -422,6 +440,10 @@ function updateCustomTime(event: any) {
 
 .status-danger {
   color: var(--ion-color-danger);
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 220px;
 }
 
 @media (max-width: 991px) {

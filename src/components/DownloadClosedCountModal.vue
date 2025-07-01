@@ -104,10 +104,12 @@ import { DateTime } from "luxon";
 import logger from "@/logger";
 import store from "@/store";
 import { UserService } from "@/services/UserService";
+import { useUserStore } from "@hotwax/dxp-components";
 
+const userStore = useUserStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const facilities = computed(() => store.getters["user/getFacilities"])
+const facilities = computed(() => userStore.getFacilites)
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const query = computed(() => store.getters["count/getQuery"])
 const userProfile = computed(() => store.getters["user/getUserProfile"])
@@ -278,14 +280,14 @@ async function fetchBulkCycleCountItems() {
     let items = [] as any, resp, index = 0;
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : count.inventoryCountImportId, pageSize: 100, pageIndex: index })
+        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : count.inventoryCountImportId, pageSize: 200, pageIndex: index })
         if(!hasError(resp) && resp.data?.itemList?.length) {
           items = items.concat(resp.data.itemList)
           index++;
         } else {
           throw resp.data;
         }
-      } while(resp.data.itemList?.length >= 100)
+      } while(resp.data.itemList?.length >= 200)
     } catch(err) {
       logger.error(err)
       items = []

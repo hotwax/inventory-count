@@ -104,7 +104,6 @@ import {
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
-  alertController,
   modalController,
   popoverController
 } from '@ionic/vue';
@@ -112,6 +111,7 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, trashBinOutlin
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
+import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
 import { CountService } from "@/services/CountService"
@@ -240,42 +240,31 @@ async function save(){
       externalFacilityId: item[fieldMapping.value.facility]
     }
   })
-  const alert = await alertController.create({
-    header: translate("Bulk Upload Cycle Counts"),
-    message: translate("Make sure all the columns are mapped correctly."),
-    buttons: [
-        {
-          text: translate("Cancel"),
-          role: 'cancel',
-        },
-        {
-          text: translate("Upload"),
-          handler: () => {
-            const data = jsonToCsv(uploadedData)
-            const formData = new FormData();
-            formData.append("uploadedFile", data, fileName.value);
-            formData.append("fileName", fileName.value.replace(".csv", ""));
-            
-            CountService.bulkUploadInventoryCounts({
-              data: formData,
-              headers: {
-                'Content-Type': 'multipart/form-data;'
-              }
-            }).then(async (resp) => {
-              if (hasError(resp)) {
-                throw resp.data
-              }
-              resetDefaults()
-              await store.dispatch('count/fetchCycleCountImportSystemMessages')
-              showToast(translate("The cycle counts file uploaded successfully."))
-            }).catch(() => {
-              showToast(translate("Something went wrong, please try again"));
-            })
-          },
-        },
-      ],
-    });
-  return alert.present();  
+
+  const data = jsonToCsv(uploadedData)
+  const formData = new FormData();
+  formData.append("uploadedFile", data, fileName.value);
+  formData.append("fileName", fileName.value.replace(".csv", ""));
+  
+  try {
+    const resp = await CountService.bulkUploadInventoryCounts({
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data;'
+      }
+    })
+
+    if(!hasError(resp)) {
+      resetDefaults();
+      await store.dispatch('count/fetchCycleCountImportSystemMessages');
+      showToast(translate("The cycle counts file uploaded successfully."));
+    } else {
+      throw resp.data;
+    }
+  } catch(err) {
+    logger.error(err)
+    showToast(translate("Failed to upload the file, please try again"));
+  }
 }
 function mapFields(mapping, mappingId) {
   const fieldMappingData = JSON.parse(JSON.stringify(mapping));

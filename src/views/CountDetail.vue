@@ -10,10 +10,10 @@
       <div class="find">
         <aside class="filters">
           <div class="fixed-section">
-            <ion-item lines="full">
+            <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInput" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="updateFilteredItems()">
               <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
                 <ion-segment-button value="all">
                   <ion-label>{{ translate("ALL") }}</ion-label>
@@ -52,17 +52,26 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+            <DynamicScroller class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index">
+                  <ProductItemList :disabled="isLoadingItems" :item="item"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
-          <template v-else>
+          <template v-else-if="!isLoadingItems">
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
           </template>
         </aside>
         <!--Product details-->
-        <main :class="itemsList?.length ? 'product-detail' : ''">
-          <template v-if="itemsList?.length">
+        <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
+          <template v-if="isLoadingItems">
+            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
+          </template>
+          <template v-else-if="itemsList?.length">
             <div class="product" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
@@ -72,8 +81,8 @@
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
                   <p class="overline" v-if="product.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
-                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}</h1>
-                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(product.productId)) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
+                  <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>            
                 </ion-label>
 
                 <ion-badge v-if="product.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
@@ -247,15 +256,19 @@ import { hasError } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
 import ProductItemList from '@/views/ProductItemList.vue';
-import { getPartyName, getProductIdentificationValue, showToast } from '@/utils';
+import { getPartyName, getProductStoreId, showToast } from '@/utils';
 import { CountService } from '@/services/CountService';
 import { paperPlaneOutline } from "ionicons/icons"
 import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
 import { registerTopicListener } from '@/websocket';
+import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
+const productIdentificationStore = useProductIdentificationStore();
 
 const product = computed(() => store.getters['product/getCurrentProduct']);
 const getProduct = computed(() => (id) => store.getters["product/getProduct"](id))
@@ -264,7 +277,6 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -273,9 +285,9 @@ const itemsList = computed(() => {
     return cycleCountItems.value.itemList.filter(item =>(item.quantity === undefined || item.quantity === null) && item.itemStatusId === "INV_COUNT_CREATED");
   } else if (selectedSegment.value === 'counted') {
     // Based on discussion, item with rejected and completed status should be shown in the counted segment
-    return cycleCountItems.value.itemList.filter(item => item.quantity >= 0 || (item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'));
+    return cycleCountItems.value.itemList.filter(item => (item.quantity >= 0 ) && ((item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'|| item.itemStatusId === "INV_COUNT_CREATED")));
   } else if (selectedSegment.value === 'notCounted') {
-    return cycleCountItems.value.itemList.filter(item => !item.quantity && item.statusId === "INV_COUNT_REVIEW");
+    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && item.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
@@ -297,23 +309,29 @@ let hasUnsavedChanges = ref(false);
 const barcodeInput = ref();
 let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
+const isAnimationInProgress = ref(false);
+const productInAnimation = ref({});
+const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
+  await store.dispatch('count/updateCycleCountItems', []);
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
   registerTopicListener(handleNewMessage);
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+  await nextTick(); // Wait for DOM update
   if(itemsList.value?.length) initializeObserver()
+  emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
 onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
+  emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 onBeforeRouteLeave(async (to) => {
@@ -353,6 +371,11 @@ onBeforeRouteLeave(async (to) => {
 
 function inputCountValidation(event) {
   if(/[`!@#$%^&*()_+\-=\\|,.<>?~e]/.test(event.key) && event.key !== 'Backspace') event.preventDefault();
+}
+
+function updateAnimatingProduct(item) {
+  isAnimationInProgress.value = true;
+  productInAnimation.value = item;
 }
 
 async function fetchCycleCount() {
@@ -416,6 +439,8 @@ async function scanProduct() {
     setTimeout(() => {
       const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
       if (element) {
+        isAnimationInProgress.value = true;
+        productInAnimation.value = selectedItem
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
@@ -445,10 +470,16 @@ async function updateFilteredItems() {
   }
   await nextTick();
   if(itemsList.value?.length) initializeObserver()
+  if(isAnimationInProgress.value) {
+    store.dispatch("product/currentProduct", productInAnimation.value);
+    isAnimationInProgress.value = false;
+    productInAnimation.value = {}
+  }
 }
 
 function initializeObserver() {
   const main = scrollingContainerRef.value;
+  if(!main) return;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {
@@ -466,6 +497,10 @@ function initializeObserver() {
         if (currentProduct) {
           store.dispatch("product/currentProduct", currentProduct);
           product.value.isRecounting = false;
+          if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
+            isAnimationInProgress.value = false
+            productInAnimation.value = {}
+          }
         }
       }
     });
@@ -723,10 +758,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -739,6 +770,7 @@ aside {
   height: 90vh;
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
+  will-change: scroll-position; /* Hint to browser about scrolling */
 }
 
 .product::-webkit-scrollbar { 
@@ -747,7 +779,7 @@ aside {
 
 .image {
   grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -763,6 +795,10 @@ aside {
 
 .detail > ion-item {
   grid-column: span 2;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {

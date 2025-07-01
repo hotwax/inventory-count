@@ -5,8 +5,8 @@
     </ion-thumbnail>
     <ion-label class="ion-text-wrap" v-if="item.productId">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
-      <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-      <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-label class="ion-text-wrap" v-else>
       <h2>{{ item.scannedId }}</h2>
@@ -39,12 +39,13 @@ import { IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
-import { getProductIdentificationValue } from "@/utils"
+import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
 import emitter from '@/event-bus';
 
 const router = useRouter();
 const store = useStore();
+const productIdentificationStore = useProductIdentificationStore()
 const props = defineProps(['item']);
 
 
@@ -75,6 +76,7 @@ async function navigateToDetail(item: any) {
     setTimeout(() => {
       const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
       if (element) {
+        emitter.emit("updateAnimatingProduct", item);
         element.scrollIntoView({ behavior: 'smooth' });
       } else {
         store.dispatch("product/currentProduct", item);

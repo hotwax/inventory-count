@@ -22,6 +22,9 @@ import { Settings } from 'luxon'
 import Menu from '@/components/Menu.vue';
 import { Actions, hasPermission } from '@/authorization'
 import { initWebSocket } from '@/websocket';
+import { getProductStoreId } from './utils';
+import logger from './logger';
+import { useProductIdentificationStore } from '@hotwax/dxp-components';
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])
@@ -30,12 +33,10 @@ const webSocketUrl = computed(() => store.getters["user/getWebSocketUrl"])
 const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
 
 const loader = ref(null) as any
-const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0
 
 initialise({
   token: userToken.value,
-  instanceUrl: instanceUrl.value,
-  cacheMaxAge: maxAge,
+  instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""), // TODO: remove component replace logic once we start storing the oms url in state without component name
   events: {
     responseError: () => {
       setTimeout(() => dismissLoader(), 100);
@@ -43,7 +44,8 @@ initialise({
     queueTask: (payload: any) => {
       emitter.emit("queueTask", payload);
     }
-  }
+  },
+  systemType: "MOQUI"
 })
 
 async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
@@ -78,6 +80,13 @@ onMounted(async () => {
     // Luxon timezone should be set with the user's selected timezone
     userProfile.value.timeZone && (Settings.defaultZone = userProfile.value.timeZone);
   }
+  
+  if(userToken.value && getProductStoreId()) {
+    // Get product identification from api using dxp-component
+    await useProductIdentificationStore().getIdentificationPref(getProductStoreId())
+      .catch((error: any) => logger.error(error));
+  }
+
   if(userToken.value && webSocketUrl.value) {
     initWebSocket(webSocketUrl.value, currentFacility.value.facilityId)
   }

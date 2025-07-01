@@ -16,10 +16,10 @@
       <div class="find">
         <aside class="filters">
           <div class="fixed-section">
-            <ion-item lines="full">
+            <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInputRef" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment v-model="selectedSegment" @ionChange="handleSegmentChange()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="handleSegmentChange()">
               <ion-segment-button value="all">
                 <ion-label>{{ translate("ALL") }}</ion-label>
               </ion-segment-button>
@@ -29,9 +29,15 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.importItemSeqId ? item.importItemSeqId : item.scannedId" :item="item"/>
+            <DynamicScroller class="virtual-scroller" :items="itemsListForScroller" key-field="itemKey" :min-item-size="80" :buffer="400">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
+                  <ProductItemList :disabled="isLoadingItems" :item="item"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
-          <template v-else>
+          <template v-else-if="!isLoadingItems">
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
@@ -39,8 +45,11 @@
         </aside>
 
         <!--Product details-->
-        <main :class="itemsList?.length ? 'product-detail' : ''">
-          <template v-if="itemsList?.length && Object.keys(currentProduct)?.length">
+        <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
+          <template v-if="isLoadingItems">
+            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
+          </template>
+          <template v-else-if="itemsList?.length && Object.keys(currentProduct)?.length">
             <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
               <template v-if="isScrollingAnimationEnabled">
                 <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
@@ -56,8 +65,8 @@
               <ion-item lines="none">
                 <ion-icon v-if="!isItemAlreadyAdded(currentProduct)" :icon="cloudOfflineOutline" slot="start" />
                 <ion-label class="ion-text-wrap" v-if="currentProduct.productId">
-                  <h1>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(currentProduct.productId)) || getProduct(currentProduct.productId).productName }}</h1>
-                  <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(currentProduct.productId)) }}</p>
+                  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(currentProduct.productId)) || getProduct(currentProduct.productId).productName }}
+                  <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(currentProduct.productId)) }}</p>
                 </ion-label>
                 <ion-label class="ion-text-wrap" v-else>
                   <h1>{{ currentProduct.scannedId }}</h1>
@@ -218,14 +227,18 @@ import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
 import ProductItemList from "@/views/ProductItemList.vue";
-import { getPartyName, getProductIdentificationValue, hasError, showToast } from "@/utils";
+import { getPartyName, getProductStoreId, hasError, showToast } from "@/utils";
 import { CountService } from "@/services/CountService";
 import Image from "@/components/Image.vue";
 import router from "@/router";
 import MatchProductModal from "@/components/MatchProductModal.vue";
 import { registerTopicListener } from "@/websocket";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
+const productIdentificationStore = useProductIdentificationStore();
 
 const currentProduct = computed(() => store.getters["product/getCurrentProduct"]);
 const getProduct = computed(() => (id: any) => store.getters["product/getProduct"](id));
@@ -234,7 +247,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDefaultRecountUpdateBehaviour"])
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
+const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -261,21 +274,24 @@ const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const isSubmittingForReview = ref(false);
 const productIdAdding = ref();
-
+const isAnimationInProgress = ref(false);
+const productInAnimation = ref({}) as any;
+const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  emitter.emit("presentLoader");
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", currentFacility.value?.productStore?.productStoreId)])
+  await store.dispatch('count/updateCycleCountItems', []);
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   window.addEventListener('beforeunload', handleBeforeUnload);
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+  await nextTick(); // Wait for DOM update
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   registerTopicListener(handleNewMessage);
   emitter.on("handleProductClick", handleProductClick)
-
+  emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 onIonViewDidLeave(async() => {
@@ -284,6 +300,7 @@ onIonViewDidLeave(async() => {
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("handleProductClick", handleProductClick)
+  emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
 
 async function handleBeforeUnload() {
@@ -341,6 +358,11 @@ async function fetchCycleCount() {
   }
 }
 
+function updateAnimatingProduct(item: any) {
+  isAnimationInProgress.value = true;
+  productInAnimation.value = item;
+}
+
 async function handleSegmentChange() {
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
@@ -353,6 +375,11 @@ async function handleSegmentChange() {
   }
   inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
+  if(isAnimationInProgress.value) {
+    store.dispatch("product/currentProduct", productInAnimation.value);
+    isAnimationInProgress.value = false;
+    productInAnimation.value = {}
+  }
   if(isScrollingAnimationEnabled.value && itemsList.value?.length) {
     await nextTick();
     initializeObserver()
@@ -452,6 +479,7 @@ function scrollToProduct(product: any) {
   setTimeout(() => {
     const element = document.getElementById(isItemAlreadyAdded(product) ? `${product.productId}-${product.importItemSeqId}` : product.scannedId);
     if (element) {
+      updateAnimatingProduct(product)
       element.scrollIntoView({ behavior: 'smooth' });
     }
   }, 0);
@@ -623,6 +651,7 @@ const onScroll = () => {
 
 function initializeObserver() {
   const main = scrollingContainerRef.value;
+  if(!main) return;
   const products = Array.from(main.querySelectorAll('.image'));
   const observer = new IntersectionObserver((entries) => {  
     entries.forEach((entry: any) => {
@@ -641,6 +670,10 @@ function initializeObserver() {
         if(product) {
           previousItem = product  // Update the previousItem variable with the current item
           store.dispatch("product/currentProduct", product);
+          if(isAnimationInProgress.value && product.productId === productInAnimation.value.productId) {
+            isAnimationInProgress.value = false;
+            productInAnimation.value = {}
+          }
         }
       }
     });
@@ -844,10 +877,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -860,6 +889,7 @@ aside {
   height: 90vh;
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
+  will-change: scroll-position; /* Hint to browser about scrolling */
 }
 
 .product::-webkit-scrollbar { 
@@ -868,7 +898,7 @@ aside {
 
 .image {
   grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -903,6 +933,10 @@ ion-radio::part(label) {
 
 .line-through {
   text-decoration: line-through;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {

@@ -10,32 +10,38 @@ import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  async fetchProducts ( { commit, state }, { productIds }) {
+  async fetchProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
-
-    const productIdFilter = remainingProductIds.join(' OR ')
-
-    // If there are no products skip the API call
-    if (productIdFilter === '') return;
-
-    let resp;
-
+    if(!remainingProductIds.length) return;
+    const batchSize = 250, fetchedProducts = [];
+    let index = 0;
+  
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": ['productId: (' + productIdFilter + ')'],
-        "viewSize": productIds.length
-      })
-      if (resp.status === 200 && !hasError(resp)) {
-        const products = resp.data.response.docs;
-        // Handled empty response in case of failed query
-        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      do {
+        const productIdBatch = remainingProductIds.slice(index, index + batchSize);
+        const productIdFilter = productIdBatch.join(' OR ');
+  
+        const resp = await ProductService.fetchProducts({
+          filters: ['productId: (' + productIdFilter + ')'],
+          viewSize: productIdBatch.length
+        });
+  
+        if(!hasError(resp)) {
+          const products = resp.data.response.docs;
+          if(products?.length) {
+            fetchedProducts.push(...products);
+          }
+        }
+        index += batchSize;
+      } while (index < remainingProductIds.length);
+  
+      if(fetchedProducts.length) {
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: fetchedProducts });
       }
     } catch(err) {
       logger.error("Failed to fetch products", err)
     }
-    // TODO Handle specific error
-    return resp;
   },
 
   async currentProduct ({ commit }, payload) {
