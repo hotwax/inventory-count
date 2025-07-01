@@ -108,7 +108,7 @@ const actions: ActionTree<UserState, RootState> = {
       if(topicsToAdd.length) await WebSocketService.createNotificationTopic(topicsToAdd);
 
       const url = store.getters["user/getWebSocketUrl"];
-      initWebSocket(url, state.currentFacility.facilityId)
+      initWebSocket(url, currentFacility.facilityId)
       emitter.emit("dismissLoader")
     } catch (err: any) {
       logger.error("error", err);

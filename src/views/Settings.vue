@@ -144,7 +144,7 @@ function goToLaunchpad() {
 
 async function setFacility(facility: any) {
   await store.dispatch("user/updateCurrentFacility", facility)
-  subscribeToFacility(currentFacility.value.facilityId)
+  subscribeToFacility(facility.value.facilityId)
 }
 
 async function setProductStore(selectedProductStore: any) {
