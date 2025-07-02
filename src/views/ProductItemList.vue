@@ -1,7 +1,7 @@
 <template>
   <ion-item v-if="currentProduct" :key="currentProduct.productId" :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
     <ion-thumbnail slot="start">
-      <Image :src="getProduct(item.productId).mainImageUrl"/>
+      <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
     </ion-thumbnail>
     <ion-label class="ion-text-wrap" v-if="item.productId">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
