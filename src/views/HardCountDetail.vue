@@ -279,7 +279,7 @@ const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/updateCycleCountItems', []);
-  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItemsView", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
+  await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
   await store.dispatch("product/currentProduct", itemsList.value?.length ? itemsList.value[0] : {})
   barcodeInputRef.value?.$el?.setFocus();

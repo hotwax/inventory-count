@@ -249,30 +249,22 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
-  async fetchCycleCountItemsView({commit, state} ,params) {
+  async fetchCycleCountItemsSummary({commit, state} ,payload) {
     let items = [] as any, resp, pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
     
     try {
       do {
-        const payload = {
-          "customParametersMap": {
-            "inventoryCountImportId": params.inventoryCountImportId,
-            "pageIndex": pageIndex,
-            "pageSize": 100
-          },
-          "selectedEntity": "co.hotwax.warehouse.InventoryCountImportItem",
-        }
-        resp = await CountService.fetchCycleCountItemsView({ ...payload })
-        if(!hasError(resp) && resp.data.entityValueList?.length) {
-          items = items.concat(resp.data.entityValueList)
+        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex })
+        if(!hasError(resp) && resp.data?.length) {
+          items = items.concat(resp.data)
           // dispatch progress update after each batch
           commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
         } else {
           throw resp.data;
         }
         pageIndex++;
-      } while(resp.data.entityValueList?.length >= 100)
+      } while(resp.data?.length >= 100)
       } catch(err: any) {
       logger.error(err)
     }
@@ -291,12 +283,12 @@ const actions: ActionTree<CountState, RootState> = {
       }
     });
 
-    if(params.isSortingRequired) items = sortListByField(items, "parentProductName");
+    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
     // Fetch product stock if QOH display is enabled in store settings.
     if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
 
-    if(params.isHardCount) {
-      const cachedProducts = state.cachedUnmatchProducts[params.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[params.inventoryCountImportId])) : [];
+    if(payload.isHardCount) {
+      const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
       if(cachedProducts?.length) items = items.concat(cachedProducts)
     }
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })

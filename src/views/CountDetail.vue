@@ -315,7 +315,7 @@ const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/updateCycleCountItems', []);
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItemsView", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
