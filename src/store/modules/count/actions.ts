@@ -276,21 +276,24 @@ const actions: ActionTree<CountState, RootState> = {
       } catch(err: any) {
       logger.error(err)
     }
-    // Renaming 'statusId' to 'itemStatusId'
-    items.forEach((item: any) => { item.itemStatusId = item.statusId; delete item.statusId; });
+
+    this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+    const productList = store.getters["product/getCachedProducts"];
+
+    // Update items with parentProductName and rename statusId to itemStatusId
+    items.forEach((item: any) => {
+      item.itemStatusId = item.statusId;
+      delete item.statusId;
+      
+      const product = productList[item.productId];
+      if(product?.parentProductName) {
+        item.parentProductName = product.parentProductName;
+      }
+    });
+
+    if(params.isSortingRequired) items = sortListByField(items, "parentProductName");
     // Fetch product stock if QOH display is enabled in store settings.
     if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
-    this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-
-    // If sorting is required, attach parentProductName and sort the list
-    if(params.isSortingRequired) {
-      const productList = store.getters["product/getCachedProducts"];
-      items.forEach((item: any) => {
-        const product = productList?.[item.productId];
-        if(product?.parentProductName) item.parentProductName = product.parentProductName;
-      });
-      items = sortListByField(items, "parentProductName");
-    }
 
     if(params.isHardCount) {
       const cachedProducts = state.cachedUnmatchProducts[params.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[params.inventoryCountImportId])) : [];
