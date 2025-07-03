@@ -104,15 +104,16 @@ const actions: ActionTree<ProductState, RootState> = {
   },
 
   async fetchProductStock({ commit, state }, productId) {
-    // Return early if stock data for this productId already exists
-    if(Object.prototype.hasOwnProperty.call(state.productStock, productId)) return;
-
     const currentFacility: any = useUserStore().getCurrentFacility
+    const facilityId = currentFacility.facilityId; 
+    // Return early if stock data for this productId already exists
+    if(state.productStock[productId] && Object.prototype.hasOwnProperty.call(state.productStock[productId], facilityId)) return;
+
     let productQoh = [];
 
     try {
       const resp = await ProductService.fetchProductStock({
-        facilityId: currentFacility.facilityId,
+        facilityId: facilityId,
         productId: productId
       });
 
@@ -124,7 +125,9 @@ const actions: ActionTree<ProductState, RootState> = {
     } catch (err) {
       logger.error("Failed to fetch product stock", err);
     }
-    commit(types.PRODUCT_STOCK_UPDATED, { [productId]: productQoh?.qoh });
+    commit(types.PRODUCT_STOCK_UPDATED, { 
+      [productId]: { [currentFacility.facilityId]: productQoh?.qoh } 
+    });
   },
 
   async addProductToCached({ commit }, payload) {

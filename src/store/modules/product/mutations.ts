@@ -26,7 +26,12 @@ const mutations: MutationTree <ProductState> = {
     state.cached = {}
   },
   [types.PRODUCT_STOCK_UPDATED] (state, payload) {
-    state.productStock = { ...state.productStock, ...payload }
+    Object.entries(payload).forEach(([productId, facilityStock]) => {
+      if(!state.productStock[productId]) {
+        state.productStock[productId] = {};
+      }
+      state.productStock[productId] = {...state.productStock[productId], ...(facilityStock as any)};
+    });
   }
 }
 export default mutations;

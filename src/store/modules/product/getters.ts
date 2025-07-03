@@ -1,6 +1,7 @@
 import { GetterTree } from "vuex";
 import ProductState from "./ProductState";
 import RootState from "../../RootState";
+import { useUserStore } from "@hotwax/dxp-components"
 
 const getters: GetterTree<ProductState, RootState> = {
   getProduct: (state) => (productId: string) => {
@@ -17,7 +18,9 @@ const getters: GetterTree<ProductState, RootState> = {
     return state.list.items
   },
   getProductStock: (state) => (productId: string) => {
-    return state.productStock[productId]
+    const currentFacility: any = useUserStore().getCurrentFacility;
+    const facilityId = currentFacility.facilityId;
+    return state.productStock?.[productId]?.[facilityId]
   },
   isScrollable(state) {
     return (
