@@ -23,7 +23,7 @@ const fetchProductStock = async (query: any): Promise<any> => {
   const baseURL = url.startsWith("http") ? url.includes("/rest/s1/inventory-cycle-count") ? url.replace("/inventory-cycle-count", "") : `${url}/rest/s1` : `https://${url}.hotwax.io/rest/s1`;
 
   return await client({
-    url: `/poorti/getInventoryAvailableByFacility`,
+    url: "/poorti/getInventoryAvailableByFacility",
     method: "GET",
     baseURL,
     params: query,

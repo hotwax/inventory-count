@@ -40,7 +40,7 @@ const fetchCycleCountItemsView = async (payload: any): Promise <any>  => {
   const baseURL = url.startsWith("http") ? url.includes("/rest/s1/inventory-cycle-count") ? url.replace("/inventory-cycle-count", "") : `${url}/rest/s1` : `https://${url}.hotwax.io/rest/s1`;
 
   return await client({
-    url: `/oms/entityData`,
+    url: "/oms/entityData",
     method: "POST",
     baseURL,
     data: payload,

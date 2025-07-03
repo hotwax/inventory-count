@@ -105,7 +105,7 @@ const actions: ActionTree<ProductState, RootState> = {
 
   async fetchProductStock({ commit, state }, productId) {
     // Return early if stock data for this productId already exists
-    if(productId in state.productStock) return;
+    if(Object.prototype.hasOwnProperty.call(state.productStock, productId)) return;
 
     const currentFacility: any = useUserStore().getCurrentFacility
     let productQoh = [];
