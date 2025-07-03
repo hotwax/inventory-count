@@ -126,7 +126,7 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch product stock", err);
     }
     commit(types.PRODUCT_STOCK_UPDATED, { 
-      [productId]: { [currentFacility.facilityId]: productQoh?.qoh } 
+      [productId]: { [facilityId]: productQoh?.qoh } 
     });
   },
 
