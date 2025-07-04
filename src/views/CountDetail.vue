@@ -55,7 +55,7 @@
             <DynamicScroller class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
               <template v-slot="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :active="active" :index="index">
-                  <ProductItemList :disabled="isLoadingItems" :item="item"/>
+                  <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/>
                 </DynamicScrollerItem>
               </template>
             </DynamicScroller>
@@ -105,7 +105,7 @@
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
-              <ion-list v-if="product?.statusId !== 'INV_COUNT_CREATED' && product?.statusId !== 'INV_COUNT_ASSIGNED'">
+              <ion-list v-if="cycleCount?.statusId !== 'INV_COUNT_CREATED' && cycleCount?.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
                 <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
@@ -113,7 +113,7 @@
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                   </ion-item>
                   <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                     {{ translate("Variance") }}
@@ -133,7 +133,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -167,7 +167,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                       {{ translate("Variance") }}
@@ -194,7 +194,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -276,6 +276,7 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const getProductStock = computed(() => (id) => store.getters["product/getProductStock"](id));
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -286,7 +287,7 @@ const itemsList = computed(() => {
     // Based on discussion, item with rejected and completed status should be shown in the counted segment
     return cycleCountItems.value.itemList.filter(item => (item.quantity >= 0 ) && ((item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'|| item.itemStatusId === "INV_COUNT_CREATED")));
   } else if (selectedSegment.value === 'notCounted') {
-    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && item.statusId === "INV_COUNT_REVIEW");
+    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && cycleCount.value.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
@@ -314,7 +315,7 @@ const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/updateCycleCountItems', []);
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
@@ -442,7 +443,7 @@ async function scanProduct() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
-  } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
+  } else if(cycleCount.value.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
@@ -478,11 +479,14 @@ async function updateFilteredItems() {
 function initializeObserver() {
   const main = scrollingContainerRef.value;
   if(!main) return;
+  let timeoutId = null;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
+        if(timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
         const productId = entry.target.dataset.productId;
         const seqId = entry.target.dataset.seq;
         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
@@ -495,11 +499,16 @@ function initializeObserver() {
         if (currentProduct) {
           store.dispatch("product/currentProduct", currentProduct);
           product.value.isRecounting = false;
+          // Fetch product stock only for the current product if showQoh is enabled
+          if(productStoreSettings.value['showQoh']) {
+            store.dispatch("product/fetchProductStock", currentProduct.productId);
+          }
           if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
         }
+        }, 200);
       }
     });
   }, {
@@ -538,7 +547,7 @@ function getVariance(item , isRecounting) {
   }
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
-  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(getProductStock.value(item.productId) ?? 0)
 }
 
 async function saveCount(currentProduct, isScrollEvent = false) {
