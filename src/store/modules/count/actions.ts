@@ -249,12 +249,14 @@ const actions: ActionTree<CountState, RootState> = {
   },
 
   // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
-  async fetchCycleCountItemsSummary({commit, state} ,payload) {
+  async fetchCycleCountItemsSummary({commit, state, getters} ,payload) {
     let items = [] as any, resp, pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
     
     try {
       do {
+        // Check if count details page is still active
+        if(!getters.isCountDetailPageActive) return;
         resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex })
         if(!hasError(resp) && resp.data?.length) {
           items = items.concat(resp.data)
@@ -296,6 +298,10 @@ const actions: ActionTree<CountState, RootState> = {
 
   async updateCycleCountItems ({ commit }, payload) {
     commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
+  },
+
+  setCountDetailPageActive({ commit }, isPageActive) {
+    commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   },
 
   async clearCycleCountItems ({ commit }) {
