@@ -33,7 +33,10 @@ const mutations: MutationTree <CountState> = {
     state.cycleCounts.isScrollable = payload.isScrollable;
   },
   [types.COUNT_ITEMS_UPDATED] (state, payload) {
-    state.cycleCountItems = payload
+    let countItems = payload
+    // Prevents late API responses from updating state after leaving the count details page
+    if(!state.isCountDetailsActive) countItems = {};
+    state.cycleCountItems = countItems
   },
   [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
     state.cycleCountImportSystemMessages = payload
@@ -43,6 +46,9 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED] (state, payload) {
     state.closedCycleCountsTotal = payload
+  },
+  [types.COUNT_DETAILS_ACTIVE_UPDATED](state, payload) {
+    state.isCountDetailsActive = payload;
   }
   
 }	
