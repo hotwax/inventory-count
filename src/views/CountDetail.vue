@@ -314,7 +314,7 @@ const productInAnimation = ref({});
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  await store.dispatch('count/setCountDetailsActive', true);
+  await store.dispatch('count/setCountDetailPageActive', true);
   await store.dispatch('count/updateCycleCountItems', []);
   await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
@@ -329,7 +329,7 @@ onIonViewDidEnter(async() => {
 })  
 
 onIonViewDidLeave(async() => {
-  await store.dispatch('count/setCountDetailsActive', false);
+  await store.dispatch('count/setCountDetailPageActive', false);
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)

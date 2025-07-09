@@ -256,7 +256,7 @@ const actions: ActionTree<CountState, RootState> = {
     try {
       do {
         // Check if count details page is still active
-        if(!getters.isCountDetailsActive) return;
+        if(!getters.isCountDetailPageActive) return;
         resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex })
         if(!hasError(resp) && resp.data?.length) {
           items = items.concat(resp.data)
@@ -300,8 +300,8 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
   },
 
-  setCountDetailsActive({ commit }, isActive) {
-    commit(types.COUNT_DETAILS_ACTIVE_UPDATED, isActive);
+  setCountDetailPageActive({ commit }, isPageActive) {
+    commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   },
 
   async clearCycleCountItems ({ commit }) {

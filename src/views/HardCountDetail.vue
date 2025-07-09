@@ -278,7 +278,7 @@ const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  await store.dispatch('count/setCountDetailsActive', true);
+  await store.dispatch('count/setCountDetailPageActive', true);
   await store.dispatch('count/updateCycleCountItems', []);
   await Promise.allSettled([fetchCycleCount(),   await store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: false, isHardCount: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   previousItem = itemsList.value[0];
@@ -294,7 +294,7 @@ onIonViewDidEnter(async() => {
 })
 
 onIonViewDidLeave(async() => {
-  await store.dispatch('count/setCountDetailsActive', false);
+  await store.dispatch('count/setCountDetailPageActive', false);
   window.removeEventListener('beforeunload', handleBeforeUnload);
   await handleBeforeUnload();
   await store.dispatch('count/updateCycleCountItems', []);

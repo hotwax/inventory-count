@@ -36,8 +36,8 @@ const getters: GetterTree<CountState, RootState> = {
   getClosedCycleCountsTotal(state) {
     return state.closedCycleCountsTotal
   },
-  isCountDetailsActive(state) {
-    return state.isCountDetailsActive;
+  isCountDetailPageActive(state) {
+    return state.isCountDetailPageActive;
   }
 };
 

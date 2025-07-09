@@ -35,7 +35,7 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_ITEMS_UPDATED] (state, payload) {
     let countItems = payload
     // Prevents late API responses from updating state after leaving the count details page
-    if(!state.isCountDetailsActive) countItems = {};
+    if(!state.isCountDetailPageActive) countItems = {};
     state.cycleCountItems = countItems
   },
   [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
@@ -47,8 +47,8 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED] (state, payload) {
     state.closedCycleCountsTotal = payload
   },
-  [types.COUNT_DETAILS_ACTIVE_UPDATED](state, payload) {
-    state.isCountDetailsActive = payload;
+  [types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED](state, payload) {
+    state.isCountDetailPageActive = payload;
   }
   
 }	
