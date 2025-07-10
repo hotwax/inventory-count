@@ -10,10 +10,10 @@
       <div class="find">
         <aside class="filters">
           <div class="fixed-section">
-            <ion-item lines="full">
+            <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInput" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment v-model="selectedSegment" @ionChange="updateFilteredItems()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="updateFilteredItems()">
               <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
                 <ion-segment-button value="all">
                   <ion-label>{{ translate("ALL") }}</ion-label>
@@ -52,17 +52,26 @@
             </ion-segment>
           </div>
           <template v-if="itemsList?.length > 0">
-            <ProductItemList v-for="item in itemsList" :key="item.inventoryCountImportId" :item="item"/>
+            <DynamicScroller class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+              <template v-slot="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :active="active" :index="index">
+                  <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
           </template>
-          <template v-else>
+          <template v-else-if="!isLoadingItems">
             <div class="empty-state">
               <p>{{ translate("No products found.") }}</p>
             </div>
           </template>
         </aside>
         <!--Product details-->
-        <main :class="itemsList?.length ? 'product-detail' : ''">
-          <template v-if="itemsList?.length">
+        <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
+          <template v-if="isLoadingItems">
+            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
+          </template>
+          <template v-else-if="itemsList?.length">
             <div class="product" ref="scrollingContainerRef">
               <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
                 <Image :src="getProduct(item.productId)?.mainImageUrl" />
@@ -96,7 +105,7 @@
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
-              <ion-list v-if="product?.statusId !== 'INV_COUNT_CREATED' && product?.statusId !== 'INV_COUNT_ASSIGNED'">
+              <ion-list v-if="cycleCount?.statusId !== 'INV_COUNT_CREATED' && cycleCount?.statusId !== 'INV_COUNT_ASSIGNED'">
                 <ion-item>
                   {{ translate("Counted") }}
                 <ion-label slot="end">{{ product.quantity || product.quantity === 0 ? product.quantity : '-'}}</ion-label>
@@ -104,7 +113,7 @@
                 <template v-if="productStoreSettings['showQoh']">
                   <ion-item>
                     {{ translate("Current on hand") }}
-                    <ion-label slot="end">{{ product.qoh }}</ion-label>
+                    <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                   </ion-item>
                   <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                     {{ translate("Variance") }}
@@ -124,7 +133,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -158,7 +167,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item v-if="product.itemStatusId !== 'INV_COUNT_REJECTED'">
                       {{ translate("Variance") }}
@@ -185,7 +194,7 @@
                   <template v-if="productStoreSettings['showQoh']">
                     <ion-item>
                       {{ translate("Current on hand") }}
-                      <ion-label slot="end">{{ product.qoh }}</ion-label>
+                      <ion-label slot="end">{{ getProductStock(product.productId) ?? '-' }}</ion-label>
                     </ion-item>
                     <ion-item>
                       {{ translate("Variance") }}
@@ -254,6 +263,8 @@ import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -265,6 +276,7 @@ const cycleCountItems = computed(() => store.getters["count/getCycleCountItems"]
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
+const getProductStock = computed(() => (id) => store.getters["product/getProductStock"](id));
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -275,7 +287,7 @@ const itemsList = computed(() => {
     // Based on discussion, item with rejected and completed status should be shown in the counted segment
     return cycleCountItems.value.itemList.filter(item => (item.quantity >= 0 ) && ((item.itemStatusId === 'INV_COUNT_REJECTED' || item.itemStatusId === 'INV_COUNT_COMPLETED'|| item.itemStatusId === "INV_COUNT_CREATED")));
   } else if (selectedSegment.value === 'notCounted') {
-    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && item.statusId === "INV_COUNT_REVIEW");
+    return cycleCountItems.value.itemList.filter(item => (item.quantity === undefined || item.quantity === null) && cycleCount.value.statusId === "INV_COUNT_REVIEW");
   } else if (selectedSegment.value === 'rejected') {
     return cycleCountItems.value.itemList.filter(item => item.itemStatusId === 'INV_COUNT_REJECTED');
   } else if (selectedSegment.value === 'accepted') {
@@ -299,21 +311,25 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const isLoadingItems = ref(true);
 
 onIonViewDidEnter(async() => {  
-  emitter.emit("presentLoader");
-  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItems", { inventoryCountImportId : props?.id, isSortingRequired: true, computeQOH: productStoreSettings.value['showQoh'] ? "Y" : "N" }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
+  await store.dispatch('count/setCountDetailPageActive', true);
+  await store.dispatch('count/updateCycleCountItems', []);
+  await Promise.allSettled([await fetchCycleCount(), store.dispatch("count/fetchCycleCountItemsSummary", { inventoryCountImportId : props?.id, isSortingRequired: true }), store.dispatch("user/getProductStoreSetting", getProductStoreId())])
   selectedSegment.value = 'all';
   queryString.value = '';
   previousItem = itemsList.value[0]
   await store.dispatch("product/currentProduct", itemsList.value[0])
   barcodeInput.value?.$el?.setFocus();
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
+  await nextTick(); // Wait for DOM update
   if(itemsList.value?.length) initializeObserver()
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
 onIonViewDidLeave(async() => {
+  await store.dispatch('count/setCountDetailPageActive', false);
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
@@ -429,7 +445,7 @@ async function scanProduct() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
-  } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
+  } else if(cycleCount.value.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
       inputCount.value++
@@ -464,11 +480,15 @@ async function updateFilteredItems() {
 
 function initializeObserver() {
   const main = scrollingContainerRef.value;
+  if(!main) return;
+  let timeoutId = null;
   const products = Array.from(main.querySelectorAll('.image'));
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
+        if(timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
         const productId = entry.target.dataset.productId;
         const seqId = entry.target.dataset.seq;
         const currentProduct = itemsList.value?.find((item) => item.productId === productId && item.importItemSeqId === seqId);
@@ -481,11 +501,16 @@ function initializeObserver() {
         if (currentProduct) {
           store.dispatch("product/currentProduct", currentProduct);
           product.value.isRecounting = false;
+          // Fetch product stock only for the current product if showQoh is enabled
+          if(productStoreSettings.value['showQoh']) {
+            store.dispatch("product/fetchProductStock", currentProduct.productId);
+          }
           if(isAnimationInProgress.value && productInAnimation.value?.productId === currentProduct.productId) {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
         }
+        }, 200);
       }
     });
   }, {
@@ -524,7 +549,7 @@ function getVariance(item , isRecounting) {
   }
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
-  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(item.qoh)
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(getProductStock.value(item.productId) ?? 0)
 }
 
 async function saveCount(currentProduct, isScrollEvent = false) {
@@ -711,10 +736,6 @@ ion-list {
   background: var(--ion-background-color, #fff);
 }
 
-aside {
-  overflow-y: scroll;
-}
-
 .product-detail {
   display: grid;
   grid: "product detail" / 1fr 2fr;
@@ -727,6 +748,7 @@ aside {
   height: 90vh;
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
+  will-change: scroll-position; /* Hint to browser about scrolling */
 }
 
 .product::-webkit-scrollbar { 
@@ -735,7 +757,7 @@ aside {
 
 .image {
   grid-area: image;
-  height: 100vh;
+  height: 90vh;
   scroll-snap-stop: always;
   scroll-snap-align: start;
 }
@@ -751,6 +773,10 @@ aside {
 
 .detail > ion-item {
   grid-column: span 2;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 150px;
 }
 
 @media (max-width: 991px) {
