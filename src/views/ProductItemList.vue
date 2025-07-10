@@ -70,7 +70,7 @@ async function navigateToDetail(item: any) {
   if(productStoreSettings.value['showQoh'] && item.productId) await store.dispatch("product/fetchProductStock", item.productId)
 
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  if(props.statusId === "INV_COUNT_ASSIGNED" && (props.item.countTypeEnumId === "HARD_COUNT" || props.item.scannedId) && !isScrollingAnimationEnabled.value) {
+  if(props.statusId === "INV_COUNT_ASSIGNED" && !isScrollingAnimationEnabled.value) {
     if(props.item.importItemSeqId === item.importItemSeqId) {
       emitter.emit("handleProductClick", item)
     }

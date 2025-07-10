@@ -71,16 +71,21 @@
           <template v-if="isLoadingItems">
             <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
           </template>
-          <template v-else-if="itemsList?.length">
+          <template v-else-if="itemsList?.length && Object.keys(product)?.length">
             <div class="product" ref="scrollingContainerRef">
-              <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-                <Image :src="getProduct(item.productId)?.mainImageUrl" />
+              <template v-if="isScrollingAnimationEnabled">
+                <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
+                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                </div>
+              </template>
+              <div v-else class="image ion-padding-top" :key="product?.importItemSeqId">
+                <Image :src="getProduct(product.productId)?.mainImageUrl" />
               </div>
             </div>
             <div class="detail" v-if="Object.keys(product)?.length">
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
-                  <p class="overline" v-if="product.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
+                  <p class="overline" v-if="cycleCount.countTypeEnumId === 'HARD_COUNT'" color="warning">{{ translate("HARD COUNT") }}</p>
                   {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(product.productId)) || getProduct(product.productId).productName }}
                   <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(product.productId)) }}</p>            
                 </ion-label>
@@ -277,6 +282,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
 const getProductStock = computed(() => (id) => store.getters["product/getProductStock"](id));
+const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 const itemsList = computed(() => {
   if (selectedSegment.value === 'all') {
@@ -324,7 +330,8 @@ onIonViewDidEnter(async() => {
   barcodeInput.value?.$el?.setFocus();
   isLoadingItems.value = false;
   await nextTick(); // Wait for DOM update
-  if(itemsList.value?.length) initializeObserver()
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
+  emitter.on("handleProductClick", handleProductClick)
   emitter.on("updateAnimatingProduct", updateAnimatingProduct)
 })  
 
@@ -332,6 +339,7 @@ onIonViewDidLeave(async() => {
   await store.dispatch('count/setCountDetailPageActive', false);
   await store.dispatch('count/updateCycleCountItems', []);
   store.dispatch("product/currentProduct", {});
+  emitter.off("handleProductClick", handleProductClick)
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
 
@@ -377,6 +385,14 @@ function inputCountValidation(event) {
 function updateAnimatingProduct(item) {
   isAnimationInProgress.value = true;
   productInAnimation.value = item;
+}
+
+function handleProductClick(item) {
+  if(item) {
+    if(inputCount.value) saveCount(product.value, true)
+    store.dispatch("product/currentProduct", item);
+    previousItem = item   
+  }
 }
 
 async function fetchCycleCount() {
@@ -435,16 +451,20 @@ async function scanProduct() {
 
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
   if(!isAlreadySelected) {
-    hasUnsavedChanges.value = false;
-    router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
-    setTimeout(() => {
-      const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
-      if (element) {
-        isAnimationInProgress.value = true;
-        productInAnimation.value = selectedItem
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 0);
+    if(isScrollingAnimationEnabled.value) {
+      hasUnsavedChanges.value = false;
+      router.replace({ hash: `#${selectedItem.productId}-${selectedItem.importItemSeqId}` }); 
+      setTimeout(() => {
+        const element = document.getElementById(`${selectedItem.productId}-${selectedItem.importItemSeqId}`);
+        if (element) {
+          isAnimationInProgress.value = true;
+          productInAnimation.value = selectedItem
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 0);
+    } else {
+      handleProductClick(selectedItem)
+    }
   } else if(cycleCount.value.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
@@ -470,7 +490,7 @@ async function updateFilteredItems() {
     store.dispatch("product/currentProduct", {});
   }
   await nextTick();
-  if(itemsList.value?.length) initializeObserver()
+  if(isScrollingAnimationEnabled.value && itemsList.value?.length) initializeObserver()
   if(isAnimationInProgress.value) {
     store.dispatch("product/currentProduct", productInAnimation.value);
     isAnimationInProgress.value = false;
@@ -532,10 +552,14 @@ async function changeProduct(direction) {
 
   if (index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
-    const productEl = document.querySelector(`[data-seq="${product.importItemSeqId}"]`);
-    if (productEl) productEl.scrollIntoView({ behavior: 'smooth' });
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await store.dispatch("product/currentProduct", product);
+    if(isScrollingAnimationEnabled.value) {
+      const productEl = document.querySelector(`[data-seq="${product.importItemSeqId}"]`);
+      if (productEl) productEl.scrollIntoView({ behavior: 'smooth' });
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await store.dispatch("product/currentProduct", product);
+    } else {
+      handleProductClick(product)
+    }
   }
   isScrolling.value = false;
 }
