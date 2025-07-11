@@ -11,12 +11,6 @@ module.exports = {
       compositionOnly: false,
       fullInstall: true,
       enableInSFC: true
-    },
-    pwa: {
-      workboxPluginMode: "InjectManifest",
-      workboxOptions: {
-        swSrc: './src/sw.js'
-      }
     }
   },
   configureWebpack: {

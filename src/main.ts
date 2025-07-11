@@ -39,8 +39,6 @@ import { login, logout, loader } from './user-utils';
 import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getUserFacilities, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference } from '@/adapter';
 import localeMessages from './locales';
 
-import './test-service-worker.js'
-
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
