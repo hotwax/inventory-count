@@ -7,8 +7,9 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search">
             <ion-item lines="none" class="ion-padding">
@@ -29,7 +30,7 @@
             </ion-item>
           </div>
           <div class="filters">
-            <ion-list class="ion-padding">
+            <ion-list>
               <ion-item>
                 <ion-icon slot="start" :icon="cloudUploadOutline"/>
                 <ion-label>{{ translate("Import CSV") }}</ion-label>
@@ -103,12 +104,19 @@
         </div>
 
         <hr />
-
-        <template v-if="currentCycleCount.items?.length">
-          <div class="list-item" v-for="item in currentCycleCount.items" :key="item.importItemSeqId">
+        </template>
+        
+        <template v-if="isLoadingItems">
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+        </template>
+        <template v-else-if="currentCycleCount.items?.length">
+          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+          <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
+                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
                 {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
@@ -135,18 +143,21 @@
               <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
             </ion-button>
           </div>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </template>
         <template v-else>
           <p class="empty-state">{{ translate("No items added to count") }}</p>
         </template>
       </template>
-      <template v-else>
+      <template v-else-if="!isLoadingItems">
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
       </template>
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button @click="updateCountStatus">
+      <ion-fab-button :disabled="isLoadingItems" @click="updateCountStatus">
         <ion-icon :icon="sendOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -158,7 +169,7 @@ import { translate } from "@/i18n";
 import ImportCsvModal from "@/components/ImportCsvModal.vue"
 import SelectFacilityModal from "@/components/SelectFacilityModal.vue"
 import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutline, pencilOutline, listOutline, closeCircleOutline, cloudUploadOutline, sendOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter} from "@ionic/vue";
+import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
 import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast, parseCsv, sortListByField } from "@/utils";
@@ -170,6 +181,8 @@ import { ProductService } from "@/services/ProductService";
 import router from "@/router"
 import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
@@ -197,6 +210,8 @@ let fileColumns = ref([]) as any
 let uploadedFile = ref({}) as any
 const fileUploaded = ref(false);
  let timeoutId = ref()
+let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -223,7 +238,6 @@ watch(queryString, (value) => {
 }, { deep: true })
 
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
   currentCycleCount.value = {}
   try {
     const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
@@ -243,12 +257,16 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
 onIonViewDidEnter(async() => {
   uploadedFile.value = {}
   content.value = []
+})
+
+onIonViewWillLeave(() => {
+  cycleCountItemsProgress.value = 0
 })
 
 async function parse(event: any) {
@@ -276,6 +294,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;
@@ -577,6 +596,10 @@ async function updateCountStatus() {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-gap: 40px;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 310px;
 }
 
 @media (max-width: 991px) {

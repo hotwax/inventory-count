@@ -19,5 +19,6 @@ export default interface CountState {
   defaultRecountUpdateBehaviour: String;
   cachedUnmatchProducts: any;
   closedCycleCountsTotal: any;
+  isCountDetailPageActive: boolean;
   isFirstScanCountEnabled: boolean;
 }
