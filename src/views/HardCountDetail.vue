@@ -248,7 +248,7 @@ const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDef
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 const getProductStock = computed(() => (id: any) => store.getters["product/getProductStock"](id));
-const isFirstScanCountEnabled = computed(() => store.getters["count/getFirstScanCountSetting"]);
+const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {

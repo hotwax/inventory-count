@@ -47,7 +47,7 @@ const productIdentificationStore = useProductIdentificationStore();
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions)
-const isFirstScanCountEnabled = computed(() => store.getters["count/getFirstScanCountSetting"]);
+const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();

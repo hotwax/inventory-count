@@ -39,7 +39,7 @@ const getters: GetterTree<CountState, RootState> = {
   isCountDetailPageActive(state) {
     return state.isCountDetailPageActive;
   },
-  getFirstScanCountSetting(state) {
+  isFirstScanCountEnabled(state) {
     return state.isFirstScanCountEnabled
   }
 };

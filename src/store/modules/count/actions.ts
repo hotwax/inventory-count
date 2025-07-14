@@ -343,7 +343,7 @@ const actions: ActionTree<CountState, RootState> = {
     }
   },
   updateFirstScanCountSetting({ commit }, payload) {
-    commit(types.COUNT_ON_FIRST_SCAN_UPDATED, payload)
+    commit(types.COUNT_FIRST_SCAN_TOGGLE_UPDATED, payload)
   }
 }	
 
