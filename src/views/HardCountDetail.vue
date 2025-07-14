@@ -469,11 +469,9 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !isFirstScanCountEnabled.value) {
+  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !isFirstScanCountEnabled.value || isScrollingAnimationEnabled.value) {
     // increment inputCount when item is already selected, scrolling animation is disabled and first scan count is disabled
-    inputCount.value++;
-  } else if(isScrollingAnimationEnabled.value) {
-    // increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
+    // OR increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
     inputCount.value++;
   }
   // increment inputCount when scrolling animation is disabled and first scan count is enabled
