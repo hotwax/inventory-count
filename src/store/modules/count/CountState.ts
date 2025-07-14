@@ -20,4 +20,5 @@ export default interface CountState {
   cachedUnmatchProducts: any;
   closedCycleCountsTotal: any;
   isCountDetailPageActive: boolean;
+  isFirstScanCountEnabled: boolean;
 }

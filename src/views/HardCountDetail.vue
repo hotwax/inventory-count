@@ -248,6 +248,7 @@ const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDef
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 const getProductStock = computed(() => (id: any) => store.getters["product/getProductStock"](id));
+const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -276,6 +277,8 @@ const isSubmittingForReview = ref(false);
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
+const scannedItem = ref({}) as any;
+
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
@@ -455,6 +458,8 @@ async function scanProduct() {
     }
   }
 
+  if(selectedItem) scannedItem.value = selectedItem;
+
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
     if(isScrollingAnimationEnabled.value) {
@@ -464,8 +469,16 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
+  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !isFirstScanCountEnabled.value) || isScrollingAnimationEnabled.value) {
+    // increment inputCount when item is already selected, scrolling animation is disabled and first scan count is disabled
+    // OR increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
     inputCount.value++;
+  }
+  // increment inputCount when scrolling animation is disabled and first scan count is enabled
+  if(!isScrollingAnimationEnabled.value) {
+    if(isFirstScanCountEnabled.value) {
+      inputCount.value++;
+    }
   }
   if(itemsList.value.length === 1) {
     store.dispatch("product/currentProduct", selectedItem)
@@ -676,6 +689,10 @@ function initializeObserver() {
             isAnimationInProgress.value = false;
             productInAnimation.value = {}
           }
+        }
+        // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
+        if(isFirstScanCountEnabled.value && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
+          inputCount.value++;
         }
         }, 100);
       }

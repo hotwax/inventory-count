@@ -282,6 +282,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
 const getProductStock = computed(() => (id) => store.getters["product/getProductStock"](id));
+const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 const itemsList = computed(() => {
@@ -318,6 +319,7 @@ const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
 const isLoadingItems = ref(true);
+const scannedItem = ref({});
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
@@ -447,6 +449,8 @@ async function scanProduct() {
     showToast(translate("Scanned item is not present in the count."))
     queryString.value = ""
     return;
+  } else {
+    scannedItem.value = selectedItem
   }
 
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
@@ -529,6 +533,11 @@ function initializeObserver() {
             isAnimationInProgress.value = false
             productInAnimation.value = {}
           }
+        }
+        // update the input count when the first scan count is enabled and the current product matches the scanned item
+        if(isFirstScanCountEnabled.value && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+          hasUnsavedChanges.value = true;
+          inputCount.value++;
         }
         }, 200);
       }
