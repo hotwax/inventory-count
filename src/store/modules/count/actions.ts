@@ -341,9 +341,6 @@ const actions: ActionTree<CountState, RootState> = {
       delete cachedUnmatchProducts[id]
       commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
     }
-  },
-  updateFirstScanCountSetting({ commit }, payload) {
-    commit(types.COUNT_FIRST_SCAN_TOGGLE_UPDATED, payload)
   }
 }	
 

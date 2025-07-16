@@ -15,6 +15,7 @@ export default interface UserState {
     value: object;
   },
   settings: {
+    isFirstScanCountEnabled: boolean;
     forceScan: boolean,
     showQoh: boolean,
     barcodeIdentificationPref: string;
