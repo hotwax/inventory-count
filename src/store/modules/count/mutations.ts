@@ -44,9 +44,5 @@ const mutations: MutationTree <CountState> = {
   [types.COUNT_CLOSED_CYCLE_COUNTS_TOTAL_UPDATED] (state, payload) {
     state.closedCycleCountsTotal = payload
   },
-  [types.COUNT_ON_FIRST_SCAN_UPDATED] (state, payload) {
-    state.isFirstScanCountEnabled = payload
-  }
-  
 }	
 export default mutations;	

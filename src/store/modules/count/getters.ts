@@ -36,9 +36,6 @@ const getters: GetterTree<CountState, RootState> = {
   getClosedCycleCountsTotal(state) {
     return state.closedCycleCountsTotal
   },
-  getFirstScanCountSetting(state) {
-    return state.isFirstScanCountEnabled
-  }
 };
 
 export default getters;
