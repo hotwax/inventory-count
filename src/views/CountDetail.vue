@@ -537,6 +537,7 @@ function initializeObserver() {
         if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
           hasUnsavedChanges.value = true;
           inputCount.value++;
+          scannedItem.value = {};
         }
         }, 200);
       }

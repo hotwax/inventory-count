@@ -692,6 +692,7 @@ function initializeObserver() {
         // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
         if(productStoreSettings.value["isFirstScanCountEnabled"] && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
           inputCount.value++;
+          scannedItem.value = {};          
         }
         }, 100);
       }
