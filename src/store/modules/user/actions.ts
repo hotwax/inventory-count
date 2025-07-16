@@ -235,7 +235,7 @@ const actions: ActionTree<UserState, RootState> = {
       "settingTypeEnumId": payload.enumId,
       settingValue
     }
-    
+
     try {
       await UserService.createProductStoreSetting(params) as any
       isSettingExists = true
