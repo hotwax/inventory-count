@@ -587,7 +587,10 @@ function getVariance(item , isRecounting) {
 
 async function saveCount(currentProduct, isScrollEvent = false) {
   isScanningInProgress.value = true;
-  if (!inputCount.value && inputCount.value !== 0) {
+  let currentCount = inputCount.value;
+  // Set the input count to 0 to avoid race conditions while scanning.
+  inputCount.value = "";
+  if (!currentCount && currentCount !== 0) {
     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
     isScanningInProgress.value = false;
     return;
@@ -597,16 +600,15 @@ async function saveCount(currentProduct, isScrollEvent = false) {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: inputCount.value,
+      quantity: currentCount,
       countedByUserLoginId: userProfile.value.username
     };
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = inputCount.value
+      currentProduct.quantity = currentCount
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
-      inputCount.value = ''; 
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
