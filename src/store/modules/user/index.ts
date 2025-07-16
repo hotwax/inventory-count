@@ -24,6 +24,7 @@ const userModule: Module<UserState, RootState> = {
         value: {}
       },
       settings: {
+        isFirstScanCountEnabled: false,
         forceScan: false,
         showQoh: false,
         barcodeIdentificationPref: ""

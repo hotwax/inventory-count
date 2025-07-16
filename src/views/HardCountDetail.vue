@@ -248,7 +248,6 @@ const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDef
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 const getProductStock = computed(() => (id: any) => store.getters["product/getProductStock"](id));
-const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -469,14 +468,14 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !isFirstScanCountEnabled.value) || isScrollingAnimationEnabled.value) {
+  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !productStoreSettings.value["isFirstScanCountEnabled"]) || isScrollingAnimationEnabled.value) {
     // increment inputCount when item is already selected, scrolling animation is disabled and first scan count is disabled
     // OR increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
     inputCount.value++;
   }
   // increment inputCount when scrolling animation is disabled and first scan count is enabled
   if(!isScrollingAnimationEnabled.value) {
-    if(isFirstScanCountEnabled.value) {
+    if(productStoreSettings.value["isFirstScanCountEnabled"]) {
       inputCount.value++;
     }
   }
@@ -691,7 +690,7 @@ function initializeObserver() {
           }
         }
         // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
-        if(isFirstScanCountEnabled.value && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
           inputCount.value++;
         }
         }, 100);

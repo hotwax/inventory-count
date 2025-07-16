@@ -12,7 +12,7 @@
       </ion-toggle>
     </ion-item>
     <ion-item v-if="!router.currentRoute.value.fullPath.includes('/tabs/')" lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
-      <ion-toggle v-model="isFirstScanCountEnabled" @click.prevent="toggleFirstScanCount($event)">
+      <ion-toggle :checked="productStoreSettings['isFirstScanCountEnabled']" @click.prevent="updateProductStoreSetting($event, 'isFirstScanCountEnabled')">
         {{ translate("Count on first scan") }}
       </ion-toggle>
     </ion-item>
@@ -47,7 +47,6 @@ const productIdentificationStore = useProductIdentificationStore();
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions)
-const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();
@@ -56,10 +55,5 @@ function updateProductStoreSetting(event: any, key: string) {
 
 function setBarcodeIdentificationPref(value: any) {
   store.dispatch("user/setProductStoreSetting", { key: "barcodeIdentificationPref", value })
-}
-
-function toggleFirstScanCount(event: any) {
-  event.stopImmediatePropagation();
-  store.dispatch("count/updateFirstScanCountSetting", !isFirstScanCountEnabled.value);
 }
 </script>
