@@ -130,7 +130,6 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
     this.dispatch('product/clearCachedProducts')
-    this.dispatch('count/updateFirstScanCountSetting', false)
 
     emitter.emit('dismissLoader')
   },

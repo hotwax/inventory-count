@@ -49,9 +49,6 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED](state, payload) {
     state.isCountDetailPageActive = payload;
-  },
-  [types.COUNT_FIRST_SCAN_TOGGLE_UPDATED] (state, payload) {
-    state.isFirstScanCountEnabled = payload
   }
   
 }	
