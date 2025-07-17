@@ -11,6 +11,11 @@
         {{ translate("Require barcode scanning") }}
       </ion-toggle>
     </ion-item>
+    <ion-item v-if="!router.currentRoute.value.fullPath.includes('/tabs/')" lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
+      <ion-toggle :checked="productStoreSettings['isFirstScanCountEnabled']" @click.prevent="updateProductStoreSetting($event, 'isFirstScanCountEnabled')">
+        {{ translate("Count on first scan") }}
+      </ion-toggle>
+    </ion-item>
     <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
       <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
         <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
@@ -32,6 +37,7 @@ import {
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import store from "@/store";
+import router from "@/router";
 import { computed } from "vue";
 import { hasPermission } from "@/authorization"
 import { useProductIdentificationStore } from "@hotwax/dxp-components";

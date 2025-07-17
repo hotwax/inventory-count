@@ -299,6 +299,7 @@ let isScanningInProgress = ref(false);
 const scrollingContainerRef = ref();
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({});
+const scannedItem = ref({});
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -415,6 +416,8 @@ async function scanProduct() {
     showToast(translate("Scanned item is not present in the count."))
     queryString.value = ""
     return;
+  } else {
+    scannedItem.value = selectedItem
   }
 
   const isAlreadySelected = (product.value.productId === selectedItem.productId && product.value.importItemSeqId === selectedItem.importItemSeqId);
@@ -429,6 +432,9 @@ async function scanProduct() {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }, 0);
+    if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0) {
+      openRecountAlert()
+    }
   } else if(selectedItem.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
@@ -486,6 +492,12 @@ function initializeObserver() {
             productInAnimation.value = {}
           }
         }
+        // update the input count when the first scan count is enabled and the current product matches the scanned item
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+          hasUnsavedChanges.value = true;
+          inputCount.value++;
+          scannedItem.value = {};
+        }
       }
     });
   }, {
@@ -534,21 +546,24 @@ async function saveCount(currentProduct, isScrollEvent = false) {
     isScanningInProgress.value = false;
     return;
   }
+
+  let currentCount = inputCount.value;
+  inputCount.value = '';
+
   try {
     const payload = {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: inputCount.value,
+      quantity: currentCount,
       countedByUserLoginId: userProfile.value.username
     };
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = inputCount.value
+      currentProduct.quantity = currentCount
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
-      inputCount.value = ''; 
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {

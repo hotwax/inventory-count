@@ -262,7 +262,7 @@ const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrolli
 const isSubmittingForReview = ref(false);
 const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
-
+const scannedItem = ref({}) as any;
 
 onIonViewDidEnter(async() => {  
   emitter.emit("presentLoader");
@@ -439,6 +439,8 @@ async function scanProduct() {
     }
   }
 
+  if(selectedItem) scannedItem.value = selectedItem;
+
   const isAlreadySelected = isItemAlreadyAdded(selectedItem) ? (currentProduct.value.productId === selectedItem.productId && currentProduct.value.importItemSeqId === selectedItem.importItemSeqId) : (currentProduct.value.scannedId === selectedItem.scannedId);
   if(!isAlreadySelected) {
     if(isScrollingAnimationEnabled.value) {
@@ -448,8 +450,16 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if(selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded) {
+  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !productStoreSettings.value["isFirstScanCountEnabled"]) || isScrollingAnimationEnabled.value) {
+    // increment inputCount when item is already selected, scrolling animation is disabled and first scan count is disabled
+    // OR increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
     inputCount.value++;
+  }
+  // increment inputCount when scrolling animation is disabled and first scan count is enabled
+  if(!isScrollingAnimationEnabled.value) {
+    if(productStoreSettings.value["isFirstScanCountEnabled"]) {
+      inputCount.value++;
+    }
   }
   if(itemsList.value.length === 1) {
     store.dispatch("product/currentProduct", selectedItem)
@@ -653,6 +663,12 @@ function initializeObserver() {
             productInAnimation.value = {}
           }
         }
+        // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
+        const isProductMatched = (isItemAlreadyAdded(scannedItem.value) ? (scannedItem.value.productId === product.productId && scannedItem.value.importItemSeqId === product.importItemSeqId) : (scannedItem.value.scannedId && product.scannedId === scannedItem.value.scannedId))
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && isProductMatched) {
+          inputCount.value++;
+          scannedItem.value = {};
+        }
       }
     });
   }, {
@@ -672,6 +688,8 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
   }
 
   isScanningInProgress.value = true;
+  let currentCount = inputCount.value
+  inputCount.value = ""; 
   if(!isItemAlreadyAdded(currentProduct)) {
     const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
     let currentItem = {};
@@ -680,14 +698,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         const prevCount = currentProduct.scannedCount ? currentProduct.scannedCount : 0
 
         item.countedByUserLoginId = userProfile.value.username
-        if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
-        else item.scannedCount = Number(inputCount.value) + Number(prevCount)
+        if(selectedCountUpdateType.value === "replace") item.scannedCount = currentCount
+        else item.scannedCount = Number(currentCount) + Number(prevCount)
         currentItem = item;
       }
     })
     await store.dispatch('count/updateCycleCountItems', items);
     if(!isScrollEvent) await store.dispatch('product/currentProduct', currentItem);
-    inputCount.value = ""; 
     isScanningInProgress.value = false;
     return;
   }
@@ -697,13 +714,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0),
+      quantity: selectedCountUpdateType.value === "replace" ? currentCount : Number(currentCount) + Number(currentProduct.quantity || 0),
       countedByUserLoginId: userProfile.value.username
     };
 
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
+      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? currentCount : Number(currentCount) + Number(currentProduct.quantity || 0)
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
@@ -715,7 +732,6 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
           item.countedByUserLoginId = userProfile.value.username
         }
       })
-      inputCount.value = '';
       await store.dispatch('count/updateCycleCountItems', items);
       if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
     } else {
