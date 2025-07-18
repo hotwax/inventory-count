@@ -133,7 +133,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('product/clearCachedProducts')
 
     // Clear indexedDB storage on logout
-    deleteDB();
+    deleteDB("cycleCounts");
 
     emitter.emit('dismissLoader')
   },

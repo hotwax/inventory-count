@@ -1,11 +1,13 @@
 import logger from "@/logger";
 
-function syncItem(items: any, table: any, key: any) {
-  const open = indexedDB.open("cycleCounts", 1);
+const recordKey = "importItemSeqId"
+
+function syncItem(values: any, table: any, key: any, database: string) {
+  const open = indexedDB.open(database, 1);
 
   // Creating object store, as it can only be created inside onupgradeneeded event
   open.onupgradeneeded = () => {
-    open.result.createObjectStore("counts");
+    open.result.createObjectStore(table);
   }
 
   return new Promise(res => {
@@ -14,25 +16,25 @@ function syncItem(items: any, table: any, key: any) {
       const tran = db.transaction(table, "readwrite");
       const objStore = tran.objectStore(table);
       // @ts-ignore
-      objStore.get(key).onsuccess = ({ target: { result: itemToUpdate } }) => {
-        if (!itemToUpdate) {
-          const itemsMap = new Map();
-          items.map((item: any) => {
-            itemsMap.set(item.importItemSeqId, item)
+      objStore.get(key).onsuccess = ({ target: { result } }) => {
+        if (!result) {
+          const data = new Map();
+          values.map((value: any) => {
+            data.set(value[recordKey], value)
           })
           objStore.add({
             lastUpdatedStamp: Date.now(),
-            items: itemsMap
+            data
           }, key).onsuccess = res;
         } else {
-          const itemsToUpdate = itemToUpdate.items
-          items.map((i: any) => {
-            itemsToUpdate.set(i.importItemSeqId, i)
+          const data = result.data
+          values.map((value: any) => {
+            data.set(value[recordKey], value)
           })
 
           objStore.put({
             lastUpdatedStamp: Date.now(),
-            items: itemsToUpdate
+            data
           }, key).onsuccess = res;
         }
       };
@@ -40,37 +42,12 @@ function syncItem(items: any, table: any, key: any) {
   });
 }
 
-function syncCount(count: any, table: any, key: any) {
-  const open = indexedDB.open("cycleCounts", 1);
+function readTable(table: any, key: any, database: string) {
+  const open = indexedDB.open(database, 1);
 
   // Creating object store, as it can only be created inside onupgradeneeded event
   open.onupgradeneeded = () => {
-    open.result.createObjectStore("counts");
-  }
-
-  return new Promise(res => {
-    open.onsuccess = () => {
-      const db = open.result;
-      const tran = db.transaction(table, "readwrite");
-      const objStore = tran.objectStore(table);
-      // @ts-ignore
-      objStore.get(key).onsuccess = ({ target: { result: data } }) => {
-        if (!data) {
-          objStore.add(JSON.parse(count), key).onsuccess = res;
-        } else {
-          objStore.put(data, key).onsuccess = res;
-        }
-      };
-    };
-  });
-}
-
-function readTable(table: any, key: any, start?: any, end?: any) {
-  const open = indexedDB.open("cycleCounts", 1);
-
-  // Creating object store, as it can only be created inside onupgradeneeded event
-  open.onupgradeneeded = () => {
-    open.result.createObjectStore("counts");
+    open.result.createObjectStore(table);
   }
 
   return new Promise((resolve, reject) => {
@@ -81,26 +58,13 @@ function readTable(table: any, key: any, start?: any, end?: any) {
       const idx = objStore.get(key);
       
       idx.onsuccess = () => {
-        if(!idx.result || !idx.result.items) {
-          return reject("Items not found")
+        if(!idx.result || !idx.result.data) {
+          return reject("Data not found")
         }
-
-        // Commented as we are not supporting pagination for now when fetching data from indexedDB
-        // if(start || end) {
-        //   const items = Object.values(idx.result.items).slice(start, end)
-
-        //   if(!items.length) {
-        //     return reject("Items not found")
-        //   }
-        //   return resolve({
-        //     lastUpdatedStamp: idx.result.lastUpdatedStamp,
-        //     items
-        //   });
-        // }
 
         return resolve({
           lastUpdatedStamp: idx.result.lastUpdatedStamp,
-          items: idx.result.items.values().toArray()
+          data: idx.result.data.values().toArray()
         });
       }
 
@@ -111,12 +75,12 @@ function readTable(table: any, key: any, start?: any, end?: any) {
   });
 }
 
-function deleteRecord(table: any, key: any) {
-  const open = indexedDB.open("cycleCounts", 1);
+function deleteRecord(table: any, key: any, database: string) {
+  const open = indexedDB.open(database, 1);
 
   // Creating object store, as it can only be created inside onupgradeneeded event
   open.onupgradeneeded = () => {
-    open.result.createObjectStore("counts");
+    open.result.createObjectStore(table);
   }
 
   open.onsuccess = () => {
@@ -133,8 +97,8 @@ function deleteRecord(table: any, key: any) {
 }
 
 // Deletes all the object store from the indexeddb
-function deleteDB() {
-  const deleteDB = indexedDB.deleteDatabase("cycleCounts");
+function deleteDB(database: string) {
+  const deleteDB = indexedDB.deleteDatabase(database);
 
   deleteDB.onerror = () => {
     logger.error("Error deleting database.");
@@ -145,4 +109,4 @@ function deleteDB() {
   };
 }
 
-export { deleteDB, deleteRecord, readTable, syncItem, syncCount }
+export { deleteDB, deleteRecord, readTable, syncItem }

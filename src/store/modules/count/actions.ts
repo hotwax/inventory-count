@@ -257,7 +257,7 @@ const actions: ActionTree<CountState, RootState> = {
     try {
       let dbData: any = {};
       try {
-        dbData = await readTable("counts", payload.inventoryCountImportId)
+        dbData = await readTable("counts", payload.inventoryCountImportId, "cycleCounts")
       } catch(err) {
         logger.error(err)
       }
@@ -301,7 +301,7 @@ const actions: ActionTree<CountState, RootState> = {
 
   }
 
-      syncItem(items, "counts", payload.inventoryCountImportId)
+      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
     } catch(err) {
       logger.error("error", err)
     }
