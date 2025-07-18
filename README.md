@@ -4,6 +4,8 @@
 # Prerequisite
 Ionic CLI - If you don't have the ionic CLI installed refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
 
+For a high level overview of the project layout take a look at [docs/README.md](docs/README.md).
+
 
 # Build Notes (Users)
 
