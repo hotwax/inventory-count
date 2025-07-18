@@ -79,6 +79,41 @@ include:
 
 Each module exposes its own state, getters, actions and mutations under `src/store/modules/`.
 
+### Authentication flow
+
+User login and logout are managed through the `user` Vuex module. During login the
+`user/login` action performs a number of API requests and updates the store with
+the returned data:
+
+* Sets the instance URL used for subsequent requests.
+* Retrieves the server side permission list to verify the user may access the app.
+* Exchanges the login token for an API key via `UserService.login` and fetches
+  the user profile with `UserService.getUserProfile`.
+* Loads associated facilities, eCommerce stores and any saved preferences such as
+  the selected brand and product identification settings.
+* Updates product store settings and loads saved CSV field mappings.
+
+State for the `user` module along with cached product details and unmatched count
+items is persisted using `vuex-persistedstate`. The store configuration specifies
+which paths are saved to browser `localStorage`:
+
+```
+paths: ["user", "product.cached", "count.cachedUnmatchProducts"]
+```
+
+This allows authentication data and cached resources to survive page reloads.
+
+When logging out, the `user/logout` action clears session data and resets related
+modules:
+
+* Removes the token, user profile and permissions from the store.
+* Clears OMS redirection info and resets API configuration and CASL permissions.
+* Resets plugin state from `dxp-components` and clears cached products and count
+  information.
+* Resets product store settings back to their defaults.
+
+These steps ensure a clean state before redirecting back to the login screen.
+
 #### Module layout
 
 Every module directory follows the same pattern:
@@ -103,6 +138,26 @@ For example the count module at `src/store/modules/count/index.ts` defines the d
 7. In `index.ts` import the above files and export the module object.
 8. Register the module in `src/store/index.ts` so it becomes available application wide.
 9. Extend `RootState.ts` with your new state type and, if needed, add its path to the persisted state plugin.
+
+##### Adding a new page
+
+Adding a new route generally involves wiring together a service, Vuex state and
+a view component. The following steps outline the process used for features like
+the Cycle Count Lists screen:
+
+1. **Create the view component** under `src/views/` (e.g.
+   `src/views/CycleCountLists.vue`). Define its route in `src/router/index.ts`
+   and include any required permissions in the route `meta` field.
+2. **Add an API service** in `src/services` if the page relies on new endpoints
+   or logic. Each service groups related requests and returns typed responses.
+3. **Update or create a Vuex module** in `src/store/modules` to manage the
+   page's data. Implement actions to fetch records, mutations to update state and
+   getters for computed values.
+4. **Load data within the view** by dispatching the store actions from the
+   component's `setup()` or lifecycle hooks. Use the resulting store getters to
+   render lists and show loading indicators.
+5. **Expose the page through navigation**, for example by adding an entry to the
+   side menu or linking from other screens.
 
 ## Environment configuration
 
