@@ -235,6 +235,7 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { deleteRecord } from "@/utils/indexeddb";
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -629,6 +630,11 @@ async function readyForReview() {
           })
           isSubmittingForReview.value = true;
           router.push("/tabs/count")
+
+          // No status check as this method will only be called when moving from assigned to review
+          // Deleting indexeddb record once the count is moved to pending review page
+          deleteRecord("counts", props?.id)
+
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
         } catch(err) {

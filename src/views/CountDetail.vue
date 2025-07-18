@@ -265,6 +265,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { deleteRecord } from '@/utils/indexeddb';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -678,6 +679,8 @@ async function readyForReview() {
             statusId: "INV_COUNT_REVIEW"
           })
           router.push("/tabs/count")
+          // Deleting indexeddb record once the count is moved to pending review page
+          deleteRecord("counts", props?.id)
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))

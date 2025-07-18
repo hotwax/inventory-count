@@ -299,8 +299,9 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
 
-        syncItem(items, "counts", payload.inventoryCountImportId)
-      }
+  }
+
+      syncItem(items, "counts", payload.inventoryCountImportId)
     } catch(err) {
       logger.error("error", err)
     }
