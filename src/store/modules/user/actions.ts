@@ -12,6 +12,7 @@ import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotw
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
+import { deleteDB } from "@/utils/indexeddb"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -130,6 +131,9 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
     this.dispatch('product/clearCachedProducts')
+
+    // Clear indexedDB storage on logout
+    deleteDB("cycleCounts");
 
     emitter.emit('dismissLoader')
   },

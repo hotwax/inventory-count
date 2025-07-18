@@ -9,6 +9,7 @@ import router from "@/router"
 import logger from "@/logger";
 import { DateTime } from "luxon"
 import store from "@/store";
+import { readTable, syncItem } from "@/utils/indexeddb"
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
@@ -252,7 +253,34 @@ const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCountItemsSummary({commit, state, getters} ,payload) {
     let items = [] as any, resp, pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
-    
+
+    try {
+      let dbData: any = {};
+      try {
+        dbData = await readTable("counts", payload.inventoryCountImportId, "cycleCounts")
+      } catch(err) {
+        logger.error(err)
+      }
+
+      if(dbData?.items?.length) {
+        items = dbData.items
+        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex, lastUpdatedStamp_from: dbData.lastUpdatedStamp })
+        if(!hasError(resp) && resp.data?.length) {
+          const respItems = resp.data
+
+          const updatedItems = dbData?.items.reduce((itms: any, item: any) => {
+            itms[item.importItemSeqId] = item
+            return itms
+          }, {})
+
+          respItems.map((item: any) => {
+            updatedItems[item.importItemSeqId] = item
+          })
+
+          items = Object.values(updatedItems)
+        }
+        commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+      } else {
     try {
       do {
         // Check if count details page is still active
@@ -269,6 +297,13 @@ const actions: ActionTree<CountState, RootState> = {
       } while(resp.data?.length >= 100)
       } catch(err: any) {
       logger.error(err)
+    }
+
+  }
+
+      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
+    } catch(err) {
+      logger.error("error", err)
     }
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
