@@ -107,7 +107,7 @@
         </template>
         
         <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress" :existingItemsCount="existingItemsCount" :uploadingItemsCount="uploadingItemsCount"/>
         </template>
         <template v-else-if="currentCycleCount.items?.length">
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
@@ -212,6 +212,8 @@ const fileUploaded = ref(false);
  let timeoutId = ref()
 let isLoadingItems = ref(true)
 let cycleCountItemsProgress = ref(0)
+const existingItemsCount = ref(0)
+const uploadingItemsCount = ref(0)
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -286,6 +288,12 @@ async function parse(event: any) {
   }
 }
 
+function resetProgressBarState() {
+  isLoadingItems.value = false;
+  existingItemsCount.value = 0;
+  uploadingItemsCount.value = 0;
+}
+
 async function fetchCountItems() {
   let items = [] as any, resp, pageIndex = 0;
 
@@ -308,6 +316,7 @@ async function fetchCountItems() {
 
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+  resetProgressBarState();
 }
 
 async function openImportCsvModal() {
@@ -322,6 +331,9 @@ async function openImportCsvModal() {
   // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
   importCsvModal.onDidDismiss().then((result: any) => {
     if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
+      // Set loading state before starting the process of adding the items to the cycle count
+      isLoadingItems.value = true;
+      existingItemsCount.value = currentCycleCount.value.items?.length || 0;
       findProductFromIdentifier(result.data.identifierData)
     }
   })
@@ -447,8 +459,12 @@ async function findProductFromIdentifier(payload: any) {
   const idValues = payload.idValue;
 
   if(!idValues || !idValues.length) {
+    resetProgressBarState();
     return showToast(translate("CSV data is missing or incorrect. Please check your file."));
   }
+
+  // Set the uploading items count for progress bar to calculate the total items count
+  uploadingItemsCount.value = idValues.length;
 
   const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
 
@@ -489,6 +505,7 @@ async function findProductFromIdentifier(payload: any) {
       showToast(translate("Failed to fetch the products."));
     }
     logger.error("Failed to add products to count", err);
+    resetProgressBarState();
   }
 }
 
@@ -528,6 +545,7 @@ async function addProductToCount(payload?: any) {
   } catch(err) {
     logger.error("Failed to add product to count", err)
     showToast(translate("Failed to add product to count"))
+    resetProgressBarState();
   }
 }
 

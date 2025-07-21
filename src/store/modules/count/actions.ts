@@ -271,6 +271,8 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
 
+    if(!items.length) return;
+
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     const productList = store.getters["product/getCachedProducts"];
 
