@@ -316,7 +316,6 @@ async function fetchCountItems() {
 
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-  resetProgressBarState();
 }
 
 async function openImportCsvModal() {
@@ -335,6 +334,7 @@ async function openImportCsvModal() {
       isLoadingItems.value = true;
       existingItemsCount.value = currentCycleCount.value.items?.length || 0;
       findProductFromIdentifier(result.data.identifierData)
+      resetProgressBarState();
     }
   })
   importCsvModal.present();
@@ -459,7 +459,6 @@ async function findProductFromIdentifier(payload: any) {
   const idValues = payload.idValue;
 
   if(!idValues || !idValues.length) {
-    resetProgressBarState();
     return showToast(translate("CSV data is missing or incorrect. Please check your file."));
   }
 
@@ -505,7 +504,6 @@ async function findProductFromIdentifier(payload: any) {
       showToast(translate("Failed to fetch the products."));
     }
     logger.error("Failed to add products to count", err);
-    resetProgressBarState();
   }
 }
 
@@ -545,7 +543,6 @@ async function addProductToCount(payload?: any) {
   } catch(err) {
     logger.error("Failed to add product to count", err)
     showToast(translate("Failed to add product to count"))
-    resetProgressBarState();
   }
 }
 

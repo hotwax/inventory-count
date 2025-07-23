@@ -691,7 +691,8 @@ function initializeObserver() {
           }
         }
         // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
-        if(isFirstScanCountEnabled.value && product.productId === scannedItem.value.productId && product.importItemSeqId === scannedItem.value.importItemSeqId) {
+        const isProductMatched = (isItemAlreadyAdded(scannedItem.value) ? (scannedItem.value.productId === product.productId && scannedItem.value.importItemSeqId === product.importItemSeqId) : (scannedItem.value.scannedId && product.scannedId === scannedItem.value.scannedId))
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && isProductMatched) {
           inputCount.value++;
         }
         }, 100);
@@ -714,6 +715,9 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
   }
 
   isScanningInProgress.value = true;
+  let currentCount = inputCount.value
+  inputCount.value = "";
+
   if(!isItemAlreadyAdded(currentProduct)) {
     const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
     let currentItem = {};
@@ -722,14 +726,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         const prevCount = currentProduct.scannedCount ? currentProduct.scannedCount : 0
 
         item.countedByUserLoginId = userProfile.value.username
-        if(selectedCountUpdateType.value === "replace") item.scannedCount = inputCount.value
-        else item.scannedCount = Number(inputCount.value) + Number(prevCount)
+        if(selectedCountUpdateType.value === "replace") item.scannedCount = currentCount
+        else item.scannedCount = Number(currentCount) + Number(prevCount)
         currentItem = item;
       }
     })
     await store.dispatch('count/updateCycleCountItems', items);
     if(!isScrollEvent) await store.dispatch('product/currentProduct', currentItem);
-    inputCount.value = ""; 
     isScanningInProgress.value = false;
     return;
   }
@@ -739,13 +742,13 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0),
+      quantity: selectedCountUpdateType.value === "replace" ? currentCount : Number(currentCount) + Number(currentProduct.quantity || 0),
       countedByUserLoginId: userProfile.value.username
     };
 
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? inputCount.value : Number(inputCount.value) + Number(currentProduct.quantity || 0)
+      currentProduct.quantity = selectedCountUpdateType.value === "replace" ? currentCount : Number(currentCount) + Number(currentProduct.quantity || 0)
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
@@ -757,7 +760,6 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
           item.countedByUserLoginId = userProfile.value.username
         }
       })
-      inputCount.value = '';
       await store.dispatch('count/updateCycleCountItems', items);
       if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
     } else {

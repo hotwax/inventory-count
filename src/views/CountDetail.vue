@@ -592,21 +592,24 @@ async function saveCount(currentProduct, isScrollEvent = false) {
     isScanningInProgress.value = false;
     return;
   }
+
+  let currentCount = inputCount.value;
+  inputCount.value = "";
+
   try {
     const payload = {
       inventoryCountImportId: currentProduct.inventoryCountImportId,
       importItemSeqId: currentProduct.importItemSeqId,
       productId: currentProduct.productId,
-      quantity: inputCount.value,
+      quantity: currentCount,
       countedByUserLoginId: userProfile.value.username
     };
     const resp = await CountService.updateCount(payload);
     if (!hasError(resp)) {
-      currentProduct.quantity = inputCount.value
+      currentProduct.quantity = currentCount
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
-      inputCount.value = ''; 
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
