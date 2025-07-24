@@ -108,7 +108,7 @@
                   <ion-label slot="end">{{ getPartyName(currentProduct) }}</ion-label>
                 </ion-item>
 
-                <template v-if="productStoreSettings['showQoh']">
+                <template v-if="productStoreSettings['showQoh'] && !currentProduct.isMatchNotFound">
                   <ion-item>
                     {{ translate("Current on hand") }}
                     <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getProductStock(currentProduct.productId) ?? "-" : "-" }}</ion-label>
@@ -144,6 +144,7 @@
                   </ion-radio-group>
                 </template>
 
+                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -158,7 +159,7 @@
                   <ion-input :label="translate('Count')" :placeholder="translate('submit physical count')" :disabled="productStoreSettings['forceScan']" name="value" v-model="inputCount" id="value" type="number" min="0" required @keydown="inputCountValidation"/>
                 </ion-item>
 
-                <template v-if="productStoreSettings['showQoh']">
+                <template v-if="productStoreSettings['showQoh'] && !currentProduct.isMatchNotFound">
                   <ion-item>
                     {{ translate("Current on hand") }}
                     <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getProductStock(currentProduct.productId) ?? "-" : "-" }}</ion-label>
@@ -168,6 +169,8 @@
                     <ion-label slot="end">{{ isItemAlreadyAdded(currentProduct) ? getVariance(currentProduct, true) : "-" }}</ion-label>
                   </ion-item>
                 </template>
+
+                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -235,6 +238,7 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import PreviousNextItem from "@/components/PreviousNextItem.vue";
 import { deleteRecord } from "@/utils/indexeddb";
 
 const store = useStore();
@@ -278,7 +282,6 @@ const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 const scannedItem = ref({}) as any;
-
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
@@ -389,12 +392,16 @@ async function handleSegmentChange() {
   }
 }
 
-async function changeProduct(direction: string) {
+async function changeProduct(direction?: string, matchedItemIndex?: any, currentIndex?: any) {
   if(isScrolling.value) return;
   isScrolling.value = true;
 
-  const index = (direction === 'next') ? currentItemIndex.value + 1 : currentItemIndex.value - 1;
-
+  // we have added the same before and after the if check to update the itemsList
+  // need to improve this flow
+  if(selectedSegment.value === "unmatched" && matchedItemIndex) selectedSegment.value = "all"
+  
+  const index = matchedItemIndex ? (direction === 'next') ? currentIndex + matchedItemIndex : currentIndex - matchedItemIndex : (direction === 'next') ? currentItemIndex.value + 1 : currentItemIndex.value - 1;
+  
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
     if(isScrollingAnimationEnabled.value) {
@@ -406,6 +413,7 @@ async function changeProduct(direction: string) {
       await store.dispatch("product/currentProduct", product);
     }
   }
+  if(selectedSegment.value === "unmatched" && matchedItemIndex) handleSegmentChange()
   isScrolling.value = false;
 }
 
