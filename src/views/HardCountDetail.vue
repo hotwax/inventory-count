@@ -144,43 +144,7 @@
                   </ion-radio-group>
                 </template>
 
-                <template v-if="currentProduct?.isMatchNotFound">
-                  <!-- Last matched item -->
-                  <ion-item v-if="getMatchedProduct('last')" lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(getMatchedProduct('last')?.productId)?.mainImageUrl" :key="getMatchedProduct('last')?.importItemSeqId"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('last')?.productId)) }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('last')?.productId)) }}</p>
-                      <p>{{ translate("items ago", { lastIndex: lastItemIndexDist }) }}</p>
-                    </ion-label>
-                    <div class="last-next-match">
-                      <ion-note class="ion-margin-end">{{ translate("last match") }}</ion-note>
-                      <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="changeProduct('last',lastItemIndexDist)">
-                        <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
-                      </ion-button>
-                    </div>
-                  </ion-item>
-                  <!-- Next matched item -->
-                  <ion-item v-if="getMatchedProduct('next')" lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(getMatchedProduct('next')?.productId)?.mainImageUrl" :key="getMatchedProduct('next')?.importItemSeqId"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('next')?.productId)) }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('next')?.productId)) }}</p>
-                      <p>{{ translate("items later", { nextIndex: nextItemIndexDist }) }}</p>
-                    </ion-label>
-                    <div class="last-next-match">
-                      <ion-note class="ion-margin-end">{{ translate("next match") }}</ion-note>
-                      <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="changeProduct('next',nextItemIndexDist)">
-                        <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
-                      </ion-button>
-                    </div>
-                  </ion-item>
-                </template>
-
+                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -206,44 +170,7 @@
                   </ion-item>
                 </template>
 
-                <template v-if="currentProduct?.isMatchNotFound">
-                  <!-- Last matched item -->
-                  <ion-item v-if="getMatchedProduct('last')" lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(getMatchedProduct('last')?.productId)?.mainImageUrl" :key="getMatchedProduct('last')?.importItemSeqId"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('last')?.productId)) }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('last')?.productId)) }}</p>
-                      <p>{{ translate("items ago", { lastIndex: lastItemIndexDist }) }}</p>
-                    </ion-label>
-                    <div class="last-next-match">
-                      <ion-note class="ion-margin-end">{{ translate("last match") }}</ion-note>
-                      <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="changeProduct('last',lastItemIndexDist)">
-                        <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
-                      </ion-button>
-                    </div>
-                  </ion-item>
-
-                  <!-- Next matched item -->
-                  <ion-item v-if="getMatchedProduct('next')" lines="none">
-                    <ion-thumbnail slot="start">
-                      <Image :src="getProduct(getMatchedProduct('next')?.productId)?.mainImageUrl" :key="getMatchedProduct('next')?.importItemSeqId"/>
-                    </ion-thumbnail>
-                    <ion-label>
-                      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('next')?.productId)) }}
-                      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('next')?.productId)) }}</p>
-                      <p>{{ translate("items later", { nextIndex: nextItemIndexDist }) }}</p>
-                    </ion-label>
-                    <div class="last-next-match">
-                      <ion-note class="ion-margin-end">{{ translate("next match") }}</ion-note>
-                      <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="changeProduct('next',nextItemIndexDist)">
-                        <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
-                      </ion-button>
-                    </div>
-                  </ion-item>
-                </template>
-
+                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -289,7 +216,6 @@ import {
   IonRadioGroup,
   IonSegment,
   IonSegmentButton,
-  IonThumbnail,
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
@@ -312,6 +238,7 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import PreviousNextItem from "@/components/PreviousNextItem.vue";
 import { deleteRecord } from "@/utils/indexeddb";
 
 const store = useStore();
@@ -355,8 +282,6 @@ const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 const scannedItem = ref({}) as any;
-const lastItemIndexDist = ref(0);
-const nextItemIndexDist = ref(0);
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
@@ -383,28 +308,6 @@ onIonViewDidLeave(async() => {
   emitter.off("handleProductClick", handleProductClick)
   emitter.off("updateAnimatingProduct", updateAnimatingProduct)
 })
-
-// Finds the nearest matched product in the given direction ('last' or 'next'),
-// also calculates the distance (number of items away) to that matched product
-function getMatchedProduct(direction: string) {
-  const index = currentItemIndex.value;
-  if(index === -1) return null;
-
-  const isLast = direction === 'last';
-  const list = isLast ? itemsList.value.slice(0, index).reverse() : itemsList.value.slice(index + 1);
-  const matchedIndexInList = list.findIndex((item: any) => !item.isMatchNotFound);
-
-  if(matchedIndexInList === -1) return null;
-
-  const distance = matchedIndexInList + 1;
-  if(isLast) {
-    lastItemIndexDist.value = distance;
-  } else {
-    nextItemIndexDist.value = distance;
-  }
-
-  return list[matchedIndexInList];
-}
 
 async function handleBeforeUnload() {
   if(inputCount.value && isItemAlreadyAdded(currentProduct.value)) {
@@ -489,12 +392,16 @@ async function handleSegmentChange() {
   }
 }
 
-async function changeProduct(direction?: string, matchedItemIndex?: any) {
+async function changeProduct(direction?: string, matchedItemIndex?: any, currentIndex?: any) {
   if(isScrolling.value) return;
   isScrolling.value = true;
 
-  const index = matchedItemIndex ? (direction === 'next') ? currentItemIndex.value + matchedItemIndex : currentItemIndex.value - matchedItemIndex : (direction === 'next') ? currentItemIndex.value + 1 : currentItemIndex.value - 1;
-
+  // we have added the same before and after the if check to update the itemsList
+  // need to improve this flow
+  if(selectedSegment.value === "unmatched" && matchedItemIndex) selectedSegment.value = "all"
+  
+  const index = matchedItemIndex ? (direction === 'next') ? currentIndex + matchedItemIndex : currentIndex - matchedItemIndex : (direction === 'next') ? currentItemIndex.value + 1 : currentItemIndex.value - 1;
+  
   if(index >= 0 && index < itemsList.value.length) {
     const product = itemsList.value[index];
     if(isScrollingAnimationEnabled.value) {
@@ -506,6 +413,7 @@ async function changeProduct(direction?: string, matchedItemIndex?: any) {
       await store.dispatch("product/currentProduct", product);
     }
   }
+  if(selectedSegment.value === "unmatched" && matchedItemIndex) handleSegmentChange()
   isScrolling.value = false;
 }
 
@@ -1010,10 +918,6 @@ ion-list {
   grid-column: span 2;
 }
 
-.last-next-match {
-  display: flex;
-  align-items: center;
-}
 /* 
   We are not able to show the count using ion-note at the right of the ion-radio when used inside of the ion-item because of it's default css 
   The following CSS is used to override the default ion-radio styles when placed inside an ion-item. 
