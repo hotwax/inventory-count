@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="!isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
           <ion-button fill="outline" @click="goToLaunchpad()">
@@ -124,6 +124,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const isEmbedded = computed(() => store.getters["user/isEmbedded"])
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
@@ -138,7 +139,11 @@ function logout() {
 }
 
 function goToLaunchpad() {
-  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+  if (isEmbedded) {
+    window.location.href = `${process.env.VUE_APP_EMBEDDED_LAUNCHPAD_URL}`
+  } else {
+    window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+  }
 }
 
 async function setFacility(facility: any) {

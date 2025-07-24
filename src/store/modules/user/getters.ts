@@ -40,6 +40,9 @@ const getters: GetterTree <UserState, RootState> = {
   },
   isScrollingAnimationEnabled(state) {
     return state.isScrollingAnimationEnabled
-  }
+  },
+  isEmbedded: (state) => {
+      return state.isEmbedded;
+  },
 }
 export default getters;

@@ -10,6 +10,7 @@ const mutations: MutationTree <UserState> = {
     state.token = ""
     state.current = null
     state.permissions = []
+    state.isEmbedded = false
   },
   [types.USER_INFO_UPDATED] (state, payload) {
     state.current = payload
@@ -42,6 +43,9 @@ const mutations: MutationTree <UserState> = {
   },
   [types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED] (state, payload) {
     state.isScrollingAnimationEnabled = payload
+  },
+  [types.USER_IS_EMBEDDED_UPDATED] (state, payload) {
+    state.isEmbedded = payload;
   }
 }
 export default mutations;
