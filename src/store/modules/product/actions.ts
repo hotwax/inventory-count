@@ -25,7 +25,8 @@ const actions: ActionTree<ProductState, RootState> = {
   
         const resp = await ProductService.fetchProducts({
           filters: ['productId: (' + productIdFilter + ')'],
-          viewSize: productIdBatch.length
+          viewSize: productIdBatch.length,
+          fieldsToSelect: ["productName", "productId", "parentProductName", "goodIdentifications", "mainImageUrl", "internalName"]
         });
   
         if(!hasError(resp)) {

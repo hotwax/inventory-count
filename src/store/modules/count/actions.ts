@@ -299,6 +299,8 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
 
+    if(!items.length) return;
+
   }
 
       syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
