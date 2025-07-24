@@ -4,7 +4,6 @@ import { hasError } from "@/utils";
 
 const login = async (token: string): Promise <any> => {
   const baseURL = store.getters["user/getBaseUrl"]
-  console.log("======baseURL="+baseURL+"==")
   let api_key = ""
 
   try {

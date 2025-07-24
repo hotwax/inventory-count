@@ -271,7 +271,7 @@ import { registerTopicListener } from '@/websocket';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
-import { deleteRecord } from '@/utils/indexeddb';
+import { deleteRecord, replaceItems, syncItem } from '@/utils/indexeddb';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -743,15 +743,25 @@ async function handleNewMessage(jsonObj) {
     const currentItemIndex = items.findIndex((item) => item.importItemSeqId === message.importItemSeqId);  
     let updatedItem = {}
     if(currentItemIndex !== -1) {
-      updatedItem = { ...items[currentItemIndex], quantity: message.quantity }
-      items[currentItemIndex] = updatedItem
-    } else {
+      if (message.isDeleted) {
+        //if it's the item delete notification, delete the item from the list
+        items.splice(currentItemIndex, 1);
+        replaceItems(items, "counts", message.inventoryCountImportId, "cycleCounts")
+      } else {
+        //update the item
+        updatedItem = { ...items[currentItemIndex], quantity: message.quantity }
+        items[currentItemIndex] = updatedItem
+        syncItem(items, "counts", message.inventoryCountImportId, "cycleCounts")
+      }
+    } else if (!message.isDeleted) {
+      //Add new item
       updatedItem = await CountService.fetchCycleCountItem({ inventoryCountImportId: message.inventoryCountImportId, importItemSeqId: message.importItemSeqId })
       if(updatedItem?.productId) {
         store.dispatch("product/fetchProducts", { productIds: [updatedItem.productId] })
         items.push(updatedItem)
         isNewItemAdded = true
       }
+      syncItem(items, "counts", message.inventoryCountImportId, "cycleCounts")
     }
     store.dispatch('count/updateCycleCountItems', items);
     if(isNewItemAdded) initializeObserver()

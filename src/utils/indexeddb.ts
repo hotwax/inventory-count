@@ -42,6 +42,44 @@ function syncItem(values: any, table: any, key: any, database: string) {
   });
 }
 
+function replaceItems(values: any, table: any, key: any, database: string) {
+  const open = indexedDB.open(database, 1);
+
+  open.onupgradeneeded = () => {
+    if (!open.result.objectStoreNames.contains(table)) {
+      open.result.createObjectStore(table);
+    }
+  };
+
+  return new Promise((res, rej) => {
+    open.onsuccess = () => {
+      const db = open.result;
+      const tran = db.transaction(table, "readwrite");
+      const objStore = tran.objectStore(table);
+
+      // @ts-ignore
+      objStore.get(key).onsuccess = ({ target: { result } }) => {
+        const data = new Map();
+        values.forEach((value: any) => {
+          data.set(value[recordKey], value);
+        });
+
+        const newRecord = {
+          ...(result || {}),
+          data,
+          lastUpdatedStamp: Date.now()
+        };
+
+        objStore.put(newRecord, key).onsuccess = res;
+      };
+
+      objStore.get(key).onerror = rej;
+    };
+
+    open.onerror = rej;
+  });
+}
+
 function readTable(table: any, key: any, database: string) {
   const open = indexedDB.open(database, 1);
 
@@ -109,4 +147,4 @@ function deleteDB(database: string) {
   };
 }
 
-export { deleteDB, deleteRecord, readTable, syncItem }
+export { deleteDB, deleteRecord, readTable, replaceItems, syncItem }
