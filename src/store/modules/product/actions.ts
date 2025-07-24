@@ -3,6 +3,7 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { ProductService } from "@/services/ProductService"
+import { useUserStore } from "@hotwax/dxp-components"
 import { hasError } from '@/utils';
 import emitter from '@/event-bus';
 import logger from '@/logger'
@@ -24,7 +25,8 @@ const actions: ActionTree<ProductState, RootState> = {
   
         const resp = await ProductService.fetchProducts({
           filters: ['productId: (' + productIdFilter + ')'],
-          viewSize: productIdBatch.length
+          viewSize: productIdBatch.length,
+          fieldsToSelect: ["productName", "productId", "parentProductName", "goodIdentifications", "mainImageUrl", "internalName"]
         });
   
         if(!hasError(resp)) {
@@ -100,6 +102,33 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch products", err)
     }
     return {};
+  },
+
+  async fetchProductStock({ commit, state }, productId) {
+    const currentFacility: any = useUserStore().getCurrentFacility
+    const facilityId = currentFacility.facilityId; 
+    // Return early if stock data for this productId already exists
+    if(state.productStock[productId] && Object.prototype.hasOwnProperty.call(state.productStock[productId], facilityId)) return;
+
+    let productQoh = [];
+
+    try {
+      const resp = await ProductService.fetchProductStock({
+        facilityId: facilityId,
+        productId: productId
+      });
+
+      if(!hasError(resp)) {
+        productQoh = resp.data;
+      } else {
+        throw resp;
+      }
+    } catch (err) {
+      logger.error("Failed to fetch product stock", err);
+    }
+    commit(types.PRODUCT_STOCK_UPDATED, { 
+      [productId]: { [facilityId]: productQoh?.qoh } 
+    });
   },
 
   async addProductToCached({ commit }, payload) {

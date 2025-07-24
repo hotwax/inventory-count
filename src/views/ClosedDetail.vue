@@ -56,7 +56,7 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
+                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
                 {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
@@ -164,7 +164,7 @@ async function fetchCountItems() {
 
   try {
     do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 200, pageIndex })
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
         cycleCountItemsProgress.value = items.length
@@ -172,7 +172,7 @@ async function fetchCountItems() {
       } else {
         throw resp.data;
       }
-    } while(resp.data.itemList?.length >= 200)
+    } while(resp.data.itemList?.length >= 100)
   } catch(err) {
     logger.error(err)
   }

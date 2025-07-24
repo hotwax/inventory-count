@@ -14,6 +14,7 @@ import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions,
 import { closeWebSocket, initWebSocket } from "@/websocket";
 import store from "@/store"
 import { WebSocketService } from "@/services/WebSocketService"
+import { deleteDB } from "@/utils/indexeddb"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -142,6 +143,9 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('product/clearCachedProducts')
 
     closeWebSocket()
+
+    // Clear indexedDB storage on logout
+    deleteDB("cycleCounts");
     emitter.emit('dismissLoader')
   },
 
@@ -186,7 +190,7 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   async updateCurrentProductStore({ commit, dispatch }, selectedProductStore) {
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, isFirstScanCountEnabled: false, barcodeIdentificationPref: "internalName" })
 
     await useProductIdentificationStore().getIdentificationPref(selectedProductStore.productStoreId)
       .catch((error) => logger.error(error));
@@ -196,7 +200,7 @@ const actions: ActionTree<UserState, RootState> = {
   async getProductStoreSetting({ commit }, productStoreId?: string) {
     const payload = {
       "productStoreId": productStoreId ? productStoreId : getProductStoreId(),
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,BARCODE_IDEN_PREF",
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,INV_COUNT_FIRST_SCAN,BARCODE_IDEN_PREF",
       "settingTypeEnumId_op": "in",
       "pageSize": 10
     }
@@ -213,6 +217,10 @@ const actions: ActionTree<UserState, RootState> = {
             settings["forceScan"] = JSON.parse(setting.settingValue)
           }
 
+          if(setting.settingTypeEnumId === "INV_COUNT_FIRST_SCAN" && setting.settingValue) {
+            settings["isFirstScanCountEnabled"] = JSON.parse(setting.settingValue)
+          }
+
           if(setting.settingTypeEnumId === "BARCODE_IDEN_PREF" && setting.settingValue) {
             settings["barcodeIdentificationPref"] = setting.settingValue
           }
@@ -220,6 +228,7 @@ const actions: ActionTree<UserState, RootState> = {
         }, {
           showQoh: false,
           forceScan: false,
+          isFirstScanCountEnabled: false,
           barcodeIdentificationPref: "internalName"
         })
         commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, settings)
@@ -267,6 +276,10 @@ const actions: ActionTree<UserState, RootState> = {
 
     if(payload.key === "forceScan") {
       enumId = "INV_FORCE_SCAN"
+    }
+
+    if(payload.key === "isFirstScanCountEnabled") {
+      enumId = "INV_COUNT_FIRST_SCAN"
     }
 
     if(payload.key === "barcodeIdentificationPref") {

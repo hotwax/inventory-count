@@ -8,6 +8,8 @@ import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
 import { DateTime } from "luxon"
+import store from "@/store";
+import { readTable, syncItem } from "@/utils/indexeddb"
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
@@ -251,28 +253,83 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_UPDATED, {})
   },
 
-  async fetchCycleCountItems({commit, state} ,payload) {
+  // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
+  async fetchCycleCountItemsSummary({commit, state, getters} ,payload) {
     let items = [] as any, resp, pageIndex = 0;
-    
+    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+
+    try {
+      let dbData: any = {};
+      try {
+        dbData = await readTable("counts", payload.inventoryCountImportId, "cycleCounts")
+      } catch(err) {
+        logger.error(err)
+      }
+
+      if(dbData?.items?.length) {
+        items = dbData.items
+        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex, lastUpdatedStamp_from: dbData.lastUpdatedStamp })
+        if(!hasError(resp) && resp.data?.length) {
+          const respItems = resp.data
+
+          const updatedItems = dbData?.items.reduce((itms: any, item: any) => {
+            itms[item.importItemSeqId] = item
+            return itms
+          }, {})
+
+          respItems.map((item: any) => {
+            updatedItems[item.importItemSeqId] = item
+          })
+
+          items = Object.values(updatedItems)
+        }
+        commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+      } else {
     try {
       do {
-        resp = await CountService.fetchCycleCountItems({ ...payload, pageSize: 200, pageIndex })
-        if(!hasError(resp) && resp.data?.itemList?.length) {
-          items = items.concat(resp.data.itemList)
+        // Check if count details page is still active
+        if(!getters.isCountDetailPageActive) return;
+        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex })
+        if(!hasError(resp) && resp.data?.length) {
+          items = items.concat(resp.data)
           // dispatch progress update after each batch
           commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
         } else {
           throw resp.data;
         }
         pageIndex++;
-      } while(resp.data.itemList?.length >= 200)
+      } while(resp.data?.length >= 100)
       } catch(err: any) {
       logger.error(err)
     }
 
-    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
+    if(!items.length) return;
+
+  }
+
+      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
+    } catch(err) {
+      logger.error("error", err)
+    }
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+    const productList = store.getters["product/getCachedProducts"];
+
+    // Update items with parentProductName and rename statusId to itemStatusId
+    items.forEach((item: any) => {
+      item.itemStatusId = item.statusId;
+      delete item.statusId;
+      
+      const product = productList[item.productId];
+      if(product?.parentProductName) {
+        item.parentProductName = product.parentProductName;
+      }
+    });
+
+    if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
+    // Fetch product stock if QOH display is enabled in store settings.
+    if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
+
     if(payload.isHardCount) {
       const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
       if(cachedProducts?.length) items = items.concat(cachedProducts)
@@ -282,6 +339,10 @@ const actions: ActionTree<CountState, RootState> = {
 
   async updateCycleCountItems ({ commit }, payload) {
     commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
+  },
+
+  setCountDetailPageActive({ commit }, isPageActive) {
+    commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   },
 
   async clearCycleCountItems ({ commit }) {
@@ -321,7 +382,7 @@ const actions: ActionTree<CountState, RootState> = {
       delete cachedUnmatchProducts[id]
       commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
     }
-  },
+  }
 }	
 
 export default actions;	

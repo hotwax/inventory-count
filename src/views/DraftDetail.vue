@@ -107,7 +107,7 @@
         </template>
         
         <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress" :existingItemsCount="existingItemsCount" :uploadingItemsCount="uploadingItemsCount"/>
         </template>
         <template v-else-if="currentCycleCount.items?.length">
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
@@ -116,7 +116,7 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
+                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
                 {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
@@ -212,6 +212,8 @@ const fileUploaded = ref(false);
  let timeoutId = ref()
 let isLoadingItems = ref(true)
 let cycleCountItemsProgress = ref(0)
+const existingItemsCount = ref(0)
+const uploadingItemsCount = ref(0)
 
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
@@ -286,12 +288,18 @@ async function parse(event: any) {
   }
 }
 
+function resetProgressBarState() {
+  isLoadingItems.value = false;
+  existingItemsCount.value = 0;
+  uploadingItemsCount.value = 0;
+}
+
 async function fetchCountItems() {
   let items = [] as any, resp, pageIndex = 0;
 
   try {
     do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 200, pageIndex })
+      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
         cycleCountItemsProgress.value = items.length
@@ -299,7 +307,7 @@ async function fetchCountItems() {
       } else {
         throw resp.data;
       }
-    } while(resp.data.itemList?.length >= 200)
+    } while(resp.data.itemList?.length >= 100)
   } catch(err) {
     logger.error(err)
   }
@@ -320,9 +328,13 @@ async function openImportCsvModal() {
     }
   })
   // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
-  importCsvModal.onDidDismiss().then((result: any) => {
+  importCsvModal.onDidDismiss().then(async (result: any) => {
     if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
-      findProductFromIdentifier(result.data.identifierData)
+      // Set loading state before starting the process of adding the items to the cycle count
+      isLoadingItems.value = true;
+      existingItemsCount.value = currentCycleCount.value.items?.length || 0;
+      await findProductFromIdentifier(result.data.identifierData)
+      resetProgressBarState();
     }
   })
   importCsvModal.present();
@@ -449,6 +461,9 @@ async function findProductFromIdentifier(payload: any) {
   if(!idValues || !idValues.length) {
     return showToast(translate("CSV data is missing or incorrect. Please check your file."));
   }
+
+  // Set the uploading items count for progress bar to calculate the total items count
+  uploadingItemsCount.value = idValues.length;
 
   const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
 
