@@ -591,15 +591,13 @@ function getVariance(item , isRecounting) {
 
 async function saveCount(currentProduct, isScrollEvent = false) {
   isScanningInProgress.value = true;
-  let currentCount = inputCount.value;
-  // Set the input count to 0 to avoid race conditions while scanning.
-  inputCount.value = "";
-  if (!currentCount && currentCount !== 0) {
+  if (!inputCount.value && inputCount.value !== 0) {
     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
     isScanningInProgress.value = false;
     return;
   }
-
+  
+  // Set the input count to 0 to avoid race conditions while scanning.
   let currentCount = inputCount.value;
   inputCount.value = "";
 

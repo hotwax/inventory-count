@@ -328,12 +328,12 @@ async function openImportCsvModal() {
     }
   })
   // On modal dismiss, if it returns identifierData, add the product to the count by calling addProductToCount()
-  importCsvModal.onDidDismiss().then((result: any) => {
+  importCsvModal.onDidDismiss().then(async (result: any) => {
     if (result?.data?.identifierData && Object.keys(result?.data?.identifierData).length) {
       // Set loading state before starting the process of adding the items to the cycle count
       isLoadingItems.value = true;
       existingItemsCount.value = currentCycleCount.value.items?.length || 0;
-      findProductFromIdentifier(result.data.identifierData)
+      await findProductFromIdentifier(result.data.identifierData)
       resetProgressBarState();
     }
   })
