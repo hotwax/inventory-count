@@ -153,7 +153,7 @@
                     <ion-label>
                       {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('last')?.productId)) }}
                       <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('last')?.productId)) }}</p>
-                      <p>{{ lastItemIndexDist }} items ago</p>
+                      <p>{{ translate("items ago", { lastIndex: lastItemIndexDist }) }}</p>
                     </ion-label>
                     <div class="last-next-match">
                       <ion-note class="ion-margin-end">{{ translate("last match") }}</ion-note>
@@ -170,7 +170,7 @@
                     <ion-label>
                       {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('next')?.productId)) }}
                       <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('next')?.productId)) }}</p>
-                      <p>{{ nextItemIndexDist }} items later</p>
+                      <p>{{ translate("items later", { nextIndex: nextItemIndexDist }) }}</p>
                     </ion-label>
                     <div class="last-next-match">
                       <ion-note class="ion-margin-end">{{ translate("next match") }}</ion-note>
@@ -215,7 +215,7 @@
                     <ion-label>
                       {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('last')?.productId)) }}
                       <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('last')?.productId)) }}</p>
-                      <p>{{ lastItemIndexDist }} items ago</p>
+                      <p>{{ translate("items ago", { lastIndex: lastItemIndexDist }) }}</p>
                     </ion-label>
                     <div class="last-next-match">
                       <ion-note class="ion-margin-end">{{ translate("last match") }}</ion-note>
@@ -233,7 +233,7 @@
                     <ion-label>
                       {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(getMatchedProduct('next')?.productId)) }}
                       <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(getMatchedProduct('next')?.productId)) }}</p>
-                      <p>{{ nextItemIndexDist }} items later</p>
+                      <p>{{ translate("items later", { nextIndex: nextItemIndexDist }) }}</p>
                     </ion-label>
                     <div class="last-next-match">
                       <ion-note class="ion-margin-end">{{ translate("next match") }}</ion-note>
@@ -289,6 +289,7 @@ import {
   IonRadioGroup,
   IonSegment,
   IonSegmentButton,
+  IonThumbnail,
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
@@ -396,7 +397,11 @@ function getMatchedProduct(direction: string) {
   if(matchedIndexInList === -1) return null;
 
   const distance = matchedIndexInList + 1;
-  (isLast ? lastItemIndexDist : nextItemIndexDist).value = distance;
+  if(isLast) {
+    lastItemIndexDist.value = distance;
+  } else {
+    nextItemIndexDist.value = distance;
+  }
 
   return list[matchedIndexInList];
 }

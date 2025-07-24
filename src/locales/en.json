@@ -157,6 +157,8 @@
   "Item variance threshold": "Item variance threshold",
   "item counted": "item counted",
   "items": "items",
+  "items ago": "{lastIndex} items ago",
+  "items later": "{nextIndex} items later",
   "items counted": "items counted",
   "Last counted": "Last counted",
   "last counted": "last counted",
