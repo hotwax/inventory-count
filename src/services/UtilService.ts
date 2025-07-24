@@ -1,15 +1,6 @@
 import api, {client} from '@/api';
 import store from '@/store';
 
-const fetchVarianceReasons = async (payload: any): Promise<any> => {
-  return api({
-    url: "performFind",
-    method: "get",
-    params: payload,
-    cache: true
-  });
-}
-
 function getOrdinalSuffix(day: any) {
   if (day == 1 || day == 21 || day == 31) return 'st';
   if (day == 2 || day == 22) return 'nd';
@@ -19,7 +10,7 @@ function getOrdinalSuffix(day: any) {
 
 const fetchFacilities = async (payload: any): Promise<any> => {
   return api({
-    url: "facilities",
+    url: "inventory-cycle-count/facilities",
     method: "GET",
     params: payload
   })
@@ -27,7 +18,7 @@ const fetchFacilities = async (payload: any): Promise<any> => {
 
 const createBulkCycleCounts = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts/bulk",
+    url: "inventory-cycle-count/cycleCounts/bulk",
     method: "POST",
     data: payload
   })
@@ -35,11 +26,10 @@ const createBulkCycleCounts = async (payload: any): Promise<any> => {
 
 const fetchFacilityGroups = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = store.getters["user/getBaseUrl"]
 
   return client({
-    url: "facilityGroups",
+    url: "available-to-promise/facilityGroups",
     baseURL,
     method: "GET",
     params: payload,
@@ -52,12 +42,10 @@ const fetchFacilityGroups = async (payload: any): Promise<any> => {
 
 const fetchGroupFacilities = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
-  const url = store.getters["user/getBaseUrl"]
-  
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = store.getters["user/getBaseUrl"]
 
   return client({
-    url: `facilityGroups/${payload.facilityGroupId}/facilities`,
+    url: `available-to-promise/facilityGroups/${payload.facilityGroupId}/facilities`,
     baseURL,
     method: "GET",
     params: payload,
@@ -73,6 +61,5 @@ export const UtilService = {
   fetchFacilities,
   fetchFacilityGroups,
   fetchGroupFacilities,
-  fetchVarianceReasons,
   getOrdinalSuffix
 }

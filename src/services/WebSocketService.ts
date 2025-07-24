@@ -8,7 +8,7 @@ const fetchAllNotificationTopics = async (params: any): Promise<any> => {
 
   try {
     const resp = await api({
-      url: "/notificationTopics",
+      url: "notification/notificationTopics",
       method: "GET",
       params
     }) as any
@@ -27,7 +27,7 @@ const fetchAllNotificationTopics = async (params: any): Promise<any> => {
 const createNotificationTopic = async (payload: any): Promise<any> => {
   try {
     const resp = await api({
-      url: "/notificationTopics",
+      url: "notification/notificationTopics",
       method: "POST",
       data: payload
     }) as any
@@ -43,7 +43,7 @@ const createNotificationTopic = async (payload: any): Promise<any> => {
 const createNotificationTopicUser = async (payload: any): Promise<any> => {
   try {
     const resp = await api({
-      url: `/notificationTopics/${payload.topic}/users`,
+      url: `notification/notificationTopics/${payload.topic}/users`,
       method: "POST",
       data: payload
     }) as any
@@ -62,7 +62,7 @@ const createNotificationTopicUser = async (payload: any): Promise<any> => {
 const deleteNotificationTopicUser = async (payload: any): Promise<any> => {
   try {
     const resp = await api({
-      url: `/notificationTopics/${payload.topic}/users/${payload.userId}`,
+      url: `notification/notificationTopics/${payload.topic}/users/${payload.userId}`,
       method: "DELETE",
       data: payload
     }) as any
@@ -81,7 +81,7 @@ const deleteNotificationTopicUser = async (payload: any): Promise<any> => {
 const checkIfUserSubscribedToTopic = async (params: any): Promise<any> => {
   try {
     const resp = await api({
-      url: `/notificationTopics/${params.topic}/users`,
+      url: `notification/notificationTopics/${params.topic}/users`,
       method: "GET",
       params
     }) as any
