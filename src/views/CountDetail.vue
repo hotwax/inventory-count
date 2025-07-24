@@ -472,6 +472,10 @@ async function scanProduct() {
     if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0) {
       openRecountAlert()
     }
+    // increment inputCount when scrolling animation is disabled and first scan count is enabled
+    if(!isScrollingAnimationEnabled.value) {
+      if(productStoreSettings.value["isFirstScanCountEnabled"]) inputCount.value++;
+    }
   } else if(cycleCount.value.statusId === "INV_COUNT_ASSIGNED" && selectedItem.itemStatusId === "INV_COUNT_CREATED") {
     if((!selectedItem.quantity && selectedItem.quantity !== 0) || product.value.isRecounting) {
       hasUnsavedChanges.value = true;
