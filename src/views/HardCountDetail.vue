@@ -235,6 +235,7 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { deleteRecord } from "@/utils/indexeddb";
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -248,7 +249,6 @@ const defaultRecountUpdateBehaviour = computed(() => store.getters["count/getDef
 const currentItemIndex = computed(() => !currentProduct.value ? 0 : currentProduct.value.scannedId ? itemsList.value?.findIndex((item: any) => item.scannedId === currentProduct.value.scannedId) : itemsList?.value.findIndex((item: any) => item.productId === currentProduct.value?.productId && item.importItemSeqId === currentProduct.value?.importItemSeqId));
 const itemsListForScroller = computed(() => itemsList.value.map((item: any) => ({ ...item, itemKey: item.importItemSeqId || item.scannedId })));
 const getProductStock = computed(() => (id: any) => store.getters["product/getProductStock"](id));
-const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 
 const itemsList = computed(() => {
   if(selectedSegment.value === "all") {
@@ -469,14 +469,14 @@ async function scanProduct() {
       store.dispatch("product/currentProduct", selectedItem)
       previousItem = selectedItem
     }
-  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !isFirstScanCountEnabled.value) || isScrollingAnimationEnabled.value) {
+  } else if((selectedItem.itemStatusId === "INV_COUNT_CREATED" && !isNewlyAdded && !isScrollingAnimationEnabled.value && !productStoreSettings.value["isFirstScanCountEnabled"]) || isScrollingAnimationEnabled.value) {
     // increment inputCount when item is already selected, scrolling animation is disabled and first scan count is disabled
     // OR increment inputCount when item is already selected, scolling animation is enabled and first scan count is disabled
     inputCount.value++;
   }
   // increment inputCount when scrolling animation is disabled and first scan count is enabled
   if(!isScrollingAnimationEnabled.value) {
-    if(isFirstScanCountEnabled.value) {
+    if(productStoreSettings.value["isFirstScanCountEnabled"]) {
       inputCount.value++;
     }
   }
@@ -642,6 +642,11 @@ async function readyForReview() {
           })
           isSubmittingForReview.value = true;
           router.push("/tabs/count")
+
+          // No status check as this method will only be called when moving from assigned to review
+          // Deleting indexeddb record once the count is moved to pending review page
+          deleteRecord("counts", props?.id)
+
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
@@ -694,6 +699,7 @@ function initializeObserver() {
         const isProductMatched = (isItemAlreadyAdded(scannedItem.value) ? (scannedItem.value.productId === product.productId && scannedItem.value.importItemSeqId === product.importItemSeqId) : (scannedItem.value.scannedId && product.scannedId === scannedItem.value.scannedId))
         if(productStoreSettings.value["isFirstScanCountEnabled"] && isProductMatched) {
           inputCount.value++;
+          scannedItem.value = {};          
         }
         }, 100);
       }
@@ -715,9 +721,9 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
   }
 
   isScanningInProgress.value = true;
-  let currentCount = inputCount.value
+  let currentCount = inputCount.value;
+  // Set the input count to 0 to avoid race conditions while scanning.
   inputCount.value = "";
-
   if(!isItemAlreadyAdded(currentProduct)) {
     const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
     let currentItem = {};

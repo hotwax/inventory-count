@@ -270,6 +270,7 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { deleteRecord } from '@/utils/indexeddb';
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -282,7 +283,6 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 const currentItemIndex = computed(() => !product.value ? 0 : itemsList?.value.findIndex((item) => item.productId === product?.value.productId && item.importItemSeqId === product?.value.importItemSeqId));
 const getProductStock = computed(() => (id) => store.getters["product/getProductStock"](id));
-const isFirstScanCountEnabled = computed(() => store.getters["count/isFirstScanCountEnabled"]);
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 const itemsList = computed(() => {
@@ -535,9 +535,10 @@ function initializeObserver() {
           }
         }
         // update the input count when the first scan count is enabled and the current product matches the scanned item
-        if(isFirstScanCountEnabled.value && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
           hasUnsavedChanges.value = true;
           inputCount.value++;
+          scannedItem.value = {};
         }
         }, 200);
       }
@@ -587,7 +588,10 @@ function getVariance(item , isRecounting) {
 
 async function saveCount(currentProduct, isScrollEvent = false) {
   isScanningInProgress.value = true;
-  if (!inputCount.value && inputCount.value !== 0) {
+  let currentCount = inputCount.value;
+  // Set the input count to 0 to avoid race conditions while scanning.
+  inputCount.value = "";
+  if (!currentCount && currentCount !== 0) {
     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
     isScanningInProgress.value = false;
     return;
@@ -714,6 +718,8 @@ async function readyForReview() {
             statusId: "INV_COUNT_REVIEW"
           })
           router.push("/tabs/count")
+          // Deleting indexeddb record once the count is moved to pending review page
+          deleteRecord("counts", props?.id)
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))
