@@ -597,7 +597,7 @@ async function saveCount(currentProduct, isScrollEvent = false) {
     return;
   }
   
-  // Set the input count to 0 to avoid race conditions while scanning.
+  // Set the input count to empty to avoid race conditions while scanning.
   let currentCount = inputCount.value;
   inputCount.value = "";
 

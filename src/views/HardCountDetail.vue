@@ -722,7 +722,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
 
   isScanningInProgress.value = true;
   let currentCount = inputCount.value;
-  // Set the input count to 0 to avoid race conditions while scanning.
+  // Set the input count to empty to avoid race conditions while scanning.
   inputCount.value = "";
   if(!isItemAlreadyAdded(currentProduct)) {
     const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
