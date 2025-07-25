@@ -275,6 +275,7 @@ const inputCount = ref("") as any;
 const selectedCountUpdateType = ref("add");
 const isScrolling = ref(false);
 let isScanningInProgress = ref(false);
+const isScanTriggered = ref(false); // Add a flag to track scan source
 const scrollingContainerRef = ref();
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 const isSubmittingForReview = ref(false);
@@ -370,6 +371,8 @@ function updateAnimatingProduct(item: any) {
 }
 
 async function handleSegmentChange() {
+  // Reset scan trigger when segment changes
+  isScanTriggered.value = false;
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -379,7 +382,6 @@ async function handleSegmentChange() {
   } else {
     store.dispatch("product/currentProduct", {});
   }
-  inputCount.value = ""
   selectedCountUpdateType.value = defaultRecountUpdateBehaviour.value
   if(isAnimationInProgress.value) {
     store.dispatch("product/currentProduct", productInAnimation.value);
@@ -431,6 +433,7 @@ function removeCountItem(current: any) {
 
 async function scanProduct() {
   let isNewlyAdded = false;
+  isScanTriggered.value = true;
   if(!queryString.value.trim()) {
     showToast(translate("Please provide a valid barcode identifier."))
     return;
@@ -705,9 +708,10 @@ function initializeObserver() {
         }
         // update the inputCount when the first scan count is enabled and scrolling animation ia enabled
         const isProductMatched = (isItemAlreadyAdded(scannedItem.value) ? (scannedItem.value.productId === product.productId && scannedItem.value.importItemSeqId === product.importItemSeqId) : (scannedItem.value.scannedId && product.scannedId === scannedItem.value.scannedId))
-        if(productStoreSettings.value["isFirstScanCountEnabled"] && isProductMatched) {
+        if(isScanTriggered.value && productStoreSettings.value["isFirstScanCountEnabled"] && isProductMatched) {
           inputCount.value++;
-          scannedItem.value = {};          
+          scannedItem.value = {};
+          isScanTriggered.value = false;       
         }
         }, 100);
       }
