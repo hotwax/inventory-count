@@ -542,7 +542,7 @@ function initializeObserver() {
           }
         }
         // update the input count when the first scan count is enabled and the current product matches the scanned item
-        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0 && !hasUnsavedChanges.value) {
           hasUnsavedChanges.value = true;
           inputCount.value++;
           scannedItem.value = {};
