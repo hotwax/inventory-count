@@ -274,7 +274,6 @@ const actions: ActionTree<CountState, RootState> = {
       if(dbData?.data?.length) {
         items = dbData.data
         params["lastUpdatedStamp_from"] = dbData.lastUpdatedStamp
-        params["pageSize"] = 1
         dbItems = dbData?.data?.reduce((itms: any, item: any) => {
           itms[item.importItemSeqId] = item
           return itms
@@ -308,7 +307,7 @@ const actions: ActionTree<CountState, RootState> = {
             throw resp.data;
           }
           params["pageIndex"]++;
-        } while(resp.data?.length >= params["pageSize"])
+        } while(resp.data?.length >= 100)
       } catch(err: any) {
         logger.error(err)
       }
