@@ -2,7 +2,7 @@
   <div class="progress-bar-wrapper">
     <ion-label>{{ translate("Loading cycle count") }}</ion-label>
     <ion-progress-bar class="ion-margin-vertical bar-width" :value="progressValue()"></ion-progress-bar>
-    <ion-note>{{ props.cycleCountItemsProgress }} / {{ getTotalItems() }}</ion-note>
+    <ion-note>{{ props.existingItemsCount + props.cycleCountItemsProgress }} / {{ getTotalItems() }}</ion-note>
   </div>
 </template>
 
@@ -22,6 +22,14 @@ const props = defineProps({
   cycleCountItemsProgress: {
     type: Number,
     default: 0
+  },
+  existingItemsCount: {
+    type: Number,
+    default: 0
+  },
+  uploadingItemsCount: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -30,13 +38,17 @@ onMounted(async() => {
 })
 
 function getTotalItems() {
+  // If uploadingItemsCount is provided, use it for draft page csv upload scenario
+  if(props.uploadingItemsCount) {
+    return props.uploadingItemsCount + (props.existingItemsCount || 0);
+  }
   return cycleCountStats.value?.totalItems || 0;
 }
 
 function progressValue() {
   const total = getTotalItems();
   if(!total) return 0;
-  return props.cycleCountItemsProgress / total;
+  return (props.existingItemsCount + props.cycleCountItemsProgress) / total;
 }
 </script>
 

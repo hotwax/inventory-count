@@ -313,6 +313,8 @@ const actions: ActionTree<CountState, RootState> = {
         logger.error(err)
       }
 
+      if(!items.length) return;
+
       // Sync the items to indexeddb
       syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
     } catch(err) {
@@ -389,7 +391,7 @@ const actions: ActionTree<CountState, RootState> = {
       delete cachedUnmatchProducts[id]
       commit(types.COUNT_CACHED_UNMATCH_PRODUCTS_UPDATED, cachedUnmatchProducts)
     }
-  },
+  }
 }	
 
 export default actions;	
