@@ -28,6 +28,7 @@ import { useProductIdentificationStore } from '@hotwax/dxp-components';
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])
 const instanceUrl = computed(() => store.getters["user/getInstanceUrl"])
+const isEmbedded = computed(() => store.getters["user/isEmbedded"])
 
 const loader = ref(null) as any
 
