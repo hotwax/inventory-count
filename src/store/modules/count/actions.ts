@@ -314,19 +314,16 @@ const actions: ActionTree<CountState, RootState> = {
 
       if(!items.length) return;
 
-      // Sync the items to indexeddb
-      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
-    } catch(err) {
-      logger.error("error", err)
-    }
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     const productList = store.getters["product/getCachedProducts"];
 
     // Update items with parentProductName and rename statusId to itemStatusId
     items.forEach((item: any) => {
-      item.itemStatusId = item.statusId;
-      delete item.statusId;
+      if(!item.itemStatusId && item.statusId) {
+        item.itemStatusId = item.statusId;
+        delete item.statusId;
+      }
       
       const product = productList[item.productId];
       if(product?.parentProductName) {
@@ -334,6 +331,11 @@ const actions: ActionTree<CountState, RootState> = {
       }
     });
 
+      // Sync the items to indexeddb
+      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
+    } catch(err) {
+      logger.error("error", err)
+    }
     if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
     // Fetch product stock if QOH display is enabled in store settings.
     if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
