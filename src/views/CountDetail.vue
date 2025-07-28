@@ -469,7 +469,7 @@ async function scanProduct() {
     } else {
       handleProductClick(selectedItem)
     }
-    if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0) {
+    if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0 && cycleCount.value.statusId === "INV_COUNT_ASSIGNED") {
       openRecountAlert()
     }
     // increment inputCount when scrolling animation is disabled and first scan count is enabled
