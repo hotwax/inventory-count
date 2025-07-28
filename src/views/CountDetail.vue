@@ -724,7 +724,7 @@ async function readyForReview() {
           })
           router.push("/tabs/count")
           // Deleting indexeddb record once the count is moved to pending review page
-          deleteRecord("counts", props?.id)
+          deleteRecord("counts", props?.id, "cycleCounts")
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))
