@@ -656,7 +656,7 @@ async function readyForReview() {
 
           // No status check as this method will only be called when moving from assigned to review
           // Deleting indexeddb record once the count is moved to pending review page
-          deleteRecord("counts", props?.id)
+          deleteRecord("counts", props?.id, "cycleCounts")
 
           store.dispatch('count/clearCurrentCountFromCachedUnmatchProducts', props.id);
           showToast(translate("Count has been submitted for review"))
