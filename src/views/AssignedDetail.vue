@@ -249,6 +249,7 @@ async function fetchCountItems() {
 
   try {
     do {
+      // itemStatusId: "INV_COUNT_VOIDED", itemStatusId_not: "Y", itemStatusId_op: "in"
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
@@ -293,15 +294,17 @@ async function updateCountName() {
   isCountNameUpdating.value = false
 }
 
-async function deleteItemFromCount(seqId: string) {
+async function deleteItemFromCount(item: any) {
   try {
-    const resp = await CountService.deleteCycleCountItem({
+    const resp = await CountService.updateCount({
       inventoryCountImportId: currentCycleCount.value.countId,
-      importItemSeqId: seqId
+      importItemSeqId: item.importItemSeqId,
+      statusId: "INV_COUNT_VOIDED",
+      productId: item.productId
     })
 
     if(!hasError(resp)) {
-      currentCycleCount.value.items = currentCycleCount.value.items.filter((item: any) => item.importItemSeqId !== seqId)
+      currentCycleCount.value.items = currentCycleCount.value.items.filter((itm: any) => itm.importItemSeqId !== item.importItemSeqId)
       showToast(translate("Item has been removed from the cycle count"))
     } else {
       throw "Failed to remove the item from the count"
@@ -329,7 +332,7 @@ async function openAssignedCountPopover(event: any, item: any){
     }
 
     if(result.data?.itemAction === "remove") {
-      await deleteItemFromCount(item.importItemSeqId)
+      await deleteItemFromCount(item)
     }
   })
 
