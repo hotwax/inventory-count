@@ -249,7 +249,6 @@ async function fetchCountItems() {
 
   try {
     do {
-      // itemStatusId: "INV_COUNT_VOIDED", itemStatusId_not: "Y", itemStatusId_op: "in"
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
