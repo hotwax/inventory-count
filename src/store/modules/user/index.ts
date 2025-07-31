@@ -29,8 +29,7 @@ const userModule: Module<UserState, RootState> = {
         showQoh: false,
         barcodeIdentificationPref: ""
       },
-      isScrollingAnimationEnabled: false,
-      isEmbedded: false
+      isScrollingAnimationEnabled: false
     },
     getters,
     actions,

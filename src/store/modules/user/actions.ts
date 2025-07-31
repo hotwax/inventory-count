@@ -24,9 +24,9 @@ const actions: ActionTree<UserState, RootState> = {
 
       // TODO: implement support for permission check
 
-      const { token, oms, omsRedirectionUrl, isEmbedded} = payload;
+      const { token, oms, omsRedirectionUrl } = payload;
       dispatch("setUserInstanceUrl", oms);
-      dispatch("setIsEmbedded", isEmbedded);
+
       // Getting the permissions list from server
       const permissionId = process.env.VUE_APP_PERMISSION_ID;
       // Prepare permissions list
@@ -67,7 +67,10 @@ const actions: ActionTree<UserState, RootState> = {
       const authStore = useAuthStore()
       authStore.$patch({
         token: { value: api_key, expiration: authStore.token.expiration as any },
-        oms
+        oms,
+        isEmbedded: authStore.isEmbedded,
+        shop: authStore.shop as any,
+        host: authStore.host as any
       })
 
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
@@ -488,9 +491,5 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED, payload)
   },
 
-  async setIsEmbedded ({ commit }, isEmbedded) {
-    const isEmbeddedFlag = isEmbedded === 'true' ? true : false;
-    commit(types.USER_IS_EMBEDDED_UPDATED, isEmbeddedFlag);
-  },
 }
 export default actions;

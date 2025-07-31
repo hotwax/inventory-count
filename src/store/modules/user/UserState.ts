@@ -21,5 +21,4 @@ export default interface UserState {
     barcodeIdentificationPref: string;
   },
   isScrollingAnimationEnabled: boolean;
-  isEmbedded: boolean;
 }
