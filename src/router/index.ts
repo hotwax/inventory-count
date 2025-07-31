@@ -37,7 +37,7 @@ const authGuard = async (to: any, from: any, next: any) => {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = authStore.isEmbedded? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`
+    window.location.href = authStore.isEmbedded ? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
