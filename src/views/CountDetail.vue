@@ -469,7 +469,7 @@ async function scanProduct() {
     } else {
       handleProductClick(selectedItem)
     }
-    if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0) {
+    if(productStoreSettings.value["isFirstScanCountEnabled"] && selectedItem.quantity >= 0 && cycleCount.value.statusId === "INV_COUNT_ASSIGNED") {
       openRecountAlert()
     }
     // increment inputCount when scrolling animation is disabled and first scan count is enabled
@@ -542,7 +542,7 @@ function initializeObserver() {
           }
         }
         // update the input count when the first scan count is enabled and the current product matches the scanned item
-        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0) {
+        if(productStoreSettings.value["isFirstScanCountEnabled"] && currentProduct.productId === scannedItem.value.productId && currentProduct.importItemSeqId === scannedItem.value.importItemSeqId && !scannedItem.value.quantity && scannedItem.value.quantity !== 0 && !hasUnsavedChanges.value) {
           hasUnsavedChanges.value = true;
           inputCount.value++;
           scannedItem.value = {};
@@ -724,7 +724,7 @@ async function readyForReview() {
           })
           router.push("/tabs/count")
           // Deleting indexeddb record once the count is moved to pending review page
-          deleteRecord("counts", props?.id)
+          deleteRecord("counts", props?.id, "cycleCounts")
           showToast(translate("Count has been submitted for review"))
         } catch(err) {
           showToast(translate("Failed to submit cycle count for review"))

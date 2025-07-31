@@ -251,70 +251,79 @@ const actions: ActionTree<CountState, RootState> = {
 
   // Fetches cycle count items in batches, updates item status, optionally fetches stock & product data, and applies sorting if required
   async fetchCycleCountItemsSummary({commit, state, getters} ,payload) {
-    let items = [] as any, resp, pageIndex = 0;
+    let items = [] as any, resp
+    const pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
 
     try {
       let dbData: any = {};
+      let dbItems = {} as Record<string, any>;
+      const params = {
+        ...payload,
+        pageSize: 100,
+        pageIndex
+      }
+
       try {
         dbData = await readTable("counts", payload.inventoryCountImportId, "cycleCounts")
       } catch(err) {
         logger.error(err)
       }
 
-      if(dbData?.items?.length) {
-        items = dbData.items
-        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex, lastUpdatedStamp_from: dbData.lastUpdatedStamp })
-        if(!hasError(resp) && resp.data?.length) {
-          const respItems = resp.data
+      // If the indexedDB has data, then assign data to items and define the lastUpdatedStamp field
+      if(dbData?.data?.length) {
+        items = dbData.data
+        params["lastUpdatedStamp_from"] = dbData.lastUpdatedStamp
+        dbItems = dbData?.data?.reduce((itms: any, item: any) => {
+          itms[item.importItemSeqId] = item
+          return itms
+        }, {})
+      }
 
-          const updatedItems = dbData?.items.reduce((itms: any, item: any) => {
-            itms[item.importItemSeqId] = item
-            return itms
-          }, {})
+      try {
+        do {
+          // Check if count details page is still active
+          if(!getters.isCountDetailPageActive) return;
+          resp = await CountService.fetchCycleCountItemsSummary(params)
+          if(!hasError(resp) && resp.data?.length) {
+            const respItems = resp.data
 
-          respItems.map((item: any) => {
-            updatedItems[item.importItemSeqId] = item
-          })
+            // If dbData has items, it means that we have called diff api(api with lastUpdatedStamp_from)
+            // field, thus only updating required items in the dbItems
+            if(dbData?.data?.length) {
+              respItems.forEach((item: any) => {
+                dbItems[item.importItemSeqId] = item
+              })
 
-          items = Object.values(updatedItems)
-        }
-        commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
-      } else {
-    try {
-      do {
-        // Check if count details page is still active
-        if(!getters.isCountDetailPageActive) return;
-        resp = await CountService.fetchCycleCountItemsSummary({ ...payload, pageSize: 100, pageIndex })
-        if(!hasError(resp) && resp.data?.length) {
-          items = items.concat(resp.data)
-          // dispatch progress update after each batch
-          commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
-        } else {
-          throw resp.data;
-        }
-        pageIndex++;
-      } while(resp.data?.length >= 100)
+              // As we are directly updating the dbItems, thus not using concat and directly updating the items
+              items = Object.values(dbItems)
+            } else {
+              items = items.concat(respItems)
+            }
+
+            // dispatch progress update after each batch
+            commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+          } else {
+            throw resp.data;
+          }
+          params["pageIndex"]++;
+        } while(resp.data?.length >= 100)
       } catch(err: any) {
-      logger.error(err)
-    }
+        logger.error(err)
+      }
 
-    if(!items.length) return;
+      if(!items.length) return;
 
-  }
-
-      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
-    } catch(err) {
-      logger.error("error", err)
-    }
 
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     const productList = store.getters["product/getCachedProducts"];
 
     // Update items with parentProductName and rename statusId to itemStatusId
     items.forEach((item: any) => {
-      item.itemStatusId = item.statusId;
-      delete item.statusId;
+      if(!item.itemStatusId && item.statusId) {
+        item.itemStatusId = item.statusId;
+        delete item.statusId;
+      }
       
       const product = productList[item.productId];
       if(product?.parentProductName) {
@@ -322,6 +331,11 @@ const actions: ActionTree<CountState, RootState> = {
       }
     });
 
+      // Sync the items to indexeddb
+      syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
+    } catch(err) {
+      logger.error("error", err)
+    }
     if(payload.isSortingRequired) items = sortListByField(items, "parentProductName");
     // Fetch product stock if QOH display is enabled in store settings.
     if(productStoreSettings['showQoh']) this.dispatch("product/fetchProductStock", items[0].productId)
