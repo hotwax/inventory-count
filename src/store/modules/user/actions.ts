@@ -67,7 +67,10 @@ const actions: ActionTree<UserState, RootState> = {
       const authStore = useAuthStore()
       authStore.$patch({
         token: { value: api_key, expiration: authStore.token.expiration as any },
-        oms
+        oms,
+        isEmbedded: authStore.isEmbedded,
+        shop: authStore.shop as any,
+        host: authStore.host as any
       })
 
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
@@ -487,5 +490,6 @@ const actions: ActionTree<UserState, RootState> = {
   async updateScrollingAnimationPreference({commit}, payload) {
     commit(types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED, payload)
   },
+
 }
 export default actions;
