@@ -293,17 +293,17 @@ async function updateCountName() {
   isCountNameUpdating.value = false
 }
 
-async function deleteItemFromCount(item: any) {
+async function deleteItemFromCount(countItem: any) {
   try {
     const resp = await CountService.updateCount({
       inventoryCountImportId: currentCycleCount.value.countId,
-      importItemSeqId: item.importItemSeqId,
+      importItemSeqId: countItem.importItemSeqId,
       statusId: "INV_COUNT_VOIDED",
-      productId: item.productId
+      productId: countItem.productId
     })
 
     if(!hasError(resp)) {
-      currentCycleCount.value.items = currentCycleCount.value.items.filter((itm: any) => itm.importItemSeqId !== item.importItemSeqId)
+      currentCycleCount.value.items = currentCycleCount.value.items.filter((item: any) => item.importItemSeqId !== countItem.importItemSeqId)
       showToast(translate("Item has been removed from the cycle count"))
     } else {
       throw "Failed to remove the item from the count"
