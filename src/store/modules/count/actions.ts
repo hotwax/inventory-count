@@ -292,13 +292,20 @@ const actions: ActionTree<CountState, RootState> = {
             // field, thus only updating required items in the dbItems
             if(dbData?.data?.length) {
               respItems.forEach((item: any) => {
-                dbItems[item.importItemSeqId] = item
+                if(item.statusId === "INV_COUNT_VOIDED") {
+                  // If the item is voided and already exists in dbItems, remove it
+                  if(dbItems[item.importItemSeqId]) delete dbItems[item.importItemSeqId];
+                } else {
+                  // Otherwise, update or insert the item
+                  dbItems[item.importItemSeqId] = item;
+                }
               })
 
               // As we are directly updating the dbItems, thus not using concat and directly updating the items
               items = Object.values(dbItems)
             } else {
-              items = items.concat(respItems)
+              // Filter out voided items before adding to items when indexedDB does not have any saved items.
+              items = items.concat(respItems.filter((item: any) => item.statusId !== "INV_COUNT_VOIDED"))
             }
 
             // dispatch progress update after each batch

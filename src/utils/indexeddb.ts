@@ -17,26 +17,15 @@ function syncItem(values: any, table: any, key: any, database: string) {
       const objStore = tran.objectStore(table);
       // @ts-ignore
       objStore.get(key).onsuccess = ({ target: { result } }) => {
-        if (!result) {
-          const data = new Map();
-          values.map((value: any) => {
-            data.set(value[recordKey], value)
-          })
-          objStore.add({
-            lastUpdatedStamp: Date.now(),
-            data
-          }, key).onsuccess = res;
-        } else {
-          const data = result.data
-          values.map((value: any) => {
-            data.set(value[recordKey], value)
-          })
-
-          objStore.put({
-            lastUpdatedStamp: Date.now(),
-            data
-          }, key).onsuccess = res;
-        }
+        // Always overwrites the object store entry with the latest values mapped by key and a timestamp
+        const data = new Map();
+        values.map((value: any) => {
+          data.set(value[recordKey], value)
+        })
+        objStore.put({
+          lastUpdatedStamp: Date.now(),
+          data
+        }, key).onsuccess = res;
       };
     };
   });
