@@ -5,7 +5,7 @@
         <ion-back-button slot="start" default-href="/assigned" />
         <ion-title>{{ translate("Assigned count")}}</ion-title>
         <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button @click="addProduct()">
+          <ion-button @click="addProduct()" :disabled="isAddButtonDisabled">
             <ion-icon slot="icon-only" :icon="addOutline" />
           </ion-button>
         </ion-buttons>
@@ -183,6 +183,10 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let isLoadingItems = ref(true)
 let cycleCountItemsProgress = ref(0)
+
+const isAddButtonDisabled = computed(() => {
+  return selectedSegment.value === 'accepted' || selectedSegment.value === 'rejected';
+});
 
 async function addProductToCount(productId: any) {
   if(!productId) {
