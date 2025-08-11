@@ -29,6 +29,10 @@
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
+          <ion-button v-if="hasPermission('APP_DRAFT_VIEW')" fill="outline" @click="goToTabs()">
+           {{ router.currentRoute.value.fullPath.includes('/tabs/') ? translate('go to admin') : translate('go to store') }}
+          </ion-button>
+
         </ion-card>
       </div>
       <div class="section-header">
@@ -138,6 +142,15 @@ function logout() {
   })
 }
 
+function goToTabs() {
+  const currentPath = router.currentRoute.value.fullPath;
+
+  if (currentPath.includes('/tabs/')) {
+    router.push('/draft'); 
+  } else {
+    router.replace('/tabs/');
+  }
+}
 function goToLaunchpad() {
   window.location.href = `${getAppLoginUrl()}`
 }
