@@ -29,9 +29,10 @@
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
-         <ion-button v-if="(router.currentRoute.value.fullPath.includes('/tabs/') && cameFromAdmin) ||!router.currentRoute.value.fullPath.includes('/tabs/')" color="danger" @click="goToTabs()">
-            {{ router.currentRoute.value.fullPath.includes('/tabs/') ? translate("go to admin") : translate("go to store") }}
-         </ion-button>
+          <ion-button v-if="hasPermission('APP_DRAFT_VIEW')" fill="outline" @click="goToTabs()">
+           {{ router.currentRoute.value.fullPath.includes('/tabs/') ? translate('go to admin') : translate('go to store') }}
+          </ion-button>
+
         </ion-card>
       </div>
       <div class="section-header">
@@ -140,17 +141,14 @@ function logout() {
     window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
 }
-const cameFromAdmin = ref(sessionStorage.getItem("cameFromAdmin") === "true");
 
 function goToTabs() {
   const currentPath = router.currentRoute.value.fullPath;
 
   if (currentPath.includes('/tabs/')) {
-    router.push('/draft');
+    router.push('/draft'); 
   } else {
-    cameFromAdmin.value = true; 
-    sessionStorage.setItem("cameFromAdmin", "true");
-    router.replace('/tabs/'); 
+    router.replace('/tabs/');
   }
 }
 function goToLaunchpad() {
