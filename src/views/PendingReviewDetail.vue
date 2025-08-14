@@ -16,8 +16,9 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content">
+    <ion-content class="main-content" :scroll-y="false">
       <template v-if="currentCycleCount.inventoryCountImportId">
+        <template v-if="!isLoadingItems">
         <div class="header">
           <div class="search ion-padding">
             <ion-item lines="none">
@@ -63,7 +64,7 @@
             </ion-chip>
           </div>
           <ion-list>
-            <div class="filters ion-padding">
+            <div class="filters">
               <ion-item>
                 <ion-label>{{ translate("Progress") }}</ion-label>
                 <ion-label slot="end">{{ getProgress() }}</ion-label>
@@ -98,16 +99,23 @@
             </ion-segment-button>
           </ion-segment>
         </div>
+        </template>
 
-        <template v-if="filteredItems?.length">
-          <div class="list-item" v-for="item in filteredItems" :key="item.importItemSeqId">
+        <template v-if="isLoadingItems">
+          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+        </template>
+        <template v-else-if="filteredItems?.length">
+          <DynamicScroller class="virtual-scroller" :items="filteredItems" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :active="active" :index="index">
+          <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl"/>
+                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-                <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
               </ion-label>
             </ion-item>
 
@@ -150,19 +158,22 @@
               <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
             </div>
           </div>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </template>
 
         <p v-else class="empty-state">
           {{ translate("No items added to count") }}
         </p>
       </template>
-      <template v-else>
+      <template v-else-if="!isLoadingItems">
         <p class="empty-state">{{ translate("Cycle count not found") }}</p>
       </template>
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="!isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
+      <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
@@ -193,16 +204,21 @@ import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getProductIdentificationValue, getDateTime, sortListByField } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
 import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps({
   inventoryCountImportId: String
 })
+
+const productIdentificationStore = useProductIdentificationStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
@@ -235,12 +251,16 @@ let isCountNameUpdating = ref(false)
 let countName = ref("")
 let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
+
 const isUpdatingItem = ref<{ [key: string]: boolean }>({});
 const isUpdatingItemsInBulk = ref(false);
 const isAnyItemUpdating = computed(() => Object.values(isUpdatingItem.value).some((isUpdating) => isUpdating));
 
+let isLoadingItems = ref(true)
+let cycleCountItemsProgress = ref(0)
+
+
 onIonViewWillEnter(async () => {
-  emitter.emit("presentLoader", { message: "Loading cycle count details" })
   emitter.on("addProductToCount", addProductToCount);
 
   currentCycleCount.value = {}
@@ -262,11 +282,12 @@ onIonViewWillEnter(async () => {
     logger.error()
   }
 
-  emitter.emit("dismissLoader")
+  isLoadingItems.value = false;
 })
 
 onIonViewWillLeave(() => {
   emitter.off("addProductToCount", addProductToCount)
+  cycleCountItemsProgress.value = 0
 })
 
 async function fetchCountItems() {
@@ -278,6 +299,7 @@ async function fetchCountItems() {
       resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
+        cycleCountItemsProgress.value = items.length
         pageIndex++;
       } else {
         throw resp.data;
@@ -703,6 +725,10 @@ ion-footer ion-buttons {
 
 .main-content {
   --padding-bottom: 80px;
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 400px;
 }
 
 @media (max-width: 991px) {

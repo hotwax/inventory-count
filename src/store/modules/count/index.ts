@@ -15,7 +15,7 @@ const countModule: Module<CountState, RootState> = {
       facilityIds: [],
       noFacility: false,
       queryString: '',
-      sortBy: 'dueDate desc',
+      sortBy: 'dueDate asc',
       createdDate_from: '',
       createdDate_thru: '',
       closedDate_from: '',
@@ -30,7 +30,8 @@ const countModule: Module<CountState, RootState> = {
     cycleCountItems: {},
     defaultRecountUpdateBehaviour: "add",
     cachedUnmatchProducts: {},
-    closedCycleCountsTotal: ""
+    closedCycleCountsTotal: "",
+    isCountDetailPageActive: false
   },
   getters,
   actions,

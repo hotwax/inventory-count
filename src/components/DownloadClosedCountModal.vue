@@ -95,7 +95,7 @@ import {
   modalController
 } from "@ionic/vue";
 import emitter from "@/event-bus"
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
 import { convertIsoToMillis, getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv, showToast } from "@/utils";
 import { CountService } from "@/services/CountService"
@@ -103,12 +103,16 @@ import { translate } from '@/i18n';
 import { DateTime } from "luxon";
 import logger from "@/logger";
 import store from "@/store";
+import { UserService } from "@/services/UserService";
+import { useUserStore } from "@hotwax/dxp-components";
 
+const userStore = useUserStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const facilities = computed(() => store.getters["user/getFacilities"])
+const facilities = computed(() => userStore.getFacilites)
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const query = computed(() => store.getters["count/getQuery"])
+const userProfile = computed(() => store.getters["user/getUserProfile"])
 
 const productIdentifications = {
   "Internal ID": "productId",
@@ -118,24 +122,75 @@ const productIdentifications = {
 };
 
 const selectedFields: any = ref({
-  countId: true,
-  countName: true,
-  acceptedByUser: true,
-  createdDate: true,
-  lastSubmittedDate: true,
-  closedDate: true,
-  facility: true,
-  primaryProductId: true,
-  secondaryProductId: true,
-  lineStatus: true,
-  expectedQuantity: true,
-  countedQuantity: true,
-  variance: true,
+  countId: false,
+  countName: false,
+  acceptedByUser: false,
+  createdDate: false,
+  lastSubmittedDate: false,
+  closedDate: false,
+  facility: false,
+  primaryProductId: false,
+  secondaryProductId: false,
+  lineStatus: false,
+  expectedQuantity: false,
+  countedQuantity: false,
+  variance: false,
 });
 
 const selectedFacilityField: any = ref('facilityId');
 const selectedPrimaryProductId: any = ref('productId');
 const selectedSecondaryProductId: any = ref('productId');
+const savedFieldMappings = ref("")
+
+onMounted(async () => {
+  const userId = userProfile.value.partyId
+  try {
+    const resp = await UserService.getUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string);
+
+    if(resp.length && resp[0].preferenceValue) {
+      savedFieldMappings.value = resp[0].preferenceValue
+      const savedMapping = savedFieldMappings.value.split(",");
+
+      savedMapping.map((mapping: string) => {
+        if(mapping.includes(":")) {
+          const [key, value] = mapping.split(":")
+          selectedFields.value[key] = true
+
+          if(key === "facility") {
+            selectedFacilityField.value = value
+          }
+
+          if(key === "primaryProductId") {
+            selectedPrimaryProductId.value = value
+          }
+
+          if(key === "secondaryProductId") {
+            selectedSecondaryProductId.value = value
+          }
+        } else {
+          selectedFields.value[mapping] = true
+        }
+
+      })
+    } else if(!resp[0]?.preferenceKey) {
+      // Make all the fields selected, if no user preference is found
+      markAllFieldsSelected();
+      const mappedData: Array<string> = generateMappedData(Object.keys(selectedFields.value))
+      await UserService.createUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string, mappedData.join(","));
+    }
+  } catch(err) {
+    // Make all the fields selected, if no user preference is found
+    markAllFieldsSelected();
+    logger.error(err)
+  }
+})
+
+function markAllFieldsSelected() {
+  selectedFields.value = Object.keys(selectedFields.value).reduce((updatedFields: any, field: string) => {
+    updatedFields[field] = true
+    return updatedFields
+  }, {})
+}
 
 function closeModal() {
   modalController.dismiss({ dismissed: true});
@@ -260,6 +315,7 @@ async function downloadCSV() {
   }
 
   await modalController.dismiss({ dismissed: true });
+  await updateMappingPreference();
   emitter.emit("presentLoader", { message: "Preparing file to downlaod...", backdropDismiss: true });
   
   const facilityDetails = getFacilityDetails();
@@ -317,6 +373,42 @@ async function downloadCSV() {
   const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
   await jsonToCsv(downloadData, { download: true, name: fileName });
   emitter.emit("dismissLoader")
+}
+
+function generateMappedData(data: any) {
+  return data.map((key: string) => {
+    if(key === "facility") {
+      return `facility:${selectedFacilityField.value}`
+    }
+
+    if(key === "primaryProductId") {
+      return `primaryProductId:${selectedPrimaryProductId.value}`
+    }
+
+    if(key === "secondaryProductId") {
+      return `secondaryProductId:${selectedSecondaryProductId.value}`
+    }
+
+    return key;
+  })
+}
+
+async function updateMappingPreference() {
+  // Only fields those are selected by the user
+  const selectedData = Object.keys(selectedFields.value).filter((field) => selectedFields.value[field]);
+
+  const mappedData: Array<string> = generateMappedData(selectedData)
+
+  // No changes have been made in the mappings, so no need to update the user preference
+  if(savedFieldMappings.value === mappedData.join(",")) {
+    return;
+  }
+
+  try {
+    await UserService.updateUserPreference(userProfile.value.partyId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string, mappedData.join(","))
+  } catch(err) {
+    logger.error("Failed to update user preference for mapping")
+  }
 }
 </script>
 

@@ -15,11 +15,7 @@ const userModule: Module<UserState, RootState> = {
         url: "",
         token: ""
       },
-      facilities: [],
-      currentFacility: {},
       permissions: [],
-      productStores: [],
-      currentProductStore: {},
       fieldMappings: {},
       currentMapping: {
         id: '',
@@ -28,15 +24,11 @@ const userModule: Module<UserState, RootState> = {
         value: {}
       },
       settings: {
+        isFirstScanCountEnabled: false,
         forceScan: false,
         showQoh: false,
-        productIdentificationPref: {
-          primaryId: 'productId',
-          secondaryId: ''
-        },
         barcodeIdentificationPref: ""
       },
-      goodIdentificationTypes: [],
       isScrollingAnimationEnabled: false
     },
     getters,

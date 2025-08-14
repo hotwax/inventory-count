@@ -2,11 +2,11 @@
   <ion-content>
     <ion-list>
       <ion-list-header>{{ systemMessage.systemMessageId }}</ion-list-header>
-      <ion-item v-if="systemMessage.statusId === 'SmsgReceived'" lines="none" button @click="cancelUpload()">
+      <ion-item v-if="systemMessage.statusId === 'SmsgReceived'" button @click="cancelUpload()">
         <ion-icon slot="end" />
         {{ translate("Cancel") }}
       </ion-item>
-      <ion-item v-if="systemMessage.statusId === 'SmsgError'" lines="none" button @click="viewErrorModal()">
+      <ion-item v-if="systemMessage.statusId === 'SmsgError'" button @click="viewErrorModal()">
         <ion-icon slot="end"/>
         {{ translate("View error") }}
       </ion-item>
