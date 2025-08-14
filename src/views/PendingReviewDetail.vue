@@ -237,9 +237,7 @@ let segmentSelected = ref("all")
 let varianceThreshold = ref(40)
 const isUpdatingItem = ref<{ [key: string]: boolean }>({});
 const isUpdatingItemsInBulk = ref(false);
-const isAnyItemUpdating = computed(() => {
-  return Object.values(isUpdatingItem.value).some((isUpdating) => isUpdating);
-});
+const isAnyItemUpdating = computed(() => Object.values(isUpdatingItem.value).some((isUpdating) => isUpdating));
 
 onIonViewWillEnter(async () => {
   emitter.emit("presentLoader", { message: "Loading cycle count details" })
