@@ -36,7 +36,7 @@ const createBulkCycleCounts = async (payload: any): Promise<any> => {
 const fetchFacilityGroups = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
   const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
 
   return client({
     url: "facilityGroups",
@@ -54,7 +54,7 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
   const url = store.getters["user/getBaseUrl"]
   
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
 
   return client({
     url: `facilityGroups/${payload.facilityGroupId}/facilities`,

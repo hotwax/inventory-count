@@ -4,7 +4,7 @@ import { hasError } from "@/utils";
 
 const login = async (token: string): Promise <any> => {
   const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
   let api_key = ""
 
   try {
@@ -33,7 +33,7 @@ const login = async (token: string): Promise <any> => {
 
 const getUserProfile = async (token: any): Promise<any> => {
   const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
   try {
     const resp = await client({
       url: "user/profile",
@@ -53,7 +53,7 @@ const getUserProfile = async (token: any): Promise<any> => {
 
 const getAvailableTimeZones = async (): Promise <any>  => {
   const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
   return client({
     url: "user/getAvailableTimeZones",
     method: "get",
