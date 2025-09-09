@@ -36,8 +36,8 @@ const authGuard = async (to: any, from: any, next: any) => {
   if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
     await loader.present('Authenticating')
     if (authStore.isEmbedded) {
-      next('/login');
       loader.dismiss();
+      next('/login');
       return;
     }
     // TODO use authenticate() when support is there
