@@ -271,6 +271,7 @@ import { getProductIdentificationValue, useProductIdentificationStore } from '@h
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 import { deleteRecord } from '@/utils/indexeddb';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore();
@@ -594,9 +595,13 @@ function getVariance(item , isRecounting) {
 }
 
 async function saveCount(currentProduct, isScrollEvent = false) {
+  const { updateItem } = useInventoryCountImport();   // get composable methods
+
   isScanningInProgress.value = true;
   if (!inputCount.value && inputCount.value !== 0) {
-    showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
+    showToast(translate(productStoreSettings.value['forceScan'] ? 
+      "Scan a count before saving changes" : 
+      "Enter a count before saving changes"))
     isScanningInProgress.value = false;
     return;
   }
@@ -613,12 +618,15 @@ async function saveCount(currentProduct, isScrollEvent = false) {
       quantity: currentCount,
       countedByUserLoginId: userProfile.value.username
     };
+
     const resp = await CountService.updateCount(payload);
+
     if (!hasError(resp)) {
       currentProduct.quantity = currentCount
       currentProduct.countedByGroupName = userProfile.value.userFullName
       currentProduct.countedByUserLoginId = userProfile.value.username
       currentProduct.isRecounting = false;
+
       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
       items.map((item) => {
         if(item.importItemSeqId === currentProduct.importItemSeqId) {
@@ -627,19 +635,79 @@ async function saveCount(currentProduct, isScrollEvent = false) {
           item.countedByUserLoginId = userProfile.value.username
         }
       })
+
       await store.dispatch('count/updateCycleCountItems', items);
       if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
+
+      await updateItem(currentProduct.importItemSeqId, {
+        quantity: currentProduct.quantity,
+        countedByGroupName: userProfile.value.userFullName,
+        countedByUserLoginId: userProfile.value.username,
+        isRecounting: false,
+        lastUpdatedStamp: Date.now()
+      });
     } else {
       throw resp.data;
     }
+
     hasUnsavedChanges.value = false;
     updateFilteredItems();
+
   } catch (err) {
     logger.error(err);
     showToast(translate("Something went wrong, please try again"));
   }
-  isScanningInProgress.value = false
+
+  isScanningInProgress.value = false;
 }
+
+// async function saveCount(currentProduct, isScrollEvent = false) {
+//   isScanningInProgress.value = true;
+//   if (!inputCount.value && inputCount.value !== 0) {
+//     showToast(translate(productStoreSettings.value['forceScan'] ? "Scan a count before saving changes" : "Enter a count before saving changes"))
+//     isScanningInProgress.value = false;
+//     return;
+//   }
+  
+//   // Set the input count to empty to avoid race conditions while scanning.
+//   let currentCount = inputCount.value;
+//   inputCount.value = "";
+
+//   try {
+//     const payload = {
+//       inventoryCountImportId: currentProduct.inventoryCountImportId,
+//       importItemSeqId: currentProduct.importItemSeqId,
+//       productId: currentProduct.productId,
+//       quantity: currentCount,
+//       countedByUserLoginId: userProfile.value.username
+//     };
+//     const resp = await CountService.updateCount(payload);
+//     if (!hasError(resp)) {
+//       currentProduct.quantity = currentCount
+//       currentProduct.countedByGroupName = userProfile.value.userFullName
+//       currentProduct.countedByUserLoginId = userProfile.value.username
+//       currentProduct.isRecounting = false;
+//       const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
+//       items.map((item) => {
+//         if(item.importItemSeqId === currentProduct.importItemSeqId) {
+//           item.quantity = currentProduct.quantity
+//           item.countedByGroupName = userProfile.value.userFullName
+//           item.countedByUserLoginId = userProfile.value.username
+//         }
+//       })
+//       await store.dispatch('count/updateCycleCountItems', items);
+//       if(!isScrollEvent) await store.dispatch('product/currentProduct', currentProduct);
+//     } else {
+//       throw resp.data;
+//     }
+//     hasUnsavedChanges.value = false;
+//     updateFilteredItems();
+//   } catch (err) {
+//     logger.error(err);
+//     showToast(translate("Something went wrong, please try again"));
+//   }
+//   isScanningInProgress.value = false
+// }
 
 async function openRecountAlert() {
   const alert = await alertController.create({

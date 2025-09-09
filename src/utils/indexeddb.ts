@@ -3,6 +3,7 @@ import logger from "@/logger";
 const recordKey = "importItemSeqId"
 
 function syncItem(values: any, table: any, key: any, database: string) {
+  console.log("\n\nSyncing items to indexedDB", { values, table, key, database }, "\n\n");
   const open = indexedDB.open(database, 1);
 
   // Creating object store, as it can only be created inside onupgradeneeded event
@@ -32,6 +33,7 @@ function syncItem(values: any, table: any, key: any, database: string) {
 }
 
 function readTable(table: any, key: any, database: string) {
+  console.log("\n\nReading items from indexedDB", { table, key, database }, "\n\n");
   const open = indexedDB.open(database, 1);
 
   // Creating object store, as it can only be created inside onupgradeneeded event

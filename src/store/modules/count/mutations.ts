@@ -33,6 +33,7 @@ const mutations: MutationTree <CountState> = {
     state.cycleCounts.isScrollable = payload.isScrollable;
   },
   [types.COUNT_ITEMS_UPDATED] (state, payload) {
+    console.log("Updating count items in store:", payload);
     let countItems = payload
     // Prevents late API responses from updating state after leaving the count details page
     if(!state.isCountDetailPageActive) countItems = {};
