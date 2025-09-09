@@ -3,13 +3,12 @@ import store from "@/store";
 import { hasError } from "@/utils";
 
 const login = async (token: string): Promise <any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   let api_key = ""
 
   try {
     const resp = await client({
-      url: "login", 
+      url: "admin/login", 
       method: "post",
       baseURL,
       params: {
@@ -32,11 +31,10 @@ const login = async (token: string): Promise <any> => {
 }
 
 const getUserProfile = async (token: any): Promise<any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   try {
     const resp = await client({
-      url: "user/profile",
+      url: "admin/user/profile",
       method: "GET",
       baseURL,
       headers: {
@@ -52,19 +50,17 @@ const getUserProfile = async (token: any): Promise<any> => {
 }
 
 const getAvailableTimeZones = async (): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   return client({
-    url: "user/getAvailableTimeZones",
+    url: "admin/user/getAvailableTimeZones",
     method: "get",
-    baseURL,
     cache: true
   });
 }
 
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
+    url: `admin/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     params: payload
   });
@@ -72,7 +68,7 @@ const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
 
 const updateProductStoreSetting = async (payload: any): Promise <any>  => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
+    url: `admin/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     data: payload
   });
@@ -80,15 +76,7 @@ const updateProductStoreSetting = async (payload: any): Promise <any>  => {
 
 const createProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
-    method: "post",
-    data: payload
-  });
-}
-
-const setUserTimeZone = async (payload: any): Promise <any>  => {
-  return api({
-    url: "setUserTimeZone",
+    url: `admin/productStores/${payload.productStoreId}/settings`,
     method: "post",
     data: payload
   });
@@ -186,7 +174,7 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 
 const createFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings",
+    url: "inventory-cycle-count/dataManagerMappings",
     method: "POST",
     data: payload
   });
@@ -194,7 +182,7 @@ const createFieldMapping = async (payload: any): Promise <any> => {
 
 const updateFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings/${payload.mappingPrefId}",
+    url: "inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}",
     method: "POST",
     data: payload
   });
@@ -202,14 +190,14 @@ const updateFieldMapping = async (payload: any): Promise <any> => {
 
 const deleteFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings/${payload.mappingPrefId}",
+    url: "inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}",
     method: "DELETE",
     data: payload
   });
 }
 
 const getFieldMappings = async (payload: any): Promise <any> => {
-  let url = "dataManagerMappings?"
+  let url = "inventory-cycle-count/dataManagerMappings?"
 
   if (Array.isArray(payload.mappingPrefTypeEnumId)) {
     url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId.join('&')}`
@@ -226,13 +214,12 @@ const getFieldMappings = async (payload: any): Promise <any> => {
 }
 
 const createUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   const token = store.getters["user/getUserToken"]
 
   try {
     const resp = await client({
-      url: "user/preferences",
+      url: "admin/user/preferences",
       method: "POST",
       baseURL,
       data: {
@@ -253,13 +240,12 @@ const createUserPreference = async(userId: string, preferenceKey: string, prefer
 }
 
 const updateUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   const token = store.getters["user/getUserToken"]
 
   try {
     const resp = await client({
-      url: "user/preferences",
+      url: "admin/user/preferences",
       method: "PUT",
       baseURL,
       data: {
@@ -280,13 +266,12 @@ const updateUserPreference = async(userId: string, preferenceKey: string, prefer
 }
 
 const getUserPreference = async(userId: string, preferenceKey: string): Promise<any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   const token = store.getters["user/getUserToken"]
 
   try {
     const resp = await client({
-      url: "user/preferences",
+      url: "admin/user/preferences",
       method: "GET",
       baseURL,
       params: {
@@ -319,6 +304,5 @@ export const UserService = {
   login,
   updateFieldMapping,
   updateProductStoreSetting,
-  updateUserPreference,
-  setUserTimeZone,
+  updateUserPreference
 }
