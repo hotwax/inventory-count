@@ -22,6 +22,7 @@ import BulkUpload from "@/views/BulkUpload.vue"
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
 import ClosedDetail from "@/views/ClosedDetail.vue";
+import Shopify from "@/views/Shopify.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -221,6 +222,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
+  },
+  {
+    path: '/shopify',
+    name: 'Shopify',
+    component: Shopify
   }
 ];
 
