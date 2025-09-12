@@ -90,7 +90,7 @@
           </ion-item>
           <ion-item lines="none" v-else-if="searchedProduct.productId">
             <ion-thumbnail slot="start">
-              <Image :src="getProduct(searchedProduct.productId).mainImageUrl"/>
+              <Image :src="getProductById(searchedProduct.productId).product?.mainImageUrl"/>
             </ion-thumbnail>
             <ion-label>
               <p class="overline">{{ translate("Search result") }}</p>
@@ -116,11 +116,11 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
+                <Image :src="getProductById(item.productId).product?.mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>           
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProductById(item.productId)) || getProductById(item.productId).product?.productName }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProductById(item.productId)) }}</p>           
               </ion-label>
             </ion-item>
             <ion-label>
@@ -183,14 +183,16 @@ import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductMaster } from "@/composables/useProductMaster";
 
 const props = defineProps({
   inventoryCountImportId: String
 })
+const { cacheReady, getById, prefetch, findByIdentification } = useProductMaster();
 
 const productIdentificationStore = useProductIdentificationStore();
-
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productMap = ref<Record<string, any>>({})
+const identMap = ref<Record<string, any>>({})
 
 const isProductAvailableInCycleCount = computed(() => {
   if(!searchedProduct.value.productId) return false
@@ -215,6 +217,12 @@ let cycleCountItemsProgress = ref(0)
 const existingItemsCount = ref(0)
 const uploadingItemsCount = ref(0)
 
+// Helper to get product by ID synchronously
+const getProductById = (id: string) => productMap.value[id] || {}
+
+// Helper to get product by identification synchronously
+const getProductByIdentification = (type: string, value: string) => identMap.value[`${type}:${value}`] || {}
+
 // Implemented watcher to display the search spinner correctly. Mainly the watcher is needed to not make the findProduct call always and to create the debounce effect.
 // Previously we were using the `debounce` property of ion-input but it was updating the searchedString and making other related effects after the debounce effect thus the spinner is also displayed after the debounce
 // effect is completed.
@@ -233,9 +241,16 @@ watch(queryString, (value) => {
   }
 
   // Storing the setTimeoutId in a variable as watcher is invoked multiple times creating multiple setTimeout instance those are all called, but we only need to call the function once.
-  timeoutId.value = setTimeout(() => {
-    if(searchedString?.length) findProduct()
-  }, 1000)
+  timeoutId.value = setTimeout(async () => {
+    // Find via product master composable
+    const product = await findByIdentification("sku", searchedString);
+    if (product?.product?.productId) {
+      searchedProduct.value = product;
+    } else {
+      searchedProduct.value = {};
+    }
+    isSearchingProduct.value = false;
+  }, 1000);
 
 }, { deep: true })
 
@@ -315,7 +330,22 @@ async function fetchCountItems() {
   items = sortListByField(items, "parentProductName");
 
   currentCycleCount.value["items"] = items
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+  const productIds = [...new Set(currentCycleCount.value.items.map((item: any) => item.productId))] as any[];
+  await prefetch(productIds);
+
+  // Populate productMap and identMap
+  for (const productId of productIds) {
+    const { product } = await getById(productId)
+    if (product) {
+      productMap.value[productId] = product
+
+      if (product.goodIdentifications?.length) {
+        for (const ident of product.goodIdentifications) {
+          identMap.value[`${ident.type}:${ident.value}`] = product
+        }
+      }
+    }
+  }
 }
 
 async function openImportCsvModal() {
@@ -454,57 +484,25 @@ async function findProduct() {
 }
 
 async function findProductFromIdentifier(payload: any) {
-  
   const idType = payload.idType;
   const idValues = payload.idValue;
 
-  if(!idValues || !idValues.length) {
-    return showToast(translate("CSV data is missing or incorrect. Please check your file."));
-  }
+  if(!idValues?.length) return showToast(translate("CSV data is missing or incorrect. Please check your file."));
 
-  // Set the uploading items count for progress bar to calculate the total items count
   uploadingItemsCount.value = idValues.length;
 
-  const filterString = (idType === 'productId') ? `${idType}: (${idValues.join(' OR ')})` : `goodIdentifications: (${idValues.map((value: any) => `${idType}/${value}`).join(' OR ')})`;
-
-  try {
-    const resp = await ProductService.fetchProducts({
-      "filters": [filterString],
-      "viewSize": idValues.length
-    })
-    // We first fetch the products and then check whether they are available in the current count, instead of doing it in reverse order, it reduces the number of checks and improve performance.
-    // This ensures that we have the most up-to-date product data and can accurately determine their presence in the current cycle count.
-
-    if (!hasError(resp) && resp.data.response?.docs?.length) {
-      const products = resp.data.response.docs;
-      const itemsAlreadyInCycleCount = currentCycleCount.value.items.map((item: any) => item.productId);
-
-      // Filter payload products to only include items that have a matching product and are not already in the cycle count.
-      const filteredProducts = products.filter((product: any) => {
-        const identificationValue = getProductIdentificationValue(idType, product);
-        return idValues.includes(identificationValue) && !itemsAlreadyInCycleCount.includes(product.productId);
-      })
-
-      // Passing both productId and idValue for the backend compatibility
-      // idValue will be removed in the future.
-      const productsToAdd = filteredProducts.map((product: any) => ({ idValue: product.productId, productId: product.productId }));
-      if(!productsToAdd) {
-        return showToast(translate("Failed to add product to count"))
-      }
-
-      await addProductToCount(productsToAdd);
-      showToast(translate("Added products to the cycle count out of.", {added: productsToAdd.length, total: idValues.length}))
-    } else {
-      throw { toast: translate("No product found, please verify your CSV") };
+  const productsToAdd: any[] = [];
+  for (const value of idValues) {
+    const product = await findByIdentification(idType, value);
+    if (product && !currentCycleCount.value.items?.some((item: any) => item.productId === product.product?.productId)) {
+      productsToAdd.push({ idValue: product.product?.productId, productId: product.product?.productId });
     }
-  } catch(err: any) {
-    if (err.toast) {
-      showToast(err.toast);
-    } else {
-      showToast(translate("Failed to fetch the products."));
-    }
-    logger.error("Failed to add products to count", err);
   }
+
+  if (!productsToAdd.length) return showToast(translate("No valid products found to add"));
+
+  await addProductToCount(productsToAdd);
+  showToast(translate("Added products to the cycle count out of.", { added: productsToAdd.length, total: idValues.length }));
 }
 
 async function addProductToCount(payload?: any) {

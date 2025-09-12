@@ -111,11 +111,11 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
+                <Image :src="getProductById(item.productId).product?.mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                   {{ getProductIdentification(item.productId, productIdentificationStore.getProductIdentificationPref.primaryId) || productCache[item.productId]?.productName }}
+                <p>{{ getProductIdentification(item.productId, productIdentificationStore.getProductIdentificationPref.secondaryId) }}</p>
               </ion-label>
             </ion-item>
 
@@ -213,15 +213,25 @@ import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductMaster } from '@/composables/useProductMaster'
+import { reactive } from 'vue'
+
+const productCache = reactive({} as Record<string, any>)
 
 const props = defineProps({
   inventoryCountImportId: String
 })
+const { getById, prefetch } = useProductMaster();
+const productMap = ref<Record<string, any>>({})
+const identMap = ref<Record<string, any>>({})
 
 const productIdentificationStore = useProductIdentificationStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const getProductById = (id: string) => productMap.value[id] || {}
+
+const getProductByIdentification = (type: string, value: string) => identMap.value[`${type}:${value}`] || {}
+
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 const filteredItems = computed(() => {
@@ -306,7 +316,22 @@ async function fetchCountItems() {
   items = sortListByField(items, "parentProductName");
 
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+  const productIds = [...new Set(currentCycleCount.value.items.map((item: any) => item.productId))] as any[];
+    await prefetch(productIds);
+
+    // Populate productMap and identMap
+    for (const productId of productIds) {
+      const { product } = await getById(productId)
+      if (product) {
+        productMap.value[productId] = product
+
+        if (product.goodIdentifications?.length) {
+          for (const ident of product.goodIdentifications) {
+            identMap.value[`${ident.type}:${ident.value}`] = product
+          }
+        }
+      }
+  }
 }
 
 async function addProductToCount(productId: any) {
@@ -348,6 +373,14 @@ function getVarianceInformation() {
 
   // TODO: internationalize text
   return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
+}
+
+async function getProductIdentification(productId: string, idType: string) {
+  const { product } = await getById(productId)
+  if (!product) return ''
+  productCache[productId] = product
+  const ident = product.goodIdentifications?.find(id => id.type === idType)
+  return ident ? ident.value : ''
 }
 
 function getProgress() {

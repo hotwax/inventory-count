@@ -11,6 +11,7 @@ import { DateTime } from "luxon"
 import store from "@/store";
 import { readTable, syncItem } from "@/utils/indexeddb"
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
+import { useProductMaster } from '@/composables/useProductMaster'
 
 const actions: ActionTree<CountState, RootState> = {
   async fetchCycleCounts({ commit, dispatch, state }, payload) {
@@ -355,106 +356,111 @@ const actions: ActionTree<CountState, RootState> = {
   //   commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   // },
 
-  async fetchCycleCountItemsSummary({ commit, state, getters }, payload) {
-    const { bulkInsert, fetchAll, updateItem, deleteItem, allItems } = useInventoryCountImport()
+async fetchCycleCountItemsSummary({ commit, state, getters }, payload) {
+  const { bulkInsert, fetchAll, updateItem, deleteItem, allItems } = useInventoryCountImport()
+    const { cacheReady, getById, prefetch } = useProductMaster()
 
-    let items: any[] = [], resp
-    console.log("Fetching items for count:", payload);
-    
-    const pageIndex = 0
-    const productStoreSettings = store.getters['user/getProductStoreSettings']
+  let items: any[] = [], resp
+  console.log("Fetching items for count:", payload);
+  
+  const pageIndex = 0
+  const productStoreSettings = store.getters['user/getProductStoreSettings']
 
-    try {
-      // Load from IndexedDB first
-      await fetchAll()
-      let dbItems = {} as any;
-      const params: any = { ...payload, pageSize: 100, pageIndex }
+  try {
+    // Load from IndexedDB first
+    await fetchAll()
+    let dbItems = {} as any;
+    const params: any = { ...payload, pageSize: 100, pageIndex }
 
-      if (allItems.value.length) {
-        items = [...allItems.value]
-        const lastUpdatedStamp = Math.max(...items.map(it => it.lastUpdatedStamp || 0))
-        params['lastUpdatedStamp_from'] = lastUpdatedStamp
-        dbItems = items.reduce((acc, it) => {
-          acc[it.importItemSeqId] = it
-          return acc
-        }, {} as any)
-      }
+    if (allItems.value.length) {
+      items = [...allItems.value]
+      const lastUpdatedStamp = Math.max(...items.map(it => it.lastUpdatedStamp || 0))
+      params['lastUpdatedStamp_from'] = lastUpdatedStamp
+      dbItems = items.reduce((acc, it) => {
+        acc[it.importItemSeqId] = it
+        return acc
+      }, {} as any)
+    }
 
-      // API fetch loop
-      do {
-        if (!getters.isCountDetailPageActive) return
-        resp = await CountService.fetchCycleCountItemsSummary(params)
+    // API fetch loop
+    do {
+      if (!getters.isCountDetailPageActive) return
+      resp = await CountService.fetchCycleCountItemsSummary(params)
 
-        if (!hasError(resp) && resp.data?.length) {
-          const respItems = resp.data
+      if (!hasError(resp) && resp.data?.length) {
+        const respItems = resp.data
 
-          if (items.length) {
-            // We already had items in IndexedDB -> update only diffs
-            for (const item of respItems) {
-              if (item.statusId === 'INV_COUNT_VOIDED') {
-                if (dbItems[item.importItemSeqId]) {
-                  await deleteItem(item.importItemSeqId)
-                  delete dbItems[item.importItemSeqId]
-                }
-              } else {
-                dbItems[item.importItemSeqId] = item
-                await updateItem(item.importItemSeqId, item)
+        if (items.length) {
+          // We already had items in IndexedDB -> update only diffs
+          for (const item of respItems) {
+            if (item.statusId === 'INV_COUNT_VOIDED') {
+              if (dbItems[item.importItemSeqId]) {
+                await deleteItem(item.importItemSeqId)
+                delete dbItems[item.importItemSeqId]
               }
+            } else {
+              dbItems[item.importItemSeqId] = item
+              await updateItem(item.importItemSeqId, item)
             }
-            items = Object.values(dbItems)
-          } else {
-            // First-time insert
-            const filtered = respItems.filter((it: any) => it.statusId !== 'INV_COUNT_VOIDED')
-            items = [...items, ...filtered]
-            await bulkInsert(items)
           }
-
-          commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+          items = Object.values(dbItems)
         } else {
-          throw resp.data
+          // First-time insert
+          const filtered = respItems.filter((it: any) => it.statusId !== 'INV_COUNT_VOIDED')
+          items = [...items, ...filtered]
+          await bulkInsert(items)
         }
-        params['pageIndex']++
-      } while (resp.data?.length >= 100)
 
-      if (!items.length) return
+        commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+      } else {
+        throw resp.data
+      }
+      params['pageIndex']++
+    } while (resp.data?.length >= 100)
 
-      // Enrich products
-      await this.dispatch('product/fetchProducts', { productIds: [...new Set(items.map(it => it.productId))] })
-      const productList = store.getters['product/getCachedProducts']
+    if (!items.length) return
 
-      items.forEach(item => {
-        if (!item.itemStatusId && item.statusId) {
-          item.itemStatusId = item.statusId
-          delete item.statusId
-        }
-        const product = productList[item.productId]
-        if (product?.parentProductName) {
-          item.parentProductName = product.parentProductName
-        }
-      })
+    // Use useProductMaster to fetch products and enrich items
+    const productIds = [...new Set(items.map(item => item.productId))]
+    await prefetch(productIds) // Ensure products are in the cache
 
-    } catch (err) {
-      logger.error('error', err)
-    }
+    // Update items with parentProductName and rename statusId to itemStatusId
 
-    if (payload.isSortingRequired) {
-      items = sortListByField(items, 'parentProductName')
-    }
+    items.forEach(async item => {
+      if (!item.itemStatusId && item.statusId) {
+        item.itemStatusId = item.statusId
+        delete item.statusId
+      }
+      const { product } = await getById(item.productId)
+      if (product?.parentProductName) {
+        item.parentProductName = product.parentProductName
+      }
+    })
+    // Sync to indexedDB
+    syncItem(items, "counts", payload.inventoryCountImportId, "cycleCounts")
 
-    if (productStoreSettings['showQoh']) {
-      this.dispatch('product/fetchProductStock', items[0].productId)
-    }
+  } catch (err) {
+    logger.error('error', err)
+  }
 
-    if (payload.isHardCount) {
-      const cachedProducts =
-        state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length
-          ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId]))
-          : []
-      if (cachedProducts?.length) items = [...items, ...cachedProducts]
-    }
+  if (payload.isSortingRequired) {
+    items = sortListByField(items, 'parentProductName')
+  }
 
-    commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
-  },
+  if (productStoreSettings['showQoh']) {
+    this.dispatch('product/fetchProductStock', items[0].productId)
+  }
+
+  if (payload.isHardCount) {
+    const cachedProducts =
+      state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length
+        ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId]))
+        : []
+    if (cachedProducts?.length) items = [...items, ...cachedProducts]
+  }
+
+  commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
+},
 
 
   async updateCycleCountItems ({ commit }, payload) {

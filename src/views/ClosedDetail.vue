@@ -56,11 +56,11 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
+                <Image :src="getProductById(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
               </ion-thumbnail>
               <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+                {{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.primaryId, getProductById(item.productId)) || getProductById(item.productId).productName }}
+                <p>{{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.secondaryId, getProductById(item.productId)) }}</p>
               </ion-label>
             </ion-item>
 
@@ -114,7 +114,8 @@ import emitter from '@/event-bus';
 import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, sortListByField } from "@/utils"
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useProductMaster } from "@/composables/useProductMaster";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 
@@ -122,15 +123,23 @@ const props = defineProps({
   inventoryCountImportId: String
 })
 
+const { prefetch, getById } = useProductMaster()
 const productIdentificationStore = useProductIdentificationStore();
 
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const productMap = ref<Record<string, any>>({})
+const identMap = ref<Record<string, any>>({})
 
+const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const currentCycleCount = ref({}) as any
 let countName = ref("")
 let isLoadingItems = ref(true)
 let cycleCountItemsProgress = ref(0)
+
+// Helper to get product by ID synchronously
+const getProductById = (id: string) => productMap.value[id] || {}
+
+// Helper to get product by identification synchronously
+const getProductByIdentification = (type: string, value: string) => identMap.value[`${type}:${value}`] || {}
 
 onIonViewWillEnter(async () => {
   currentCycleCount.value = {}
@@ -177,10 +186,26 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
-
+  items = sortListByField(items, "parentProductName")
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+
+  // Prefetch products using composable
+  const productIds = [...new Set(items.map((item: any) => item.productId))] as string[]
+  await prefetch(productIds)
+
+  // Populate productMap and identMap
+  for (const productId of productIds) {
+    const { product } = await getById(productId)
+    if (product) {
+      productMap.value[productId] = product
+
+      if (product.goodIdentifications?.length) {
+        for (const ident of product.goodIdentifications) {
+          identMap.value[`${ident.type}:${ident.value}`] = product
+        }
+      }
+    }
+  }
 }
 
 function getVarianceInformation() {
@@ -191,7 +216,6 @@ function getVarianceInformation() {
     totalItemsExpectedCount += parseInt(item.qoh || 0)
   })
 
-  // TODO: internationalize text
   return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
 }
 

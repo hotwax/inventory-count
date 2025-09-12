@@ -45,6 +45,44 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch products", err)
     }
   },
+  // async fetchProducts({ commit, state }, { productIds }) {
+  //   const { addProducts, getAllProducts, getProductById } = useProductMaster()
+  //   const cached = await getAllProducts()
+  //   const cachedProductIds = cached.map((p: any) => p.productId)
+  //   const remainingProductIds = productIds.filter((id: any) => !cachedProductIds.includes(id))
+
+  //   if (!remainingProductIds.length) return
+
+  //   const batchSize = 250
+  //   const fetchedProducts = []
+  //   let index = 0
+
+  //   try {
+  //     do {
+  //       const productIdBatch = remainingProductIds.slice(index, index + batchSize)
+  //       const productIdFilter = productIdBatch.join(' OR ')
+
+  //       const resp = await ProductService.fetchProducts({
+  //         filters: ['productId: (' + productIdFilter + ')'],
+  //         viewSize: productIdBatch.length,
+  //         fieldsToSelect: ["productName", "productId", "parentProductName", "goodIdentifications", "mainImageUrl", "internalName"]
+  //       })
+
+  //       if (!hasError(resp) && resp.data?.response?.docs?.length) {
+  //         const products = resp.data.response.docs
+  //         fetchedProducts.push(...products)
+  //       }
+  //       index += batchSize
+  //     } while (index < remainingProductIds.length)
+
+  //     if (fetchedProducts.length) {
+  //       await addProducts(fetchedProducts)   // Save into IndexedDB
+  //       commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: fetchedProducts })
+  //     }
+  //   } catch (err) {
+  //     logger.error("Failed to fetch products", err)
+  //   }
+  // },
 
   async currentProduct ({ commit }, payload) {
     commit(types.PRODUCT_CURRENT_UPDATED, payload)

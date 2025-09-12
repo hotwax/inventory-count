@@ -86,8 +86,8 @@
               </ion-thumbnail>
               <ion-label>
                 <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
+                {{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
               </ion-label>
             </ion-item>
 
@@ -166,15 +166,26 @@ import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductMaster } from '@/composables/useProductMaster'
 
 const props = defineProps({
   inventoryCountImportId: String
 })
+const { cacheReady, getById, prefetch } = useProductMaster()
+const productMap = ref<Record<string, any>>({})
+const identificationsMap = ref<Record<string, any>>({})
+
 
 const productIdentificationStore = useProductIdentificationStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const getProduct = (id: string) => {
+  return productMap.value[id] || {}
+}
+const getProductByIdentification = (type: string, value: string) => {
+  const key = `${type}:${value}`
+  return identMap.value[key] || {}
+}
 
 const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
@@ -265,7 +276,25 @@ async function fetchCountItems() {
   items = sortListByField(items, "parentProductName");
 
   currentCycleCount.value["items"] = items
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+
+  // Prefetch products using the product composable
+  const productIds = [...new Set(items.map((item: any) => item.productId))] as string[]
+  await prefetch(productIds)
+
+  // Populate the reactive productMap and identMap
+  for (const productId of productIds) {
+    const { product } = await getById(productId)
+    if (product) {
+      productMap.value[productId] = product
+
+      if (product.goodIdentifications?.length) {
+        for (const ident of product.goodIdentifications) {
+          const key = `${ident.type}:${ident.value}`
+          identificationsMap.value[key] = product
+        }
+      }
+    }
+  }
 }
 
 async function editCountName() {

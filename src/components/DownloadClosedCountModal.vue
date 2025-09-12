@@ -105,8 +105,10 @@ import logger from "@/logger";
 import store from "@/store";
 import { UserService } from "@/services/UserService";
 import { useUserStore } from "@hotwax/dxp-components";
+import { useProductMaster } from "@/composables/useProductMaster";
 
 const userStore = useUserStore();
+const pm = useProductMaster(); // Initialize the composable
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const facilities = computed(() => userStore.getFacilites)
@@ -145,6 +147,7 @@ const savedFieldMappings = ref("")
 onMounted(async () => {
   const userId = userProfile.value.partyId
   try {
+    pm.init({});
     const resp = await UserService.getUserPreference(userId, process.env.VUE_APP_DOWNLOAD_MAPPING_ID as string);
 
     if(resp.length && resp[0].preferenceValue) {
@@ -299,11 +302,11 @@ async function fetchBulkCycleCountItems() {
   return countItems
 }
 
-async function fetchProducts(productIds: any){
-  await store.dispatch("product/fetchProducts", { productIds });
-}
+// async function fetchProducts(productIds: any){
+//   await store.dispatch("product/fetchProducts", { productIds });
+// }
 
-async function downloadCSV() {
+/* async function downloadCSV() {
   if(!query.value.facilityIds?.length) {
     showToast(translate("Please select atleast one facility in filters."))
     return;
@@ -373,7 +376,7 @@ async function downloadCSV() {
   const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
   await jsonToCsv(downloadData, { download: true, name: fileName });
   emitter.emit("dismissLoader")
-}
+}*/
 
 function generateMappedData(data: any) {
   return data.map((key: string) => {
@@ -391,6 +394,83 @@ function generateMappedData(data: any) {
 
     return key;
   })
+}
+
+async function downloadCSV() {
+  if (!query.value.facilityIds?.length) {
+    showToast(translate("Please select at least one facility in filters."));
+    return;
+  }
+
+  if (!(query.value.createdDate_from && query.value.createdDate_thru) && !(query.value.closedDate_from && query.value.closedDate_thru)) {
+    showToast(translate("Please select at least one of the date filter range."));
+    return;
+  }
+
+  await modalController.dismiss({ dismissed: true });
+  await updateMappingPreference();
+  emitter.emit("presentLoader", { message: "Preparing file to download...", backdropDismiss: true });
+
+  const facilityDetails = getFacilityDetails();
+  const selectedFieldMappings: any = {
+    countId: "inventoryCountImportId",
+    countName: "countImportName",
+    acceptedByUser: "acceptedByUserLoginId",
+    createdDate: "createdDate",
+    lastSubmittedDate: "lastSubmittedDate",
+    closedDate: "closedDate",
+    facility: "facilityId",
+    primaryProductId: "primaryProductId",
+    secondaryProductId: "secondaryProductId",
+    lineStatus: "statusId",
+    expectedQuantity: "qoh",
+    countedQuantity: "quantity",
+    variance: "varianceQuantityOnHand",
+  };
+
+  const selectedData = Object.keys(selectedFields.value).filter(field => selectedFields.value[field]);
+
+  const cycleCountItems = await fetchBulkCycleCountItems();
+
+  // Prefetch the products for all items before processing
+  const productIds = [... new Set(cycleCountItems.map((item: any) => item.productId))] as string[];
+  await pm.prefetch(productIds);
+
+  const downloadData = await Promise.all(cycleCountItems.map(async (item: any) => {
+    const facility = facilityDetails[item?.facilityId];
+
+    // Use composable to get product details
+    const { product } = await pm.getById(item.productId);
+
+    const cycleCountDetails = selectedData.reduce((details: any, property: any) => {
+      if (property === 'createdDate') {
+        details[property] = getDateWithOrdinalSuffix(item.createdDate);
+      } else if (property === 'lastSubmittedDate') {
+        details[property] = getLastSubmittedDate(item);
+      } else if (property === 'closedDate') {
+        details[property] = getClosedDate(item);
+      } else if (property === 'facility') {
+        details[property] = facility[selectedFacilityField.value];
+      } else if (property === 'primaryProductId') {
+        details[property] = product?.productId ? getProductIdentificationValue(selectedPrimaryProductId.value, product) : item.productId;
+      } else if (product?.productId && property === 'secondaryProductId') {
+        details[property] = getProductIdentificationValue(selectedSecondaryProductId.value, product);
+      } else if (property === 'countName' && item.countImportName) {
+        details[property] = item.countImportName;
+      } else if (property === "lineStatus") {
+        details[property] = item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'Completed' : item.itemStatusId === 'INV_COUNT_REJECTED' ? 'Rejected' : item.itemStatusId;
+      } else {
+        details[property] = item[selectedFieldMappings[property]];
+      }
+      return details;
+    }, {});
+
+    return cycleCountDetails;
+  }));
+
+  const fileName = `CycleCounts-${DateTime.now().toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}.csv`;
+  await jsonToCsv(downloadData, { download: true, name: fileName });
+  emitter.emit("dismissLoader");
 }
 
 async function updateMappingPreference() {
