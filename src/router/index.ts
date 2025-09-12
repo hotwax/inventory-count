@@ -22,6 +22,7 @@ import BulkUpload from "@/views/BulkUpload.vue"
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
 import ClosedDetail from "@/views/ClosedDetail.vue";
+import Shopify from "@/views/Shopify.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -35,9 +36,14 @@ const authGuard = async (to: any, from: any, next: any) => {
   const appLoginUrl = getAppLoginUrl();
   if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
     await loader.present('Authenticating')
+    if (authStore.isEmbedded) {
+      loader.dismiss();
+      next('/login');
+      return;
+    }
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = authStore.isEmbedded ? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`
+    window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
@@ -45,6 +51,9 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
+  if (to.query?.embedded === '1') {
+    authStore.$reset();
+  }
   if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
     next('/')
   }
@@ -216,6 +225,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
+  },
+  {
+    path: '/shopify',
+    name: 'Shopify',
+    component: Shopify
   }
 ];
 
