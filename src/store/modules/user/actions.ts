@@ -69,6 +69,7 @@ const actions: ActionTree<UserState, RootState> = {
         token: { value: api_key, expiration: authStore.token.expiration as any },
         oms,
         isEmbedded: authStore.isEmbedded,
+        shopifyAppBridge: authStore.shopifyAppBridge as any,
         shop: authStore.shop as any,
         host: authStore.host as any
       })
