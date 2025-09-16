@@ -49,15 +49,6 @@ const getUserProfile = async (token: any): Promise<any> => {
   }
 }
 
-const getAvailableTimeZones = async (): Promise <any>  => {
-  const baseURL = store.getters["user/getBaseUrl"]
-  return client({
-    url: "admin/user/getAvailableTimeZones",
-    method: "get",
-    cache: true
-  });
-}
-
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
     url: `admin/productStores/${payload.productStoreId}/settings`,
@@ -182,7 +173,7 @@ const createFieldMapping = async (payload: any): Promise <any> => {
 
 const updateFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}",
+    url: `inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}`,
     method: "POST",
     data: payload
   });
@@ -190,7 +181,7 @@ const updateFieldMapping = async (payload: any): Promise <any> => {
 
 const deleteFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}",
+    url: `inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}`,
     method: "DELETE",
     data: payload
   });
@@ -296,7 +287,6 @@ export const UserService = {
   createUserPreference,
   deleteFieldMapping,
   fetchProductStoreSettings,
-  getAvailableTimeZones,
   getFieldMappings,
   getUserPermissions,
   getUserPreference,
