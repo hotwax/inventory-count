@@ -184,8 +184,8 @@ function sortListByField(list: any, field = "parentProductName") {
 }
 
 const getProductStoreId = () => {
-  const currentEComStore: any = useUserStore().getCurrentEComStore;
-  return currentEComStore.productStoreId
+  const currentProductStore: any = useUserStore().getCurrentEComStore;
+  return currentProductStore.productStoreId
 };
 
 export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
