@@ -111,7 +111,7 @@ import { computed, defineProps, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, sortListByField } from "@/utils"
+import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, sortListByField } from "@/utils"
 import logger from "@/logger";
 import Image from "@/components/Image.vue"
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
@@ -177,7 +177,7 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
+  items = sortListByField(getValidItems(items), "parentProductName");
 
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })

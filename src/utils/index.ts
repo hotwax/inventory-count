@@ -188,4 +188,8 @@ const getProductStoreId = () => {
   return currentEComStore.productStoreId
 };
 
-export { convertIsoToMillis, downloadCsv, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+const  getValidItems = (items: any) => {
+  return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
+}
+
+export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }

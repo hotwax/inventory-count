@@ -204,7 +204,7 @@ import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
 import { CountService } from "@/services/CountService"
 import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import logger from "@/logger";
 import AddProductModal from "@/components/AddProductModal.vue";
 import router from "@/router";
@@ -303,7 +303,7 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
+  items = sortListByField(getValidItems(items), "parentProductName");
 
   currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
