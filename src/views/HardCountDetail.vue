@@ -373,6 +373,11 @@ function updateAnimatingProduct(item: any) {
 async function handleSegmentChange() {
   // Reset scan trigger when segment changes
   isScanTriggered.value = false;
+  // If scrolling animation is disabled and there are items with inputCount,
+  // save the current product count before switching segments
+  if(!isScrollingAnimationEnabled.value && itemsList.value?.length && inputCount.value) {
+    saveCount(currentProduct.value)
+  }
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
