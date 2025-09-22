@@ -20,7 +20,7 @@ const getters: GetterTree <UserState, RootState> = {
   },
   getBaseUrl(state) {
     const baseURL = state.instanceUrl;
-    return baseURL.startsWith("http") ? baseURL : `https://${baseURL}.hotwax.io/rest/s1/inventory-cycle-count/`;
+      return  baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
   },
   getOmsRedirectionInfo(state) {
     return state.omsRedirectionInfo;

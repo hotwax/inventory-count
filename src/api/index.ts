@@ -87,10 +87,10 @@ const api = async (customConfig: any) => {
     // withCredentials: true
   }
 
-  const baseURL = store.getters["user/getInstanceUrl"];
+  const baseURL = store.getters["user/getBaseUrl"];
 
   if (baseURL) {
-    config.baseURL = baseURL.startsWith('http') ? baseURL.includes('/rest/s1/inventory-cycle-count') ? baseURL : `${baseURL}/rest/s1/inventory-cycle-count/` : `https://${baseURL}.hotwax.io/rest/s1/inventory-cycle-count/`;
+    config.baseURL = baseURL;
   }
 
   if(customConfig.cache) config.adapter = axiosCache.adapter;
