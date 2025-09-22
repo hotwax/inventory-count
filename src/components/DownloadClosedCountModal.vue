@@ -292,7 +292,7 @@ async function fetchBulkCycleCountItems() {
       logger.error(err)
       items = []
     }
-
+    items = (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
     countItems = countItems.concat(items);
   }
 

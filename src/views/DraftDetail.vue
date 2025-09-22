@@ -312,6 +312,7 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
+  items = (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
   items = sortListByField(items, "parentProductName");
 
   currentCycleCount.value["items"] = items
