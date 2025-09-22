@@ -194,7 +194,7 @@ const actions: ActionTree<UserState, RootState> = {
       "productStoreId": productStoreId ? productStoreId : getProductStoreId(),
       "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,INV_COUNT_FIRST_SCAN,BARCODE_IDEN_PREF",
       "settingTypeEnumId_op": "in",
-      "pageSize": 50
+      "pageSize": 4
     }
 
     try {
