@@ -490,7 +490,7 @@ async function scanProduct() {
 async function updateFilteredItems() {
   // If scrolling animation is disabled and there are items with inputCount,
   // save the current product count before switching segments
-  if(!isScrollingAnimationEnabled.value && itemsList.value?.length && inputCount.value) {
+  if(!isScrollingAnimationEnabled.value && inputCount.value) {
     await saveCount(product.value)
   }
   if (itemsList.value.length > 0) {
