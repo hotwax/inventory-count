@@ -51,7 +51,7 @@ const getUserProfile = async (token: any): Promise<any> => {
 
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
-    url: `admin/productStores/${payload.productStoreId}/settings`,
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     params: payload
   });
@@ -59,7 +59,7 @@ const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
 
 const updateProductStoreSetting = async (payload: any): Promise <any>  => {
   return api({
-    url: `admin/productStores/${payload.productStoreId}/settings`,
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     data: payload
   });
@@ -67,7 +67,7 @@ const updateProductStoreSetting = async (payload: any): Promise <any>  => {
 
 const createProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
-    url: `admin/productStores/${payload.productStoreId}/settings`,
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "post",
     data: payload
   });

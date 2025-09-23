@@ -19,7 +19,7 @@ function getOrdinalSuffix(day: any) {
 
 const fetchFacilities = async (payload: any): Promise<any> => {
   return api({
-    url: "admin/facilities",
+    url: "inventory-cycle-count/facilities",
     method: "GET",
     params: payload
   })
@@ -38,7 +38,7 @@ const fetchFacilityGroups = async (payload: any): Promise<any> => {
   const baseURL = store.getters["user/getBaseUrl"]
 
   return client({
-    url: "admin/facilityGroups",
+    url: "available-to-promise/facilityGroups",
     baseURL,
     method: "GET",
     params: payload,
@@ -54,7 +54,7 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
   const baseURL = store.getters["user/getBaseUrl"]
   
   return client({
-    url: `admin/facilityGroups/${payload.facilityGroupId}/facilities`,
+    url: `available-to-promise/facilityGroups/${payload.facilityGroupId}/facilities`,
     baseURL,
     method: "GET",
     params: payload,
