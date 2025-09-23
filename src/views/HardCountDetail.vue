@@ -345,7 +345,7 @@ async function handleBeforeUnload() {
 
 function handleProductClick(item: any) {
   if(item) {
-    if(inputCount.value) saveCount(currentProduct.value, true)
+    if(inputCount.value && item.importItemSeqId) saveCount(currentProduct.value, true)
     store.dispatch("product/currentProduct", item);
     previousItem = item
   }
@@ -610,7 +610,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
     newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
   }
 
-  if(newCount) {
+  if(newCount && updatedItem?.importItemSeqId && updatedItem.productId) {
     try {
       const resp = await CountService.updateCount({
         inventoryCountImportId: cycleCount.value.inventoryCountImportId,
