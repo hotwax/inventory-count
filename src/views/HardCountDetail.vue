@@ -345,7 +345,7 @@ async function handleBeforeUnload() {
 
 function handleProductClick(item: any) {
   if(item) {
-    if(inputCount.value && item.importItemSeqId) saveCount(currentProduct.value, true)
+    if(inputCount.value) saveCount(currentProduct.value, true)
     store.dispatch("product/currentProduct", item);
     previousItem = item
   }
