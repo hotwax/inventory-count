@@ -23,6 +23,7 @@
     "@ionic/core": "^7.8.6",
     "@ionic/vue": "^7.8.6",
     "@ionic/vue-router": "^7.8.6",
+    "@shopify/app-bridge-utils": "^3.5.1",
     "@types/papaparse": "^5.3.1",
     "axios": "^0.21.1",
     "axios-cache-adapter": "^2.7.3",
