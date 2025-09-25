@@ -283,6 +283,7 @@ const isAnimationInProgress = ref(false);
 const productInAnimation = ref({}) as any;
 const isLoadingItems = ref(true);
 const scannedItem = ref({}) as any;
+let scannedItemsQueue = {} as any;
 
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
@@ -531,7 +532,7 @@ async function addProductToItemsList() {
       initializeObserver()
     }, 0);
   }
-  findProductFromIdentifier(queryString.value.trim(), newItem);
+  findProductFromIdentifier(queryString.value.trim(), JSON.parse(JSON.stringify(newItem)));
   return newItem;
 }
 
@@ -595,6 +596,13 @@ async function addProductToCount(productId: any) {
   return "";
 }
 
+// Synchronizes a scanned item with an object, removing it from the scanned items queue.
+function syncScannedItem(updatedItem: any) {
+  const scannedId = updatedItem.scannedId;
+  if(!scannedId) return updatedItem;
+  delete scannedItemsQueue[scannedId];
+}
+
 async function updateCurrentItemInList(newItem: any, scannedValue: string) {  
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList));
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
@@ -609,7 +617,11 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   } else if(selectedSegment.value === "unmatched" && (inputCount.value || updatedItem.scannedCount)) {
     newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
   }
-
+  
+  if(scannedItemsQueue[updatedItem.scannedId]) {
+    newCount = scannedItemsQueue[updatedItem.scannedId]
+  }
+  
   if(newCount && updatedItem?.importItemSeqId && updatedItem.productId) {
     try {
       const resp = await CountService.updateCount({
@@ -629,6 +641,8 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
       logger.error(error)
     }
   }
+
+  syncScannedItem(updatedItem);
 
   if(updatedProduct.scannedId === updatedItem.scannedId) {
     store.dispatch("product/currentProduct", updatedItem);
@@ -752,6 +766,8 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         if(selectedCountUpdateType.value === "replace") item.scannedCount = currentCount
         else item.scannedCount = Number(currentCount) + Number(prevCount)
         currentItem = item;
+        // Updates the quantity of a scanned item in the scanned items queue.
+        scannedItemsQueue[currentProduct.scannedId] = item.scannedCount;
       }
     })
     await store.dispatch('count/updateCycleCountItems', items);
