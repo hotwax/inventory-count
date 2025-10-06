@@ -19,6 +19,7 @@ export default interface UserState {
     forceScan: boolean,
     showQoh: boolean,
     barcodeIdentificationPref: string;
+    inventoryItemsSortBy: string;
   },
   isScrollingAnimationEnabled: boolean;
 }

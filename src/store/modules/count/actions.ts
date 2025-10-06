@@ -3,7 +3,7 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
-import { convertIsoToMillis, hasError, showToast, sortListByField } from "@/utils"
+import { convertIsoToMillis, hasError, showToast, sortListByField, sortInventoryItems } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -255,11 +255,17 @@ const actions: ActionTree<CountState, RootState> = {
     const pageIndex = 0;
     const productStoreSettings = store.getters["user/getProductStoreSettings"];
 
+    // Save old sort value (with itemCreatedDate) for later sorting
+    const inventoryItemsSortBy = productStoreSettings['inventoryItemsSortBy'];
+    // Update orderByField for API payload: replace 'itemCreatedDate' with 'createdDate'
+    const sortBy = inventoryItemsSortBy?.includes("itemCreatedDate") ? inventoryItemsSortBy.replace("itemCreatedDate", "createdDate") : inventoryItemsSortBy;
+    
     try {
       let dbData: any = {};
       let dbItems = {} as Record<string, any>;
       const params = {
         ...payload,
+        orderByField: sortBy,
         pageSize: 100,
         pageIndex
       }
@@ -325,13 +331,17 @@ const actions: ActionTree<CountState, RootState> = {
     this.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
     const productList = store.getters["product/getCachedProducts"];
 
-    // Update items with parentProductName and rename statusId to itemStatusId
     items.forEach((item: any) => {
+      // Rename statusId to itemStatusId if itemStatusId doesn't exist
       if(!item.itemStatusId && item.statusId) {
         item.itemStatusId = item.statusId;
         delete item.statusId;
       }
-      
+      // Assign itemCreatedDate from createdDate
+      if(item.createdDate) {
+        item.itemCreatedDate = item.createdDate;
+      }
+      // Assign parentProductName from product details
       const product = productList[item.productId];
       if(product?.parentProductName) {
         item.parentProductName = product.parentProductName;
@@ -351,11 +361,17 @@ const actions: ActionTree<CountState, RootState> = {
       const cachedProducts = state.cachedUnmatchProducts[payload.inventoryCountImportId]?.length ? JSON.parse(JSON.stringify(state.cachedUnmatchProducts[payload.inventoryCountImportId])) : [];
       if(cachedProducts?.length) items = items.concat(cachedProducts)
     }
+    // Sort items using old sortBy after merging unmatched items
+    items = sortInventoryItems(items, inventoryItemsSortBy);
     commit(types.COUNT_ITEMS_UPDATED, { itemList: items })
   },
 
   async updateCycleCountItems ({ commit }, payload) {
-    commit(types.COUNT_ITEMS_UPDATED, { itemList: payload })
+    // Sorts cycle count items based on user’s inventoryItemsSortBy setting 
+    // and updates the state with sorted items.
+    const sortBy = store.getters["user/getProductStoreSettings"]['inventoryItemsSortBy'];
+    const sortedItems = sortInventoryItems(payload, sortBy);
+    commit(types.COUNT_ITEMS_UPDATED, { itemList: sortedItems })
   },
 
   setCountDetailPageActive({ commit }, isPageActive) {

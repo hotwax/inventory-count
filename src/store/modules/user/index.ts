@@ -27,7 +27,8 @@ const userModule: Module<UserState, RootState> = {
         isFirstScanCountEnabled: false,
         forceScan: false,
         showQoh: false,
-        barcodeIdentificationPref: ""
+        barcodeIdentificationPref: "",
+        inventoryItemsSortBy: ""
       },
       isScrollingAnimationEnabled: false
     },

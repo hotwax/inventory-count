@@ -227,6 +227,7 @@ import { chevronDownOutline, chevronUpOutline, cloudOfflineOutline, paperPlaneOu
 import { translate } from "@/i18n";
 import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
+import { DateTime } from 'luxon';
 import logger from "@/logger";
 import emitter from "@/event-bus";
 import ProductItemList from "@/views/ProductItemList.vue";
@@ -515,12 +516,17 @@ function scrollToProduct(product: any) {
 }
 
 async function addProductToItemsList() {
+  const currentTime = DateTime.now().toMillis();
+
   const newItem = {
     scannedId: queryString.value.trim(),
     isMatching: true,
     itemStatusId: "INV_COUNT_CREATED",
     statusId: "INV_COUNT_ASSIGNED",
-    inventoryCountImportId: cycleCount.value.inventoryCountImportId
+    inventoryCountImportId: cycleCount.value.inventoryCountImportId,
+    // We are setting itemCreatedDate and lastUpdatedStamp to the current time, which later helps in item sorting.    
+    itemCreatedDate: currentTime,
+    lastUpdatedStamp: currentTime
   }
 
   const items = JSON.parse(JSON.stringify(cycleCountItems.value.itemList))
@@ -600,7 +606,10 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
   const updatedProduct = JSON.parse(JSON.stringify(currentProduct.value))
 
   let updatedItem = items.find((item: any) => item.scannedId === scannedValue);
-  updatedItem = { ...updatedItem, ...newItem, isMatching: false }
+
+  // Only update lastUpdatedStamp to keep a record of the item that was updated recently, let API response override itemCreatedDate if present
+  const currentTime = DateTime.now().toMillis();
+  updatedItem = { ...updatedItem, ...newItem, isMatching: false, lastUpdatedStamp: currentTime }
   updatedItem["isMatchNotFound"] = newItem?.importItemSeqId ? false : true
 
   let newCount = "" as any;
@@ -739,6 +748,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
 
   isScanningInProgress.value = true;
   let currentCount = inputCount.value;
+  const currentTime = DateTime.now().toMillis();
   // Set the input count to empty to avoid race conditions while scanning.
   inputCount.value = "";
   if(!isItemAlreadyAdded(currentProduct)) {
@@ -751,6 +761,8 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
         item.countedByUserLoginId = userProfile.value.username
         if(selectedCountUpdateType.value === "replace") item.scannedCount = currentCount
         else item.scannedCount = Number(currentCount) + Number(prevCount)
+        // Update the timestamp to keep a record of item that were updated recently.
+        item.lastUpdatedStamp = currentTime;
         currentItem = item;
       }
     })
@@ -781,6 +793,8 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
           item.quantity = currentProduct.quantity
           item.countedByGroupName = userProfile.value.userFullName
           item.countedByUserLoginId = userProfile.value.username
+          // Update the timestamp to keep a record of item that were updated recently.
+          item.lastUpdatedStamp = currentTime
         }
       })
       await store.dispatch('count/updateCycleCountItems', items);

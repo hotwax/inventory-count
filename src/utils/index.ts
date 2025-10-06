@@ -192,4 +192,39 @@ const  getValidItems = (items: any) => {
   return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
 }
 
-export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+/**
+ * Sorts an array of inventory items based on a given field and direction.
+ * @param items - The array of inventory items to be sorted.
+ * @param sortBy - A string in the format "field direction" 
+ *                 (e.g., "itemCreatedDate asc" or "lastUpdatedStamp desc").
+ * @returns A new array of items sorted according to the specified field and direction.
+ */
+const sortInventoryItems = (items: any, sortBy: any) => {
+  if (!items || !Array.isArray(items)) return [];
+  if (!sortBy) return [...items];
+  
+  try {
+    const [field, direction] = sortBy.split(' ');
+    // Create a copy of items to avoid mutating the original array
+    const itemsToSort = [...items];
+    
+    itemsToSort.sort((firstItem, secondItem) => {
+      // Use 0 as default if the field is missing
+      const firstItemValue = firstItem[field] || 0;
+      const secondItemValue = secondItem[field] || 0;
+      
+      if (direction === 'asc') {
+        return firstItemValue - secondItemValue;
+      } else {
+        return secondItemValue - firstItemValue;
+      }
+    });
+    return itemsToSort;
+  } catch (error) {
+    console.error('Error sorting items:', error);
+    // Return original items if sorting fails
+    return [...items];
+  }
+}
+
+export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField, sortInventoryItems }

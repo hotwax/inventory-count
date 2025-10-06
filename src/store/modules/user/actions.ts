@@ -130,7 +130,7 @@ const actions: ActionTree<UserState, RootState> = {
     authStore.$reset()
     userStore.$reset()
 
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName", inventoryItemsSortBy: "itemCreatedDate asc" })
     this.dispatch('count/clearCycleCounts')
     this.dispatch('count/clearCycleCountItems')
     this.dispatch('product/clearCachedProducts')
@@ -182,7 +182,7 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   async updateCurrentProductStore({ commit, dispatch }, selectedProductStore) {
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, isFirstScanCountEnabled: false, barcodeIdentificationPref: "internalName" })
+    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, isFirstScanCountEnabled: false, barcodeIdentificationPref: "internalName", inventoryItemsSortBy: "itemCreatedDate asc" })
 
     await useProductIdentificationStore().getIdentificationPref(selectedProductStore.productStoreId)
       .catch((error) => logger.error(error));
@@ -192,7 +192,7 @@ const actions: ActionTree<UserState, RootState> = {
   async getProductStoreSetting({ commit }, productStoreId?: string) {
     const payload = {
       "productStoreId": productStoreId ? productStoreId : getProductStoreId(),
-      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,INV_COUNT_FIRST_SCAN,BARCODE_IDEN_PREF",
+      "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,INV_COUNT_FIRST_SCAN,SORT_INVENTORY_ITEMS,BARCODE_IDEN_PREF",
       "settingTypeEnumId_op": "in",
       "pageSize": 10
     }
@@ -216,12 +216,17 @@ const actions: ActionTree<UserState, RootState> = {
           if(setting.settingTypeEnumId === "BARCODE_IDEN_PREF" && setting.settingValue) {
             settings["barcodeIdentificationPref"] = setting.settingValue
           }
+
+          if(setting.settingTypeEnumId === "SORT_INVENTORY_ITEMS" && setting.settingValue) {
+            settings["inventoryItemsSortBy"] = setting.settingValue
+          }
           return settings
         }, {
           showQoh: false,
           forceScan: false,
           isFirstScanCountEnabled: false,
-          barcodeIdentificationPref: "internalName"
+          barcodeIdentificationPref: "internalName",
+          inventoryItemsSortBy: "itemCreatedDate asc"
         })
         commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, settings)
       }
@@ -236,7 +241,8 @@ const actions: ActionTree<UserState, RootState> = {
 
     let settingValue = false as any;
     if(payload.enumId === "BARCODE_IDEN_PREF") settingValue = "internalName"
-
+    if(payload.enumId === "SORT_INVENTORY_ITEMS") settingValue = "itemCreatedDate asc"
+    
     const params = {
       "productStoreId": eComStoreId,
       "settingTypeEnumId": payload.enumId,
@@ -278,6 +284,10 @@ const actions: ActionTree<UserState, RootState> = {
       enumId = "BARCODE_IDEN_PREF"
     }
 
+    if(payload.key === "inventoryItemsSortBy") {
+      enumId = "SORT_INVENTORY_ITEMS"
+    }
+
     let isSettingExists = false;
 
     try {
@@ -305,7 +315,7 @@ const actions: ActionTree<UserState, RootState> = {
     const params = {
       "productStoreId": eComStoreId,
       "settingTypeEnumId": enumId,
-      "settingValue": payload.key !== "barcodeIdentificationPref" ? JSON.stringify(payload.value) : payload.value
+      "settingValue": (payload.key !== "barcodeIdentificationPref" && payload.key !== "inventoryItemsSortBy") ? JSON.stringify(payload.value) : payload.value
     }
 
     try {
