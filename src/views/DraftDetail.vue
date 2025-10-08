@@ -172,7 +172,7 @@ import { calendarNumberOutline, checkmarkCircle, businessOutline, addCircleOutli
 import { IonBackButton, IonButton, IonChip, IonContent, IonDatetime, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonSpinner, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewDidEnter, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { CountService } from "@/services/CountService"
 import { defineProps, ref, nextTick, computed, watch } from "vue"
-import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, showToast, parseCsv, sortListByField } from "@/utils";
+import { hasError, getDateTime, getDateWithOrdinalSuffix, handleDateTimeInput, getFacilityName, getValidItems, showToast, parseCsv, sortListByField } from "@/utils";
 import emitter from "@/event-bus"
 import logger from "@/logger"
 import { DateTime } from "luxon"
@@ -312,7 +312,7 @@ async function fetchCountItems() {
     logger.error(err)
   }
 
-  items = sortListByField(items, "parentProductName");
+  items = sortListByField(getValidItems(items), "parentProductName");
 
   currentCycleCount.value["items"] = items
   store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })

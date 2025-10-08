@@ -97,7 +97,7 @@ import {
 import emitter from "@/event-bus"
 import { computed, onMounted, ref } from "vue";
 import { closeOutline, cloudDownloadOutline } from "ionicons/icons";
-import { convertIsoToMillis, getDateWithOrdinalSuffix, getProductIdentificationValue, hasError, jsonToCsv, showToast } from "@/utils";
+import { convertIsoToMillis, getDateWithOrdinalSuffix, getProductIdentificationValue, getValidItems, hasError, jsonToCsv, showToast } from "@/utils";
 import { CountService } from "@/services/CountService"
 import { translate } from '@/i18n';
 import { DateTime } from "luxon";
@@ -292,8 +292,7 @@ async function fetchBulkCycleCountItems() {
       logger.error(err)
       items = []
     }
-
-    countItems = countItems.concat(items);
+    countItems = countItems.concat(getValidItems(items));
   }
 
   return countItems

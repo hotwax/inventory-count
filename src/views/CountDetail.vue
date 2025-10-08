@@ -13,7 +13,7 @@
             <ion-item :disabled="isLoadingItems" lines="full">
               <ion-input :label="translate('Scan items')" :placeholder="translate('Scan or search products')" ref="barcodeInput" @ionFocus="selectSearchBarText($event)" v-model="queryString" @keyup.enter="scanProduct()"/>
             </ion-item>
-            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="updateFilteredItems()">
+            <ion-segment :disabled="isLoadingItems" v-model="selectedSegment" @ionChange="segmentChange()">
               <template v-if="cycleCount?.statusId === 'INV_COUNT_ASSIGNED'">
                 <ion-segment-button value="all">
                   <ion-label>{{ translate("ALL") }}</ion-label>
@@ -391,7 +391,7 @@ function updateAnimatingProduct(item) {
 
 function handleProductClick(item) {
   if(item) {
-    if(inputCount.value) saveCount(product.value, true)
+    if(inputCount.value && item.importItemSeqId) saveCount(product.value, true)
     store.dispatch("product/currentProduct", item);
     previousItem = item   
   }
@@ -485,6 +485,15 @@ async function scanProduct() {
     }
   }
   queryString.value = ""
+}
+
+async function segmentChange() {
+  // If scrolling animation is disabled and there are items with inputCount,
+  // save the current product count before switching segments
+  if(!isScrollingAnimationEnabled.value && inputCount.value) {
+    await saveCount(product.value)
+  }
+  await updateFilteredItems();
 }
 
 async function updateFilteredItems() {
