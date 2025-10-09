@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
           <ion-button fill="outline" @click="goToLaunchpad()">
@@ -47,44 +47,13 @@
           <ion-card-content>
             {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+          <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
             {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <ion-card v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')">
-          <ion-card-header>
-            <ion-card-title>
-              {{ $t("Facility") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ $t("Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.") }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-select :label="$t('Select facility')" interface="popover" :value="currentFacility.facilityId" @ionChange="setFacility($event)">
-              <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId" >{{ facility.facilityName || facility.facilityId }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
-        <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
-          <ion-card-header>
-            <ion-card-subtitle>
-              {{ translate("Product Store") }}
-            </ion-card-subtitle>
-            <ion-card-title>
-              {{ translate("Store") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ translate("A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.") }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-select :label="translate('Select store')" interface="popover" :value="currentProductStore.productStoreId" @ionChange="setProductStore($event)">
-              <ion-select-option v-for="store in productStores" :key="store.productStoreId" :value="store.productStoreId" >{{ store.storeName || store.productStoreId }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
+        <DxpFacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility($event)"/>
+        <DxpProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore($event)" />
       </section>
       <hr />
       <div class="section-header">
@@ -109,29 +78,8 @@
             <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
           </ion-item>
         </ion-card> -->
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate('Product Identifier') }}
-            </ion-card-title>
-          </ion-card-header>
 
-          <ion-card-content>
-            {{ translate('Choosing a product identifier allows you to view products with your preferred identifiers.') }}
-          </ion-card-content>
-
-          <ion-item>
-            <ion-select :label="translate('Primary')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('primary identifier')" :value="productStoreSettings['productIdentificationPref'].primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
-              <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          <ion-item>
-            <ion-select :label="translate('Secondary')" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE) || !(currentFacility?.productStore?.productStoreId || currentProductStore.productStoreId)" interface="popover" :placeholder="translate('secondary identifier')" :value="productStoreSettings['productIdentificationPref'].secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
-              <ion-select-option v-for="identification in productIdentifications" :key="identification" :value="identification" >{{ identification }}</ion-select-option>
-              <ion-select-option value="">{{ translate("None") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-card>
+        <DxpProductIdentifier />
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
         <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
 
@@ -162,67 +110,50 @@ import { useStore } from "vuex";
 import Image from "@/components/Image.vue"
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { goToOms } from "@hotwax/dxp-components";
+import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import ForceScanCard from "@/components/ForceScanCard.vue";
 
 const store = useStore()
+const authStore = useAuthStore();
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
-const facilities = computed(() => store.getters["user/getFacilities"])
-const currentFacility = computed(() => store.getters["user/getCurrentFacility"])
-const currentProductStore = computed(() => store.getters["user/getCurrentProductStore"])
-const productStores = computed(() => store.getters["user/getProductStores"])
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-const productIdentifications = computed(() => store.getters["user/getGoodIdentificationTypes"])
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await store.dispatch("user/fetchGoodIdentificationTypes")
   await store.dispatch("user/getProductStoreSetting")
 })
 
 function logout() {
   store.dispatch("user/logout").then(() => {
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
 }
 
 function goToLaunchpad() {
-  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+  window.location.href = `${getAppLoginUrl()}`
 }
 
-async function setFacility(event: CustomEvent) {
-  const facilityId = event.detail.value
-  const facility = facilities.value.find((facility: any) => facility.facilityId === facilityId)
+async function setFacility(facility: any) {
   await store.dispatch("user/updateCurrentFacility", facility)
 }
 
-async function setProductStore(event: any) {
-  const productStoreId = event.detail.value
-  const productStore = productStores.value.find((store: any) => store.productStoreId === productStoreId)
-  await store.dispatch("user/updateCurrentProductStore", productStore)
+async function setProductStore(selectedProductStore: any) {
+  await store.dispatch("user/updateCurrentProductStore", selectedProductStore)
 }
 
 function updateScrollingAnimationPreference(event: any) {
   event.stopImmediatePropagation();
 
   store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
-}
-
-function setProductIdentificationPref(value: string, id: string) {
-  store.dispatch("user/setProductStoreSetting", { key: "productIdentificationPref", value: {
-    ...productStoreSettings.value["productIdentificationPref"],
-    [id]: value
-  }})
 }
 
 function getDateTime(time: any) {

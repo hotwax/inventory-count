@@ -14,12 +14,12 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar class="searchbar" v-model="query.queryString" @keyup.enter="updateQueryString('queryString', $event.target.value)" />
+      <SearchBarAndSortBy />
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else class="list">
-        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="router.push(`/draft/${count.inventoryCountImportId}`)">
+        <ion-item lines="full" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button detail @click="openDraft(count.inventoryCountImportId)">
           <ion-label>
             <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
             {{ count.countImportName }}
@@ -29,7 +29,7 @@
         </ion-item>
       </ion-list>
 
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab ref="fabRef" vertical="bottom" horizontal="end" slot="fixed">
         <ion-fab-button>
           <ion-icon :icon="addOutline" />
         </ion-fab-button>
@@ -70,7 +70,6 @@ import {
   IonMenuButton,
   IonNote,
   IonPage,
-  IonSearchbar,
   IonTitle,
   IonToolbar,
   alertController,
@@ -85,16 +84,17 @@ import store from "@/store";
 import { showToast } from "@/utils";
 import router from "@/router";
 import { DateTime } from "luxon";
+import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
-const query = computed(() => store.getters["count/getQuery"])
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
+const fabRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await fetchDraftCycleCounts()
@@ -114,11 +114,6 @@ function enableScrolling() {
   } else {
     isScrollingEnabled.value = true;
   }
-}
-
-async function updateQueryString(key: string, value: any) {
-  await store.dispatch("count/updateQueryString", { key, value })
-  fetchDraftCycleCounts();
 }
 
 async function loadMoreCycleCounts(event: any) {
@@ -193,6 +188,15 @@ async function createCycleCount() {
   })
 
   return createCountAlert.present();
+}
+
+function openDraft(importId: string) {
+  // accessing fab using ref and using fab close method
+    const fab = fabRef.value.$el;
+    if (fab) {
+      fab.close();
+    }
+  router.push(`/draft/${importId}`) // navigate to the draft
 }
 </script>
 

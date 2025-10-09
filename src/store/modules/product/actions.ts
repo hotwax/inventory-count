@@ -3,6 +3,7 @@ import RootState from '@/store/RootState'
 import ProductState from './ProductState'
 import * as types from './mutation-types'
 import { ProductService } from "@/services/ProductService"
+import { useUserStore } from "@hotwax/dxp-components"
 import { hasError } from '@/utils';
 import emitter from '@/event-bus';
 import logger from '@/logger'
@@ -10,32 +11,39 @@ import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  async fetchProducts ( { commit, state }, { productIds }) {
+  async fetchProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
-
-    const productIdFilter = remainingProductIds.join(' OR ')
-
-    // If there are no products skip the API call
-    if (productIdFilter === '') return;
-
-    let resp;
-
+    if(!remainingProductIds.length) return;
+    const batchSize = 250, fetchedProducts = [];
+    let index = 0;
+  
     try {
-      resp = await ProductService.fetchProducts({
-        "filters": ['productId: (' + productIdFilter + ')'],
-        "viewSize": productIds.length
-      })
-      if (resp.status === 200 && !hasError(resp)) {
-        const products = resp.data.response.docs;
-        // Handled empty response in case of failed query
-        if (resp.data) commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products });
+      do {
+        const productIdBatch = remainingProductIds.slice(index, index + batchSize);
+        const productIdFilter = productIdBatch.join(' OR ');
+  
+        const resp = await ProductService.fetchProducts({
+          filters: ['productId: (' + productIdFilter + ')'],
+          viewSize: productIdBatch.length,
+          fieldsToSelect: ["productName", "productId", "parentProductName", "goodIdentifications", "mainImageUrl", "internalName"]
+        });
+  
+        if(!hasError(resp)) {
+          const products = resp.data.response.docs;
+          if(products?.length) {
+            fetchedProducts.push(...products);
+          }
+        }
+        index += batchSize;
+      } while (index < remainingProductIds.length);
+  
+      if(fetchedProducts.length) {
+        commit(types.PRODUCT_ADD_TO_CACHED_MULTIPLE, { products: fetchedProducts });
       }
     } catch(err) {
       logger.error("Failed to fetch products", err)
     }
-    // TODO Handle specific error
-    return resp;
   },
 
   async currentProduct ({ commit }, payload) {
@@ -94,6 +102,33 @@ const actions: ActionTree<ProductState, RootState> = {
       logger.error("Failed to fetch products", err)
     }
     return {};
+  },
+
+  async fetchProductStock({ commit, state }, productId) {
+    const currentFacility: any = useUserStore().getCurrentFacility
+    const facilityId = currentFacility.facilityId; 
+    // Return early if stock data for this productId already exists
+    if(state.productStock[productId] && Object.prototype.hasOwnProperty.call(state.productStock[productId], facilityId)) return;
+
+    let productQoh = [];
+
+    try {
+      const resp = await ProductService.fetchProductStock({
+        facilityId: facilityId,
+        productId: productId
+      });
+
+      if(!hasError(resp)) {
+        productQoh = resp.data;
+      } else {
+        throw resp;
+      }
+    } catch (err) {
+      logger.error("Failed to fetch product stock", err);
+    }
+    commit(types.PRODUCT_STOCK_UPDATED, { 
+      [productId]: { [facilityId]: productQoh?.qoh } 
+    });
   },
 
   async addProductToCached({ commit }, payload) {

@@ -20,20 +20,8 @@ const mutations: MutationTree <UserState> = {
   [types.USER_OMS_REDIRECTION_INFO_UPDATED](state, payload) {
     state.omsRedirectionInfo = payload;
   },
-  [types.USER_FACILITIES_UPDATED](state, payload) {
-    state.facilities = payload;
-  },
-  [types.USER_CURRENT_FACILITY_UPDATED](state, facility) {
-    state.currentFacility = facility;
-  },
   [types.USER_PERMISSIONS_UPDATED] (state, payload) {
     state.permissions = payload
-  },
-  [types.USER_PRODUCT_STORES_UPDATED] (state, payload) {
-    state.productStores = payload
-  },
-  [types.USER_CURRENT_PRODUCT_STORE_UPDATED] (state, payload) {
-    state.currentProductStore = payload
   },
   [types.USER_PRODUCT_STORE_SETTING_UPDATED] (state, payload) {
     Object.keys(payload).map((setting: any) => {
@@ -51,9 +39,6 @@ const mutations: MutationTree <UserState> = {
           name: payload.name,
           value: payload.value
       };
-  },
-  [types.USER_GOOD_IDENTIFICATION_TYPES_UPDATED](state, payload = []) {
-    state.goodIdentificationTypes = payload.length ? payload : process.env.VUE_APP_PRDT_IDENT ? JSON.parse(process.env.VUE_APP_PRDT_IDENT) : []
   },
   [types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED] (state, payload) {
     state.isScrollingAnimationEnabled = payload

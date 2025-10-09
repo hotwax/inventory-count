@@ -1,7 +1,7 @@
 <template>
   <ion-content>
     <ion-list>
-      <ion-list-header>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
+      <ion-list-header>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</ion-list-header>
       <ion-item :lines="isRemoveItemEligible(item) ? 'full' : 'none'">
         <ion-label>{{ translate("Last counted")}}</ion-label>
         <ion-note slot="end">{{ timeFromNow(item.lastCountedDate) }}</ion-note>
@@ -28,13 +28,14 @@ import {
 import { removeCircleOutline } from "ionicons/icons";
 import { computed, defineProps } from "vue";
 import { translate } from "@/i18n"
-import { getProductIdentificationValue, timeFromNow } from "@/utils"
+import { timeFromNow } from "@/utils"
 import store from "@/store";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 
 defineProps(["item"])
+const productIdentificationStore = useProductIdentificationStore();
 
 const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 function updateItem(action: string) {
   popoverController.dismiss({ itemAction: action })

@@ -4,7 +4,7 @@ import { hasError } from '@/utils';
 
 const fetchCycleCounts = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts",
+    url: "inventory-cycle-count/cycleCounts",
     method: "GET",
     params: payload
   })
@@ -12,7 +12,7 @@ const fetchCycleCounts = async (payload: any): Promise<any> => {
 
 const fetchCycleCountStats = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts/stats",
+    url: "inventory-cycle-count/cycleCounts/stats",
     method: "POST",
     data: payload
   })
@@ -20,22 +20,30 @@ const fetchCycleCountStats = async (payload: any): Promise<any> => {
 
 const fetchCycleCount = async (inventoryCountImportId: string): Promise<any> => {
   return api({
-    url: `cycleCounts/${inventoryCountImportId}`,
+    url: `inventory-cycle-count/cycleCounts/${inventoryCountImportId}`,
     method: "GET"
   })
 }
 
 const fetchCycleCountItems = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items`,
     method: "GET",
     params: payload
   })
 }
 
+const fetchCycleCountItemsSummary = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/summary`,
+    method: "GET",
+    params: payload
+  });
+}
+
 const fetchCycleCountItemsCount = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/count`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/count`,
     method: "GET",
     params: payload
   })
@@ -43,7 +51,7 @@ const fetchCycleCountItemsCount = async (payload: any): Promise<any> => {
 
 const fetchBulkCycleCountItems = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts/items",
+    url: "inventory-cycle-count/cycleCounts/items",
     method: "GET",
     params: payload
   })
@@ -51,7 +59,7 @@ const fetchBulkCycleCountItems = async (payload: any): Promise<any> => {
 
 const createCycleCount = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts",
+    url: "inventory-cycle-count/cycleCounts",
     method: "POST",
     data: payload
   })
@@ -60,7 +68,7 @@ const createCycleCount = async (payload: any): Promise<any> => {
 const updateCycleCount = async (payload: any): Promise<any> => {
   try {
     const resp = await api({
-      url: `cycleCounts/${payload.inventoryCountImportId}`,
+      url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}`,
       method: "PUT",
       data: payload
     }) as any
@@ -78,14 +86,14 @@ const updateCycleCount = async (payload: any): Promise<any> => {
 
 const deleteCycleCountItem = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
     method: "DELETE"
   })
 }
 
 const addProductToCount = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/add`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/add`,
     method: "POST",
     data: payload
   })
@@ -93,7 +101,7 @@ const addProductToCount = async (payload: any): Promise<any> => {
 
 const updateProductsInCount = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/update`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/update`,
     method: "POST",
     data: payload
   })
@@ -101,7 +109,7 @@ const updateProductsInCount = async (payload: any): Promise<any> => {
 
 const recountItems = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/recount`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/recount`,
     method: "POST",
     data: payload
   })
@@ -109,7 +117,7 @@ const recountItems = async (payload: any): Promise<any> => {
 
 const updateCount = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}`,
     method: "put",
     data: payload
   })
@@ -117,7 +125,7 @@ const updateCount = async (payload: any): Promise<any> => {
 
 const acceptItem = async (payload: any): Promise<any> => {
   return api({
-    url: `cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}/accept`,
+    url: `inventory-cycle-count/cycleCounts/${payload.inventoryCountImportId}/items/${payload.importItemSeqId}/accept`,
     method: "POST",
     data: payload
   })
@@ -125,21 +133,21 @@ const acceptItem = async (payload: any): Promise<any> => {
 
 const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
   return api({
-    url: `cycleCounts/upload`,
+    url: `inventory-cycle-count/cycleCounts/upload`,
     method: "post",
     ...payload
   });
 }
 const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
   return api({
-    url: `cycleCounts/systemMessages`,
+    url: `inventory-cycle-count/cycleCounts/systemMessages`,
     method: "get",
     params: payload
   });
 }
 const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
   return api({
-    url: `cycleCounts/systemMessages/${payload.systemMessageId}`,
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
     method: "post",
     data: payload
   });
@@ -147,7 +155,7 @@ const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
 
 const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
   return api({
-    url: `cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
     method: "get",
     data: payload
   });
@@ -155,7 +163,7 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
 
 const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
   return api({
-    url: `cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
     method: "get",
     data: payload
   });
@@ -163,7 +171,7 @@ const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
 
 const fetchCycleCountsTotal = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts/count",
+    url: "inventory-cycle-count/cycleCounts/count",
     method: "get",
     params: payload
   })
@@ -185,6 +193,7 @@ export const CountService = {
   fetchCycleCounts,
   fetchCycleCountItems,
   fetchCycleCountItemsCount,
+  fetchCycleCountItemsSummary,
   fetchCycleCountsTotal,
   recountItems,
   updateCount,

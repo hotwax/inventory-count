@@ -1,12 +1,12 @@
 <template>
-  <ion-item v-if="currentProduct" :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
+  <ion-item v-if="currentProduct" :key="currentProduct.productId" :color="isCurrentProduct() ? 'light' : ''" button @click="navigateToDetail(item)">
     <ion-thumbnail slot="start">
-      <Image :src="getProduct(item.productId).mainImageUrl"/>
+      <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
     </ion-thumbnail>
     <ion-label class="ion-text-wrap" v-if="item.productId">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
-      <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}</h2>
-      <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, getProduct(item.productId)) }}</p>
+      {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+      <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
     </ion-label>
     <ion-label class="ion-text-wrap" v-else>
       <h2>{{ item.scannedId }}</h2>
@@ -18,16 +18,16 @@
     <ion-note v-else-if="item.itemStatusId === 'INV_COUNT_COMPLETED'" color="success">
       {{ translate("accepted") }}
     </ion-note>
-    <ion-badge slot="end" v-else-if="item.statusId === 'INV_COUNT_ASSIGNED' && ((item.quantity !== undefined && item.quantity !== null) || (item.scannedCount !== undefined && item.scannedCount !== null && item.scannedCount !== ''))">
+    <ion-badge slot="end" v-else-if="statusId === 'INV_COUNT_ASSIGNED' && ((item.quantity !== undefined && item.quantity !== null) || (item.scannedCount !== undefined && item.scannedCount !== null && item.scannedCount !== ''))">
       {{ translate("units", { count: isItemAlreadyAdded(item) ? item.quantity : item.scannedCount }) }}
     </ion-badge>
-    <ion-note v-else-if="(item.quantity === undefined || item.quantity === null || item.scannedCount === '') && item.statusId === 'INV_COUNT_ASSIGNED'">
+    <ion-note v-else-if="(item.quantity === undefined || item.quantity === null || item.scannedCount === '') && statusId === 'INV_COUNT_ASSIGNED'">
       {{ translate("pending") }}
     </ion-note>
-    <ion-note v-else-if="item.quantity >= 0 && item.statusId === 'INV_COUNT_REVIEW'">
+    <ion-note v-else-if="item.quantity >= 0 && statusId === 'INV_COUNT_REVIEW'">
       {{ translate("pending review") }}
     </ion-note>
-    <ion-note v-else-if="!item.quantity && item.statusId === 'INV_COUNT_REVIEW'" color="warning">
+    <ion-note v-else-if="!item.quantity && statusId === 'INV_COUNT_REVIEW'" color="warning">
       {{ translate("not counted") }}
     </ion-note>
   </ion-item>
@@ -39,13 +39,14 @@ import { IonBadge, IonItem, IonLabel, IonNote, IonThumbnail } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useStore } from 'vuex';
 import Image from "@/components/Image.vue";
-import { getProductIdentificationValue } from "@/utils"
+import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { useRouter } from 'vue-router';
 import emitter from '@/event-bus';
 
 const router = useRouter();
 const store = useStore();
-const props = defineProps(['item']);
+const productIdentificationStore = useProductIdentificationStore()
+const props = defineProps(['item', 'statusId']);
 
 
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
@@ -66,8 +67,10 @@ onMounted(() => {
  * It also handles the challenge of scrolling to an element on a page that is being navigated to and scroll smoothly.
  **/
 async function navigateToDetail(item: any) {
+  if(productStoreSettings.value['showQoh'] && item.productId) await store.dispatch("product/fetchProductStock", item.productId)
+
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
-  if(props.item.statusId === "INV_COUNT_ASSIGNED" && (props.item.countTypeEnumId === "HARD_COUNT" || props.item.scannedId) && !isScrollingAnimationEnabled.value) {
+  if(props.statusId === "INV_COUNT_ASSIGNED" && !isScrollingAnimationEnabled.value) {
     if(props.item.importItemSeqId === item.importItemSeqId) {
       emitter.emit("handleProductClick", item)
     }
@@ -75,6 +78,7 @@ async function navigateToDetail(item: any) {
     setTimeout(() => {
       const element = document.getElementById(isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` : item.scannedId);
       if (element) {
+        emitter.emit("updateAnimatingProduct", item);
         element.scrollIntoView({ behavior: 'smooth' });
       } else {
         store.dispatch("product/currentProduct", item);

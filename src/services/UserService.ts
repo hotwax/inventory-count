@@ -3,13 +3,12 @@ import store from "@/store";
 import { hasError } from "@/utils";
 
 const login = async (token: string): Promise <any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   let api_key = ""
 
   try {
     const resp = await client({
-      url: "login", 
+      url: "admin/login", 
       method: "post",
       baseURL,
       params: {
@@ -32,11 +31,10 @@ const login = async (token: string): Promise <any> => {
 }
 
 const getUserProfile = async (token: any): Promise<any> => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
+  const baseURL = store.getters["user/getBaseUrl"]
   try {
     const resp = await client({
-      url: "user/profile",
+      url: "admin/user/profile",
       method: "GET",
       baseURL,
       headers: {
@@ -51,60 +49,9 @@ const getUserProfile = async (token: any): Promise<any> => {
   }
 }
 
-const getAvailableTimeZones = async (): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "available-to-promise") : `${url}/rest/s1/available-to-promise/` : `https://${url}.hotwax.io/rest/s1/available-to-promise/`;
-  return client({
-    url: "user/getAvailableTimeZones",
-    method: "get",
-    baseURL,
-    cache: true
-  });
-}
-
-const fetchFacilities = async (payload: any, token: any): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
-
-  return client({
-    url: "facilities",
-    method: "GET",
-    baseURL,
-    params: payload,
-    headers: {
-      "api_key": token,
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-const fetchAssociatedFacilities = async (payload: any, token: any): Promise <any>  => {
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url : `${url}/rest/s1/inventory-cycle-count/` : `https://${url}.hotwax.io/rest/s1/inventory-cycle-count/`;
-  
-  return client({
-    url: `user/${payload.partyId}/facilities`,
-    method: "GET",
-    baseURL,
-    params: payload,
-    headers: {
-      "api_key": token,
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-const fetchProductStores = async (payload: any): Promise <any>  => {
-  return api({
-    url: "facilities/productStores",
-    method: "GET",
-    params: payload
-  });
-}
-
 const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "GET",
     params: payload
   });
@@ -112,7 +59,7 @@ const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
 
 const updateProductStoreSetting = async (payload: any): Promise <any>  => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "POST",
     data: payload
   });
@@ -120,15 +67,7 @@ const updateProductStoreSetting = async (payload: any): Promise <any>  => {
 
 const createProductStoreSetting = async (payload: any): Promise<any> => {
   return api({
-    url: `productStores/${payload.productStoreId}/settings`,
-    method: "post",
-    data: payload
-  });
-}
-
-const setUserTimeZone = async (payload: any): Promise <any>  => {
-  return api({
-    url: "setUserTimeZone",
+    url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "post",
     data: payload
   });
@@ -226,7 +165,7 @@ const getUserPermissions = async (payload: any, url: string, token: any): Promis
 
 const createFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings",
+    url: "inventory-cycle-count/dataManagerMappings",
     method: "POST",
     data: payload
   });
@@ -234,7 +173,7 @@ const createFieldMapping = async (payload: any): Promise <any> => {
 
 const updateFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings/${payload.mappingPrefId}",
+    url: `inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}`,
     method: "POST",
     data: payload
   });
@@ -242,14 +181,14 @@ const updateFieldMapping = async (payload: any): Promise <any> => {
 
 const deleteFieldMapping = async (payload: any): Promise <any> => {
   return api({
-    url: "dataManagerMappings/${payload.mappingPrefId}",
+    url: `inventory-cycle-count/dataManagerMappings/${payload.mappingPrefId}`,
     method: "DELETE",
     data: payload
   });
 }
 
 const getFieldMappings = async (payload: any): Promise <any> => {
-  let url = "dataManagerMappings?"
+  let url = "inventory-cycle-count/dataManagerMappings?"
 
   if (Array.isArray(payload.mappingPrefTypeEnumId)) {
     url += `mappingPrefTypeEnumId=${payload.mappingPrefTypeEnumId.join('&')}`
@@ -265,37 +204,95 @@ const getFieldMappings = async (payload: any): Promise <any> => {
   });
 }
 
-const fetchGoodIdentificationTypes = async (payload: any): Promise <any>  => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-  const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+const createUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
+  const baseURL = store.getters["user/getBaseUrl"]
+  const token = store.getters["user/getUserToken"]
 
-  return await client({
-    url: "performFind",
-    method: "post",
-    baseURL,
-    data: payload,
-    headers: {
-      "Authorization":  'Bearer ' + omsRedirectionInfo.token,
-      'Content-Type': 'application/json'
-    }
-  });
+  try {
+    const resp = await client({
+      url: "admin/user/preferences",
+      method: "POST",
+      baseURL,
+      data: {
+        userId,
+        preferenceKey,
+        preferenceValue,
+      },
+      headers: {
+        "api_key": token,
+        "Content-Type": "application/json"
+      }
+    });
+    if(hasError(resp)) throw "Error creating user preference";
+    return Promise.resolve(resp.data)
+  } catch(error: any) {
+    return Promise.reject(error)
+  }
+}
+
+const updateUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
+  const baseURL = store.getters["user/getBaseUrl"]
+  const token = store.getters["user/getUserToken"]
+
+  try {
+    const resp = await client({
+      url: "admin/user/preferences",
+      method: "PUT",
+      baseURL,
+      data: {
+        userId,
+        preferenceKey,
+        preferenceValue,
+      },
+      headers: {
+        "api_key": token,
+        "Content-Type": "application/json"
+      }
+    });
+    if(hasError(resp)) throw "Error creating user preference";
+    return Promise.resolve(resp.data)
+  } catch(error: any) {
+    return Promise.reject(error)
+  }
+}
+
+const getUserPreference = async(userId: string, preferenceKey: string): Promise<any> => {
+  const baseURL = store.getters["user/getBaseUrl"]
+  const token = store.getters["user/getUserToken"]
+
+  try {
+    const resp = await client({
+      url: "admin/user/preferences",
+      method: "GET",
+      baseURL,
+      params: {
+        userId,
+        preferenceKey
+      },
+      headers: {
+        "api_key": token,
+        "Content-Type": "application/json"
+      }
+    });
+    if(hasError(resp)) throw "Error creating user preference";
+    return Promise.resolve(resp.data)
+  } catch(error: any) {
+    return Promise.reject(error)
+  }
 }
 
 export const UserService = {
   createFieldMapping,
   createProductStoreSetting,
+  createUserPreference,
   deleteFieldMapping,
-  fetchAssociatedFacilities,
-  fetchFacilities,
-  fetchGoodIdentificationTypes,
-  fetchProductStores,
   fetchProductStoreSettings,
-  getAvailableTimeZones,
   getFieldMappings,
   getUserPermissions,
+  getUserPreference,
   getUserProfile,
   login,
   updateFieldMapping,
   updateProductStoreSetting,
-  setUserTimeZone,
+  updateUserPreference
 }

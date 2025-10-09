@@ -25,16 +25,16 @@
           </ion-thumbnail>
           <template v-if="isProductAvailableInCycleCount(product.productId)">
             <ion-label>
-              <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
-              <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
+              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) || product.productName }}
+              <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>        
             </ion-label>
             <ion-icon  color="success" :icon="checkmarkCircle" />
           </template>
 
           <ion-radio :value="product.productId" v-else>
-            <ion-label>
-              <h2>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].primaryId, product) || getProduct(product.productId).productName }}</h2>
-              <p>{{ getProductIdentificationValue(productStoreSettings["productIdentificationPref"].secondaryId, product) }}</p>
+             <ion-label>
+              {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) || product.productName }}
+              <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>     
             </ion-label>
           </ion-radio>
         </ion-item>
@@ -81,14 +81,15 @@ import { computed, defineProps, Ref, ref } from "vue";
 import { checkmarkCircle, closeOutline, saveOutline } from "ionicons/icons";
 import store from "@/store";
 import { translate } from "@hotwax/dxp-components";
-import { getProductIdentificationValue, hasError } from "@/utils"
+import { hasError } from "@/utils"
 import Image from "@/components/Image.vue"
 import { ProductService } from "@/services/ProductService";
 import logger from "@/logger";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+
+const productIdentificationStore = useProductIdentificationStore();
 
 const props = defineProps(["items"])
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-const getProduct = computed(() => (id: any) => store.getters["product/getProduct"](id))
 
 const products = ref([]) as any;
 let queryString = ref('');
