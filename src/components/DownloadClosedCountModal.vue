@@ -118,7 +118,8 @@ const productIdentifications = {
   "Internal ID": "productId",
   "Internal Name": "internalName",
   "SKU": "SKU",
-  "UPC": "UPCA"
+  "UPC": "UPCA",
+  "Parent Product Name": "parentProductName"
 };
 
 const selectedFields: any = ref({
