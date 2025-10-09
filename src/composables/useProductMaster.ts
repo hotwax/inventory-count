@@ -111,17 +111,19 @@ export function useProductMaster() {
     return { product, status: 'stale' as const }
   }
 
-  const findByIdentification = async (idType: string, productId: string) => {
+  const findByIdentification = async (idType: string, idValue: string) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized")
-    if (!productId) return { product: undefined, identificationValue: undefined }
+    if (!idValue) return { product: undefined, identificationValue: undefined }
 
-    // Get product from DB
-    const product = await db.products.get(productId)
-    if (!product) return { product: undefined, identificationValue: undefined }
+    // Since Dexie cannot query inside arrays directly, we need to scan manually:
+    const allProducts = await db.products.toArray()
+    const matchedProduct = allProducts.find(p =>
+      p.goodIdentifications?.some(ident => ident.type === idType && ident.value === idValue)
+    )
 
-    // Find identification value from product.goodIdentifications
-    const ident = product.goodIdentifications?.find(i => i.type === idType)
-    return { product, identificationValue: ident?.value }
+    if (!matchedProduct) return { product: undefined, identificationValue: undefined }
+
+    return { product: matchedProduct, identificationValue: idValue }
   }
 
   const prefetch = async (productIds: string[]) => {
