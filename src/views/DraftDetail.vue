@@ -139,7 +139,7 @@
                 <ion-label>{{ item.rejectionHistory ? translate("3 rejections in the last week") : translate("No rejection history") }}</ion-label>
               </ion-chip>
             </div> -->
-            <ion-button fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
+            <ion-button size="default" fill="clear" color="medium" slot="end" @click="deleteItemFromCount(item.importItemSeqId)">
               <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
             </ion-button>
           </div>
