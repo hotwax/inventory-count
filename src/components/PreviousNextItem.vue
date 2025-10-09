@@ -12,7 +12,7 @@
       </ion-label>
       <div class="last-next-match">
         <ion-note class="ion-margin-end">{{ translate("last match") }}</ion-note>
-        <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="$emit('change-product', 'last', lastItemIndexDist, currentIndex)">
+        <ion-button size="default" fill="outline" shape="round" color="medium" class="ion-no-padding" @click="$emit('change-product', 'last', lastItemIndexDist, currentIndex)">
           <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
         </ion-button>
       </div>
@@ -31,7 +31,7 @@
       </ion-label>
       <div class="last-next-match">
         <ion-note class="ion-margin-end">{{ translate('next match') }}</ion-note>
-        <ion-button fill="outline" shape="round" color="medium" class="ion-no-padding" @click="$emit('change-product', 'next', nextItemIndexDist, currentIndex)">
+        <ion-button size="default" fill="outline" shape="round" color="medium" class="ion-no-padding" @click="$emit('change-product', 'next', nextItemIndexDist, currentIndex)">
           <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
         </ion-button>
       </div>

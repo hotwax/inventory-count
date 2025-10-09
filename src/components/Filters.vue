@@ -24,7 +24,7 @@
 
         <ion-item v-for="facilityId in query.facilityIds" :key="facilityId">
           <ion-label>{{ getFacilityName(facilityId) }}</ion-label>
-          <ion-button color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
+          <ion-button size="default" color="danger" v-if="query.facilityIds.length" fill="clear" slot="end" @click="updateQuery('facilityIds', query.facilityIds.filter((id: string) => id !== facilityId))">
             <ion-icon slot="icon-only" :icon="closeCircleOutline"/>
           </ion-button>
         </ion-item>
