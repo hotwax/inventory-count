@@ -60,7 +60,7 @@
                 <ion-icon slot="start" :icon="businessOutline"/>
                 <ion-label>{{ translate("Facility") }}</ion-label>
                 <ion-label v-if="currentCycleCount.facilityId" slot="end">{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-                <ion-button fill="clear" slot="end" v-if="currentCycleCount.facilityId" @click="openSelectFacilityModal">
+                <ion-button size="default" fill="clear" slot="end" v-if="currentCycleCount.facilityId" @click="openSelectFacilityModal">
                   <ion-icon slot="icon-only" :icon="pencilOutline" />
                 </ion-button>
                 <ion-button v-else fill="outline" @click="openSelectFacilityModal">
@@ -96,7 +96,7 @@
               <p class="overline">{{ translate("Search result") }}</p>
               {{ searchedProduct.internalName || searchedProduct.sku || searchedProduct.productId }}
             </ion-label>
-            <ion-button slot="end" fill="clear" @click="addProductToCount" :color="isProductAvailableInCycleCount ? 'success' : 'primary'">
+            <ion-button size="default" slot="end" fill="clear" @click="addProductToCount" :color="isProductAvailableInCycleCount ? 'success' : 'primary'">
               <ion-icon slot="icon-only" :icon="isProductAvailableInCycleCount ? checkmarkCircle : addCircleOutline"/>
             </ion-button>
           </ion-item>

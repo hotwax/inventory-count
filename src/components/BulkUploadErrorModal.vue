@@ -15,7 +15,7 @@
         <ion-item lines="full">
           <ion-icon :icon="bookOutline" slot="start"/>
           {{ translate("View upload guide") }}
-          <ion-button color="medium" fill="clear" slot="end" @click="viewUploadGuide">
+          <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide">
             <ion-icon slot="icon-only" :icon="openOutline"/>
           </ion-button>
         </ion-item>
