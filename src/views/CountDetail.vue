@@ -852,7 +852,6 @@ ion-list {
     column-gap: var(--spacer-2xl);
   }
  .find >.filters {
-    width:433px;
     display: unset;
   }
 }
