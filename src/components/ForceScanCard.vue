@@ -1,49 +1,59 @@
 <template>
   <ion-card>
     <ion-card-header>
-      <ion-card-title>{{ translate("Force scan") }}</ion-card-title>
+      <ion-card-title>{{ translate("settings.forceScan.title") }}</ion-card-title>
     </ion-card-header>
 
     <ion-card-content>
-      {{ translate("Require inventory to be scanned when counting instead of manually entering values.") }}
+      <p>{{ translate("settings.forceScan.description1") }}</p>
+      <p class="ion-padding-top">{{ translate("settings.forceScan.description2") }}</p>
     </ion-card-content>
 
-    <ion-item lines="none">
-      <ion-toggle 
-        v-model="forceScan" 
-        :disabled="!hasPermission('APP_DRAFT_VIEW')"
-      >
-        {{ translate("Require barcode scanning") }}
-      </ion-toggle>
-    </ion-item>
-
-    <div v-if="forceScan">
+    <div v-if="areSettingsLoaded">
       <ion-item lines="none">
         <ion-toggle 
-          v-model="firstScanCount" 
+          v-model="forceScan" 
           :disabled="!hasPermission('APP_DRAFT_VIEW')"
         >
-          {{ translate("Count on first scan") }}
+          {{ translate("settings.forceScan.requireScanningToggle") }}
         </ion-toggle>
       </ion-item>
 
-      <ion-item lines="none">
-        <ion-select
-          :label="translate('Barcode Identifier')"
-          v-model="barcodeIdentifier"
-          interface="popover"
-          :disabled="!hasPermission('APP_DRAFT_VIEW')"
-        >
-          <ion-select-option 
-            v-for="option in barcodeIdentificationOptions" 
-            :key="option.id" 
-            :value="option.id"
+      <div v-if="forceScan">
+        <ion-item lines="none">
+          <ion-toggle 
+            v-model="firstScanCount" 
+            :disabled="!hasPermission('APP_DRAFT_VIEW')"
           >
-            {{ option.description }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
+            {{ translate("settings.forceScan.countOnFirstScanToggle") }}
+          </ion-toggle>
+        </ion-item>
+
+        <ion-item lines="none">
+          <ion-select
+            :label="translate('settings.forceScan.barcodeIdentifierLabel')"
+            v-model="barcodeIdentifier"
+            interface="popover"
+            :disabled="!hasPermission('APP_DRAFT_VIEW')"
+          >
+            <ion-select-option 
+              v-for="option in barcodeIdentificationOptions" 
+              :key="option.id" 
+              :value="option.id"
+            >
+              {{ option.description }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
     </div>
+
+    <div v-else class="ion-padding-start ion-padding-bottom">
+        <ion-text color="medium">
+            <p>{{ translate("settings.forceScan.loading") }}</p>
+        </ion-text>
+    </div>
+
   </ion-card>
 </template>
 
@@ -56,31 +66,35 @@ import {
   IonItem,
   IonSelect,
   IonSelectOption,
+  IonText,
   IonToggle,
 } from "@ionic/vue";
 import { computed } from "vue";
 import { useStore } from "vuex";
-import { translate } from "@/i18n"; // Re-import for internationalization
-import { hasPermission } from "@/authorization"; // Re-import for permission checks
+import { translate } from "@/i18n";
+import { hasPermission } from "@/authorization";
 
 const store = useStore();
 
-// Vuex Integration: Use computed properties with get/set for two-way binding with the store
+const userSettings = computed(() => store.getters['user/getSetting']);
+const areSettingsLoaded = computed(() => !!userSettings.value);
+
 const forceScan = computed({
-  get: () => store.getters['user/getSetting']('inventory.forceScan'),
+  get: () => userSettings.value?.['inventory.forceScan'] ?? false,
   set: (value) => store.dispatch('user/updateSetting', { key: 'inventory.forceScan', value }),
 });
 
 const firstScanCount = computed({
-  get: () => store.getters['user/getSetting']('inventory.countOnFirstScan'),
+  get: () => userSettings.value?.['inventory.countOnFirstScan'] ?? false,
   set: (value) => store.dispatch('user/updateSetting', { key: 'inventory.countOnFirstScan', value }),
 });
 
 const barcodeIdentifier = computed({
-  get: () => store.getters['user/getSetting']('inventory.barcodeIdentifier'),
+  get: () => userSettings.value?.['inventory.barcodeIdentifier'] ?? 'SKU',
   set: (value) => store.dispatch('user/updateSetting', { key: 'inventory.barcodeIdentifier', value }),
 });
 
-// Dynamic Options: Fetch barcode identification options from the product store
-const barcodeIdentificationOptions = computed(() => store.getters['product/getProductIdentificationPref']);
+const barcodeIdentificationOptions = computed(() => {
+  return store.getters['product/getProductIdentificationPref'] ?? [];
+});
 </script>
