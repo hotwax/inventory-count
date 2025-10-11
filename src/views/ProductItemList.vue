@@ -125,9 +125,6 @@ ion-note {
 
 .secondary-identifier {
   font-weight: normal !important;    /* remove bold */
-  color: #a0a0a0 !important;            /* override Ionic color */
+  color: var(--ion-color-medium-shade, #a0a0a0) !important;            /* override Ionic color */ !important;            /* override Ionic color */
 }
-
-
-
 </style>
