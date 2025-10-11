@@ -321,6 +321,10 @@ const productInAnimation = ref({});
 const isLoadingItems = ref(true);
 const scannedItem = ref({});
 
+const isAddButtonDisabled = computed(() => {
+  return selectedSegment.value === 'accepted' || selectedSegment.value === 'rejected';
+});
+
 onIonViewDidEnter(async() => {  
   await store.dispatch('count/setCountDetailPageActive', true);
   await store.dispatch('count/updateCycleCountItems', []);
