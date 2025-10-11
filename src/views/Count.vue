@@ -3,6 +3,19 @@
     <ion-header>
       <ion-toolbar>
         <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
+
+        <!-- 🔹 Add Button (disabled in pendingReview & closed tabs) -->
+        <ion-buttons slot="end">
+          <ion-button
+            :disabled="selectedSegment !== 'assigned'"
+            @click="addNewItem"
+          >
+            <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+            {{ translate("Add") }}
+          </ion-button>
+        </ion-buttons>
+
+        <!-- 🔹 Tabs -->
         <ion-segment :value="selectedSegment" @ionChange="segmentChanged($event.detail.value)">
           <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
             <ion-label>{{ translate("Assigned") }}</ion-label>
@@ -22,9 +35,16 @@
         <template v-if="isLoading">
           <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
         </template>
+
         <section v-else-if="cycleCount.length">
+          <!-- 🔹 Assigned Tab -->
           <template v-if="selectedSegment === 'assigned'">
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
+            <ion-card
+              v-for="count in cycleCount"
+              :key="count.inventoryCountImportId"
+              @click="navigateToStoreView(count)"
+              button
+            >
               <ion-card-header>
                 <div>
                   <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
@@ -39,7 +59,10 @@
                     </ion-label>
                   </ion-card-title>
                 </div>
-                <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
+                <ion-note>
+                  {{ cycleCountStats(count.inventoryCountImportId)?.totalItems }}
+                  {{ translate("items") }}
+                </ion-note>
               </ion-card-header>
               <ion-item lines="none">
                 {{ translate("Due date") }}
@@ -48,9 +71,16 @@
                 </ion-label>
               </ion-item>
             </ion-card>
-          </template> 
+          </template>
+
+          <!-- 🔹 Pending Review Tab -->
           <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
+            <ion-card
+              button
+              v-for="count in cycleCount"
+              :key="count.inventoryCountImportId"
+              @click="navigateToStoreView(count)"
+            >
               <ion-card-header>
                 <div>
                   <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
@@ -65,7 +95,10 @@
                     </ion-label>
                   </ion-card-title>
                 </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
+                <ion-note>
+                  {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
+                  {{ translate("items counted") }}
+                </ion-note>
               </ion-card-header>
               <ion-item>
                 {{ translate("Due date") }}
@@ -81,8 +114,15 @@
               </ion-item>
             </ion-card>
           </template>
+
+          <!-- 🔹 Closed Tab -->
           <template v-else>
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
+            <ion-card
+              v-for="count in cycleCount"
+              :key="count.inventoryCountImportId"
+              @click="navigateToStoreView(count)"
+              button
+            >
               <ion-card-header>
                 <div>
                   <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
@@ -97,7 +137,10 @@
                     </ion-label>
                   </ion-card-title>
                 </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
+                <ion-note>
+                  {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
+                  {{ translate("items counted") }}
+                </ion-note>
               </ion-card-header>
               <div class="header">
                 <div class="search">
@@ -136,15 +179,24 @@
                 </div>
               </div>
             </ion-card>
-          </template> 
+          </template>
         </section>
+
         <template v-else>
           <p class="empty-state">{{ translate("No cycle counts found") }}</p>
         </template>
       </main>
 
-      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+      <ion-infinite-scroll
+        ref="infiniteScrollRef"
+        v-show="isScrollable"
+        threshold="100px"
+        @ionInfinite="loadMoreCycleCount($event)"
+      >
+        <ion-infinite-scroll-content
+          loading-spinner="crescent"
+          :loading-text="translate('Loading')"
+        />
       </ion-infinite-scroll>
     </ion-content>
   </ion-page>
@@ -168,6 +220,9 @@ import {
   IonSegmentButton,
   IonTitle,
   IonToolbar,
+  IonButtons,
+  IonButton,
+  IonIcon,
   onIonViewDidEnter
 } from '@ionic/vue';
 import { translate } from '@/i18n';
@@ -192,18 +247,25 @@ const contentRef = ref({});
 const infiniteScrollRef = ref({});
 let isLoading = ref(false);
 
-onIonViewDidEnter(async() => {
+onIonViewDidEnter(async () => {
   isLoading.value = true;
   await fetchCycleCounts();
   isLoading.value = false;
-})
+});
+
+// 🔹 Add new item (only works in 'assigned' tab)
+function addNewItem() {
+  if (selectedSegment.value !== "assigned") return;
+  showToast(translate("You can only add items in the Assigned tab."));
+  // add your actual add logic here...
+}
 
 function enableScrolling() {
   const parentElement = contentRef.value.$el
   const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
   let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
   const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-  if(distanceFromInfinite < 0) {
+  if (distanceFromInfinite < 0) {
     isScrollingEnabled.value = false;
   } else {
     isScrollingEnabled.value = true;
@@ -211,8 +273,7 @@ function enableScrolling() {
 }
 
 async function loadMoreCycleCount(event) {
-  // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-  if(!(isScrollingEnabled.value && isScrollable.value)) {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
   }
   fetchCycleCounts(
@@ -226,7 +287,7 @@ async function loadMoreCycleCount(event) {
 }
 
 async function fetchCycleCounts(vSize, vIndex) {
-  if(!currentFacility.value?.facilityId) {
+  if (!currentFacility.value?.facilityId) {
     showToast(translate("No facility is associated with this user"));
     return;
   }
@@ -254,9 +315,9 @@ function navigateToStoreView(count) {
 }
 
 function getStatusIdForCountsToBeFetched() {
-  if(selectedSegment.value === "assigned") {
+  if (selectedSegment.value === "assigned") {
     return "INV_COUNT_ASSIGNED"
-  } else if(selectedSegment.value === "pendingReview") {
+  } else if (selectedSegment.value === "pendingReview") {
     return "INV_COUNT_REVIEW"
   } else {
     return "INV_COUNT_COMPLETED"
@@ -265,35 +326,27 @@ function getStatusIdForCountsToBeFetched() {
 
 function getSubmissionDate(count) {
   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
-  }
-
+  if (!history) return "-";
   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
 
 function getClosedDate(count) {
   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
-  }
-
+  if (!history) return "-";
   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
-</script> 
+</script>
 
 <style scoped>
 section {
-  padding-bottom: 100px
+  padding-bottom: 100px;
 }
-
 ion-card {
   min-width: 400px;
   max-width: 650px;
 }
-
 ion-card-header {
   display: flex;
   flex-direction: row;
@@ -301,16 +354,13 @@ ion-card-header {
   align-items: center;
   padding-bottom: 0px;
 }
-
 main {
   margin: var(--spacer-base) auto 0;
   display: flex;
 }
-
 .header {
   display: grid;
-  grid: "search filters"
-        /1fr 1fr;
+  grid: "search filters" /1fr 1fr;
 }
 .search {
   grid-area: search;
@@ -319,15 +369,10 @@ main {
 .filters {
   grid-area: filters;
 }
-
 @media (max-width: 991px) {
   .header {
-    grid: "search"
-          "filters"
-          / auto;
+    grid: "search" "filters" / auto;
     padding: 0;
   }
 }
 </style>
-
-
