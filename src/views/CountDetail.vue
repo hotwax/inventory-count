@@ -848,10 +848,11 @@ ion-list {
  .find {
     grid: "search main" min-content
           "filters main" 1fr
-          / 375px;
+          / 433px;
     column-gap: var(--spacer-2xl);
   }
  .find >.filters {
+    width:433px;
     display: unset;
   }
 }
