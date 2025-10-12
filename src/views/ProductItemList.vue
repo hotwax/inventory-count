@@ -6,9 +6,7 @@
     <ion-label class="ion-text-wrap" v-if="item.productId">
       <p class="overline">{{ item.itemStatusId === 'INV_COUNT_REJECTED' ? "rejected" : "" }}</p>
       {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-      <p class="secondary-identifier">
-  {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}
-</p>
+      <p class="secondary-identifier">{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
 
     </ion-label>
     <ion-label class="ion-text-wrap" v-else>
@@ -125,6 +123,6 @@ ion-note {
 
 .secondary-identifier {
   font-weight: normal !important;    /* remove bold */
-  color: var(--ion-color-medium-shade, #a0a0a0) !important;            /* override Ionic color */ !important;            /* override Ionic color */
+  color: var(--ion-color-medium-shade, #a0a0a0) !important;            /* override Ionic color */
 }
 </style>
