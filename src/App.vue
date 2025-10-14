@@ -1,5 +1,5 @@
 <template>
-  <ion-app v-if="!$router.currentRoute.value.fullPath.includes('/login') && !$router.currentRoute.value.fullPath.includes('/tabs/') && hasPermission(Actions.APP_DRAFT_VIEW)">
+  <ion-app v-if="!$router.currentRoute.value.fullPath.includes('/login') && !$router.currentRoute.value.fullPath.includes('/tabs/') && !$router.currentRoute.value.fullPath.includes('/count-detail/') && hasPermission(Actions.APP_DRAFT_VIEW)">
     <IonSplitPane content-id="main-content" when="lg">
       <Menu />
       <ion-router-outlet id="main-content"></ion-router-outlet>
