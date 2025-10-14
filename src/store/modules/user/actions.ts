@@ -168,13 +168,13 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   async updateCurrentFacility({ dispatch }, facility) {
-    const previousEComStoreId = getProductStoreId()
+    const previousProductStoreId = getProductStoreId()
     const userProfile = store.getters["user/getUserProfile"]
     await useUserStore().getEComStoresByFacility(facility.facilityId);
     await useUserStore().getEComStorePreference('SELECTED_BRAND', userProfile.userId);
     const preferredStore: any = useUserStore().getCurrentEComStore
 
-    if(previousEComStoreId !== preferredStore.productStoreId) {
+    if(previousProductStoreId !== preferredStore.productStoreId) {
       dispatch("getProductStoreSetting", preferredStore.productStoreId)
       await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
       .catch((error) => logger.error(error));
@@ -231,14 +231,14 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   async createProductStoreSetting({ commit }, payload) {
-    const eComStoreId = getProductStoreId();
+    const productStoreId = getProductStoreId();
     let isSettingExists = false;
 
     let settingValue = false as any;
     if(payload.enumId === "BARCODE_IDEN_PREF") settingValue = "internalName"
 
     const params = {
-      "productStoreId": eComStoreId,
+      "productStoreId": productStoreId,
       "settingTypeEnumId": payload.enumId,
       settingValue
     }
@@ -257,7 +257,7 @@ const actions: ActionTree<UserState, RootState> = {
   },
 
   async setProductStoreSetting({ commit, dispatch, state }, payload) {
-    const eComStoreId = getProductStoreId();
+    const productStoreId = getProductStoreId();
     let prefValue = (state.settings as any)[payload.key]
 
     let enumId = "";
@@ -303,7 +303,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     const params = {
-      "productStoreId": eComStoreId,
+      "productStoreId": productStoreId,
       "settingTypeEnumId": enumId,
       "settingValue": payload.key !== "barcodeIdentificationPref" ? JSON.stringify(payload.value) : payload.value
     }
