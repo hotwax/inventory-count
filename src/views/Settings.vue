@@ -83,6 +83,22 @@
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
         <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
 
+        <ion-card v-if="router.currentRoute.value.fullPath.includes('/tabs/')">
+          <ion-card-header>
+            <ion-card-title>{{ translate("Sort items") }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate("Choosing a sorting option allows you to view items in your preferred sequence.") }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-select :label="translate('Sort by')" interface="popover" :value="productStoreSettings['inventoryItemsSortBy']" @ionChange="setInventoryItemsSorting($event.detail.value)">
+              <ion-select-option value="itemCreatedDate asc">{{ translate("Oldest created") }}</ion-select-option>
+              <ion-select-option value="itemCreatedDate desc">{{ translate("Last created") }}</ion-select-option>
+              <ion-select-option value="lastUpdatedStamp desc">{{ translate("Recently updated") }}</ion-select-option>
+            </ion-select> 
+          </ion-item>
+        </ion-card>
+
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -125,6 +141,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"])
 const oms = computed(() => store.getters["user/getInstanceUrl"])
 const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
@@ -148,6 +165,10 @@ async function setFacility(facility: any) {
 
 async function setProductStore(selectedProductStore: any) {
   await store.dispatch("user/updateCurrentProductStore", selectedProductStore)
+}
+
+function setInventoryItemsSorting(value: any) {
+  store.dispatch("user/setProductStoreSetting", { key: "inventoryItemsSortBy", value })
 }
 
 function updateScrollingAnimationPreference(event: any) {
