@@ -72,7 +72,7 @@
             </ion-label>
             <div class="system-message-action">
               <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button slot="end" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+              <ion-button size="default" slot="end" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
