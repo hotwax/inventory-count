@@ -120,7 +120,7 @@
             </ion-item>
 
             <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh ?? '-'}}
+              {{ item.quantity }} / {{ item.qoh ?? "-"}}
               <p>{{ translate("counted / systemic") }}</p>
             </ion-label>
 
