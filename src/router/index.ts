@@ -77,24 +77,6 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'count-detail/:id',
-        name: 'CountDetail',
-        component: CountDetail,
-        props: true,
-        meta: {
-          permissionId: "APP_COUNT_VIEW"
-        }
-      },
-      {
-        path: 'count-detail/hard/:id',
-        name: 'HardCountDetail',
-        component: HardCountDetail,
-        props: true,
-        meta: {
-          permissionId: "APP_COUNT_VIEW"
-        }
-      },
-      {
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
@@ -102,6 +84,26 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
   },
   
+  {
+    path: '/count-detail/:id',
+    name: 'CountDetail',
+    component: CountDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_COUNT_VIEW"
+    }
+  },
+  {
+    path: '/count-detail/hard/:id',
+    name: 'HardCountDetail',
+    component: HardCountDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_COUNT_VIEW"
+    }
+  },
   {
     path: '/bulkUpload',
     name: 'Draft bulk',

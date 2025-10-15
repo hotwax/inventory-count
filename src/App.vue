@@ -1,5 +1,5 @@
 <template>
-  <ion-app v-if="!$router.currentRoute.value.fullPath.includes('/login') && !$router.currentRoute.value.fullPath.includes('/tabs/') && hasPermission(Actions.APP_DRAFT_VIEW)">
+  <ion-app v-if="showMenu">
     <IonSplitPane content-id="main-content" when="lg">
       <Menu />
       <ion-router-outlet id="main-content"></ion-router-outlet>
@@ -24,10 +24,18 @@ import { Actions, hasPermission } from '@/authorization'
 import { getProductStoreId } from './utils';
 import logger from './logger';
 import { useProductIdentificationStore } from '@hotwax/dxp-components';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const userProfile = computed(() => store.getters["user/getUserProfile"])
 const userToken = computed(() => store.getters["user/getUserToken"])
 const instanceUrl = computed(() => store.getters["user/getInstanceUrl"])
+const excludedPaths = ['/login', '/tabs/', '/count-detail/'];
+const showMenu = computed(() => {
+  const fullPath = router.currentRoute.value.fullPath
+  const isExcluded = excludedPaths.some(path => fullPath.includes(path))
+  return !isExcluded && hasPermission(Actions.APP_DRAFT_VIEW)
+})
 
 const loader = ref(null) as any
 
