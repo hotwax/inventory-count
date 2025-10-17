@@ -9,19 +9,11 @@ import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
 import CountDetail from '@/views/CountDetail.vue';
 import Tabs from '@/views/Tabs.vue';
-import Draft from "@/views/Draft.vue";
-import DraftDetail from "@/views/DraftDetail.vue";
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
-import PendingReview from "@/views/PendingReview.vue";
-import PendingReviewDetail from "@/views/PendingReviewDetail.vue";
-import Closed from "@/views/Closed.vue";
-import StorePermissions from "@/views/StorePermissions.vue";
 import Settings from "@/views/Settings.vue";
-import BulkUpload from "@/views/BulkUpload.vue"
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
-import ClosedDetail from "@/views/ClosedDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -56,7 +48,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/",
     redirect: () => {
       if(hasPermission("APP_DRAFT_VIEW")) {
-        return "/draft"
+        return "/assigned"
       }
       return "/tabs/count"
     },
@@ -105,38 +97,10 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/bulkUpload',
-    name: 'Draft bulk',
-    component: BulkUpload,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
-    path: '/draft',
-    name: 'Draft',
-    component: Draft,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
     path: '/hard-count',
     name: 'HardCount',
     component: HardCount,
     beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
-    path: "/draft/:inventoryCountImportId",
-    name: "DraftDetail",
-    component: DraftDetail,
-    beforeEnter: authGuard,
-    props: true,
     meta: {
       permissionId: "APP_DRAFT_VIEW"
     }
@@ -158,53 +122,6 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: "APP_ASSIGNED_VIEW"
-    }
-  },
-  {
-    path: '/pending-review',
-    name: 'PendingReview',
-    component: PendingReview,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
-    }
-  },
-  {
-    path: '/pending-review/:inventoryCountImportId',
-    name: 'PendingReviewDetail',
-    component: PendingReviewDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
-    }
-  },
-  {
-    path: '/closed',
-    name: 'Closed',
-    component: Closed,  
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW"
-    }
-  },
-  {
-    path: '/closed/:inventoryCountImportId',
-    name: 'ClosedDetail',
-    component: ClosedDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW"
-    }
-  },
-  {
-    path: '/store-permissions',
-    name: 'StorePermissions',
-    component: StorePermissions,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW"
     }
   },
   {
