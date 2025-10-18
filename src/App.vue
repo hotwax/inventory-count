@@ -1,9 +1,9 @@
 <template>
   <ion-app v-if="showMenu">
-    <IonSplitPane content-id="main-content" when="lg">
+    <ion-split-pane when="lg" content-id="main-content">
       <Menu />
       <ion-router-outlet id="main-content"></ion-router-outlet>
-    </IonSplitPane>
+    </ion-split-pane>
   </ion-app>
   <ion-app v-else>
     <ion-router-outlet id="main-content"></ion-router-outlet>
