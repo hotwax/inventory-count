@@ -29,7 +29,7 @@
     "boon-js": "^2.0.3",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
-    "dexie": "^4.0.8",
+    "dexie": "^4.0.7",
     "http-status-codes": "^2.1.4",
     "luxon": "^3.2.0",
     "mitt": "^2.1.0",
