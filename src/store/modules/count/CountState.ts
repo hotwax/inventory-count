@@ -1,5 +1,5 @@
 export default interface CountState {
-  list: Array<any>,
+  assignedWorkEfforts: Array<any>,
   total: number,
   isScrollable: boolean,
   query: {

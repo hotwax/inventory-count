@@ -16,7 +16,7 @@
         <template v-if="isLoading">
           <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
         </template>
-        <section v-else-if="cycleCount.length">
+        <section>
           <template v-if="selectedSegment === 'assigned'">
             
             <!-- no sessions -->
@@ -211,9 +211,9 @@
             </ion-card>
           </template> 
         </section>
-        <template v-else>
+        <!-- <template v-else>
           <p class="empty-state">{{ translate("No cycle counts found") }}</p>
-        </template>
+        </template> -->
       </main>
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
@@ -257,7 +257,7 @@ const store = useStore();
 const router = useRouter()
 const userStore = useUserStore();
 
-const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
+const cycleCount = computed(() => store.getters["count/getAssignedWorkEfforts"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => userStore.getCurrentFacility)
 const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
@@ -275,15 +275,24 @@ onIonViewDidEnter(async() => {
 })
 
 function enableScrolling() {
-  const parentElement = contentRef.value.$el
-  const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
-  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+  // Make sure refs exist and DOM is ready
+  const parentElement = contentRef.value?.$el
+  if (!parentElement) return
+
+  // Get the internal scrollable element inside ion-content
+  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']")
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return
+
+  const scrollHeight = scrollEl.scrollHeight
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight
+  const scrollTop = scrollEl.scrollTop
+  const threshold = 100
+  const height = scrollEl.offsetHeight
+
   const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-  if(distanceFromInfinite < 0) {
-    isScrollingEnabled.value = false;
-  } else {
-    isScrollingEnabled.value = true;
-  }
+
+  // Enable or disable scroll based on distance
+  isScrollingEnabled.value = distanceFromInfinite >= 0
 }
 
 async function loadMoreCycleCount(event) {
