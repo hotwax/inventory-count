@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <Filters menu-id="assigned-filter" content-id="filter"/>
+    <!-- <Filters menu-id="assigned-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Assigned")}}</ion-title>
@@ -13,8 +13,8 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <SearchBarAndSortBy />
-      <p v-if="!cycleCounts.length" class="empty-state">
+      <!-- <SearchBarAndSortBy /> -->
+      <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else>
@@ -63,9 +63,9 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
 import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
-import Filters from "@/components/Filters.vue"
+// import Filters from "@/components/Filters.vue"
 import router from "@/router"
-import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
+// import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
 const cycleCounts = computed(() => store.getters["count/getCounts"])
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])

@@ -30,11 +30,11 @@
           </div>
           <template v-if="itemsList?.length > 0">
             <DynamicScroller class="virtual-scroller" :items="itemsListForScroller" key-field="itemKey" :min-item-size="80" :buffer="400">
-              <template v-slot="{ item, index, active }">
-                <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
+              <!-- <template v-slot="{ item, index, active }"> -->
+                <!-- <DynamicScrollerItem :item="item" :active="active" :index="index" :key="item.virtualKey">
                   <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/>
-                </DynamicScrollerItem>
-              </template>
+                </DynamicScrollerItem> -->
+              <!-- </template> -->
             </DynamicScroller>
           </template>
           <template v-else-if="!isLoadingItems">
@@ -47,17 +47,17 @@
         <!--Product details-->
         <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
           <template v-if="isLoadingItems">
-            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
+            <!-- <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/> -->
           </template>
           <template v-else-if="itemsList?.length && Object.keys(currentProduct)?.length">
             <div class="product" @scroll="isScrollingAnimationEnabled ? onScroll : null" ref="scrollingContainerRef">
               <template v-if="isScrollingAnimationEnabled">
                 <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId || item.scannedId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="isItemAlreadyAdded(item) ? `${item.productId}-${item.importItemSeqId}` :  item.scannedId" :data-isMatching="item.isMatching" :data-scanned-id="item.scannedId">
-                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                  <!-- <Image :src="getProduct(item.productId)?.mainImageUrl" /> -->
                 </div>
               </template>
               <div v-else class="image ion-padding-top" :key="currentProduct.importItemSeqId">
-                <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" />
+                <!-- <Image :src="getProduct(currentProduct.productId)?.mainImageUrl" /> -->
               </div>
             </div>
 
@@ -144,7 +144,7 @@
                   </ion-radio-group>
                 </template>
 
-                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
+                <!-- <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" /> -->
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) : saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -170,7 +170,7 @@
                   </ion-item>
                 </template>
 
-                <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" />
+                <!-- <PreviousNextItem v-if="currentProduct?.isMatchNotFound" :scannedId="currentProduct.scannedId" :itemList="cycleCountItems.itemList" @changeProduct="changeProduct" /> -->
                 <ion-button v-if="!['INV_COUNT_REJECTED', 'INV_COUNT_COMPLETED'].includes(currentProduct.itemStatusId)" class="ion-margin" expand="block" :disabled="currentProduct.isMatching" @click="currentProduct.isMatchNotFound ? matchProduct(currentProduct) :  saveCount(currentProduct)">
                   {{ translate((currentProduct.isMatchNotFound || currentProduct.isMatching) ? "Match product" : "Save count") }}
                 </ion-button>
@@ -229,16 +229,16 @@ import { computed, defineProps, nextTick, ref } from "vue";
 import { useStore } from "@/store";
 import logger from "@/logger";
 import emitter from "@/event-bus";
-import ProductItemList from "@/views/ProductItemList.vue";
+// import ProductItemList from "@/views/ProductItemList.vue";
 import { getPartyName, getProductStoreId, hasError, showToast } from "@/utils";
-import { CountService } from "@/services/CountService";
-import Image from "@/components/Image.vue";
+// import { CountService } from "@/services/CountService";
+// import Image from "@/components/Image.vue";
 import router from "@/router";
-import MatchProductModal from "@/components/MatchProductModal.vue";
+// import MatchProductModal from "@/components/MatchProductModal.vue";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
-import PreviousNextItem from "@/components/PreviousNextItem.vue";
+// import ProgressBar from '@/components/ProgressBar.vue';
+// import PreviousNextItem from "@/components/PreviousNextItem.vue";
 import { deleteRecord } from "@/utils/indexeddb";
 
 const store = useStore();
@@ -353,7 +353,7 @@ function handleProductClick(item: any) {
 
 async function fetchCycleCount() {
   try {
-    const resp = await CountService.fetchCycleCount(props?.id)
+    const resp = {}
     if(!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {
@@ -560,28 +560,19 @@ async function addProductToCount(productId: any) {
   let resp = {} as any, newProduct = {} as any;
 
   try {
-    resp = await CountService.addProductToCount({
-      inventoryCountImportId: cycleCount.value.inventoryCountImportId,
-      itemList: [{
-        // Passing both productId and idValue for the backend compatibility
-        // idValue will be removed in the future.
-        idValue: productId,
-        productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
-    })
+    resp = {}
 
     if(!hasError(resp) && resp.data?.itemList?.length) {
       const importItemSeqId = resp.data.itemList[0].importItemSeqId
 
       if(productStoreSettings.value['showQoh']) {
-        resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
-        if(!hasError(resp)) {
-          newProduct = resp.data.itemList[0];
-          return newProduct
-        } else {
-          throw resp;
-        }
+        // resp = await CountService.fetchCycleCountItems({ inventoryCountImportId: cycleCount.value.inventoryCountImportId, importItemSeqId, pageSize: 1 })
+        // if(!hasError(resp)) {
+        //   newProduct = resp.data.itemList[0];
+        //   return newProduct
+        // } else {
+        //   throw resp;
+        // }
       } else {
         return importItemSeqId
       }
@@ -612,13 +603,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
 
   if(newCount && updatedItem?.importItemSeqId && updatedItem.productId) {
     try {
-      const resp = await CountService.updateCount({
-        inventoryCountImportId: cycleCount.value.inventoryCountImportId,
-        importItemSeqId: updatedItem?.importItemSeqId,
-        productId: updatedItem.productId,
-        quantity: newCount,
-        countedByUserLoginId: userProfile.value.username
-      })
+      const resp = {}
   
       if(!hasError(resp)) {
         updatedItem["quantity"] = newCount
@@ -652,10 +637,10 @@ async function readyForReview() {
       text: translate('Submit'),
       handler: async () => {
         try {
-          await CountService.updateCycleCount({
-            inventoryCountImportId: props?.id,
-            statusId: "INV_COUNT_REVIEW"
-          })
+          // await CountService.updateCycleCount({
+          //   inventoryCountImportId: props?.id,
+          //   statusId: "INV_COUNT_REVIEW"
+          // })
           isSubmittingForReview.value = true;
           router.push("/tabs/count")
 
@@ -769,7 +754,7 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
       countedByUserLoginId: userProfile.value.username
     };
 
-    const resp = await CountService.updateCount(payload);
+    const resp = {}
     if (!hasError(resp)) {
       currentProduct.quantity = selectedCountUpdateType.value === "replace" ? currentCount : Number(currentCount) + Number(currentProduct.quantity || 0)
       currentProduct.countedByGroupName = userProfile.value.userFullName
@@ -796,26 +781,26 @@ async function saveCount(currentProduct: any, isScrollEvent = false) {
 }
 
 async function matchProduct(currentProduct: any) {
-  const addProductModal = await modalController.create({
-    component: MatchProductModal,
-    componentProps: { items: cycleCountItems.value.itemList },
-    showBackdrop: false,
-  });
+  // const addProductModal = await modalController.create({
+  //   component: MatchProductModal,
+  //   componentProps: { items: cycleCountItems.value.itemList },
+  //   showBackdrop: false,
+  // });
 
-  addProductModal.onDidDismiss().then(async (result) => {
-    if(result.data?.selectedProduct) {
-      const product = result.data.selectedProduct
-      if(productStoreSettings.value['showQoh']) {
-        const newItem = await addProductToCount(product.productId)
-        await updateCurrentItemInList(newItem, currentProduct.scannedId);
-      } else {
-        const importItemSeqId = await addProductToCount(product.productId)
-        await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
-      }
-    }
-  })
+  // addProductModal.onDidDismiss().then(async (result) => {
+  //   if(result.data?.selectedProduct) {
+  //     const product = result.data.selectedProduct
+  //     if(productStoreSettings.value['showQoh']) {
+  //       const newItem = await addProductToCount(product.productId)
+  //       await updateCurrentItemInList(newItem, currentProduct.scannedId);
+  //     } else {
+  //       const importItemSeqId = await addProductToCount(product.productId)
+  //       await updateCurrentItemInList({ ...currentProduct, ...product, importItemSeqId }, currentProduct.scannedId);
+  //     }
+  //   }
+  // })
 
-  addProductModal.present();
+  // addProductModal.present();
 }
 
 function getVariance(item: any , isRecounting: boolean) {
