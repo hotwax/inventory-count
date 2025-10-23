@@ -14,6 +14,7 @@ import AssignedDetail from "@/views/AssignedDetail.vue";
 import Settings from "@/views/Settings.vue";
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
+import SessionCountDetail from "@/views/SessionCountDetail.vue"
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -135,6 +136,13 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
+  },
+  {
+    path: '/session-count-detail/:id',
+    name: 'SessionCountDetail',
+    component: SessionCountDetail,
+    beforeEnter: authGuard,
+    props: true
   }
 ];
 

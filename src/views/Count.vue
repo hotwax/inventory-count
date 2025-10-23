@@ -18,20 +18,187 @@
         </template>
         <section v-else-if="cycleCount.length">
           <template v-if="selectedSegment === 'assigned'">
+            
+            <!-- no sessions -->
+            <ion-card>
+              <ion-card-header>
+                <div>
+                  <ion-label color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
+                  </ion-label>
+                  <ion-card-title>
+                    Count name
+                  </ion-card-title>
+                  <ion-card-subtitle>
+                    created date
+                  </ion-card-subtitle>
+                </div>
+                <ion-note>number of items</ion-note>
+              </ion-card-header>
+              <ion-item lines="none">
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>work effort due date</p>
+                </ion-label>
+              </ion-item>
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>
+                    Sessions
+                  </ion-label>
+                </ion-list-header>
+                <ion-button expand="block" class="ion-margin-horizontal">
+                  <ion-label>
+                    Start new session
+                  </ion-label>
+                </ion-button>
+              </ion-list>
+            </ion-card>
+
+            <!-- new session on device -->
+            <ion-card>
+              <ion-card-header>
+                <div>
+                  <ion-label color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
+                  </ion-label>
+                  <ion-card-title>
+                    Count name
+                  </ion-card-title>
+                  <ion-card-subtitle>
+                    created date
+                  </ion-card-subtitle>
+                </div>
+                <ion-note>number of items</ion-note>
+              </ion-card-header>
+              <ion-item lines="none">
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>work effort due date</p>
+                </ion-label>
+              </ion-item>
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>
+                    Sessions
+                  </ion-label>
+                  <ion-button fill="clear" size="small">
+                    <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
+                    New
+                  </ion-button>
+                </ion-list-header>
+                <!-- unassigned session -->
+                <ion-item detail="true" :router-link="'/session-count-detail/123'">
+                  <ion-label>
+                    Count name + Area name
+                    <p>
+                      created by userlogin
+                    </p>
+                  </ion-label>
+                  <ion-note slot="end">
+                    Open
+                  </ion-note>
+                </ion-item>
+                <ion-item-group>
+                  <ion-item-divider color="light">
+                    <ion-label>
+                      Other sessions
+                    </ion-label>
+                  </ion-item-divider>
+                  <ion-item detail="true">
+                    <ion-label>
+                      Count name + Area name
+                      <p>
+                        created by userlogin
+                      </p>
+                    </ion-label>
+                    <ion-note slot="end">
+                      Submitted
+                    </ion-note>
+                  </ion-item>
+                </ion-item-group>
+              </ion-list>
+            </ion-card>
+
+            <!-- session started -->
+            <ion-card>
+              <ion-card-header>
+                <div>
+                  <ion-label color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
+                  </ion-label>
+                  <ion-card-title>
+                    Count name
+                  </ion-card-title>
+                  <ion-card-subtitle>
+                    created date
+                  </ion-card-subtitle>
+                </div>
+                <ion-note>number of items</ion-note>
+              </ion-card-header>
+              <ion-item lines="none">
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>work effort due date</p>
+                </ion-label>
+              </ion-item>
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>
+                    Sessions
+                  </ion-label>
+                </ion-list-header>
+                <ion-item-group>
+                  <ion-item-divider color="light">
+                    <ion-label>
+                      On this device
+                    </ion-label>
+                  </ion-item-divider>
+                  <ion-item detail="true" href="tabs/count-details/1001" router-direction="forward">
+                    <ion-label>
+                      Count name + Area name
+                      <p>
+                        created by userlogin
+                      </p>
+                    </ion-label>
+                    <ion-note slot="end">
+                      In progress
+                    </ion-note>
+                  </ion-item>
+                </ion-item-group>
+                <ion-item-group>
+                  <ion-item-divider color="light">
+                    <ion-label>
+                      Other sessions
+                    </ion-label>
+                  </ion-item-divider>
+                  <ion-item detail="true">
+                    <ion-label>
+                      Count name + Area name
+                      <p>
+                        created by userlogin
+                      </p>
+                    </ion-label>
+                    <ion-note slot="end">
+                      Submitted
+                    </ion-note>
+                  </ion-item>
+                </ion-item-group>
+              </ion-list>
+            </ion-card>
+            
             <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
               <ion-card-header>
                 <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
+                  <ion-label v-if="count.countTypeEnumId === 'HARD_COUNT'" color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
+                  </ion-label>
                   <ion-card-title>
                     {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
                   </ion-card-title>
+                  <ion-card-subtitle>
+                    {{ getDateWithOrdinalSuffix(count.createdDate) }}
+                  </ion-card-subtitle>
                 </div>
                 <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
               </ion-card-header>
@@ -41,94 +208,6 @@
                   <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
                 </ion-label>
               </ion-item>
-            </ion-card>
-          </template> 
-          <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <ion-item>
-                {{ translate("Due date") }}
-                <ion-label slot="end">
-                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                </ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                {{ translate("Submission date") }}
-                <ion-label slot="end">
-                  <p>{{ getSubmissionDate(count) }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-card>
-          </template>
-          <template v-else>
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <div class="header">
-                <div class="search">
-                  <ion-item>
-                    {{ translate("Due date") }}
-                    <ion-label slot="end">
-                      <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Submission date") }}
-                    <ion-label slot="end">
-                      <p>{{ getSubmissionDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item lines="none">
-                    {{ translate("Closed date") }}
-                    <ion-label slot="end">
-                      <p>{{ getClosedDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-                <div class="filters">
-                  <ion-item>
-                    {{ translate("Rejected") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Total variance") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalVariance }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-              </div>
             </ion-card>
           </template> 
         </section>
@@ -151,11 +230,13 @@ import {
   IonCardSubtitle,
   IonCardTitle,
   IonContent,
+  IonIcon,
   IonHeader,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
   IonLabel,
+  IonList,
   IonNote,
   IonPage,
   IonSegment,
@@ -164,6 +245,7 @@ import {
   IonToolbar,
   onIonViewDidEnter
 } from '@ionic/vue';
+import { addCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
@@ -279,12 +361,8 @@ function getClosedDate(count) {
 </script> 
 
 <style scoped>
-section {
-  padding-bottom: 100px
-}
 
 ion-card {
-  min-width: 400px;
   max-width: 650px;
 }
 
@@ -293,34 +371,7 @@ ion-card-header {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 0px;
-}
-
-main {
-  margin: var(--spacer-base) auto 0;
-  display: flex;
-}
-
-.header {
-  display: grid;
-  grid: "search filters"
-        /1fr 1fr;
-}
-.search {
-  grid-area: search;
-  border-right: 1px solid #ccc;
-}
-.filters {
-  grid-area: filters;
-}
-
-@media (max-width: 991px) {
-  .header {
-    grid: "search"
-          "filters"
-          / auto;
-    padding: 0;
-  }
+  gap: var(--spacer-sm);
 }
 </style>
 
