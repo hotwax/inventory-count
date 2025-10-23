@@ -63,6 +63,16 @@ export default defineComponent({
     const router = useRouter();
     const appPages = [
       {
+        title: "Draft",
+        url: "/draft",
+        iosIcon: createOutline,
+        mdIcon: createOutline,
+        childRoutes: ["/draft/", "/bulkUpload", "/hard-count"],
+        meta: {
+          permissionId: "APP_DRAFT_VIEW"
+        }
+      },
+      {
         title: "Assigned",
         url: "/assigned",
         iosIcon: storefrontOutline,
@@ -70,6 +80,35 @@ export default defineComponent({
         childRoutes: ["/assigned/"],
         meta: {
           permissionId: "APP_ASSIGNED_VIEW"
+        }
+      },
+      {
+        title: "Pending review",
+        url: "/pending-review",
+        iosIcon: mailUnreadOutline,
+        mdIcon: mailUnreadOutline,
+        childRoutes: ["/pending-review/"],
+        meta: {
+          permissionId: "APP_PENDING_REVIEW_VIEW"
+        }
+      },
+      {
+        title: "Closed",
+        url: "/closed",
+        iosIcon: receiptOutline,
+        mdIcon: receiptOutline,
+        childRoutes: ["/closed/"],
+        meta: {
+          permissionId: "APP_CLOSED_VIEW"
+        }
+      },
+      {
+        title: "Store permissions",
+        url: "/store-permissions",
+        iosIcon: shieldCheckmarkOutline,
+        mdIcon: shieldCheckmarkOutline,
+        meta: {
+          permissionId: "APP_STORE_PERMISSIONS_VIEW"
         }
       },
       {

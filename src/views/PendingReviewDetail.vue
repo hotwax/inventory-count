@@ -4,172 +4,136 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
-        <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button :disabled="!filteredItems?.length || isAllItemsMarkedAsCompletedOrRejected" @click="selectAll()">
-            <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
-            <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
-          </ion-button>
-          <ion-button @click="addProduct()">
-            <ion-icon slot="icon-only" :icon="addOutline" />
-          </ion-button>
-        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content" :scroll-y="false">
-      <template v-if="currentCycleCount.inventoryCountImportId">
-        <template v-if="!isLoadingItems">
-        <div class="header">
-          <div class="search ion-padding">
+    <ion-content>
+      <div class="header">
+        <ion-card>
+          <ion-item lines="none">
+            <ion-label>
+              <p class="overline">workEfforId</p>
+              <h1>workEffortName</h1>
+            </ion-label>
+            <ion-button slot="end" fill="outline" color="medium">
+              Edit
+            </ion-button>
+          </ion-item>
+          <ion-item>
+            <ion-icon :icon="businessOutline" slot="start"></ion-icon>
+            <ion-label>
+              facilityName
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+            <ion-label>Due date</ion-label>
+            <ion-datetime-button slot="end"></ion-datetime-button>
+          </ion-item>
+        </ion-card>
+        <ion-card>
+          <ion-item>
+            <ion-label>First item counted</ion-label>
+            <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Last item counted</ion-label>
+            <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>
+              40% Coverage
+            </ion-label>
+          </ion-item>
+        </ion-card>
+
+        <div class="statistics">
+          <ion-card>
             <ion-item lines="none">
-              <ion-label slot="start">
-                <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-                <p>{{ currentCycleCount.countId }}</p>
+              <ion-label>
+                Review progress 60% complete
+                <p>6 out of 10 items complete</p>
               </ion-label>
-
-              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-                {{ translate("Rename") }}
-              </ion-button>
-              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-                {{ translate("Save") }}
-              </ion-button>
             </ion-item>
-            <ion-chip outline @click="openDateTimeModal">
-              <ion-icon :icon="calendarClearOutline"></ion-icon>
-              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-            </ion-chip>
-            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-              <ion-content :force-overscroll="false">
-                <ion-datetime
-                  id="schedule-datetime"
-                  :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
-                  @ionChange="updateCustomTime($event)"
-                  :min="DateTime.now().toISO()"
-                  :max="DateTime.now().plus({ years: 10 }).toISO()"
-                  presentation="date"
-                  showDefaultButtons
-                />
-              </ion-content>
-            </ion-modal>
-            <ion-chip outline>
-              <ion-icon :icon="businessOutline"></ion-icon>
-              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-            </ion-chip>
-            <ion-chip outline @click="reassignCount">
-              <ion-icon :icon="playBackOutline"></ion-icon>
-              <ion-label>{{ translate("Re-assign") }}</ion-label>
-            </ion-chip>
-          </div>
-          <ion-list>
-            <div class="filters">
-              <ion-item>
-                <ion-label>{{ translate("Progress") }}</ion-label>
-                <ion-label slot="end">{{ getProgress() }}</ion-label>
-              </ion-item>
-              <ion-item>
-                <ion-label>{{ translate("Variance") }}</ion-label>
-                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                <ion-icon slot="start" :icon="thermometerOutline"/>
-                <ion-label>{{ translate("Item variance threshold") }}</ion-label>
-                <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                <div slot="start"></div>
-                <ion-range v-model="varianceThreshold"></ion-range>
-              </ion-item>
-            </div>
-          </ion-list>
+          </ion-card>
+          <ion-card>
+            <ion-item lines="full">
+              <ion-label>
+                <p class="overline">Overall variance (Filtered)</p>
+                <h3>16 units</h3>
+                <p>based on 4 results</p>
+              </ion-label>
+            </ion-item>
+          </ion-card>
         </div>
+      </div>
 
-        <div class="header border">
-          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
-            <ion-segment-button value="all">
-              <ion-label>{{ translate("All") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="accept">
-              <ion-icon color="success" :icon="thermometerOutline"/>
-            </ion-segment-button>
-            <ion-segment-button value="reject">
-              <ion-icon color="danger" :icon="thermometerOutline"/>
-            </ion-segment-button>
-          </ion-segment>
+      <div class="controls ion-margin-top">
+        <div class="filters">
+          <ion-searchbar placeholder="Search"></ion-searchbar>
+
+          <ion-item>
+            <ion-select label="Status" placeholder="Select one" interface="popover">
+              <ion-select-option value="1">Option 1</ion-select-option>
+              <ion-select-option value="2">Option 2</ion-select-option>
+              <ion-select-option value="3">Option 3</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-select label="Compliance" placeholder="Select another" interface="popover">
+              <ion-select-option value="a">Option A</ion-select-option>
+              <ion-select-option value="b">Option B</ion-select-option>
+              <ion-select-option value="c">Option C</ion-select-option>
+            </ion-select>
+          </ion-item>
         </div>
-        </template>
+        <ion-item-divider color="light">
+          <ion-checkbox slot="start"/>
+          5 results
+          <ion-select slot="end" label="Sort by"></ion-select>
+        </ion-item-divider>
+      </div>
 
-        <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
-        </template>
-        <template v-else-if="filteredItems?.length">
-          <DynamicScroller class="virtual-scroller" :items="filteredItems" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
-            <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :active="active" :index="index">
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
+      <div class="results ion-margin-top">
+        <ion-accordion-group>
+          <ion-accordion value="first">
+            <div class="list-item" slot="header">
+              <div class="item-key">
+                <ion-checkbox></ion-checkbox>
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <dxp-image></dxp-image>
+                  </ion-thumbnail>
+                  <ion-label>
+                      Primary Id
+                      <p>Secondary Id</p>
+                  </ion-label>                
+                </ion-item>
+              </div>
+              <ion-label class="stat">
+                6/3
+                <p>counted/systemic</p>
               </ion-label>
-            </ion-item>
-
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh ?? "-"}}
-              <p>{{ translate("counted / systemic") }}</p>
-            </ion-label>
-
-            <ion-label v-else>
-              {{ item.qoh ?? "-" }}
-              <p>{{ translate("systemic") }}</p>
-            </ion-label>
-
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.qoh ? +(item.quantity) - +(item.qoh) : item.quantity }}
-              <p>{{ getPartyName(item) }}</p>
-            </ion-label>
-
-            <ion-item lines="none" v-else>
-              <ion-label class="ion-text-center">
-                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
+              <ion-label class="stat">
+                +3
+                <p>variance</p>
               </ion-label>
-            </ion-item>
-
-            <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
-                <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
-                <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
-                <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-              </ion-button>
+              <div class="actions">
+                <ion-button fill="outline" color="success">
+                  Accept
+                </ion-button>
+                <ion-button fill="outline" color="danger">
+                  Reject
+                </ion-button>
+              </div>
             </div>
-
-            <div class="ion-margin-end">
-              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
+            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
+              item content
             </div>
-          </div>
-              </DynamicScrollerItem>
-            </template>
-          </DynamicScroller>
-        </template>
-
-        <p v-else class="empty-state">
-          {{ translate("No items added to count") }}
-        </p>
-      </template>
-      <template v-else-if="!isLoadingItems">
-        <p class="empty-state">{{ translate("Cycle count not found") }}</p>
-      </template>
+          </ion-accordion>
+        </ion-accordion-group>
+      </div>
     </ion-content>
 
     <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
@@ -198,7 +162,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
@@ -625,12 +589,20 @@ function isSelectedItemsHasQuantity() {
 </script>
 
 <style scoped>
-.border {
-  border-bottom : 1px solid var(--ion-color-medium);
+
+.filters {
+  display: flex;
+  padding-inline-start: var(--spacer-sm);
+  gap: var(--spacer-sm);
+  align-items: end;
+}
+
+.filters>* {
+  flex: 1;
 }
 
 .list-item {
-  --columns-desktop: 6;
+  --columns-desktop: 4;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
@@ -638,39 +610,19 @@ function isSelectedItemsHasQuantity() {
   width: 100%;
 }
 
+.list-item .item-key {
+  padding-inline-start: var(--spacer-sm);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.list-item .actions {
+  display: flex;
+  gap: var(--spacer-xs);
+}
+
 .header {
   display: grid;
-  grid: "search filters"
-        /1fr 1fr;
-}
-
-.search {
-  grid-area: search;
-}
-
-.filters {
-  grid-area: filters;
-}
-
-/* To remove overlapping of fab button with footer buttons */
-ion-footer ion-buttons {
-  padding-right: 80px;
-}
-
-.main-content {
-  --padding-bottom: 80px;
-}
-
-.virtual-scroller {
-  --virtual-scroller-offset: 400px;
-}
-
-@media (max-width: 991px) {
-  .header {
-    grid: "search"
-          "filters"
-          / auto;
-    padding: 0;
-  }
 }
 </style>

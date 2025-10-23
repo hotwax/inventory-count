@@ -53,11 +53,11 @@
           </div>
           <template v-if="itemsList?.length > 0">
             <DynamicScroller class="virtual-scroller" :items="itemsList" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
-              <template v-slot="{ item, index, active }">
-                <DynamicScrollerItem :item="item" :active="active" :index="index">
-                  <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/>
-                </DynamicScrollerItem>
-              </template>
+              <!-- <template v-slot="{ item, index, active }"> -->
+                <!-- <DynamicScrollerItem :item="item" :active="active" :index="index"> -->
+                  <!-- <ProductItemList :disabled="isLoadingItems" :item="item" :statusId="cycleCount.statusId"/> -->
+                <!-- </DynamicScrollerItem> -->
+              <!-- </template> -->
             </DynamicScroller>
           </template>
           <template v-else-if="!isLoadingItems">
@@ -69,17 +69,17 @@
         <!--Product details-->
         <main :class="itemsList?.length && !isLoadingItems ? 'product-detail' : ''">
           <template v-if="isLoadingItems">
-            <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/>
+            <!-- <ProgressBar :cycleCountItemsProgress="cycleCountItems.itemList?.length"/> -->
           </template>
           <template v-else-if="itemsList?.length && Object.keys(product)?.length">
             <div class="product" ref="scrollingContainerRef">
               <template v-if="isScrollingAnimationEnabled">
                 <div class="image ion-padding-top" v-for="item in itemsList" :key="item.importItemSeqId" :data-product-id="item.productId" :data-seq="item.importItemSeqId" :id="`${item.productId}-${item.importItemSeqId}`">
-                  <Image :src="getProduct(item.productId)?.mainImageUrl" />
+                  <!-- <Image :src="getProduct(item.productId)?.mainImageUrl" /> -->
                 </div>
               </template>
               <div v-else class="image ion-padding-top" :key="product?.importItemSeqId">
-                <Image :src="getProduct(product.productId)?.mainImageUrl" />
+                <!-- <Image :src="getProduct(product.productId)?.mainImageUrl" /> -->
               </div>
             </div>
             <div class="detail" v-if="Object.keys(product)?.length">
@@ -260,16 +260,16 @@ import { useStore } from "@/store";
 import { hasError } from '@/utils'
 import logger from '@/logger'
 import emitter from '@/event-bus'
-import ProductItemList from '@/views/ProductItemList.vue';
+// import ProductItemList from '@/views/ProductItemList.vue';
 import { getPartyName, getProductStoreId, showToast } from '@/utils';
-import { CountService } from '@/services/CountService';
+// import { CountService } from '@/services/CountService';
 import { paperPlaneOutline } from "ionicons/icons"
-import Image from "@/components/Image.vue";
+// import Image from "@/components/Image.vue";
 import router from "@/router"
 import { onBeforeRouteLeave } from 'vue-router';
 import { getProductIdentificationValue, useProductIdentificationStore } from '@hotwax/dxp-components';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
+// import ProgressBar from '@/components/ProgressBar.vue';
 import { deleteRecord } from '@/utils/indexeddb';
 
 const store = useStore();
@@ -401,7 +401,7 @@ async function fetchCycleCount() {
   let payload = props?.id
   let resp
   try {
-    resp = await CountService.fetchCycleCount(payload)
+    resp = {}
     if (!hasError(resp)) {
       cycleCount.value = resp?.data
     } else {
@@ -622,7 +622,7 @@ async function saveCount(currentProduct, isScrollEvent = false) {
       quantity: currentCount,
       countedByUserLoginId: userProfile.value.username
     };
-    const resp = await CountService.updateCount(payload);
+    const resp = {}
     if (!hasError(resp)) {
       currentProduct.quantity = currentCount
       currentProduct.countedByGroupName = userProfile.value.userFullName
@@ -727,10 +727,10 @@ async function readyForReview() {
       text: translate('Submit'),
       handler: async () => {
         try {
-          await CountService.updateCycleCount({
-            inventoryCountImportId: props?.id,
-            statusId: "INV_COUNT_REVIEW"
-          })
+        //   await CountService.updateCycleCount({
+        //     inventoryCountImportId: props?.id,
+        //     statusId: "INV_COUNT_REVIEW"
+        //   })
           router.push("/tabs/count")
           // Deleting indexeddb record once the count is moved to pending review page
           deleteRecord("counts", props?.id, "cycleCounts")

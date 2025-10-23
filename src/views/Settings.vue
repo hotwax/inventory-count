@@ -12,7 +12,7 @@
         <ion-card>
           <ion-item lines="full">
             <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
-              <Image :src="userProfile.partyImageUrl"/>
+              <!-- <Image :src="userProfile.partyImageUrl"/> -->
             </ion-avatar>
             <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
             is added on sides from ion-item and ion-padding-vertical to compensate the removed
@@ -81,7 +81,7 @@
 
         <DxpProductIdentifier />
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
-        <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <!-- <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/> -->
 
         <ion-card>
           <ion-card-header>
@@ -107,14 +107,14 @@
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
-import Image from "@/components/Image.vue"
+// import Image from "@/components/Image.vue"
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
-import ForceScanCard from "@/components/ForceScanCard.vue";
+// import ForceScanCard from "@/components/ForceScanCard.vue";
 
 const store = useStore()
 const authStore = useAuthStore();
