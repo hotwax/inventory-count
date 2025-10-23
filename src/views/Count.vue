@@ -16,7 +16,7 @@
         <template v-if="isLoading">
           <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
         </template>
-        <section v-else-if="cycleCount.length">
+        <section v-else-if="cycleCount?.length">
           <template v-if="selectedSegment === 'assigned'">
             
             <!-- no sessions -->
