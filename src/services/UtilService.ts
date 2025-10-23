@@ -19,7 +19,7 @@ function getOrdinalSuffix(day: any) {
 
 const fetchFacilities = async (payload: any): Promise<any> => {
   return api({
-    url: "facilities",
+    url: "inventory-cycle-count/facilities",
     method: "GET",
     params: payload
   })
@@ -27,7 +27,7 @@ const fetchFacilities = async (payload: any): Promise<any> => {
 
 const createBulkCycleCounts = async (payload: any): Promise<any> => {
   return api({
-    url: "cycleCounts/bulk",
+    url: "inventory-cycle-count/cycleCounts/bulk",
     method: "POST",
     data: payload
   })
@@ -35,11 +35,10 @@ const createBulkCycleCounts = async (payload: any): Promise<any> => {
 
 const fetchFacilityGroups = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
-  const url = store.getters["user/getBaseUrl"]
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
+  const baseURL = store.getters["user/getBaseUrl"]
 
   return client({
-    url: "facilityGroups",
+    url: "available-to-promise/facilityGroups",
     baseURL,
     method: "GET",
     params: payload,
@@ -52,12 +51,10 @@ const fetchFacilityGroups = async (payload: any): Promise<any> => {
 
 const fetchGroupFacilities = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
-  const url = store.getters["user/getBaseUrl"]
+  const baseURL = store.getters["user/getBaseUrl"]
   
-  const baseURL = url.startsWith('http') ? url.includes('/rest/s1/inventory-cycle-count') ? url.replace("inventory-cycle-count", "admin") : `${url}/rest/s1/admin/` : `https://${url}.hotwax.io/rest/s1/admin/`;
-
   return client({
-    url: `facilityGroups/${payload.facilityGroupId}/facilities`,
+    url: `available-to-promise/facilityGroups/${payload.facilityGroupId}/facilities`,
     baseURL,
     method: "GET",
     params: payload,

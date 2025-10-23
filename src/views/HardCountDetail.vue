@@ -85,11 +85,11 @@
                   <ion-label>{{ `${currentItemIndex + 1}/${itemsList.length}` }}</ion-label>
                 </ion-item>
 
-                <ion-button @click="changeProduct('previous')" :disabled="currentItemIndex === 0" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                <ion-button size="small" @click="changeProduct('previous')" :disabled="currentItemIndex === 0" fill="outline" shape="round" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronUpOutline"></ion-icon>
                 </ion-button>
 
-                <ion-button @click="changeProduct('next')" :disabled="currentItemIndex === itemsList.length - 1" fill="outline" shape="round" color="medium" class="ion-no-padding">
+                <ion-button size="small" @click="changeProduct('next')" :disabled="currentItemIndex === itemsList.length - 1" fill="outline" shape="round" color="medium" class="ion-no-padding">
                   <ion-icon slot="icon-only" :icon="chevronDownOutline"></ion-icon>
                 </ion-button>
               </ion-item>
@@ -373,6 +373,11 @@ function updateAnimatingProduct(item: any) {
 async function handleSegmentChange() {
   // Reset scan trigger when segment changes
   isScanTriggered.value = false;
+  // If scrolling animation is disabled and there are items with inputCount,
+  // save the current product count before switching segments
+  if(!isScrollingAnimationEnabled.value && inputCount.value) {
+    await saveCount(currentProduct.value)
+  }
   if(itemsList.value.length) {
     let updatedProduct = Object.keys(currentProduct.value)?.length ? itemsList.value.find((item: any) => isItemAlreadyAdded(item) ? (item.productId === currentProduct.value.productId && item.importItemSeqId === currentProduct.value.importItemSeqId) : (item.scannedId === currentProduct.value.scannedId)) : itemsList.value[0]
     if(!updatedProduct) {
@@ -605,7 +610,7 @@ async function updateCurrentItemInList(newItem: any, scannedValue: string) {
     newCount = Number(inputCount.value || 0) + Number(updatedItem.scannedCount || 0)
   }
 
-  if(newCount) {
+  if(newCount && updatedItem?.importItemSeqId && updatedItem.productId) {
     try {
       const resp = await CountService.updateCount({
         inventoryCountImportId: cycleCount.value.inventoryCountImportId,
