@@ -85,7 +85,7 @@
               </ion-button>
             </ion-list-header>
             <!-- unassigned session -->
-            <ion-item detail="true" :router-link="'/session-count-detail/123'">
+            <ion-item detail="true" :router-link="'/session-count-detail/M100010/HARD_COUNT/M100008'">
               <ion-label>
                 Count name + Area name
                 <p>

@@ -20,8 +20,16 @@ const getInventoryCountImportsByWorkEffort = async (params: any): Promise <any> 
     params
   });
 }
+const getInventoryCountImportSession = async (params: { workEffortId: string; inventoryCountImportId: string; }): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions/${params.inventoryCountImportId}`,
+    method: 'get',
+    params
+  });
+}
 
 export const CountService = {
   getAssignedWorkEfforts,
-  getInventoryCountImportsByWorkEffort
+  getInventoryCountImportsByWorkEffort,
+  getInventoryCountImportSession
 }

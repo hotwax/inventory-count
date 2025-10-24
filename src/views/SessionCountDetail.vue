@@ -10,18 +10,31 @@
     </ion-header>
     <ion-content>
       <main>
+        <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
-            <ion-label position="stacked">sku</ion-label>
-            <ion-input placeholder="Scan a barcode"></ion-input>
+            <ion-label position="stacked">SKU / Barcode</ion-label>
+            <ion-input
+              ref="barcodeInput"
+              v-model="scannedValue"
+              placeholder="Scan or type SKU"
+              @keyup.enter="handleScan"
+              :disabled="sessionLocked"
+            ></ion-input>
           </ion-item>
 
-          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal">
+          <ion-button
+            expand="block"
+            color="success"
+            class="focus ion-margin-top ion-margin-horizontal"
+            @click="startSession"
+            :disabled="sessionLocked"
+          >
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-            start counting
+            Start counting
           </ion-button>
 
-          <ion-item lines="none" class="empty ion-margin-top">
+          <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top">
             <ion-label>
               Items you scan or count will show on this list. Focus your scanner on the input field to begin.
             </ion-label>
@@ -29,70 +42,52 @@
 
           <div class="events">
             <ion-list>
-              <ion-item v-for="n in 50" :key="n">
-                <ion-thumbnail slot="start"> <dxp-image></dxp-image> </ion-thumbnail>
+              <ion-item v-for="event in events" :key="event.id">
+                <ion-thumbnail slot="start">
+                  <Image v-if="event.matched && event.product" :src="event.product.mainImageUrl" />
+                </ion-thumbnail>
                 <ion-label>
-                  Primary identifier
-                  <p>Secondary identifier</p>
+                  {{ event.scannedValue }}
+                  <p>{{ timeAgo(event.createdAt) }}</p>
                 </ion-label>
-                <ion-note slot="end">
-                  30 seconds ago
-                </ion-note>
+                <ion-note slot="end">{{ event.qty }}</ion-note>
               </ion-item>
             </ion-list>
           </div>
-
-          <ion-card class="add-pre-counted" href="">
-            <ion-item lines="none">
-              <ion-label class="ion-text-nowrap">Add pre-counted items</ion-label>
-              <ion-icon slot="end" :icon="addOutline"></ion-icon>
-            </ion-item>
-          </ion-card>
         </div>
-        
+
+        <!-- Right Panel -->
         <div class="count-dashboard">
           <div class="header ion-padding">
             <ion-item lines="none">
               <ion-label>
-                <p class="overline">Hard count</p>
-                <h1>Accessories - Register</h1>
-                <p>Created by user login</p>
+                <p class="overline">{{ countTypeLabel }}</p>
+                <h1>{{ sessionName }}</h1>
+                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
               </ion-label>
             </ion-item>
-            <ion-button color="warning" fill="outline">
+            <ion-button color="warning" fill="outline" @click="discardSession" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="exitOutline"></ion-icon>
               Discard session
             </ion-button>
-            <ion-button color="success" fill="outline">
+            <ion-button color="success" fill="outline" @click="submitSession" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
               Submit session
             </ion-button>
           </div>
-          
+
           <div class="statistics ion-padding">
             <ion-card>
               <ion-card-header>
                 <ion-card-title class="overline">Products counted</ion-card-title>
               </ion-card-header>
               <ion-card-content>
-                  <p class="big-number">72</p>
+                <p class="big-number">{{ stats.productsCounted }}</p>
               </ion-card-content>
               <ion-list lines="none">
                 <ion-item>
-                  <ion-label>
-                    Pending match scans
-                  </ion-label>
-                  <p slot="end">
-                    0
-                  </p>
-                </ion-item>
-                <ion-item>
-                  <ion-label>
-                    Unmatched scans
-                  </ion-label>
-                  <p slot="end">
-                    0
-                  </p>
+                  <ion-label>Unmatched scans</ion-label>
+                  <p slot="end">{{ stats.unmatched }}</p>
                 </ion-item>
               </ion-list>
             </ion-card>
@@ -102,31 +97,9 @@
                 <ion-card-title class="overline">Units counted</ion-card-title>
               </ion-card-header>
               <ion-card-content>
-                <p class="big-number">200</p>
-                <ion-button color="primary" fill="clear">
-                  <ion-icon slot="icon-only" :icon="timerOutline"></ion-icon>
-                </ion-button>
+                <p class="big-number">{{ stats.totalUnits }}</p>
               </ion-card-content>
-              <ion-list lines="none">
-                <ion-item>
-                  <ion-label>
-                    Lap 2
-                  </ion-label>
-                  <p slot="end">
-                    15
-                  </p>
-                </ion-item>
-                <ion-item>
-                  <ion-label>
-                    Lap 1
-                  </ion-label>
-                  <p slot="end">
-                    10
-                  </p>
-                </ion-item>
-              </ion-list>
             </ion-card>
-            
           </div>
           <ion-segment value="unmatched">
             <ion-segment-button content-id="uncounted" value="uncounted">
@@ -175,58 +148,22 @@
               <ion-card v-for="index in 6" :key="index">
                 <ion-item>
                   <ion-label>
-                    <h2>10022001922</h2>
-                    <p>10 scans ago</p>
-                    <p>3 minutes ago</p>
+                    <h2>{{ '' }}</h2>
+                    <p>{{ '' }}</p>
                   </ion-label>
-                  <ion-button slot="end" fill="outline">
-                    <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                    Match
-                  </ion-button>
                 </ion-item>
-                <ion-list>
-                  <ion-item>
-                    <ion-thumbnail slot="start">
-                      <dxp-image></dxp-image>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">3 scans ago</p>
-                      Primary Id
-                      <p>secondary Id</p>
-                      <p>scanned value</p>
-                    </ion-label>
-                    <ion-note slot="end">
-                      last match
-                    </ion-note>
-                    <ion-icon :icon="chevronUpCircleOutline" slot="end"></ion-icon>
-                  </ion-item>
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <dxp-image></dxp-image>
-                    </ion-thumbnail>
-                    <ion-label>
-                      <p class="overline">3 scans ago</p>
-                      Primary Id
-                      <p>secondary Id</p>
-                      <p>scanned value</p>
-                    </ion-label>
-                    <ion-note slot="end">
-                      last match
-                    </ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
-                  </ion-item>
-                </ion-list>
               </ion-card>
             </ion-segment-content>
-            <ion-segment-content id="counted" class="cards">
-              <ion-card v-for="index in 3" :key="index">
-                <dxp-image>
-                </dxp-image>
+
+            <ion-segment-content id="counted">
+              <ion-card v-for="record in countedItems" :key="record.uuid">
                 <ion-item>
+                  <ion-thumbnail slot="start">
+                    <Image v-if="record.productId" :src="getProduct(record.productId)?.mainImageUrl" />
+                  </ion-thumbnail>
                   <ion-label>
-                    Primary id
-                    <p>secondary id</p>
-                    <p>40 units</p>
+                    {{ record.sku }}
+                    <p>{{ record.quantity }} units</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
@@ -239,35 +176,191 @@
 </template>
 
 <script setup lang="ts">
-import {
-  IonBackButton,
-  IonButtons,
-  IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonSegmentContent,
-  IonSegmentView,
-  IonTitle,
-  IonToolbar,
-} from '@ionic/vue';
-import { addOutline, barcodeOutline, checkmarkDoneOutline, chevronDownCircleOutline, chevronUpCircleOutline, exitOutline, searchOutline, timerOutline } from 'ionicons/icons';
-import { defineProps } from 'vue';
-const props = defineProps(["id"]);
+  import {
+    IonBackButton, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
+    IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
+    IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
+  } from '@ionic/vue';
+  import { barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
+  import { ref, onMounted, computed, defineProps } from 'vue';
+  import { useProductMaster } from '@/composables/useProductMaster';
+  import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
+  // Optional background aggregation worker — fallback no-op if the module is missing.
+  let startBackgroundAggregation: () => void = () => {
+    /* no-op */
+  };
+  (async () => {
+    try {
+      const mod = await import('@/workers/backgroundAggregation');
+      if (mod?.startBackgroundAggregation) startBackgroundAggregation = mod.startBackgroundAggregation;
+    } catch (e) {
+      // ignore if the optional worker module is not present
+    }
+  })();
+  import { showToast } from '@/utils'; 
+  import { useStore } from '@/store';
+  import dayjs from 'dayjs';
+  import relativeTime from 'dayjs/plugin/relativeTime';
+  dayjs.extend(relativeTime);
+  import { v4 as uuidv4 } from 'uuid';
+  import Image from "@/components/Image.vue";
+  import api from '@/api';
+  import { CountService } from '@/services/CountService';
 
+  const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string }>();
 
+  const { recordScan, loadInventoryItemsFromBackend } = useInventoryCountImport();
+  const { init, getById, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
+  const store = useStore();
+
+  const scannedValue = ref('');
+  const events = ref<any[]>([]);
+  const unmatchedEvents = ref<any[]>([]);
+  const countedItems = ref<any[]>([]);
+  const selectedSegment = ref('counted');
+  const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+  const barcodeInput = ref();
+  const sessionLocked = ref(false);
+  const sessionName = computed(() => props.inventoryCountTypeId);
+  const countTypeLabel = computed(() =>
+    props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
+  );
+  const userLogin = computed(() => store.getters['user/getUserProfile']);
+
+  onMounted(async () => {
+    init();
+    await startSession();
+    startBackgroundAggregation();
+  });
+
+  // --- Core session init ---
+  async function startSession() {
+    try {
+      const resp = await CountService.getInventoryCountImportSession({ workEffortId: props.workEffortId, inventoryCountImportId: props.inventoryCountImportId });
+
+      if (resp?.data?.activeUserLoginId) {
+        sessionLocked.value = true;
+        showToast('This session is already being worked on by another user.');
+        return;
+      }
+
+      await loadInventoryItemsFromBackend(props.workEffortId, props.inventoryCountImportId);
+
+      const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
+      if (productIds.length) await prefetch(productIds);
+
+      showToast('Session ready to start counting');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to initialize session');
+    }
+
+    updateStats();
+    focusScanner();
+  }
+
+  // --- Scanning ---
+  function focusScanner() {
+    barcodeInput.value?.$el?.setFocus();
+  }
+
+  async function handleScan() {
+    const value = scannedValue.value.trim();
+    console.log('Scanned value:', value);
+    if (!value) return;
+
+    try {
+      const productResp = await getById(value);
+      const matched = !!productResp?.product;
+      const qty = 1;
+
+      await recordScan({ inventoryCountImportId: props.inventoryCountImportId, sku: value, qty });
+
+      const event = {
+        id: Date.now(),
+        scannedValue: value,
+        qty,
+        createdAt: Date.now(),
+        matched,
+        product: matched ? productResp.product : null
+      };
+      events.value.unshift(event);
+
+      if (matched) {
+        countedItems.value.push({
+          uuid: uuidv4(),
+          sku: value,
+          productId: productResp.product.productId,
+          quantity: qty
+        });
+      } else {
+        unmatchedEvents.value.push(event);
+      }
+
+      updateStats();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to record scan');
+    } finally {
+      scannedValue.value = '';
+    }
+  }
+
+  // --- Stats ---
+  function updateStats() {
+    const totalUnits = events.value.length
+      ? events.value.reduce((a, b) => a + (b.qty || 0), 0)
+      : countedItems.value.reduce((a, b) => a + (b.quantity || 0), 0);
+
+    const distinctSkus = new Set(countedItems.value.map(i => i.sku)).size;
+
+    stats.value = {
+      productsCounted: distinctSkus,
+      totalUnits,
+      unmatched: unmatchedEvents.value.length
+    };
+  }
+
+  // --- Utility ---
+  function timeAgo(ts: number) {
+    return dayjs(ts).fromNow();
+  }
+
+  function getProduct(productId: string) {
+    return cacheReady.value ? store.getters['product/getProduct'](productId) : null;
+  }
+
+  // --- Submit / Discard ---
+  async function submitSession() {
+    try {
+      await api({
+        url: `/cycleCounts/${props.inventoryCountImportId}/submit`,
+        method: 'POST',
+        data: {
+          activeUserLoginId: null,
+          statusId: 'INV_COUNT_SUBMITTED'
+        }
+      });
+      showToast('Session submitted successfully');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to submit session');
+    }
+  }
+
+  async function discardSession() {
+    try {
+      await api({
+        url: `/cycleCounts/${props.inventoryCountImportId}/discard`,
+        method: 'POST',
+        data: { activeUserLoginId: null }
+      });
+      showToast('Session discarded');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to discard session');
+    }
+  }
 </script>
 
 <style scoped>

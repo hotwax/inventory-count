@@ -159,7 +159,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: loginGuard
   },
   {
-    path: '/session-count-detail/:id',
+    path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
     name: 'SessionCountDetail',
     component: SessionCountDetail,
     beforeEnter: authGuard,
