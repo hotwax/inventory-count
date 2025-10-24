@@ -25,10 +25,15 @@
               facilityName
             </ion-label>
           </ion-item>
-          <ion-item>
+          <ion-item class="due-date">
             <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-            <ion-label>Due date</ion-label>
-            <ion-datetime-button slot="end"></ion-datetime-button>
+            <div>
+              <p class="overline">Due Date</p>
+              <ion-datetime-button datetime="datetime"></ion-datetime-button>
+              <ion-modal :keep-contents-mounted="true">
+                <ion-datetime id="datetime"></ion-datetime>
+              </ion-modal>
+            </div>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -91,7 +96,7 @@
         </ion-list>
         <ion-item-divider color="light">
           <ion-checkbox slot="start"/>
-          5 results
+          5 results out of 1,200
           <ion-select slot="end" label="Sort by" interface="popover">
               <ion-select-option value="parent">Parent product</ion-select-option>
               <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
@@ -381,7 +386,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline, personCircleOutline, ellipseOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
@@ -811,6 +816,10 @@ function isSelectedItemsHasQuantity() {
 
 .header {
   display: grid;
+}
+
+ion-item.due-date {
+  --padding-bottom: var(--spacer-sm)
 }
 
 .controls {
