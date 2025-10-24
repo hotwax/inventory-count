@@ -70,7 +70,7 @@
 
       <div class="controls ion-margin-top">
         <ion-list lines="full" class="filters ion-margin">
-          <ion-searchbar placeholder="Search"></ion-searchbar>
+          <ion-searchbar placeholder="Search product name"></ion-searchbar>
           <ion-item>
           <ion-select label="Status" placeholder="All" interface="popover">
             <ion-select-option value="all">All</ion-select-option>
@@ -102,7 +102,6 @@
 
       <div class="results ion-margin-top">
         <ion-accordion-group>
-
           <ion-accordion value="counted">
             <div class="list-item count-item-rollup" slot="header"> 
               <div class="item-key">
@@ -141,7 +140,6 @@
                   userLogin
                 </ion-label>
               </ion-item>
-
               <ion-label>
                 2
                 <p>counted</p>
@@ -360,23 +358,20 @@
       </div>
     </ion-content>
 
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
       <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
         <ion-icon :icon="receiptOutline" />
       </ion-fab-button>
     </ion-fab>
     
-    <ion-footer v-if="currentCycleCount.inventoryCountImportId">
+    <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
-            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
+          <ion-button fill="outline" color="success" size="small">
+            Accept
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" :icon="refreshOutline" />
-          </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
+          <ion-button fill="clear" color="danger" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
+            Reject
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -837,7 +832,7 @@ function isSelectedItemsHasQuantity() {
 
 .list-item.count-item-rollup {
   --columns-desktop: 5;
-  border-bottom : 1px solid var(--ion-color-medium);
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
@@ -853,6 +848,11 @@ function isSelectedItemsHasQuantity() {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
+  justify-self: stretch;
+}
+
+.item-key ion-item {
+  flex: 1
 }
 
 .list-item .actions {
