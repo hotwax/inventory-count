@@ -11,6 +11,7 @@
       </ion-toolbar>
     </ion-header>
 
+<<<<<<< Updated upstream
     <ion-content class="ion-padding" ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
@@ -51,6 +52,51 @@
             </ion-button>
           </ion-list>
         </ion-card>
+=======
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <main>
+        <template v-if="isLoading">
+          <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+        </template>
+        <section>
+          <template v-if="selectedSegment === 'assigned'">
+            
+            <!-- no sessions -->
+            <ion-card>
+              <ion-card-header>
+                <div>
+                  <ion-label color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
+                  </ion-label>
+                  <ion-card-title>
+                    Count name
+                  </ion-card-title>
+                  <ion-card-subtitle>
+                    created date
+                  </ion-card-subtitle>
+                </div>
+                <ion-note>number of items</ion-note>
+              </ion-card-header>
+              <ion-item lines="none">
+                {{ translate("Due date") }}
+                <ion-label slot="end">
+                  <p>work effort due date</p>
+                </ion-label>
+              </ion-item>
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>
+                    Sessions
+                  </ion-label>
+                </ion-list-header>
+                <ion-button expand="block" class="ion-margin-horizontal">
+                  <ion-label>
+                    Start new session
+                  </ion-label>
+                </ion-button>
+              </ion-list>
+            </ion-card>
+>>>>>>> Stashed changes
 
         <!-- new session on device -->
         <ion-card>
@@ -113,9 +159,54 @@
                   Submitted
                 </ion-note>
               </ion-item>
+<<<<<<< Updated upstream
             </ion-item-group>
           </ion-list>
         </ion-card>
+=======
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>
+                    Sessions
+                  </ion-label>
+                  <ion-button fill="clear" size="small">
+                    <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
+                    New
+                  </ion-button>
+                </ion-list-header>
+                <!-- unassigned session -->
+                <ion-item detail="true" :router-link="`/session-count-detail/123`">
+                  <ion-label>
+                    Count name + Area name
+                    <p>
+                      created by userlogin
+                    </p>
+                  </ion-label>
+                  <ion-note slot="end">
+                    Open
+                  </ion-note>
+                </ion-item>
+                <ion-item-group>
+                  <ion-item-divider color="light">
+                    <ion-label>
+                      Other sessions
+                    </ion-label>
+                  </ion-item-divider>
+                  <ion-item detail="true">
+                    <ion-label>
+                      Count name + Area name
+                      <p>
+                        created by userlogin
+                      </p>
+                    </ion-label>
+                    <ion-note slot="end">
+                      Submitted
+                    </ion-note>
+                  </ion-item>
+                </ion-item-group>
+              </ion-list>
+            </ion-card>
+>>>>>>> Stashed changes
 
         <!-- session started -->
         <ion-card>
