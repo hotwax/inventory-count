@@ -37,14 +37,14 @@ const actions: ActionTree<CountState, RootState> = {
             if (!hasError(inventoryResp)) {
               assignedWorkEfforts.push({
                 ...workEffort,
-                inventoryCountImports: inventoryResp.data || []
+                sessions: inventoryResp.data || []
               })
             }
           } catch (err) {
             logger.error(`Error fetching inventory imports for workEffortId ${workEffort.workEffortId}:`, err)
           }
         }
-
+        console.log("These are counts: ", assignedWorkEfforts);
         total = assignedWorkEfforts.length
         isScrollable = workEfforts.length >= params.pageSize
       } else {
