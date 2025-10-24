@@ -1,10 +1,10 @@
 <template>
   <ion-modal :is-open="isOpen" @did-dismiss="closeModal">
-        <ion-header>
-            <ion-toolbar>
-                <ion-title>New Session</ion-title>
-            </ion-toolbar>
-        </ion-header>
+    <ion-header>
+        <ion-toolbar>
+            <ion-title>New Session</ion-title>
+        </ion-toolbar>
+    </ion-header>
     <ion-content>
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
             <ion-fab-button @click="addNewSession">
@@ -20,6 +20,7 @@ import { defineComponent } from 'vue';
 import { IonModal, IonIcon, IonFab, IonFabButton, IonContent } from '@ionic/vue';
 import { saveOutline } from "ionicons/icons";
 import { CountService } from '@/services/CountService';
+import { showToast } from '@/utils';
 
 export default defineComponent({
   name: 'AddNewSessionModal',
@@ -34,8 +35,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const closeModal = () => emit('update:isOpen', false);
 
-    function addNewSession() {
-        CountService.addSessionInCount({
+    async function addNewSession() {
+        const resp = await CountService.addSessionInCount({
             countImportName: "Test Count From Modal",
             statusId: "CYCLE_CNT_CREATED",
             uploadedByUserLogin: "hotwax.user",
@@ -44,6 +45,14 @@ export default defineComponent({
             dueDate: Date.now(),
             workEffortId: "M100877"
         });
+
+        if (resp.status !== 200) {
+            showToast("Something Went Wrong!");
+            console.error(resp);
+        } else {
+            showToast("Session added Successfully");
+        }
+        closeModal();
     }
 
     return { closeModal, saveOutline, addNewSession };
