@@ -129,10 +129,16 @@
             
           </div>
           <ion-segment value="unmatched">
-            <ion-segment-button content-id="unmatched" value="unmatched">
+            <ion-segment-button content-id="uncounted" value="uncounted">
               <ion-label>
-                Unmatched
+                Uncounted
               </ion-label>
+            </ion-segment-button>
+            <ion-segment-button content-id="undirected" value="undirected">
+              <ion-label>Undirected</ion-label>
+            </ion-segment-button>
+            <ion-segment-button content-id="unmatched" value="unmatched">
+              <ion-label>Unmatched</ion-label>
             </ion-segment-button>
             <ion-segment-button content-id="counted" value="counted">
               <ion-label>Counted</ion-label>
@@ -140,6 +146,31 @@
           </ion-segment>
 
           <ion-segment-view>
+            <ion-segment-content id="uncounted" class="cards">
+              <ion-card v-for="index in 3" :key="index">
+                <dxp-image>
+                </dxp-image>
+                <ion-item>
+                  <ion-label>
+                    Primary id
+                    <p>secondary id</p>
+                  </ion-label>
+                </ion-item>
+              </ion-card>
+            </ion-segment-content>
+            <ion-segment-content id="undirected" class="cards">
+              <ion-card v-for="index in 3" :key="index">
+                <dxp-image>
+                </dxp-image>
+                <ion-item>
+                  <ion-label>
+                    Primary id
+                    <p>secondary id</p>
+                    <p>40 units</p>
+                  </ion-label>
+                </ion-item>
+              </ion-card>
+            </ion-segment-content>
             <ion-segment-content id="unmatched" class="cards">
               <ion-card v-for="index in 6" :key="index">
                 <ion-item>

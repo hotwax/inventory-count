@@ -361,13 +361,12 @@
           </ion-accordion>
         </ion-accordion-group>
       </div>
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
+        <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
+          <ion-icon :icon="receiptOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
-
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-      <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
-        <ion-icon :icon="receiptOutline" />
-      </ion-fab-button>
-    </ion-fab>
     
     <ion-footer>
       <ion-toolbar>
