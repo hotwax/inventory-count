@@ -28,9 +28,15 @@ const addSessionInCount = async (payload: any): Promise<any> => {
   }
   );
 }
+const getInventoryCountImportSession = async (params: { workEffortId: string; inventoryCountImportId: string; }): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions/${params.inventoryCountImportId}`,
+    method: 'get',
+    params
+  });
+}
 
 export const CountService = {
   getAssignedWorkEfforts,
-  getInventoryCountImportsByWorkEffort,
-  addSessionInCount
+  getInventoryCountImportsByWorkEffort
 }

@@ -25,10 +25,15 @@
               facilityName
             </ion-label>
           </ion-item>
-          <ion-item>
+          <ion-item class="due-date">
             <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-            <ion-label>Due date</ion-label>
-            <ion-datetime-button slot="end"></ion-datetime-button>
+            <div>
+              <p class="overline">Due Date</p>
+              <ion-datetime-button datetime="datetime"></ion-datetime-button>
+              <ion-modal :keep-contents-mounted="true">
+                <ion-datetime id="datetime"></ion-datetime>
+              </ion-modal>
+            </div>
           </ion-item>
         </ion-card>
         <ion-card>
@@ -70,7 +75,7 @@
 
       <div class="controls ion-margin-top">
         <ion-list lines="full" class="filters ion-margin">
-          <ion-searchbar placeholder="Search"></ion-searchbar>
+          <ion-searchbar placeholder="Search product name"></ion-searchbar>
           <ion-item>
           <ion-select label="Status" placeholder="All" interface="popover">
             <ion-select-option value="all">All</ion-select-option>
@@ -91,7 +96,7 @@
         </ion-list>
         <ion-item-divider color="light">
           <ion-checkbox slot="start"/>
-          5 results
+          5 results out of 1,200
           <ion-select slot="end" label="Sort by" interface="popover">
               <ion-select-option value="parent">Parent product</ion-select-option>
               <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
@@ -102,7 +107,6 @@
 
       <div class="results ion-margin-top">
         <ion-accordion-group>
-
           <ion-accordion value="counted">
             <div class="list-item count-item-rollup" slot="header"> 
               <div class="item-key">
@@ -141,7 +145,6 @@
                   userLogin
                 </ion-label>
               </ion-item>
-
               <ion-label>
                 2
                 <p>counted</p>
@@ -358,25 +361,21 @@
           </ion-accordion>
         </ion-accordion-group>
       </div>
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
+        <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
+          <ion-icon :icon="receiptOutline" />
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
-
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
-        <ion-icon :icon="receiptOutline" />
-      </ion-fab-button>
-    </ion-fab>
     
-    <ion-footer v-if="currentCycleCount.inventoryCountImportId">
+    <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
-            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
+          <ion-button fill="outline" color="success" size="small">
+            Accept
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" :icon="refreshOutline" />
-          </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
+          <ion-button fill="clear" color="danger" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
+            Reject
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -386,7 +385,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline, personCircleOutline, ellipseOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from "vue";
 import store from "@/store"
@@ -818,6 +817,10 @@ function isSelectedItemsHasQuantity() {
   display: grid;
 }
 
+ion-item.due-date {
+  --padding-bottom: var(--spacer-sm)
+}
+
 .controls {
   position: sticky;
   top: 0;
@@ -837,7 +840,7 @@ function isSelectedItemsHasQuantity() {
 
 .list-item.count-item-rollup {
   --columns-desktop: 5;
-  border-bottom : 1px solid var(--ion-color-medium);
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
@@ -853,6 +856,11 @@ function isSelectedItemsHasQuantity() {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
+  justify-self: stretch;
+}
+
+.item-key ion-item {
+  flex: 1
 }
 
 .list-item .actions {

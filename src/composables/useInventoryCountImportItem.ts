@@ -26,6 +26,7 @@ interface InventoryCountRecord {
   importItemSeqId: number;
   sku: string;
   productId: string | null;
+  uuid: string;
   productIdentifier: string;
   locationSeqId?: string | null;
   quantity: number;
@@ -101,6 +102,7 @@ export function useInventoryCountImport() {
       importItemSeqId: 0,
       sku: '',
       productId: null,
+      uuid: '',
       productIdentifier: '',
       quantity: 0,
       syncedQty: 0,
@@ -155,6 +157,7 @@ export function useInventoryCountImport() {
             importItemSeqId: seqId,
             sku: scannedValue || '',
             productId: product?.product?.productId || null,
+            uuid: generateULID(),
             productIdentifier: scannedValue || '',
             locationSeqId: locationSeqId || null,
             quantity: qty,
@@ -212,10 +215,10 @@ export function useInventoryCountImport() {
   }
 
   /** Load inventory items from backend into Dexie */
-  async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
+  async function loadInventoryItemsFromBackend(workEffortId: string, inventoryCountImportId: string): Promise<void> {
     try {
       const resp = await api({
-        url: `/cycleCounts/${inventoryCountImportId}/items/summary`,
+        url: `inventory-cycle-count/cycleCounts/workEfforts/${workEffortId}/sessions/${inventoryCountImportId}/items`,
         method: 'GET'
       });
 
@@ -223,25 +226,25 @@ export function useInventoryCountImport() {
         const items = resp.data;
         await db.transaction('rw', db.inventoryCountRecords, async () => {
           for (const item of items) {
-            if (item.statusId !== 'INV_COUNT_VOIDED') {
-                await db.inventoryCountRecords.put({
-                inventoryCountImportId: item.inventoryCountImportId,
-                importItemSeqId: item.importItemSeqId,
-                sku: item.sku,
-                productId: item.productId || null,
-                productIdentifier: item.sku,
-                locationSeqId: item.locationSeqId || null,
-                quantity: item.quantity,
-                syncedQty: item.syncedQty,
-                status: 'active',
-                facilityId: item.facilityId,
-                createdAt: Date.parse(item.createdAt) || currentMillis(),
-                lastScanAt: Date.parse(item.lastScanAt) || currentMillis(),
-                lastSyncedAt: item.lastSyncedAt ? Date.parse(item.lastSyncedAt) : null,
-                lastSyncedBatchId: item.lastSyncedBatchId || null,
-                aggApplied: 0
-              });
-            }
+            await db.inventoryCountRecords.put({
+              inventoryCountImportId: item.inventoryCountImportId,
+              importItemSeqId: Number(item.importItemSeqId),
+              sku: '', // SKU not provided by backend — will be resolved later from product master if needed
+              productId: item.productId || null,
+              uuid: item.uuid || generateULID(),
+              productIdentifier: item.productId || '',
+              locationSeqId: item.locationSeqId || null,
+              quantity: item.quantity || 0,              // default 0 until user scans
+              syncedQty: item.quantity || 0,             // nothing synced yet
+              status: 'active',
+              facilityId: '',
+              createdAt: item.createdDate || currentMillis(),
+              lastScanAt: item.lastUpdatedStamp || currentMillis(),
+              lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
+              lastSyncedAt: null,
+              lastSyncedBatchId: null,
+              aggApplied: 0
+            });
           }
         });
       }

@@ -55,8 +55,8 @@ export function useProductMaster() {
 
   const getFromSolr = async (productIds: string[]): Promise<Product[]> => {
     const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-    const baseURL = omsRedirectionInfo.url.startsWith('http') 
-      ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` 
+    const baseURL = omsRedirectionInfo.url.startsWith('http')
+      ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/`
       : `https://${omsRedirectionInfo.url}.hotwax.io/api/`
 
     const batchSize = 250
@@ -86,7 +86,7 @@ export function useProductMaster() {
       }
       index += batchSize
     } while (index < productIds.length)
-
+    console.log('Fetched products from Solr:', results);
     return results
   }
 
@@ -134,38 +134,111 @@ export function useProductMaster() {
     const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
     if (idsToFetch.length === 0) return
-
+    console.log('Prefetching product IDs:', idsToFetch);
     const docs = await getFromSolr(idsToFetch)
     if (docs.length) {
       await upsertFromApi(docs)
     }
   }
 
-  const upsertFromApi = async (docs: any[]) => {
-    if (!cacheReady.value) throw new Error("ProductMaster not initialized")
+  async function getAllProductIdsFromIndexedDB(inventoryCountImportId: string): Promise<string[]> {
+    try {
+      // Reuse the same Dexie DB as in useInventoryCountImport
+      const db = new Dexie('InventoryCountDB');
+      db.version(3).stores({
+        inventoryCountRecords: '[inventoryCountImportId+importItemSeqId], productId'
+      });
 
-    const now = Date.now()
+      const records = await db.table('inventoryCountRecords')
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .toArray();
+
+      const ids = records
+        .map((r: any) => r.productId)
+        .filter((id: string | null) => !!id && id !== '')
+        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+
+      return ids;
+    } catch (err) {
+      console.error('Error fetching productIds from IndexedDB:', err);
+      return [];
+    }
+  }
+
+  const upsertFromApi = async (docs: any[]) => {
+    if (!cacheReady.value) throw new Error("ProductMaster not initialized");
+
+    const now = Date.now();
     const products = docs.map(doc => ({
       ...mapApiDocToProduct(doc),
       updatedAt: now
-    }))
+    }));
 
     await db.transaction('rw', db.products, db.productIdents, async () => {
       for (const product of products) {
-        await db.products.put(product)
+        console.log('Upserting product:', product.productId);
+        await db.products.put(product);
 
         if (product.goodIdentifications?.length) {
-          for (const ident of product.goodIdentifications) {
-            await db.productIdents.put({
-              productId: product.productId,
-              identKey: makeIdentKey(ident.type),
-              value: ident.value
-            })
+          for (const ident of product.goodIdentifications as any[]) {
+            console.log('Upserting identification for product:', product.productId, ident);
+
+            let idType: string | undefined;
+            let idValue: string | undefined;
+
+            // Case 1: ident is a string like "SKU/207-113-G"
+            if (typeof ident === 'string') {
+              const slashIndex = ident.indexOf('/');
+              if (slashIndex === -1) {
+                console.warn('Invalid identification format (missing "/"):', ident);
+                continue;
+              }
+              idType = ident.substring(0, slashIndex).trim();
+              idValue = ident.substring(slashIndex + 1).trim();
+            }
+            // Case 2: ident is an object { type, value }
+            else if (ident && typeof ident === 'object' && ('type' in ident || 'value' in ident)) {
+              idType = String((ident as any).type || '').trim();
+              idValue = String((ident as any).value || '').trim();
+            } else {
+              console.warn('Invalid ident type (expected string or object):', ident);
+              continue;
+            }
+
+            if (!idType || !idValue) {
+              console.warn('Invalid identification format, missing type or value:', ident);
+              continue;
+            }
+
+            const identKey = (makeIdentKey(idType) || idType).trim();
+
+            // 🔍 Check for existing record for same productId + identKey
+            const existingIdent = await db.productIdents
+              .where('[productId+identKey]')
+              .equals([product.productId, identKey])
+              .first();
+
+            if (existingIdent) {
+              // Update existing record
+              await db.productIdents.update(existingIdent, {
+                value: idValue
+              });
+              console.log(`Updated existing ident for ${product.productId} (${identKey})`);
+            } else {
+              // Insert new record
+              await db.productIdents.put({
+                productId: product.productId,
+                identKey,
+                value: idValue
+              });
+              console.log(`Inserted new ident for ${product.productId} (${identKey})`);
+            }
           }
         }
       }
-    })
-  }
+    });
+  };
 
   const clearCache = async () => {
     await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -205,6 +278,7 @@ export function useProductMaster() {
     upsertFromApi,
     clearCache,
     setStaleMs,
+    getAllProductIdsFromIndexedDB,
     liveProduct,
     cacheReady
   }
