@@ -14,10 +14,10 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <SearchBarAndSortBy />
-      <p v-if="!cycleCounts.length" class="empty-state">
+      <!-- <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
-      </p>
-      <ion-list v-else>
+      </p> -->
+      <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" @click="router.push(`/pending-review/${count.inventoryCountImportId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
