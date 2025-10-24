@@ -233,6 +233,7 @@ import {
   IonToolbar,
 } from '@ionic/vue';
 import { addOutline, barcodeOutline, checkmarkDoneOutline, chevronDownCircleOutline, chevronUpCircleOutline, exitOutline, searchOutline, timerOutline } from 'ionicons/icons';
+import { defineProps } from 'vue';
 const props = defineProps(["id"]);
 
 
