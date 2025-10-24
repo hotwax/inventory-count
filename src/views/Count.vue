@@ -303,7 +303,7 @@ function getSessionStatusDescription(statusId) {
   if (!statusId) {
     return "";
   }
-  if (statusId === "INV_COUNT_CREATED") {
+  if (statusId === "CYCLE_CNT_CREATED") {
     return "Created";
   } else if (statusId === "CYCLE_CNT_IN_PRGS") {
     return "In Progress";
