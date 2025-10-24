@@ -11,6 +11,8 @@ import CountDetail from '@/views/CountDetail.vue';
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
+import PendingReview from '@/views/PendingReview.vue';
+import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
@@ -123,6 +125,25 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: "APP_ASSIGNED_VIEW"
+    }
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/pending-review/:inventoryCountImportId',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
     }
   },
   {
