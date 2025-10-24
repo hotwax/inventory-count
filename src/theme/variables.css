@@ -237,6 +237,7 @@ http://ionicframework.com/docs/theming/ */
 
 body {
   --ion-text-color: 0,0,0,.87;
+  --ion-background-color: #fff
 }
 
 @media (min-width: 991px) {
