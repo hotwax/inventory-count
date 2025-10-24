@@ -206,12 +206,12 @@
               <ion-label>
                 Sessions
               </ion-label>
-              <ion-button v-if="count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal">
+              <ion-button v-if="count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                   <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                   New
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal">
+            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 Start new session
               </ion-label>
@@ -231,7 +231,7 @@
             </ion-item-group>
           </ion-list>
         </ion-card>
-        <AddNewSessionModal v-model:isOpen="isAddSessionModalOpen"/>
+        <AddNewSessionModal v-model:isOpen="isAddSessionModalOpen" :work-effort-id="selectedWorkEffortId"/>
       </template>
       <!-- <template v-else>
         <p class="empty-state">{{ translate("No cycle counts found") }}</p>
@@ -291,7 +291,7 @@ const contentRef = ref({});
 const infiniteScrollRef = ref({});
 let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
-
+const selectedWorkEffortId = ref(null);
 onIonViewDidEnter(async() => {
   isLoading.value = true;
   await fetchCycleCounts();
@@ -314,8 +314,9 @@ function getSessionStatusDescription(statusId) {
   }
 }
 
-function showAddNewSessionModal() {
+function showAddNewSessionModal(workEffortId) {
   isAddSessionModalOpen.value = true;
+  selectedWorkEffortId.value = workEffortId;
 }
 
 function enableScrolling() {

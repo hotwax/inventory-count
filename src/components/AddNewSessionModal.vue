@@ -29,6 +29,10 @@ export default defineComponent({
     isOpen: {
       type: Boolean,
       required: true
+    },
+    workEffortId: {
+        type: Number,
+        required: true
     }
   },
   emits: ['update:isOpen'],
@@ -43,7 +47,7 @@ export default defineComponent({
             facilityAreaId: "Basement Vault 786",
             createdDate: Date.now(),
             dueDate: Date.now(),
-            workEffortId: "M100877"
+            workEffortId: props.workEffortId
         });
 
         if (resp.status !== 200) {
