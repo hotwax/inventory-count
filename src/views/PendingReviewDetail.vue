@@ -69,36 +69,210 @@
       </div>
 
       <div class="controls ion-margin-top">
-        <div class="filters">
+        <ion-list lines="full" class="filters ion-margin">
           <ion-searchbar placeholder="Search"></ion-searchbar>
-
           <ion-item>
-            <ion-select label="Status" placeholder="Select one" interface="popover">
-              <ion-select-option value="1">Option 1</ion-select-option>
-              <ion-select-option value="2">Option 2</ion-select-option>
-              <ion-select-option value="3">Option 3</ion-select-option>
-            </ion-select>
-          </ion-item>
+          <ion-select label="Status" placeholder="All" interface="popover">
+            <ion-select-option value="all">All</ion-select-option>
+            <ion-select-option value="open">Open</ion-select-option>
+            <ion-select-option value="accepted">Accepted</ion-select-option>
+            <ion-select-option value="rejected">Rejected</ion-select-option>
+          </ion-select>
+        </ion-item>
 
-          <ion-item>
-            <ion-select label="Compliance" placeholder="Select another" interface="popover">
-              <ion-select-option value="a">Option A</ion-select-option>
-              <ion-select-option value="b">Option B</ion-select-option>
-              <ion-select-option value="c">Option C</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </div>
+        <ion-item>
+          <ion-select label="Compliance" placeholder="All" interface="popover">
+            <ion-select-option value="all">All</ion-select-option>
+            <ion-select-option value="acceptable">Acceptable</ion-select-option>
+            <ion-select-option value="rejectable">Rejectable</ion-select-option>
+            <ion-select-option value="configure">Configure threshold</ion-select-option>
+          </ion-select>
+        </ion-item>
+        </ion-list>
         <ion-item-divider color="light">
           <ion-checkbox slot="start"/>
           5 results
-          <ion-select slot="end" label="Sort by"></ion-select>
+          <ion-select slot="end" label="Sort by" interface="popover">
+              <ion-select-option value="parent">Parent product</ion-select-option>
+              <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
+              <ion-select-option value="variance">Variance</ion-select-option>
+          </ion-select>
         </ion-item-divider>
       </div>
 
       <div class="results ion-margin-top">
         <ion-accordion-group>
-          <ion-accordion value="first">
-            <div class="list-item" slot="header">
+
+          <ion-accordion value="counted">
+            <div class="list-item count-item-rollup" slot="header"> 
+              <div class="item-key">
+                <ion-checkbox></ion-checkbox>
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <dxp-image></dxp-image>
+                  </ion-thumbnail>
+                  <ion-label>
+                      Primary Id
+                      <p>Secondary Id</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <ion-label class="stat">
+                6/3
+                <p>counted/systemic</p>
+              </ion-label>
+              <ion-label class="stat">
+                +3
+                <p>variance</p>
+              </ion-label>
+              <div class="actions">
+                <ion-button fill="outline" color="success" size="small">
+                  Accept
+                </ion-button>
+                <ion-button fill="outline" color="danger" size="small">
+                  Reject
+                </ion-button>
+              </div>
+            </div>
+            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
+              <ion-item lines="none">
+                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                <ion-label>
+                  userLogin
+                </ion-label>
+              </ion-item>
+
+              <ion-label>
+                2
+                <p>counted</p>
+              </ion-label>
+              <ion-label>
+                6:00 AM 2nd March 2025
+                <p>started</p>
+              </ion-label>
+              <ion-label>
+                9:00 AM 2nd March 2025
+                <p>last updated</p>
+              </ion-label>
+              <ion-button fill="clear" color="medium">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-accordion>
+          <ion-accordion value="counted2">
+            <div class="list-item count-item-rollup" slot="header"> 
+              <div class="item-key">
+                <ion-checkbox></ion-checkbox>
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <dxp-image></dxp-image>
+                  </ion-thumbnail>
+                  <ion-label>
+                      Primary Id
+                      <p>Secondary Id</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <ion-label class="stat">
+                6/3
+                <p>counted/systemic</p>
+              </ion-label>
+              <ion-label class="stat">
+                +3
+                <p>variance</p>
+              </ion-label>
+              <div class="actions">
+                <ion-button fill="outline" color="success" size="small">
+                  Accept
+                </ion-button>
+                <ion-button fill="outline" color="danger" size="small">
+                  Reject
+                </ion-button>
+              </div>
+            </div>
+            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
+              <ion-item lines="none">
+                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                <ion-label>
+                  userLogin
+                </ion-label>
+              </ion-item>
+
+              <ion-label>
+                2
+                <p>counted</p>
+              </ion-label>
+              <ion-label>
+                6:00 AM 2nd March 2025
+                <p>started</p>
+              </ion-label>
+              <ion-label>
+                9:00 AM 2nd March 2025
+                <p>last updated</p>
+              </ion-label>
+              <ion-button fill="clear" color="medium">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-accordion>
+          <ion-accordion value="counted3">
+            <div class="list-item count-item-rollup" slot="header"> 
+              <div class="item-key">
+                <ion-checkbox></ion-checkbox>
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <dxp-image></dxp-image>
+                  </ion-thumbnail>
+                  <ion-label>
+                      Primary Id
+                      <p>Secondary Id</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <ion-label class="stat">
+                6/3
+                <p>counted/systemic</p>
+              </ion-label>
+              <ion-label class="stat">
+                +3
+                <p>variance</p>
+              </ion-label>
+              <div class="actions">
+                <ion-button fill="outline" color="success" size="small">
+                  Accept
+                </ion-button>
+                <ion-button fill="outline" color="danger" size="small">
+                  Reject
+                </ion-button>
+              </div>
+            </div>
+            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
+              <ion-item lines="none">
+                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                <ion-label>
+                  userLogin
+                </ion-label>
+              </ion-item>
+
+              <ion-label>
+                2
+                <p>counted</p>
+              </ion-label>
+              <ion-label>
+                6:00 AM 2nd March 2025
+                <p>started</p>
+              </ion-label>
+              <ion-label>
+                9:00 AM 2nd March 2025
+                <p>last updated</p>
+              </ion-label>
+              <ion-button fill="clear" color="medium">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-accordion>
+          <ion-accordion value="accepted">
+            <div class="list-item count-item-rollup" slot="header">
               <div class="item-key">
                 <ion-checkbox></ion-checkbox>
                 <ion-item lines="none">
@@ -120,16 +294,66 @@
                 <p>variance</p>
               </ion-label>
               <div class="actions">
-                <ion-button fill="outline" color="success">
-                  Accept
-                </ion-button>
-                <ion-button fill="outline" color="danger">
-                  Reject
-                </ion-button>
+                <ion-badge color="success">
+                  accepted
+                </ion-badge>
               </div>
             </div>
             <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
               item content
+            </div>
+          </ion-accordion>
+          <ion-accordion v-for="index in 6" :key="index" value="rejected">
+            <div class="list-item count-item-rollup" slot="header"> 
+              <div class="item-key">
+                <ion-checkbox></ion-checkbox>
+                <ion-item lines="none">
+                  <ion-thumbnail slot="start">
+                    <dxp-image></dxp-image>
+                  </ion-thumbnail>
+                  <ion-label>
+                      Primary Id
+                      <p>Secondary Id</p>
+                  </ion-label>
+                </ion-item>
+              </div>
+              <ion-label class="stat">
+                6/3
+                <p>counted/systemic</p>
+              </ion-label>
+              <ion-label class="stat">
+                +3
+                <p>variance</p>
+              </ion-label>
+              <div class="actions">
+                <ion-badge color="danger">
+                  rejected
+                </ion-badge>
+              </div>
+            </div>
+            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
+              <ion-item lines="none">
+                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                <ion-label>
+                  userLogin
+                </ion-label>
+              </ion-item>
+
+              <ion-label>
+                2
+                <p>counted</p>
+              </ion-label>
+              <ion-label>
+                6:00 AM 2nd March 2025
+                <p>started</p>
+              </ion-label>
+              <ion-label>
+                9:00 AM 2nd March 2025
+                <p>last updated</p>
+              </ion-label>
+              <ion-button fill="clear" color="medium">
+                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+              </ion-button>
             </div>
           </ion-accordion>
         </ion-accordion-group>
@@ -161,7 +385,7 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
+import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline, personCircleOutline, ellipseOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, ref } from "vue";
@@ -590,9 +814,19 @@ function isSelectedItemsHasQuantity() {
 
 <style scoped>
 
+.header {
+  display: grid;
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  background-color: var(--ion-background-color);
+  z-index: 999;
+}
+
 .filters {
   display: flex;
-  padding-inline-start: var(--spacer-sm);
   gap: var(--spacer-sm);
   align-items: end;
 }
@@ -601,13 +835,17 @@ function isSelectedItemsHasQuantity() {
   flex: 1;
 }
 
-.list-item {
-  --columns-desktop: 4;
+.list-item.count-item-rollup {
+  --columns-desktop: 5;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
   width: 100%;
+}
+
+.list-item.count-item {
+  --columns-desktop: 5
 }
 
 .list-item .item-key {
@@ -620,9 +858,5 @@ function isSelectedItemsHasQuantity() {
 .list-item .actions {
   display: flex;
   gap: var(--spacer-xs);
-}
-
-.header {
-  display: grid;
 }
 </style>
