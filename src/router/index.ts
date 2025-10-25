@@ -137,7 +137,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/pending-review/:inventoryCountImportId',
+    path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,

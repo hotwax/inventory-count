@@ -253,6 +253,38 @@ export function useInventoryCountImport() {
     }
   }
 
+  const fetchCycleCount = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
+    method: "get",
+  });
+}
+
+const fetchSessions = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
+    method: "get",
+    params: payload
+  });
+}
+
+const fetchWorkEffort = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
+    method: "get"
+  });
+}
+
+const getProductReviewDetail = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
+    method: "get",
+    params: {
+      internalName: payload.internalName
+    }
+  });
+}
+
   return {
     currentImport,
     syncStatus,
@@ -263,6 +295,10 @@ export function useInventoryCountImport() {
     pendingItems,
     loadInventoryItemsFromBackend,
     startAggregationScheduler,
-    startSyncWorker
+    startSyncWorker,
+    fetchCycleCount,
+    fetchSessions,
+    fetchWorkEffort,
+    getProductReviewDetail
   };
 }
