@@ -12,7 +12,6 @@ export interface Product {
   internalName?: string
   mainImageUrl?: string
   goodIdentifications?: { type: string, value: string }[]
-  identKeys?: string[]
   updatedAt: number
 }
 
@@ -86,7 +85,6 @@ export function useProductMaster() {
       }
       index += batchSize
     } while (index < productIds.length)
-    console.log('Fetched products from Solr:', results);
     return results
   }
 
@@ -126,6 +124,61 @@ export function useProductMaster() {
     return { product: matchedProduct, identificationValue: idValue }
   }
 
+  const getByIdentificationFromSolr = async (idValue: string) => {
+    const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
+    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+    const productIdentifications = process.env.VUE_APP_PRDT_IDENT
+      ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
+      : [];
+
+    const baseURL = omsRedirectionInfo.url.startsWith('http')
+      ? omsRedirectionInfo.url.includes('/api')
+        ? omsRedirectionInfo.url
+        : `${omsRedirectionInfo.url}/api/`
+      : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+
+    // Build Solr filter dynamically
+    const filter = productIdentifications.includes(barcodeIdentification)
+      ? `${barcodeIdentification}: ${idValue}`
+      : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
+
+    try {
+      const resp = await client({
+        url: 'searchProducts',
+        method: 'POST',
+        baseURL,
+        data: {
+          filters: [filter],
+          viewSize: 1,
+          fieldsToSelect: [
+            'productId',
+            'productName',
+            'parentProductName',
+            'internalName',
+            'mainImageUrl',
+            'goodIdentifications'
+          ]
+        },
+        headers: {
+          'Authorization': 'Bearer ' + omsRedirectionInfo.token,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const docs = resp.data?.response?.docs || [];
+      if (docs.length) {
+        const mapped = mapApiDocToProduct(docs[0]);
+        await upsertFromApi([mapped]);
+        return { product: mapped, status: 'fresh' as const };
+      }
+    } catch (err) {
+      console.error('Failed to fetch product by identification from Solr:', err);
+    }
+
+    return { product: undefined, status: 'miss' as const };
+  };
+
   const prefetch = async (productIds: string[]) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
@@ -134,7 +187,6 @@ export function useProductMaster() {
     const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
     if (idsToFetch.length === 0) return
-    console.log('Prefetching product IDs:', idsToFetch);
     const docs = await getFromSolr(idsToFetch)
     if (docs.length) {
       await upsertFromApi(docs)
@@ -177,68 +229,34 @@ export function useProductMaster() {
 
     await db.transaction('rw', db.products, db.productIdents, async () => {
       for (const product of products) {
-        console.log('Upserting product:', product.productId);
         await db.products.put(product);
 
         if (product.goodIdentifications?.length) {
-          for (const ident of product.goodIdentifications as any[]) {
-            console.log('Upserting identification for product:', product.productId, ident);
+          for (const ident of product.goodIdentifications) {
+            const identKey = (makeIdentKey(ident.type) || ident.type).trim();
+            const idValue = ident.value?.trim();
 
-            let idType: string | undefined;
-            let idValue: string | undefined;
+            if (!identKey || !idValue) continue;
 
-            // Case 1: ident is a string like "SKU/207-113-G"
-            if (typeof ident === 'string') {
-              const slashIndex = ident.indexOf('/');
-              if (slashIndex === -1) {
-                console.warn('Invalid identification format (missing "/"):', ident);
-                continue;
-              }
-              idType = ident.substring(0, slashIndex).trim();
-              idValue = ident.substring(slashIndex + 1).trim();
-            }
-            // Case 2: ident is an object { type, value }
-            else if (ident && typeof ident === 'object' && ('type' in ident || 'value' in ident)) {
-              idType = String((ident as any).type || '').trim();
-              idValue = String((ident as any).value || '').trim();
-            } else {
-              console.warn('Invalid ident type (expected string or object):', ident);
-              continue;
-            }
-
-            if (!idType || !idValue) {
-              console.warn('Invalid identification format, missing type or value:', ident);
-              continue;
-            }
-
-            const identKey = (makeIdentKey(idType) || idType).trim();
-
-            // 🔍 Check for existing record for same productId + identKey
             const existingIdent = await db.productIdents
               .where('[productId+identKey]')
               .equals([product.productId, identKey])
               .first();
 
             if (existingIdent) {
-              // Update existing record
-              await db.productIdents.update(existingIdent, {
-                value: idValue
-              });
-              console.log(`Updated existing ident for ${product.productId} (${identKey})`);
+              await db.productIdents.update(existingIdent, { value: idValue });
             } else {
-              // Insert new record
               await db.productIdents.put({
                 productId: product.productId,
                 identKey,
                 value: idValue
               });
-              console.log(`Inserted new ident for ${product.productId} (${identKey})`);
             }
           }
         }
       }
     });
-  };
+};
 
   const clearCache = async () => {
     await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -258,22 +276,49 @@ export function useProductMaster() {
   }
 
   const mapApiDocToProduct = (doc: any): Product => {
+    // Normalize goodIdentifications (convert "SKU/123" → { type: "SKU", value: "123" })
+    const normalizedIdents = (doc.goodIdentifications || []).map((ident: any) => {  
+      // Case 1: ident is a string like "SKU/123"
+      if (typeof ident === 'string') {
+        const slashIndex = ident.indexOf('/');
+        let type = '';
+        let value = '';
+        if (slashIndex !== -1) {
+          type = ident.substring(0, slashIndex).trim();
+          value = ident.substring(slashIndex + 1).trim();
+        } else {
+          // If no slash found, treat the whole string as value
+          value = ident.trim();
+        }
+        return { type, value };
+      }
+
+      // Case 2: ident is an object like { type: "SKU", value: "123" }
+      if (ident && typeof ident === 'object') {
+        const type = String(ident.type || '').trim();
+        const value = String(ident.value || '').trim();
+        return { type, value };
+      }
+
+      return { type: '', value: '' };
+    });
     return {
       productId: doc.productId,
       productName: doc.productName || '',
       parentProductName: doc.parentProductName || '',
       internalName: doc.internalName || '',
       mainImageUrl: doc.mainImageUrl || '',
-      goodIdentifications: doc.goodIdentifications || [],
-      identKeys: (doc.goodIdentifications || []).map((id: any) => `${id.type}:${id.value}`),
-      updatedAt: Date.now() // Will be overridden if necessary during upsert
-    }
-  }
+      goodIdentifications: normalizedIdents,
+      updatedAt: Date.now()
+    };
+  };
+
 
   return {
     init,
     getById,
     findByIdentification,
+    getByIdentificationFromSolr,
     prefetch,
     upsertFromApi,
     clearCache,

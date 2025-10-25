@@ -20,7 +20,7 @@ interface ScanEvent {
   aggApplied: number;
 }
 
-interface InventoryCountRecord {
+interface InventoryCountImportItem {
   // merged fields from InventoryCountImportItem + InventoryCountImport
   inventoryCountImportId: string;
   importItemSeqId: number;
@@ -53,11 +53,11 @@ interface RecordScanParams {
  */
 class InventoryCountDB extends Dexie {
   scanEvents!: Table<ScanEvent, number>;
-  inventoryCountRecords!: Table<InventoryCountRecord, [string, number]>;
+  inventoryCountRecords!: Table<InventoryCountImportItem, [string, number]>;
 
   constructor() {
     super('InventoryCountDB');
-    this.version(2).stores({
+    this.version(1).stores({
       scanEvents: '++id, inventoryCountImportId, aggApplied',
       inventoryCountRecords: '[inventoryCountImportId+importItemSeqId], sku, productId'
     });
@@ -82,8 +82,9 @@ function currentMillis(): number {
  */
 export function useInventoryCountImport() {
   const syncStatus = ref<'idle'>('idle');
-  const currentImport = ref<InventoryCountRecord | null>(null);
+  const currentImport = ref<InventoryCountImportItem | null>(null);
   const productMaster = useProductMaster();
+  console.log('useInventoryCountImport initialized with product: ', productMaster);
 
   /** Loads a specific inventory import record session */
   async function loadSession(inventoryCountImportId: string): Promise<void> {
@@ -97,7 +98,7 @@ export function useInventoryCountImport() {
   /** Creates a new inventory import session */
   async function createSession(inventoryCountImportId: string, facilityId: string): Promise<void> {
     const now = currentMillis();
-    const session: InventoryCountRecord = {
+    const session: InventoryCountImportItem = {
       inventoryCountImportId,
       importItemSeqId: 0,
       sku: '',
@@ -152,7 +153,7 @@ export function useInventoryCountImport() {
 
           const seqId = maxSeq + 1;
 
-          const newRecord: InventoryCountRecord = {
+          const newRecord: InventoryCountImportItem = {
             inventoryCountImportId,
             importItemSeqId: seqId,
             sku: scannedValue || '',
@@ -199,7 +200,7 @@ export function useInventoryCountImport() {
   }
 
   /** Computes items pending sync */
-  const pendingItems: ComputedRef<Promise<InventoryCountRecord[]>> = computed(() =>
+  const pendingItems: ComputedRef<Promise<InventoryCountImportItem[]>> = computed(() =>
     db.inventoryCountRecords
       .where('quantity')
       .notEqual(0)
@@ -253,6 +254,20 @@ export function useInventoryCountImport() {
     }
   }
 
+  async function getInventoryRecordsFromIndexedDB(inventoryCountImportId: string) {
+    try {
+      const records = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .toArray();
+
+      return records || [];
+    } catch (err) {
+      console.error('Error fetching inventory records from IndexedDB:', err);
+      return [];
+    }
+  }
+
   return {
     currentImport,
     syncStatus,
@@ -263,6 +278,7 @@ export function useInventoryCountImport() {
     pendingItems,
     loadInventoryItemsFromBackend,
     startAggregationScheduler,
-    startSyncWorker
+    startSyncWorker,
+    getInventoryRecordsFromIndexedDB
   };
 }

@@ -101,70 +101,83 @@
               </ion-card-content>
             </ion-card>
           </div>
-          <ion-segment value="unmatched">
-            <ion-segment-button content-id="uncounted" value="uncounted">
-              <ion-label>
-                Uncounted
-              </ion-label>
+          <ion-segment v-model="selectedSegment">
+            <ion-segment-button value="counted">
+              <ion-label>Counted</ion-label>
             </ion-segment-button>
-            <ion-segment-button content-id="undirected" value="undirected">
+            <ion-segment-button v-if="isDirected" value="uncounted">
+              <ion-label>Uncounted</ion-label>
+            </ion-segment-button>
+            <ion-segment-button v-if="isDirected" value="undirected">
               <ion-label>Undirected</ion-label>
             </ion-segment-button>
-            <ion-segment-button content-id="unmatched" value="unmatched">
+            <ion-segment-button value="unmatched">
               <ion-label>Unmatched</ion-label>
-            </ion-segment-button>
-            <ion-segment-button content-id="counted" value="counted">
-              <ion-label>Counted</ion-label>
             </ion-segment-button>
           </ion-segment>
 
           <ion-segment-view>
-            <ion-segment-content id="uncounted" class="cards">
-              <ion-card v-for="index in 3" :key="index">
-                <dxp-image>
-                </dxp-image>
+            <!-- Counted -->
+            <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
+              <ion-card v-for="record in countedItems" :key="record.uuid">
                 <ion-item>
+                  <ion-thumbnail slot="start">
+                    <Image v-if="record.product" :src="record.product.mainImageUrl" />
+                  </ion-thumbnail>
                   <ion-label>
-                    Primary id
-                    <p>secondary id</p>
-                  </ion-label>
-                </ion-item>
-              </ion-card>
-            </ion-segment-content>
-            <ion-segment-content id="undirected" class="cards">
-              <ion-card v-for="index in 3" :key="index">
-                <dxp-image>
-                </dxp-image>
-                <ion-item>
-                  <ion-label>
-                    Primary id
-                    <p>secondary id</p>
-                    <p>40 units</p>
-                  </ion-label>
-                </ion-item>
-              </ion-card>
-            </ion-segment-content>
-            <ion-segment-content id="unmatched" class="cards">
-              <ion-card v-for="index in 6" :key="index">
-                <ion-item>
-                  <ion-label>
-                    <h2>{{ '' }}</h2>
-                    <p>{{ '' }}</p>
+                    {{ primaryId(record.product) }}
+                    <p>{{ secondaryId(record.product) }}</p>
+                    <p>{{ record.quantity }} units</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
             </ion-segment-content>
 
-            <ion-segment-content id="counted">
-              <ion-card v-for="record in countedItems" :key="record.uuid">
+            <!-- Uncounted (Directed only) -->
+            <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
+              <ion-card v-for="item in uncountedItems" :key="item.uuid">
                 <ion-item>
                   <ion-thumbnail slot="start">
-                    <Image v-if="record.productId" :src="getProduct(record.productId)?.mainImageUrl" />
+                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    {{ record.sku }}
-                    <p>{{ record.quantity }} units</p>
+                    {{ primaryId(item.product) }}
+                    <p>{{ secondaryId(item.product) }}</p>
+                    <p>Not yet counted</p>
                   </ion-label>
+                </ion-item>
+              </ion-card>
+            </ion-segment-content>
+
+            <!-- Undirected (Directed only) -->
+            <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
+              <ion-card v-for="item in undirectedItems" :key="item.uuid">
+                <ion-item>
+                  <ion-thumbnail slot="start">
+                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    {{ primaryId(item.product) }}
+                    <p>{{ secondaryId(item.product) }}</p>
+                    <p>{{ item.quantity }} units</p>
+                  </ion-label>
+                </ion-item>
+              </ion-card>
+            </ion-segment-content>
+
+            <!-- Unmatched -->
+            <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
+              <ion-card v-for="scan in unmatchedEvents" :key="scan.id">
+                <ion-item>
+                  <ion-label>
+                    <!-- No productId, show scanned value -->
+                    <h2>{{ scan.scannedValue }}</h2>
+                    <p>{{ timeAgo(scan.createdAt) }}</p>
+                    <p>{{ scan.qty }} units</p>
+                  </ion-label>
+                  <ion-button slot="end" fill="outline" color="medium">
+                    Match
+                  </ion-button>
                 </ion-item>
               </ion-card>
             </ion-segment-content>
@@ -176,191 +189,236 @@
 </template>
 
 <script setup lang="ts">
-  import {
-    IonBackButton, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
-    IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
-    IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
-  } from '@ionic/vue';
-  import { barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
-  import { ref, onMounted, computed, defineProps } from 'vue';
-  import { useProductMaster } from '@/composables/useProductMaster';
-  import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
-  // Optional background aggregation worker — fallback no-op if the module is missing.
-  let startBackgroundAggregation: () => void = () => {
-    /* no-op */
-  };
-  (async () => {
-    try {
-      const mod = await import('@/workers/backgroundAggregation');
-      if (mod?.startBackgroundAggregation) startBackgroundAggregation = mod.startBackgroundAggregation;
-    } catch (e) {
-      // ignore if the optional worker module is not present
+import {
+  IonBackButton, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
+  IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
+  IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
+} from '@ionic/vue';
+import { barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
+import { ref, onMounted, computed, defineProps } from 'vue';
+import { useProductMaster } from '@/composables/useProductMaster';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { showToast } from '@/utils';
+import { useStore } from '@/store';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
+import { v4 as uuidv4 } from 'uuid';
+import Image from "@/components/Image.vue";
+import api from '@/api';
+import { CountService } from '@/services/CountService';
+import { useProductIdentificationStore } from "@hotwax/dxp-components";
+
+const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string }>();
+const productIdentificationStore = useProductIdentificationStore();
+
+const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB } = useInventoryCountImport();
+const { init, getById, prefetch, getByIdentificationFromSolr, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
+const store = useStore();
+
+const scannedValue = ref('');
+const events = ref<any[]>([]);
+const unmatchedEvents = ref<any[]>([]);
+const countedItems = ref<any[]>([]);
+const uncountedItems = ref<any[]>([]);
+const undirectedItems = ref<any[]>([]);
+const selectedSegment = ref('counted');
+const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+const barcodeInput = ref();
+const sessionLocked = ref(false);
+
+const countTypeLabel = computed(() =>
+  props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
+);
+const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
+const userLogin = computed(() => store.getters['user/getUserProfile']);
+
+onMounted(async () => {
+  init();
+  await startSession();
+});
+
+async function startSession() {
+  try {
+    const resp = await CountService.getInventoryCountImportSession({
+      workEffortId: props.workEffortId,
+      inventoryCountImportId: props.inventoryCountImportId
+    });
+
+    if (resp?.data?.activeUserLoginId) {
+      sessionLocked.value = true;
+      showToast('This session is already being worked on by another user.');
+      return;
     }
-  })();
-  import { showToast } from '@/utils'; 
-  import { useStore } from '@/store';
-  import dayjs from 'dayjs';
-  import relativeTime from 'dayjs/plugin/relativeTime';
-  dayjs.extend(relativeTime);
-  import { v4 as uuidv4 } from 'uuid';
-  import Image from "@/components/Image.vue";
-  import api from '@/api';
-  import { CountService } from '@/services/CountService';
 
-  const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string }>();
+    // Load InventoryCountImportItem records into IndexedDB
+    await loadInventoryItemsFromBackend(props.workEffortId, props.inventoryCountImportId);
 
-  const { recordScan, loadInventoryItemsFromBackend } = useInventoryCountImport();
-  const { init, getById, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
-  const store = useStore();
+    // Prefetch product details for all related productIds
+    const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
+    if (productIds.length) await prefetch(productIds);
 
-  const scannedValue = ref('');
-  const events = ref<any[]>([]);
-  const unmatchedEvents = ref<any[]>([]);
-  const countedItems = ref<any[]>([]);
-  const selectedSegment = ref('counted');
-  const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
-  const barcodeInput = ref();
-  const sessionLocked = ref(false);
-  const sessionName = computed(() => props.inventoryCountTypeId);
-  const countTypeLabel = computed(() =>
-    props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
-  );
-  const userLogin = computed(() => store.getters['user/getUserProfile']);
+    // Load the inventory records from IndexedDB
+    const records = await getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
 
-  onMounted(async () => {
-    init();
-    await startSession();
-    startBackgroundAggregation();
-  });
-
-  // --- Core session init ---
-  async function startSession() {
-    try {
-      const resp = await CountService.getInventoryCountImportSession({ workEffortId: props.workEffortId, inventoryCountImportId: props.inventoryCountImportId });
-
-      if (resp?.data?.activeUserLoginId) {
-        sessionLocked.value = true;
-        showToast('This session is already being worked on by another user.');
-        return;
+    // Enrich each record with product details from ProductMaster Dexie
+    const enrichedRecords = await Promise.all(records.map(async (r: any) => {
+      let product = null;
+      if (r.productId) {
+        const res = await getById(r.productId);
+        product = res?.product || null;
       }
+      return { ...r, product };
+    }));
 
-      await loadInventoryItemsFromBackend(props.workEffortId, props.inventoryCountImportId);
+    // Split enriched records into Counted and Uncounted lists
+    countedItems.value = enrichedRecords.filter((r: any) => (r.quantity || 0) > 0);
+    uncountedItems.value = enrichedRecords.filter((r: any) => !r.quantity || r.quantity === 0);
 
-      const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
-      if (productIds.length) await prefetch(productIds);
+    showToast('Session ready to start counting');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to initialize session');
+  }
 
-      showToast('Session ready to start counting');
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to initialize session');
+  updateStats();
+  focusScanner();
+}
+
+function focusScanner() {
+  barcodeInput.value?.$el?.setFocus();
+}
+
+async function handleScan() {
+  const value = scannedValue.value.trim();
+  if (!value) return;
+
+  try {
+    const qty = 1;
+    await recordScan({ inventoryCountImportId: props.inventoryCountImportId, sku: value, qty });
+
+    let productResp = await getById(value);
+    let matched = !!productResp?.product;
+
+    if (!matched) {
+      // Attempt Solr fetch if not found in IndexedDB
+      const solrProduct = await getByIdentificationFromSolr(value);
+      if (solrProduct) {
+        matched = true;
+        // include status to satisfy the expected return type from useProductMaster
+        productResp = { product: solrProduct as any, status: 'stale' as const };
+      }
+    }
+
+    const event = {
+      id: Date.now(),
+      scannedValue: value,
+      qty,
+      createdAt: Date.now(),
+      matched,
+      product: matched ? productResp.product : null
+    };
+    events.value.unshift(event);
+
+    if (matched) {
+      const inDirectedList = countedItems.value.some(i => i.productId === productResp?.product?.productId)
+        || uncountedItems.value.some(i => i.productId === productResp?.product?.productId);
+
+      const targetList = inDirectedList ? countedItems : undirectedItems;
+        targetList.value.push({
+        uuid: uuidv4(),
+        sku: value,
+        productId: productResp?.product?.productId,
+        product: productResp?.product,
+        quantity: qty
+      });
+    } else {
+      unmatchedEvents.value.push(event);
     }
 
     updateStats();
-    focusScanner();
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to record scan');
+  } finally {
+    scannedValue.value = '';
+  }
+}
+
+function updateStats() {
+  const totalUnits = events.value.reduce((a, b) => a + (b.qty || 0), 0);
+  const distinctSkus = new Set(countedItems.value.map(i => i.sku)).size;
+  stats.value = { productsCounted: distinctSkus, totalUnits, unmatched: unmatchedEvents.value.length };
+}
+
+function timeAgo(ts: number) {
+  return dayjs(ts).fromNow();
+}
+
+// helper: pick primary/secondary id from enriched product.goodIdentifications
+const primaryId = (p?: any) => {
+  if (!p) return ''
+
+  const pref = productIdentificationStore.getProductIdentificationPref.primaryId
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return p.internalName || ''
+    if (type === 'productId') return p.productId || ''
+    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
   }
 
-  // --- Scanning ---
-  function focusScanner() {
-    barcodeInput.value?.$el?.setFocus();
+  // Try preference, then fallback to SKU or productId
+  return resolve(pref) || resolve('SKU') || p.productId || ''
+}
+
+const secondaryId = (p?: any) => {
+  if (!p) return ''
+
+  const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return p.internalName || ''
+    if (type === 'productId') return p.productId || ''
+    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
   }
 
-  async function handleScan() {
-    const value = scannedValue.value.trim();
-    console.log('Scanned value:', value);
-    if (!value) return;
+  // Try preference, then fallback to productId
+  return resolve(pref) || p.productId || ''
+}
 
-    try {
-      const productResp = await getById(value);
-      const matched = !!productResp?.product;
-      const qty = 1;
-
-      await recordScan({ inventoryCountImportId: props.inventoryCountImportId, sku: value, qty });
-
-      const event = {
-        id: Date.now(),
-        scannedValue: value,
-        qty,
-        createdAt: Date.now(),
-        matched,
-        product: matched ? productResp.product : null
-      };
-      events.value.unshift(event);
-
-      if (matched) {
-        countedItems.value.push({
-          uuid: uuidv4(),
-          sku: value,
-          productId: productResp.product.productId,
-          quantity: qty
-        });
-      } else {
-        unmatchedEvents.value.push(event);
-      }
-
-      updateStats();
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to record scan');
-    } finally {
-      scannedValue.value = '';
-    }
+async function submitSession() {
+  try {
+    await api({
+      url: `/cycleCounts/${props.inventoryCountImportId}/submit`,
+      method: 'POST',
+      data: { activeUserLoginId: null, statusId: 'INV_COUNT_SUBMITTED' }
+    });
+    showToast('Session submitted successfully');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to submit session');
   }
+}
 
-  // --- Stats ---
-  function updateStats() {
-    const totalUnits = events.value.length
-      ? events.value.reduce((a, b) => a + (b.qty || 0), 0)
-      : countedItems.value.reduce((a, b) => a + (b.quantity || 0), 0);
-
-    const distinctSkus = new Set(countedItems.value.map(i => i.sku)).size;
-
-    stats.value = {
-      productsCounted: distinctSkus,
-      totalUnits,
-      unmatched: unmatchedEvents.value.length
-    };
+async function discardSession() {
+  try {
+    await api({
+      url: `/cycleCounts/${props.inventoryCountImportId}/discard`,
+      method: 'POST',
+      data: { activeUserLoginId: null }
+    });
+    showToast('Session discarded');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to discard session');
   }
-
-  // --- Utility ---
-  function timeAgo(ts: number) {
-    return dayjs(ts).fromNow();
-  }
-
-  function getProduct(productId: string) {
-    return cacheReady.value ? store.getters['product/getProduct'](productId) : null;
-  }
-
-  // --- Submit / Discard ---
-  async function submitSession() {
-    try {
-      await api({
-        url: `/cycleCounts/${props.inventoryCountImportId}/submit`,
-        method: 'POST',
-        data: {
-          activeUserLoginId: null,
-          statusId: 'INV_COUNT_SUBMITTED'
-        }
-      });
-      showToast('Session submitted successfully');
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to submit session');
-    }
-  }
-
-  async function discardSession() {
-    try {
-      await api({
-        url: `/cycleCounts/${props.inventoryCountImportId}/discard`,
-        method: 'POST',
-        data: { activeUserLoginId: null }
-      });
-      showToast('Session discarded');
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to discard session');
-    }
-  }
+}
 </script>
 
 <style scoped>

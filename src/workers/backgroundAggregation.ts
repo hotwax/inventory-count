@@ -1,4 +1,4 @@
-import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 let isRunning = false;
 let intervalId: number | null = null;
