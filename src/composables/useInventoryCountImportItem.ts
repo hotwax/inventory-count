@@ -2,9 +2,10 @@ import { ref, computed, ComputedRef } from 'vue';
 import Dexie, { Table } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
-import api from '@/api';
+import api, { client } from '@/api';
 import { wrap } from 'comlink';
 import type { InventorySyncWorker } from '@/workers/inventorySyncWorker';
+import store from '@/store';
 
 /**
  * Schema definitions
@@ -84,6 +85,8 @@ export function useInventoryCountImport() {
   const syncStatus = ref<'idle'>('idle');
   const currentImport = ref<InventoryCountRecord | null>(null);
   const productMaster = useProductMaster();
+  const maargInstanceUrl = store.getters["user/getInstanceUrl"];
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]; 
 
   /** Loads a specific inventory import record session */
   async function loadSession(inventoryCountImportId: string): Promise<void> {
@@ -253,6 +256,21 @@ export function useInventoryCountImport() {
     }
   }
 
+  async function createSessionOnServer (payload: any) {
+
+    const resp = await client({
+        url: `rest/s1/inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
+        method: "POST",
+        baseURL: maargInstanceUrl,
+        data: payload,
+        headers: {
+          "Authorization": 'Bearer ' + omsRedirectionInfo.token,
+          'Content-Type': 'application/json'
+        }
+      })
+    return resp;
+  }
+
   return {
     currentImport,
     syncStatus,
@@ -263,6 +281,7 @@ export function useInventoryCountImport() {
     pendingItems,
     loadInventoryItemsFromBackend,
     startAggregationScheduler,
-    startSyncWorker
+    startSyncWorker,
+    createSessionOnServer
   };
 }
