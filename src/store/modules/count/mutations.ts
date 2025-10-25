@@ -10,6 +10,9 @@ const mutations: MutationTree <CountState> = {
     state.assignedWorkEfforts = payload.assignedWorkEfforts
     state.total = payload.total
     state.isScrollable = payload.isScrollable;
+  },
+  [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
+    state.cycleCountImportSystemMessages = payload
   }
 }	
 export default mutations;	

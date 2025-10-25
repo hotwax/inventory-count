@@ -63,6 +63,12 @@ export default defineComponent({
     const router = useRouter();
     const appPages = [
       {
+        title: "Bulk Upload",
+        url: "/bulkUpload",
+        iosIcon: createOutline,
+        mdIcon: createOutline
+      },
+      {
         title: "Draft",
         url: "/draft",
         iosIcon: createOutline,

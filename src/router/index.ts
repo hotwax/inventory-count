@@ -17,6 +17,7 @@ import Settings from "@/views/Settings.vue";
 import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
+import BulkUpload from "@/views/BulkUpload.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -144,6 +145,15 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/bulkUpload',
+    name: 'Draft bulk',
+    component: BulkUpload,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
     }
   },
   {
