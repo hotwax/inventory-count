@@ -11,6 +11,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   isCountDetailPageActive(state) {
     return state.isCountDetailPageActive;
+  },
+  getCycleCountImportSystemMessages(state) {
+    return state.cycleCountImportSystemMessages
   }
 };
 
