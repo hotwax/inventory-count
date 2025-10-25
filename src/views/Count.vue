@@ -181,7 +181,7 @@
           </ion-list>
         </ion-card>
         
-        <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId">
+        <ion-card v-for="count in cycleCount" :key="count.workEffortId">
           <ion-card-header>
             <div>
               <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
@@ -274,7 +274,6 @@ import { useRouter } from 'vue-router'
 import { getDateWithOrdinalSuffix, showToast } from "@/utils"
 import { useUserStore } from '@hotwax/dxp-components';
 import AddNewSessionModal from '@/components/AddNewSessionModal.vue';
-// import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
 
 const store = useStore();
 const router = useRouter()
@@ -297,7 +296,6 @@ onIonViewDidEnter(async() => {
   isLoading.value = true;
   await fetchCycleCounts();
   isLoading.value = false;
-  // useInventoryCountImport();
 })
 
 // TODO: Fetch the status description when the app loads.

@@ -57,7 +57,6 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
 import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
-// import { useInventoryCountImport } from "@/composables/useInventoryCountImportItem";
 // import Filters from "@/components/Filters.vue"
 import router from "@/router"
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
@@ -71,7 +70,6 @@ const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await fetchAssignedCycleCount();
-  // useInventoryCountImport();
 })
 
 onIonViewWillLeave(async () => {

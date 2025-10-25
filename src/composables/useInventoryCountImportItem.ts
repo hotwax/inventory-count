@@ -44,7 +44,6 @@ interface InventoryCountRecord {
 
 interface RecordScanParams {
   inventoryCountImportId: string;
-  scannedValue: string,
   sku: string;
   qty: number;
   locationSeqId?: string | null;
@@ -67,8 +66,6 @@ class InventoryCountDB extends Dexie {
 }
 
 const db = new InventoryCountDB();
-
-console.log("This is you db: ", db);
 
 /**
  * Utility Functions
@@ -125,7 +122,6 @@ export function useInventoryCountImport() {
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
-      scannedValue: params.scannedValue,
       locationSeqId: params.locationSeqId || null,
       qty: params.qty,
       createdAt: currentMillis(),
@@ -261,7 +257,6 @@ export function useInventoryCountImport() {
   }
 
   async function createSessionOnServer (payload: any) {
-    console.log("This is from the ", maargInstanceUrl, " and ", omsRedirectionInfo);
 
     const resp = await client({
         url: `rest/s1/inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
