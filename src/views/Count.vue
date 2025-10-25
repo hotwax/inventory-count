@@ -274,6 +274,7 @@ import { useRouter } from 'vue-router'
 import { getDateWithOrdinalSuffix, showToast } from "@/utils"
 import { useUserStore } from '@hotwax/dxp-components';
 import AddNewSessionModal from '@/components/AddNewSessionModal.vue';
+// import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
 
 const store = useStore();
 const router = useRouter()
@@ -296,6 +297,7 @@ onIonViewDidEnter(async() => {
   isLoading.value = true;
   await fetchCycleCounts();
   isLoading.value = false;
+  // useInventoryCountImport();
 })
 
 // TODO: Fetch the status description when the app loads.

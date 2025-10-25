@@ -9,6 +9,9 @@ const countModule: Module<CountState, RootState> = {
   namespaced: true,
   state: {
     assignedWorkEfforts: [],
+    draftWorkEfforts: [],
+    inReviewWorkEfforts: [],
+    closedWorkEfforts: [],
     total: 0,
     isScrollable: true,
     query: {

@@ -40,8 +40,8 @@
 import { defineProps, defineEmits, ref } from 'vue';
 import { IonButtons, IonModal, IonIcon, IonFab, IonFabButton, IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonList, IonListHeader, IonItem, IonLabel, IonRadioGroup, IonRadio, IonInput, IonNote } from '@ionic/vue';
 import { closeOutline, saveOutline, checkmarkDoneOutline } from "ionicons/icons";
-import { CountService } from '@/services/CountService';
 import { showToast } from '@/utils';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
 
 const props = defineProps({
   isOpen: {
@@ -59,7 +59,7 @@ const emit = defineEmits(['update:isOpen']);
 const closeModal = () => emit('update:isOpen', false);
 
 async function addNewSession() {
-    const resp = await CountService.addSessionInCount({
+    const resp = await useInventoryCountImport().createSessionOnServer({
         countImportName: countName.value,
         statusId: "CYCLE_CNT_ASSIGNED",
         uploadedByUserLogin: "hotwax.user",

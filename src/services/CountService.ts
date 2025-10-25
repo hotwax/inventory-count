@@ -13,6 +13,13 @@ const getAssignedWorkEfforts = async (params: any): Promise <any> => {
     params
   });
 }
+const getWorkEfforts = async (params: any): Promise <any> => {
+  return api({
+    url: "inventory-cycle-count/cycleCounts/workEfforts",
+    method: "get",
+    params
+  });
+}
 const getInventoryCountImportsByWorkEffort = async (params: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
@@ -38,5 +45,7 @@ const getInventoryCountImportSession = async (params: { workEffortId: string; in
 
 export const CountService = {
   getAssignedWorkEfforts,
-  getInventoryCountImportsByWorkEffort
+  getInventoryCountImportsByWorkEffort,
+  addSessionInCount,
+  getWorkEfforts
 }
