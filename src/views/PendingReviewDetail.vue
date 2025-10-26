@@ -81,7 +81,7 @@
           <ion-list lines="full" class="filters ion-margin">
             <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
             <ion-item>
-            <ion-select label="Status" placeholder="All" interface="popover">
+            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
               <ion-select-option value="all">All</ion-select-option>
               <ion-select-option value="open">Open</ion-select-option>
               <ion-select-option value="accepted">Accepted</ion-select-option>
@@ -173,7 +173,7 @@
             </ion-accordion>
           </ion-accordion-group>
         </div>
-        <div v-els class="empty-state">
+        <div v-else class="empty-state">
           <p>No Results</p>
         </div>
         <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
@@ -203,7 +203,7 @@
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline, personCircleOutline, ellipseOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, ref } from "vue";
+import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImportItem";
 import emitter from '@/event-bus';
@@ -231,6 +231,30 @@ const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
+const filters = reactive({
+  dcsnRsn: 'all',
+  searchedProductString: ''
+});
+
+const  { dcsnRsn, searchedProductString } = toRefs(filters);
+
+watch(() => filters, async () => {
+
+  const count = await fetchCycleCount({
+    workEffortId: props,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    internalName_op: searchedProductString.value ? "contains" : null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
+
+  if (count && count.status === 200 && count.data) {
+    cycleCount.value = count;
+  }
+},{ deep: true });
+
 const isLoading = ref(false);
 
 const loadingSessions = ref(false);
@@ -239,10 +263,14 @@ const workEffort = ref();
 
 const cycleCount = ref();
 
-const sessions = ref();
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
+const pagination = reactive({
+  pageSize: 25,
+  pageIndex: 0
+});
 
-const searchedProductString = ref();
+const sessions = ref();
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
 
 async function filterProductByInternalName() {
 
@@ -260,6 +288,18 @@ async function filterProductByInternalName() {
 
 function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
+}
+
+function getDcsnFilter() {
+  if (dcsnRsn.value === 'all') {
+    return null;
+  } else if (dcsnRsn.value === 'open') {
+    return 'empty';
+  } else if (dcsnRsn.value === 'accepted') {
+    return 'APPLIED';
+  } else if (dcsnRsn.value === 'rejected') {
+    return 'SKIPPED';
+  }
 }
 
 async function fetchCountSessions(workEffortId?: any, productId?: any) {
@@ -280,9 +320,7 @@ async function fetchCountSessions(workEffortId?: any, productId?: any) {
 async function fetchInventoryCycleCount (pSize?: any, pIndex?: any) {
 
   const workEffortResp = await fetchWorkEffort({
-    workEffortId: props.workEffortId,
-    pageSize: pSize || 25,
-    pageIndex: pIndex
+    workEffortId: props.workEffortId
   }
   );
 
@@ -291,7 +329,12 @@ async function fetchInventoryCycleCount (pSize?: any, pIndex?: any) {
   }
 
   const resp = await fetchCycleCount({
-    workEffortId: props.workEffortId
+    workEffortId: props.workEffortId,
+    pageSize: pSize || 25,
+    pageIndex: pIndex || 0,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
   });
 
   if (resp && resp.status === 200 && resp.data && resp.data.length) {

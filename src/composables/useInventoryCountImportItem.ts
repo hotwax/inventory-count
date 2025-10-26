@@ -257,6 +257,7 @@ export function useInventoryCountImport() {
   return api({
     url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
     method: "get",
+    params: payload
   });
 }
 
