@@ -216,8 +216,9 @@
                 Start new session
               </ion-label>
             </ion-button>
+            <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-              <ion-item>
+              <ion-item detail="true" :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                 <ion-label>
                   {{ session.countImportName }} + {{ session.facilityAreaId }}
                   <p>
@@ -303,14 +304,14 @@ function getSessionStatusDescription(statusId) {
   if (!statusId) {
     return "";
   }
-  if (statusId === "CYCLE_CNT_CREATED") {
+  if (statusId === "SESSION_CREATED") {
     return "Created";
-  } else if (statusId === "CYCLE_CNT_IN_PRGS") {
+  } else if (statusId === "SESSION_ASSIGNED") {
     return "In Progress";
-  } else if (statusId === "CYCLE_CNT_IN_CMPLTD") {
-    return "Completed";
-  } else {
-    return "Cancelled"
+  } else if (statusId === "SESSION_SUBMITTED") {
+    return "Submitted";
+  } else if (statusId === "SESSION_VOIDED") {
+    return "Voided";
   }
 }
 
@@ -369,7 +370,6 @@ async function fetchCycleCounts(vSize, vIndex) {
     facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched()
   };
-  console.log("This is store: ", store);
   await store.dispatch("count/getAssignedWorkEfforts", payload);
 }
 

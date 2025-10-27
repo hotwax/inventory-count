@@ -42,6 +42,7 @@ import { IonButtons, IonModal, IonIcon, IonFab, IonFabButton, IonContent, IonHea
 import { closeOutline, saveOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { showToast } from '@/utils';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImportItem';
+import store from '@/store';
 
 const props = defineProps({
   isOpen: {
@@ -61,8 +62,8 @@ const closeModal = () => emit('update:isOpen', false);
 async function addNewSession() {
     const resp = await useInventoryCountImport().createSessionOnServer({
         countImportName: countName.value,
-        statusId: "CYCLE_CNT_ASSIGNED",
-        uploadedByUserLogin: "hotwax.user",
+        statusId: "SESSION_ASSIGNED",
+        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
