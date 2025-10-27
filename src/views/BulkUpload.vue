@@ -116,6 +116,7 @@ import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
 import { CountService } from "@/services/CountService"
 import CycleCountUploadActionPopover from "@/components/CycleCountUploadActionPopover.vue"
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
 
@@ -131,6 +132,7 @@ let fileColumns = ref([])
 let selectedMappingId = ref(null)
 const fileUploaded = ref(false);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
+const { bulkUploadInventoryCounts }  = useInventoryCountImport();
 
 
 onIonViewDidEnter(async() => {
@@ -247,7 +249,7 @@ async function save(){
   formData.append("fileName", fileName.value.replace(".csv", ""));
   
   try {
-    const resp = await CountService.bulkUploadInventoryCounts({
+    const resp = await bulkUploadInventoryCounts({
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data;'

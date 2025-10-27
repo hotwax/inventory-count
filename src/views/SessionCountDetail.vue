@@ -238,6 +238,8 @@ const countedItems = ref<any[]>([]);
 const uncountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
+const { getInventoryCountImportSession } = useInventoryCountImport();
+
 let aggregationWorker: Worker | null = null
 
 const countTypeLabel = computed(() =>
@@ -305,7 +307,7 @@ aggregationWorker.onmessageerror = (err) => {
 
 async function startSession() {
   try {
-    const resp = await CountService.getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId});
+    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId});
 
     if (resp?.data?.activeUserLoginId) {
       sessionLocked.value = true;
