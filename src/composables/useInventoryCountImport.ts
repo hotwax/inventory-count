@@ -79,8 +79,6 @@ export function useInventoryCountImport() {
   const syncStatus = ref<'idle'>('idle');
   const currentImport = ref<InventoryCountImportItem | null>(null);
   const productMaster = useProductMaster();
-  const maargInstanceUrl = store.getters["user/getInstanceUrl"];
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]; 
 
   /** Loads a specific inventory import record session */
   async function loadSession(inventoryCountImportId: string): Promise<void> {
@@ -239,18 +237,92 @@ export function useInventoryCountImport() {
 
   async function createSessionOnServer (payload: any) {
 
-    const resp = await client({
-        url: `rest/s1/inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
-        method: "POST",
-        baseURL: maargInstanceUrl,
-        data: payload,
-        headers: {
-          "Authorization": 'Bearer ' + omsRedirectionInfo.token,
-          'Content-Type': 'application/json'
-        }
+    const resp = await api({
+        url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
+        method: "post",
+        data: payload
       })
     return resp;
   }
+
+  const getAssignedWorkEfforts = async (params: any): Promise <any> => {
+  return api({
+    url: "inventory-cycle-count/cycleCounts/workEfforts",
+    method: "get",
+    params
+  });
+}
+const getWorkEfforts = async (params: any): Promise <any> => {
+  return api({
+    url: "inventory-cycle-count/cycleCounts/workEfforts",
+    method: "get",
+    params
+  });
+}
+
+const getInventoryCountImportsByWorkEffort = async (params: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
+    method: "get",
+  });
+}
+
+const addSessionInCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
+    method: "post",
+    data: payload
+  }
+  );
+}
+
+const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${params.inventoryCountImportId}`,
+    method: 'get',
+    params
+  });
+}
+
+const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/upload`,
+    method: "post",
+    ...payload
+  });
+}
+
+const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages`,
+    method: "get",
+    params: payload
+  });
+}
+
+const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
+    method: "post",
+    data: payload
+  });
+}
+
+const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
+    method: "get",
+    data: payload
+  });
+}
+
+const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
+    method: "get",
+    data: payload
+  });
+}
 
     
   return {
@@ -269,6 +341,16 @@ export function useInventoryCountImport() {
     fetchCycleCount,
     fetchSessions,
     fetchWorkEffort,
-    getProductReviewDetail
+    getProductReviewDetail,
+    cancelCycleCountFileProcessing,
+    getAssignedWorkEfforts,
+    getInventoryCountImportsByWorkEffort,
+    getInventoryCountImportSession,
+    bulkUploadInventoryCounts,
+    fetchCycleCountImportSystemMessages,
+    fetchCycleCountUploadedFileData,
+    addSessionInCount,
+    getWorkEfforts,
+    fetchCycleCountImportErrors
   };
 }

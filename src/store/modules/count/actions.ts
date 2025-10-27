@@ -3,6 +3,7 @@ import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
 import { convertIsoToMillis, hasError, showToast, sortListByField } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
@@ -10,7 +11,7 @@ import logger from "@/logger";
 import { DateTime } from "luxon"
 import store from "@/store";
 import { readTable, syncItem } from "@/utils/indexeddb"
-
+const { getAssignedWorkEfforts, getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getAssignedWorkEfforts({ commit, dispatch, state }, params) {
     let assignedWorkEfforts = []
@@ -24,14 +25,14 @@ const actions: ActionTree<CountState, RootState> = {
     params["orderByField"] = "lastUpdatedStamp"
 
     try {
-      const resp = await CountService.getAssignedWorkEfforts(params)
+      const resp = await getAssignedWorkEfforts(params)
       if (!hasError(resp) && resp.data.length > 0) {
         const workEfforts = resp.data
 
         // For each workEffort, fetch InventoryCountImport details
         for (const workEffort of workEfforts) {
           try {
-            const inventoryResp = await CountService.getInventoryCountImportsByWorkEffort({
+            const inventoryResp = await getInventoryCountImportsByWorkEffort({
               workEffortId: workEffort.workEffortId
             })
             if (!hasError(inventoryResp)) {
@@ -63,7 +64,7 @@ const actions: ActionTree<CountState, RootState> = {
     let systemMessages;
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
-      const resp = await CountService.fetchCycleCountImportSystemMessages({
+      const resp = await fetchCycleCountImportSystemMessages({
         systemMessageTypeId: "ImportInventoryCounts",
         initDate_from: twentyFourHoursEarlier.toMillis(),
         orderByField: 'initDate desc, processedDate desc',
@@ -85,7 +86,7 @@ const actions: ActionTree<CountState, RootState> = {
   async getCycleCounts ({commit}, payload) {
     let workEfforts = [];
     try {
-      const resp = await CountService.getWorkEfforts(payload);
+      const resp = await getWorkEfforts(payload);
       if (!resp || resp.status !== 200 || hasError(resp)) {
         console.error(resp);
         return;

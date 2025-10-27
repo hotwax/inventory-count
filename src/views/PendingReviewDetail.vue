@@ -109,9 +109,9 @@
           </ion-item-divider>
         </div>
 
-        <div class="results ion-margin-top" v-if="cycleCount?.length">
+        <div class="results ion-margin-top" v-if="cycleCounts?.length">
           <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCount" :key="cycleCount.workEffortId" @click="fetchCountSessions(workEffortId, cycleCount.productId)">
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
               <div class="list-item count-item-rollup" slot="header"> 
                 <div class="item-key">
                   <ion-checkbox @click.stop="stopAccordianEventProp"></ion-checkbox>
@@ -246,7 +246,7 @@ watch(() => filters, async () => {
   });
 
   if (count && count.status === 200 && count.data) {
-    cycleCount.value = count;
+    cycleCounts.value = count;
   }
 },{ deep: true });
 
@@ -256,7 +256,7 @@ const loadingSessions = ref(false);
 
 const workEffort = ref();
 
-const cycleCount = ref();
+const cycleCounts = ref();
 
 const pagination = reactive({
   pageSize: 25,
@@ -275,7 +275,7 @@ async function filterProductByInternalName() {
   });
 
   if (productReviewDetail && productReviewDetail.status === 200) {
-    cycleCount.value = productReviewDetail.data;
+    cycleCounts.value = productReviewDetail.data;
   } else {
     showToast(translate("Product Not Found in this Count"));
   }
@@ -297,13 +297,13 @@ function getDcsnFilter() {
   }
 }
 
-async function fetchCountSessions(workEffortId?: any, productId?: any) {
-  console.log("These are count id and product id", workEffortId, productId);
+async function fetchCountSessions(productId: any) {
+  console.log("These are count id and product id", props.workEffortId, productId);
   loadingSessions.value = true;
   sessions.value = [];
   const resp = await fetchSessions({
-    workEffortId: "M100000",
-    productId: "10359"
+    workEffortId: props.workEffortId,
+    productId: productId
   });
 
   if (resp && resp.status && resp.data && resp.data.length) {
@@ -333,9 +333,9 @@ async function fetchInventoryCycleCount (pSize?: any, pIndex?: any) {
   });
 
   if (resp && resp.status === 200 && resp.data && resp.data.length) {
-    cycleCount.value = resp.data;
+    cycleCounts.value = resp.data;
   } else {
-    cycleCount.value = [
+    cycleCounts.value = [
       {
         "facilityId": "BROOKLYN",
         "workEffortId": "M10001",
