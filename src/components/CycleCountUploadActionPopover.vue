@@ -1,132 +1,90 @@
 <template>
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-button @click="closeModal"> 
-            <ion-icon :icon="close" />
-          </ion-button>
-        </ion-buttons>
-        <ion-title>{{ translate("CSV Mapping") }}</ion-title>
-      </ion-toolbar>
-    </ion-header>
-  
-    <ion-item>
-      <ion-input :label="translate('Mapping name')" :placeholder="translate('Field mapping name')" v-model="mappingName" />
-    </ion-item>
-  
-    <ion-content>
-      <div>
-        <ion-list>
-          <ion-item-divider>
-            <ion-label>{{ translate("Required") }} </ion-label>
-          </ion-item-divider>
-          <ion-item :key="field" v-for="(fieldValues, field) in getFields(fields, true)">
-            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
-              <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          <ion-item-divider>
-            <ion-label>{{ translate("Optional") }} </ion-label>
-          </ion-item-divider>
-          <ion-item :key="field" v-for="(fieldValues, field) in getFields(fields, false)">
-            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
-              <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-list>
-      </div>
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="saveMapping">
-          <ion-icon :icon="saveOutline" />
-        </ion-fab-button>
-      </ion-fab>
-    </ion-content>
-  </template>
+  <ion-content>
+    <ion-list>
+      <ion-list-header>{{ systemMessage.systemMessageId }}</ion-list-header>
+      <ion-item v-if="systemMessage.statusId === 'SmsgReceived'" button @click="cancelUpload()">
+        <ion-icon slot="end" />
+        {{ translate("Cancel") }}
+      </ion-item>
+      <ion-item v-if="systemMessage.statusId === 'SmsgError'" button @click="viewErrorModal()">
+        <ion-icon slot="end"/>
+        {{ translate("View error") }}
+      </ion-item>
+      <ion-item lines="none" button @click="viewFile()">
+        <ion-icon slot="end"/>
+        {{ translate("View file") }}
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</template>
 
-<script setup>
+<script setup lang="ts">
 import {
-  IonButtons,
-  IonButton,
   IonContent,
-  IonFab,
-  IonFabButton,
-  IonHeader,
   IonIcon,
-  IonInput,
   IonItem,
-  IonItemDivider,
-  IonLabel,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar,
   IonList,
-  modalController
-} from '@ionic/vue';
+  IonListHeader,
+  modalController,
+  popoverController
+} from "@ionic/vue"
+import { defineProps } from "vue";
+import { translate } from "@/i18n"
+import store from "@/store";
+import { CountService } from "@/services/CountService"
+import { downloadCsv, hasError, showToast } from "@/utils";
+import logger from "@/logger";
+import BulkUploadErrorModal from "./BulkUploadErrorModal.vue";
 
-import { close, save, saveOutline } from "ionicons/icons";
-import { computed, defineProps, onMounted, ref } from "vue";
-import { useStore } from "vuex";
-import { showToast } from '@/utils';
-import { translate } from "@hotwax/dxp-components";
+const props = defineProps(["systemMessage", "fileName"])
 
-const store = useStore();
-
-const props = defineProps(["content", "seletedFieldMapping", "mappingType"])
-const fieldMappings = computed(() => store.getters["user/getFieldMappings"])
-
-let mappingName = ref(null)
-let fieldMapping = ref ({})
-let fileColumns = ref([])
-let identificationTypeId = ref('SKU')
-const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
-
-onMounted(() => {
-  fieldMapping.value = { ...props.seletedFieldMapping }
-  fileColumns.value = Object.keys(props.content[0]);
-})
-
-function getFields(fields, required = true) {
-  return Object.keys(fields).reduce((result, key) => {
-    if (fields[key].required === required) {
-      result[key] = fields[key];
+function closePopover() {
+  popoverController.dismiss()
+}
+async function viewFile() {
+  try {
+    const resp = await CountService.fetchCycleCountUploadedFileData({
+      systemMessageId: props.systemMessage.systemMessageId,
+    });
+    if (!hasError(resp)) {
+      downloadCsv(resp.data.csvData, props.fileName)
+    } else {
+      throw resp.data;
     }
-    return result;
-  }, {});
-}
-function closeModal() {
-  modalController.dismiss({ dismissed: true });
-}
-async function saveMapping() {
-  if(!mappingName.value || !mappingName.value.trim()) {
-    showToast(translate("Enter mapping name"));
-    return
+  } catch (err) {
+    showToast(translate('Failed to download uploaded cycle count file.'))
+    logger.error(err);
   }
-  if (!areAllFieldsSelected()) {
-    showToast(translate("Map all required fields"));
-    return
+  closePopover()
+}
+async function viewErrorModal() {
+  const bulkUploadErrorModal = await modalController.create({
+    component: BulkUploadErrorModal,
+    componentProps: { systemMessage: props.systemMessage }
+  });
+
+  // dismissing the popover once the picker modal is closed
+  bulkUploadErrorModal.onDidDismiss().finally(() => {
+    closePopover();
+  });
+  return bulkUploadErrorModal.present();
+}
+async function cancelUpload () {
+  try {
+    const resp = await CountService.cancelCycleCountFileProcessing({
+      systemMessageId: props.systemMessage.systemMessageId,
+      statusId: 'SmsgCancelled'
+    });
+    if (!hasError(resp)) {
+      showToast(translate('Cycle count cancelled successfully.'))
+      await store.dispatch('count/fetchCycleCountImportSystemMessages')
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
+    showToast(translate('Failed to cancel uploaded cycle count.'))
+    logger.error(err);
   }
-  const id = generateUniqueMappingPrefId();
-  await store.dispatch("user/createFieldMapping", { id, name: mappingName.value, value: fieldMapping.value, mappingType: props.mappingType })
-  closeModal();
+  closePopover()
 }
-
-function areAllFieldsSelected() {
-  const requiredFields = Object.keys(getFields(fields, true));
-  const selectedFields = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key] !== '')
-
-  return requiredFields.every(field => selectedFields.includes(field));
-}
-
-//Todo: Generating unique identifiers as we are currently storing in local storage. Need to remove it as we will be storing data on server.
-function generateUniqueMappingPrefId() {
-  const id = Math.floor(Math.random() * 1000);
-  return !fieldMappings.value[id] ? id : this.generateUniqueMappingPrefId();
-}
-
 </script>
-<style scoped>
-  ion-content {
-    --padding-bottom: 80px;
-  }
-</style>

@@ -18,6 +18,8 @@ import HardCount from "@/views/HardCount.vue"
 import HardCountDetail from "@/views/HardCountDetail.vue"
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
 import BulkUpload from "@/views/BulkUpload.vue";
+import Draft from "@/views/Draft.vue";
+import Closed from "@/views/Closed.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -110,12 +112,31 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/draft',
+    name: 'Draft',
+    component: Draft,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
     path: '/assigned',
     name: 'Assigned',
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_ASSIGNED_VIEW"
+    }
+  },
+  {
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
     }
   },
   {
@@ -138,7 +159,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/pending-review/:inventoryCountImportId',
+    path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
@@ -204,9 +225,9 @@ router.beforeEach((to, from) => {
   // - If using ionViewWillLeave/DidLeave hook to clear the filters, the filters are also cleared when moving to and fro from the details page of the same parent page, but in this case we do not want to clear the filters
   //
   // Added check that if the `to` page has the same url pattern as the `from` page and vice-versa then do not clear the filters, used this approach as parent and child page paths are identical
-  if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
-    store.dispatch("count/clearQuery")
-  }
+  // if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
+  //   store.dispatch("count/clearQuery")
+  // }
 })
 
 

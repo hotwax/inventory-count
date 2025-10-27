@@ -50,7 +50,7 @@
                   {{ event.scannedValue }}
                   <p>{{ timeAgo(event.createdAt) }}</p>
                 </ion-label>
-                <ion-note slot="end">{{ event.qty }}</ion-note>
+                <ion-note slot="end">{{ event.quantity }}</ion-note>
               </ion-item>
             </ion-list>
           </div>
@@ -62,7 +62,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ sessionName }}</h1>
+                <h1>{{ countImportName || 'Unknown Session' }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
               </ion-label>
             </ion-item>
@@ -119,15 +119,16 @@
           <ion-segment-view>
             <!-- Counted -->
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
-              <ion-card v-for="record in countedItems" :key="record.uuid">
+              <ion-card v-for="item in countedItems" :key="item.uuid">
                 <ion-item>
                   <ion-thumbnail slot="start">
-                    <Image v-if="record.product" :src="record.product.mainImageUrl" />
+                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    {{ primaryId(record.product) }}
-                    <p>{{ secondaryId(record.product) }}</p>
-                    <p>{{ record.quantity }} units</p>
+                    <p>{{ item.productId }}</p>
+                    <!-- <p>{{ getProduct(item.productId) }}</p> -->
+                    <!-- <p>{{ secondaryId(item.product) }}</p> -->
+                    <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
@@ -137,13 +138,15 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-card v-for="item in uncountedItems" :key="item.uuid">
                 <ion-item>
-                  <ion-thumbnail slot="start">
+                  <!-- <ion-thumbnail slot="start">
                     <Image v-if="item.product" :src="item.product.mainImageUrl" />
-                  </ion-thumbnail>
+                  </ion-thumbnail> -->
                   <ion-label>
-                    {{ primaryId(item.product) }}
-                    <p>{{ secondaryId(item.product) }}</p>
-                    <p>Not yet counted</p>
+                    {{ item.productId }}
+                    {{ item.quantity }} units
+                    <!-- {{ primaryId(item.product) }} -->
+                    <!-- <p>{{ secondaryId(item.product) }}</p> -->
+                    <p>{{ 'Not yet counted' }}</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
@@ -157,8 +160,9 @@
                     <Image v-if="item.product" :src="item.product.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    {{ primaryId(item.product) }}
-                    <p>{{ secondaryId(item.product) }}</p>
+                    {{ item.productId }}
+                    <!-- {{ primaryId(item.product) }}
+                    <p>{{ secondaryId(item.product) }}</p> -->
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
@@ -167,15 +171,15 @@
 
             <!-- Unmatched -->
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
-              <ion-card v-for="scan in unmatchedEvents" :key="scan.id">
+              <ion-card v-for="item in unmatchedItems" :key="item.uuid">
                 <ion-item>
                   <ion-label>
                     <!-- No productId, show scanned value -->
-                    <h2>{{ scan.scannedValue }}</h2>
-                    <p>{{ timeAgo(scan.createdAt) }}</p>
-                    <p>{{ scan.qty }} units</p>
+                    <h2>{{ item.productIdentifier }}</h2>
+                    <p>{{ timeAgo(item.createdAt) }}</p>
+                    <p>{{ item.quantity }} units</p>
                   </ion-label>
-                  <ion-button slot="end" fill="outline" color="medium">
+                  <ion-button slot="end" fill="outline" color="medium" @click="openMatchModal(item)">
                     Match
                   </ion-button>
                 </ion-item>
@@ -195,7 +199,7 @@ import {
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
 import { barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
-import { ref, onMounted, computed, defineProps } from 'vue';
+import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast } from '@/utils';
@@ -208,24 +212,33 @@ import Image from "@/components/Image.vue";
 import api from '@/api';
 import { CountService } from '@/services/CountService';
 import { useProductIdentificationStore } from "@hotwax/dxp-components";
+import { from } from 'rxjs';
+import { modalController } from "@ionic/vue";
+import MatchProductModal from "@/components/MatchProductModal.vue";
 
-const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string }>();
+const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB } = useInventoryCountImport();
+const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems } = useInventoryCountImport();
 const { init, getById, prefetch, getByIdentificationFromSolr, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
 const scannedValue = ref('');
 const events = ref<any[]>([]);
 const unmatchedEvents = ref<any[]>([]);
-const countedItems = ref<any[]>([]);
-const uncountedItems = ref<any[]>([]);
-const undirectedItems = ref<any[]>([]);
+// const countedItems = ref<any[]>([]);
+// const uncountedItems = ref<any[]>([]);
+// const undirectedItems = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const barcodeInput = ref();
 const sessionLocked = ref(false);
+const unmatchedItems = ref<any[]>([]);
+const countedItems = ref<any[]>([]);
+const uncountedItems = ref<any[]>([]);
+const undirectedItems = ref<any[]>([]);
+
+let aggregationWorker: Worker | null = null
 
 const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
@@ -236,14 +249,63 @@ const userLogin = computed(() => store.getters['user/getUserProfile']);
 onMounted(async () => {
   init();
   await startSession();
+  from(getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+  from(getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+  from(getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+  from(getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+
+  watchEffect(() => {
+    const totalUnits = countedItems.value.reduce((sum, i) => sum + (i.quantity || 0), 0)
+    const distinctProducts = new Set(countedItems.value.map(i => i.uuid)).size
+    stats.value = {
+      productsCounted: distinctProducts,
+      totalUnits,
+      unmatched: unmatchedItems.value.length
+    }
+  })
+
+  aggregationWorker = new Worker(
+    new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
+  )
+
+  aggregationWorker.onmessage = (e) => {
+    const { type, count } = e.data
+    if (type === 'aggregationComplete') {
+      console.log(`Aggregated ${count} products from scans`)
+    }
+  }
+  aggregationWorker.onerror = (err) => {
+  console.error('[Worker Error]', err.message || err);
+};
+aggregationWorker.onmessageerror = (err) => {
+  console.error('[Worker Message Error]', err);
+};
+  // Run every 10 seconds
+  const omsInfo = store.getters['user/getOmsRedirectionInfo']
+  // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
+  const productStoreSettings = store.getters["user/getProductStoreSettings"];
+  const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
+
+  aggregationWorker.postMessage({
+    type: 'schedule',
+    payload: {
+      workEffortId: props.workEffortId,
+      inventoryCountImportId: props.inventoryCountImportId,
+      intervalMs: 15000,
+      context: {
+        omsUrl: omsInfo.url,
+        userLoginId: store.getters['user/getUserProfile']?.username,
+        maargUrl: store.getters['user/getBaseUrl'],
+        token: omsInfo.token,
+        barcodeIdentification: barcodeIdentification
+      }
+    }
+  })
 });
 
 async function startSession() {
   try {
-    const resp = await CountService.getInventoryCountImportSession({
-      workEffortId: props.workEffortId,
-      inventoryCountImportId: props.inventoryCountImportId
-    });
+    const resp = await CountService.getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId});
 
     if (resp?.data?.activeUserLoginId) {
       sessionLocked.value = true;
@@ -259,21 +321,21 @@ async function startSession() {
     if (productIds.length) await prefetch(productIds);
 
     // Load the inventory records from IndexedDB
-    const records = await getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
+    // const records = await getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
 
     // Enrich each record with product details from ProductMaster Dexie
-    const enrichedRecords = await Promise.all(records.map(async (r: any) => {
-      let product = null;
-      if (r.productId) {
-        const res = await getById(r.productId);
-        product = res?.product || null;
-      }
-      return { ...r, product };
-    }));
+    // const enrichedRecords = await Promise.all(records.map(async (r: any) => {
+    //   let product = null;
+    //   if (r.productId) {
+    //     const res = await getById(r.productId);
+    //     product = res?.product || null;
+    //   }
+    //   return { ...r, product };
+    // }));
 
     // Split enriched records into Counted and Uncounted lists
-    countedItems.value = enrichedRecords.filter((r: any) => (r.quantity || 0) > 0);
-    uncountedItems.value = enrichedRecords.filter((r: any) => !r.quantity || r.quantity === 0);
+    // countedItems.value = enrichedRecords.filter((r: any) => (r.quantity || 0) > 0);
+    // uncountedItems.value = enrichedRecords.filter((r: any) => !r.quantity || r.quantity === 0);
 
     showToast('Session ready to start counting');
   } catch (err) {
@@ -281,7 +343,6 @@ async function startSession() {
     showToast('Failed to initialize session');
   }
 
-  updateStats();
   focusScanner();
 }
 
@@ -289,54 +350,13 @@ function focusScanner() {
   barcodeInput.value?.$el?.setFocus();
 }
 
-async function handleScan() {
+function handleScan() {
   const value = scannedValue.value.trim();
   if (!value) return;
 
   try {
-    const qty = 1;
-    await recordScan({ inventoryCountImportId: props.inventoryCountImportId, sku: value, qty });
-
-    let productResp = await getById(value);
-    let matched = !!productResp?.product;
-
-    if (!matched) {
-      // Attempt Solr fetch if not found in IndexedDB
-      const solrProduct = await getByIdentificationFromSolr(value);
-      if (solrProduct) {
-        matched = true;
-        // include status to satisfy the expected return type from useProductMaster
-        productResp = { product: solrProduct as any, status: 'stale' as const };
-      }
-    }
-
-    const event = {
-      id: Date.now(),
-      scannedValue: value,
-      qty,
-      createdAt: Date.now(),
-      matched,
-      product: matched ? productResp.product : null
-    };
-    events.value.unshift(event);
-
-    if (matched) {
-      const inDirectedList = countedItems.value.some(i => i.productId === productResp?.product?.productId)
-        || uncountedItems.value.some(i => i.productId === productResp?.product?.productId);
-
-      const targetList = inDirectedList ? countedItems : undirectedItems;
-        targetList.value.push({
-        uuid: uuidv4(),
-        sku: value,
-        productId: productResp?.product?.productId,
-        product: productResp?.product,
-        quantity: qty
-      });
-    } else {
-      unmatchedEvents.value.push(event);
-    }
-
-    updateStats();
+    recordScan({inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1});
+    events.value.unshift({scannedValue: value, quantity: 1, createdAt: Date.now()});
   } catch (err) {
     console.error(err);
     showToast('Failed to record scan');
@@ -345,10 +365,23 @@ async function handleScan() {
   }
 }
 
-function updateStats() {
-  const totalUnits = events.value.reduce((a, b) => a + (b.qty || 0), 0);
-  const distinctSkus = new Set(countedItems.value.map(i => i.sku)).size;
-  stats.value = { productsCounted: distinctSkus, totalUnits, unmatched: unmatchedEvents.value.length };
+async function openMatchModal(item: any) {
+  const modal = await modalController.create({
+    component: MatchProductModal,
+    componentProps: {
+      inventoryCountImportId: props.inventoryCountImportId,
+      item: item
+    },
+    showBackdrop: false,
+  });
+
+  modal.onDidDismiss().then(({ data }) => {
+    if (data?.success) {
+      showToast("Product matched successfully");
+    }
+  });
+
+  modal.present();
 }
 
 function timeAgo(ts: number) {
@@ -356,41 +389,41 @@ function timeAgo(ts: number) {
 }
 
 // helper: pick primary/secondary id from enriched product.goodIdentifications
-const primaryId = (p?: any) => {
-  if (!p) return ''
+// const primaryId = (p?: any) => {
+//   if (!p) return ''
 
-  const pref = productIdentificationStore.getProductIdentificationPref.primaryId
+//   const pref = productIdentificationStore.getProductIdentificationPref.primaryId
 
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
-  }
+//   const resolve = (type: string) => {
+//     if (!type) return ''
+//     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+//       return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+//     if (type === 'internalName') return p.internalName || ''
+//     if (type === 'productId') return p.productId || ''
+//     return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+//   }
 
-  // Try preference, then fallback to SKU or productId
-  return resolve(pref) || resolve('SKU') || p.productId || ''
-}
+//   // Try preference, then fallback to SKU or productId
+//   return resolve(pref) || resolve('SKU') || p.productId || ''
+// }
 
-const secondaryId = (p?: any) => {
-  if (!p) return ''
+// const secondaryId = (p?: any) => {
+//   if (!p) return ''
 
-  const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
+//   const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
 
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
-  }
+//   const resolve = (type: string) => {
+//     if (!type) return ''
+//     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+//       return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+//     if (type === 'internalName') return p.internalName || ''
+//     if (type === 'productId') return p.productId || ''
+//     return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+//   }
 
-  // Try preference, then fallback to productId
-  return resolve(pref) || p.productId || ''
-}
+//   // Try preference, then fallback to productId
+//   return resolve(pref) || p.productId || ''
+// }
 
 async function submitSession() {
   try {

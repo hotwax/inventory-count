@@ -37,7 +37,7 @@ const actions: ActionTree<CountState, RootState> = {
             if (!hasError(inventoryResp)) {
               assignedWorkEfforts.push({
                 ...workEffort,
-                inventoryCountImports: inventoryResp.data || []
+                sessions: inventoryResp.data || []
               })
             }
           } catch (err) {
@@ -81,6 +81,36 @@ const actions: ActionTree<CountState, RootState> = {
   },
   setCountDetailPageActive({ commit }, isPageActive) {
     commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
+  },
+  async getCycleCounts ({commit}, payload) {
+    let workEfforts = [];
+    try {
+      const resp = await CountService.getWorkEfforts(payload);
+      if (!resp || resp.status !== 200 || hasError(resp)) {
+        console.error(resp);
+        return;
+      }
+
+      workEfforts = resp.data;
+      const total = workEfforts?.length;
+      const isScrollable = total > payload.pageSize;
+    
+      if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
+        console.log("In Review");
+        commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: workEfforts, total, isScrollable })
+      } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
+        console.log("In Created");
+        commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: workEfforts, total, isScrollable })
+      } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
+        console.log("In Progress");
+        commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: workEfforts, total, isScrollable })
+      } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
+        console.log("In Closed");
+        commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: workEfforts, total, isScrollable })
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 

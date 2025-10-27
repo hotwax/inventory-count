@@ -8,364 +8,181 @@
     </ion-header>
 
     <ion-content>
-      <div class="header">
-        <ion-card>
-          <ion-item lines="none">
-            <ion-label>
-              <p class="overline">workEfforId</p>
-              <h1>workEffortName</h1>
-            </ion-label>
-            <ion-button slot="end" fill="outline" color="medium">
-              Edit
-            </ion-button>
-          </ion-item>
-          <ion-item>
-            <ion-icon :icon="businessOutline" slot="start"></ion-icon>
-            <ion-label>
-              facilityName
-            </ion-label>
-          </ion-item>
-          <ion-item class="due-date">
-            <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-            <div>
-              <p class="overline">Due Date</p>
-              <ion-datetime-button datetime="datetime"></ion-datetime-button>
-              <ion-modal :keep-contents-mounted="true">
-                <ion-datetime id="datetime"></ion-datetime>
-              </ion-modal>
-            </div>
-          </ion-item>
-        </ion-card>
-        <ion-card>
-          <ion-item>
-            <ion-label>First item counted</ion-label>
-            <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-label>Last item counted</ion-label>
-            <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
-          </ion-item>
-          <ion-item>
-            <ion-label>
-              40% Coverage
-            </ion-label>
-          </ion-item>
-        </ion-card>
-
-        <div class="statistics">
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+      </template>
+      <template v-else>
+        <div class="header">
           <ion-card>
             <ion-item lines="none">
               <ion-label>
-                Review progress 60% complete
-                <p>6 out of 10 items complete</p>
+                <p class="overline">{{ workEffort?.workEfforId }}</p>
+                <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
+              <ion-button slot="end" fill="outline" color="medium">
+                Edit
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
+              <ion-label>
+                {{ getFacilityName(workEffort?.facilityId) }}
+              </ion-label>
+            </ion-item>
+            <ion-item class="due-date">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <div>
+                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
+                <ion-datetime-button datetime="datetime"></ion-datetime-button>
+                <ion-modal :keep-contents-mounted="true">
+                  <ion-datetime id="datetime"></ion-datetime>
+                </ion-modal>
+              </div>
             </ion-item>
           </ion-card>
           <ion-card>
-            <ion-item lines="full">
+            <ion-item>
+              <ion-label>First item counted</ion-label>
+              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Last item counted</ion-label>
+              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
               <ion-label>
-                <p class="overline">Overall variance (Filtered)</p>
-                <h3>16 units</h3>
-                <p>based on 4 results</p>
+                40% Coverage
               </ion-label>
             </ion-item>
           </ion-card>
+
+          <div class="statistics">
+            <ion-card>
+              <ion-item lines="none">
+                <ion-label>
+                  Review progress 60% complete
+                  <p>6 out of 10 items complete</p>
+                </ion-label>
+              </ion-item>
+            </ion-card>
+            <ion-card>
+              <ion-item lines="full">
+                <ion-label>
+                  <p class="overline">Overall variance (Filtered)</p>
+                  <h3>16 units</h3>
+                  <p>based on 4 results</p>
+                </ion-label>
+              </ion-item>
+            </ion-card>
+          </div>
         </div>
-      </div>
 
-      <div class="controls ion-margin-top">
-        <ion-list lines="full" class="filters ion-margin">
-          <ion-searchbar placeholder="Search product name"></ion-searchbar>
+        <div class="controls ion-margin-top">
+          <ion-list lines="full" class="filters ion-margin">
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-item>
+            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="open">Open</ion-select-option>
+              <ion-select-option value="accepted">Accepted</ion-select-option>
+              <ion-select-option value="rejected">Rejected</ion-select-option>
+            </ion-select>
+          </ion-item>
+
           <ion-item>
-          <ion-select label="Status" placeholder="All" interface="popover">
-            <ion-select-option value="all">All</ion-select-option>
-            <ion-select-option value="open">Open</ion-select-option>
-            <ion-select-option value="accepted">Accepted</ion-select-option>
-            <ion-select-option value="rejected">Rejected</ion-select-option>
-          </ion-select>
-        </ion-item>
+            <ion-select label="Compliance" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="acceptable">Acceptable</ion-select-option>
+              <ion-select-option value="rejectable">Rejectable</ion-select-option>
+              <ion-select-option value="configure">Configure threshold</ion-select-option>
+            </ion-select>
+          </ion-item>
+          </ion-list>
+          <ion-item-divider color="light">
+            <ion-checkbox slot="start"/>
+            5 results out of 1,200
+            <ion-select slot="end" label="Sort by" interface="popover">
+                <ion-select-option value="parent">Parent product</ion-select-option>
+                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
+                <ion-select-option value="variance">Variance</ion-select-option>
+            </ion-select>
+          </ion-item-divider>
+        </div>
 
-        <ion-item>
-          <ion-select label="Compliance" placeholder="All" interface="popover">
-            <ion-select-option value="all">All</ion-select-option>
-            <ion-select-option value="acceptable">Acceptable</ion-select-option>
-            <ion-select-option value="rejectable">Rejectable</ion-select-option>
-            <ion-select-option value="configure">Configure threshold</ion-select-option>
-          </ion-select>
-        </ion-item>
-        </ion-list>
-        <ion-item-divider color="light">
-          <ion-checkbox slot="start"/>
-          5 results out of 1,200
-          <ion-select slot="end" label="Sort by" interface="popover">
-              <ion-select-option value="parent">Parent product</ion-select-option>
-              <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
-              <ion-select-option value="variance">Variance</ion-select-option>
-          </ion-select>
-        </ion-item-divider>
-      </div>
-
-      <div class="results ion-margin-top">
-        <ion-accordion-group>
-          <ion-accordion value="counted">
-            <div class="list-item count-item-rollup" slot="header"> 
-              <div class="item-key">
-                <ion-checkbox></ion-checkbox>
+        <div class="results ion-margin-top" v-if="cycleCount?.length">
+          <ion-accordion-group>
+            <ion-accordion v-for="cycleCount in cycleCount" :key="cycleCount.workEffortId" @click="fetchCountSessions(workEffortId, cycleCount.productId)">
+              <div class="list-item count-item-rollup" slot="header"> 
+                <div class="item-key">
+                  <ion-checkbox @click.stop="stopAccordianEventProp"></ion-checkbox>
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <dxp-image></dxp-image>
+                    </ion-thumbnail>
+                    <ion-label>
+                        {{ cycleCount.internalName }}
+                        <!-- <p>Secondary Id</p> -->
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <ion-label class="stat">
+                  {{ cycleCount.countedQuantity }}/{{ cycleCount.systemQuantity }}
+                  <p>counted/systemic</p>
+                </ion-label>
+                <ion-label class="stat">
+                  {{ cycleCount.proposedVarianceQuantity }}
+                  <p>variance</p>
+                </ion-label>
+                <div class="actions">
+                  <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp">
+                    Accept
+                  </ion-button>
+                  <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp">
+                    Reject
+                  </ion-button>
+                </div>
+              </div>
+              <div v-if="loadingSessions">
+              <ion-spinner name="crescent"></ion-spinner>
+                <p>Loading items...</p>
+              </div>
+              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
                 <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <dxp-image></dxp-image>
-                  </ion-thumbnail>
+                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
                   <ion-label>
-                      Primary Id
-                      <p>Secondary Id</p>
+                    {{ session.uploadedByUserLogin }}
                   </ion-label>
                 </ion-item>
-              </div>
-              <ion-label class="stat">
-                6/3
-                <p>counted/systemic</p>
-              </ion-label>
-              <ion-label class="stat">
-                +3
-                <p>variance</p>
-              </ion-label>
-              <div class="actions">
-                <ion-button fill="outline" color="success" size="small">
-                  Accept
-                </ion-button>
-                <ion-button fill="outline" color="danger" size="small">
-                  Reject
-                </ion-button>
-              </div>
-            </div>
-            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                <ion-label>
-                  userLogin
-                </ion-label>
-              </ion-item>
-              <ion-label>
-                2
-                <p>counted</p>
-              </ion-label>
-              <ion-label>
-                6:00 AM 2nd March 2025
-                <p>started</p>
-              </ion-label>
-              <ion-label>
-                9:00 AM 2nd March 2025
-                <p>last updated</p>
-              </ion-label>
-              <ion-button fill="clear" color="medium">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-accordion>
-          <ion-accordion value="counted2">
-            <div class="list-item count-item-rollup" slot="header"> 
-              <div class="item-key">
-                <ion-checkbox></ion-checkbox>
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <dxp-image></dxp-image>
-                  </ion-thumbnail>
-                  <ion-label>
-                      Primary Id
-                      <p>Secondary Id</p>
-                  </ion-label>
-                </ion-item>
-              </div>
-              <ion-label class="stat">
-                6/3
-                <p>counted/systemic</p>
-              </ion-label>
-              <ion-label class="stat">
-                +3
-                <p>variance</p>
-              </ion-label>
-              <div class="actions">
-                <ion-button fill="outline" color="success" size="small">
-                  Accept
-                </ion-button>
-                <ion-button fill="outline" color="danger" size="small">
-                  Reject
-                </ion-button>
-              </div>
-            </div>
-            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                <ion-label>
-                  userLogin
-                </ion-label>
-              </ion-item>
 
-              <ion-label>
-                2
-                <p>counted</p>
-              </ion-label>
-              <ion-label>
-                6:00 AM 2nd March 2025
-                <p>started</p>
-              </ion-label>
-              <ion-label>
-                9:00 AM 2nd March 2025
-                <p>last updated</p>
-              </ion-label>
-              <ion-button fill="clear" color="medium">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-accordion>
-          <ion-accordion value="counted3">
-            <div class="list-item count-item-rollup" slot="header"> 
-              <div class="item-key">
-                <ion-checkbox></ion-checkbox>
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <dxp-image></dxp-image>
-                  </ion-thumbnail>
-                  <ion-label>
-                      Primary Id
-                      <p>Secondary Id</p>
-                  </ion-label>
-                </ion-item>
-              </div>
-              <ion-label class="stat">
-                6/3
-                <p>counted/systemic</p>
-              </ion-label>
-              <ion-label class="stat">
-                +3
-                <p>variance</p>
-              </ion-label>
-              <div class="actions">
-                <ion-button fill="outline" color="success" size="small">
-                  Accept
-                </ion-button>
-                <ion-button fill="outline" color="danger" size="small">
-                  Reject
+                <ion-label>
+                  {{ session.counted }}
+                  <p>counted</p>
+                </ion-label>
+                <ion-label>
+                  {{ session.createdDate }}
+                  <p>started</p>
+                </ion-label>
+                <ion-label>
+                  {{ session.itemCreatedDate }}
+                  <p>last updated</p>
+                </ion-label>
+                <ion-button fill="clear" color="medium">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
                 </ion-button>
               </div>
-            </div>
-            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                <ion-label>
-                  userLogin
-                </ion-label>
-              </ion-item>
-
-              <ion-label>
-                2
-                <p>counted</p>
-              </ion-label>
-              <ion-label>
-                6:00 AM 2nd March 2025
-                <p>started</p>
-              </ion-label>
-              <ion-label>
-                9:00 AM 2nd March 2025
-                <p>last updated</p>
-              </ion-label>
-              <ion-button fill="clear" color="medium">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-accordion>
-          <ion-accordion value="accepted">
-            <div class="list-item count-item-rollup" slot="header">
-              <div class="item-key">
-                <ion-checkbox></ion-checkbox>
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <dxp-image></dxp-image>
-                  </ion-thumbnail>
-                  <ion-label>
-                      Primary Id
-                      <p>Secondary Id</p>
-                  </ion-label>                
-                </ion-item>
-              </div>
-              <ion-label class="stat">
-                6/3
-                <p>counted/systemic</p>
-              </ion-label>
-              <ion-label class="stat">
-                +3
-                <p>variance</p>
-              </ion-label>
-              <div class="actions">
-                <ion-badge color="success">
-                  accepted
-                </ion-badge>
-              </div>
-            </div>
-            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
-              item content
-            </div>
-          </ion-accordion>
-          <ion-accordion v-for="index in 6" :key="index" value="rejected">
-            <div class="list-item count-item-rollup" slot="header"> 
-              <div class="item-key">
-                <ion-checkbox></ion-checkbox>
-                <ion-item lines="none">
-                  <ion-thumbnail slot="start">
-                    <dxp-image></dxp-image>
-                  </ion-thumbnail>
-                  <ion-label>
-                      Primary Id
-                      <p>Secondary Id</p>
-                  </ion-label>
-                </ion-item>
-              </div>
-              <ion-label class="stat">
-                6/3
-                <p>counted/systemic</p>
-              </ion-label>
-              <ion-label class="stat">
-                +3
-                <p>variance</p>
-              </ion-label>
-              <div class="actions">
-                <ion-badge color="danger">
-                  rejected
-                </ion-badge>
-              </div>
-            </div>
-            <div v-for="n in 4" :key="n" class="list-item count-item" slot="content">
-              <ion-item lines="none">
-                <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                <ion-label>
-                  userLogin
-                </ion-label>
-              </ion-item>
-
-              <ion-label>
-                2
-                <p>counted</p>
-              </ion-label>
-              <ion-label>
-                6:00 AM 2nd March 2025
-                <p>started</p>
-              </ion-label>
-              <ion-label>
-                9:00 AM 2nd March 2025
-                <p>last updated</p>
-              </ion-label>
-              <ion-button fill="clear" color="medium">
-                <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-accordion>
-        </ion-accordion-group>
-      </div>
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-        <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
-          <ion-icon :icon="receiptOutline" />
-        </ion-fab-button>
-      </ion-fab>
+            </ion-accordion>
+          </ion-accordion-group>
+        </div>
+        <div v-else class="empty-state">
+          <p>No Results</p>
+        </div>
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
+          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
+          <ion-fab-button>
+            <ion-icon :icon="receiptOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </template>
     </ion-content>
     
     <ion-footer>
@@ -374,7 +191,8 @@
           <ion-button fill="outline" color="success" size="small">
             Accept
           </ion-button>
-          <ion-button fill="clear" color="danger" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
+          <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
+          <ion-button fill="clear" color="danger" size="small" class="ion-margin-horizontal">
             Reject
           </ion-button>
         </ion-buttons>
@@ -385,430 +203,1143 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline, personCircleOutline, ellipseOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, ref } from "vue";
+import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
-import { CountService } from "@/services/CountService"
-import emitter from '@/event-bus';
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
-import logger from "@/logger";
-import AddProductModal from "@/components/AddProductModal.vue";
-import router from "@/router";
-import Image from "@/components/Image.vue"
-import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
+
 
 const props = defineProps({
-  inventoryCountImportId: String
+  workEffortId: String
+})
+
+onIonViewDidEnter(async () => {
+  isLoading.value = true;
+  await fetchInventoryCycleCount();
+  isLoading.value = false;
 })
 
 const productIdentificationStore = useProductIdentificationStore();
 
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
-const filteredItems = computed(() => {
-  let items = currentCycleCount.value.items
+const filters = reactive({
+  dcsnRsn: 'all',
+  searchedProductString: ''
+});
 
-  if(segmentSelected.value === "accept") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item) && item.itemStatusId === "INV_COUNT_CREATED")
-  } else if(segmentSelected.value === "reject") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item) && item.itemStatusId === "INV_COUNT_CREATED")
-  }
+const  { dcsnRsn, searchedProductString } = toRefs(filters);
 
-  return items
-})
+watch(() => filters, async () => {
 
-const isAnyItemSelected = computed(() => {
-  return !currentCycleCount.value.items?.some((item: any) => item.isChecked)
-})
-
-const isAllItemsMarkedAsCompletedOrRejected = computed(() => {
-  return currentCycleCount.value.items?.every((item: any) => item.itemStatusId === "INV_COUNT_COMPLETED" || item.itemStatusId === "INV_COUNT_REJECTED")
-})
-
-const dateTimeModalOpen = ref(false)
-const currentCycleCount = ref({}) as any
-const countNameRef = ref()
-let isCountNameUpdating = ref(false)
-let countName = ref("")
-let segmentSelected = ref("all")
-let varianceThreshold = ref(40)
-let isLoadingItems = ref(true)
-let cycleCountItemsProgress = ref(0)
-
-onIonViewWillEnter(async () => {
-  emitter.on("addProductToCount", addProductToCount);
-
-  currentCycleCount.value = {}
-  try {
-    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
-
-    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data?.statusId === "INV_COUNT_REVIEW") {
-      currentCycleCount.value = {
-        countName: resp.data.countImportName,
-        countId: resp.data.inventoryCountImportId,
-        items: [],
-        ...resp.data
-      }
-
-      countName.value = resp.data.countImportName
-      await fetchCountItems();
-    }
-  } catch(err) {
-    logger.error()
-  }
-
-  isLoadingItems.value = false;
-})
-
-onIonViewWillLeave(() => {
-  emitter.off("addProductToCount", addProductToCount)
-  cycleCountItemsProgress.value = 0
-})
-
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
-
-  try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        cycleCountItemsProgress.value = items.length
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
-  } catch(err) {
-    logger.error(err)
-  }
-
-  items = sortListByField(getValidItems(items), "parentProductName");
-
-  currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
-}
-
-async function addProductToCount(productId: any) {
-  if(!productId) {
-    showToast(translate("Failed to add product to count"))
-    return;
-  }
-
-  try {
-    const resp = await CountService.addProductToCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      itemList: [{
-        // Passing both productId and idValue for the backend compatibility
-        // idValue will be removed in the future.
-        idValue: productId,
-        productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
-    })
-
-    if(!hasError(resp)) {
-      showToast(translate("Added product to count"))
-      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
-    }
-  } catch(err) {
-    logger.error("Failed to add product to count", err)
-    showToast(translate("Failed to add product to count"))
-  }
-}
-
-function getVarianceInformation() {
-  let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
-
-  currentCycleCount.value.items?.map((item: any) => {
-    totalItemsQuantityCount += parseInt(item.quantity || 0)
-    totalItemsExpectedCount += parseInt(item.qoh || 0)
-  })
-
-  // TODO: internationalize text
-  return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
-}
-
-function getProgress() {
-  const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
-  const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
-}
-
-async function editCountName() {
-  isCountNameUpdating.value = !isCountNameUpdating.value;
-  // Waiting for DOM updations before focus inside the text-area, as it is conditionally rendered in the DOM
-  await nextTick()
-  countNameRef.value.$el.setFocus();
-}
-
-async function updateCountName() {
-  if(!countName.value?.trim()) {
-    showToast(translate("Enter a valid cycle count name"))
-    return;
-  }
-
-  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
-    await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
-    .then(() => {
-      currentCycleCount.value.countName = countName.value.trim()
-    }).catch(() => {
-      countName.value = currentCycleCount.value.countName.trim()
-    })
-  }
-
-  isCountNameUpdating.value = false
-}
-
-function isItemReadyToAccept(item: any) {
-  // If the items qoh/quantity is not available then we will consider that the variance percentage is 100%, as we are unable to identify the % without qoh/quantity. Thus if qoh/quantity is not present for an item
-  // then we will suggest it for acceptance only when variance threshold is set to 100%
-  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) <= varianceThreshold.value : item.quantity === undefined ? false : 100 <= varianceThreshold.value
-}
-
-function isItemReadyToReject(item: any) {
-  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) > varianceThreshold.value : item.quantity === undefined ? false : 100 > varianceThreshold.value
-}
-
-function isItemCompletedOrRejected(item: any) {
-  return item.itemStatusId === "INV_COUNT_REJECTED" || item.itemStatusId === "INV_COUNT_COMPLETED"
-}
-
-function selectItem(checked: boolean, item: any) {
-  return item.isChecked = checked
-}
-
-function selectAll() {
-  // When all the items are already selected then unselect the items again
-  // Added check for every item selection as we need to check the items of the current segment, and filteredItems returns items based on current selected segment
-  if(areAllItemsSelected()) {
-    currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
-    return;
-  }
-
-  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not want all the items to be marked as checked
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" && ((segmentSelected.value === "accept" && isItemReadyToAccept(item)) || (segmentSelected.value === "reject" && isItemReadyToReject(item)) || segmentSelected.value === "all") ? true : false }))
-}
-
-function areAllItemsSelected(): boolean {
-  // Only checking for those items which are in created status
-  return filteredItems.value.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED").every((item: any) => item.isChecked)
-}
-
-function segmentChanged() {
-  // When changing the segment make the isChecked property again to false.
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
-}
-
-async function addProduct() {
-  const addProductModal = await modalController.create({
-    component: AddProductModal,
-    componentProps: { cycleCount: currentCycleCount.value },
-    showBackdrop: false,
+  const count = await fetchCycleCount({
+    workEffortId: props,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    internalName_op: searchedProductString.value ? "contains" : null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
   });
 
-  await addProductModal.present();
+  if (count && count.status === 200 && count.data) {
+    cycleCount.value = count;
+  }
+},{ deep: true });
+
+const isLoading = ref(false);
+
+const loadingSessions = ref(false);
+
+const workEffort = ref();
+
+const cycleCount = ref();
+
+const pagination = reactive({
+  pageSize: 25,
+  pageIndex: 0
+});
+
+const sessions = ref();
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
+
+async function filterProductByInternalName() {
+
+  const productReviewDetail = await getProductReviewDetail({
+    workEffortId: props.workEffortId,
+    internalName: searchedProductString.value
+  });
+
+  if (productReviewDetail && productReviewDetail.status === 200) {
+    cycleCount.value = productReviewDetail.data;
+  } else {
+    showToast(translate("Product Not Found in this Count"));
+  }
 }
 
-async function updateItemStatus(statusId: string, item?: any) {
-  let itemList: Array<any> = []
-  if(item) {
-    itemList = [{
-      importItemSeqId: item.importItemSeqId,
-      statusId
-    }]
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
+}
+
+function getDcsnFilter() {
+  if (dcsnRsn.value === 'all') {
+    return null;
+  } else if (dcsnRsn.value === 'open') {
+    return 'empty';
+  } else if (dcsnRsn.value === 'accepted') {
+    return 'APPLIED';
+  } else if (dcsnRsn.value === 'rejected') {
+    return 'SKIPPED';
+  }
+}
+
+async function fetchCountSessions(workEffortId?: any, productId?: any) {
+  console.log("These are count id and product id", workEffortId, productId);
+  loadingSessions.value = true;
+  sessions.value = [];
+  const resp = await fetchSessions({
+    workEffortId: "M100000",
+    productId: "10359"
+  });
+
+  if (resp && resp.status && resp.data && resp.data.length) {
+    sessions.value = resp.data;
+  }
+  loadingSessions.value = false;
+}
+
+async function fetchInventoryCycleCount (pSize?: any, pIndex?: any) {
+
+  const workEffortResp = await fetchWorkEffort({
+    workEffortId: props.workEffortId
+  }
+  );
+
+  if (workEffortResp && workEffortResp.status === 200 && workEffortResp.data) {
+    workEffort.value = workEffortResp.data;
+  }
+
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pSize || 25,
+    pageIndex: pIndex || 0,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
+
+  if (resp && resp.status === 200 && resp.data && resp.data.length) {
+    cycleCount.value = resp.data;
   } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        itemList.push({
-          importItemSeqId: item.importItemSeqId,
-          statusId
-        })
+    cycleCount.value = [
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10001",
+        "internalName": "Product 10001",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 141,
+        "unitCost": 19.3,
+        "quantity": 140,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -1,
+        "systemQuantity": 141,
+        "countedQuantity": 140,
+        "parentProductId": "11001",
+        "parentProductInternalName": "Parent Product 11001",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -19.3,
+        "extendedPrice": -31.25
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10002",
+        "internalName": "Product 10002",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 142,
+        "unitCost": 20.1,
+        "quantity": 142,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 0,
+        "systemQuantity": 142,
+        "countedQuantity": 142,
+        "parentProductId": "11002",
+        "parentProductInternalName": "Parent Product 11002",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10003",
+        "internalName": "Product 10003",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 143,
+        "unitCost": 20.9,
+        "quantity": 144,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 1,
+        "systemQuantity": 143,
+        "countedQuantity": 144,
+        "parentProductId": "11003",
+        "parentProductInternalName": "Parent Product 11003",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 20.9,
+        "extendedPrice": 33.75
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10004",
+        "internalName": "Product 10004",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 144,
+        "unitCost": 21.7,
+        "quantity": 146,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 2,
+        "systemQuantity": 144,
+        "countedQuantity": 146,
+        "parentProductId": "11004",
+        "parentProductInternalName": "Parent Product 11004",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 43.4,
+        "extendedPrice": 70.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10005",
+        "internalName": "Product 10005",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 145,
+        "unitCost": 22.5,
+        "quantity": 143,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -2,
+        "systemQuantity": 145,
+        "countedQuantity": 143,
+        "parentProductId": "11005",
+        "parentProductInternalName": "Parent Product 11005",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -45.0,
+        "extendedPrice": -72.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10006",
+        "internalName": "Product 10006",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 146,
+        "unitCost": 18.5,
+        "quantity": 145,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -1,
+        "systemQuantity": 146,
+        "countedQuantity": 145,
+        "parentProductId": "11006",
+        "parentProductInternalName": "Parent Product 11006",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -18.5,
+        "extendedPrice": -37.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10007",
+        "internalName": "Product 10007",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 147,
+        "unitCost": 19.3,
+        "quantity": 147,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 0,
+        "systemQuantity": 147,
+        "countedQuantity": 147,
+        "parentProductId": "11007",
+        "parentProductInternalName": "Parent Product 11007",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10008",
+        "internalName": "Product 10008",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 148,
+        "unitCost": 20.1,
+        "quantity": 149,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 1,
+        "systemQuantity": 148,
+        "countedQuantity": 149,
+        "parentProductId": "11008",
+        "parentProductInternalName": "Parent Product 11008",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 20.1,
+        "extendedPrice": 30.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10009",
+        "internalName": "Product 10009",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 149,
+        "unitCost": 20.9,
+        "quantity": 151,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 2,
+        "systemQuantity": 149,
+        "countedQuantity": 151,
+        "parentProductId": "11009",
+        "parentProductInternalName": "Parent Product 11009",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 41.8,
+        "extendedPrice": 62.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10010",
+        "internalName": "Product 10010",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 150,
+        "unitCost": 21.7,
+        "quantity": 148,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -2,
+        "systemQuantity": 150,
+        "countedQuantity": 148,
+        "parentProductId": "11010",
+        "parentProductInternalName": "Parent Product 11010",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -43.4,
+        "extendedPrice": -65.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10011",
+        "internalName": "Product 10011",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 151,
+        "unitCost": 22.5,
+        "quantity": 150,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -1,
+        "systemQuantity": 151,
+        "countedQuantity": 150,
+        "parentProductId": "11011",
+        "parentProductInternalName": "Parent Product 11011",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -22.5,
+        "extendedPrice": -33.75
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10012",
+        "internalName": "Product 10012",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 152,
+        "unitCost": 18.5,
+        "quantity": 152,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 0,
+        "systemQuantity": 152,
+        "countedQuantity": 152,
+        "parentProductId": "11012",
+        "parentProductInternalName": "Parent Product 11012",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10013",
+        "internalName": "Product 10013",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 153,
+        "unitCost": 19.3,
+        "quantity": 154,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 1,
+        "systemQuantity": 153,
+        "countedQuantity": 154,
+        "parentProductId": "11013",
+        "parentProductInternalName": "Parent Product 11013",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 19.3,
+        "extendedPrice": 36.25
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10014",
+        "internalName": "Product 10014",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 154,
+        "unitCost": 20.1,
+        "quantity": 156,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 2,
+        "systemQuantity": 154,
+        "countedQuantity": 156,
+        "parentProductId": "11014",
+        "parentProductInternalName": "Parent Product 11014",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 40.2,
+        "extendedPrice": 75.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10015",
+        "internalName": "Product 10015",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 155,
+        "unitCost": 20.9,
+        "quantity": 153,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -2,
+        "systemQuantity": 155,
+        "countedQuantity": 153,
+        "parentProductId": "11015",
+        "parentProductInternalName": "Parent Product 11015",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -41.8,
+        "extendedPrice": -77.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10016",
+        "internalName": "Product 10016",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 156,
+        "unitCost": 21.7,
+        "quantity": 155,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -1,
+        "systemQuantity": 156,
+        "countedQuantity": 155,
+        "parentProductId": "11016",
+        "parentProductInternalName": "Parent Product 11016",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -21.7,
+        "extendedPrice": -30.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10017",
+        "internalName": "Product 10017",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 157,
+        "unitCost": 22.5,
+        "quantity": 157,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 0,
+        "systemQuantity": 157,
+        "countedQuantity": 157,
+        "parentProductId": "11017",
+        "parentProductInternalName": "Parent Product 11017",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10018",
+        "internalName": "Product 10018",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 158,
+        "unitCost": 18.5,
+        "quantity": 159,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 1,
+        "systemQuantity": 158,
+        "countedQuantity": 159,
+        "parentProductId": "11018",
+        "parentProductInternalName": "Parent Product 11018",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 18.5,
+        "extendedPrice": 32.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10019",
+        "internalName": "Product 10019",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 159,
+        "unitCost": 19.3,
+        "quantity": 161,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 2,
+        "systemQuantity": 159,
+        "countedQuantity": 161,
+        "parentProductId": "11019",
+        "parentProductInternalName": "Parent Product 11019",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 38.6,
+        "extendedPrice": 67.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10020",
+        "internalName": "Product 10020",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 140,
+        "unitCost": 20.1,
+        "quantity": 138,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -2,
+        "systemQuantity": 140,
+        "countedQuantity": 138,
+        "parentProductId": "11020",
+        "parentProductInternalName": "Parent Product 11020",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -40.2,
+        "extendedPrice": -70.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10021",
+        "internalName": "Product 10021",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 141,
+        "unitCost": 20.9,
+        "quantity": 140,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -1,
+        "systemQuantity": 141,
+        "countedQuantity": 140,
+        "parentProductId": "11021",
+        "parentProductInternalName": "Parent Product 11021",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -20.9,
+        "extendedPrice": -36.25
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10022",
+        "internalName": "Product 10022",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 142,
+        "unitCost": 21.7,
+        "quantity": 142,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 0,
+        "systemQuantity": 142,
+        "countedQuantity": 142,
+        "parentProductId": "11022",
+        "parentProductInternalName": "Parent Product 11022",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10023",
+        "internalName": "Product 10023",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 143,
+        "unitCost": 22.5,
+        "quantity": 144,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 1,
+        "systemQuantity": 143,
+        "countedQuantity": 144,
+        "parentProductId": "11023",
+        "parentProductInternalName": "Parent Product 11023",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 22.5,
+        "extendedPrice": 38.75
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10024",
+        "internalName": "Product 10024",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 144,
+        "unitCost": 18.5,
+        "quantity": 146,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 2,
+        "systemQuantity": 144,
+        "countedQuantity": 146,
+        "parentProductId": "11024",
+        "parentProductInternalName": "Parent Product 11024",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 37.0,
+        "extendedPrice": 60.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10025",
+        "internalName": "Product 10025",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 145,
+        "unitCost": 19.3,
+        "quantity": 143,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -2,
+        "systemQuantity": 145,
+        "countedQuantity": 143,
+        "parentProductId": "11025",
+        "parentProductInternalName": "Parent Product 11025",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -38.6,
+        "extendedPrice": -62.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10026",
+        "internalName": "Product 10026",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 146,
+        "unitCost": 20.1,
+        "quantity": 145,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -1,
+        "systemQuantity": 146,
+        "countedQuantity": 145,
+        "parentProductId": "11026",
+        "parentProductInternalName": "Parent Product 11026",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -20.1,
+        "extendedPrice": -32.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10027",
+        "internalName": "Product 10027",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 147,
+        "unitCost": 20.9,
+        "quantity": 147,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 0,
+        "systemQuantity": 147,
+        "countedQuantity": 147,
+        "parentProductId": "11027",
+        "parentProductInternalName": "Parent Product 11027",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10028",
+        "internalName": "Product 10028",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 148,
+        "unitCost": 21.7,
+        "quantity": 149,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 1,
+        "systemQuantity": 148,
+        "countedQuantity": 149,
+        "parentProductId": "11028",
+        "parentProductInternalName": "Parent Product 11028",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 21.7,
+        "extendedPrice": 35.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10029",
+        "internalName": "Product 10029",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 149,
+        "unitCost": 22.5,
+        "quantity": 151,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 2,
+        "systemQuantity": 149,
+        "countedQuantity": 151,
+        "parentProductId": "11029",
+        "parentProductInternalName": "Parent Product 11029",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 45.0,
+        "extendedPrice": 72.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10030",
+        "internalName": "Product 10030",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 150,
+        "unitCost": 18.5,
+        "quantity": 148,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -2,
+        "systemQuantity": 150,
+        "countedQuantity": 148,
+        "parentProductId": "11030",
+        "parentProductInternalName": "Parent Product 11030",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -37.0,
+        "extendedPrice": -75.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10031",
+        "internalName": "Product 10031",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 151,
+        "unitCost": 19.3,
+        "quantity": 150,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -1,
+        "systemQuantity": 151,
+        "countedQuantity": 150,
+        "parentProductId": "11031",
+        "parentProductInternalName": "Parent Product 11031",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -19.3,
+        "extendedPrice": -38.75
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10032",
+        "internalName": "Product 10032",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 152,
+        "unitCost": 20.1,
+        "quantity": 152,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 0,
+        "systemQuantity": 152,
+        "countedQuantity": 152,
+        "parentProductId": "11032",
+        "parentProductInternalName": "Parent Product 11032",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10033",
+        "internalName": "Product 10033",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 153,
+        "unitCost": 20.9,
+        "quantity": 154,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 1,
+        "systemQuantity": 153,
+        "countedQuantity": 154,
+        "parentProductId": "11033",
+        "parentProductInternalName": "Parent Product 11033",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 20.9,
+        "extendedPrice": 31.25
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10034",
+        "internalName": "Product 10034",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 154,
+        "unitCost": 21.7,
+        "quantity": 156,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 2,
+        "systemQuantity": 154,
+        "countedQuantity": 156,
+        "parentProductId": "11034",
+        "parentProductInternalName": "Parent Product 11034",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 43.4,
+        "extendedPrice": 65.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10035",
+        "internalName": "Product 10035",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 155,
+        "unitCost": 22.5,
+        "quantity": 153,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -2,
+        "systemQuantity": 155,
+        "countedQuantity": 153,
+        "parentProductId": "11035",
+        "parentProductInternalName": "Parent Product 11035",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -45.0,
+        "extendedPrice": -67.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10036",
+        "internalName": "Product 10036",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 156,
+        "unitCost": 18.5,
+        "quantity": 155,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -1,
+        "systemQuantity": 156,
+        "countedQuantity": 155,
+        "parentProductId": "11036",
+        "parentProductInternalName": "Parent Product 11036",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -18.5,
+        "extendedPrice": -35.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10037",
+        "internalName": "Product 10037",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 157,
+        "unitCost": 19.3,
+        "quantity": 157,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 0,
+        "systemQuantity": 157,
+        "countedQuantity": 157,
+        "parentProductId": "11037",
+        "parentProductInternalName": "Parent Product 11037",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10038",
+        "internalName": "Product 10038",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 158,
+        "unitCost": 20.1,
+        "quantity": 159,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 1,
+        "systemQuantity": 158,
+        "countedQuantity": 159,
+        "parentProductId": "11038",
+        "parentProductInternalName": "Parent Product 11038",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 20.1,
+        "extendedPrice": 37.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10039",
+        "internalName": "Product 10039",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 159,
+        "unitCost": 20.9,
+        "quantity": 161,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 2,
+        "systemQuantity": 159,
+        "countedQuantity": 161,
+        "parentProductId": "11039",
+        "parentProductInternalName": "Parent Product 11039",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 41.8,
+        "extendedPrice": 77.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10040",
+        "internalName": "Product 10040",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 140,
+        "unitCost": 21.7,
+        "quantity": 138,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -2,
+        "systemQuantity": 140,
+        "countedQuantity": 138,
+        "parentProductId": "11040",
+        "parentProductInternalName": "Parent Product 11040",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -43.4,
+        "extendedPrice": -60.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10041",
+        "internalName": "Product 10041",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 141,
+        "unitCost": 22.5,
+        "quantity": 140,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -1,
+        "systemQuantity": 141,
+        "countedQuantity": 140,
+        "parentProductId": "11041",
+        "parentProductInternalName": "Parent Product 11041",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -22.5,
+        "extendedPrice": -31.25
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10042",
+        "internalName": "Product 10042",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 142,
+        "unitCost": 18.5,
+        "quantity": 142,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 0,
+        "systemQuantity": 142,
+        "countedQuantity": 142,
+        "parentProductId": "11042",
+        "parentProductInternalName": "Parent Product 11042",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10043",
+        "internalName": "Product 10043",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 143,
+        "unitCost": 19.3,
+        "quantity": 144,
+        "price": 33.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 1,
+        "systemQuantity": 143,
+        "countedQuantity": 144,
+        "parentProductId": "11043",
+        "parentProductInternalName": "Parent Product 11043",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 19.3,
+        "extendedPrice": 33.75
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10044",
+        "internalName": "Product 10044",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 144,
+        "unitCost": 20.1,
+        "quantity": 146,
+        "price": 35.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 2,
+        "systemQuantity": 144,
+        "countedQuantity": 146,
+        "parentProductId": "11044",
+        "parentProductInternalName": "Parent Product 11044",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 40.2,
+        "extendedPrice": 70.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10045",
+        "internalName": "Product 10045",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 145,
+        "unitCost": 20.9,
+        "quantity": 143,
+        "price": 36.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": -2,
+        "systemQuantity": 145,
+        "countedQuantity": 143,
+        "parentProductId": "11045",
+        "parentProductInternalName": "Parent Product 11045",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -41.8,
+        "extendedPrice": -72.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10046",
+        "internalName": "Product 10046",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 146,
+        "unitCost": 21.7,
+        "quantity": 145,
+        "price": 37.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -1,
+        "systemQuantity": 146,
+        "countedQuantity": 145,
+        "parentProductId": "11046",
+        "parentProductInternalName": "Parent Product 11046",
+        "proposedVarianceQuantity": -1,
+        "extendedUnitCost": -21.7,
+        "extendedPrice": -37.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10047",
+        "internalName": "Product 10047",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 147,
+        "unitCost": 22.5,
+        "quantity": 147,
+        "price": 38.75,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 0,
+        "systemQuantity": 147,
+        "countedQuantity": 147,
+        "parentProductId": "11047",
+        "parentProductInternalName": "Parent Product 11047",
+        "proposedVarianceQuantity": 0,
+        "extendedUnitCost": 0.0,
+        "extendedPrice": 0.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10048",
+        "internalName": "Product 10048",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 148,
+        "unitCost": 18.5,
+        "quantity": 149,
+        "price": 30.0,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": 1,
+        "systemQuantity": 148,
+        "countedQuantity": 149,
+        "parentProductId": "11048",
+        "parentProductInternalName": "Parent Product 11048",
+        "proposedVarianceQuantity": 1,
+        "extendedUnitCost": 18.5,
+        "extendedPrice": 30.0
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10049",
+        "internalName": "Product 10049",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 149,
+        "unitCost": 19.3,
+        "quantity": 151,
+        "price": 31.25,
+        "decisionOutcomeEnumId": "APPLIED",
+        "varianceQuantity": 2,
+        "systemQuantity": 149,
+        "countedQuantity": 151,
+        "parentProductId": "11049",
+        "parentProductInternalName": "Parent Product 11049",
+        "proposedVarianceQuantity": 2,
+        "extendedUnitCost": 38.6,
+        "extendedPrice": 62.5
+      },
+      {
+        "facilityId": "BROOKLYN",
+        "workEffortId": "M10001",
+        "productId": "10050",
+        "internalName": "Product 10050",
+        "primaryProductCategoryId": "BROWSE_ROOT",
+        "quantityOnHand": 150,
+        "unitCost": 20.1,
+        "quantity": 148,
+        "price": 32.5,
+        "decisionOutcomeEnumId": "SKIPPED",
+        "varianceQuantity": -2,
+        "systemQuantity": 150,
+        "countedQuantity": 148,
+        "parentProductId": "11050",
+        "parentProductInternalName": "Parent Product 11050",
+        "proposedVarianceQuantity": -2,
+        "extendedUnitCost": -40.2,
+        "extendedPrice": -65.0
       }
-    })
-  }
-
-  if(!itemList.length) {
-    return;
-  }
-
-  try {
-    const resp = await CountService.updateProductsInCount({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      itemList
-    })
-
-    const itemsCount = itemList.length
-    if (!hasError(resp)) {
-      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
-      await fetchCountItems();
-    } else {
-      throw resp.data
-    }
-
-  } catch(err) {
-    showToast(translate(`Failed to update ${itemList.length > 1 ? 'count items' : 'count item'}`))
-    logger.error("Failed to update items", err)
+    ]
   }
 }
 
-async function recountItem(item?: any) {
-  let importItemSeqIds: Array<string> = []
-  if(item) {
-    importItemSeqIds = [item.importItemSeqId]
-  } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        importItemSeqIds.push(item.importItemSeqId)
-      }
-    })
-  }
-
-  if(!importItemSeqIds.length) {
-    return;
-  }
-
-  try {
-    const resp = await CountService.recountItems({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      importItemSeqIds
-    })
-
-    const itemsCount = importItemSeqIds.length
-    if (!hasError(resp)) {
-      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} recounted.`))
-      await fetchCountItems();
-    } else {
-      throw resp.data
-    }
-
-  } catch(err) {
-    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'count items' : 'count item'}`))
-    logger.error("Failed to recount items", err)
-  }
-}
-
-async function completeCount() {
-  emitter.emit("presentLoader");
-  try {
-    const resp = await CountService.fetchCycleCountItemsCount({
-      inventoryCountImportId: props?.inventoryCountImportId,
-      statusId: "INV_COUNT_CREATED",
-    })
-
-    if(!hasError(resp) && resp.data?.count > 0) {
-      showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
-      await fetchCountItems();
-      emitter.emit("dismissLoader")
-      return;
-    }
-
-    try {
-      await CountService.updateCycleCount({
-        inventoryCountImportId: currentCycleCount.value.countId,
-        statusId: "INV_COUNT_COMPLETED"
-      })
-      emitter.emit("dismissLoader")
-      router.push("/closed")
-      showToast(translate("Count has been marked as completed"))
-    } catch(err) {
-      showToast(translate("Failed to complete cycle count"))
-    }
-  } catch(err) {
-    showToast(translate("Failed to complete cycle count"))
-    logger.error(err)
-  }
-  emitter.emit("dismissLoader")
-}
-
-async function reassignCount() {
-  try {
-    await CountService.updateCycleCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      statusId: "INV_COUNT_ASSIGNED"
-    })
-    router.push("/assigned")
-    showToast(translate("Count has been re-assigned"))
-  } catch(err) {
-    showToast(translate("Failed to re-assign cycle count"))
-  }
-}
-
-async function acceptItem(item?: any) {
-  const payloads = []
-  if(item) {
-    payloads.push({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      importItemSeqId: item.importItemSeqId,
-      quantity: item.quantity,
-      reason: "CYCLE_COUNT",
-      systemQOH: item.qoh,
-      varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
-    })
-  } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        payloads.push({
-          inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-          importItemSeqId: item.importItemSeqId,
-          quantity: item.quantity,
-          reason: "CYCLE_COUNT",
-          systemQOH: item.qoh,
-          varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
-        })
-      }
-    })
-  }
-
-  const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
-
-  const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
-
-  const itemsCount = payloads.length
-  if(isAnyRespHasError) {
-    showToast(translate(`Failed to accept ${itemsCount > 1 ? 'count items' : 'count item'}`))
-  } else {
-    showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} accepted`))
-  }
-  await fetchCountItems()
-}
-
-function openDateTimeModal() {
-  dateTimeModalOpen.value = true;
-}
-
-const handleDateTimeInput = (dateTimeValue: any) => {
-  // TODO Handle it in a better way
-  // Remove timezone and then convert to timestamp
-  // Current date time picker picks browser timezone and there is no supprt to change it
-  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
-  return DateTime.fromISO(dateTime).toMillis()
-}
-
-function updateCustomTime(event: any) {
-  const date = handleDateTimeInput(event.detail.value)
-  CountService.updateCycleCount({
-    inventoryCountImportId: currentCycleCount.value.countId,
-    dueDate: date
-  }).then(() => {
-    currentCycleCount.value.dueDate = date
-  }).catch(err => {
-    logger.info(err)
-  })
-}
-
-// Method checks whether all the items selected all counted(having some quantity) or not, as we do not allow accepting those items on which quantity is not set
-function isSelectedItemsHasQuantity() {
-  return filteredItems.value?.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED" && item.isChecked).every((item: any) => item.quantity >= 0)
-}
 </script>
 
 <style scoped>

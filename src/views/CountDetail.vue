@@ -592,14 +592,14 @@ async function changeProduct(direction) {
 
 
 function getVariance(item , isRecounting) {
-  const qty = item.quantity
+  const quantity = item.quantity
   if(isRecounting && inputCount.value === "") return 0;
-  if(!isRecounting && !qty && qty !== 0) {
+  if(!isRecounting && !quantity && quantity !== 0) {
     return 0;
   }
 
   // As the item is rejected there is no meaning of displaying variance hence added check for REJECTED item status
-  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : qty) - parseInt(getProductStock.value(item.productId) ?? 0)
+  return item.itemStatusId === "INV_COUNT_REJECTED" ? 0 : parseInt(isRecounting ? inputCount.value : quantity) - parseInt(getProductStock.value(item.productId) ?? 0)
 }
 
 async function saveCount(currentProduct, isScrollEvent = false) {

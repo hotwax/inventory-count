@@ -14,7 +14,16 @@ const getters: GetterTree<CountState, RootState> = {
   },
   getCycleCountImportSystemMessages(state) {
     return state.cycleCountImportSystemMessages
-  }
+  },
+  getDraftWorkEfforts(state) {
+    return state.draftWorkEfforts ? JSON.parse(JSON.stringify(state.draftWorkEfforts)) : []
+  },
+  getInReviewCounts(state) {
+    return state.inReviewWorkEfforts ? JSON.parse(JSON.stringify(state.inReviewWorkEfforts)) : []
+  },
+  getClosedCounts(state) {
+    return state.closedWorkEfforts ? JSON.parse(JSON.stringify(state.closedWorkEfforts)) : [];
+  },
 };
 
 export default getters;

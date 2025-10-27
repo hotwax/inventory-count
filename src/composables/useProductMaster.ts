@@ -3,6 +3,7 @@ import Dexie, { Table } from 'dexie'
 import { liveQuery } from 'dexie'
 import store from '@/store'
 import { client } from '@/api'
+import workerApi from "@/api/workerApi";
 
 // Product structure
 export interface Product {
@@ -30,7 +31,7 @@ class ProductDB extends Dexie {
     super('ProductMasterDB')
     this.version(1).stores({
       products: 'productId, updatedAt',
-      productIdents: '[productId+identKey], identKey' // compound primary key
+      productIdents: '[productId+identKey], identKey, value' // compound primary key
     })
   }
 }
@@ -91,32 +92,40 @@ export function useProductMaster() {
   const getById = async (productId: string, opts?: { refresh?: boolean }) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
-    const product = await db.products.get(productId)
     const now = Date.now()
+    const product = await db.products.get(productId)
 
     if (product && (!opts?.refresh || now - product.updatedAt < staleMs.value)) {
       return { product, status: 'hit' as const }
     }
 
-    if (!product) return { product: undefined, status: 'miss' as const }
+    try {
+      const docs = await getFromSolr([productId])
+      if (docs?.length) {
+        // upsert the fetched product into IndexedDB
+        await upsertFromApi(docs)
 
-    getFromSolr([productId])
-      .then(async docs => {
-        if (docs.length) await upsertFromApi(docs)
-      })
-      .catch(err => console.error("Background refresh failed", err))
+        // read back the normalized product from IndexedDB
+        const updatedProduct = await db.products.get(productId)
 
-    return { product, status: 'stale' as const }
-  }
+        if (updatedProduct) {
+          return { product: updatedProduct, status: product ? 'stale-refreshed' as const : 'miss-refreshed' as const }
+        }
+      }
+    } catch (err) {
+      console.error("Solr fetch or upsert failed in getById:", err)
+    }
+  return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
+}
 
-  const findByIdentification = async (idType: string, idValue: string) => {
+  const findByIdentification = async (idValue: string) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized")
     if (!idValue) return { product: undefined, identificationValue: undefined }
 
     // Since Dexie cannot query inside arrays directly, we need to scan manually:
     const allProducts = await db.products.toArray()
     const matchedProduct = allProducts.find(p =>
-      p.goodIdentifications?.some(ident => ident.type === idType && ident.value === idValue)
+      p.goodIdentifications?.some(ident => ident.value === idValue)
     )
 
     if (!matchedProduct) return { product: undefined, identificationValue: undefined }
@@ -198,7 +207,7 @@ export function useProductMaster() {
       // Reuse the same Dexie DB as in useInventoryCountImport
       const db = new Dexie('InventoryCountDB');
       db.version(3).stores({
-        inventoryCountRecords: '[inventoryCountImportId+importItemSeqId], productId'
+        inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId'
       });
 
       const records = await db.table('inventoryCountRecords')
@@ -257,6 +266,57 @@ export function useProductMaster() {
       }
     });
 };
+
+async function findProductByIdentification(idType: string, value: string, context: any) {
+  const ident = await db.table('productIdents')
+    .where('value')
+    .equalsIgnoreCase(value)
+    .first()
+  if (ident) return ident.productId
+
+  if (!context?.token || !context?.omsUrl) return null
+  if (!idType) idType = context.barcodeIdentification
+
+  try {
+    const resp = await workerApi({
+      baseURL: context.omsUrl,
+      headers: {
+        'Authorization': `Bearer ${context.token}`,
+        'Content-Type': 'application/json'
+      },
+      url: 'searchProducts',
+      method: 'POST',
+      data: {
+        filters: [`goodIdentifications:${idType}/${value}`],
+        viewSize: 1,
+        fieldsToSelect: [
+          'productId',
+          'productName',
+          'parentProductName',
+          'internalName',
+          'mainImageUrl',
+          'goodIdentifications'
+        ]
+      }
+    })
+
+    const productId = resp?.response?.docs?.[0]?.productId
+
+    if (productId) {
+      await db.table('productIdents').put({
+        productId,
+        identKey: idType,
+        value
+      })
+      return productId
+    }
+
+    return null
+  } catch (err) {
+    console.warn('Solr lookup failed for', value, err)
+    return null
+  }
+}
 
   const clearCache = async () => {
     await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -318,6 +378,7 @@ export function useProductMaster() {
     init,
     getById,
     findByIdentification,
+    findProductByIdentification,
     getByIdentificationFromSolr,
     prefetch,
     upsertFromApi,

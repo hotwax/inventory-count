@@ -28,6 +28,7 @@ export default async function workerApi(customConfig: {
   }
 
   const response = await fetch(fullUrl, fetchOptions);
+  console.log('workerApi response:', fullUrl, fetchOptions, response);
   const result = await response.json();
 
   if (!response.ok) {

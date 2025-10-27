@@ -18,13 +18,13 @@
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else>
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button @click="router.push(`/assigned/${count.inventoryCountImportId}`)">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/assigned/${count.inventoryCountImportId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
               <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-              {{ count.countImportName }}
-              <p>{{ count.inventoryCountImportId }}</p>
+              {{ count.workEffortName }}
+              <p>{{ count.workEffortId }}</p>
             </ion-label>
           </ion-item>
           
@@ -32,11 +32,6 @@
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
           
-          <ion-label>
-            <!-- TODO: make it dynamic currently not getting stats correctly -->
-            {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
-            <p>{{ translate("counted") }}</p>
-          </ion-label>
 
           <ion-label>
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
@@ -44,7 +39,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getDerivedStatusForCount(count)?.color" slot="end">{{ translate(getDerivedStatusForCount(count)?.label) }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ count.currentStatusId }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -67,7 +62,7 @@ import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount,
 import router from "@/router"
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
-const cycleCounts = computed(() => store.getters["count/getCounts"])
+const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"])
 const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
 
 const isScrollingEnabled = ref(false);
@@ -76,6 +71,7 @@ const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await fetchAssignedCycleCount();
+  console.log("Assigned Cycle Counts:", cycleCounts.value);
 })
 
 onIonViewWillLeave(async () => {
@@ -113,9 +109,9 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    statusId: "INV_COUNT_ASSIGNED"
+    currentStatusId: "CYCLE_CNT_IN_PRGS"
   }
-  await store.dispatch("count/fetchCycleCounts", payload)
+  await store.dispatch("count/getCycleCounts", payload)
 }
 </script>
 

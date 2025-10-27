@@ -13,6 +13,18 @@ const mutations: MutationTree <CountState> = {
   },
   [types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED] (state, payload) {
     state.cycleCountImportSystemMessages = payload
+  },
+  [types.COUNT_DRAFT_WORK_EFFORTS_UPDATED] (state, payload) {
+    state.draftWorkEfforts = payload.draftWorkEfforts
+    state.isScrollable = payload.isScrollable;
+  },
+  [types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED] (state, payload) {
+    state.inReviewWorkEfforts = payload.inReviewWorkEfforts
+    state.isScrollable = payload.isScrollable;
+  },
+  [types.COUNT_CLOSED_WORK_EFFORTS_UPDATED] (state, payload) {
+    state.closedWorkEfforts = payload.closedWorkEfforts
+    state.isScrollable = payload.isScrollable;
   }
 }	
 export default mutations;	
