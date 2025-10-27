@@ -70,7 +70,7 @@ async function addNewSession() {
         workEffortId: props.workEffortId
     });
 
-    if (resp.status !== 200) {
+    if (resp?.status !== 200) {
         showToast("Something Went Wrong!");
         console.error(resp);
     } else {

@@ -142,8 +142,8 @@
                     <Image v-if="item.product" :src="item.product.mainImageUrl" />
                   </ion-thumbnail> -->
                   <ion-label>
-                    {{ item.productId }}
-                    {{ item.quantity }} units
+                    <p>{{ item.productId }}</p>
+                    <p>{{ item.quantity }} units</p>
                     <!-- {{ primaryId(item.product) }} -->
                     <!-- <p>{{ secondaryId(item.product) }}</p> -->
                     <p>{{ 'Not yet counted' }}</p>
@@ -265,6 +265,7 @@ onMounted(async () => {
       unmatched: unmatchedItems.value.length
     }
   })
+  console.log('Starting aggregation worker...', import.meta.url)
 
   aggregationWorker = new Worker(
     new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
@@ -293,7 +294,7 @@ aggregationWorker.onmessageerror = (err) => {
     payload: {
       workEffortId: props.workEffortId,
       inventoryCountImportId: props.inventoryCountImportId,
-      intervalMs: 15000,
+      intervalMs: 8000,
       context: {
         omsUrl: omsInfo.url,
         userLoginId: store.getters['user/getUserProfile']?.username,

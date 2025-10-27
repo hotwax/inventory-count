@@ -164,7 +164,6 @@ import router from "@/router";
 // import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 // import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductMaster } from '@/composables/useProductMaster'
 
@@ -329,7 +328,7 @@ async function deleteItemFromCount(countItem: any) {
   }
 }
 
-async function openAssignedCountPopover(event: any, item: any){
+// async function openAssignedCountPopover(event: any, item: any){
   // const popover = await popoverController.create({
   //   component: AssignedCountPopover,
   //   event,
@@ -351,9 +350,9 @@ async function openAssignedCountPopover(event: any, item: any){
   // })
 
   // await popover.present();
-}
+// }
 
-async function addProduct() {
+// async function addProduct() {
   // const addProductModal = await modalController.create({
   //   component: AddProductModal,
   //   componentProps: { cycleCount: currentCycleCount.value },
@@ -361,7 +360,7 @@ async function addProduct() {
   // });
 
   // await addProductModal.present();
-}
+// }
 
 function getVarianceInformation() {
   let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0

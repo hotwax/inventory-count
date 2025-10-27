@@ -2,8 +2,6 @@ import Dexie from 'dexie'
 import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/api/workerApi";
 import { expose } from 'comlink';
-import { wrap } from 'comlink';
-import type { Remote } from 'comlink';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -16,10 +14,6 @@ export interface InventorySyncWorker {
     context: any
   ) => Promise<{ success: boolean; error?: any }>;
 }
-
-const worker = new Worker(new URL('./backgroundAggregation.ts', import.meta.url), { type: 'module' });
-
-export const inventorySyncWorker = wrap<Remote<InventorySyncWorker>>(worker);
 
 expose({
   aggregate,
@@ -206,6 +200,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
 
   const now = Date.now();
   console.log(`[Worker] Matching product ${productId} for ${item?.uuid}`);
+  console.log('Context in worker:', context);
 
   try {
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
@@ -224,6 +219,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
           .modify({
             productId,
             lastUpdatedAt: now,
+            isRequested: context.isRequested
           });
       } else {
         await table.add({
@@ -241,7 +237,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
           lastSyncedAt: null,
           lastSyncedBatchId: null,
           aggApplied: 1,
-          isRequested: 'N'
+          isRequested: context.isRequested
         });
       }
     });
@@ -340,7 +336,7 @@ self.onmessage = async (e: MessageEvent) => {
   }
 
   if (type === 'schedule') {
-    const { workEffortId, inventoryCountImportId, context, intervalMs = 2000 } = payload
+    const { workEffortId, inventoryCountImportId, context, intervalMs = 10000 } = payload
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       if (count > 0) {

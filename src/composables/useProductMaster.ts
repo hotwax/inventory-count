@@ -115,8 +115,8 @@ export function useProductMaster() {
     } catch (err) {
       console.error("Solr fetch or upsert failed in getById:", err)
     }
-  return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
-}
+    return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
+  }
 
   const findByIdentification = async (idValue: string) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized")
@@ -265,58 +265,58 @@ export function useProductMaster() {
         }
       }
     });
-};
+  };
 
-async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdents')
-    .where('value')
-    .equalsIgnoreCase(value)
-    .first()
-  if (ident) return ident.productId
+  async function findProductByIdentification(idType: string, value: string, context: any) {
+    const ident = await db.table('productIdents')
+      .where('value')
+      .equalsIgnoreCase(value)
+      .first()
+    if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
-  if (!idType) idType = context.barcodeIdentification
+    if (!context?.token || !context?.omsUrl) return null
+    if (!idType) idType = context.barcodeIdentification
 
-  try {
-    const resp = await workerApi({
-      baseURL: context.omsUrl,
-      headers: {
-        'Authorization': `Bearer ${context.token}`,
-        'Content-Type': 'application/json'
-      },
-      url: 'searchProducts',
-      method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
-        viewSize: 1,
-        fieldsToSelect: [
-          'productId',
-          'productName',
-          'parentProductName',
-          'internalName',
-          'mainImageUrl',
-          'goodIdentifications'
-        ]
-      }
-    })
-
-    const productId = resp?.response?.docs?.[0]?.productId
-
-    if (productId) {
-      await db.table('productIdents').put({
-        productId,
-        identKey: idType,
-        value
+    try {
+      const resp = await workerApi({
+        baseURL: context.omsUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'searchProducts',
+        method: 'POST',
+        data: {
+          filters: [`goodIdentifications:${idType}/${value}`],
+          viewSize: 1,
+          fieldsToSelect: [
+            'productId',
+            'productName',
+            'parentProductName',
+            'internalName',
+            'mainImageUrl',
+            'goodIdentifications'
+          ]
+        }
       })
-      return productId
-    }
 
-    return null
-  } catch (err) {
-    console.warn('Solr lookup failed for', value, err)
-    return null
+      const productId = resp?.response?.docs?.[0]?.productId
+
+      if (productId) {
+        await db.table('productIdents').put({
+          productId,
+          identKey: idType,
+          value
+        })
+        return productId
+      }
+
+      return null
+    } catch (err) {
+      console.warn('Solr lookup failed for', value, err)
+      return null
+    }
   }
-}
 
   const clearCache = async () => {
     await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -337,7 +337,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   const mapApiDocToProduct = (doc: any): Product => {
     // Normalize goodIdentifications (convert "SKU/123" → { type: "SKU", value: "123" })
-    const normalizedIdents = (doc.goodIdentifications || []).map((ident: any) => {  
+    const normalizedIdents = (doc.goodIdentifications || []).map((ident: any) => {
       // Case 1: ident is a string like "SKU/123"
       if (typeof ident === 'string') {
         const slashIndex = ident.indexOf('/');
