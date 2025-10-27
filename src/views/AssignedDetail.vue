@@ -92,7 +92,7 @@
             </ion-item>
 
             <ion-label>
-              {{ item.qoh }}
+              {{ item.qoh ?? "-" }}
               <p>{{ translate("QoH") }}</p>
             </ion-label>
 
@@ -103,7 +103,7 @@
               </ion-label>
 
               <ion-label>
-                {{ +(item.quantity) - +(item.qoh) }}
+                {{ item.qoh ? +(item.quantity) - +(item.qoh) : item.quantity }}
                 <p>{{ translate("variance") }}</p>
               </ion-label>
             </template>

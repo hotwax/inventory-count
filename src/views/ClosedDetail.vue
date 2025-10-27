@@ -75,7 +75,7 @@
             </ion-label>
 
             <ion-label v-if="item.quantity >= 0">
-              {{ +(item.quantity) - +(item.qoh) }}
+              {{ item.qoh ? +(item.quantity) - +(item.qoh) : item.quantity }}
               <p>{{ getPartyName(item) }}</p>
             </ion-label>
             <ion-item lines="none" v-else>
