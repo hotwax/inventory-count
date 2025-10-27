@@ -59,6 +59,26 @@ const actions: ActionTree<CountState, RootState> = {
 
     commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
   },
+  async fetchCycleCountImportSystemMessages({commit} ,payload) {
+    let systemMessages;
+    try {
+      const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
+      const resp = await CountService.fetchCycleCountImportSystemMessages({
+        systemMessageTypeId: "ImportInventoryCounts",
+        initDate_from: twentyFourHoursEarlier.toMillis(),
+        orderByField: 'initDate desc, processedDate desc',
+        pageSize: 100
+      })
+      if (!hasError(resp)) {
+        systemMessages = resp.data
+      } else {
+        throw resp.data;
+      }
+    } catch (err: any) {
+      logger.error(err)
+    }
+    commit(types.COUNT_IMPORT_SYSTEM_MESSAGES_UPDATED, systemMessages)
+  },
   setCountDetailPageActive({ commit }, isPageActive) {
     commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   }

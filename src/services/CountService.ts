@@ -28,8 +28,26 @@ const getInventoryCountImportSession = async (params: { workEffortId: string; in
   });
 }
 
+const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/upload`,
+    method: "post",
+    ...payload
+  });
+}
+
+const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages`,
+    method: "get",
+    params: payload
+  });
+}
+
 export const CountService = {
   getAssignedWorkEfforts,
   getInventoryCountImportsByWorkEffort,
-  getInventoryCountImportSession
+  getInventoryCountImportSession,
+  bulkUploadInventoryCounts,
+  fetchCycleCountImportSystemMessages
 }
