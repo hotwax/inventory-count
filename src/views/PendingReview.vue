@@ -18,7 +18,7 @@
         {{ translate("No cycle counts found") }}
       </p> -->
       <ion-list>
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" @click="router.push(`/pending-review/${count.inventoryCountImportId}`)">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/pending-review/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>

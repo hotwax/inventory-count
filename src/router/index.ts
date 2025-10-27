@@ -7,19 +7,17 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-import CountDetail from '@/views/CountDetail.vue';
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
 import PendingReview from '@/views/PendingReview.vue';
 import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
-import HardCount from "@/views/HardCount.vue"
-import HardCountDetail from "@/views/HardCountDetail.vue"
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
 import BulkUpload from "@/views/BulkUpload.vue";
 import Draft from "@/views/Draft.vue";
 import Closed from "@/views/Closed.vue";
+import StorePermissions from "@/views/StorePermissions.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -80,36 +78,6 @@ const routes: Array<RouteRecordRaw> = [
       },
     ],
     beforeEnter: authGuard,
-  },
-  
-  {
-    path: '/count-detail/:id',
-    name: 'CountDetail',
-    component: CountDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
-  },
-  {
-    path: '/count-detail/hard/:id',
-    name: 'HardCountDetail',
-    component: HardCountDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
-  },
-  {
-    path: '/hard-count',
-    name: 'HardCount',
-    component: HardCount,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
   },
   {
     path: '/draft',
@@ -175,6 +143,15 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_STORE_PERMISSIONS_VIEW"
     }
   },
   {
