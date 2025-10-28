@@ -126,7 +126,13 @@
                   </ion-thumbnail>
                   <ion-label>
                     <h2>{{ primaryId(item.product) }}</h2>
+                    <ion-badge v-if="item.unmatched" color="primary" class="unmatched-badge">
+                      Unmatched
+                    </ion-badge>
                     <p>{{ secondaryId(item.product) }}</p>
+                    <p v-if="item.unmatched" class="ion-text-wrap unmatched-id">
+                      {{ item.productIdentifier }}
+                    </p>
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
@@ -193,7 +199,7 @@
 
 <script setup lang="ts">
 import {
-  IonBackButton, IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
+  IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
   IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
@@ -367,6 +373,7 @@ async function openMatchModal(item: any) {
   const modal = await modalController.create({
     component: MatchProductModal,
     componentProps: {
+      workEffortId: props.workEffortId,
       inventoryCountImportId: props.inventoryCountImportId,
       item: item
     },
@@ -546,6 +553,29 @@ ion-segment-view {
   line-height: 1.2;
   margin: 0;
   color: rgba(var(--ion-text-color));
+}
+
+.counted-card {
+  position: relative;
+}
+
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.unmatched-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+.unmatched-id {
+  color: var(--ion-color-primary);
+  font-weight: 500;
 }
 
 </style>

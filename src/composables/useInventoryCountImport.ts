@@ -208,11 +208,25 @@ export function useInventoryCountImport() {
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
     const products = await db.products.bulkGet(productIds)
     const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
-    console.log("Counted Items Product Map", productMap);
-    return items.map(item => ({
-      ...item,
-      product: productMap.get(item.productId || '')
-    }))
+    return items.map((item) => {
+      const product = productMap.get(item.productId || "");
+      let unmatched = false;
+
+      if (product) {
+        const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
+        ].map((v) => (v || "").toLowerCase());
+
+        // Mark as unmatched if productIdentifier doesn't appear in product details
+        if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
+          unmatched = true;
+        }
+      }
+      return {
+        ...item,
+        product,
+        unmatched,
+      };
+    });
   });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
