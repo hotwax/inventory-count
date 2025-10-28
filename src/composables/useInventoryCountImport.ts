@@ -404,6 +404,14 @@ async function submitSession(workEffortId: string): Promise<void> {
   }
 }
 
+const submitProductReview = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/submit`,
+    method: "post",
+    data: payload
+  })
+}
+
     
   return {
     currentImport,
@@ -433,6 +441,7 @@ async function submitSession(workEffortId: string): Promise<void> {
     fetchCycleCountUploadedFileData,
     addSessionInCount,
     getWorkEfforts,
-    fetchCycleCountImportErrors
+    fetchCycleCountImportErrors,
+    submitProductReview
   };
 }
