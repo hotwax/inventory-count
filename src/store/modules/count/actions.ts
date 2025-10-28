@@ -4,7 +4,7 @@ import CountState from "./CountState"
 import * as types from "./mutation-types"
 import { CountService } from "@/services/CountService"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
-import { convertIsoToMillis, hasError, showToast, sortListByField } from "@/utils"
+import { convertIsoToMillis, getCycleCountStats, hasError, showToast, sortListByField } from "@/utils"
 import { translate } from "@/i18n"
 import router from "@/router"
 import logger from "@/logger";
@@ -83,34 +83,72 @@ const actions: ActionTree<CountState, RootState> = {
   setCountDetailPageActive({ commit }, isPageActive) {
     commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   },
-  async getCycleCounts ({commit}, payload) {
+  async getCycleCounts ({ commit, state }, payload) {
     let workEfforts = [];
-    try {
-      const resp = await getWorkEfforts(payload);
-      if (!resp || resp.status !== 200 || hasError(resp)) {
-        console.error(resp);
-        return;
-      }
 
-      workEfforts = resp.data;
-      const total = workEfforts?.length;
-      const isScrollable = total > payload.pageSize;
-    
-      if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
-        console.log("In Review");
-        commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: workEfforts, total, isScrollable })
-      } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
-        console.log("In Created");
-        commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: workEfforts, total, isScrollable })
-      } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
-        console.log("In Progress");
-        commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: workEfforts, total, isScrollable })
-      } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
-        console.log("In Closed");
-        commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: workEfforts, total, isScrollable })
+    if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
+      workEfforts = state.inReviewWorkEfforts;
+    } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
+      workEfforts = state.draftWorkEfforts;
+    } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
+      console.log("Assigned Work Efforts");
+      workEfforts = state.assignedWorkEfforts;
+    } else if (payload.currentStatusId === 'CYCLE_CNT_IN_CLOSED') {
+      workEfforts = state.closedWorkEfforts;
+    }
+
+    // Deep clone and initialize total
+    let counts = workEfforts ? JSON.parse(JSON.stringify(workEfforts)) : [];
+    let total = 0;
+    let isScrollable = true
+
+    const params = {
+      ...payload,
+    }
+
+    try {
+      const resp = await getWorkEfforts(params);
+      if(!hasError(resp) && resp.data.length > 0) {
+        if(payload.pageIndex && payload.pageIndex > 0) {
+          counts = counts.concat(resp.data)
+        } else {
+          counts = resp.data
+        }
+        total = resp.data.length
+        // Determine if more data can be fetched
+        isScrollable = resp.data.length >= payload.pageSize
+      } else {
+        if (payload.pageIndex > 0) isScrollable = false
+        throw "Failed to fetch the counts"
       }
-    } catch (error) {
-      console.error(error);
+    } catch(err) {
+      isScrollable = false
+      if(payload.pageIndex == 0) counts = []
+      logger.error(err)
+    }
+    if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
+      console.log("In Review");
+      commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: counts, total, isScrollable })
+    } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
+      console.log("In Created");
+      commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: counts, total, isScrollable })
+    } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
+      console.log("In Progress");
+      commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: counts, total, isScrollable })
+    } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
+      console.log("In Closed");
+      commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: counts, total, isScrollable })
+    }
+  },
+  async clearCycleCountList({ commit }, payload) {
+    if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
+      commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: [], total: 0 })
+    } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
+      commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: [], total: 0 })
+    } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
+      commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: [], total: 0 })
+    } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
+      commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: [], total: 0 })
     }
   }
 }

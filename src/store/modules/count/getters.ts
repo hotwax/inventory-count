@@ -24,6 +24,9 @@ const getters: GetterTree<CountState, RootState> = {
   getClosedCounts(state) {
     return state.closedWorkEfforts ? JSON.parse(JSON.stringify(state.closedWorkEfforts)) : [];
   },
+  isScrollable(state) {
+    return state.isScrollable;
+  }
 };
 
 export default getters;

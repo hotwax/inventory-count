@@ -62,7 +62,7 @@ import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount,
 import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
 const cycleCounts = computed(() => store.getters["count/getInReviewCounts"])
-const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
+const isScrollable = computed(() => store.getters["count/isScrollable"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -73,7 +73,7 @@ onIonViewDidEnter(async () => {
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_CMPLTD'})
 })
 
 function enableScrolling() {
