@@ -298,7 +298,6 @@ function getDcsnFilter() {
 }
 
 async function fetchCountSessions(productId: any) {
-  console.log("These are count id and product id", props.workEffortId, productId);
   loadingSessions.value = true;
   sessions.value = [];
   const resp = await fetchSessions({

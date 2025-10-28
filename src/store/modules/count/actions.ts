@@ -60,7 +60,7 @@ const actions: ActionTree<CountState, RootState> = {
 
     commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
   },
-  async fetchCycleCountImportSystemMessages({commit} ,payload) {
+  async fetchCycleCountImportSystemMessages({ commit }, payload) {
     let systemMessages;
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
@@ -91,7 +91,6 @@ const actions: ActionTree<CountState, RootState> = {
     } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
       workEfforts = state.draftWorkEfforts;
     } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
-      console.log("Assigned Work Efforts");
       workEfforts = state.assignedWorkEfforts;
     } else if (payload.currentStatusId === 'CYCLE_CNT_IN_CLOSED') {
       workEfforts = state.closedWorkEfforts;
@@ -127,16 +126,12 @@ const actions: ActionTree<CountState, RootState> = {
       logger.error(err)
     }
     if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
-      console.log("In Review");
       commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: counts, total, isScrollable })
     } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
-      console.log("In Created");
       commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: counts, total, isScrollable })
     } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
-      console.log("In Progress");
       commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: counts, total, isScrollable })
     } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
-      console.log("In Closed");
       commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: counts, total, isScrollable })
     }
   },

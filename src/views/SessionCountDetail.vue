@@ -122,12 +122,11 @@
               <ion-card v-for="item in countedItems" :key="item.uuid">
                 <ion-item>
                   <ion-thumbnail slot="start">
-                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
+                    <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    <p>{{ item.productId }}</p>
-                    <!-- <p>{{ getProduct(item.productId) }}</p> -->
-                    <!-- <p>{{ secondaryId(item.product) }}</p> -->
+                    <h2>{{ primaryId(item.product) }}</h2>
+                    <p>{{ secondaryId(item.product) }}</p>
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
@@ -138,15 +137,14 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-card v-for="item in uncountedItems" :key="item.uuid">
                 <ion-item>
-                  <!-- <ion-thumbnail slot="start">
-                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
-                  </ion-thumbnail> -->
+                  <ion-thumbnail slot="start">
+                    <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  </ion-thumbnail>
                   <ion-label>
-                    <p>{{ item.productId }}</p>
+                    <h2>{{ primaryId(item.product) }}</h2>
+                    <p>{{ secondaryId(item.product) }}</p>
                     <p>{{ item.quantity }} units</p>
-                    <!-- {{ primaryId(item.product) }} -->
-                    <!-- <p>{{ secondaryId(item.product) }}</p> -->
-                    <p>{{ 'Not yet counted' }}</p>
+                    <p class="ion-text-wrap">Not yet counted</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
@@ -157,12 +155,11 @@
               <ion-card v-for="item in undirectedItems" :key="item.uuid">
                 <ion-item>
                   <ion-thumbnail slot="start">
-                    <Image v-if="item.product" :src="item.product.mainImageUrl" />
+                    <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                   </ion-thumbnail>
                   <ion-label>
-                    {{ item.productId }}
-                    <!-- {{ primaryId(item.product) }}
-                    <p>{{ secondaryId(item.product) }}</p> -->
+                    <h2>{{ primaryId(item.product) }}</h2>
+                    <p>{{ secondaryId(item.product) }}</p>
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
@@ -173,10 +170,12 @@
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
               <ion-card v-for="item in unmatchedItems" :key="item.uuid">
                 <ion-item>
+                  <ion-thumbnail slot="start">
+                    <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  </ion-thumbnail>
                   <ion-label>
-                    <!-- No productId, show scanned value -->
                     <h2>{{ item.productIdentifier }}</h2>
-                    <p>{{ timeAgo(item.createdAt) }}</p>
+                    <p>{{ secondaryId(item.product) }}</p>
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                   <ion-button slot="end" fill="outline" color="medium" @click="openMatchModal(item)">
@@ -219,16 +218,12 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems } = useInventoryCountImport();
+const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession: submitSessionComposable, discardSession: discardSessionComposable } = useInventoryCountImport();
 const { init, getById, prefetch, getByIdentificationFromSolr, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
 const scannedValue = ref('');
 const events = ref<any[]>([]);
-const unmatchedEvents = ref<any[]>([]);
-// const countedItems = ref<any[]>([]);
-// const uncountedItems = ref<any[]>([]);
-// const undirectedItems = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const barcodeInput = ref();
@@ -392,49 +387,45 @@ function timeAgo(ts: number) {
 }
 
 // helper: pick primary/secondary id from enriched product.goodIdentifications
-// const primaryId = (p?: any) => {
-//   if (!p) return ''
+const primaryId = (p?: any) => {
+  if (!p) return ''
 
-//   const pref = productIdentificationStore.getProductIdentificationPref.primaryId
+  const pref = productIdentificationStore.getProductIdentificationPref.primaryId
 
-//   const resolve = (type: string) => {
-//     if (!type) return ''
-//     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-//       return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-//     if (type === 'internalName') return p.internalName || ''
-//     if (type === 'productId') return p.productId || ''
-//     return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
-//   }
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return p.internalName || ''
+    if (type === 'productId') return p.productId || ''
+    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+  }
 
-//   // Try preference, then fallback to SKU or productId
-//   return resolve(pref) || resolve('SKU') || p.productId || ''
-// }
+  // Try preference, then fallback to SKU or productId
+  return resolve(pref) || resolve('SKU') || p.productId || ''
+}
 
-// const secondaryId = (p?: any) => {
-//   if (!p) return ''
+const secondaryId = (p?: any) => {
+  if (!p) return ''
 
-//   const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
+  const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
 
-//   const resolve = (type: string) => {
-//     if (!type) return ''
-//     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-//       return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-//     if (type === 'internalName') return p.internalName || ''
-//     if (type === 'productId') return p.productId || ''
-//     return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
-//   }
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return p.internalName || ''
+    if (type === 'productId') return p.productId || ''
+    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+  }
 
-//   // Try preference, then fallback to productId
-//   return resolve(pref) || p.productId || ''
-// }
+  // Try preference, then fallback to productId
+  return resolve(pref) || p.productId || ''
+}
 
 async function submitSession() {
   try {
-    await api({
-      url: `/cycleCounts/${props.inventoryCountImportId}/submit`,
-      method: 'POST',
-      data: { activeUserLoginId: null, statusId: 'INV_COUNT_SUBMITTED' }
-    });
+    await submitSessionComposable(props.workEffortId);
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -444,11 +435,7 @@ async function submitSession() {
 
 async function discardSession() {
   try {
-    await api({
-      url: `/cycleCounts/${props.inventoryCountImportId}/discard`,
-      method: 'POST',
-      data: { activeUserLoginId: null }
-    });
+    await discardSessionComposable(props.inventoryCountImportId);
     showToast('Session discarded');
   } catch (err) {
     console.error(err);

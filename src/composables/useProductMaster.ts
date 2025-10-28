@@ -23,20 +23,7 @@ export interface Identification {
 }
 
 // Setup Dexie database
-class ProductDB extends Dexie {
-  products!: Table<Product, string>
-  productIdents!: Table<{ productId: string, identKey: string, value: string }, [string, string]>
-
-  constructor() {
-    super('ProductMasterDB')
-    this.version(1).stores({
-      products: 'productId, updatedAt',
-      productIdents: '[productId+identKey], identKey, value' // compound primary key
-    })
-  }
-}
-
-const db = new ProductDB()
+import { db } from '@/database/commonDatabase'
 
 export function useProductMaster() {
   const staleMs = ref(24 * 60 * 60 * 1000)
@@ -80,6 +67,7 @@ export function useProductMaster() {
           'Content-Type': 'application/json'
         }
       })
+      console.log(`Fetched ${resp.data?.response?.docs?.length || 0} products from Solr for batch starting at index ${index}`)
 
       if (resp.data?.response?.docs?.length) {
         results.push(...resp.data.response.docs.map(mapApiDocToProduct))
@@ -205,11 +193,6 @@ export function useProductMaster() {
   async function getAllProductIdsFromIndexedDB(inventoryCountImportId: string): Promise<string[]> {
     try {
       // Reuse the same Dexie DB as in useInventoryCountImport
-      const db = new Dexie('InventoryCountDB');
-      db.version(3).stores({
-        inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId'
-      });
-
       const records = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -377,6 +360,7 @@ export function useProductMaster() {
   return {
     init,
     getById,
+    getFromSolr,
     findByIdentification,
     findProductByIdentification,
     getByIdentificationFromSolr,

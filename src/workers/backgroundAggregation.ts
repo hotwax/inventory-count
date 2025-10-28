@@ -1,7 +1,7 @@
-import Dexie from 'dexie'
 import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/api/workerApi";
 import { expose } from 'comlink';
+import { db } from '@/database/commonDatabase';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -21,20 +21,6 @@ expose({
   matchProductLocallyAndSync
 });
 
-// Shared Dexie Schema
-const db = new Dexie('InventoryCountDB')
-db.version(5).stores({
-  scanEvents: '++id, inventoryCountImportId, scannedValue, quantity, createdAt, aggApplied',
-  inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested'
-})
-
-// ProductMaster DB (same schema as useProductMaster)
-const productDB = new Dexie('ProductMasterDB')
-productDB.version(1).stores({
-  products: 'productId, updatedAt',
-  productIdents: '[productId+identKey], identKey, value'
-})
-
 let isAggregating = false
 let isSyncing = false
 // const store = useStore();
@@ -42,7 +28,7 @@ let isSyncing = false
 // Product Lookup Helper
 async function getById(productId: string, context: any) {
   const now = Date.now()
-  const cached = await productDB.table('products').get(productId)
+  const cached = await db.table('products').get(productId)
   const ttlMs = 60 * 60 * 1000
   if (cached && now - cached.updatedAt < ttlMs) {
     return cached
@@ -70,9 +56,9 @@ async function getById(productId: string, context: any) {
         ...doc,
         updatedAt: now
       }
-      await productDB.table('products').put(normalized)
+      await db.table('products').put(normalized)
       // Return the normalized version from Dexie
-      return await productDB.table('products').get(productId)
+      return await db.table('products').get(productId)
     }
   } catch (err) {
     console.error(`Error fetching product ${productId} via workerApi:`, err)
@@ -82,7 +68,7 @@ async function getById(productId: string, context: any) {
 }
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await productDB.table('productIdents').where('value').equalsIgnoreCase(value).first()
+  const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
   if (ident) return ident.productId
 
   if (!context?.token || !context?.omsUrl) return null
@@ -106,10 +92,10 @@ async function findProductByIdentification(idType: string, value: string, contex
 
     const productId = resp?.response?.docs?.[0]?.productId
     if (productId) {
-      await productDB.table('productIdents').put({ productId, identKey: idType, value })
+      await db.table('productIdents').put({ productId, identKey: idType, value })
       // Optionally cache full product for faster future access
       const doc = resp.response.docs[0]
-      await productDB.table('products').put({ ...doc, updatedAt: Date.now() })
+      await db.table('products').put({ ...doc, updatedAt: Date.now() })
     }
 
     return productId || null
@@ -117,6 +103,39 @@ async function findProductByIdentification(idType: string, value: string, contex
     console.warn('Solr lookup failed for', value, err)
     return null
   }
+}
+
+function ensureProductStored(productId: string | null, context: any) {
+  if (!productId) return;
+
+  (async () => {
+    try {
+      const existing = await db.table('products').get(productId);
+      if (existing) return;
+
+      const resp = await workerApi({
+        baseURL: context.omsUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'searchProducts',
+        method: 'POST',
+        data: {
+          filters: [`productId:${productId}`],
+          viewSize: 1,
+          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
+        }
+      });
+
+      const doc = resp?.response?.docs?.[0];
+      if (doc) {
+        await db.table('products').put({ ...doc, updatedAt: Date.now() });
+      }
+    } catch (err) {
+      console.warn(`[Worker] Failed to cache product ${productId}:`, err);
+    }
+  })();
 }
 
 // Aggregation Logic
@@ -154,6 +173,8 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         .where({ inventoryCountImportId })
         .and(r => (productId && r.productId === productId) || r.productIdentifier === scannedValue)
         .first()
+
+        if (productId) ensureProductStored(productId, context);
 
       if (existing) {
         await db.table('inventoryCountRecords').put({
@@ -199,8 +220,6 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
-  console.log(`[Worker] Matching product ${productId} for ${item?.uuid}`);
-  console.log('Context in worker:', context);
 
   try {
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
@@ -211,6 +230,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
         .and((r: any) => r.uuid === item?.uuid)
         .first();
 
+      if (productId) ensureProductStored(productId, context);
       if (existing) {
         // Use compound key + modify for a safe partial update
         await table

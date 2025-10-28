@@ -47,23 +47,7 @@ interface RecordScanParams {
   locationSeqId?: string | null;
 }
 
-/**
- * Dexie Database
- */
-class InventoryCountDB extends Dexie {
-  scanEvents!: Table<ScanEvent, number>;
-  inventoryCountRecords!: Table<InventoryCountImportItem, [string, number]>;
-
-  constructor() {
-    super('InventoryCountDB');
-    this.version(1).stores({
-      scanEvents: '++id, inventoryCountImportId, aggApplied',
-      inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested'
-    });
-  }
-}
-
-const db = new InventoryCountDB();
+import { db } from '@/database/commonDatabase'
 
 /**
  * Utility Functions
@@ -78,7 +62,7 @@ function currentMillis(): number {
 export function useInventoryCountImport() {
   const syncStatus = ref<'idle'>('idle');
   const currentImport = ref<InventoryCountImportItem | null>(null);
-  const productMaster = useProductMaster();
+  const { upsertFromApi, getById } = useProductMaster();
 
   /** Loads a specific inventory import record session */
   async function loadSession(inventoryCountImportId: string): Promise<void> {
@@ -132,6 +116,28 @@ export function useInventoryCountImport() {
 
       if (!hasError(resp) && resp?.data?.length) {
         const items = resp.data;
+        const productIds = [...new Set(items.map((item: any) => item.productId).filter(Boolean))] as any
+
+      if (productIds.length) {
+        try {
+          const existingProducts = await db.products.bulkGet(productIds);
+          const existingIds = new Set(existingProducts.filter(Boolean).map((p: any) => p.productId));
+
+          const missingIds = productIds.filter((id: string) => !existingIds.has(id));
+
+          if (missingIds.length) {
+            const productMaster = useProductMaster();
+            const { getFromSolr, upsertFromApi } = productMaster as any;
+            const newProducts = await getFromSolr(missingIds);
+
+            if (newProducts?.length) {
+              await upsertFromApi(newProducts);
+            }
+          }
+        } catch (err) {
+          console.warn("Failed to verify or fetch missing products:", err);
+        }
+      }
         await db.transaction('rw', db.inventoryCountRecords, async () => {
           for (const item of items) {
             await db.inventoryCountRecords.put({
@@ -174,34 +180,78 @@ export function useInventoryCountImport() {
   }
 
   const getUnmatchedItems = (inventoryCountImportId: string) =>
-    liveQuery(() => db.table('inventoryCountRecords')
+    liveQuery(async () => {
+    const items = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
       .filter(r => !r.productId)
-      .toArray());
+      .toArray()
+
+    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+    const products = await db.products.bulkGet(productIds)
+    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+
+    return items.map(item => ({
+      ...item,
+      product: productMap.get(item.productId || '')
+    }))
+  });
 
   const getCountedItems = (inventoryCountImportId: string) =>
-    liveQuery(() =>
-      db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .filter(r => (Number(r.quantity) || 0) > 0 && r.isRequested === 'Y')
-        .toArray());
+    liveQuery(async () => {
+    const items = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .filter(r => (Number(r.quantity) || 0) > 0 && r.isRequested === 'Y')
+      .toArray()
+
+    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+    const products = await db.products.bulkGet(productIds)
+    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+    console.log("Counted Items Product Map", productMap);
+    return items.map(item => ({
+      ...item,
+      product: productMap.get(item.productId || '')
+    }))
+  });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
-    liveQuery(() => db.table('inventoryCountRecords')
+    liveQuery(async () => {
+    const items = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
       .filter(r => (Number(r.quantity) || 0) === 0)
-      .toArray());
+      .toArray()
+
+    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+    const products = await db.products.bulkGet(productIds)
+    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+
+    return items.map(item => ({
+      ...item,
+      product: productMap.get(item.productId || '')
+    }))
+  });
 
   const getUndirectedItems = (inventoryCountImportId: string) =>
-    liveQuery(() => db.table('inventoryCountRecords')
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => r.isRequested === 'N' && r.productId)
-      .toArray());
+    liveQuery(async () => {
+      const items = await db.table('inventoryCountRecords')
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(r => r.isRequested === 'N' && r.productId)
+        .toArray();
 
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+
+      return items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId || '')
+      }))
+    });
+
+   /* API call functions moved from CountService.ts */   
   const fetchCycleCount = async (payload: any): Promise <any>  => {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
@@ -324,9 +374,41 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
   });
 }
 
+async function discardSession(inventoryCountImportId: string): Promise<void> {
+  try {
+    const resp = await api({
+      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}`,
+      method: 'PUT',
+      data: {
+        uploadedByUserLogin: null
+      }
+    })
+  } catch (err) {
+    console.error(`useInventoryCountImport Failed to discard session ${inventoryCountImportId}`, err)
+    throw err
+  }
+}
+
+async function submitSession(workEffortId: string): Promise<void> {
+  try {
+    const resp = await api({
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${workEffortId}`,
+      method: 'PUT',
+      data: {
+        statusId: 'SESSION_SUBMITTED'
+      }
+    })
+  } catch (err) {
+    console.error(`useInventoryCountImport Failed to submit WorkEffort ${workEffortId}`, err)
+    throw err
+  }
+}
+
     
   return {
     currentImport,
+    discardSession,
+    submitSession,
     createSessionOnServer,
     syncStatus,
     loadSession,
