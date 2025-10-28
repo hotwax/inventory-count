@@ -212,10 +212,7 @@ import { useStore } from '@/store';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
-import { v4 as uuidv4 } from 'uuid';
 import Image from "@/components/Image.vue";
-import api from '@/api';
-import { CountService } from '@/services/CountService';
 import { useProductIdentificationStore } from "@hotwax/dxp-components";
 import { from } from 'rxjs';
 import { modalController } from "@ionic/vue";
@@ -224,8 +221,8 @@ import MatchProductModal from "@/components/MatchProductModal.vue";
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, loadInventoryItemsFromBackend, getInventoryRecordsFromIndexedDB, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession: submitSessionComposable, discardSession: discardSessionComposable } = useInventoryCountImport();
-const { init, getById, prefetch, getByIdentificationFromSolr, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
+const { recordScan, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession: submitSessionComposable, discardSession: discardSessionComposable } = useInventoryCountImport();
+const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
 const scannedValue = ref('');
@@ -266,7 +263,6 @@ onMounted(async () => {
       unmatched: unmatchedItems.value.length
     }
   })
-  console.log('Starting aggregation worker...', import.meta.url)
 
   aggregationWorker = new Worker(
     new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }

@@ -31,7 +31,6 @@ import {
 import { defineProps } from "vue";
 import { translate } from "@/i18n"
 import store from "@/store";
-import { CountService } from "@/services/CountService"
 import { downloadCsv, hasError, showToast } from "@/utils";
 import logger from "@/logger";
 import BulkUploadErrorModal from "./BulkUploadErrorModal.vue";

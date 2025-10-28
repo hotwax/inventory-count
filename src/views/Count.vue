@@ -16,172 +16,6 @@
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
       <template v-if="selectedSegment === 'assigned'">
-        <!-- no sessions -->
-        <ion-card>
-          <ion-card-header>
-            <div>
-              <ion-label color="warning" class="overline">
-                {{ translate("HARD COUNT") }}
-              </ion-label>
-              <ion-card-title>
-                Count name
-              </ion-card-title>
-              <ion-card-subtitle>
-                created date
-              </ion-card-subtitle>
-            </div>
-          </ion-card-header>
-          <ion-item lines="none">
-            {{ translate("Due date") }}
-            <ion-label slot="end">
-              <p>work effort due date</p>
-            </ion-label>
-          </ion-item>
-          <ion-list>
-            <ion-list-header>
-              <ion-label>
-                Sessions
-              </ion-label>
-            </ion-list-header>
-            <ion-button expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal">
-              <ion-label>
-                Start new session
-              </ion-label>
-            </ion-button>
-          </ion-list>
-        </ion-card>
-
-        <!-- new session on device -->
-        <ion-card>
-          <ion-card-header>
-            <div>
-              <ion-label color="warning" class="overline">
-                {{ translate("HARD COUNT") }}
-              </ion-label>
-              <ion-card-title>
-                Count name
-              </ion-card-title>
-              <ion-card-subtitle>
-                created date
-              </ion-card-subtitle>
-            </div>
-            <ion-note>number of items</ion-note>
-          </ion-card-header>
-          <ion-item lines="none">
-            {{ translate("Due date") }}
-            <ion-label slot="end">
-              <p>work effort due date</p>
-            </ion-label>
-          </ion-item>
-          <ion-list>
-            <ion-list-header>
-              <ion-label>
-                Sessions
-              </ion-label>
-              <ion-button fill="clear" size="small" @click="showAddNewSessionModal">
-                <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                New
-              </ion-button>
-            </ion-list-header>
-            <!-- unassigned session -->
-            <ion-item detail="true" :router-link="'/session-count-detail/M100010/HARD_COUNT/M100008'">
-              <ion-label>
-                Count name + Area name
-                <p>
-                  created by userlogin
-                </p>
-              </ion-label>
-              <ion-note slot="end">
-                Open
-              </ion-note>
-            </ion-item>
-            <ion-item-group>
-              <ion-item-divider color="light">
-                <ion-label>
-                  Other sessions
-                </ion-label>
-              </ion-item-divider>
-              <ion-item detail="true">
-                <ion-label>
-                  Count name + Area name
-                  <p>
-                    created by userlogin
-                  </p>
-                </ion-label>
-                <ion-note slot="end">
-                  Submitted
-                </ion-note>
-              </ion-item>
-            </ion-item-group>
-          </ion-list>
-        </ion-card>
-
-        <!-- session started -->
-        <ion-card>
-          <ion-card-header>
-            <div>
-              <ion-label color="warning" class="overline">
-                {{ translate("HARD COUNT") }}
-              </ion-label>
-              <ion-card-title>
-                Count name
-              </ion-card-title>
-              <ion-card-subtitle>
-                created date
-              </ion-card-subtitle>
-            </div>
-          </ion-card-header>
-          <ion-item lines="none">
-            {{ translate("Due date") }}
-            <ion-label slot="end">
-              <p>work effort due date</p>
-            </ion-label>
-          </ion-item>
-          <ion-list>
-            <ion-list-header>
-              <ion-label>
-                Sessions
-              </ion-label>
-            </ion-list-header>
-            <ion-item-group>
-              <ion-item-divider color="light">
-                <ion-label>
-                  On this device
-                </ion-label>
-              </ion-item-divider>
-              <ion-item detail="true" href="tabs/count-details/1001" router-direction="forward">
-                <ion-label>
-                  Count name + Area name
-                  <p>
-                    created by userlogin
-                  </p>
-                </ion-label>
-                <ion-note slot="end">
-                  In progress
-                </ion-note>
-              </ion-item>
-            </ion-item-group>
-            <ion-item-group>
-              <ion-item-divider color="light">
-                <ion-label>
-                  Other sessions
-                </ion-label>
-              </ion-item-divider>
-              <ion-item detail="true">
-                <ion-label>
-                  Count name + Area name
-                  <p>
-                    created by userlogin
-                  </p>
-                </ion-label>
-                <ion-note slot="end">
-                  Submitted
-                </ion-note>
-              </ion-item>
-            </ion-item-group>
-          </ion-list>
-        </ion-card>
-        
         <ion-card v-for="count in cycleCount" :key="count.workEffortId">
           <ion-card-header>
             <div>
@@ -285,7 +119,6 @@ const cycleCount = computed(() => store.getters["count/getAssignedWorkEfforts"])
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => userStore.getCurrentFacility)
 // const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
-const userProfile = store.getters["user/getUserProfile"];
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const contentRef = ref({});
@@ -383,9 +216,9 @@ async function segmentChanged(value) {
   isLoading.value = false;
 }
 
-function navigateToStoreView(count) {
-  router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/count-detail/hard/${count.inventoryCountImportId}` : `/count-detail/${count.inventoryCountImportId}`);
-}
+// function navigateToStoreView(count) {
+//   router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/count-detail/hard/${count.inventoryCountImportId}` : `/count-detail/${count.inventoryCountImportId}`);
+// }
 
 function getStatusIdForCountsToBeFetched() {
   if(selectedSegment.value === "assigned") {

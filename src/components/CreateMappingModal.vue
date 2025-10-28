@@ -64,7 +64,7 @@ import {
   modalController
 } from '@ionic/vue';
 
-import { close, save, saveOutline } from "ionicons/icons";
+import { close, saveOutline } from "ionicons/icons";
 import { computed, defineProps, onMounted, ref } from "vue";
 import { useStore } from "vuex";
 import { showToast } from '@/utils';
@@ -78,7 +78,6 @@ const fieldMappings = computed(() => store.getters["user/getFieldMappings"])
 let mappingName = ref(null)
 let fieldMapping = ref ({})
 let fileColumns = ref([])
-let identificationTypeId = ref('SKU')
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
 
 onMounted(() => {

@@ -107,14 +107,13 @@ import {
   modalController,
   popoverController
 } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, trashBinOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
-import { CountService } from "@/services/CountService"
 import CycleCountUploadActionPopover from "@/components/CycleCountUploadActionPopover.vue"
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 

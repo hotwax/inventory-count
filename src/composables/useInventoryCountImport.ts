@@ -1,10 +1,9 @@
-import { ref, computed, ComputedRef } from 'vue';
-import Dexie, { Table, liveQuery } from 'dexie';
+import { ref } from 'vue';
+import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
-import api, { client } from '@/api';
+import api from '@/api';
 import { v4 as uuidv4 } from 'uuid';
-import store from '@/store';
 
 /**
  * Schema definitions
@@ -62,7 +61,6 @@ function currentMillis(): number {
 export function useInventoryCountImport() {
   const syncStatus = ref<'idle'>('idle');
   const currentImport = ref<InventoryCountImportItem | null>(null);
-  const { upsertFromApi, getById } = useProductMaster();
 
   /** Loads a specific inventory import record session */
   async function loadSession(inventoryCountImportId: string): Promise<void> {
@@ -74,7 +72,7 @@ export function useInventoryCountImport() {
   }
 
   /** Creates a new inventory import session */
-  async function createSession(inventoryCountImportId: string, facilityId: string): Promise<void> {
+  // async function createSession(inventoryCountImportId: string, facilityId: string): Promise<void> {
    /* Implementation yet to be done
     const now = currentMillis();
     const session: InventoryCountImportItem = {
@@ -90,7 +88,7 @@ export function useInventoryCountImport() {
     };
     await db.inventoryCountRecords.put(session);
     currentImport.value = session; */
-  }
+  // }
 
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
@@ -434,7 +432,7 @@ const submitProductReview = async (payload: any): Promise <any> => {
     createSessionOnServer,
     syncStatus,
     loadSession,
-    createSession,
+    // createSession,
     recordScan,
     loadInventoryItemsFromBackend,
     getInventoryRecordsFromIndexedDB,

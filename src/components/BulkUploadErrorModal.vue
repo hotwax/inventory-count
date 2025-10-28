@@ -52,12 +52,10 @@ import { bookOutline, close, openOutline } from "ionicons/icons";
 import { useStore } from "vuex";
 import { defineProps, onMounted, ref } from 'vue';
 import { translate } from "@hotwax/dxp-components";
-import { CountService } from "@/services/CountService"
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasError } from "@/utils";
 import logger from "@/logger";
 
-const store = useStore();
 let systemMessageError = ref({})
 
 const { fetchCycleCountImportErrors } = useInventoryCountImport();

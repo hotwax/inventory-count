@@ -58,8 +58,7 @@ import { computed, ref } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
-import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
-import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 
 const cycleCounts = computed(() => store.getters["count/getInReviewCounts"])
 const isScrollable = computed(() => store.getters["count/isScrollable"])

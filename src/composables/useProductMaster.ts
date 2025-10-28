@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import Dexie, { Table } from 'dexie'
 import { liveQuery } from 'dexie'
 import store from '@/store'
 import { client } from '@/api'
@@ -272,14 +271,7 @@ export function useProductMaster() {
         data: {
           filters: [`goodIdentifications:${idType}/${value}`],
           viewSize: 1,
-          fieldsToSelect: [
-            'productId',
-            'productName',
-            'parentProductName',
-            'internalName',
-            'mainImageUrl',
-            'goodIdentifications'
-          ]
+          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
         }
       })
 

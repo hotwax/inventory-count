@@ -39,7 +39,7 @@
 
 import { defineProps, defineEmits, ref } from 'vue';
 import { IonButtons, IonModal, IonIcon, IonFab, IonFabButton, IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonList, IonListHeader, IonItem, IonLabel, IonRadioGroup, IonRadio, IonInput, IonNote } from '@ionic/vue';
-import { closeOutline, saveOutline, checkmarkDoneOutline } from "ionicons/icons";
+import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { showToast } from '@/utils';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import store from '@/store';

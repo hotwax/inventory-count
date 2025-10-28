@@ -26,15 +26,12 @@
 
 <script setup lang="ts">
 import { translate, useUserStore } from '@hotwax/dxp-components';
-import { IonPage, IonHeader, IonContent, onIonViewDidEnter, IonList, IonLabel, onIonViewDidLeave, onIonViewWillLeave } from '@ionic/vue';
+import { IonPage, IonHeader, IonContent, onIonViewDidEnter, IonList, IonLabel, onIonViewWillLeave } from '@ionic/vue';
 import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router'
 
 const isLoading = ref(false);
 const store = useStore();
-const router = useRouter()
-const userStore = useUserStore();
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
