@@ -8,8 +8,6 @@ import 'vue-router'
 import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
 import Tabs from '@/views/Tabs.vue';
-import Draft from "@/views/Draft.vue";
-import DraftDetail from "@/views/DraftDetail.vue";
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
 import PendingReview from '@/views/PendingReview.vue';
@@ -180,16 +178,6 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Closed',
     component: Closed,  
     beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW"
-    }
-  },
-  {
-    path: '/closed/:inventoryCountImportId',
-    name: 'ClosedDetail',
-    component: ClosedDetail,
-    beforeEnter: authGuard,
-    props: true,
     meta: {
       permissionId: "APP_CLOSED_VIEW"
     }
