@@ -56,26 +56,6 @@
       <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
       <p>Enter a SKU or product name to search a product</p>
     </div>
-
-    <!-- Radio buttons for isRequested -->
-    <ion-list class="ion-margin-top">
-      <ion-list-header>
-        <ion-label>Is Requested?</ion-label>
-      </ion-list-header>
-      <ion-radio-group v-model="isRequested">
-        <ion-item>
-          <ion-radio value="Y" label-placement="end">
-            <ion-label>Yes</ion-label>
-          </ion-radio>
-        </ion-item>
-        <ion-item>
-          <ion-radio value="N" label-placement="end">
-            <ion-label>No</ion-label>
-          </ion-radio>
-        </ion-item>
-      </ion-radio-group>
-    </ion-list>
-
     <!-- Save button -->
     <ion-fab vertical="bottom" horizontal="end" slot="fixed">
       <ion-fab-button :disabled="!selectedProductId" @click="saveMatchProduct">
@@ -127,7 +107,6 @@ const queryString = ref("");
 const isSearching = ref(false);
 const selectedProductId = ref("");
 const isLoading = ref(false);
-const isRequested = ref<"Y" | "N">("N");
 const productIdentificationStore = useProductIdentificationStore();
 
 /**
@@ -199,7 +178,7 @@ async function saveMatchProduct() {
     token: omsInfo?.token,
     omsUrl: omsInfo?.url,
     userLoginId: store.getters["user/getUserProfile"]?.username,
-    isRequested: isRequested.value,
+    isRequested: 'Y',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(props.item)));
