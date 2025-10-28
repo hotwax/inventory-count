@@ -324,6 +324,14 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
   });
 }
 
+const submitProductReview = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/submit`,
+    method: "post",
+    data: payload
+  })
+}
+
     
   return {
     currentImport,
@@ -351,6 +359,7 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
     fetchCycleCountUploadedFileData,
     addSessionInCount,
     getWorkEfforts,
-    fetchCycleCountImportErrors
+    fetchCycleCountImportErrors,
+    submitProductReview
   };
 }

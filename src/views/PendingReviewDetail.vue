@@ -126,21 +126,29 @@
                   </ion-item>
                 </div>
                 <ion-label class="stat">
-                  {{ cycleCount.countedQuantity }}/{{ cycleCount.systemQuantity }}
+                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
                   <p>counted/systemic</p>
                 </ion-label>
                 <ion-label class="stat">
                   {{ cycleCount.proposedVarianceQuantity }}
                   <p>variance</p>
                 </ion-label>
-                <div class="actions">
-                  <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp">
+                <div v-if="!cycleCount.decisionOutcomeEnumId" class="actions">
+                  <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'APPLIED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
                     Accept
                   </ion-button>
-                  <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp">
+                  <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'SKIPPED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
                     Reject
                   </ion-button>
                 </div>
+                <ion-badge
+                  v-else
+                  :color="cycleCount.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
+                  style="--color: white;"
+                >
+                  {{ cycleCount.decisionOutcomeEnumId }}
+                </ion-badge>
+
               </div>
               <div v-if="loadingSessions">
               <ion-spinner name="crescent"></ion-spinner>
@@ -209,7 +217,7 @@ import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "v
 import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 
 
 const props = defineProps({
@@ -233,23 +241,6 @@ const filters = reactive({
 
 const  { dcsnRsn, searchedProductString } = toRefs(filters);
 
-watch(() => filters, async () => {
-
-  const count = await fetchCycleCount({
-    workEffortId: props,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
-    internalName_op: searchedProductString.value ? "contains" : null,
-    decisionOutcomeEnumId: getDcsnFilter(),
-    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
-  });
-
-  if (count && count.status === 200 && count.data) {
-    cycleCounts.value = count;
-  }
-},{ deep: true });
-
 const isLoading = ref(false);
 
 const loadingSessions = ref(false);
@@ -263,9 +254,29 @@ const pagination = reactive({
   pageIndex: 0
 });
 
+watch(() => filters, async () => {
+
+  const count = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    internalName_op: searchedProductString.value ? "contains" : null,
+    decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
+
+  if (count && count.status === 200 && count.data) {
+    cycleCounts.value = count.data;
+  } else {
+    showToast(translate("Something Went Wrong!"));
+    console.error("Error Submitting ", count);
+  }
+},{ deep: true });
+
 const sessions = ref();
 
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
 
 async function filterProductByInternalName() {
 
@@ -310,6 +321,31 @@ async function fetchCountSessions(productId: any) {
     sessions.value = resp.data;
   }
   loadingSessions.value = false;
+}
+
+async function submitSingleProductReview(productId: any, proposedVarianceQuantity: any, decisionOutcomeEnumId: string, systemQuantity: any, countedQuantity: any, cycleCount: any) {
+  const inventoryCountProductsList = [];
+  const inventoryCountProductMap = {
+    workEffortId: props.workEffortId,
+    productId,
+    facilityId: workEffort.value.facilityId,
+    varianceQuantity: proposedVarianceQuantity,
+    systemQuantity,
+    countedQuantity,
+    decisionOutcomeEnumId,
+    decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+  }
+  inventoryCountProductsList.push(inventoryCountProductMap);
+
+  const resp = await submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
+
+  console.log("This is reponse", resp);
+
+  if (resp?.status === 200) {
+    cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
+  } else {
+    showToast(translate("Something Went Wrong"));
+  }
 }
 
 async function fetchInventoryCycleCount (pSize?: any, pIndex?: any) {
