@@ -7,6 +7,12 @@
           <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
             <ion-label>{{ translate("Assigned") }}</ion-label>
           </ion-segment-button>
+          <ion-segment-button value="pendingReview" @click="selectedSegment = 'pendingReview'">
+            <ion-label>{{ translate("Pending review") }}</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="closed" @click="selectedSegment = 'closed'">
+            <ion-label>{{ translate("Closed") }}</ion-label>
+          </ion-segment-button>
         </ion-segment>
       </ion-toolbar>
     </ion-header>
@@ -87,13 +93,11 @@ import {
   IonCardSubtitle,
   IonCardTitle,
   IonContent,
-  IonIcon,
   IonHeader,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
   IonLabel,
-  IonList,
   IonNote,
   IonPage,
   IonSegment,
@@ -102,7 +106,6 @@ import {
   IonToolbar,
   onIonViewDidEnter
 } from '@ionic/vue';
-import { addCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
@@ -252,6 +255,9 @@ function getStatusIdForCountsToBeFetched() {
 </script> 
 
 <style scoped>
+section {
+  padding-bottom: 100px
+}
 
 ion-card {
   max-width: 450px;
@@ -263,7 +269,34 @@ ion-card-header {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  gap: var(--spacer-sm);
+  padding-bottom: 0px;
+}
+
+main {
+  margin: var(--spacer-base) auto 0;
+  display: flex;
+}
+
+.header {
+  display: grid;
+  grid: "search filters"
+        /1fr 1fr;
+}
+.search {
+  grid-area: search;
+  border-right: 1px solid #ccc;
+}
+.filters {
+  grid-area: filters;
+}
+
+@media (max-width: 991px) {
+  .header {
+    grid: "search"
+          "filters"
+          / auto;
+    padding: 0;
+  }
 }
 </style>
 
