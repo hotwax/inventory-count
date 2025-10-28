@@ -11,7 +11,6 @@
 
     <ion-content>
       <main>
-        <!-- Left Panel (matches Reference UI layout & wording) -->
         <div class="count-events">
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
@@ -58,11 +57,9 @@
             </ion-list>
           </div>
 
-          <!-- Decorative card anchored bottom like Reference UI (no logic change) -->
           <ion-card class="add-pre-counted" href="">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">Add pre-counted items</ion-label>
-              <!-- addOutline icon is imported already in Reference UI; harmless here if present in your project -->
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
             </ion-item>
           </ion-card>
