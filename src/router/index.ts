@@ -8,6 +8,8 @@ import 'vue-router'
 import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
 import Tabs from '@/views/Tabs.vue';
+import Draft from "@/views/Draft.vue";
+import DraftDetail from "@/views/DraftDetail.vue";
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
 import PendingReview from '@/views/PendingReview.vue';
@@ -52,7 +54,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/",
     redirect: () => {
       if(hasPermission("APP_DRAFT_VIEW")) {
-        return "/assigned"
+        return "/draft"
       }
       return "/tabs/count"
     },
@@ -143,6 +145,53 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_STORE_PERMISSIONS_VIEW"
+    }
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/pending-review/:inventoryCountImportId',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,  
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
+  },
+  {
+    path: '/closed/:inventoryCountImportId',
+    name: 'ClosedDetail',
+    component: ClosedDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
     }
   },
   {

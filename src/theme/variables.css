@@ -74,6 +74,9 @@ http://ionicframework.com/docs/theming/ */
   --ion-color-light-contrast-rgb: 0, 0, 0;
   --ion-color-light-shade: #d7d8da;
   --ion-color-light-tint: #f5f6f9;
+
+  /** Spacer **/
+  --spacer-xs: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -273,7 +276,8 @@ main {
   display: flex;
   justify-content: center;
   align-items: start;
-  height: 100%;
+  /* gap: var(--spacer-2xl); */
+  max-width: 100%;
 }
 
 .header {
@@ -315,37 +319,16 @@ ion-input.name {
   --background: var(--ion-color-light);
 }
 
-/* move to theme package */
-
-/* testing out new static attribute to make list items not appear clickable */
+/* testing out new static attribute to make list items not appear clickable (need to move to theme package) */
 :hover [data-static = "true"] { 
   --list-item-bg-hover: none;
   background: initial;
 }
 
-/* default icon handling */
+/* default icon handling (need to move to theme package) */
 
 ion-icon.standalone-icon {
   font-size: 1.5rem;
   color: rgba(var(--ion-text-color-rgb, 0, 0, 0), 0.54);
 
-}
-
-/* card layout */
-
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: start;
-}
-
-.cards ion-card {
-  flex: 0 1 304px;
-}
-
-/* ion-note slot end alignment */
-
-ion-item ::slotted(ion-note) {
-  align-self: unset;
-  padding-block: unset;
 }

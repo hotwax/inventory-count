@@ -38,7 +38,6 @@ import BulkUploadErrorModal from "./BulkUploadErrorModal.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 
 const { fetchCycleCountUploadedFileData, cancelCycleCountFileProcessing } = useInventoryCountImport();
-
 const props = defineProps(["systemMessage", "fileName"])
 
 function closePopover() {
