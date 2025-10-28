@@ -270,7 +270,7 @@ watch(() => filters, async () => {
     cycleCounts.value = count.data;
   } else {
     showToast(translate("Something Went Wrong!"));
-    console.error("Error Submitting ", count);
+    console.error("Error Fetching Cycle Count: ", count);
   }
 },{ deep: true });
 
@@ -309,7 +309,6 @@ function getDcsnFilter() {
 }
 
 async function fetchCountSessions(productId: any) {
-  console.log("These are count id and product id", props.workEffortId, productId);
   loadingSessions.value = true;
   sessions.value = [];
   const resp = await fetchSessions({
@@ -338,8 +337,6 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
   inventoryCountProductsList.push(inventoryCountProductMap);
 
   const resp = await submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
-
-  console.log("This is reponse", resp);
 
   if (resp?.status === 200) {
     cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
