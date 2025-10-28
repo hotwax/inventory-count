@@ -141,13 +141,13 @@ const actions: ActionTree<CountState, RootState> = {
     }
   },
   async clearCycleCountList({ commit }, payload) {
-    if (payload.currentStatusId === 'CYCLE_CNT_IN_CMPLTD') {
+    if (payload.workEffortStatusId === 'CYCLE_CNT_IN_CMPLTD') {
       commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { inReviewWorkEfforts: [], total: 0 })
-    } else if (payload.currentStatusId === 'CYCLE_CNT_CREATED') {
+    } else if (payload.workEffortStatusId === 'CYCLE_CNT_CREATED') {
       commit(types.COUNT_DRAFT_WORK_EFFORTS_UPDATED, { draftWorkEfforts: [], total: 0 })
-    } else if (payload.currentStatusId === 'CYCLE_CNT_IN_PRGS') {
+    } else if (payload.workEffortStatusId === 'CYCLE_CNT_IN_PRGS') {
       commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts: [], total: 0 })
-    } else if (payload.currentStatusId === "CYCLE_CNT_IN_CLOSED") {
+    } else if (payload.workEffortStatusId === "CYCLE_CNT_IN_CLOSED") {
       commit(types.COUNT_CLOSED_WORK_EFFORTS_UPDATED, { closedWorkEfforts: [], total: 0 })
     }
   }
