@@ -192,7 +192,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: 'N',
+          isRequested: !productId ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt

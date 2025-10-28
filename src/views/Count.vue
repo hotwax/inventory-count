@@ -88,16 +88,20 @@
 
 <script setup>
 import {
+  IonButton,
   IonCard,
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
   IonContent,
   IonHeader,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
+  IonItemGroup,
   IonLabel,
+  IonList,
   IonNote,
   IonPage,
   IonSegment,
@@ -106,6 +110,7 @@ import {
   IonToolbar,
   onIonViewDidEnter
 } from '@ionic/vue';
+import { addCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
