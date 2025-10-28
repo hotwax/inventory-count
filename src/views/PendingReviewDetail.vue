@@ -99,7 +99,7 @@
           </ion-item>
           </ion-list>
           <ion-item-divider color="light">
-            <ion-checkbox slot="start"/>
+            <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             5 results out of 1,200
             <ion-select slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="parent">Parent product</ion-select-option>
@@ -114,7 +114,7 @@
             <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
               <div class="list-item count-item-rollup" slot="header"> 
                 <div class="item-key">
-                  <ion-checkbox @click.stop="stopAccordianEventProp"></ion-checkbox>
+                  <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox>
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
                       <dxp-image></dxp-image>
@@ -167,11 +167,11 @@
                   <p>counted</p>
                 </ion-label>
                 <ion-label>
-                  {{ session.createdDate }}
+                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
                   <p>started</p>
                 </ion-label>
                 <ion-label>
-                  {{ session.itemCreatedDate }}
+                  {{ getDateWithOrdinalSuffix(session.itemCreatedDate) }}
                   <p>last updated</p>
                 </ion-label>
                 <ion-button fill="clear" color="medium">
@@ -196,11 +196,11 @@
     <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button fill="outline" color="success" size="small">
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
             Accept
           </ion-button>
           <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
-          <ion-button fill="clear" color="danger" size="small" class="ion-margin-horizontal">
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
             Reject
           </ion-button>
         </ion-buttons>
@@ -218,7 +218,7 @@ import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-
+import { loader } from "@/user-utils";
 
 const props = defineProps({
   workEffortId: String
@@ -275,8 +275,82 @@ watch(() => filters, async () => {
 },{ deep: true });
 
 const sessions = ref();
+const selectedProductsReview = ref<any[]>([]);
+
 
 const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
+
+
+function isSelected(product: any) {
+  return selectedProductsReview.value.some(
+    (p: any) => p.productId === product.productId
+  );
+}
+
+function toggleSelectedForReview(product: any) {
+  const index = selectedProductsReview.value.findIndex(
+    (p: any) => p.productId === product.productId
+  );
+
+  if (index === -1) {
+    selectedProductsReview.value.push(product);
+  } else {
+    selectedProductsReview.value.splice(index, 1);
+  }
+}
+
+const isAllSelected = computed(() => {
+  return (
+    cycleCounts.value?.length > 0 && selectedProductsReview.value?.length === cycleCounts.value.length
+  );
+});
+
+function toggleSelectAll(event: CustomEvent) {
+  const isChecked = event.detail.checked;
+
+  if (isChecked) {
+    selectedProductsReview.value = cycleCounts.value.filter(
+      (cycle: any) => !cycle.decisionOutcomeEnumId
+    );
+  } else {
+    selectedProductsReview.value = [];
+  }
+}
+
+
+async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
+  await loader.present("Submitting Review...");
+  const inventoryCountProductsList = selectedProductsReview.value.map(product => ({
+    workEffortId: props.workEffortId,
+    productId: product.productId,
+    facilityId: workEffort.value.facilityId,
+    varianceQuantity: product.proposedVarianceQuantity,
+    systemQuantity: product.quantity,
+    countedQuantity: product.quantityOnHand,
+    decisionOutcomeEnumId: decisionOutcomeEnumId,
+    decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+  }));
+
+  console.log("Before API call:", inventoryCountProductsList);
+
+  const resp = await submitProductReview({ inventoryCountProductsList });
+
+  if (resp && resp.status === 200) {
+    const selectedProductIds = selectedProductsReview.value.map(p => p.productId);
+
+    cycleCounts.value.forEach((cycle: any) => {
+      if (selectedProductIds.includes(cycle.productId)) {
+        cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
+      }
+    });
+
+    selectedProductsReview.value = [];
+  } else {
+    showToast("Something Went Wrong");
+    console.error("Error while submitting: ", resp);
+  }
+  await loader.dismiss();
+}
 
 async function filterProductByInternalName() {
 
