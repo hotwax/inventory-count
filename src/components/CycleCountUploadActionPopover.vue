@@ -31,11 +31,13 @@ import {
 import { defineProps } from "vue";
 import { translate } from "@/i18n"
 import store from "@/store";
-import { CountService } from "@/services/CountService"
 import { downloadCsv, hasError, showToast } from "@/utils";
 import logger from "@/logger";
 import BulkUploadErrorModal from "./BulkUploadErrorModal.vue";
 
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+
+const { fetchCycleCountUploadedFileData, cancelCycleCountFileProcessing } = useInventoryCountImport();
 const props = defineProps(["systemMessage", "fileName"])
 
 function closePopover() {
@@ -43,7 +45,7 @@ function closePopover() {
 }
 async function viewFile() {
   try {
-    const resp = await CountService.fetchCycleCountUploadedFileData({
+    const resp = await fetchCycleCountUploadedFileData({
       systemMessageId: props.systemMessage.systemMessageId,
     });
     if (!hasError(resp)) {
@@ -71,7 +73,7 @@ async function viewErrorModal() {
 }
 async function cancelUpload () {
   try {
-    const resp = await CountService.cancelCycleCountFileProcessing({
+    const resp = await cancelCycleCountFileProcessing({
       systemMessageId: props.systemMessage.systemMessageId,
       statusId: 'SmsgCancelled'
     });

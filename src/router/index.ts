@@ -7,21 +7,17 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-import CountDetail from '@/views/CountDetail.vue';
 import Tabs from '@/views/Tabs.vue';
-import Draft from "@/views/Draft.vue";
-import DraftDetail from "@/views/DraftDetail.vue";
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
-import PendingReview from "@/views/PendingReview.vue";
-import PendingReviewDetail from "@/views/PendingReviewDetail.vue";
+import PendingReview from '@/views/PendingReview.vue';
+import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
+import Settings from "@/views/Settings.vue";
+import SessionCountDetail from "@/views/SessionCountDetail.vue"
+import BulkUpload from "@/views/BulkUpload.vue";
+import Draft from "@/views/Draft.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
-import Settings from "@/views/Settings.vue";
-import BulkUpload from "@/views/BulkUpload.vue"
-import HardCount from "@/views/HardCount.vue"
-import HardCountDetail from "@/views/HardCountDetail.vue"
-import ClosedDetail from "@/views/ClosedDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -83,58 +79,10 @@ const routes: Array<RouteRecordRaw> = [
     ],
     beforeEnter: authGuard,
   },
-  
-  {
-    path: '/count-detail/:id',
-    name: 'CountDetail',
-    component: CountDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
-  },
-  {
-    path: '/count-detail/hard/:id',
-    name: 'HardCountDetail',
-    component: HardCountDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_COUNT_VIEW"
-    }
-  },
-  {
-    path: '/bulkUpload',
-    name: 'Draft bulk',
-    component: BulkUpload,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
   {
     path: '/draft',
     name: 'Draft',
     component: Draft,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
-    path: '/hard-count',
-    name: 'HardCount',
-    component: HardCount,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
-    path: "/draft/:inventoryCountImportId",
-    name: "DraftDetail",
-    component: DraftDetail,
     beforeEnter: authGuard,
     props: true,
     meta: {
@@ -151,6 +99,15 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
+  },
+  {
     path: '/assigned/:inventoryCountImportId',
     name: 'AssignedDetail',
     component: AssignedDetail,
@@ -158,6 +115,43 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: "APP_ASSIGNED_VIEW"
+    }
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/pending-review/:workEffortId',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW"
+    }
+  },
+  {
+    path: '/bulkUpload',
+    name: 'Draft bulk',
+    component: BulkUpload,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_STORE_PERMISSIONS_VIEW"
     }
   },
   {
@@ -189,16 +183,6 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/closed/:inventoryCountImportId',
-    name: 'ClosedDetail',
-    component: ClosedDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW"
-    }
-  },
-  {
     path: '/store-permissions',
     name: 'StorePermissions',
     component: StorePermissions,
@@ -218,6 +202,13 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
+  },
+  {
+    path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
+    name: 'SessionCountDetail',
+    component: SessionCountDetail,
+    beforeEnter: authGuard,
+    props: true
   }
 ];
 
@@ -248,9 +239,9 @@ router.beforeEach((to, from) => {
   // - If using ionViewWillLeave/DidLeave hook to clear the filters, the filters are also cleared when moving to and fro from the details page of the same parent page, but in this case we do not want to clear the filters
   //
   // Added check that if the `to` page has the same url pattern as the `from` page and vice-versa then do not clear the filters, used this approach as parent and child page paths are identical
-  if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
-    store.dispatch("count/clearQuery")
-  }
+  // if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
+  //   store.dispatch("count/clearQuery")
+  // }
 })
 
 

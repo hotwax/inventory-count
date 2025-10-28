@@ -17,131 +17,67 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <main>
-        <template v-if="isLoading">
-          <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
-        </template>
-        <section v-else-if="cycleCount.length">
-          <template v-if="selectedSegment === 'assigned'">
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
-              </ion-card-header>
-              <ion-item lines="none">
-                {{ translate("Due date") }}
-                <ion-label slot="end">
-                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
+    <ion-content class="ion-padding" ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+      </template>
+      <template v-if="selectedSegment === 'assigned'">
+        <ion-card v-for="count in cycleCount" :key="count.workEffortId">
+          <ion-card-header>
+            <div>
+              <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
+                {{ translate("HARD COUNT") }}
+              </ion-label>
+              <ion-card-title>
+                {{ count.workEfforName }}
+              </ion-card-title>
+              <ion-card-subtitle>
+                {{ getDateWithOrdinalSuffix(count.createdDate) }}
+              </ion-card-subtitle>
+            </div>
+          </ion-card-header>
+          <ion-item lines="none">
+            {{ translate("Due date") }}
+            <ion-label slot="end">
+              <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-list>
+            <ion-list-header>
+              <ion-label>
+                Sessions
+              </ion-label>
+              <ion-button v-if="count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+                  <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
+                  New
+              </ion-button>
+            </ion-list-header>
+            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-label>
+                Start new session
+              </ion-label>
+            </ion-button>
+            <!-- TODO: Need to show the session on this device seperately from the other sessions -->
+              <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
+              <ion-item detail="true" :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-label>
+                  {{ session.countImportName }} + {{ session.facilityAreaId }}
+                  <p>
+                    created By {{ session.uploadedByUserLogin }}
+                  </p>
                 </ion-label>
+                <ion-note slot="end">
+                  {{ getSessionStatusDescription(session.statusId) }}
+                </ion-note>
               </ion-item>
-            </ion-card>
-          </template> 
-          <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <ion-item>
-                {{ translate("Due date") }}
-                <ion-label slot="end">
-                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                </ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                {{ translate("Submission date") }}
-                <ion-label slot="end">
-                  <p>{{ getSubmissionDate(count) }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-card>
-          </template>
-          <template v-else>
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <div class="header">
-                <div class="search">
-                  <ion-item>
-                    {{ translate("Due date") }}
-                    <ion-label slot="end">
-                      <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Submission date") }}
-                    <ion-label slot="end">
-                      <p>{{ getSubmissionDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item lines="none">
-                    {{ translate("Closed date") }}
-                    <ion-label slot="end">
-                      <p>{{ getClosedDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-                <div class="filters">
-                  <ion-item>
-                    {{ translate("Rejected") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Total variance") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalVariance }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-              </div>
-            </ion-card>
-          </template> 
-        </section>
-        <template v-else>
-          <p class="empty-state">{{ translate("No cycle counts found") }}</p>
-        </template>
-      </main>
+            </ion-item-group>
+          </ion-list>
+        </ion-card>
+        <AddNewSessionModal v-model:isOpen="isAddSessionModalOpen" :work-effort-id="selectedWorkEffortId"/>
+      </template>
+      <!-- <template v-else>
+        <p class="empty-state">{{ translate("No cycle counts found") }}</p>
+      </template> -->
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -174,23 +110,25 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router'
-import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
+import { getDateWithOrdinalSuffix, showToast } from "@/utils"
 import { useUserStore } from '@hotwax/dxp-components';
+import AddNewSessionModal from '@/components/AddNewSessionModal.vue';
 
 const store = useStore();
 const router = useRouter()
 const userStore = useUserStore();
 
-const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
+const cycleCount = computed(() => store.getters["count/getAssignedWorkEfforts"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
 const currentFacility = computed(() => userStore.getCurrentFacility)
-const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
-
+// const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const contentRef = ref({});
 const infiniteScrollRef = ref({});
 let isLoading = ref(false);
+const isAddSessionModalOpen = ref(false);
+const selectedWorkEffortId = ref(null);
 
 onIonViewDidEnter(async() => {
   isLoading.value = true;
@@ -198,16 +136,47 @@ onIonViewDidEnter(async() => {
   isLoading.value = false;
 })
 
-function enableScrolling() {
-  const parentElement = contentRef.value.$el
-  const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
-  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-  if(distanceFromInfinite < 0) {
-    isScrollingEnabled.value = false;
-  } else {
-    isScrollingEnabled.value = true;
+// TODO: Fetch the status description when the app loads.
+function getSessionStatusDescription(statusId) {
+  if (!statusId) {
+    return "";
   }
+  if (statusId === "SESSION_CREATED") {
+    return "Created";
+  } else if (statusId === "SESSION_ASSIGNED") {
+    return "In Progress";
+  } else if (statusId === "SESSION_SUBMITTED") {
+    return "Submitted";
+  } else if (statusId === "SESSION_VOIDED") {
+    return "Voided";
+  }
+}
+
+
+function showAddNewSessionModal(workEffortId) {
+  isAddSessionModalOpen.value = true;
+  selectedWorkEffortId.value = workEffortId;
+}
+
+function enableScrolling() {
+  // Make sure refs exist and DOM is ready
+  const parentElement = contentRef.value?.$el
+  if (!parentElement) return
+
+  // Get the internal scrollable element inside ion-content
+  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']")
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return
+
+  const scrollHeight = scrollEl.scrollHeight
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight
+  const scrollTop = scrollEl.scrollTop
+  const threshold = 100
+  const height = scrollEl.offsetHeight
+
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+
+  // Enable or disable scroll based on distance
+  isScrollingEnabled.value = distanceFromInfinite >= 0
 }
 
 async function loadMoreCycleCount(event) {
@@ -237,9 +206,10 @@ async function fetchCycleCounts(vSize, vIndex) {
     pageSize,
     pageIndex,
     facilityId,
-    statusId: getStatusIdForCountsToBeFetched()
+    currentStatusId: getStatusIdForCountsToBeFetched()
   };
-  await store.dispatch("count/fetchCycleCountsLists", payload);
+  console.log("Fetching cycle counts with payload:", payload);
+  await store.dispatch("count/getAssignedWorkEfforts", payload);
 }
 
 async function segmentChanged(value) {
@@ -249,13 +219,13 @@ async function segmentChanged(value) {
   isLoading.value = false;
 }
 
-function navigateToStoreView(count) {
-  router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/count-detail/hard/${count.inventoryCountImportId}` : `/count-detail/${count.inventoryCountImportId}`);
-}
+// function navigateToStoreView(count) {
+//   router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/count-detail/hard/${count.inventoryCountImportId}` : `/count-detail/${count.inventoryCountImportId}`);
+// }
 
 function getStatusIdForCountsToBeFetched() {
   if(selectedSegment.value === "assigned") {
-    return "INV_COUNT_ASSIGNED"
+    return "CYCLE_CNT_IN_PRGS"
   } else if(selectedSegment.value === "pendingReview") {
     return "INV_COUNT_REVIEW"
   } else {
@@ -263,25 +233,25 @@ function getStatusIdForCountsToBeFetched() {
   }
 }
 
-function getSubmissionDate(count) {
-  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
-  }
+// function getSubmissionDate(count) {
+//   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+//   if(!history) {
+//     return "-";
+//   }
 
-  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
-  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
-}
+//   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
+//   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+// }
 
-function getClosedDate(count) {
-  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
-  }
+// function getClosedDate(count) {
+//   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
+//   if(!history) {
+//     return "-";
+//   }
 
-  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
-  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
-}
+//   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
+//   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
+// }
 </script> 
 
 <style scoped>
@@ -290,8 +260,8 @@ section {
 }
 
 ion-card {
-  min-width: 400px;
-  max-width: 650px;
+  max-width: 450px;
+  margin-inline: auto;
 }
 
 ion-card-header {

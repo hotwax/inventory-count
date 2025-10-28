@@ -13,30 +13,24 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <SearchBarAndSortBy />
-      <p v-if="!cycleCounts.length" class="empty-state">
+      <!-- <SearchBarAndSortBy /> -->
+      <!-- <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
-      </p>
-      <ion-list v-else>
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" @click="router.push(`/pending-review/${count.inventoryCountImportId}`)">
+      </p> -->
+      <ion-list>
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/pending-review/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-              {{ count.countImportName }}
-              <p>{{ count.inventoryCountImportId }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
+              {{ count.workEffortName }}
+              <p>{{ count.workEffortId }}</p>
             </ion-label>
           </ion-item>
           
           <ion-chip outline>
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
-          
-          <ion-label>
-            <!-- TODO: make it dynamic currently not getting stats correctly -->
-            {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
-            <p>{{ translate("counted") }}</p>
-          </ion-label>
 
           <ion-label>
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
@@ -44,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getDerivedStatusForCount(count)?.color" slot="end">{{ translate(getDerivedStatusForCount(count)?.label) }}</ion-badge>
+            <ion-badge slot="end">{{ translate(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -64,11 +58,10 @@ import { computed, ref } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
-import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
-import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 
-const cycleCounts = computed(() => store.getters["count/getCounts"])
-const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
+const cycleCounts = computed(() => store.getters["count/getInReviewCounts"])
+const isScrollable = computed(() => store.getters["count/isScrollable"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -79,7 +72,7 @@ onIonViewDidEnter(async () => {
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_CMPLTD'})
 })
 
 function enableScrolling() {
@@ -113,9 +106,9 @@ async function fetchPendingCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    statusId: "INV_COUNT_REVIEW"
+    currentStatusId: "CYCLE_CNT_IN_CMPLTD"
   }
-  await store.dispatch("count/fetchCycleCounts", payload)
+  await store.dispatch("count/getCycleCounts", payload)
 }
 </script>
 

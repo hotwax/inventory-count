@@ -238,6 +238,11 @@ http://ionicframework.com/docs/theming/ */
   }
 }
 
+body {
+  --ion-text-color: 0,0,0,.87;
+  --ion-background-color: #fff
+}
+
 @media (min-width: 991px) {
   .list-item {
     padding-block: var(--spacer-sm);
@@ -280,11 +285,6 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   align-items: center;
   gap: var(--spacer-xs);
-}
-
-/* Ensures the virtual scroller fills the viewport minus any surrounding UI elements, using a customizable offset via --virtual-scroller-offset */
-.virtual-scroller {
-  height: calc(100vh - var(--virtual-scroller-offset, 0px));
 }
 
 @media (max-width: 991px) {

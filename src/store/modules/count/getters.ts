@@ -3,41 +3,29 @@ import CountState from "./CountState";
 import RootState from "../../RootState";
 
 const getters: GetterTree<CountState, RootState> = {
-  getCounts(state) {
-    return state.list
-  },
-  getQuery(state) {
-    return state.query
-  },
-  getCycleCountStats: (state) => (id: string) =>  {
-    return state.stats[id]
+  getAssignedWorkEfforts(state) {
+    return state.assignedWorkEfforts ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []
   },
   getCycleCountsList(state) {
     return state.cycleCounts.list ? JSON.parse(JSON.stringify(state.cycleCounts.list)) : []
   },
-  isCycleCountListScrollable(state) {
-    return state.isScrollable
-  },
-  isCycleCountScrollable(state) {
-    return state.cycleCounts.isScrollable
-  },
-  getCycleCountItems(state) {
-    return state.cycleCountItems
+  isCountDetailPageActive(state) {
+    return state.isCountDetailPageActive;
   },
   getCycleCountImportSystemMessages(state) {
     return state.cycleCountImportSystemMessages
   },
-  getDefaultRecountUpdateBehaviour(state) {
-    return state.defaultRecountUpdateBehaviour
+  getDraftWorkEfforts(state) {
+    return state.draftWorkEfforts ? JSON.parse(JSON.stringify(state.draftWorkEfforts)) : []
   },
-  getCachedUnmatchProducts: (state) => (id: string) => {
-    return state.cachedUnmatchProducts[id]
+  getInReviewCounts(state) {
+    return state.inReviewWorkEfforts ? JSON.parse(JSON.stringify(state.inReviewWorkEfforts)) : []
   },
-  getClosedCycleCountsTotal(state) {
-    return state.closedCycleCountsTotal
+  getClosedCounts(state) {
+    return state.closedWorkEfforts ? JSON.parse(JSON.stringify(state.closedWorkEfforts)) : [];
   },
-  isCountDetailPageActive(state) {
-    return state.isCountDetailPageActive;
+  isScrollable(state) {
+    return state.isScrollable;
   }
 };
 

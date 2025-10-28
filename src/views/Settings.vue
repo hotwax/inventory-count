@@ -12,7 +12,7 @@
         <ion-card>
           <ion-item lines="full">
             <ion-avatar slot="start" v-if="userProfile?.partyImageUrl">
-              <Image :src="userProfile.partyImageUrl"/>
+              <!-- <Image :src="userProfile.partyImageUrl"/> -->
             </ion-avatar>
             <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
             is added on sides from ion-item and ion-padding-vertical to compensate the removed
@@ -104,10 +104,9 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
-import Image from "@/components/Image.vue"
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
 import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";

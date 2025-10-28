@@ -107,15 +107,15 @@ import {
   modalController,
   popoverController
 } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, trashBinOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
 import CreateMappingModal from "@/components/CreateMappingModal.vue";
-import { CountService } from "@/services/CountService"
 import CycleCountUploadActionPopover from "@/components/CycleCountUploadActionPopover.vue"
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
 
@@ -131,6 +131,7 @@ let fileColumns = ref([])
 let selectedMappingId = ref(null)
 const fileUploaded = ref(false);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
+const { bulkUploadInventoryCounts }  = useInventoryCountImport();
 
 
 onIonViewDidEnter(async() => {
@@ -232,7 +233,8 @@ async function save(){
   const uploadedData = content.value.map(item => {
     return {
       countImportName: item[fieldMapping.value.countImportName],
-      statusId: item[fieldMapping.value.statusId] ? item[fieldMapping.value.statusId] : "INV_COUNT_CREATED",
+      purposeType: item[fieldMapping.value.purposeType] ? item[fieldMapping.value.purposeType] : "DIRECTED_COUNT",
+      statusId: item[fieldMapping.value.statusId] ? item[fieldMapping.value.statusId] : "CYCLE_CNT_CREATED",
       idValue: item[fieldMapping.value.productSku],
       idType: "SKU",
       dueDate: item[fieldMapping.value.dueDate],
@@ -247,7 +249,7 @@ async function save(){
   formData.append("fileName", fileName.value.replace(".csv", ""));
   
   try {
-    const resp = await CountService.bulkUploadInventoryCounts({
+    const resp = await bulkUploadInventoryCounts({
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data;'

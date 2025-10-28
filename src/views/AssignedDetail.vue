@@ -73,7 +73,7 @@
         </template>
         
         <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
+          <!-- <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/> -->
         </template>
         <template v-else-if="currentCycleCount.items?.length">
           <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
@@ -82,12 +82,12 @@
           <div class="list-item">
             <ion-item lines="none">
               <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
+                <!-- <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/> -->
               </ion-thumbnail>
               <ion-label>
                 <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
+                {{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
+                <p>{{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
               </ion-label>
             </ion-item>
 
@@ -153,28 +153,38 @@ import { computed, defineProps, nextTick, ref } from "vue";
 import { translate } from '@/i18n'
 import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, lockClosedOutline } from "ionicons/icons";
 import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController, onIonViewWillLeave } from "@ionic/vue";
-import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
+// import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
 import store from "@/store"
 import logger from "@/logger"
-import { CountService } from "@/services/CountService"
+// import { CountService } from "@/services/CountService"
 import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getValidItems, sortListByField } from "@/utils"
 import emitter from '@/event-bus';
-import AddProductModal from "@/components/AddProductModal.vue"
+// import AddProductModal from "@/components/AddProductModal.vue"
 import router from "@/router";
-import Image from "@/components/Image.vue"
+// import Image from "@/components/Image.vue"
 import { DateTime } from "luxon";
 import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
+// import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductMaster } from '@/composables/useProductMaster'
 
 const props = defineProps({
   inventoryCountImportId: String
 })
+const { cacheReady, getById, prefetch } = useProductMaster()
+const productMap = ref<Record<string, any>>({})
+const identificationsMap = ref<Record<string, any>>({})
+
 
 const productIdentificationStore = useProductIdentificationStore();
 
 const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const getProduct = (id: string) => {
+  return productMap.value[id] || {}
+}
+const getProductByIdentification = (type: string, value: string) => {
+  const key = `${type}:${value}`
+  return identificationsMap.value[key] || {}
+}
 
 const dateTimeModalOpen = ref(false)
 const currentCycleCount = ref({}) as any
@@ -191,16 +201,7 @@ async function addProductToCount(productId: any) {
   }
 
   try {
-    const resp = await CountService.addProductToCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      itemList: [{
-        // Passing both productId and idValue for the backend compatibility
-        // idValue will be removed in the future.
-        idValue: productId,
-        productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
-    })
+    const resp = {}
 
     if(!hasError(resp)) {
       showToast(translate("Added product to count"))
@@ -218,7 +219,7 @@ onIonViewWillEnter(async () => {
 
   currentCycleCount.value = {}
   try {
-    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
+    const resp = {data: {inventoryCountImportId: '', statusId: '', countImportName: ''}} // await CountService.getCycleCountById({ inventoryCountImportId: props.inventoryCountImportId })
 
     if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data.statusId === "INV_COUNT_ASSIGNED") {
       currentCycleCount.value = {
@@ -249,7 +250,7 @@ async function fetchCountItems() {
 
   try {
     do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
+      resp = {data: {itemList: []}} // await CountService.getCountItems({ inventoryCountImportId: props.inventoryCountImportId, pageSize: 100, pageIndex })
       if(!hasError(resp) && resp.data?.itemList?.length) {
         items = items.concat(resp.data.itemList)
         cycleCountItemsProgress.value = items.length
@@ -265,7 +266,25 @@ async function fetchCountItems() {
   items = sortListByField(getValidItems(items), "parentProductName");
 
   currentCycleCount.value["items"] = items
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+
+  // Prefetch products using the product composable
+  const productIds = [...new Set(items.map((item: any) => item.productId))] as string[]
+  await prefetch(productIds)
+
+  // Populate the reactive productMap and identMap
+  for (const productId of productIds) {
+    const { product } = await getById(productId)
+    if (product) {
+      productMap.value[productId] = product
+
+      if (product.goodIdentifications?.length) {
+        for (const ident of product.goodIdentifications) {
+          const key = `${ident.type}:${ident.value}`
+          identificationsMap.value[key] = product
+        }
+      }
+    }
+  }
 }
 
 async function editCountName() {
@@ -281,26 +300,21 @@ async function updateCountName() {
     return;
   }
 
-  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
-    await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
-    .then(() => {
-      currentCycleCount.value.countName = countName.value.trim()
-    }).catch(() => {
-      countName.value = currentCycleCount.value.countName.trim()
-    })
-  }
+  // if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
+  //   await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
+  //   .then(() => {
+  //     currentCycleCount.value.countName = countName.value.trim()
+  //   }).catch(() => {
+  //     countName.value = currentCycleCount.value.countName.trim()
+  //   })
+  // }
 
   isCountNameUpdating.value = false
 }
 
 async function deleteItemFromCount(countItem: any) {
   try {
-    const resp = await CountService.updateCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      importItemSeqId: countItem.importItemSeqId,
-      statusId: "INV_COUNT_VOIDED",
-      productId: countItem.productId
-    })
+    const resp = {}
 
     if(!hasError(resp)) {
       currentCycleCount.value.items = currentCycleCount.value.items.filter((item: any) => item.importItemSeqId !== countItem.importItemSeqId)
@@ -314,39 +328,39 @@ async function deleteItemFromCount(countItem: any) {
   }
 }
 
-async function openAssignedCountPopover(event: any, item: any){
-  const popover = await popoverController.create({
-    component: AssignedCountPopover,
-    event,
-    componentProps: {
-      item
-    },
-    showBackdrop: false,
-  });
+// async function openAssignedCountPopover(event: any, item: any){
+  // const popover = await popoverController.create({
+  //   component: AssignedCountPopover,
+  //   event,
+  //   componentProps: {
+  //     item
+  //   },
+  //   showBackdrop: false,
+  // });
 
-  popover.onDidDismiss().then(async (result) => {
-    // considered that if a role is available on dismiss, it will be a negative role in which we don't need to perform any action
-    if(result.role) {
-      return;
-    }
+  // popover.onDidDismiss().then(async (result) => {
+  //   // considered that if a role is available on dismiss, it will be a negative role in which we don't need to perform any action
+  //   if(result.role) {
+  //     return;
+  //   }
 
-    if(result.data?.itemAction === "remove") {
-      await deleteItemFromCount(item)
-    }
-  })
+  //   if(result.data?.itemAction === "remove") {
+  //     await deleteItemFromCount(item)
+  //   }
+  // })
 
-  await popover.present();
-}
+  // await popover.present();
+// }
 
-async function addProduct() {
-  const addProductModal = await modalController.create({
-    component: AddProductModal,
-    componentProps: { cycleCount: currentCycleCount.value },
-    showBackdrop: false,
-  });
+// async function addProduct() {
+  // const addProductModal = await modalController.create({
+  //   component: AddProductModal,
+  //   componentProps: { cycleCount: currentCycleCount.value },
+  //   showBackdrop: false,
+  // });
 
-  await addProductModal.present();
-}
+  // await addProductModal.present();
+// }
 
 function getVarianceInformation() {
   let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
@@ -368,11 +382,11 @@ function getProgress() {
 
 async function updateCountStatus() {
   try {
-    await CountService.updateCycleCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      statusId: "INV_COUNT_REVIEW"
-    })
-    router.push("/pending-review")
+    // await CountService.updateCycleCount({
+    //   inventoryCountImportId: currentCycleCount.value.countId,
+    //   statusId: "INV_COUNT_REVIEW"
+    // })
+    // router.push("/pending-review")
     showToast(translate("Count has been submitted for review"))
   } catch(err) {
     showToast(translate("Failed to change the cycle count status"))
@@ -393,14 +407,14 @@ const handleDateTimeInput = (dateTimeValue: any) => {
 
 function updateCustomTime(event: any) {
   const date = handleDateTimeInput(event.detail.value)
-  CountService.updateCycleCount({
-    inventoryCountImportId: currentCycleCount.value.countId,
-    dueDate: date
-  }).then(() => {
-    currentCycleCount.value.dueDate = date
-  }).catch(err => {
-    logger.info(err)
-  })
+  // CountService.updateCycleCount({
+  //   inventoryCountImportId: currentCycleCount.value.countId,
+  //   dueDate: date
+  // }).then(() => {
+  //   currentCycleCount.value.dueDate = date
+  // }).catch(err => {
+  //   logger.info(err)
+  // })
 }
 </script>
 
