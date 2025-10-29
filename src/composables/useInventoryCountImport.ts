@@ -291,9 +291,7 @@ export function useInventoryCountImport() {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
       method: "get",
-      params: {
-        internalName: payload.internalName
-      }
+      params: payload
     });
   }
 
@@ -424,13 +422,13 @@ const submitProductReview = async (payload: any): Promise <any> => {
   })
 }
 
-const updateWorkEffort = async (payload: any): Promise <any>  => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-      method: "put",
-      params: payload
-    });
-  }
+const updateWorkEffort = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
+    method: "put",
+    data: payload
+  })
+}
     
   return {
     currentImport,
@@ -461,6 +459,8 @@ const updateWorkEffort = async (payload: any): Promise <any>  => {
     addSessionInCount,
     getWorkEfforts,
     fetchCycleCountImportErrors,
+    submitProductReview,
+    updateWorkEffort
     submitProductReview,
     updateWorkEffort
   };

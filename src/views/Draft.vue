@@ -10,7 +10,7 @@
                 {{ translate("No cycle counts found") }}
             </p>
             <ion-list v-else class="list">
-                <ion-item lines="full" v-for="count in cycleCounts" :key="count.workEffortId" button detail>
+                <ion-item lines="full" v-for="count in cycleCounts" :key="count.workEffortId" button detail  @click="router.push(`/draft/${count.workEffortId}`)">
                     <ion-label>
                         <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
                         {{ count.workEffortName }}
@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import router from '@/router';
 import { translate, useUserStore } from '@hotwax/dxp-components';
 import { IonPage, IonHeader, IonContent, onIonViewDidEnter, IonList, IonLabel, onIonViewWillLeave } from '@ionic/vue';
 import { computed, ref } from 'vue';
