@@ -62,9 +62,9 @@
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
               <ion-item :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
                 <ion-label>
-                  {{ session.countImportName }} + {{ session.facilityAreaId }}
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
                   <p>
-                    created By {{ session.uploadedByUserLogin }}
+                    created by {{ session.uploadedByUserLogin }}
                   </p>
                 </ion-label>
                 <ion-note slot="end">
