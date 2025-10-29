@@ -108,7 +108,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/assigned/:inventoryCountImportId',
+    path: '/assigned/:workEffortId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,

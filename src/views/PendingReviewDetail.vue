@@ -16,7 +16,7 @@
           <ion-card>
             <ion-item lines="none">
               <ion-label>
-                <p class="overline">{{ workEffort?.workEfforId }}</p>
+                <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
               <ion-button slot="end" fill="outline" color="medium">
@@ -170,7 +170,7 @@
                   <p>started</p>
                 </ion-label>
                 <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.itemCreatedDate) }}
+                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                   <p>last updated</p>
                 </ion-label>
                 <ion-button fill="clear" color="medium">
@@ -194,7 +194,7 @@
         </ion-fab>
       </template>
       <template v-else>
-        <p class="empty-state">{{ translate("Cycle Not Found") }}</p>
+        <p class="empty-state">{{ translate("Cycle Conut Not Found") }}</p>
       </template>
     </ion-content>
     
