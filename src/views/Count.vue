@@ -17,7 +17,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding" ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+    <ion-content class="ion-padding" ref="pageRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
@@ -73,11 +73,43 @@
             </ion-item-group>
           </ion-list>
         </ion-card>
-        <AddNewSessionModal v-model:isOpen="isAddSessionModalOpen" :work-effort-id="selectedWorkEffortId"/>
       </template>
-      <!-- <template v-else>
-        <p class="empty-state">{{ translate("No cycle counts found") }}</p>
-      </template> -->
+      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>New session</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-item>
+              <ion-label position="stacked">Name</ion-label>
+              <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
+              <ion-note slot="helper">Add a name to help identify what inventory is counted in this session</ion-note>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>Area</ion-list-header>
+
+              <ion-radio-group v-model="selectedArea">
+                <ion-item v-for="area in areas" :key="area.value">
+                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-list>
+
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="addNewSession">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
+
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -88,45 +120,28 @@
 
 <script setup>
 import {
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem,
-  IonItemGroup,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonTitle,
-  IonToolbar,
-  onIonViewDidEnter
+  IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent,
+  IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem,
+  IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton,
+  IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton,
+  IonListHeader, IonRadioGroup, IonRadio, IonInput, IonNote as IonNoteComponent
 } from '@ionic/vue';
-import { addCircleOutline } from 'ionicons/icons';
+import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router'
-import { getDateWithOrdinalSuffix, showToast } from "@/utils"
+import { useRouter } from 'vue-router';
+import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
-import AddNewSessionModal from '@/components/AddNewSessionModal.vue';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
-const router = useRouter()
+const router = useRouter();
 const userStore = useUserStore();
 
 const cycleCount = computed(() => store.getters["count/getAssignedWorkEfforts"]);
-const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
-const currentFacility = computed(() => userStore.getCurrentFacility)
-// const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
+const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"]);
+const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const contentRef = ref({});
@@ -134,29 +149,21 @@ const infiniteScrollRef = ref({});
 let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
+const pageRef = ref(null);
 
-onIonViewDidEnter(async() => {
+onIonViewDidEnter(async () => {
   isLoading.value = true;
   await fetchCycleCounts();
   isLoading.value = false;
-})
+});
 
-// TODO: Fetch the status description when the app loads.
 function getSessionStatusDescription(statusId) {
-  if (!statusId) {
-    return "";
-  }
-  if (statusId === "SESSION_CREATED") {
-    return "Created";
-  } else if (statusId === "SESSION_ASSIGNED") {
-    return "In Progress";
-  } else if (statusId === "SESSION_SUBMITTED") {
-    return "Submitted";
-  } else if (statusId === "SESSION_VOIDED") {
-    return "Voided";
-  }
+  if (!statusId) return "";
+  if (statusId === "SESSION_CREATED") return "Created";
+  if (statusId === "SESSION_ASSIGNED") return "In Progress";
+  if (statusId === "SESSION_SUBMITTED") return "Submitted";
+  if (statusId === "SESSION_VOIDED") return "Voided";
 }
-
 
 function showAddNewSessionModal(workEffortId) {
   isAddSessionModalOpen.value = true;
@@ -164,29 +171,23 @@ function showAddNewSessionModal(workEffortId) {
 }
 
 function enableScrolling() {
-  // Make sure refs exist and DOM is ready
-  const parentElement = contentRef.value?.$el
-  if (!parentElement) return
+  const parentElement = contentRef.value?.$el;
+  if (!parentElement) return;
+  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']");
+  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
 
-  // Get the internal scrollable element inside ion-content
-  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']")
-  if (!scrollEl || !infiniteScrollRef.value?.$el) return
+  const scrollHeight = scrollEl.scrollHeight;
+  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
+  const scrollTop = scrollEl.scrollTop;
+  const threshold = 100;
+  const height = scrollEl.offsetHeight;
 
-  const scrollHeight = scrollEl.scrollHeight
-  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight
-  const scrollTop = scrollEl.scrollTop
-  const threshold = 100
-  const height = scrollEl.offsetHeight
-
-  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-
-  // Enable or disable scroll based on distance
-  isScrollingEnabled.value = distanceFromInfinite >= 0
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = distanceFromInfinite >= 0;
 }
 
 async function loadMoreCycleCount(event) {
-  // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-  if(!(isScrollingEnabled.value && isScrollable.value)) {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
   }
   fetchCycleCounts(
@@ -224,44 +225,47 @@ async function segmentChanged(value) {
   isLoading.value = false;
 }
 
-// function navigateToStoreView(count) {
-//   router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/count-detail/hard/${count.inventoryCountImportId}` : `/count-detail/${count.inventoryCountImportId}`);
-// }
-
 function getStatusIdForCountsToBeFetched() {
-  if(selectedSegment.value === "assigned") {
-    return "CYCLE_CNT_IN_PRGS"
-  } else if(selectedSegment.value === "pendingReview") {
-    return "INV_COUNT_REVIEW"
-  } else {
-    return "INV_COUNT_COMPLETED"
-  }
+  if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
+  if (selectedSegment.value === "pendingReview") return "INV_COUNT_REVIEW";
+  return "INV_COUNT_COMPLETED";
 }
 
-// function getSubmissionDate(count) {
-//   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-//   if(!history) {
-//     return "-";
-//   }
+const areas = [
+  { value: 'back_stock', label: 'Back stock' },
+  { value: 'display', label: 'Display' },
+  { value: 'floor_wall', label: 'Floor - wall' },
+  { value: 'floor_shelf', label: 'Floor - shelf' },
+  { value: 'overflow', label: 'Overflow' },
+  { value: 'register', label: 'Register' },
+];
+const selectedArea = ref(areas[0].value);
+const countName = ref('');
 
-//   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
-//   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
-// }
+async function addNewSession() {
+  const resp = await useInventoryCountImport().createSessionOnServer({
+    countImportName: countName.value,
+    statusId: "SESSION_ASSIGNED",
+    uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+    facilityAreaId: selectedArea.value,
+    createdDate: Date.now(),
+    dueDate: Date.now(),
+    workEffortId: selectedWorkEffortId.value
+  });
 
-// function getClosedDate(count) {
-//   const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-//   if(!history) {
-//     return "-";
-//   }
-
-//   const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
-//   return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
-// }
-</script> 
+  if (resp?.status !== 200) {
+    showToast("Something Went Wrong!");
+    console.error(resp);
+  } else {
+    showToast("Session added Successfully");
+  }
+  isAddSessionModalOpen.value = false;
+}
+</script>
 
 <style scoped>
 section {
-  padding-bottom: 100px
+  padding-bottom: 100px;
 }
 
 ion-card {
@@ -304,5 +308,3 @@ main {
   }
 }
 </style>
-
-
