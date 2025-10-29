@@ -21,7 +21,7 @@
                 :router-link="page.path"
                 :class="{ selected: selectedIndex === index }"
               >
-                <ion-icon :icon="page.meta.icon" slot="start" />
+                <ion-icon :ios="page.meta.iosIcon" :md="page.meta.mdIcon" slot="start" />
                 <ion-label>{{ translate(page.meta.title || page.name) }}</ion-label>
               </ion-item>
             </ion-menu-toggle>
@@ -29,7 +29,6 @@
         </ion-content>
       </ion-menu>
 
-      <!-- ✅ Main Content -->
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>
