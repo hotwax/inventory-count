@@ -27,7 +27,8 @@ declare module 'vue-router' {
   interface RouteMeta {
     permissionId?: string;
     title?: string;
-    icon?: string;
+    iosIcon?: any;
+    mdIcon?: any;
     showInMenu?: boolean;
   }
 }
