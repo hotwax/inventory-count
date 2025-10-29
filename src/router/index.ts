@@ -108,7 +108,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/assigned/:inventoryCountImportId',
+    path: '/assigned/:workEffortId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,
@@ -164,7 +164,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/pending-review/:inventoryCountImportId',
+    path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
