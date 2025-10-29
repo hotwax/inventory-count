@@ -223,7 +223,7 @@ async function moveWorkEffortInProgress() {
       showToast(translate("Cycle Count Moved to In Progress"));
       router.push(`/assigned/${props.workEffortId}`);
     } else {
-      throw new Error(resp)
+      throw resp.data;
     }
   } catch (error) {
     showToast(translate("Something Went Wrong"));
@@ -283,7 +283,7 @@ watch(() => searchAndSortBy, async () => {
       cycleCounts.value = count.data;
       isScrollable.value = count.data.length >= pagination.pageSize;
     } else {
-      throw new Error(count.data);
+      throw count.data;
     }
   } catch (error) {
     showToast(translate("Something Went Wrong!"));
@@ -317,7 +317,7 @@ async function filterProductByInternalName() {
       cycleCounts.value = productReviewDetail.data;
       isScrollable.value = productReviewDetail.data >= pagination.pageSize;
     } else {
-      throw new Error(productReviewDetail.data);
+      throw productReviewDetail.data;
     }
   } catch (error) {
     showToast("Something Went Wrong");
