@@ -461,7 +461,5 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
     fetchCycleCountImportErrors,
     submitProductReview,
     updateWorkEffort
-    submitProductReview,
-    updateWorkEffort
   };
 }

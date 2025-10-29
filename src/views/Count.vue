@@ -125,11 +125,35 @@
 
 <script setup>
 import {
-  IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent,
-  IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem,
-  IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton,
-  IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton,
-  IonListHeader, IonRadioGroup, IonRadio, IonInput, IonNote as IonNoteComponent
+  IonButton,
+  IonCard,
+  IonCardHeader,
+  IonCardSubtitle,
+  IonCardTitle,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonItem,
+  IonItemGroup,
+  IonLabel,
+  IonList,
+  IonNote,
+  IonPage,
+  IonSegment,
+  IonSegmentButton,
+  IonTitle,
+  IonToolbar,
+  onIonViewDidEnter,
+  IonButtons,
+  IonModal,
+  IonFab,
+  IonFabButton,
+  IonListHeader,
+  IonRadioGroup,
+  IonRadio,
+  IonInput
 } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
@@ -151,7 +175,6 @@ const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"
 const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
-const contentRef = ref({});
 const infiniteScrollRef = ref({});
 let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
@@ -178,7 +201,7 @@ function showAddNewSessionModal(workEffortId) {
 }
 
 function enableScrolling() {
-  const parentElement = contentRef.value?.$el;
+  const parentElement = pageRef.value?.$el;
   if (!parentElement) return;
   const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']");
   if (!scrollEl || !infiniteScrollRef.value?.$el) return;
@@ -283,9 +306,7 @@ async function markAsCompleted(workEffortId) {
       await fetchCycleCounts();
     } else {
       showToast(translate("Failed to send session for review"));
-      throw new Error(response);
     }
-    console.log("Work effort updated successfully:", cycleCounts);
   } catch (err) {
     console.error("Error updating status:", err);
   }
@@ -313,13 +334,6 @@ ion-card-header {
 main {
   margin: var(--spacer-base) auto 0;
   display: flex;
-}
-
-.border-top {
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content max-content 1fr;
 }
 
 .header {
