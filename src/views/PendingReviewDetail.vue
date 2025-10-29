@@ -118,10 +118,7 @@
                     <ion-thumbnail slot="start">
                       <dxp-image></dxp-image>
                     </ion-thumbnail>
-                    <ion-label>
-                        {{ cycleCount.internalName }}
-                        <!-- <p>Secondary Id</p> -->
-                    </ion-label>
+                    <ion-label>{{ cycleCount.internalName }}</ion-label>
                   </ion-item>
                 </div>
                 <ion-label class="stat">
@@ -147,35 +144,40 @@
                 >
                   {{ cycleCount.decisionOutcomeEnumId }}
                 </ion-badge>
-
               </div>
-              <div v-if="loadingSessions">
-              <ion-spinner name="crescent"></ion-spinner>
-                <p>Loading items...</p>
-              </div>
-              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
-                <ion-item lines="none">
-                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+              <div slot="content">
+                <ion-list v-if="!sessions || !sessions.length">
+                  <ion-item>
+                    <ion-avatar slot="start">
+                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                    </ion-avatar>
+                    <ion-label>
+                      <h3><ion-skeleton-text animated style="width: 80%"></ion-skeleton-text></h3>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                  <ion-item lines="none">
+                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                  </ion-item>
                   <ion-label>
-                    {{ session.uploadedByUserLogin }}
+                    {{ session.counted }}
+                    <p>counted</p>
                   </ion-label>
-                </ion-item>
-
-                <ion-label>
-                  {{ session.counted }}
-                  <p>counted</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                  <p>started</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                  <p>last updated</p>
-                </ion-label>
-                <ion-button fill="clear" color="medium">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                </ion-button>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                    <p>started</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                    <p>last updated</p>
+                  </ion-label>
+                  <ion-button fill="clear" color="medium">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  </ion-button>
+                </div>
               </div>
             </ion-accordion>
           </ion-accordion-group>
@@ -468,7 +470,7 @@ function getDcsnFilter() {
 
 async function fetchCountSessions(productId: any) {
   loadingSessions.value = true;
-  sessions.value = [];
+  sessions.value = null;
   const resp = await fetchSessions({
     workEffortId: props.workEffortId,
     productId: productId
@@ -476,6 +478,8 @@ async function fetchCountSessions(productId: any) {
 
   if (resp && resp.status && resp.data && resp.data.length) {
     sessions.value = resp.data;
+  } else {
+    sessions.value = [];
   }
   loadingSessions.value = false;
 }
