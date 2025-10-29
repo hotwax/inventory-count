@@ -324,7 +324,8 @@ aggregationWorker.onmessageerror = (err) => {
         userLoginId: store.getters['user/getUserProfile']?.username,
         maargUrl: store.getters['user/getBaseUrl'],
         token: omsInfo.token,
-        barcodeIdentification: barcodeIdentification
+        barcodeIdentification: barcodeIdentification,
+        inventoryCountTypeId: props.inventoryCountTypeId
       }
     }
   })

@@ -200,7 +200,7 @@ export function useInventoryCountImport() {
     const items = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
-      .filter(r => (Number(r.quantity) || 0) > 0 && r.isRequested === 'Y')
+      .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
       .toArray()
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
@@ -219,6 +219,7 @@ export function useInventoryCountImport() {
           unmatched = true;
         }
       }
+      console.log("Mapped counted item:", item, "Unmatched:", unmatched);
       return {
         ...item,
         product,
@@ -250,7 +251,7 @@ export function useInventoryCountImport() {
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => r.isRequested === 'N' && r.productId)
+        .filter(r => r.isRequested === 'N' && Boolean(r.productId))
         .toArray();
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
