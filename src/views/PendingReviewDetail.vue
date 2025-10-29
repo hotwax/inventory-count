@@ -101,8 +101,7 @@
           <ion-item-divider color="light">
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             5 results out of 1,200
-            <ion-select slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="parent">Parent product</ion-select-option>
+            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
                 <ion-select-option value="variance">Variance</ion-select-option>
             </ion-select>
@@ -243,12 +242,13 @@ const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
-const filters = reactive({
+const filterAndSortBy = reactive({
   dcsnRsn: 'all',
-  searchedProductString: ''
+  searchedProductString: '',
+  sortBy: 'alphabetic'
 });
 
-const  { dcsnRsn, searchedProductString } = toRefs(filters);
+const  { dcsnRsn, searchedProductString, sortBy } = toRefs(filterAndSortBy);
 
 const isLoading = ref(false);
 
@@ -309,24 +309,32 @@ const pagination = reactive({
   pageIndex: 0
 });
 
-watch(() => filters, async () => {
+watch(() => filterAndSortBy, async () => {
+  await loader.present("Loading...");
+  try {
+    pagination.pageIndex = 0;
+    const count = await fetchCycleCount({
+      workEffortId: props.workEffortId,
+      pageSize: pagination.pageSize,
+      pageIndex: pagination.pageIndex,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
 
-  const count = await fetchCycleCount({
-    workEffortId: props.workEffortId,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
-    internalName_op: searchedProductString.value ? "contains" : null,
-    decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
-    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
-  });
-
-  if (count && count.status === 200 && count.data) {
-    cycleCounts.value = count.data;
-  } else {
+    if (count && count.status === 200 && count.data) {
+      cycleCounts.value = count.data;
+      isScrollable.value = count.data.length >= pagination.pageSize;
+    } else {
+      throw new Error(count.data);
+    }
+  } catch (error) {
     showToast(translate("Something Went Wrong!"));
-    console.error("Error Fetching Cycle Count: ", count);
+    console.error("Error Filters Products: ", error);
   }
+  loader.dismiss();
 },{ deep: true });
 
 const sessions = ref();
@@ -335,6 +343,12 @@ const selectedProductsReview = ref<any[]>([]);
 
 const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
 
+function getSortByField () {
+  if (!sortBy.value) return null;
+
+  if (sortBy.value === 'alphabetic') return 'internalName';
+  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
+}
 
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
