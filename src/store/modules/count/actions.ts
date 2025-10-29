@@ -9,7 +9,7 @@ import { DateTime } from "luxon"
 const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getAssignedWorkEfforts({ commit, state }, params) {
-    let assignedWorkEfforts = []
+    let assignedWorkEfforts = state.assignedWorkEfforts ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []
     let total = 0
     let isScrollable = true
 

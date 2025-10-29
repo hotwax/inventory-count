@@ -166,14 +166,13 @@ import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
-
 const { updateWorkEffort } = useInventoryCountImport();
 const store = useStore();
 const router = useRouter();
 const userStore = useUserStore();
 
 const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
-const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"]);
+const isScrollable = computed(() => store.getters["count/isScrollable"]);
 const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
@@ -182,10 +181,13 @@ let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
+const pageIndex = ref(0); // ✅ Track current page index
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
-  await fetchCycleCounts();
+  pageIndex.value = 0;
+  await fetchCycleCounts(true);
   isLoading.value = false;
 });
 
@@ -203,56 +205,49 @@ function showAddNewSessionModal(workEffortId) {
 }
 
 function enableScrolling() {
-  const parentElement = pageRef.value?.$el;
-  if (!parentElement) return;
-  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']");
-  if (!scrollEl || !infiniteScrollRef.value?.$el) return;
-
-  const scrollHeight = scrollEl.scrollHeight;
-  const infiniteHeight = infiniteScrollRef.value.$el.offsetHeight;
-  const scrollTop = scrollEl.scrollTop;
-  const threshold = 100;
-  const height = scrollEl.offsetHeight;
-
-  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  const parentElement = pageRef.value.$el
+  const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
+  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
   isScrollingEnabled.value = distanceFromInfinite >= 0;
 }
 
 async function loadMoreCycleCount(event) {
   if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
+    return;
   }
-  fetchCycleCounts(
-    undefined,
-    Math.ceil(
-      cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE)
-    ).toString()
-  ).then(async () => {
-    await event.target.complete();
-  });
+
+  pageIndex.value += 1; // ✅ Increment page index each time
+  await fetchCycleCounts(false);
+  await event.target.complete();
 }
 
-async function fetchCycleCounts(vSize, vIndex) {
-  if(!currentFacility.value?.facilityId) {
+async function fetchCycleCounts(reset = false) {
+  if (!currentFacility.value?.facilityId) {
     showToast(translate("No facility is associated with this user"));
     return;
   }
-  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
-  const pageIndex = vIndex ? vIndex : 0;
-  const facilityId = currentFacility.value?.facilityId
+
+  if (reset) {
+    pageIndex.value = 0;
+  }
+
   const payload = {
-    pageSize,
-    pageIndex,
-    facilityId,
+    pageSize: pageSize.value,
+    pageIndex: pageIndex.value,
+    facilityId: currentFacility.value.facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched()
   };
+
   await store.dispatch("count/getAssignedWorkEfforts", payload);
 }
 
 async function segmentChanged(value) {
   isLoading.value = true;
-  selectedSegment.value = value
-  await fetchCycleCounts()
+  selectedSegment.value = value;
+  pageIndex.value = 0;
+  await fetchCycleCounts(true);
   isLoading.value = false;
 }
 
@@ -292,20 +287,14 @@ async function addNewSession() {
   }
   isAddSessionModalOpen.value = false;
 }
+
 async function markAsCompleted(workEffortId) {
-
   try {
-    const response = await updateWorkEffort({workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD'});
-
+    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD' });
     if (response && response.status === 200) {
-      // const index = cycleCounts.value.findIndex(c => c.workEffortId === workEffortId);
-      // console.log("Index of updated work effort:", index);
-      // if (index !== -1) {
-      //   cycleCounts.value.splice(index, 1);
-      // }
-
       showToast(translate("Session sent for review successfully"));
-      await fetchCycleCounts();
+      pageIndex.value = 0;
+      await fetchCycleCounts(true);
     } else {
       showToast(translate("Failed to send session for review"));
     }
