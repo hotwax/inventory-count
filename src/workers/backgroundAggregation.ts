@@ -192,7 +192,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: 'N',
+          isRequested: !productId || context.inventoryCountTypeId === 'HARD_COUNT' ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt
@@ -222,6 +222,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
   const now = Date.now();
 
   try {
+    ensureProductStored(productId, context);
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
       const table = db.table('inventoryCountRecords');
 
@@ -230,7 +231,6 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
         .and((r: any) => r.uuid === item?.uuid)
         .first();
 
-      if (productId) ensureProductStored(productId, context);
       if (existing) {
         // Use compound key + modify for a safe partial update
         await table

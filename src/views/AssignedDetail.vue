@@ -2,472 +2,403 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/assigned" />
+        <ion-back-button slot="start" default-href="/assigned"/>
         <ion-title>{{ translate("Assigned count")}}</ion-title>
-        <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button @click="addProduct()">
-            <ion-icon slot="icon-only" :icon="addOutline" />
-          </ion-button>
-        </ion-buttons>
       </ion-toolbar>
     </ion-header>
- 
-    <ion-content class="main-content" :scroll-y="false">
-      <template v-if="currentCycleCount.inventoryCountImportId">
-        <template v-if="!isLoadingItems">
-        <div class="header">
-          <div class="search ion-padding">
-            <ion-item lines="none">
-              <ion-label slot="start">
-                <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-                <p>{{ currentCycleCount.countId }}</p>
-              </ion-label>
 
-              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-                {{ translate("Rename") }}
-              </ion-button>
-              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-                {{ translate("Save") }}
+    <ion-content>
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+      </template>
+      <template v-else-if="workEffort">
+        <div class="header">
+          <ion-card>
+            <ion-item lines="none">
+              <ion-label>
+                <p class="overline">{{ workEffort?.workEffortId }}</p>
+                <h1>{{ workEffort?.workEffortName }}</h1>
+              </ion-label>
+              <ion-button slot="end" fill="outline" color="medium">
+                Edit
               </ion-button>
             </ion-item>
-            <ion-chip outline @click="openDateTimeModal">
-              <ion-icon :icon="calendarClearOutline"/>
-              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-            </ion-chip>
-            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-              <ion-content :force-overscroll="false">
-                <ion-datetime
-                  id="schedule-datetime"
-                  :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
-                  @ionChange="updateCustomTime($event)"
-                  :min="DateTime.now().toISO()"
-                  :max="DateTime.now().plus({ years: 10 }).toISO()"
-                  presentation="date"
-                  showDefaultButtons
-                />
-              </ion-content>
-            </ion-modal>
-            <ion-chip outline>
-              <ion-icon :icon="businessOutline"/>
-              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-            </ion-chip>
-          </div>
-          <div class="filters">
-            <ion-list>
-              <ion-item v-if="currentCycleCount.countTypeEnumId !== 'HARD_COUNT'">
-                <ion-label>{{ translate("Progress") }}</ion-label>
-                <ion-label slot="end">{{ getProgress() }}</ion-label>
+            <ion-item>
+              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
+              <ion-label>
+                {{ getFacilityName(workEffort?.facilityId) }}
+              </ion-label>
+            </ion-item>
+            <ion-item class="due-date">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <div>
+                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
+                <ion-datetime-button datetime="datetime"></ion-datetime-button>
+                <ion-modal :keep-contents-mounted="true">
+                  <ion-datetime id="datetime"></ion-datetime>
+                </ion-modal>
+              </div>
+            </ion-item>
+          </ion-card>
+          <ion-card>
+            <ion-item>
+              <ion-label>First item counted</ion-label>
+              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Last item counted</ion-label>
+              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>
+                40% Coverage
+              </ion-label>
+            </ion-item>
+          </ion-card>
+
+          <div class="statistics">
+            <ion-card>
+              <ion-item lines="none">
+                <ion-label>
+                  Review progress 60% complete
+                  <p>6 out of 10 items complete</p>
+                </ion-label>
               </ion-item>
-              <ion-item>
-                <ion-label>{{ translate("Variance") }}</ion-label>
-                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
+            </ion-card>
+            <ion-card>
+              <ion-item lines="full">
+                <ion-label>
+                  <p class="overline">Overall variance (Filtered)</p>
+                  <h3>16 units</h3>
+                  <p>based on 4 results</p>
+                </ion-label>
               </ion-item>
-            </ion-list>
+            </ion-card>
           </div>
         </div>
 
-        <hr/>
-        </template>
-        
-        <template v-if="isLoadingItems">
-          <!-- <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/> -->
-        </template>
-        <template v-else-if="currentCycleCount.items?.length">
-          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
-            <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :active="active" :index="index">
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <!-- <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/> -->
-              </ion-thumbnail>
-              <ion-label>
-                <p :class="item.itemStatusId === 'INV_COUNT_COMPLETED' ? 'overline status-success' : 'overline status-danger'" v-if="item.itemStatusId === 'INV_COUNT_COMPLETED' || item.itemStatusId === 'INV_COUNT_REJECTED'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</p>
-                {{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductByIdentification(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>          
-              </ion-label>
-            </ion-item>
+        <div class="controls ion-margin-top">
+          <ion-list lines="full" class="filters ion-margin">
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+          </ion-list>
+          <ion-item-divider color="light">
+            5 results out of 1,200
+            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
+                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
+                <ion-select-option value="variance">Variance</ion-select-option>
+            </ion-select>
+          </ion-item-divider>
+        </div>
 
-            <ion-label>
-              {{ item.qoh ?? "-" }}
-              <p>{{ translate("QoH") }}</p>
-            </ion-label>
+        <div class="results ion-margin-top" v-if="cycleCounts?.length">
+          <ion-accordion-group>
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+              <div class="list-item count-item-rollup" slot="header"> 
+                <div class="item-key">
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <dxp-image></dxp-image>
+                    </ion-thumbnail>
+                    <ion-label>
+                        {{ cycleCount.internalName }}
+                        <!-- <p>Secondary Id</p> -->
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <ion-label class="stat">
+                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
+                  <p>counted/systemic</p>
+                </ion-label>
+                <ion-label class="stat">
+                  {{ cycleCount.proposedVarianceQuantity }}
+                  <p>variance</p>
+                </ion-label>
+              </div>
+              <div v-if="loadingSessions">
+              <ion-spinner name="crescent"></ion-spinner>
+                <p>Loading items...</p>
+              </div>
+              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
+                <ion-item lines="none">
+                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                  <ion-label>
+                    {{ session.uploadedByUserLogin }}
+                  </ion-label>
+                </ion-item>
 
-            <template v-if="item.quantity >=0 ">
-              <ion-label>
-                {{ item.quantity }}
-                <p>{{ translate("counted") }}</p>
-              </ion-label>
-
-              <ion-label>
-                {{ item.qoh ? +(item.quantity) - +(item.qoh) : item.quantity }}
-                <p>{{ translate("variance") }}</p>
-              </ion-label>
-            </template>
-
-            <ion-chip outline class="tablet grid-span-columns" v-else>
-              <ion-label>{{ translate("count pending") }}</ion-label>
-            </ion-chip>
-
-            <ion-chip outline v-if="item.quantity >= 0">
-              <ion-icon :icon="personCircleOutline"/>
-              <ion-label>{{ getPartyName(item) }}</ion-label>
-            </ion-chip>
-
-            <div class="tablet ion-margin-end" v-else>
-              <ion-icon class="standalone-icon" :icon="personCircleOutline"></ion-icon>
-            </div>
-
-            <ion-button fill="clear" color="medium" @click="openAssignedCountPopover($event, item)">
-              <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-            </ion-button>
-          </div>
-              </DynamicScrollerItem>
-            </template>          
-          </DynamicScroller>
-        </template>
-        <p v-else class="empty-state">
-          {{ translate("No items added to count") }}
-        </p>
+                <ion-label>
+                  {{ session.counted }}
+                  <p>counted</p>
+                </ion-label>
+                <ion-label>
+                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                  <p>started</p>
+                </ion-label>
+                <ion-label>
+                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                  <p>last updated</p>
+                </ion-label>
+                <ion-button fill="clear" color="medium">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+          <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+          </ion-infinite-scroll>
+        </div>
+        <div v-else class="empty-state">
+          <p>No Results</p>
+        </div>
       </template>
-      <template v-else-if="!isLoadingItems">
-        <p class="empty-state">
-          {{ translate("Cycle count not found") }}
-        </p>
+      <template v-else>
+        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
-
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="isLoadingItems" @click="updateCountStatus">
-        <ion-icon :icon="lockClosedOutline" />
-      </ion-fab-button>
-    </ion-fab>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, nextTick, ref } from "vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { addOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, lockClosedOutline } from "ionicons/icons";
-import { IonBackButton, IonButton, IonButtons, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, popoverController, onIonViewWillLeave } from "@ionic/vue";
-// import AssignedCountPopover from "@/components/AssignedCountPopover.vue"
+import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
-import logger from "@/logger"
-// import { CountService } from "@/services/CountService"
-import { hasError, showToast, getDateWithOrdinalSuffix, getDateTime, getFacilityName, getPartyName, getValidItems, sortListByField } from "@/utils"
-import emitter from '@/event-bus';
-// import AddProductModal from "@/components/AddProductModal.vue"
-import router from "@/router";
-// import Image from "@/components/Image.vue"
-import { DateTime } from "luxon";
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-// import ProgressBar from '@/components/ProgressBar.vue';
-import { useProductMaster } from '@/composables/useProductMaster'
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { loader } from "@/user-utils";
 
 const props = defineProps({
-  inventoryCountImportId: String
+  workEffortId: String
 })
-const { cacheReady, getById, prefetch } = useProductMaster()
-const productMap = ref<Record<string, any>>({})
-const identificationsMap = ref<Record<string, any>>({})
+
+onIonViewDidEnter(async () => {
+  isLoading.value = true;
+  await getWorkEffortDetails();
+  if (workEffort.value) {
+    await fetchInventoryCycleCount();
+  }
+  isLoading.value = false;
+})
+
+const searchAndSortBy = reactive({
+  sortBy: 'alphabetic'
+});
+
+const  { sortBy } = toRefs(searchAndSortBy);
+
+const searchedProductString = ref('');
 
 
-const productIdentificationStore = useProductIdentificationStore();
+const isLoading = ref(false);
 
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = (id: string) => {
-  return productMap.value[id] || {}
+const loadingSessions = ref(false);
+
+const workEffort = ref();
+
+const cycleCounts = ref();
+
+const isScrollable = ref(true);
+const isLoadingMore = ref(false);
+
+async function getWorkEffortDetails() {
+  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
+    workEffort.value = workEffortResp.data;
+  } else {
+    showToast(translate("Something Went Wrong"));
+    console.error("Error getting the Cycle Count Details", workEffortResp);
+  }
 }
-const getProductByIdentification = (type: string, value: string) => {
-  const key = `${type}:${value}`
-  return identificationsMap.value[key] || {}
-}
 
-const dateTimeModalOpen = ref(false)
-const currentCycleCount = ref({}) as any
-const countNameRef = ref()
-let isCountNameUpdating = ref(false)
-let countName = ref("")
-let isLoadingItems = ref(true)
-let cycleCountItemsProgress = ref(0)
-
-async function addProductToCount(productId: any) {
-  if(!productId) {
-    showToast(translate("Failed to add product to count"))
+async function loadMoreCycleCountProductReviews(event: any) {
+  if (isLoadingMore.value || !isScrollable.value) {
+    await event.target.complete();
     return;
   }
 
-  try {
-    const resp = {}
+  isLoadingMore.value = true;
+  pagination.pageIndex += 1;
 
-    if(!hasError(resp)) {
-      showToast(translate("Added product to count"))
-      // TODO: Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+  });
+
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = [...(cycleCounts.value || []), ...resp.data];
+
+    if (resp.data.length < pagination.pageSize) {
+      isScrollable.value = false;
     }
-  } catch(err) {
-    logger.error("Failed to add product to count", err)
-    showToast(translate("Failed to add product to count"))
+  } else {
+    isScrollable.value = false;
   }
+
+  isLoadingMore.value = false;
+  await event.target.complete();
 }
 
-onIonViewWillEnter(async () => {
-  emitter.on("addProductToCount", addProductToCount);
 
-  currentCycleCount.value = {}
+const pagination = reactive({
+  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
+  pageIndex: 0
+});
+
+watch(() => searchAndSortBy, async () => {
+  await loader.present("Loading...");
   try {
-    const resp = {data: {inventoryCountImportId: '', statusId: '', countImportName: ''}} // await CountService.getCycleCountById({ inventoryCountImportId: props.inventoryCountImportId })
+    pagination.pageIndex = 0;
+    const count = await fetchCycleCount({
+      workEffortId: props.workEffortId,
+      pageSize: pagination.pageSize,
+      pageIndex: pagination.pageIndex,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data.statusId === "INV_COUNT_ASSIGNED") {
-      currentCycleCount.value = {
-        countName: resp.data.countImportName,
-        countId: resp.data.inventoryCountImportId,
-        items: [],
-        ...resp.data
-      }
-
-      countName.value = resp.data.countImportName
-      await fetchCountItems();
-    }
-  } catch(err) {
-    logger.error()
-  }
-
-  isLoadingItems.value = false;
-})
-
-onIonViewWillLeave(() => {
-  emitter.off("addProductToCount", addProductToCount)
-  cycleCountItemsProgress.value = 0
-})
-
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
-
-  try {
-    do {
-      resp = {data: {itemList: []}} // await CountService.getCountItems({ inventoryCountImportId: props.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        cycleCountItemsProgress.value = items.length
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
-  } catch(err) {
-    logger.error(err)
-  }
-
-  items = sortListByField(getValidItems(items), "parentProductName");
-
-  currentCycleCount.value["items"] = items
-
-  // Prefetch products using the product composable
-  const productIds = [...new Set(items.map((item: any) => item.productId))] as string[]
-  await prefetch(productIds)
-
-  // Populate the reactive productMap and identMap
-  for (const productId of productIds) {
-    const { product } = await getById(productId)
-    if (product) {
-      productMap.value[productId] = product
-
-      if (product.goodIdentifications?.length) {
-        for (const ident of product.goodIdentifications) {
-          const key = `${ident.type}:${ident.value}`
-          identificationsMap.value[key] = product
-        }
-      }
-    }
-  }
-}
-
-async function editCountName() {
-  isCountNameUpdating.value = !isCountNameUpdating.value;
-  // Waiting for DOM updations before focus inside the text-area, as it is conditionally rendered in the DOM
-  await nextTick()
-  countNameRef.value.$el.setFocus();
-}
-
-async function updateCountName() {
-  if(!countName.value?.trim()) {
-    showToast(translate("Enter a valid cycle count name"))
-    return;
-  }
-
-  // if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
-  //   await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
-  //   .then(() => {
-  //     currentCycleCount.value.countName = countName.value.trim()
-  //   }).catch(() => {
-  //     countName.value = currentCycleCount.value.countName.trim()
-  //   })
-  // }
-
-  isCountNameUpdating.value = false
-}
-
-async function deleteItemFromCount(countItem: any) {
-  try {
-    const resp = {}
-
-    if(!hasError(resp)) {
-      currentCycleCount.value.items = currentCycleCount.value.items.filter((item: any) => item.importItemSeqId !== countItem.importItemSeqId)
-      showToast(translate("Item has been removed from the cycle count"))
+    if (count && count.status === 200 && count.data) {
+      cycleCounts.value = count.data;
+      isScrollable.value = count.data.length >= pagination.pageSize;
     } else {
-      throw "Failed to remove the item from the count"
+      throw count.data;
     }
-  } catch(err) {
-    showToast(translate("Failed to remove the item from the count"))
-    logger.error(err)
+  } catch (error) {
+    showToast(translate("Something Went Wrong!"));
+    console.error("Error Searching Products: ", error);
   }
+  loader.dismiss();
+},{ deep: true });
+
+const sessions = ref();
+
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
+
+function getSortByField () {
+  if (!sortBy.value) return null;
+
+  if (sortBy.value === 'alphabetic') return 'internalName';
+  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
 }
 
-// async function openAssignedCountPopover(event: any, item: any){
-  // const popover = await popoverController.create({
-  //   component: AssignedCountPopover,
-  //   event,
-  //   componentProps: {
-  //     item
-  //   },
-  //   showBackdrop: false,
-  // });
-
-  // popover.onDidDismiss().then(async (result) => {
-  //   // considered that if a role is available on dismiss, it will be a negative role in which we don't need to perform any action
-  //   if(result.role) {
-  //     return;
-  //   }
-
-  //   if(result.data?.itemAction === "remove") {
-  //     await deleteItemFromCount(item)
-  //   }
-  // })
-
-  // await popover.present();
-// }
-
-// async function addProduct() {
-  // const addProductModal = await modalController.create({
-  //   component: AddProductModal,
-  //   componentProps: { cycleCount: currentCycleCount.value },
-  //   showBackdrop: false,
-  // });
-
-  // await addProductModal.present();
-// }
-
-function getVarianceInformation() {
-  let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
-
-  currentCycleCount.value.items?.map((item: any) => {
-    totalItemsQuantityCount += parseInt(item.quantity || 0)
-    totalItemsExpectedCount += parseInt(item.qoh || 0)
-  })
-
-  // TODO: internationalize text
-  return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
-}
-
-function getProgress() {
-  const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
-  const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
-}
-
-async function updateCountStatus() {
+async function filterProductByInternalName() {
   try {
-    // await CountService.updateCycleCount({
-    //   inventoryCountImportId: currentCycleCount.value.countId,
-    //   statusId: "INV_COUNT_REVIEW"
-    // })
-    // router.push("/pending-review")
-    showToast(translate("Count has been submitted for review"))
-  } catch(err) {
-    showToast(translate("Failed to change the cycle count status"))
+    const productReviewDetail = await getProductReviewDetail({
+      workEffortId: props.workEffortId,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+    });
+
+    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
+      pagination.pageIndex = 0;
+      cycleCounts.value = productReviewDetail.data;
+      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
+    } else {
+      throw productReviewDetail.data;
+    }
+  } catch (error) {
+    showToast("Something Went Wrong");
+    console.error("Error Searching Product: ", error);
   }
 }
 
-function openDateTimeModal() {
-  dateTimeModalOpen.value = true;
+async function fetchCountSessions(productId: any) {
+  loadingSessions.value = true;
+  sessions.value = [];
+  const resp = await fetchSessions({
+    workEffortId: props.workEffortId,
+    productId: productId
+  });
+
+  if (resp && resp.status && resp.data && resp.data.length) {
+    sessions.value = resp.data;
+  }
+  loadingSessions.value = false;
 }
 
-const handleDateTimeInput = (dateTimeValue: any) => {
-  // TODO Handle it in a better way
-  // Remove timezone and then convert to timestamp
-  // Current date time picker picks browser timezone and there is no supprt to change it
-  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
-  return DateTime.fromISO(dateTime).toMillis()
+async function fetchInventoryCycleCount(reset = false) {
+  if (reset) {
+    pagination.pageIndex = 0;
+    isScrollable.value = true;
+  }
+
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+  });
+
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = resp.data;
+    isScrollable.value = resp.data.length >= pagination.pageSize;
+  } else {
+    cycleCounts.value = [];
+    isScrollable.value = false;
+  }
 }
 
-function updateCustomTime(event: any) {
-  const date = handleDateTimeInput(event.detail.value)
-  // CountService.updateCycleCount({
-  //   inventoryCountImportId: currentCycleCount.value.countId,
-  //   dueDate: date
-  // }).then(() => {
-  //   currentCycleCount.value.dueDate = date
-  // }).catch(err => {
-  //   logger.info(err)
-  // })
-}
 </script>
 
 <style scoped>
-.list-item {
-  --columns-desktop: 6;
-  border-bottom : 1px solid var(--ion-color-medium);
+
+.header {
+  display: grid;
+}
+
+ion-item.due-date {
+  --padding-bottom: var(--spacer-sm)
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  background-color: var(--ion-background-color);
+  z-index: 999;
+}
+
+.filters {
+  display: flex;
+  gap: var(--spacer-sm);
+  align-items: end;
+}
+
+.filters>* {
+  flex: 1;
+}
+
+.list-item.count-item-rollup {
+  --columns-desktop: 5;
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
   width: 100%;
 }
 
-.header {
-  display: grid;
-  grid: "search filters"
-        /1fr 1fr;
+.list-item.count-item {
+  --columns-desktop: 5
 }
 
-.search {
-  grid-area: search;
+.list-item .item-key {
+  padding-inline-start: var(--spacer-sm);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-self: stretch;
 }
 
-.filters {
-  grid-area: filters;
+.item-key ion-item {
+  flex: 1
 }
 
-.grid-span-columns {
-  grid-column: 3/5;
-}
-
-.main-content {
-  --padding-bottom: 80px;
-}
-
-.status-success {
-  color: var(--ion-color-success);
-}
-
-.status-danger {
-  color: var(--ion-color-danger);
-}
-
-.virtual-scroller {
-  --virtual-scroller-offset: 220px;
-}
-
-@media (max-width: 991px) {
-  .header {
-    grid: "search"
-          "filters"
-          / auto;
-    padding: 0;
-  }
+.list-item .actions {
+  display: flex;
+  gap: var(--spacer-xs);
 }
 </style>

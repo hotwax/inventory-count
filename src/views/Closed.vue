@@ -12,7 +12,7 @@
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <ion-list>
-        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { translate } from '@/i18n';
+import router from '@/router';
 import store from '@/store';
 import { useUserStore } from '@hotwax/dxp-components';
 import { IonPage, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';

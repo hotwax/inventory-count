@@ -200,7 +200,7 @@ export function useInventoryCountImport() {
     const items = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
-      .filter(r => (Number(r.quantity) || 0) > 0 && r.isRequested === 'Y')
+      .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
       .toArray()
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
@@ -250,7 +250,7 @@ export function useInventoryCountImport() {
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => r.isRequested === 'N' && r.productId)
+        .filter(r => r.isRequested === 'N' && Boolean(r.productId))
         .toArray();
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
@@ -291,9 +291,7 @@ export function useInventoryCountImport() {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
       method: "get",
-      params: {
-        internalName: payload.internalName
-      }
+      params: payload
     });
   }
 
@@ -424,6 +422,13 @@ const submitProductReview = async (payload: any): Promise <any> => {
   })
 }
 
+const updateWorkEffort = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
+    method: "put",
+    data: payload
+  })
+}
     
   return {
     currentImport,
@@ -454,6 +459,7 @@ const submitProductReview = async (payload: any): Promise <any> => {
     addSessionInCount,
     getWorkEfforts,
     fetchCycleCountImportErrors,
-    submitProductReview
+    submitProductReview,
+    updateWorkEffort
   };
 }

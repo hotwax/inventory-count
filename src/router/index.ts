@@ -18,6 +18,8 @@ import BulkUpload from "@/views/BulkUpload.vue";
 import Draft from "@/views/Draft.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
+import ClosedDetail from "@/views/ClosedDetail.vue";
+import DraftDetail from "@/views/DraftDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -90,6 +92,16 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
+    path: '/draft/:workEffortId',
+    name: 'DraftDetail',
+    component: DraftDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW"
+    }
+  },
+  {
     path: '/assigned',
     name: 'Assigned',
     component: Assigned,
@@ -108,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/assigned/:inventoryCountImportId',
+    path: '/assigned/:workEffortId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,
@@ -164,7 +176,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/pending-review/:inventoryCountImportId',
+    path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
@@ -178,6 +190,16 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Closed',
     component: Closed,  
     beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
+  },
+  {
+    path: '/closed/:workEffortId',
+    name: 'ClosedDetail',
+    component: ClosedDetail,
+    beforeEnter: authGuard,
+    props: true,
     meta: {
       permissionId: "APP_CLOSED_VIEW"
     }

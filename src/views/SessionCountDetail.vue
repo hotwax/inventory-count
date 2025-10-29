@@ -11,6 +11,7 @@
 
     <ion-content>
       <main>
+        <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
@@ -50,9 +51,7 @@
                   {{ event.scannedValue }}
                   <p>{{ timeAgo(event.createdAt) }}</p>
                 </ion-label>
-                <ion-note slot="end">
-                  {{ event.quantity }}
-                </ion-note>
+                <ion-note slot="end">{{ event.quantity }}</ion-note>
               </ion-item>
             </ion-list>
           </div>
@@ -75,6 +74,7 @@
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
               </ion-label>
             </ion-item>
+
             <ion-button color="warning" fill="outline" @click="discardSession" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="exitOutline"></ion-icon>
               Discard session
@@ -85,7 +85,6 @@
             </ion-button>
           </div>
 
-          <!-- Statistics section styled like Reference UI -->
           <div class="statistics ion-padding">
             <ion-card>
               <ion-card-header>
@@ -95,7 +94,6 @@
                 <p class="big-number">{{ stats.productsCounted }}</p>
               </ion-card-content>
               <ion-list lines="none">
-                <!-- Reference UI shows two rows; keep Unmatched bound, set Pending to 0 without changing logic -->
                 <ion-item>
                   <ion-label>Pending match scans</ion-label>
                   <p slot="end">0</p>
@@ -113,12 +111,10 @@
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number">{{ stats.totalUnits }}</p>
-                <!-- Decorative timer button from Reference UI (no logic impact) -->
                 <ion-button color="primary" fill="clear">
                   <ion-icon slot="icon-only" :icon="timerOutline"></ion-icon>
                 </ion-button>
               </ion-card-content>
-              <!-- Optional laps list as in Reference (static placeholders to match layout) -->
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>Lap 2</ion-label>
@@ -132,12 +128,11 @@
             </ion-card>
           </div>
 
-          <!-- Segment order & look like Reference UI; still bound to selectedSegment -->
           <ion-segment v-model="selectedSegment">
-            <ion-segment-button value="uncounted" v-if="isDirected">
+            <ion-segment-button v-if="isDirected" value="uncounted">
               <ion-label>Uncounted</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="undirected" v-if="isDirected">
+            <ion-segment-button v-if="isDirected" value="undirected">
               <ion-label>Undirected</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched">
@@ -157,7 +152,6 @@
                   <ion-label>
                     {{ primaryId(item.product) }}
                     <p>{{ secondaryId(item.product) }}</p>
-                    <p class="ion-text-wrap">Not yet counted</p>
                   </ion-label>
                 </ion-item>
               </ion-card>
@@ -183,47 +177,40 @@
                 <ion-item>
                   <ion-label>
                     <h2>{{ item.productIdentifier }}</h2>
-                    <p>— scans ago</p>
-                    <p>{{ timeAgo(item.createdAt || Date.now()) }}</p>
+                    <p>{{ timeAgo(item.createdAt) }}</p>
+                    <p>{{ item.quantity }} units</p>
                   </ion-label>
-                  <ion-button slot="end" fill="outline" color="medium" @click="openMatchModal(item)">
+                  <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                     <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                     Match
                   </ion-button>
                 </ion-item>
-                <!-- Optional recent matches list like Reference UI (kept simple; uses available product if present) -->
-                <ion-list v-if="item.product">
-                  <ion-item>
+                <ion-item>
                     <ion-thumbnail slot="start">
                       <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">recent match</p>
-                      {{ primaryId(item.product) }}
+                      <!-- <p class="overline">3 scans ago</p> -->
+                      <p>{{ primaryId(item.product) }}</p>
                       <p>{{ secondaryId(item.product) }}</p>
                       <p>{{ item.productIdentifier }}</p>
                     </ion-label>
-                    <ion-note slot="end">last match</ion-note>
-                    <ion-icon :icon="chevronUpCircleOutline" slot="end"></ion-icon>
+                    <ion-note slot="end">
+                      last match
+                    </ion-note>
+                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
                   </ion-item>
-                </ion-list>
               </ion-card>
             </ion-segment-content>
 
             <!-- Counted -->
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
-              <ion-card v-for="item in countedItems" :key="item.uuid" class="counted-card">
+              <ion-card v-for="item in countedItems" :key="item.uuid">
                 <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                 <ion-item>
                   <ion-label>
-                    <div class="product-header">
-                      <h2>{{ primaryId(item.product) }}</h2>
-                      <ion-badge v-if="item.unmatched" color="primary" class="unmatched-badge">Unmatched</ion-badge>
-                    </div>
+                    {{ primaryId(item.product) }}
                     <p>{{ secondaryId(item.product) }}</p>
-                    <p v-if="item.unmatched" class="ion-text-wrap unmatched-id">
-                      {{ item.productIdentifier }}
-                    </p>
                     <p>{{ item.quantity }} units</p>
                   </ion-label>
                 </ion-item>
@@ -243,7 +230,7 @@ import {
   IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
-import { addOutline, barcodeOutline, checkmarkDoneOutline, chevronDownCircleOutline, chevronUpCircleOutline, exitOutline, searchOutline, timerOutline } from 'ionicons/icons';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
 import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -337,7 +324,8 @@ aggregationWorker.onmessageerror = (err) => {
         userLoginId: store.getters['user/getUserProfile']?.username,
         maargUrl: store.getters['user/getBaseUrl'],
         token: omsInfo.token,
-        barcodeIdentification: barcodeIdentification
+        barcodeIdentification: barcodeIdentification,
+        inventoryCountTypeId: props.inventoryCountTypeId
       }
     }
   })
@@ -488,7 +476,6 @@ async function discardSession() {
 </script>
 
 <style scoped>
-
 main {
   display: grid;
   grid-template-columns: 25% auto;
@@ -501,7 +488,7 @@ main {
   contain: paint;
   height: 100%;
   display: grid;
-  grid-template-areas: 
+  grid-template-areas:
   "scan"
   "focus"
   "empty"
@@ -590,5 +577,4 @@ ion-segment-view {
   margin: 0;
   color: rgba(var(--ion-text-color));
 }
-
 </style>

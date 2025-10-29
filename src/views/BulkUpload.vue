@@ -18,7 +18,7 @@
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
-            <ion-chip :disabled="!content.length" outline="true" @click="addFieldMapping()">
+            <ion-chip :disabled="!content.length" outline="true" @click="openCreateMappingModal">
               <ion-icon :icon="addOutline" />
               <ion-label>{{ translate("New mapping") }}</ion-label>
             </ion-chip>
@@ -35,21 +35,22 @@
             <ion-label>{{ translate("Required") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]">
               <ion-label slot="label" class="ion-text-wrap">
-                {{translate(fieldValues.label)}}
+                {{ translate(fieldValues.label) }}
                 <p>{{ fieldValues.description }}</p>
               </ion-label>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
+
           <ion-item-divider>
             <ion-label>{{ translate("Optional") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder = "translate('Select')" v-model="fieldMapping[field]">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]">
               <ion-label slot="label" class="ion-text-wrap">
-                {{translate(fieldValues.label)}}
+                {{ translate(fieldValues.label) }}
                 <p>{{ fieldValues.description }}</p>
               </ion-label>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
@@ -77,9 +78,108 @@
             </div>
           </ion-item>
         </ion-list>
-
       </div>
     </ion-content>
+
+    <ion-modal :is-open="isCreateMappingModalOpen" :keep-contents-mounted="true" @did-dismiss="closeCreateMappingModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeCreateMappingModal">
+              <ion-icon :icon="close" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("CSV Mapping") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-item>
+        <ion-input :label="translate('Mapping name')" :placeholder="translate('Field mapping name')" v-model="mappingName" />
+      </ion-item>
+
+      <ion-content>
+        <ion-list>
+          <ion-item-divider>
+            <ion-label>{{ translate("Required") }}</ion-label>
+          </ion-item-divider>
+          <ion-item v-for="(fieldValues, field) in getFields(fields, true)" :key="field">
+            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder="translate('Select')" v-model="modalFieldMapping[field]">
+              <ion-select-option :key="index" v-for="(prop, index) in modalFileColumns">{{ prop }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item-divider>
+            <ion-label>{{ translate("Optional") }}</ion-label>
+          </ion-item-divider>
+          <ion-item v-for="(fieldValues, field) in getFields(fields, false)" :key="field">
+            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder="translate('Select')" v-model="modalFieldMapping[field]">
+              <ion-select-option :key="index" v-for="(prop, index) in modalFileColumns">{{ prop }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-list>
+
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="saveMapping">
+            <ion-icon :icon="saveOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </ion-content>
+    </ion-modal>
+
+    <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false">
+      <ion-content>
+        <ion-list>
+          <ion-list-header>{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload">
+            <ion-icon slot="end" />
+            {{ translate("Cancel") }}
+          </ion-item>
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+            <ion-icon slot="end" />
+            {{ translate("View error") }}
+          </ion-item>
+          <ion-item lines="none" button @click="viewFile">
+            <ion-icon slot="end" />
+            {{ translate("View file") }}
+          </ion-item>
+        </ion-list>
+
+        <ion-modal :is-open="isErrorModalOpen" :keep-contents-mounted="true" @did-dismiss="closeErrorModal">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="closeErrorModal">
+                  <ion-icon :icon="close" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("Import Error") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-list>
+              <ion-item lines="full">
+                <ion-icon :icon="bookOutline" slot="start" />
+                {{ translate("View upload guide") }}
+                <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide">
+                  <ion-icon slot="icon-only" :icon="openOutline" />
+                </ion-button>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-label class="ion-text-wrap">
+                  <template v-if="systemMessageError?.errorText">
+                    {{ systemMessageError.errorText }}
+                  </template>
+                  <template v-else>
+                    {{ translate("No data found") }}
+                  </template>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-content>
+        </ion-modal>
+      </ion-content>
+    </ion-popover>
   </ion-page>
 </template>
 
@@ -96,214 +196,240 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonNote,
+  IonNote,  
   IonPage,
   IonSelect,
   IonSelectOption,
   IonTitle,
   IonToolbar,
   onIonViewDidEnter,
-  modalController,
-  popoverController
+  IonModal,
+  IonPopover,
+  IonButtons,
+  IonInput,
+  IonFab,
+  IonFabButton
 } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import logger from "@/logger";
-import { hasError, jsonToCsv, parseCsv, showToast } from "@/utils";
-import CreateMappingModal from "@/components/CreateMappingModal.vue";
-import CycleCountUploadActionPopover from "@/components/CycleCountUploadActionPopover.vue"
+import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
+const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
+const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"]);
+const { bulkUploadInventoryCounts, fetchCycleCountUploadedFileData, cancelCycleCountFileProcessing, fetchCycleCountImportErrors } = useInventoryCountImport();
 
-const fieldMappings = computed(() => store.getters["user/getFieldMappings"])
-const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"])
-
-let file = ref(null)
-let uploadedFile = ref({})
-let fileName = ref(null)
-let content = ref([])
-let fieldMapping = ref({})
-let fileColumns = ref([])
-let selectedMappingId = ref(null)
+/* ---------- Existing BulkUpload Data ---------- */
+let file = ref(null);
+let uploadedFile = ref({});
+let fileName = ref(null);
+let content = ref([]);
+let fieldMapping = ref({});
+let fileColumns = ref([]);
+let selectedMappingId = ref(null);
 const fileUploaded = ref(false);
-const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {}
-const { bulkUploadInventoryCounts }  = useInventoryCountImport();
+const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
 
+/* ---------- CreateMappingModal Logic ---------- */
+const isCreateMappingModalOpen = ref(false);
+const mappingName = ref(null);
+const modalFieldMapping = ref({});
+const modalFileColumns = ref([]);
 
-onIonViewDidEnter(async() => {
-  uploadedFile.value = {}
-  content.value = []
-  fileName.value = null
-  
-  resetFieldMapping();
-  file.value.value = null;
-  await store.dispatch('user/getFieldMappings')
-  await store.dispatch('count/fetchCycleCountImportSystemMessages')
-})
-function resetFieldMapping() {
-  fieldMapping.value = Object.keys(fields).reduce((fieldMapping, field) => {
-    fieldMapping[field] = ""
-    return fieldMapping;
-  }, {})
+function openCreateMappingModal() {
+  modalFieldMapping.value = { ...fieldMapping.value };
+  modalFileColumns.value = Object.keys(content.value[0] || {});
+  mappingName.value = null;
+  isCreateMappingModalOpen.value = true;
 }
-function resetDefaults() {
-  resetFieldMapping();
-  uploadedFile.value = {}
-  content.value = []
-  fileName.value = null
-  file.value.value = ''
-  selectedMappingId.value = null
+function closeCreateMappingModal() {
+  isCreateMappingModalOpen.value = false;
 }
-function extractFilename(filePath) {
-  if (!filePath) {
-    return;
-  }
-  // Get the part of the string after the last '/'
-  const filenameWithTimestamp = filePath?.substring(filePath?.lastIndexOf('/') + 1);
-  
-  // Use a regex to remove the timestamp and return the base filename
-  const baseFilename = filenameWithTimestamp.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, '.csv');
-  
-  return baseFilename;
-}
-
-function getFilteredFields(fields, required = true) {
+function getFields(fields, required = true) {
   return Object.keys(fields).reduce((result, key) => {
-    if (fields[key].required === required) {
-      result[key] = fields[key];
-    }
+    if (fields[key].required === required) result[key] = fields[key];
     return result;
   }, {});
 }
-function getFileProcessingStatus(systemMessage) {
-  let processingStatus = "pending"
-  if (systemMessage.statusId === 'SmsgConsumed') {
-    processingStatus = "processed"
-  } else if (systemMessage.statusId === 'SmsgConsuming') {
-    processingStatus = "processing"
-  } else if (systemMessage.statusId === 'SmsgCancelled') {
-    processingStatus = 'cancelled'
-  } else if (systemMessage.statusId === 'SmsgError') {
-    processingStatus = 'error'
+function areAllModalFieldsSelected() {
+  const requiredFields = Object.keys(getFields(fields, true));
+  const selectedFields = Object.keys(modalFieldMapping.value).filter(key => modalFieldMapping.value[key] !== '');
+  return requiredFields.every(field => selectedFields.includes(field));
+}
+function generateUniqueMappingPrefId() {
+  const id = Math.floor(Math.random() * 1000);
+  return !fieldMappings.value[id] ? id : generateUniqueMappingPrefId();
+}
+async function saveMapping() {
+  if (!mappingName.value || !mappingName.value.trim()) {
+    showToast(translate("Enter mapping name"));
+    return;
   }
-  return processingStatus;
-}
-
-async function openUploadActionPopover(event, systemMessage){
-  const popover = await popoverController.create({
-    component: CycleCountUploadActionPopover,
-    event,
-    componentProps: {
-      systemMessage,
-      fileName: extractFilename(systemMessage.messageText)
-    },
-    showBackdrop: false,
+  if (!areAllModalFieldsSelected()) {
+    showToast(translate("Map all required fields"));
+    return;
+  }
+  const id = generateUniqueMappingPrefId();
+  await store.dispatch("user/createFieldMapping", {
+    id,
+    name: mappingName.value,
+    value: modalFieldMapping.value,
+    mappingType: "INVCOUNT"
   });
-  await popover.present();
+  showToast(translate("Mapping saved"));
+  closeCreateMappingModal();
 }
 
-async function parse(event) {
-  const file = event.target.files[0];
+/* ---------- UploadActionPopover Logic ---------- */
+const isUploadPopoverOpen = ref(false);
+const popoverEvent = ref(null);
+const selectedSystemMessage = ref(null);
+const isErrorModalOpen = ref(false);
+const systemMessageError = ref({});
+
+function openUploadActionPopover(event, systemMessage) {
+  isUploadPopoverOpen.value = true;
+  popoverEvent.value = event;
+  selectedSystemMessage.value = systemMessage;
+}
+function closeUploadPopover() {
+  isUploadPopoverOpen.value = false;
+}
+function openErrorModal() {
+  isErrorModalOpen.value = true;
+  fetchCycleCountImportErrorsFromServer();
+}
+function closeErrorModal() {
+  isErrorModalOpen.value = false;
+  closeUploadPopover();
+}
+function viewUploadGuide() {
+  window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
+}
+async function fetchCycleCountImportErrorsFromServer() {
   try {
-    if (file) {
-      uploadedFile.value = file;
-      fileName.value = file.name
-      content.value = await parseCsv(uploadedFile.value);
+    const resp = await fetchCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
+  } catch (err) { logger.error(err); }
+}
+async function viewFile() {
+  try {
+    const resp = await fetchCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+    else throw resp.data;
+  } catch (err) {
+    showToast(translate("Failed to download uploaded cycle count file."));
+    logger.error(err);
+  }
+  closeUploadPopover();
+}
+async function cancelUpload() {
+  try {
+    const resp = await cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
+    if (!hasError(resp)) {
+      showToast(translate("Cycle count cancelled successfully."));
+      await store.dispatch("count/fetchCycleCountImportSystemMessages");
+    }
+  } catch (err) {
+    showToast(translate("Failed to cancel uploaded cycle count."));
+    logger.error(err);
+  }
+  closeUploadPopover();
+}
+
+/* ---------- Bulk Upload Logic ---------- */
+function getFilteredFields(fields, required = true) {
+  return Object.keys(fields).reduce((r, k) => { if (fields[k].required === required) r[k] = fields[k]; return r; }, {});
+}
+function extractFilename(path) {
+  if (!path) return;
+  const fn = path.substring(path.lastIndexOf("/") + 1);
+  return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
+}
+function getFileProcessingStatus(s) {
+  if (s.statusId === "SmsgConsumed") return "processed";
+  if (s.statusId === "SmsgConsuming") return "processing";
+  if (s.statusId === "SmsgCancelled") return "cancelled";
+  if (s.statusId === "SmsgError") return "error";
+  return "pending";
+}
+function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((m, k) => (m[k] = "", m), {}); }
+function resetDefaults() {
+  resetFieldMapping();
+  uploadedFile.value = {};
+  content.value = [];
+  fileName.value = null;
+  file.value.value = "";
+  selectedMappingId.value = null;
+}
+onIonViewDidEnter(async () => {
+  resetDefaults();
+  await store.dispatch("user/getFieldMappings");
+  await store.dispatch("count/fetchCycleCountImportSystemMessages");
+});
+async function parse(e) {
+  const f = e.target.files[0];
+  try {
+    if (f) {
+      uploadedFile.value = f;
+      fileName.value = f.name;
+      content.value = await parseCsv(f);
       fileColumns.value = Object.keys(content.value[0]);
       showToast(translate("File uploaded successfully"));
-      fileUploaded.value = !fileUploaded.value;
-      selectedMappingId.value = null;
       resetFieldMapping();
     }
   } catch {
-    content.value = []
+    content.value = [];
     showToast(translate("Please upload a valid csv to continue"));
   }
 }
-async function save(){
-  if (!areAllFieldsSelected()) {
-    showToast(translate("Select all the required fields to continue"));
-    return;
-  }
-
-  const uploadedData = content.value.map(item => {
-    return {
-      countImportName: item[fieldMapping.value.countImportName],
-      purposeType: item[fieldMapping.value.purposeType] ? item[fieldMapping.value.purposeType] : "DIRECTED_COUNT",
-      statusId: item[fieldMapping.value.statusId] ? item[fieldMapping.value.statusId] : "CYCLE_CNT_CREATED",
-      idValue: item[fieldMapping.value.productSku],
-      idType: "SKU",
-      dueDate: item[fieldMapping.value.dueDate],
-      facilityId: '',
-      externalFacilityId: item[fieldMapping.value.facility]
-    }
-  })
-
-  const data = jsonToCsv(uploadedData)
-  const formData = new FormData();
-  formData.append("uploadedFile", data, fileName.value);
-  formData.append("fileName", fileName.value.replace(".csv", ""));
-  
+async function save() {
+  const required = Object.keys(getFilteredFields(fields, true));
+  const selected = Object.keys(fieldMapping.value).filter(k => fieldMapping.value[k]);
+  if (!required.every(f => selected.includes(f))) return showToast(translate("Select all required fields to continue"));
+  const uploadedData = content.value.map(i => ({
+    countImportName: i[fieldMapping.value.countImportName],
+    purposeType: i[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
+    statusId: i[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
+    idValue: i[fieldMapping.value.productSku],
+    idType: "SKU",
+    dueDate: i[fieldMapping.value.dueDate],
+    facilityId: "",
+    externalFacilityId: i[fieldMapping.value.facility],
+  }));
+  const data = jsonToCsv(uploadedData);
+  const fd = new FormData();
+  fd.append("uploadedFile", data, fileName.value);
+  fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
-    const resp = await bulkUploadInventoryCounts({
-      data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data;'
-      }
-    })
-
-    if(!hasError(resp)) {
+    const resp = await bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
+    if (!hasError(resp)) {
       resetDefaults();
-      await store.dispatch('count/fetchCycleCountImportSystemMessages');
+      await store.dispatch("count/fetchCycleCountImportSystemMessages");
       showToast(translate("The cycle counts file uploaded successfully."));
-    } else {
-      throw resp.data;
-    }
-  } catch(err) {
-    logger.error(err)
+    } else throw resp.data;
+  } catch (err) {
+    logger.error(err);
     showToast(translate("Failed to upload the file, please try again"));
   }
 }
-function mapFields(mapping, mappingId) {
-  const fieldMappingData = JSON.parse(JSON.stringify(mapping));
-
-  // TODO: Store an object in this.content variable, so everytime when accessing it, we don't need to use 0th index
+function mapFields(m, id) {
+  const data = JSON.parse(JSON.stringify(m));
   const csvFields = Object.keys(content.value[0]);
-
-  const missingFields = Object.values(fieldMappingData.value).filter(field => {
-    if(!csvFields.includes(field)) return field;
-  });
-  if(missingFields.length) showToast(translate("Some of the mapping fields are missing in the CSV: ", { missingFields: missingFields.join(", ") }))
-
-  Object.keys(fieldMappingData.value).map((key) => {
-    if(!csvFields.includes(fieldMappingData.value[key])){
-      fieldMappingData.value[key] = "";
-    }
-  })
-  fieldMapping.value = fieldMappingData.value;
-  selectedMappingId.value = mappingId
+  Object.keys(data.value).forEach(k => { if (!csvFields.includes(data.value[k])) data.value[k] = ""; });
+  fieldMapping.value = data.value;
+  selectedMappingId.value = id;
 }
-function areAllFieldsSelected() {
-  const requiredFields = Object.keys(getFilteredFields(fields, true));
-  const selectedFields = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key] !== '')
+</script>
 
-  return requiredFields.every(field => selectedFields.includes(field));
-}
-async function addFieldMapping() {
-  const createMappingModal = await modalController.create({
-    component: CreateMappingModal,
-    componentProps: { content: content.value, seletedFieldMapping: fieldMapping.value, mappingType: 'INVCOUNT'}
-  });
-  return createMappingModal.present();
-}
-</script> 
 <style scoped>
 .main {
   max-width: 732px;
-  margin: var(--spacer-sm) auto 0; 
+  margin: var(--spacer-sm) auto 0;
 }
 .system-message-section {
   margin-bottom: 16px;
