@@ -194,7 +194,7 @@
         </ion-fab>
       </template>
       <template v-else>
-        <p class="empty-state">{{ translate("Cycle Conut Not Found") }}</p>
+        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
     
