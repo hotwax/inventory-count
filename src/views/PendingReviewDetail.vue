@@ -244,11 +244,12 @@ const productStoreSettings = computed(() => store.getters["user/getProductStoreS
 
 const filterAndSortBy = reactive({
   dcsnRsn: 'all',
-  searchedProductString: '',
   sortBy: 'alphabetic'
 });
 
-const  { dcsnRsn, searchedProductString, sortBy } = toRefs(filterAndSortBy);
+const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+
+const searchedProductString = ref(''); 
 
 const isLoading = ref(false);
 
@@ -426,16 +427,26 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 }
 
 async function filterProductByInternalName() {
+  try {
+    const productReviewDetail = await getProductReviewDetail({
+      workEffortId: props.workEffortId,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
 
-  const productReviewDetail = await getProductReviewDetail({
-    workEffortId: props.workEffortId,
-    internalName: searchedProductString.value
-  });
-
-  if (productReviewDetail && productReviewDetail.status === 200) {
-    cycleCounts.value = productReviewDetail.data;
-  } else {
-    showToast(translate("Product Not Found in this Count"));
+    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
+      pagination.pageIndex = 0;
+      cycleCounts.value = productReviewDetail.data;
+      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
+    } else {
+      throw new Error(productReviewDetail.data);
+    }
+  } catch (error) {
+    showToast("Something Went Wrong");
+    console.error("Error Searching Product: ", error);
   }
 }
 
