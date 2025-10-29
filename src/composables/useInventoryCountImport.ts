@@ -219,7 +219,6 @@ export function useInventoryCountImport() {
           unmatched = true;
         }
       }
-      console.log("Mapped counted item:", item, "Unmatched:", unmatched);
       return {
         ...item,
         product,
