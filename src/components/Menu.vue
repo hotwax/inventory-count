@@ -8,10 +8,19 @@
 
     <ion-content>
       <ion-list id="receiving-list">
-        <ion-menu-toggle auto-hide="false" v-for="(page, index) in appPages" :key="index">
-          <ion-item button router-direction="root" :router-link="page.url" class="hydrated" :class="{ selected: selectedIndex === index }">
-            <ion-icon :ios="page.iosIcon" :md="page.mdIcon" slot="start" />
-            <ion-label>{{ translate(page.title) }}</ion-label>
+        <ion-menu-toggle
+          auto-hide="false"
+          v-for="(page, index) in visibleMenuItems"
+          :key="index"
+        >
+          <ion-item
+            button
+            router-direction="root"
+            :router-link="page.path"
+            :class="{ selected: selectedIndex === index }"
+          >
+            <ion-icon :icon="page.meta.icon" slot="start" />
+            <ion-label>{{ translate(page.meta.title || page.name) }}</ion-label>
           </ion-item>
         </ion-menu-toggle>
       </ion-list>
@@ -33,9 +42,8 @@ import {
   IonMenuToggle,
 } from "@ionic/vue";
 import { computed, defineComponent } from "vue";
-import { mapGetters, useStore } from "vuex";
+import { mapGetters } from "vuex";
 import { useRouter } from "vue-router";
-import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import { translate } from "@/i18n";
 import { hasPermission } from "@/authorization";
 
@@ -55,107 +63,53 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      isUserAuthenticated: 'user/isUserAuthenticated'
-    })
+      isUserAuthenticated: "user/isUserAuthenticated",
+    }),
   },
   setup() {
-    const store = useStore();
     const router = useRouter();
-    const appPages = [
-      {
-        title: "Bulk Upload",
-        url: "/bulkUpload",
-        iosIcon: createOutline,
-        mdIcon: createOutline
-      },
-      {
-        title: "Draft",
-        url: "/draft",
-        iosIcon: createOutline,
-        mdIcon: createOutline,
-        childRoutes: ["/draft/", "/bulkUpload", "/hard-count"],
-        meta: {
-          permissionId: "APP_DRAFT_VIEW"
-        }
-      },
-      {
-        title: "Assigned",
-        url: "/assigned",
-        iosIcon: storefrontOutline,
-        mdIcon: storefrontOutline,
-        childRoutes: ["/assigned/"],
-        meta: {
-          permissionId: "APP_ASSIGNED_VIEW"
-        }
-      },
-      {
-        title: "Pending review",
-        url: "/pending-review",
-        iosIcon: mailUnreadOutline,
-        mdIcon: mailUnreadOutline,
-        childRoutes: ["/pending-review/"],
-        meta: {
-          permissionId: "APP_PENDING_REVIEW_VIEW"
-        }
-      },
-      {
-        title: "Closed",
-        url: "/closed",
-        iosIcon: receiptOutline,
-        mdIcon: receiptOutline,
-        childRoutes: ["/closed/"],
-        meta: {
-          permissionId: "APP_CLOSED_VIEW"
-        }
-      },
-      {
-        title: "Store permissions",
-        url: "/store-permissions",
-        iosIcon: shieldCheckmarkOutline,
-        mdIcon: shieldCheckmarkOutline,
-        meta: {
-          permissionId: "APP_STORE_PERMISSIONS_VIEW"
-        }
-      },
-      {
-        title: "Settings",
-        url: "/settings",
-        iosIcon: settingsOutline,
-        mdIcon: settingsOutline,
-      }
-    ] as Array<{
-      title: string,
-      url: string,
-      iosIcon: any;
-      mdIcon: any;
-      childRoutes: Array<string>;
-      meta: any;
-    }>;
+
+    const menuOrder = [
+      "/bulkUpload",
+      "/draft",
+      "/assigned",
+      "/pending-review",
+      "/closed",
+      "/store-permissions",
+      "/settings",
+    ];
+
+    const visibleMenuItems = computed(() => {
+      const allVisible = router
+        .getRoutes()
+        .filter(
+          (r) =>
+            r.meta?.showInMenu &&
+            (!r.meta.permissionId || hasPermission(r.meta.permissionId))
+        );
+
+      return allVisible.sort((a, b) => {
+        const aIndex = menuOrder.indexOf(a.path);
+        const bIndex = menuOrder.indexOf(b.path);
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        return aIndex - bIndex;
+      });
+    });
 
     const selectedIndex = computed(() => {
-      const path = router.currentRoute.value.path
-      return getValidMenuItems((appPages)).findIndex((screen: any) => screen.url === path || screen.childRoutes?.includes(path) || screen.childRoutes?.some((route: any) => path.includes(route)))
-    })
-
-    // Filtering array of app pages, retaining only those elements (pages) that have the necessary permissions for display.
-    const getValidMenuItems = (appPages: any) => {
-      return appPages.filter((appPage: any) => (!appPage.meta || !appPage.meta.permissionId) || hasPermission(appPage.meta.permissionId));
-    }
+      const path = router.currentRoute.value.path;
+      return visibleMenuItems.value.findIndex((r) =>
+        path.startsWith(r.path)
+      );
+    });
 
     return {
-      appPages,
-      createOutline,
-      storefrontOutline,
-      mailUnreadOutline,
-      receiptOutline,
-      shieldCheckmarkOutline,
-      settingsOutline,
-      store,
-      router,
+      visibleMenuItems,
       translate,
-      selectedIndex
+      selectedIndex,
     };
-  }
+  },
 });
 </script>
 
