@@ -147,7 +147,7 @@
               </div>
               <div slot="content" @click.stop="stopAccordianEventProp">
                 <ion-list v-if="sessions === null">
-                  <ion-item v-for="n in cycleCount.numberOfSessions">
+                  <ion-item v-for="n in cycleCount.numberOfSessions" :key="n">
                     <ion-avatar slot="start">
                       <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
                     </ion-avatar>
@@ -488,7 +488,9 @@ async function fetchCountSessions(productId: any) {
     });
 
     if (resp && resp.status && resp.data && resp.data.length) {
-      sessions.value = resp.data;
+      setTimeout(() => {
+        sessions.value = resp.data;
+      }, 1500)
     } else {
       throw resp.data;
     }
