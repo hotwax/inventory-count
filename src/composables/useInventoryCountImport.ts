@@ -422,6 +422,14 @@ const submitProductReview = async (payload: any): Promise <any> => {
   })
 }
 
+const updateWorkEffort = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
+    method: "put",
+    data: payload
+  })
+}
+
     
   return {
     currentImport,
@@ -452,6 +460,7 @@ const submitProductReview = async (payload: any): Promise <any> => {
     addSessionInCount,
     getWorkEfforts,
     fetchCycleCountImportErrors,
-    submitProductReview
+    submitProductReview,
+    updateWorkEffort
   };
 }
