@@ -22,7 +22,7 @@
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
       <template v-if="selectedSegment === 'assigned'">
-        <ion-card v-for="count in cycleCount" :key="count.workEffortId">
+        <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
           <ion-card-header>
             <div>
               <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
@@ -71,6 +71,11 @@
                 </ion-note>
               </ion-item>
             </ion-item-group>
+            <ion-item lines="none">
+              <ion-button expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" slot="end">
+                {{ translate("READY FOR REVIEW") }}
+              </ion-button>
+            </ion-item>
           </ion-list>
         </ion-card>
       </template>
@@ -135,11 +140,13 @@ import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
+
+const { updateWorkEffort } = useInventoryCountImport();
 const store = useStore();
 const router = useRouter();
 const userStore = useUserStore();
 
-const cycleCount = computed(() => store.getters["count/getAssignedWorkEfforts"]);
+const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
 const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"]);
 const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
@@ -193,7 +200,7 @@ async function loadMoreCycleCount(event) {
   fetchCycleCounts(
     undefined,
     Math.ceil(
-      cycleCount.value?.length / (process.env.VUE_APP_VIEW_SIZE)
+      cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE)
     ).toString()
   ).then(async () => {
     await event.target.complete();
@@ -214,7 +221,6 @@ async function fetchCycleCounts(vSize, vIndex) {
     facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched()
   };
-  console.log("Fetching cycle counts with payload:", payload);
   await store.dispatch("count/getAssignedWorkEfforts", payload);
 }
 
@@ -261,6 +267,29 @@ async function addNewSession() {
   }
   isAddSessionModalOpen.value = false;
 }
+async function markAsCompleted(workEffortId) {
+
+  try {
+    const response = await updateWorkEffort({workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD'});
+
+    if (response && response.status === 200) {
+      // const index = cycleCounts.value.findIndex(c => c.workEffortId === workEffortId);
+      // console.log("Index of updated work effort:", index);
+      // if (index !== -1) {
+      //   cycleCounts.value.splice(index, 1);
+      // }
+
+      showToast(translate("Session sent for review successfully"));
+      await fetchCycleCounts();
+    } else {
+      showToast(translate("Failed to send session for review"));
+      throw new Error(response);
+    }
+    console.log("Work effort updated successfully:", cycleCounts);
+  } catch (err) {
+    console.error("Error updating status:", err);
+  }
+}
 </script>
 
 <style scoped>
@@ -284,6 +313,13 @@ ion-card-header {
 main {
   margin: var(--spacer-base) auto 0;
   display: flex;
+}
+
+.border-top {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content max-content 1fr;
 }
 
 .header {
