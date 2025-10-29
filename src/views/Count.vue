@@ -72,7 +72,7 @@
               </ion-item>
             </ion-item-group>
             <ion-item lines="none">
-              <ion-button expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" slot="end">
+              <ion-button expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" slot="end" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
                 {{ translate("READY FOR REVIEW") }}
               </ion-button>
             </ion-item>
