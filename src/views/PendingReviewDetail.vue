@@ -374,8 +374,8 @@ function toggleSelectAll(event: CustomEvent) {
 
 
 async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
+  await loader.present("Submitting Review...");
   try {
-    await loader.present("Submitting Review...");
     const inventoryCountProductsList = selectedProductsReview.value.map(product => ({
       workEffortId: props.workEffortId,
       productId: product.productId,
@@ -451,7 +451,6 @@ async function fetchCountSessions(productId: any) {
 
   if (resp && resp.status && resp.data && resp.data.length) {
     sessions.value = resp.data;
-    isScrollable.value = resp.data.length >= pagination.pageSize;
   }
   loadingSessions.value = false;
 }
