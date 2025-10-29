@@ -21,7 +21,7 @@
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
-      <template v-if="selectedSegment === 'assigned'">
+      <template v-else>
         <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
           <ion-card-header>
             <div>
@@ -47,9 +47,10 @@
               <ion-label>
                 Sessions
               </ion-label>
-              <ion-button v-if="count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
-                  <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                  New
+
+              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+                <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
+                New
               </ion-button>
             </ion-list-header>
             <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
@@ -59,7 +60,7 @@
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-              <ion-item detail="true" :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+              <ion-item :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
                 <ion-label>
                   {{ session.countImportName }} + {{ session.facilityAreaId }}
                   <p>
@@ -71,8 +72,9 @@
                 </ion-note>
               </ion-item>
             </ion-item-group>
-            <ion-item lines="none">
-              <ion-button expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" slot="end" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
+
+            <ion-item v-if="selectedSegment === 'assigned'" lines="none">
+              <ion-button expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
                 {{ translate("READY FOR REVIEW") }}
               </ion-button>
             </ion-item>
@@ -256,8 +258,8 @@ async function segmentChanged(value) {
 
 function getStatusIdForCountsToBeFetched() {
   if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
-  if (selectedSegment.value === "pendingReview") return "INV_COUNT_REVIEW";
-  return "INV_COUNT_COMPLETED";
+  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_IN_CMPLTD";
+  return "CYCLE_CNT_IN_CLOSED";
 }
 
 const areas = [

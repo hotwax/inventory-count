@@ -305,13 +305,6 @@ export function useInventoryCountImport() {
     return resp;
   }
 
-  const getAssignedWorkEfforts = async (params: any): Promise <any> => {
-  return api({
-    url: "inventory-cycle-count/cycleCounts/workEfforts",
-    method: "get",
-    params
-  });
-}
 const getWorkEfforts = async (params: any): Promise <any> => {
   return api({
     url: "inventory-cycle-count/cycleCounts/workEfforts",
@@ -450,7 +443,6 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
     fetchWorkEffort,
     getProductReviewDetail,
     cancelCycleCountFileProcessing,
-    getAssignedWorkEfforts,
     getInventoryCountImportsByWorkEffort,
     getInventoryCountImportSession,
     bulkUploadInventoryCounts,

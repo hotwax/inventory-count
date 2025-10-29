@@ -6,7 +6,7 @@ import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
 import { hasError } from "@/utils"
 import logger from "@/logger";
 import { DateTime } from "luxon"
-const { getAssignedWorkEfforts, getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
+const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getAssignedWorkEfforts({ commit, state }, params) {
     let assignedWorkEfforts = []
@@ -20,7 +20,7 @@ const actions: ActionTree<CountState, RootState> = {
     params["orderByField"] = "lastUpdatedStamp"
 
     try {
-      const resp = await getAssignedWorkEfforts(params)
+      const resp = await getWorkEfforts(params)
       if (!hasError(resp) && resp.data.length > 0) {
         const workEfforts = resp.data
 
