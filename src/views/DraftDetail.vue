@@ -22,6 +22,9 @@
               <ion-button slot="end" fill="outline" color="medium">
                 Edit
               </ion-button>
+              <ion-button slot="end" fill="outline" color="primary" @click="moveWorkEffortInProgress">
+                Start Counting
+              </ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="businessOutline" slot="start"></ion-icon>
@@ -168,6 +171,7 @@ import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { loader } from "@/user-utils";
+import router from "@/router";
 
 const props = defineProps({
   workEffortId: String
@@ -209,6 +213,20 @@ async function getWorkEffortDetails() {
   } else {
     showToast(translate("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
+  }
+}
+
+async function moveWorkEffortInProgress() {
+  try {
+    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS'});
+    if (resp?.status === 200) {
+      showToast(translate("Cycle Count Moved to In Progress"));
+      router.push(`/assigned/${props.workEffortId}`);
+    } else {
+      throw new Error(resp)
+    }
+  } catch (error) {
+    showToast(translate("Something Went Wrong"));
   }
 }
 
@@ -277,7 +295,7 @@ watch(() => searchAndSortBy, async () => {
 const sessions = ref();
 
 
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
+const { updateWorkEffort, getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
 
 function getSortByField () {
   if (!sortBy.value) return null;
