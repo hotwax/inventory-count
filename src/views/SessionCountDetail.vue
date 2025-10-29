@@ -70,18 +70,22 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ countImportName || 'Unknown Session' }}</h1>
+                <h1>{{ countImportName || 'Untitled session' }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
               </ion-label>
             </ion-item>
 
+            <ion-button color="medium" fill="outline" @click="discardSession" :disabled="sessionLocked">
+              <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
+              Edit
+            </ion-button>
             <ion-button color="warning" fill="outline" @click="discardSession" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="exitOutline"></ion-icon>
-              Discard session
+              Discard
             </ion-button>
             <ion-button color="success" fill="outline" @click="submitSession" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
-              Submit session
+              Submit
             </ion-button>
           </div>
 
@@ -230,7 +234,7 @@ import {
   IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline } from 'ionicons/icons';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline } from 'ionicons/icons';
 import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
