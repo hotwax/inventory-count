@@ -145,14 +145,25 @@
                   {{ cycleCount.decisionOutcomeEnumId }}
                 </ion-badge>
               </div>
-              <div slot="content">
-                <ion-list v-if="!sessions || !sessions.length">
-                  <ion-item>
+              <div slot="content" @click.stop="stopAccordianEventProp">
+                <ion-list v-if="sessions === null">
+                  <ion-item v-for="n in cycleCount.numberOfSessions">
                     <ion-avatar slot="start">
                       <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
                     </ion-avatar>
                     <ion-label>
-                      <h3><ion-skeleton-text animated style="width: 80%"></ion-skeleton-text></h3>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
                       <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                   </ion-item>
@@ -469,19 +480,23 @@ function getDcsnFilter() {
 }
 
 async function fetchCountSessions(productId: any) {
-  loadingSessions.value = true;
   sessions.value = null;
-  const resp = await fetchSessions({
-    workEffortId: props.workEffortId,
-    productId: productId
-  });
+  try {
+    const resp = await fetchSessions({
+      workEffortId: props.workEffortId,
+      productId: productId
+    });
 
-  if (resp && resp.status && resp.data && resp.data.length) {
-    sessions.value = resp.data;
-  } else {
+    if (resp && resp.status && resp.data && resp.data.length) {
+      sessions.value = resp.data;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
     sessions.value = [];
+    console.error("Error getting sessions for this product: ", error);
+    showToast(translate("Something Went Wrong"));
   }
-  loadingSessions.value = false;
 }
 
 async function submitSingleProductReview(productId: any, proposedVarianceQuantity: any, decisionOutcomeEnumId: string, systemQuantity: any, countedQuantity: any, cycleCount: any) {
