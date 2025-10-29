@@ -165,8 +165,8 @@
                   <ion-label>
                     {{ primaryId(item.product) }}
                     <p>{{ secondaryId(item.product) }}</p>
-                    <p>{{ item.quantity }} units</p>
                   </ion-label>
+                  <ion-label slot="end">{{ item.quantity }} units</ion-label>
                 </ion-item>
               </ion-card>
             </ion-segment-content>
@@ -190,7 +190,7 @@
                       <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <!-- <p class="overline">3 scans ago</p> -->
+                      <p class="overline">3 scans ago</p>
                       <p>{{ primaryId(item.product) }}</p>
                       <p>{{ secondaryId(item.product) }}</p>
                       <p>{{ item.productIdentifier }}</p>
