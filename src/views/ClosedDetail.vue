@@ -7,244 +7,451 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content" :scroll-y="false">
-      <template v-if="currentCycleCount.inventoryCountImportId">
-        <template v-if="!isLoadingItems">
+    <ion-content>
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+      </template>
+      <template v-else-if="workEffort">
         <div class="header">
-          <div class="search ion-padding">
+          <ion-card>
             <ion-item lines="none">
-              <ion-label slot="start">
-                <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-                <h1>{{ currentCycleCount.countName }}</h1>
-                <p>{{ currentCycleCount.countId }}</p>
+              <ion-label>
+                <p class="overline">{{ workEffort?.workEffortId }}</p>
+                <h1>{{ workEffort?.workEffortName }}</h1>
+              </ion-label>
+              <ion-button slot="end" fill="outline" color="medium">
+                Edit
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
+              <ion-label>
+                {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
-            <ion-chip outline>
-              <ion-icon :icon="calendarClearOutline"></ion-icon>
-              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-            </ion-chip>
-            <ion-chip outline>
-              <ion-icon :icon="businessOutline"></ion-icon>
-              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-            </ion-chip>
-          </div>
+            <ion-item class="due-date">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <div>
+                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
+                <ion-datetime-button datetime="datetime"></ion-datetime-button>
+                <ion-modal :keep-contents-mounted="true">
+                  <ion-datetime id="datetime"></ion-datetime>
+                </ion-modal>
+              </div>
+            </ion-item>
+          </ion-card>
+          <ion-card>
+            <ion-item>
+              <ion-label>First item counted</ion-label>
+              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Last item counted</ion-label>
+              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>
+                40% Coverage
+              </ion-label>
+            </ion-item>
+          </ion-card>
 
-          <ion-list>
-            <div class="filters">
-              <ion-item>
-                <ion-label>{{ translate("Progress") }}</ion-label>
-                <ion-label slot="end">{{ getProgress() }}</ion-label>
+          <div class="statistics">
+            <ion-card>
+              <ion-item lines="none">
+                <ion-label>
+                  Review progress 60% complete
+                  <p>6 out of 10 items complete</p>
+                </ion-label>
               </ion-item>
-              <ion-item>
-                <ion-label>{{ translate("Variance") }}</ion-label>
-                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
+            </ion-card>
+            <ion-card>
+              <ion-item lines="full">
+                <ion-label>
+                  <p class="overline">Overall variance (Filtered)</p>
+                  <h3>16 units</h3>
+                  <p>based on 4 results</p>
+                </ion-label>
               </ion-item>
-            </div>
-          </ion-list>
+            </ion-card>
+          </div>
         </div>
 
-        <hr/>
-        </template>
+        <div class="controls ion-margin-top">
+          <ion-list lines="full" class="filters ion-margin">
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-item>
+            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="open">Open</ion-select-option>
+              <ion-select-option value="accepted">Accepted</ion-select-option>
+              <ion-select-option value="rejected">Rejected</ion-select-option>
+            </ion-select>
+          </ion-item>
 
-        <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
-        </template>
-        <template v-else-if="currentCycleCount.items?.length">
-          <DynamicScroller class="virtual-scroller" :items="currentCycleCount.items" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
-            <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :active="active" :index="index">
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-              </ion-label>
-            </ion-item>
+          <ion-item>
+            <ion-select label="Compliance" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="acceptable">Acceptable</ion-select-option>
+              <ion-select-option value="rejectable">Rejectable</ion-select-option>
+              <ion-select-option value="configure">Configure threshold</ion-select-option>
+            </ion-select>
+          </ion-item>
+          </ion-list>
+          <ion-item-divider color="light">
+            <!-- <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/> -->
+            5 results out of 1,200
+            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
+                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
+                <ion-select-option value="variance">Variance</ion-select-option>
+            </ion-select>
+          </ion-item-divider>
+        </div>
 
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh ?? '-' }}
-              <p>{{ translate("counted / systemic") }}</p>
-            </ion-label>
+        <div class="results ion-margin-top" v-if="cycleCounts?.length">
+          <ion-accordion-group>
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+              <div class="list-item count-item-rollup" slot="header"> 
+                <div class="item-key">
+                  <!-- <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox> -->
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <dxp-image></dxp-image>
+                    </ion-thumbnail>
+                    <ion-label>
+                        {{ cycleCount.internalName }}
+                        <!-- <p>Secondary Id</p> -->
+                    </ion-label>
+                  </ion-item>
+                </div>
+                <ion-label class="stat">
+                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
+                  <p>counted/systemic</p>
+                </ion-label>
+                <ion-label class="stat">
+                  {{ cycleCount.proposedVarianceQuantity }}
+                  <p>variance</p>
+                </ion-label>
+                <div v-if="cycleCount.decisionOutcomeEnumId">
+                  <ion-badge
+                  :color="cycleCount.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
+                  style="--color: white;"
+                >
+                  {{ cycleCount.decisionOutcomeEnumId }}
+                </ion-badge>
+                </div>
+              </div>
+              <div v-if="loadingSessions">
+              <ion-spinner name="crescent"></ion-spinner>
+                <p>Loading items...</p>
+              </div>
+              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
+                <ion-item lines="none">
+                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                  <ion-label>
+                    {{ session.uploadedByUserLogin }}
+                  </ion-label>
+                </ion-item>
 
-            <ion-label v-else>
-              {{ item.qoh ?? '-' }}
-              <p>{{ translate("systemic") }}</p>
-            </ion-label>
-
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.qoh ? +(item.quantity) - +(item.qoh) : item.quantity }}
-              <p>{{ getPartyName(item) }}</p>
-            </ion-label>
-            <ion-item lines="none" v-else>
-              <ion-label class="ion-text-center">
-                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-              </ion-label>
-            </ion-item>
-
-            <div class="ion-margin-end">
-              <ion-badge :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-            </div>
-          </div>
-              </DynamicScrollerItem>
-            </template>
-          </DynamicScroller>
-        </template>
-
-        <p v-else class="empty-state">{{ translate("No items added to count") }}</p>
+                <ion-label>
+                  {{ session.counted }}
+                  <p>counted</p>
+                </ion-label>
+                <ion-label>
+                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                  <p>started</p>
+                </ion-label>
+                <ion-label>
+                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                  <p>last updated</p>
+                </ion-label>
+                <ion-button fill="clear" color="medium">
+                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+          <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+          </ion-infinite-scroll>
+        </div>
+        <div v-else class="empty-state">
+          <p>No Results</p>
+        </div>
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
+          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
+          <ion-fab-button>
+            <ion-icon :icon="receiptOutline" />
+          </ion-fab-button>
+        </ion-fab>
       </template>
-      <template v-else-if="!isLoadingItems">
-        <p class="empty-state">{{ translate("Cycle count not found") }}</p>
+      <template v-else>
+        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonPage, IonThumbnail, IonTitle, IonToolbar, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, ref } from "vue";
+import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
-import { CountService } from "@/services/CountService"
-import emitter from '@/event-bus';
-import { getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, sortListByField } from "@/utils"
-import logger from "@/logger";
-import Image from "@/components/Image.vue"
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { loader } from "@/user-utils";
 
 const props = defineProps({
-  inventoryCountImportId: String
+  workEffortId: String
 })
 
-const productIdentificationStore = useProductIdentificationStore();
+onIonViewDidEnter(async () => {
+  isLoading.value = true;
+  await getWorkEffortDetails();
+  if (workEffort.value) {
+    await fetchInventoryCycleCount();
+  }
+  isLoading.value = false;
+})
 
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
+const filterAndSortBy = reactive({
+  dcsnRsn: 'all',
+  sortBy: 'alphabetic'
+});
 
-const currentCycleCount = ref({}) as any
-let countName = ref("")
-let isLoadingItems = ref(true)
-let cycleCountItemsProgress = ref(0)
+const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
 
-onIonViewWillEnter(async () => {
-  currentCycleCount.value = {}
-  try {
-    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
+const searchedProductString = ref(''); 
 
-    if(!hasError(resp) && resp.data?.inventoryCountImportId && ["INV_COUNT_COMPLETED", "INV_COUNT_REJECTED"].includes(resp.data?.statusId)) {
-      currentCycleCount.value = {
-        countName: resp.data.countImportName,
-        countId: resp.data.inventoryCountImportId,
-        items: [],
-        ...resp.data
-      }
+const isLoading = ref(false);
 
-      countName.value = resp.data.countImportName
-      await fetchCountItems();
+const loadingSessions = ref(false);
+
+const workEffort = ref();
+
+const cycleCounts = ref();
+
+const isScrollable = ref(true);
+const isLoadingMore = ref(false);
+
+async function getWorkEffortDetails() {
+  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
+    workEffort.value = workEffortResp.data;
+  } else {
+    showToast(translate("Something Went Wrong"));
+    console.error("Error getting the Cycle Count Details", workEffortResp);
+  }
+}
+
+async function loadMoreCycleCountProductReviews(event: any) {
+  if (isLoadingMore.value || !isScrollable.value) {
+    await event.target.complete();
+    return;
+  }
+
+  isLoadingMore.value = true;
+  pagination.pageIndex += 1;
+
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
+
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = [...(cycleCounts.value || []), ...resp.data];
+
+    if (resp.data.length < pagination.pageSize) {
+      isScrollable.value = false;
     }
-  } catch(err) {
-    logger.error()
+  } else {
+    isScrollable.value = false;
   }
-  isLoadingItems.value = false;
-})
 
-onIonViewWillLeave(() => {
-  cycleCountItemsProgress.value = 0
-})
+  isLoadingMore.value = false;
+  await event.target.complete();
+}
 
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
 
+const pagination = reactive({
+  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
+  pageIndex: 0
+});
+
+watch(() => filterAndSortBy, async () => {
+  await loader.present("Loading...");
   try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        cycleCountItemsProgress.value = items.length
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
-  } catch(err) {
-    logger.error(err)
+    pagination.pageIndex = 0;
+    const count = await fetchCycleCount({
+      workEffortId: props.workEffortId,
+      pageSize: pagination.pageSize,
+      pageIndex: pagination.pageIndex,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
+
+    if (count && count.status === 200 && count.data) {
+      cycleCounts.value = count.data;
+      isScrollable.value = count.data.length >= pagination.pageSize;
+    } else {
+      throw new Error(count.data);
+    }
+  } catch (error) {
+    showToast(translate("Something Went Wrong!"));
+    console.error("Error Filters Products: ", error);
+  }
+  loader.dismiss();
+},{ deep: true });
+
+const sessions = ref();
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
+
+function getSortByField () {
+  if (!sortBy.value) return null;
+
+  if (sortBy.value === 'alphabetic') return 'internalName';
+  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
+}
+
+async function filterProductByInternalName() {
+  try {
+    const productReviewDetail = await getProductReviewDetail({
+      workEffortId: props.workEffortId,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
+
+    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
+      pagination.pageIndex = 0;
+      cycleCounts.value = productReviewDetail.data;
+      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
+    } else {
+      throw new Error(productReviewDetail.data);
+    }
+  } catch (error) {
+    showToast("Something Went Wrong");
+    console.error("Error Searching Product: ", error);
+  }
+}
+
+function getDcsnFilter() {
+  if (dcsnRsn.value === 'all') {
+    return null;
+  } else if (dcsnRsn.value === 'open') {
+    return 'empty';
+  } else if (dcsnRsn.value === 'accepted') {
+    return 'APPLIED';
+  } else if (dcsnRsn.value === 'rejected') {
+    return 'SKIPPED';
+  }
+}
+
+async function fetchCountSessions(productId: any) {
+  loadingSessions.value = true;
+  sessions.value = [];
+  const resp = await fetchSessions({
+    workEffortId: props.workEffortId,
+    productId: productId
+  });
+
+  if (resp && resp.status && resp.data && resp.data.length) {
+    sessions.value = resp.data;
+  }
+  loadingSessions.value = false;
+}
+
+async function fetchInventoryCycleCount(reset = false) {
+  if (reset) {
+    pagination.pageIndex = 0;
+    isScrollable.value = true;
   }
 
-  items = sortListByField(getValidItems(items), "parentProductName");
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
 
-  currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = resp.data;
+    isScrollable.value = resp.data.length >= pagination.pageSize;
+  } else {
+    cycleCounts.value = [];
+    isScrollable.value = false;
+  }
 }
 
-function getVarianceInformation() {
-  let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
-
-  currentCycleCount.value.items?.map((item: any) => {
-    totalItemsQuantityCount += parseInt(item.quantity || 0)
-    totalItemsExpectedCount += parseInt(item.qoh || 0)
-  })
-
-  // TODO: internationalize text
-  return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
-}
-
-function getProgress() {
-  const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
-  const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
-}
 </script>
 
 <style scoped>
-.list-item {
+
+.header {
+  display: grid;
+}
+
+ion-item.due-date {
+  --padding-bottom: var(--spacer-sm)
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  background-color: var(--ion-background-color);
+  z-index: 999;
+}
+
+.filters {
+  display: flex;
+  gap: var(--spacer-sm);
+  align-items: end;
+}
+
+.filters>* {
+  flex: 1;
+}
+
+.list-item.count-item-rollup {
   --columns-desktop: 5;
-  border-bottom : 1px solid var(--ion-color-medium);
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
   width: 100%;
 }
 
-.header {
-  display: grid;
-  grid: "search filters"
-        /1fr 1fr;
+.list-item.count-item {
+  --columns-desktop: 5
 }
 
-.search {
-  grid-area: search;
+.list-item .item-key {
+  padding-inline-start: var(--spacer-sm);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-self: stretch;
 }
 
-.filters {
-  grid-area: filters;
+.item-key ion-item {
+  flex: 1
 }
 
-/* To remove overlapping of fab button with footer buttons */
-ion-footer ion-buttons {
-  padding-right: 80px;
-}
-
-.virtual-scroller {
-  --virtual-scroller-offset: 220px;
-}
-
-.main-content {
-  --padding-bottom: 80px;
-}
-
-@media (max-width: 991px) {
-  .header {
-    grid: "search"
-          "filters"
-          / auto;
-    padding: 0;
-  }
+.list-item .actions {
+  display: flex;
+  gap: var(--spacer-xs);
 }
 </style>
