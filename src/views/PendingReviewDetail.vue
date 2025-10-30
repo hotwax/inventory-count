@@ -488,9 +488,7 @@ async function fetchCountSessions(productId: any) {
     });
 
     if (resp && resp.status && resp.data && resp.data.length) {
-      setTimeout(() => {
-        sessions.value = resp.data;
-      }, 1500)
+      sessions.value = resp.data;
     } else {
       throw resp.data;
     }
