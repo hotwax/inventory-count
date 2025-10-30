@@ -225,8 +225,6 @@ async function getWorkEffortDetails() {
 const isDueDateModalOpen = ref(false)
 const selectedDate = ref('')
 
-const countDueDate = computed(() => workEffort.value?.dueDate)
-
 watch(
   () => workEffort.value?.dueDate,
   (newVal) => {
