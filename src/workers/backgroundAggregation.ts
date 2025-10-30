@@ -35,6 +35,12 @@ async function getById(productId: string, context: any) {
   }
 
   try {
+    let baseUrl = context.omsUrl
+    if (!baseUrl.endsWith('/')) {
+      baseUrl += '/api/'
+    } else if (!baseUrl.endsWith('/api/') && !baseUrl.includes('/api/')) {
+      baseUrl += 'api/'
+    }
     const resp = await workerApi({
       baseURL: context.omsUrl,
       headers: {

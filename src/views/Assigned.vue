@@ -71,7 +71,6 @@ const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await fetchAssignedCycleCount();
-  console.log("Assigned Cycle Counts:", cycleCounts.value);
 })
 
 onIonViewWillLeave(async () => {

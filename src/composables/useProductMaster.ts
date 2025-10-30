@@ -66,7 +66,6 @@ export function useProductMaster() {
           'Content-Type': 'application/json'
         }
       })
-      console.log(`Fetched ${resp.data?.response?.docs?.length || 0} products from Solr for batch starting at index ${index}`)
 
       if (resp.data?.response?.docs?.length) {
         results.push(...resp.data.response.docs.map(mapApiDocToProduct))

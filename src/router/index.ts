@@ -20,11 +20,16 @@ import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import DraftDetail from "@/views/DraftDetail.vue";
+import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 
 // Defining types for the meta values
 declare module 'vue-router' {
   interface RouteMeta {
     permissionId?: string;
+    title?: string;
+    iosIcon?: any;
+    mdIcon?: any;
+    showInMenu?: boolean;
   }
 }
 
@@ -88,7 +93,11 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_DRAFT_VIEW"
+      permissionId: "APP_DRAFT_VIEW",
+      showInMenu: true,
+      title: "Draft",
+      iosIcon: createOutline,
+      mdIcon: createOutline,
     }
   },
   {
@@ -107,7 +116,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW"
+      permissionId: "APP_ASSIGNED_VIEW",
+      showInMenu: true,
+      title: "Assigned",
+      iosIcon: storefrontOutline,
+      mdIcon: storefrontOutline,
     }
   },
   {
@@ -116,7 +129,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "APP_CLOSED_VIEW",
+      showInMenu: true,
+      title: "Closed",
+      iosIcon: receiptOutline,
+      mdIcon: receiptOutline,
     }
   },
   {
@@ -135,7 +152,11 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
+      permissionId: "APP_PENDING_REVIEW_VIEW",
+      showInMenu: true,
+      title: "Pending review",
+      iosIcon: mailUnreadOutline,
+      mdIcon: mailUnreadOutline,
     }
   },
   {
@@ -145,7 +166,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
+      permissionId: "APP_PENDING_REVIEW_VIEW",
     }
   },
   {
@@ -154,7 +175,12 @@ const routes: Array<RouteRecordRaw> = [
     component: BulkUpload,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_DRAFT_VIEW"
+      permissionId: "APP_DRAFT_VIEW",
+      showInMenu: true,
+      title: "Bulk Upload",
+      iosIcon: createOutline,
+      mdIcon: createOutline
+
     }
   },
   {
@@ -163,7 +189,8 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW"
+      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      showInMenu: true
     }
   },
   {
@@ -172,7 +199,11 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
+      permissionId: "APP_PENDING_REVIEW_VIEW",
+      showInMenu: true,
+      title: "Pending review",
+      iosIcon: mailUnreadOutline,
+      mdIcon: mailUnreadOutline,
     }
   },
   {
@@ -191,7 +222,11 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,  
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "APP_CLOSED_VIEW",
+      showInMenu: true,
+      title: "Closed",
+      iosIcon: receiptOutline,
+      mdIcon: receiptOutline,
     }
   },
   {
@@ -210,7 +245,11 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW"
+      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      showInMenu: true,
+      title: "Store permissions",
+      iosIcon: shieldCheckmarkOutline,
+      mdIcon: shieldCheckmarkOutline,
     }
   },
   {
@@ -218,6 +257,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Settings',
     component: Settings,
     beforeEnter: authGuard,
+    meta: {
+      showInMenu: true,
+      title: "Settings",
+      iosIcon: settingsOutline,
+      mdIcon: settingsOutline,
+    }
   },
   {
     path: '/login',

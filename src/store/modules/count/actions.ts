@@ -6,10 +6,10 @@ import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
 import { hasError } from "@/utils"
 import logger from "@/logger";
 import { DateTime } from "luxon"
-const { getAssignedWorkEfforts, getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
+const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getAssignedWorkEfforts({ commit, state }, params) {
-    let assignedWorkEfforts = []
+    let assignedWorkEfforts = (params.pageIndex > 0 && state.assignedWorkEfforts) ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []   
     let total = 0
     let isScrollable = true
 
@@ -20,7 +20,7 @@ const actions: ActionTree<CountState, RootState> = {
     params["orderByField"] = "lastUpdatedStamp"
 
     try {
-      const resp = await getAssignedWorkEfforts(params)
+      const resp = await getWorkEfforts(params)
       if (!hasError(resp) && resp.data.length > 0) {
         const workEfforts = resp.data
 

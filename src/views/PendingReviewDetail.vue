@@ -415,8 +415,6 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
-    console.log("Before API call:", inventoryCountProductsList);
-
     const resp = await submitProductReview({ inventoryCountProductsList });
 
     if (resp && resp.status === 200) {
