@@ -181,7 +181,7 @@ let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const pageIndex = ref(0); // ✅ Track current page index
+const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 onIonViewDidEnter(async () => {
@@ -205,10 +205,18 @@ function showAddNewSessionModal(workEffortId) {
 }
 
 function enableScrolling() {
-  const parentElement = pageRef.value.$el
-  const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
-  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
+  const parentElement = pageRef.value?.$el;
+  if (!parentElement) return;
+
+  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']");
+  const infiniteEl = infiniteScrollRef.value?.$el;
+  if (!scrollEl || !infiniteEl) return;
+
+  const { scrollHeight, scrollTop, offsetHeight: height } = scrollEl;
+  const infiniteHeight = infiniteEl.offsetHeight;
+  const threshold = 100;
+
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
   isScrollingEnabled.value = distanceFromInfinite >= 0;
 }
 
@@ -218,7 +226,7 @@ async function loadMoreCycleCount(event) {
     return;
   }
 
-  pageIndex.value += 1; // ✅ Increment page index each time
+  pageIndex.value += 1;
   await fetchCycleCounts(false);
   await event.target.complete();
 }
