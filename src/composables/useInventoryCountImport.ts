@@ -341,7 +341,6 @@ const addSessionInCount = async (payload: any): Promise<any> => {
 }
 
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
-  console.log("Fetching session for ID:", params.inventoryCountImportId);
   return await api({
     url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${params.inventoryCountImportId}`,
     method: 'get',

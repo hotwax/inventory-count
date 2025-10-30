@@ -485,7 +485,6 @@ function openEditSessionModal() {
 
 async function updateSessionOnServer() {
   try {
-    console.log("This is count import name: ", newCountName.value, " and ", selectedArea.value);
     const resp = await updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,

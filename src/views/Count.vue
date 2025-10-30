@@ -292,7 +292,30 @@ async function addNewSession() {
     console.error(resp);
   } else {
     showToast("Session added Successfully");
+    const index = cycleCounts.value.findIndex(
+      w => w.workEffortId === selectedWorkEffortId.value
+    );
+
+    if (index !== -1) {
+      if (!cycleCounts.value[index].sessions) {
+        cycleCounts.value[index].sessions = [];
+      }
+      const newSession = {
+        inventoryCountImportId: resp.data.inventoryCountImportId,
+        countImportName: countName.value,
+        statusId: "SESSION_ASSIGNED",
+        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        facilityAreaId: selectedArea.value,
+        createdDate: Date.now(),
+        dueDate: Date.now(),
+        workEffortId: selectedWorkEffortId.value
+      };
+      cycleCounts.value[index].sessions.push(newSession);
+    }
+
   }
+  countName.value = '';
+  selectedArea.value = areas[0].value;
   isAddSessionModalOpen.value = false;
 }
 
