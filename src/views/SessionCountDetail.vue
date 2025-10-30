@@ -75,7 +75,7 @@
               </ion-label>
             </ion-item>
 
-            <ion-button color="medium" fill="outline" @click="isEditNewSessionModalOpen = true" :disabled="sessionLocked">
+            <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
               Edit
             </ion-button>
@@ -245,9 +245,9 @@
             <ion-list>
               <ion-list-header>Area</ion-list-header>
 
-              <ion-radio-group>
+              <ion-radio-group v-model="selectedArea">
                 <ion-item v-for="area in areas" :key="area.value">
-                  <ion-radio v-model="selectedArea" label-placement="start" :value="area">{{ area.label }}</ion-radio>
+                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
                 </ion-item>
               </ion-radio-group>
             </ion-list>
@@ -329,7 +329,7 @@ const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT
 const userLogin = computed(() => store.getters['user/getUserProfile']);
 
 const inventoryCountImport = ref();
-const newCountName = computed(() => inventoryCountImport.value?.countImportName);
+const newCountName = ref();
 
 onMounted(async () => {
   init();
@@ -389,20 +389,29 @@ aggregationWorker.onmessageerror = (err) => {
   })
 });
 
-async function updateSessionOnServer() {
-  console.log("This is count import name: ", newCountName.value, " and ", selectedArea.value);
-  const resp = await updateSession({
-    inventoryCountImportId: props.inventoryCountImportId,
-    countImportName: newCountName.value,
-    facilityAreaId: selectedArea.value
-  });
+function openEditSessionModal() {
+  isEditNewSessionModalOpen.value = true;
+  newCountName.value = inventoryCountImport.value.countImportName;
+}
 
-  if (resp?.status === 200 && resp.data) {
-    inventoryCountImport.value.countImportName = newCountName;
-    inventoryCountImport.value.facilityAreaId = selectedArea.value
-    showToast(translate("Session Updated Successfully"))
-  } else {
-    showToast(translate("Failed to Update Session Details"));
+async function updateSessionOnServer() {
+  try {
+    console.log("This is count import name: ", newCountName.value, " and ", selectedArea.value);
+    const resp = await updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      countImportName: newCountName.value,
+      facilityAreaId: selectedArea.value
+    });
+
+    if (resp?.status === 200 && resp.data) {
+      inventoryCountImport.value.countImportName = newCountName;
+      inventoryCountImport.value.facilityAreaId = selectedArea.value
+      showToast(translate("Session Updated Successfully"))
+    } else {
+      showToast(translate("Failed to Update Session Details"));
+    }
+  } catch (error) {
+    console.error(error);
   }
 }
 
