@@ -104,7 +104,7 @@ export function useInventoryCountImport() {
   }
 
   /** Load inventory items from backend into Dexie */
-  async function loadInventoryItemsFromBackend(workEffortId: string, inventoryCountImportId: string): Promise<void> {
+  async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
     try {
       const resp = await api({
         url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
@@ -263,6 +263,17 @@ export function useInventoryCountImport() {
       }))
     });
 
+  const getScanEvents = (inventoryCountImportId: string) =>
+  liveQuery(async () => {
+    const events = await db.scanEvents
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .reverse()
+      .sortBy('createdAt');
+
+    return events || [];
+  });
+
    /* API call functions moved from CountService.ts */   
   const fetchCycleCount = async (payload: any): Promise <any>  => {
     return api({
@@ -330,6 +341,7 @@ const addSessionInCount = async (payload: any): Promise<any> => {
 }
 
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
+  console.log("Fetching session for ID:", params.inventoryCountImportId);
   return await api({
     url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${params.inventoryCountImportId}`,
     method: 'get',
@@ -383,7 +395,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
       url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
-        uploadedByUserLogin: null
+        statusId: 'SESSION_VOIDED'
       }
     })
   } catch (err) {
@@ -392,17 +404,17 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
   }
 }
 
-async function submitSession(workEffortId: string): Promise<void> {
+async function submitSession(inventoryCountImportId: string): Promise<void> {
   try {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${workEffortId}`,
+      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
         statusId: 'SESSION_SUBMITTED'
       }
     })
   } catch (err) {
-    console.error(`useInventoryCountImport Failed to submit WorkEffort ${workEffortId}`, err)
+    console.error(`useInventoryCountImport Failed to submit InventoryCountImport ${inventoryCountImportId}`, err)
     throw err
   }
 }
@@ -421,6 +433,22 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
     method: "put",
     data: payload
   })
+}
+
+const updateSession = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${payload.inventoryCountImportId}`,
+    method: "put",
+    data: payload
+  })
+}
+
+const getSessionItemsByImportId = async (inventoryCountImportId: string): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
+    method: 'GET',
+    params: {pageSize:500}
+  });
 }
     
   return {
@@ -452,6 +480,9 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
     getWorkEfforts,
     fetchCycleCountImportErrors,
     submitProductReview,
-    updateWorkEffort
+    updateWorkEffort,
+    updateSession,
+    getSessionItemsByImportId,
+    getScanEvents
   };
 }
