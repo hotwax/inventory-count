@@ -244,7 +244,6 @@ function getIsoFormattedDate(timestamp: any): string {
 
 async function saveDueDate() {
   try {
-    isDueDateModalOpen.value = false;
     const dueDate = DateTime.fromISO(selectedDate.value).toMillis()
     const resp = await updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
