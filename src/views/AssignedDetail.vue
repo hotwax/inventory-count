@@ -32,10 +32,17 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
-                <ion-datetime-button datetime="datetime"></ion-datetime-button>
-                <ion-modal :keep-contents-mounted="true">
-                  <ion-datetime id="datetime"></ion-datetime>
+                <p class="overline">Due Date</p>
+                <div v-if="workEffort.dueDate">
+                  <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
+                </div>
+                <div v-else>
+                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">Add Due Date</ion-button>
+                </div>
+                <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
+                  <ion-datetime id="datetime" v-model="selectedDate" :value="getIsoFormattedDate(workEffort?.dueDate)"></ion-datetime>
+                  <ion-item lines="none" class="ion-text-end">
+                  </ion-item>
                 </ion-modal>
               </div>
             </ion-item>
@@ -168,6 +175,9 @@ import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { loader } from "@/user-utils";
+import { DateTime } from "luxon";
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, updateWorkEffort } = useInventoryCountImport();
 
 const props = defineProps({
   workEffortId: String
@@ -211,6 +221,46 @@ async function getWorkEffortDetails() {
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
+
+const isDueDateModalOpen = ref(false)
+const selectedDate = ref('')
+
+watch(
+  () => workEffort.value?.dueDate,
+  (newVal) => {
+    selectedDate.value = getIsoFormattedDate(newVal)
+  },
+  { immediate: true }
+)
+
+function getIsoFormattedDate(timestamp: any): string {
+  if (!timestamp) return DateTime.now().toISO() ?? ''
+  return typeof timestamp === 'number'
+    ? DateTime.fromMillis(timestamp).toISO() ?? ''
+    : DateTime.fromISO(timestamp).toISO() ?? ''
+}
+
+async function saveDueDate() {
+  try {
+    const dueDate = DateTime.fromISO(selectedDate.value).toMillis()
+    const resp = await updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      dueDate
+    })
+
+    if (resp?.status === 200) {
+      showToast(translate('Updated Due Date Successfully'))
+      workEffort.value.dueDate = dueDate
+    } else {
+      throw resp?.data
+    }
+  } catch (error) {
+    showToast('Something Went Wrong')
+    console.error('Error updating due date on Cycle Count', error)
+  }
+  isDueDateModalOpen.value = false
+}
+
 
 async function loadMoreCycleCountProductReviews(event: any) {
   if (isLoadingMore.value || !isScrollable.value) {
@@ -275,9 +325,6 @@ watch(() => searchAndSortBy, async () => {
 },{ deep: true });
 
 const sessions = ref();
-
-
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount } = useInventoryCountImport();
 
 function getSortByField () {
   if (!sortBy.value) return null;
