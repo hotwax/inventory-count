@@ -442,6 +442,14 @@ const updateSession = async (payload: any): Promise <any> => {
   })
 }
 
+const cloneSession = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${payload.inventoryCountImportId}/cloneDirectedCount`,
+    method: "post",
+    data: payload
+  })
+}
+
 const getSessionItemsByImportId = async (inventoryCountImportId: string): Promise<any> => {
   return await api({
     url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
@@ -481,6 +489,7 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
     submitProductReview,
     updateWorkEffort,
     updateSession,
+    cloneSession,
     getSessionItemsByImportId,
     getScanEvents
   };
