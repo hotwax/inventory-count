@@ -104,7 +104,7 @@ export function useInventoryCountImport() {
   }
 
   /** Load inventory items from backend into Dexie */
-  async function loadInventoryItemsFromBackend(workEffortId: string, inventoryCountImportId: string): Promise<void> {
+  async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
     try {
       const resp = await api({
         url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
@@ -422,6 +422,22 @@ const submitProductReview = async (payload: any): Promise <any> => {
   })
 }
 
+const updateSession = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${payload.inventoryCountImportId}`,
+    method: "put",
+    data: payload
+  })
+}
+
+const getSessionItemsByImportId = async (inventoryCountImportId: string): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
+    method: 'GET',
+    params: {pageSize:500}
+  });
+}
+
 const updateWorkEffort = async (payload: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
@@ -460,6 +476,7 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
     getWorkEfforts,
     fetchCycleCountImportErrors,
     submitProductReview,
-    updateWorkEffort
+    updateWorkEffort,
+    updateSession
   };
 }

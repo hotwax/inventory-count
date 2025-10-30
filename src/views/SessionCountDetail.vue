@@ -9,7 +9,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content ref="pageRef">
       <main>
         <!-- Left Panel -->
         <div class="count-events">
@@ -75,7 +75,7 @@
               </ion-label>
             </ion-item>
 
-            <ion-button color="medium" fill="outline" @click="discardSession" :disabled="sessionLocked">
+            <ion-button color="medium" fill="outline" @click="isEditNewSessionModalOpen = true" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
               Edit
             </ion-button>
@@ -223,6 +223,42 @@
           </ion-segment-view>
         </div>
       </main>
+
+      <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="isEditNewSessionModalOpen = false" fill="clear" aria-label="Close">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>New session</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-item>
+              <ion-label position="stacked">Name</ion-label>
+              <ion-input v-model="newCountName" placeholder="category, section, or person"></ion-input>
+              <ion-note slot="helper">Add a name to help identify what inventory is counted in this session</ion-note>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>Area</ion-list-header>
+
+              <ion-radio-group>
+                <ion-item v-for="area in areas" :key="area.value">
+                  <ion-radio v-model="selectedArea" label-placement="start" :value="area">{{ area.label }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-list>
+
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="updateSessionOnServer">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -234,7 +270,7 @@ import {
   IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline } from 'ionicons/icons';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, closeOutline } from 'ionicons/icons';
 import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -248,6 +284,7 @@ import { useProductIdentificationStore } from "@hotwax/dxp-components";
 import { from } from 'rxjs';
 import { modalController } from "@ionic/vue";
 import MatchProductModal from "@/components/MatchProductModal.vue";
+import { translate } from '@/i18n';
 
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
@@ -267,7 +304,21 @@ const countedItems = ref<any[]>([]);
 const uncountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
-const { getInventoryCountImportSession } = useInventoryCountImport();
+const { getInventoryCountImportSession, updateSession } = useInventoryCountImport();
+
+const pageRef = ref(null);
+
+const isEditNewSessionModalOpen = ref(false);
+
+const areas = [
+  { value: 'back_stock', label: 'Back stock' },
+  { value: 'display', label: 'Display' },
+  { value: 'floor_wall', label: 'Floor - wall' },
+  { value: 'floor_shelf', label: 'Floor - shelf' },
+  { value: 'overflow', label: 'Overflow' },
+  { value: 'register', label: 'Register' },
+];
+const selectedArea = ref(areas[0].value);
 
 let aggregationWorker: Worker | null = null
 
@@ -276,6 +327,9 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => store.getters['user/getUserProfile']);
+
+const inventoryCountImport = ref();
+const newCountName = computed(() => inventoryCountImport.value?.countImportName);
 
 onMounted(async () => {
   init();
@@ -335,9 +389,33 @@ aggregationWorker.onmessageerror = (err) => {
   })
 });
 
+async function updateSessionOnServer() {
+  console.log("This is count import name: ", newCountName.value, " and ", selectedArea.value);
+  const resp = await updateSession({
+    inventoryCountImportId: props.inventoryCountImportId,
+    countImportName: newCountName.value,
+    facilityAreaId: selectedArea.value
+  });
+
+  if (resp?.status === 200 && resp.data) {
+    inventoryCountImport.value.countImportName = newCountName;
+    inventoryCountImport.value.facilityAreaId = selectedArea.value
+    showToast(translate("Session Updated Successfully"))
+  } else {
+    showToast(translate("Failed to Update Session Details"));
+  }
+}
+
 async function startSession() {
   try {
     const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId});
+
+    if (resp?.status === 200 && resp.data) {
+      inventoryCountImport.value = resp.data;
+    } else {
+      console.error("Session not Found");
+      throw resp;
+    }
 
     if (resp?.data?.activeUserLoginId) {
       sessionLocked.value = true;
@@ -346,7 +424,7 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    await loadInventoryItemsFromBackend(props.workEffortId, props.inventoryCountImportId);
+    await loadInventoryItemsFromBackend(props.inventoryCountImportId);
 
     // Prefetch product details for all related productIds
     const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
