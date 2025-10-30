@@ -730,8 +730,8 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_CREATED' });
+    inventoryCountImport.value.statusId = 'SESSION_CREATED';
     showToast('Session reopened');
   } catch (err) {
     console.error(err);

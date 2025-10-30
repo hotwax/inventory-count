@@ -194,7 +194,7 @@ onIonViewDidEnter(async () => {
 function getSessionStatusDescription(statusId) {
   if (!statusId) return "";
   if (statusId === "SESSION_CREATED") return "Created";
-  if (statusId === "SESSION_ASSIGNED") return "In Progress";
+  // if (statusId === "SESSION_ASSIGNED") return "In Progress";
   if (statusId === "SESSION_SUBMITTED") return "Submitted";
   if (statusId === "SESSION_VOIDED") return "Voided";
 }
@@ -292,7 +292,7 @@ async function addNewSession() {
       // --- Create a new HARD COUNT session directly ---
       resp = await useInventoryCountImport().createSessionOnServer({
         countImportName: countName.value,
-        statusId: "SESSION_ASSIGNED",
+        statusId: "SESSION_CREATED",
         uploadedByUserLogin: store.getters["user/getUserProfile"].username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
@@ -352,7 +352,7 @@ async function addNewSession() {
       const newSession = {
         inventoryCountImportId: resp.data.inventoryCountImportId,
         countImportName: countName.value,
-        statusId: "SESSION_ASSIGNED",
+        statusId: "SESSION_CREATED",
         uploadedByUserLogin: store.getters["user/getUserProfile"].username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
