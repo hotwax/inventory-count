@@ -37,8 +37,7 @@
             </div>
           </ion-card-header>
           <ion-item lines="none">
-            <p>{{  count.workEffortId }}</p>
-            <p>{{ translate("Due date") }}</p>
+            {{ translate("Due date") }}
             <ion-label slot="end">
               <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
             </ion-label>
