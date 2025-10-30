@@ -21,6 +21,7 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import DraftDetail from "@/views/DraftDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
+import PreCountedItems from "@/views/PreCountedItems.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -168,6 +169,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       permissionId: "APP_PENDING_REVIEW_VIEW",
     }
+  },
+  {
+    path: '/add-pre-counted/:workEffortId/:inventoryCountImportId',
+    name: 'PreCountedItems',
+    component: PreCountedItems,
+    props: true
   },
   {
     path: '/bulkUpload',

@@ -57,7 +57,7 @@
             </ion-list>
           </div>
 
-          <ion-card class="add-pre-counted" href="">
+          <ion-card class="add-pre-counted" button @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">Add pre-counted items</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
@@ -368,6 +368,7 @@ import { getProductIdentificationValue, useProductIdentificationStore } from "@h
 import { from } from 'rxjs';
 import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
+import router from '@/router';
 
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
