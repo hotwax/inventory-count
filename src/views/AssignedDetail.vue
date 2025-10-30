@@ -32,14 +32,16 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">{{ getDateWithOrdinalSuffix(countDueDate) }}</p>
-                <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
-                <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="isDueDateModalOpen = false">
+                <p class="overline">Due Date</p>
+                <div v-if="workEffort.dueDate">
+                  <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
+                </div>
+                <div v-else>
+                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">Add Due Date</ion-button>
+                </div>
+                <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
                   <ion-datetime id="datetime" v-model="selectedDate" :value="getIsoFormattedDate(workEffort?.dueDate)"></ion-datetime>
                   <ion-item lines="none" class="ion-text-end">
-                    <ion-button size="small" fill="clear" @click="saveDueDate">
-                      {{ translate('Save') }}
-                    </ion-button>
                   </ion-item>
                 </ion-modal>
               </div>
@@ -242,6 +244,7 @@ function getIsoFormattedDate(timestamp: any): string {
 
 async function saveDueDate() {
   try {
+    isDueDateModalOpen.value = false;
     const dueDate = DateTime.fromISO(selectedDate.value).toMillis()
     const resp = await updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
