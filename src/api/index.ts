@@ -85,7 +85,6 @@ const api = async (customConfig: any) => {
     params: customConfig.params,
     // withCredentials: true
   }
-
   const baseURL = store.getters["user/getBaseUrl"];
 
   if (baseURL) {

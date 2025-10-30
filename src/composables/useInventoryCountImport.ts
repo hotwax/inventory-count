@@ -395,7 +395,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
 async function submitSession(workEffortId: string): Promise<void> {
   try {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${workEffortId}`,
+      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${workEffortId}`,
       method: 'PUT',
       data: {
         statusId: 'SESSION_SUBMITTED'

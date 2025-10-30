@@ -75,15 +75,15 @@
               </ion-label>
             </ion-item>
 
-            <ion-button color="medium" fill="outline" @click="discardSession" :disabled="sessionLocked">
+            <ion-button color="medium" fill="outline" @click="discard" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
               Edit
             </ion-button>
-            <ion-button color="warning" fill="outline" @click="discardSession" :disabled="sessionLocked">
+            <ion-button color="warning" fill="outline" @click="discard" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="exitOutline"></ion-icon>
               Discard
             </ion-button>
-            <ion-button color="success" fill="outline" @click="submitSession" :disabled="sessionLocked">
+            <ion-button color="success" fill="outline" @click="submit" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
               Submit
             </ion-button>
@@ -223,6 +223,52 @@
           </ion-segment-view>
         </div>
       </main>
+      <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-button @click="closeMatchModal">
+                <ion-icon slot="icon-only" :icon="closeOutline" />
+              </ion-button>
+            </ion-buttons>
+            <ion-title>Match Product</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <ion-searchbar v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
+          <div v-if="isLoading" class="empty-state ion-padding">
+            <ion-spinner name="crescent" />
+            <ion-label>Searching for "{{ queryString }}"</ion-label>
+          </div>
+          <template v-else-if="isSearching && products.length">
+            <ion-radio-group v-model="selectedProductId">
+              <ion-item v-for="product in products" :key="product.productId">
+                <ion-thumbnail slot="start">
+                  <Image v-if="product.mainImageUrl" :src="product.mainImageUrl" />
+                </ion-thumbnail>
+                <ion-radio :value="product.productId">
+                  <ion-label>
+                    {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) || product.productName }}
+                    <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
+                  </ion-label>
+                </ion-radio>
+              </ion-item>
+            </ion-radio-group>
+          </template>
+          <div v-else-if="queryString && isSearching && !products.length" class="empty-state ion-padding">
+            <p>No results found for "{{ queryString }}"</p>
+          </div>
+          <div v-else class="empty-state ion-padding" >
+            <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
+            <p>Enter a SKU or product name to search a product</p>
+          </div>
+          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+            <ion-fab-button :disabled="!selectedProductId" @click="saveMatchProduct">
+              <ion-icon :icon="saveOutline" />
+            </ion-fab-button>
+          </ion-fab>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -231,28 +277,29 @@
 <script setup lang="ts">
 import {
   IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
-  IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
-  IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
+  IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage, IonSearchbar, IonSpinner,
+  IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar,
+  IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, 
 } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline } from 'ionicons/icons';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
 import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast } from '@/utils';
+import { showToast, hasError } from '@/utils';
 import { useStore } from '@/store';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 import Image from "@/components/Image.vue";
-import { useProductIdentificationStore } from "@hotwax/dxp-components";
+import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { from } from 'rxjs';
-import { modalController } from "@ionic/vue";
-import MatchProductModal from "@/components/MatchProductModal.vue";
+import { client } from "@/api";
+import { inventorySyncWorker } from "@/workers/workerInitiator";
 
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession: submitSessionComposable, discardSession: discardSessionComposable } = useInventoryCountImport();
+const { recordScan, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession, discardSession } = useInventoryCountImport();
 const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
@@ -266,6 +313,13 @@ const unmatchedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
 const uncountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
+const isMatchModalOpen = ref(false);
+const isLoading = ref(false);
+const isSearching = ref(false);
+const queryString = ref('');
+const selectedProductId = ref('');
+const matchedItem = ref<any>(null);
+const products = ref<any[]>([]);
 
 const { getInventoryCountImportSession } = useInventoryCountImport();
 
@@ -397,25 +451,6 @@ function handleScan() {
   }
 }
 
-async function openMatchModal(item: any) {
-  const modal = await modalController.create({
-    component: MatchProductModal,
-    componentProps: {
-      workEffortId: props.workEffortId,
-      inventoryCountImportId: props.inventoryCountImportId,
-      item: item
-    },
-    showBackdrop: false,
-  });
-
-  modal.onDidDismiss().then(({ data }) => {
-    if (data?.success) {
-      showToast("Product matched successfully");
-    }
-  });
-
-  modal.present();
-}
 
 function timeAgo(ts: number) {
   return dayjs(ts).fromNow();
@@ -458,9 +493,92 @@ const secondaryId = (p?: any) => {
   return resolve(pref) || p.productId || ''
 }
 
-async function submitSession() {
+function openMatchModal(item: any) {
+  matchedItem.value = item;
+  isMatchModalOpen.value = true;
+}
+
+function closeMatchModal() {
+  isMatchModalOpen.value = false;
+}
+
+async function handleSearch() {
+  if (!queryString.value.trim()) {
+    isSearching.value = false;
+    return;
+  }
+  await getProducts();
+  isSearching.value = true;
+}
+
+async function getProducts() {
+  isLoading.value = true;
   try {
-    await submitSessionComposable(props.workEffortId);
+    const resp = await fetchProducts({
+      keyword: queryString.value.trim(),
+      viewSize: 100,
+      filters: ["isVirtual: false", "isVariant: true"],
+    });
+
+    if (!hasError(resp)) {
+      products.value = resp.data.response.docs;
+    }
+  } catch (err) {
+    console.error("Failed to fetch products", err);
+  }
+  isLoading.value = false;
+}
+
+const fetchProducts = async (query: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
+  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+  return await client({
+    url: "searchProducts",
+    method: "POST",
+    baseURL,
+    data: query,
+    headers: {
+      Authorization: "Bearer " + omsRedirectionInfo.token,
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+async function saveMatchProduct() {
+  if (!selectedProductId.value) {
+    showToast("Please select a product to match");
+    return;
+  }
+  const omsInfo = store.getters["user/getOmsRedirectionInfo"];
+  const context = {
+    maargUrl: store.getters["user/getBaseUrl"],
+    token: omsInfo?.token,
+    omsUrl: omsInfo?.url,
+    userLoginId: store.getters["user/getUserProfile"]?.username,
+    isRequested: 'Y',
+  };
+  try {
+    const result = await inventorySyncWorker.matchProductLocallyAndSync(
+      props.workEffortId,
+      props.inventoryCountImportId,
+      matchedItem.value,
+      selectedProductId.value,
+      context
+    );
+    if (result.success) {
+      showToast("Product matched successfully");
+      closeMatchModal();
+    } else {
+      showToast("Failed to match product");
+    }
+  } catch (err) {
+    showToast("An error occurred while matching product");
+  }
+}
+
+async function submit() {
+  try {
+    await submitSession(props.workEffortId);
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -468,9 +586,9 @@ async function submitSession() {
   }
 }
 
-async function discardSession() {
+async function discard() {
   try {
-    await discardSessionComposable(props.inventoryCountImportId);
+    await discardSession(props.inventoryCountImportId);
     showToast('Session discarded');
   } catch (err) {
     console.error(err);
