@@ -187,7 +187,7 @@ export function useInventoryCountImport() {
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
     const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
 
     return items.map(item => ({
       ...item,
@@ -205,7 +205,7 @@ export function useInventoryCountImport() {
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
     const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
     return items.map((item) => {
       const product = productMap.get(item.productId || "");
       let unmatched = false;
@@ -237,7 +237,7 @@ export function useInventoryCountImport() {
 
     const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
     const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
 
     return items.map(item => ({
       ...item,
@@ -255,7 +255,7 @@ export function useInventoryCountImport() {
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map(p => [p!.productId, p!]))
+      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
 
       return items.map(item => ({
         ...item,
