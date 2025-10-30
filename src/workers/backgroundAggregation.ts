@@ -198,7 +198,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: !productId || context.inventoryCountTypeId === 'HARD_COUNT' ? 'Y' : 'N',
+          isRequested: (productId || context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt
@@ -223,6 +223,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 }
 
 async function matchProductLocallyAndSync(workEffortId: string, inventoryCountImportId: string, item: any, productId: string, context: any) {
+  console.log(`[Worker] matchProductLocallyAndSync called with productId: ${productId}, scannedValue: ${item?.scannedValue}`);
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
