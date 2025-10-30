@@ -232,7 +232,7 @@
                   <ion-icon :icon="closeOutline" slot="icon-only" />
                 </ion-button>
               </ion-buttons>
-              <ion-title>New session</ion-title>
+              <ion-title>New session {{ selectedArea }}</ion-title>
             </ion-toolbar>
           </ion-header>
           <ion-content>
@@ -266,8 +266,8 @@
 
 <script setup lang="ts">
 import {
-  IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
-  IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage,
+  IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonRadioGroup, IonRadio,
+  IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage, IonModal,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar
 } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, closeOutline } from 'ionicons/icons';
@@ -404,7 +404,7 @@ async function updateSessionOnServer() {
     });
 
     if (resp?.status === 200 && resp.data) {
-      inventoryCountImport.value.countImportName = newCountName;
+      inventoryCountImport.value.countImportName = newCountName.value;
       inventoryCountImport.value.facilityAreaId = selectedArea.value
       showToast(translate("Session Updated Successfully"))
     } else {
