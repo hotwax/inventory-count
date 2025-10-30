@@ -254,11 +254,10 @@ async function saveDueDate() {
     } else {
       throw resp?.data
     }
-    } catch (error) {
+  } catch (error) {
     showToast('Something Went Wrong')
     console.error('Error updating due date on Cycle Count', error)
   }
-
   isDueDateModalOpen.value = false
 }
 
