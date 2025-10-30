@@ -9,7 +9,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content ref="pageRef">
       <main>
         <!-- Left Panel -->
         <div class="count-events">
@@ -20,7 +20,7 @@
               v-model="scannedValue"
               placeholder="Scan a barcode"
               @keyup.enter="handleScan"
-              :disabled="sessionLocked"
+              :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"
             ></ion-input>
           </ion-item>
 
@@ -29,7 +29,7 @@
             color="success"
             class="focus ion-margin-top ion-margin-horizontal"
             @click="startSession"
-            :disabled="sessionLocked"
+            :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"
           >
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             start counting
@@ -43,10 +43,11 @@
 
           <div class="events">
             <ion-list>
-              <ion-item v-for="event in events" :key="event.id">
+              <ion-item v-for="event in events" :key="event.id" :class="{ unaggregated: event.aggApplied === 0 }">
                 <ion-thumbnail slot="start">
                   <Image v-if="event.matched && event.product" :src="event.product.mainImageUrl" />
                 </ion-thumbnail>
+                <ion-badge class="scan-badge">{{ event.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
                 <ion-label>
                   {{ event.scannedValue }}
                   <p>{{ timeAgo(event.createdAt) }}</p>
@@ -70,12 +71,47 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ countImportName || 'Untitled session' }}</h1>
+                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
               </ion-label>
             </ion-item>
+            <!-- When session is SUBMITTED: show only Re-open button -->
+            <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
+              <ion-button color="warning" fill="outline" @click="reopen">
+                <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
+                Re-open session
+              </ion-button>
+            </template>
 
-            <ion-button color="medium" fill="outline" @click="discard" :disabled="sessionLocked">
+            <!-- When session is VOIDED: all buttons disabled -->
+            <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
+              <ion-button color="warning" fill="outline" disabled>
+                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+                Session discarded
+              </ion-button>
+            </template>
+
+            <!-- Default: show Edit / Discard / Submit -->
+            <template v-else>
+              <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
+                <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
+                Edit
+              </ion-button>
+              <ion-button color="warning" fill="outline" @click="discard" :disabled="sessionLocked">
+                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+                Discard
+              </ion-button>
+              <ion-button
+                color="success"
+                fill="outline"
+                @click="submit"
+                :disabled="sessionLocked"
+              >
+                <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
+                Submit
+              </ion-button>
+            </template>
+            <!-- <ion-button color="medium" fill="outline" @click="discard" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
               Edit
             </ion-button>
@@ -86,7 +122,7 @@
             <ion-button color="success" fill="outline" @click="submit" :disabled="sessionLocked">
               <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
               Submit
-            </ion-button>
+            </ion-button> -->
           </div>
 
           <div class="statistics ion-padding">
@@ -100,7 +136,7 @@
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>Pending match scans</ion-label>
-                  <p slot="end">0</p>
+                  <p slot="end">{{ events.filter(e => e.aggApplied === 0).length }}</p>
                 </ion-item>
                 <ion-item>
                   <ion-label>Unmatched scans</ion-label>
@@ -269,6 +305,42 @@
           </ion-fab>
         </ion-content>
       </ion-modal>
+      <!-- Edit Session Modal -->
+      <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="isEditNewSessionModalOpen = false" fill="clear" aria-label="Close">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>New session</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-item>
+              <ion-label position="stacked">Name</ion-label>
+              <ion-input v-model="newCountName" placeholder="category, section, or person"></ion-input>
+              <ion-note slot="helper">Add a name to help identify what inventory is counted in this session</ion-note>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>Area</ion-list-header>
+
+              <ion-radio-group v-model="selectedArea">
+                <ion-item v-for="area in areas" :key="area.value">
+                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-list>
+
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="updateSessionOnServer">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -279,14 +351,15 @@ import {
   IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle,
   IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonNote, IonPage, IonSearchbar, IonSpinner,
   IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar,
-  IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, 
+  IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter
 } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
-import { ref, onMounted, computed, defineProps, watchEffect } from 'vue';
+import { ref, computed, defineProps, watchEffect } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
 import { useStore } from '@/store';
+import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
@@ -299,7 +372,7 @@ import { inventorySyncWorker } from "@/workers/workerInitiator";
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, submitSession, discardSession } = useInventoryCountImport();
+const { recordScan, getScanEvents, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, updateSession, getInventoryCountImportSession } = useInventoryCountImport();
 const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
@@ -320,8 +393,23 @@ const queryString = ref('');
 const selectedProductId = ref('');
 const matchedItem = ref<any>(null);
 const products = ref<any[]>([]);
+const inventoryCountImport = ref();
+const newCountName = ref();
 
-const { getInventoryCountImportSession } = useInventoryCountImport();
+
+const pageRef = ref(null);
+
+const isEditNewSessionModalOpen = ref(false);
+
+const areas = [
+  { value: 'back_stock', label: 'Back stock' },
+  { value: 'display', label: 'Display' },
+  { value: 'floor_wall', label: 'Floor - wall' },
+  { value: 'floor_shelf', label: 'Floor - shelf' },
+  { value: 'overflow', label: 'Overflow' },
+  { value: 'register', label: 'Register' },
+];
+const selectedArea = ref(areas[0].value);
 
 let aggregationWorker: Worker | null = null
 
@@ -331,13 +419,14 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => store.getters['user/getUserProfile']);
 
-onMounted(async () => {
+onIonViewDidEnter(async () => {
   init();
   await startSession();
   from(getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
   from(getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
   from(getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
   from(getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+  from(getScanEvents(props.inventoryCountImportId)).subscribe(scans => {events.value = scans;});
 
   watchEffect(() => {
     const totalUnits = countedItems.value.reduce((sum, i) => sum + (i.quantity || 0), 0)
@@ -389,9 +478,41 @@ aggregationWorker.onmessageerror = (err) => {
   })
 });
 
+function openEditSessionModal() {
+  isEditNewSessionModalOpen.value = true;
+  newCountName.value = inventoryCountImport.value.countImportName;
+}
+
+async function updateSessionOnServer() {
+  try {
+    const resp = await updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      countImportName: newCountName.value,
+      facilityAreaId: selectedArea.value
+    });
+
+    if (resp?.status === 200 && resp.data) {
+      inventoryCountImport.value.countImportName = newCountName.value;
+      inventoryCountImport.value.facilityAreaId = selectedArea.value
+      showToast(translate("Session Updated Successfully"))
+    } else {
+      showToast(translate("Failed to Update Session Details"));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  isEditNewSessionModalOpen.value = false;
+}
+
 async function startSession() {
   try {
     const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId});
+    if (resp?.status === 200 && resp.data) {
+      inventoryCountImport.value = resp.data;
+    } else {
+      console.error("Session not Found");
+      throw resp;
+    }
 
     if (resp?.data?.activeUserLoginId) {
       sessionLocked.value = true;
@@ -400,7 +521,7 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    await loadInventoryItemsFromBackend(props.workEffortId, props.inventoryCountImportId);
+    await loadInventoryItemsFromBackend(props.inventoryCountImportId);
 
     // Prefetch product details for all related productIds
     const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
@@ -578,7 +699,8 @@ async function saveMatchProduct() {
 
 async function submit() {
   try {
-    await submitSession(props.workEffortId);
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
+    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -588,11 +710,23 @@ async function submit() {
 
 async function discard() {
   try {
-    await discardSession(props.inventoryCountImportId);
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED' });
+    inventoryCountImport.value.statusId = 'SESSION_VOIDED';
     showToast('Session discarded');
   } catch (err) {
     console.error(err);
     showToast('Failed to discard session');
+  }
+}
+
+async function reopen() {
+  try {
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
+    showToast('Session reopened');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to reopen session');
   }
 }
 </script>
@@ -698,5 +832,12 @@ ion-segment-view {
   line-height: 1.2;
   margin: 0;
   color: rgba(var(--ion-text-color));
+}
+
+.scan-badge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  z-index: 1;
 }
 </style>
