@@ -194,7 +194,7 @@ onIonViewDidEnter(async () => {
 function getSessionStatusDescription(statusId) {
   if (!statusId) return "";
   if (statusId === "SESSION_CREATED") return "Created";
-  if (statusId === "SESSION_ASSIGNED") return "In Progress";
+  // if (statusId === "SESSION_ASSIGNED") return "In Progress";
   if (statusId === "SESSION_SUBMITTED") return "Submitted";
   if (statusId === "SESSION_VOIDED") return "Voided";
 }
@@ -277,46 +277,98 @@ const selectedArea = ref(areas[0].value);
 const countName = ref('');
 
 async function addNewSession() {
-  const resp = await useInventoryCountImport().createSessionOnServer({
-    countImportName: countName.value,
-    statusId: "SESSION_ASSIGNED",
-    uploadedByUserLogin: store.getters["user/getUserProfile"].username,
-    facilityAreaId: selectedArea.value,
-    createdDate: Date.now(),
-    dueDate: Date.now(),
-    workEffortId: selectedWorkEffortId.value
-  });
+  try {
+    const selectedCount = cycleCounts.value.find(c => c.workEffortId === selectedWorkEffortId.value)
+    if (!selectedCount) {
+      showToast("Unable to find selected count.")
+      return
+    }
 
-  if (resp?.status !== 200) {
-    showToast("Something Went Wrong!");
-    console.error(resp);
-  } else {
-    showToast("Session added Successfully");
-    const index = cycleCounts.value.findIndex(
-      w => w.workEffortId === selectedWorkEffortId.value
-    );
+    // Check the type of count
+    const isHardCount = selectedCount.workEffortPurposeTypeId === "HARD_COUNT"
+    let resp = null
 
-    if (index !== -1) {
-      if (!cycleCounts.value[index].sessions) {
-        cycleCounts.value[index].sessions = [];
-      }
-      const newSession = {
-        inventoryCountImportId: resp.data.inventoryCountImportId,
+    if (isHardCount) {
+      // --- Create a new HARD COUNT session directly ---
+      resp = await useInventoryCountImport().createSessionOnServer({
         countImportName: countName.value,
-        statusId: "SESSION_ASSIGNED",
+        statusId: "SESSION_CREATED",
         uploadedByUserLogin: store.getters["user/getUserProfile"].username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
         workEffortId: selectedWorkEffortId.value
-      };
-      cycleCounts.value[index].sessions.push(newSession);
+      })
+    } else {
+      // --- DIRECTED COUNT: clone from oldest session ---
+      const sessions = selectedCount.sessions || []
+      if (sessions.length > 0) {
+        // Sort by createdDate ascending
+        const oldest = [...sessions].sort((a, b) => a.createdDate - b.createdDate)[0]
+        if (oldest?.inventoryCountImportId) {
+          resp = await useInventoryCountImport().cloneSession({
+            inventoryCountImportId: oldest.inventoryCountImportId,
+            facilityAreaId: selectedArea.value,
+            countImportName: countName.value,
+          })
+        } else {
+          // Fallback: no valid oldest found
+          resp = await useInventoryCountImport().createSessionOnServer({
+            countImportName: countName.value,
+            statusId: "SESSION_CREATED",
+            uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+            facilityAreaId: selectedArea.value,
+            createdDate: Date.now(),
+            dueDate: Date.now(),
+            workEffortId: selectedWorkEffortId.value
+          })
+        }
+      } else {
+        // No sessions → create new one (same as HARD COUNT)
+        resp = await useInventoryCountImport().createSessionOnServer({
+          countImportName: countName.value,
+          statusId: "SESSION_CREATED",
+          uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+          facilityAreaId: selectedArea.value,
+          createdDate: Date.now(),
+          dueDate: Date.now(),
+          workEffortId: selectedWorkEffortId.value
+        })
+      }
     }
 
+    if (resp?.status !== 200) {
+      showToast("Something Went Wrong!")
+      console.error(resp)
+      return
+    }
+
+    // --- Update UI ---
+    showToast("Session added Successfully")
+    const index = cycleCounts.value.findIndex(w => w.workEffortId === selectedWorkEffortId.value)
+    if (index !== -1) {
+      if (!cycleCounts.value[index].sessions) cycleCounts.value[index].sessions = []
+
+      const newSession = {
+        inventoryCountImportId: resp.data.inventoryCountImportId,
+        countImportName: countName.value,
+        statusId: "SESSION_CREATED",
+        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        facilityAreaId: selectedArea.value,
+        createdDate: Date.now(),
+        dueDate: Date.now(),
+        workEffortId: selectedWorkEffortId.value
+      }
+      cycleCounts.value[index].sessions.push(newSession)
+    }
+
+    countName.value = ''
+    selectedArea.value = areas[0].value
+    isAddSessionModalOpen.value = false
+  } catch (err) {
+    console.error("Error creating session:", err)
+    showToast("Something Went Wrong!")
   }
-  countName.value = '';
-  selectedArea.value = areas[0].value;
-  isAddSessionModalOpen.value = false;
 }
 
 async function markAsCompleted(workEffortId) {

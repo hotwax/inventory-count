@@ -679,6 +679,14 @@ async function saveMatchProduct() {
     isRequested: 'Y',
   };
   try {
+    console.log("Matching product locally and syncing...", {
+      workEffortId: props.workEffortId,
+      inventoryCountImportId: props.inventoryCountImportId,
+      matchedItem: matchedItem.value,
+      selectedProductId: selectedProductId.value,
+      context
+    });
+    console.log("Matched Item:", inventorySyncWorker);
     const result = await inventorySyncWorker.matchProductLocallyAndSync(
       props.workEffortId,
       props.inventoryCountImportId,
@@ -686,6 +694,7 @@ async function saveMatchProduct() {
       selectedProductId.value,
       context
     );
+    console.log("Match product result:", result);
     if (result.success) {
       showToast("Product matched successfully");
       closeMatchModal();
@@ -721,8 +730,8 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_CREATED' });
+    inventoryCountImport.value.statusId = 'SESSION_CREATED';
     showToast('Session reopened');
   } catch (err) {
     console.error(err);
