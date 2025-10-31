@@ -17,7 +17,6 @@ interface ScanEvent {
   quantity: number;
   createdAt: number; // millis
   aggApplied: number;
-  
 }
 
 interface InventoryCountImportItem {
@@ -162,6 +161,40 @@ export function useInventoryCountImport() {
       console.error('Error loading inventory items', err);
     }
   }
+
+  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
+  if (!keyword?.trim()) return []
+
+  const value = keyword.trim().toLowerCase()
+
+  let tableQuery = db.table('inventoryCountRecords')
+    .where({ inventoryCountImportId })
+
+  // you can filter by type if needed (based on your existing logic)
+  // for example:
+  console.log('Segment in searchInventoryItemsByIdentifier:', segment);
+  if (segment === 'counted') {
+    tableQuery = tableQuery.and(r => r.quantity > 0)
+  } else if (segment === 'uncounted') {
+    tableQuery = tableQuery.and(r => r.quantity === 0)
+  } else if (segment === 'undirected') {
+    tableQuery = tableQuery.and(r => r.isRequested === 'N')
+  }
+  
+  const results = await tableQuery
+    .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
+    .toArray()
+    console.log('Search results:', results);
+
+  // enrich with product info if cached
+  for (const r of results) {
+    if (r.productId) {
+      const p = await db.table('products').get(r.productId)
+      if (p) r.product = p
+    }
+  }
+  return results
+}
 
   async function getInventoryRecordsFromIndexedDB(inventoryCountImportId: string) {
     try {
@@ -491,6 +524,7 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
     updateSession,
     cloneSession,
     getSessionItemsByImportId,
-    getScanEvents
+    getScanEvents,
+    searchInventoryItemsByIdentifier
   };
 }
