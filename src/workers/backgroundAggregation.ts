@@ -5,9 +5,8 @@ import { db } from '@/database/commonDatabase';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
-  syncToServer: (workEffortId: string, inventoryCountImportId: string, context: any) => Promise<number>;
+  syncToServer: (inventoryCountImportId: string, context: any) => Promise<number>;
   matchProductLocallyAndSync: (
-    workEffortId: string,
     inventoryCountImportId: string,
     item: any,
     productId: string,
@@ -143,6 +142,42 @@ function ensureProductStored(productId: string | null, context: any) {
     }
   })();
 }
+async function resolveMissingProducts(inventoryCountImportId: string, context: any) {
+  // get all records in this session where productId is null / empty
+  const unresolved = await db.table('inventoryCountRecords')
+    .where({ inventoryCountImportId })
+    .and(r => !r.productId) // null, undefined, empty
+    .toArray()
+
+  if (!unresolved.length) return 0
+
+  const now = Date.now()
+
+  // we’ll do them one by one — these are usually few
+  for (const rec of unresolved) {
+    const identifier = rec.productIdentifier
+    if (!identifier) continue
+    let productId = null
+    productId = await findProductByIdentification(context.barcodeIdentification, identifier, context)
+    if (!productId) {
+      const product = await getById(identifier, context)
+      productId = product?.productId || null
+    }
+
+    if (!productId) {
+      continue
+    }
+
+    await db.table('inventoryCountRecords')
+      .where('[inventoryCountImportId+uuid]')
+      .equals([inventoryCountImportId, rec.uuid])
+      .modify({
+        productId,
+        lastUpdatedAt: now
+      })
+  }
+  return;
+}
 
 // Aggregation Logic
 async function aggregate(inventoryCountImportId: string, context: any) {
@@ -169,18 +204,28 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     const now = Date.now()
 
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
-      let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
-      if (!productId) {
-        const product = await getById(scannedValue, context)
-        productId = product?.productId || null
+      let productId: any = null
+      const identification = await db.table('productIdents').where('value').equalsIgnoreCase(scannedValue).first()
+      if (identification) {
+        productId = identification.productId
+      } else {
+        const product = await db.table('products').get(scannedValue)
+        if (product) {
+          productId = product.productId
+        }
       }
+      // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
+      // if (!productId) {
+      //   const product = await getById(scannedValue, context)
+      //   productId = product?.productId || null
+      // }
 
       const existing = await db.table('inventoryCountRecords')
         .where({ inventoryCountImportId })
         .and(r => (productId && r.productId === productId) || r.productIdentifier === scannedValue)
         .first()
 
-        if (productId) ensureProductStored(productId, context);
+      // if (productId) ensureProductStored(productId, context);
 
       if (existing) {
         await db.table('inventoryCountRecords').put({
@@ -188,7 +233,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           quantity: (existing.quantity || 0) + quantity,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
-          productId: productId || existing.productId,
+          productId: existing.productId || productId,
           isRequested: existing.isRequested ?? 'Y'
         })
       } else {
@@ -198,7 +243,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: (productId || context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
+          isRequested: (productId || context.inventoryCountTypeId !== 'DIRECTED_COUNT' || context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt
@@ -223,7 +268,6 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 }
 
 async function matchProductLocallyAndSync(workEffortId: string, inventoryCountImportId: string, item: any, productId: string, context: any) {
-  console.log(`[Worker] matchProductLocallyAndSync called with productId: ${productId}, scannedValue: ${item?.scannedValue}`);
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
@@ -270,7 +314,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
     });
 
     console.log(`[Worker] Triggering syncToServer for ${inventoryCountImportId}`);
-    await syncToServer(workEffortId, inventoryCountImportId, context);
+    await syncToServer(inventoryCountImportId, context);
 
     return { success: true };
   } catch (err) {
@@ -279,7 +323,7 @@ async function matchProductLocallyAndSync(workEffortId: string, inventoryCountIm
   }
 }
 
-async function syncToServer(workEffortId: string, inventoryCountImportId: string, context: any) {
+async function syncToServer(inventoryCountImportId: string, context: any) {
   if (isSyncing) return 0
   isSyncing = true
   try {
@@ -352,11 +396,9 @@ self.onmessage = async (e: MessageEvent) => {
   if (type === 'aggregate') {
     const { workEffortId, inventoryCountImportId, context } = payload
     const count = await aggregate(inventoryCountImportId, context)
-
-    console.log(`Aggregated ${count} items for importId ${inventoryCountImportId}`)
     if (count > 0) {
-      console.log(`Aggregated ${count} items for importId ${inventoryCountImportId}, initiating sync`)
-      await syncToServer(workEffortId, inventoryCountImportId, context)
+      const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+      await syncToServer(inventoryCountImportId, context)
     }
 
     self.postMessage({ type: 'aggregationComplete', count })
@@ -367,8 +409,10 @@ self.onmessage = async (e: MessageEvent) => {
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       if (count > 0) {
-        await syncToServer(workEffortId, inventoryCountImportId, context)
+        const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+        await syncToServer(inventoryCountImportId, context)
       }
+
       self.postMessage({ type: 'aggregationComplete', count })
     }, intervalMs)
   }

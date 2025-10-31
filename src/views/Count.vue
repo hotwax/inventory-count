@@ -194,7 +194,7 @@ onIonViewDidEnter(async () => {
 function getSessionStatusDescription(statusId) {
   if (!statusId) return "";
   if (statusId === "SESSION_CREATED") return "Created";
-  // if (statusId === "SESSION_ASSIGNED") return "In Progress";
+  if (statusId === "SESSION_ASSIGNED") return "In Progress";
   if (statusId === "SESSION_SUBMITTED") return "Submitted";
   if (statusId === "SESSION_VOIDED") return "Voided";
 }

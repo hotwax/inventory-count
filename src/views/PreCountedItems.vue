@@ -70,7 +70,6 @@ async function getInventoryCycleCount() {
     console.error(error);
     showToast("Failed to fetch Count and Sessions Details");
   }
-  console.log("Count: ", workEffort.value, " and session", inventoryCountImport.value);
 }
 
 async function handleSearch() {
