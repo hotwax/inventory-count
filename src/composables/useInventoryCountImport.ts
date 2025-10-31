@@ -172,7 +172,6 @@ export function useInventoryCountImport() {
 
   // you can filter by type if needed (based on your existing logic)
   // for example:
-  console.log('Segment in searchInventoryItemsByIdentifier:', segment);
   if (segment === 'counted') {
     tableQuery = tableQuery.and(r => r.quantity > 0)
   } else if (segment === 'uncounted') {
@@ -180,11 +179,10 @@ export function useInventoryCountImport() {
   } else if (segment === 'undirected') {
     tableQuery = tableQuery.and(r => r.isRequested === 'N')
   }
-  
+
   const results = await tableQuery
     .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
     .toArray()
-    console.log('Search results:', results);
 
   // enrich with product info if cached
   for (const r of results) {
