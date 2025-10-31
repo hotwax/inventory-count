@@ -354,7 +354,7 @@ import {
   IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter
 } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watchEffect } from 'vue';
+import { ref, computed, defineProps, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
@@ -370,7 +370,7 @@ import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 
-const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; countImportName: string }>();
+const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
 const productIdentificationStore = useProductIdentificationStore();
 
 const { recordScan, getScanEvents, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, updateSession, getInventoryCountImportSession } = useInventoryCountImport();
@@ -679,21 +679,17 @@ async function saveMatchProduct() {
     userLoginId: store.getters["user/getUserProfile"]?.username,
     isRequested: 'Y',
   };
+
+  const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
+  const plainContext = JSON.parse(JSON.stringify(context));
+
   try {
-    console.log("Matching product locally and syncing...", {
-      workEffortId: props.workEffortId,
-      inventoryCountImportId: props.inventoryCountImportId,
-      matchedItem: matchedItem.value,
-      selectedProductId: selectedProductId.value,
-      context
-    });
-    console.log("Matched Item:", inventorySyncWorker);
     const result = await inventorySyncWorker.matchProductLocallyAndSync(
       props.workEffortId,
       props.inventoryCountImportId,
-      matchedItem.value,
+      plainItem,
       selectedProductId.value,
-      context
+      plainContext
     );
     console.log("Match product result:", result);
     if (result.success) {

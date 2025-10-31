@@ -223,7 +223,6 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 }
 
 async function matchProductLocallyAndSync(workEffortId: string, inventoryCountImportId: string, item: any, productId: string, context: any) {
-  console.log(`[Worker] matchProductLocallyAndSync called with productId: ${productId}, scannedValue: ${item?.scannedValue}`);
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
@@ -353,9 +352,7 @@ self.onmessage = async (e: MessageEvent) => {
     const { workEffortId, inventoryCountImportId, context } = payload
     const count = await aggregate(inventoryCountImportId, context)
 
-    console.log(`Aggregated ${count} items for importId ${inventoryCountImportId}`)
     if (count > 0) {
-      console.log(`Aggregated ${count} items for importId ${inventoryCountImportId}, initiating sync`)
       await syncToServer(workEffortId, inventoryCountImportId, context)
     }
 
