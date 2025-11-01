@@ -146,13 +146,21 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
   // get all records in this session where productId is null / empty
   const unresolved = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
+<<<<<<< HEAD
     .and(r => !r.productId && !r.lookupAttempted) // null, undefined, empty
+=======
+    .and(r => !r.productId) // null, undefined, empty
+>>>>>>> 30f7617516c7add4f7c5c82bfed86905378184f7
     .toArray()
 
   if (!unresolved.length) return 0
 
   const now = Date.now()
 
+<<<<<<< HEAD
+=======
+  // we’ll do them one by one — these are usually few
+>>>>>>> 30f7617516c7add4f7c5c82bfed86905378184f7
   for (const rec of unresolved) {
     const identifier = rec.productIdentifier
     if (!identifier) continue
@@ -174,6 +182,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
         productId,
         lastUpdatedAt: now
       })
+<<<<<<< HEAD
       
     await db.table('scanEvents')
       .where({ inventoryCountImportId })
@@ -183,6 +192,9 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
         lastUpdatedAt: now
       });
     }
+=======
+  }
+>>>>>>> 30f7617516c7add4f7c5c82bfed86905378184f7
   return;
 }
 
@@ -257,6 +269,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         })
       }
 
+<<<<<<< HEAD
       if (productId) {
         await db.table('scanEvents')
           .where({ inventoryCountImportId })
@@ -266,6 +279,8 @@ async function aggregate(inventoryCountImportId: string, context: any) {
             lastUpdatedAt: now
           });
       }
+=======
+>>>>>>> 30f7617516c7add4f7c5c82bfed86905378184f7
       processed++
     }
 

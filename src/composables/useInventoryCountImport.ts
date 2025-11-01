@@ -12,7 +12,6 @@ import { v4 as uuidv4 } from 'uuid';
 interface ScanEvent {
   id?: number;
   scannedValue?: string;
-  productId?: string;
   inventoryCountImportId: string;
   locationSeqId?: string | null;
   quantity: number;
@@ -37,7 +36,6 @@ interface InventoryCountImportItem {
   lastSyncedBatchId?: string | null;
   aggApplied?: number;
   isRequested?: string;
-  lookupAttempted?: boolean;
 }
 
 interface RecordScanParams {
@@ -181,8 +179,6 @@ export function useInventoryCountImport() {
     tableQuery = tableQuery.and(r => r.quantity === 0)
   } else if (segment === 'undirected') {
     tableQuery = tableQuery.and(r => r.isRequested === 'N')
-  } else if (segment === 'unmatched') {
-    tableQuery = tableQuery.and(r => !r.productId)
   }
   
   const results = await tableQuery
@@ -301,25 +297,15 @@ export function useInventoryCountImport() {
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const events = await db.scanEvents
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .reverse()
-        .sortBy('createdAt');
+  liveQuery(async () => {
+    const events = await db.scanEvents
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .reverse()
+      .sortBy('createdAt');
 
-      const enriched = await Promise.all(
-        events.map(async e => {
-          if (e.productId) {
-            const product = await db.products.get(e.productId);
-            return { ...e, product };
-          }
-          return e;
-        })
-      );
-
-      return enriched || [];
-    });
+    return events || [];
+  });
 
    /* API call functions moved from CountService.ts */   
   const fetchCycleCount = async (payload: any): Promise <any>  => {

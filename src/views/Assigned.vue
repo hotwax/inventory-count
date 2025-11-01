@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <Filters menu-id="assigned-filter" content-id="filter"/>
+    <!-- <Filters menu-id="assigned-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Assigned")}}</ion-title>
@@ -13,18 +13,18 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <SearchBarAndSortBy />
-      <p v-if="!cycleCounts.length" class="empty-state">
+      <!-- <SearchBarAndSortBy /> -->
+      <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
       <ion-list v-else>
-        <div class="list-item" v-for="count in cycleCounts" :key="count.inventoryCountImportId" button @click="router.push(`/assigned/${count.inventoryCountImportId}`)">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/assigned/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
               <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-              {{ count.countImportName }}
-              <p>{{ count.inventoryCountImportId }}</p>
+              {{ count.workEffortName }}
+              <p>{{ count.workEffortId }}</p>
             </ion-label>
           </ion-item>
           
@@ -32,11 +32,6 @@
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
           
-          <ion-label>
-            <!-- TODO: make it dynamic currently not getting stats correctly -->
-            {{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }}
-            <p>{{ translate("counted") }}</p>
-          </ion-label>
 
           <ion-label>
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
@@ -44,7 +39,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getDerivedStatusForCount(count)?.color" slot="end">{{ translate(getDerivedStatusForCount(count)?.label) }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ count.currentStatusId }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -62,13 +57,13 @@ import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
-import { getCycleCountStats, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName } from "@/utils"
-import Filters from "@/components/Filters.vue"
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
+// import Filters from "@/components/Filters.vue"
 import router from "@/router"
-import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
+// import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
-const cycleCounts = computed(() => store.getters["count/getCounts"])
-const isScrollable = computed(() => store.getters["count/isCycleCountListScrollable"])
+const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"])
+const isScrollable = computed(() => store.getters["count/isScrollable"])
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -79,12 +74,12 @@ onIonViewDidEnter(async () => {
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList")
+  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_PRGS'})
 })
 
 function enableScrolling() {
   const parentElement = contentRef.value.$el
-  const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
+  const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
   let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef?.value?.$el?.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
   const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
   if(distanceFromInfinite < 0) {
@@ -113,9 +108,9 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    statusId: "INV_COUNT_ASSIGNED"
+    currentStatusId: "CYCLE_CNT_IN_PRGS"
   }
-  await store.dispatch("count/fetchCycleCounts", payload)
+  await store.dispatch("count/getCycleCounts", payload)
 }
 </script>
 

@@ -4,191 +4,222 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/pending-review" />
         <ion-title>{{ translate("Review count")}}</ion-title>
-        <ion-buttons slot="end" v-if="currentCycleCount.inventoryCountImportId">
-          <ion-button :disabled="!filteredItems?.length || isAllItemsMarkedAsCompletedOrRejected" @click="selectAll()">
-            <ion-icon v-show="areAllItemsSelected()" slot="icon-only" :icon="checkboxOutline"/>
-            <ion-icon v-show="!areAllItemsSelected()" slot="icon-only" :icon="squareOutline"/>
-          </ion-button>
-          <ion-button @click="addProduct()">
-            <ion-icon slot="icon-only" :icon="addOutline" />
-          </ion-button>
-        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="main-content" :scroll-y="false">
-      <template v-if="currentCycleCount.inventoryCountImportId">
-        <template v-if="!isLoadingItems">
-        <div class="header">
-          <div class="search ion-padding">
-            <ion-item lines="none">
-              <ion-label slot="start">
-                <p class="overline" v-if="currentCycleCount.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-                <h1 v-show="!isCountNameUpdating">{{ countName }}</h1>
-                <!-- Added class as we can't change the background of ion-input with css property, and we need to change the background to show the user that now this value is editable -->
-                <ion-input ref="countNameRef" :class="isCountNameUpdating ? 'name' : ''" v-show="isCountNameUpdating" aria-label="group name" v-model="countName"></ion-input>
-                <p>{{ currentCycleCount.countId }}</p>
-              </ion-label>
-
-              <ion-button v-show="!isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="editCountName()">
-                {{ translate("Rename") }}
-              </ion-button>
-              <ion-button v-show="isCountNameUpdating" slot="end" color="medium" fill="outline" size="small" @click="updateCountName()">
-                {{ translate("Save") }}
-              </ion-button>
-            </ion-item>
-            <ion-chip outline @click="openDateTimeModal">
-              <ion-icon :icon="calendarClearOutline"></ion-icon>
-              <ion-label>{{ getDateWithOrdinalSuffix(currentCycleCount.dueDate) }}</ion-label>
-            </ion-chip>
-            <ion-modal class="date-time-modal" :is-open="dateTimeModalOpen" @didDismiss="() => dateTimeModalOpen = false">
-              <ion-content :force-overscroll="false">
-                <ion-datetime
-                  id="schedule-datetime"
-                  :value="currentCycleCount.dueDate ? getDateTime(currentCycleCount.dueDate) : getDateTime(DateTime.now().toMillis())"
-                  @ionChange="updateCustomTime($event)"
-                  :min="DateTime.now().toISO()"
-                  :max="DateTime.now().plus({ years: 10 }).toISO()"
-                  presentation="date"
-                  showDefaultButtons
-                />
-              </ion-content>
-            </ion-modal>
-            <ion-chip outline>
-              <ion-icon :icon="businessOutline"></ion-icon>
-              <ion-label>{{ getFacilityName(currentCycleCount.facilityId) }}</ion-label>
-            </ion-chip>
-            <ion-chip outline @click="reassignCount">
-              <ion-icon :icon="playBackOutline"></ion-icon>
-              <ion-label>{{ translate("Re-assign") }}</ion-label>
-            </ion-chip>
-          </div>
-          <ion-list>
-            <div class="filters">
-              <ion-item>
-                <ion-label>{{ translate("Progress") }}</ion-label>
-                <ion-label slot="end">{{ getProgress() }}</ion-label>
-              </ion-item>
-              <ion-item>
-                <ion-label>{{ translate("Variance") }}</ion-label>
-                <ion-label slot="end">{{ getVarianceInformation() }}</ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                <ion-icon slot="start" :icon="thermometerOutline"/>
-                <ion-label>{{ translate("Item variance threshold") }}</ion-label>
-                <ion-label slot="end">{{ varianceThreshold }} {{ "%" }}</ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                <div slot="start"></div>
-                <ion-range v-model="varianceThreshold"></ion-range>
-              </ion-item>
-            </div>
-          </ion-list>
-        </div>
-
-        <div class="header border">
-          <ion-segment v-model="segmentSelected" @ionChange="segmentChanged">
-            <ion-segment-button value="all">
-              <ion-label>{{ translate("All") }}</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="accept">
-              <ion-icon color="success" :icon="thermometerOutline"/>
-            </ion-segment-button>
-            <ion-segment-button value="reject">
-              <ion-icon color="danger" :icon="thermometerOutline"/>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
-        </template>
-
-        <template v-if="isLoadingItems">
-          <ProgressBar :cycleCountItemsProgress="cycleCountItemsProgress"/>
-        </template>
-        <template v-else-if="filteredItems?.length">
-          <DynamicScroller class="virtual-scroller" :items="filteredItems" key-field="importItemSeqId" :min-item-size="80" :buffer="400">
-            <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :active="active" :index="index">
-          <div class="list-item">
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="getProduct(item.productId).mainImageUrl" :key="item.importItemSeqId"/>
-              </ion-thumbnail>
-              <ion-label class="ion-text-wrap">
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, getProduct(item.productId)) || getProduct(item.productId).productName }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, getProduct(item.productId)) }}</p>
-              </ion-label>
-            </ion-item>
-
-            <ion-label v-if="item.quantity >= 0">
-              {{ item.quantity }} / {{ item.qoh }}
-              <p>{{ translate("counted / systemic") }}</p>
-            </ion-label>
-
-            <ion-label v-else>
-              {{ item.qoh }}
-              <p>{{ translate("systemic") }}</p>
-            </ion-label>
-
-            <ion-label v-if="item.quantity >= 0">
-              {{ +(item.quantity) - +(item.qoh) }}
-              <p>{{ getPartyName(item) }}</p>
-            </ion-label>
-
-            <ion-item lines="none" v-else>
-              <ion-label class="ion-text-center">
-                <ion-badge color="danger">{{ translate("not counted") }}</ion-badge>
-                <p>{{ item.lastCountedDate ? translate("last counted") : "" }} {{ timeFromNow(item.lastCountedDate) }}</p>
-              </ion-label>
-            </ion-item>
-
-            <div class="tablet">
-              <ion-button :disabled="isItemCompletedOrRejected(item) || item.quantity === undefined || item.quantity < 0" :fill="isItemReadyToAccept(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="success" size="small" @click="acceptItem(item)">
-                <ion-icon slot="icon-only" :icon="thumbsUpOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="item.quantity === undefined && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="warning" size="small" class="ion-margin-horizontal" @click="recountItem(item)">
-                <ion-icon slot="icon-only" :icon="refreshOutline"></ion-icon>
-              </ion-button>
-              <ion-button :disabled="isItemCompletedOrRejected(item)" :fill="isItemReadyToReject(item) && item.itemStatusId === 'INV_COUNT_CREATED' ? 'outline' : 'clear'" color="danger" size="small" @click="updateItemStatus('INV_COUNT_REJECTED', item)">
-                <ion-icon slot="icon-only" :icon="thumbsDownOutline"></ion-icon>
-              </ion-button>
-            </div>
-
-            <div class="ion-margin-end">
-              <ion-badge v-if="isItemCompletedOrRejected(item)" :color="item.itemStatusId === 'INV_COUNT_REJECTED' ? 'danger' : 'success'">{{ translate(item.itemStatusId === "INV_COUNT_COMPLETED" ? "accepted" : "rejected") }}</ion-badge>
-              <ion-checkbox v-else aria-label="checked" v-model="item.isChecked" @ionChange="selectItem($event.detail.checked, item)"></ion-checkbox>
-            </div>
-          </div>
-              </DynamicScrollerItem>
-            </template>
-          </DynamicScroller>
-        </template>
-
-        <p v-else class="empty-state">
-          {{ translate("No items added to count") }}
-        </p>
+    <ion-content>
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
-      <template v-else-if="!isLoadingItems">
-        <p class="empty-state">{{ translate("Cycle count not found") }}</p>
+      <template v-else-if="workEffort">
+        <div class="header">
+          <ion-card>
+            <ion-item lines="none">
+              <ion-label>
+                <p class="overline">{{ workEffort?.workEffortId }}</p>
+                <h1>{{ workEffort?.workEffortName }}</h1>
+              </ion-label>
+              <ion-button slot="end" fill="outline" color="medium">
+                Edit
+              </ion-button>
+            </ion-item>
+            <ion-item>
+              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
+              <ion-label>
+                {{ getFacilityName(workEffort?.facilityId) }}
+              </ion-label>
+            </ion-item>
+            <ion-item class="due-date">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <div>
+                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
+                <ion-datetime-button datetime="datetime"></ion-datetime-button>
+                <ion-modal :keep-contents-mounted="true">
+                  <ion-datetime id="datetime"></ion-datetime>
+                </ion-modal>
+              </div>
+            </ion-item>
+          </ion-card>
+          <ion-card>
+            <ion-item>
+              <ion-label>First item counted</ion-label>
+              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>Last item counted</ion-label>
+              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+            </ion-item>
+            <ion-item>
+              <ion-label>
+                40% Coverage
+              </ion-label>
+            </ion-item>
+          </ion-card>
+
+          <div class="statistics">
+            <ion-card>
+              <ion-item lines="none">
+                <ion-label>
+                  Review progress 60% complete
+                  <p>6 out of 10 items complete</p>
+                </ion-label>
+              </ion-item>
+            </ion-card>
+            <ion-card>
+              <ion-item lines="full">
+                <ion-label>
+                  <p class="overline">Overall variance (Filtered)</p>
+                  <h3>16 units</h3>
+                  <p>based on 4 results</p>
+                </ion-label>
+              </ion-item>
+            </ion-card>
+          </div>
+        </div>
+
+        <div class="controls ion-margin-top">
+          <ion-list lines="full" class="filters ion-margin">
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-item>
+            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="open">Open</ion-select-option>
+              <ion-select-option value="accepted">Accepted</ion-select-option>
+              <ion-select-option value="rejected">Rejected</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-select label="Compliance" placeholder="All" interface="popover">
+              <ion-select-option value="all">All</ion-select-option>
+              <ion-select-option value="acceptable">Acceptable</ion-select-option>
+              <ion-select-option value="rejectable">Rejectable</ion-select-option>
+              <ion-select-option value="configure">Configure threshold</ion-select-option>
+            </ion-select>
+          </ion-item>
+          </ion-list>
+          <ion-item-divider color="light">
+            <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
+            5 results out of 1,200
+            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
+                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
+                <ion-select-option value="variance">Variance</ion-select-option>
+            </ion-select>
+          </ion-item-divider>
+        </div>
+
+        <div class="results ion-margin-top" v-if="cycleCounts?.length">
+          <ion-accordion-group>
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+              <div class="list-item count-item-rollup" slot="header"> 
+                <div class="item-key">
+                  <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox>
+                  <ion-item lines="none">
+                    <ion-thumbnail slot="start">
+                      <dxp-image></dxp-image>
+                    </ion-thumbnail>
+                    <ion-label>{{ cycleCount.internalName }}</ion-label>
+                  </ion-item>
+                </div>
+                <ion-label class="stat">
+                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
+                  <p>counted/systemic</p>
+                </ion-label>
+                <ion-label class="stat">
+                  {{ cycleCount.proposedVarianceQuantity }}
+                  <p>variance</p>
+                </ion-label>
+                <div v-if="!cycleCount.decisionOutcomeEnumId" class="actions">
+                  <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'APPLIED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
+                    Accept
+                  </ion-button>
+                  <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'SKIPPED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
+                    Reject
+                  </ion-button>
+                </div>
+                <ion-badge
+                  v-else
+                  :color="cycleCount.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
+                  style="--color: white;"
+                >
+                  {{ cycleCount.decisionOutcomeEnumId }}
+                </ion-badge>
+              </div>
+              <div slot="content" @click.stop="stopAccordianEventProp">
+                <ion-list v-if="sessions === null">
+                  <ion-item v-for="n in cycleCount.numberOfSessions" :key="n">
+                    <ion-avatar slot="start">
+                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                    </ion-avatar>
+                    <ion-label>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                  <ion-item lines="none">
+                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                  </ion-item>
+                  <ion-label>
+                    {{ session.counted }}
+                    <p>counted</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                    <p>started</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                    <p>last updated</p>
+                  </ion-label>
+                  <ion-button fill="clear" color="medium">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
+          <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
+            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+          </ion-infinite-scroll>
+        </div>
+        <div v-else class="empty-state">
+          <p>No Results</p>
+        </div>
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
+          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
+          <ion-fab-button>
+            <ion-icon :icon="receiptOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </template>
+      <template v-else>
+        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
-
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" v-if="currentCycleCount.inventoryCountImportId">
-      <ion-fab-button :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount">
-        <ion-icon :icon="receiptOutline" />
-      </ion-fab-button>
-    </ion-fab>
     
-    <ion-footer v-if="currentCycleCount.inventoryCountImportId">
+    <ion-footer>
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button :fill="segmentSelected ==='accept' ? 'outline' : 'clear'" color="success" size="small" :disabled="isAnyItemSelected || !isSelectedItemsHasQuantity()" @click="acceptItem()">
-            <ion-icon slot="icon-only" :icon="thumbsUpOutline"/>
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
+            Accept
           </ion-button>
-          <ion-button fill="clear" color="warning" size="small" class="ion-margin-horizontal" :disabled="isAnyItemSelected" @click="recountItem()">
-            <ion-icon slot="icon-only" :icon="refreshOutline" />
-          </ion-button>
-          <ion-button :fill="segmentSelected ==='reject' ? 'outline' : 'clear'" color="danger" size="small" :disabled="isAnyItemSelected" @click="updateItemStatus('INV_COUNT_REJECTED')">
-            <ion-icon slot="icon-only" :icon="thumbsDownOutline" />
+          <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
+            Reject
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -197,480 +228,385 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, thermometerOutline, thumbsUpOutline, refreshOutline, thumbsDownOutline, checkboxOutline, addOutline, receiptOutline, playBackOutline, squareOutline } from "ionicons/icons";
-import { IonBackButton, IonBadge, IonButtons, IonButton, IonCheckbox, IonChip, IonContent, IonDatetime, IonModal, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonInput, IonLabel, IonList, IonPage, IonRange, IonSegment, IonSegmentButton, IonThumbnail, IonTitle, IonToolbar, modalController, onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, ref } from "vue";
+import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
-import { CountService } from "@/services/CountService"
-import emitter from '@/event-bus';
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, timeFromNow, getDateTime, sortListByField } from "@/utils"
-import logger from "@/logger";
-import AddProductModal from "@/components/AddProductModal.vue";
-import router from "@/router";
-import Image from "@/components/Image.vue"
-import { DateTime } from "luxon";
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import ProgressBar from '@/components/ProgressBar.vue';
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { loader } from "@/user-utils";
 
 const props = defineProps({
-  inventoryCountImportId: String
+  workEffortId: String
+})
+
+onIonViewDidEnter(async () => {
+  isLoading.value = true;
+  await getWorkEffortDetails();
+  if (workEffort.value) {
+    await fetchInventoryCycleCount();
+  }
+  isLoading.value = false;
 })
 
 const productIdentificationStore = useProductIdentificationStore();
 
-const cycleCountStats = computed(() => (id: string) => store.getters["count/getCycleCountStats"](id))
-const getProduct = computed(() => (id: string) => store.getters["product/getProduct"](id))
 const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
 
-const filteredItems = computed(() => {
-  let items = currentCycleCount.value.items
+const filterAndSortBy = reactive({
+  dcsnRsn: 'all',
+  sortBy: 'alphabetic'
+});
 
-  if(segmentSelected.value === "accept") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToAccept(item) && item.itemStatusId === "INV_COUNT_CREATED")
-  } else if(segmentSelected.value === "reject") {
-    items = currentCycleCount.value.items.filter((item: any) => isItemReadyToReject(item) && item.itemStatusId === "INV_COUNT_CREATED")
+const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+
+const searchedProductString = ref(''); 
+
+const isLoading = ref(false);
+
+const loadingSessions = ref(false);
+
+const workEffort = ref();
+
+const cycleCounts = ref();
+
+const isScrollable = ref(true);
+const isLoadingMore = ref(false);
+
+async function getWorkEffortDetails() {
+  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
+    workEffort.value = workEffortResp.data;
+  } else {
+    showToast(translate("Something Went Wrong"));
+    console.error("Error getting the Cycle Count Details", workEffortResp);
   }
-
-  return items
-})
-
-const isAnyItemSelected = computed(() => {
-  return !currentCycleCount.value.items?.some((item: any) => item.isChecked)
-})
-
-const isAllItemsMarkedAsCompletedOrRejected = computed(() => {
-  return currentCycleCount.value.items?.every((item: any) => item.itemStatusId === "INV_COUNT_COMPLETED" || item.itemStatusId === "INV_COUNT_REJECTED")
-})
-
-const dateTimeModalOpen = ref(false)
-const currentCycleCount = ref({}) as any
-const countNameRef = ref()
-let isCountNameUpdating = ref(false)
-let countName = ref("")
-let segmentSelected = ref("all")
-let varianceThreshold = ref(40)
-let isLoadingItems = ref(true)
-let cycleCountItemsProgress = ref(0)
-
-onIonViewWillEnter(async () => {
-  emitter.on("addProductToCount", addProductToCount);
-
-  currentCycleCount.value = {}
-  try {
-    const resp = await CountService.fetchCycleCount(props.inventoryCountImportId as string)
-
-    if(!hasError(resp) && resp.data?.inventoryCountImportId && resp.data?.statusId === "INV_COUNT_REVIEW") {
-      currentCycleCount.value = {
-        countName: resp.data.countImportName,
-        countId: resp.data.inventoryCountImportId,
-        items: [],
-        ...resp.data
-      }
-
-      countName.value = resp.data.countImportName
-      await fetchCountItems();
-    }
-  } catch(err) {
-    logger.error()
-  }
-
-  isLoadingItems.value = false;
-})
-
-onIonViewWillLeave(() => {
-  emitter.off("addProductToCount", addProductToCount)
-  cycleCountItemsProgress.value = 0
-})
-
-async function fetchCountItems() {
-  store.dispatch("count/fetchCycleCountStats", [props.inventoryCountImportId])
-  let items = [] as any, resp, pageIndex = 0;
-
-  try {
-    do {
-      resp = await CountService.fetchCycleCountItems({ inventoryCountImportId : props?.inventoryCountImportId, pageSize: 100, pageIndex })
-      if(!hasError(resp) && resp.data?.itemList?.length) {
-        items = items.concat(resp.data.itemList)
-        cycleCountItemsProgress.value = items.length
-        pageIndex++;
-      } else {
-        throw resp.data;
-      }
-    } while(resp.data.itemList?.length >= 100)
-  } catch(err) {
-    logger.error(err)
-  }
-
-  items = sortListByField(items, "parentProductName");
-
-  currentCycleCount.value["items"] = items.map((item: any) => ({ ...item, isChecked: false }))
-  store.dispatch("product/fetchProducts", { productIds: [...new Set(items.map((item: any) => item.productId))] })
 }
 
-async function addProductToCount(productId: any) {
-  if(!productId) {
-    showToast(translate("Failed to add product to count"))
+async function loadMoreCycleCountProductReviews(event: any) {
+  if (isLoadingMore.value || !isScrollable.value) {
+    await event.target.complete();
     return;
   }
 
-  try {
-    const resp = await CountService.addProductToCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      itemList: [{
-        // Passing both productId and idValue for the backend compatibility
-        // idValue will be removed in the future.
-        idValue: productId,
-        productId,
-        statusId: "INV_COUNT_CREATED"
-      }]
-    })
+  isLoadingMore.value = true;
+  pagination.pageIndex += 1;
 
-    if(!hasError(resp)) {
-      showToast(translate("Added product to count"))
-      // Fetching all the items again as in the current add api we do not get all the information required to be displayed on UI
-      await fetchCountItems();
-    }
-  } catch(err) {
-    logger.error("Failed to add product to count", err)
-    showToast(translate("Failed to add product to count"))
-  }
-}
-
-function getVarianceInformation() {
-  let totalItemsQuantityCount = 0, totalItemsExpectedCount = 0
-
-  currentCycleCount.value.items?.map((item: any) => {
-    totalItemsQuantityCount += parseInt(item.quantity || 0)
-    totalItemsExpectedCount += parseInt(item.qoh || 0)
-  })
-
-  // TODO: internationalize text
-  return `${totalItemsQuantityCount} counted | ${totalItemsExpectedCount} expected`
-}
-
-function getProgress() {
-  const currentStats = cycleCountStats.value(currentCycleCount.value.countId) || {}
-  const progress = ((currentStats.itemCounted || 0) / (currentStats.totalItems || 0)) * 100
-  return `${isNaN(progress) ? 0 : progress.toFixed(2)}% progress`
-}
-
-async function editCountName() {
-  isCountNameUpdating.value = !isCountNameUpdating.value;
-  // Waiting for DOM updations before focus inside the text-area, as it is conditionally rendered in the DOM
-  await nextTick()
-  countNameRef.value.$el.setFocus();
-}
-
-async function updateCountName() {
-  if(!countName.value?.trim()) {
-    showToast(translate("Enter a valid cycle count name"))
-    return;
-  }
-
-  if(countName.value.trim() !== currentCycleCount.value.countName?.trim()) {
-    await CountService.updateCycleCount({ inventoryCountImportId: currentCycleCount.value.countId, countImportName: countName.value.trim() })
-    .then(() => {
-      currentCycleCount.value.countName = countName.value.trim()
-    }).catch(() => {
-      countName.value = currentCycleCount.value.countName.trim()
-    })
-  }
-
-  isCountNameUpdating.value = false
-}
-
-function isItemReadyToAccept(item: any) {
-  // If the items qoh/quantity is not available then we will consider that the variance percentage is 100%, as we are unable to identify the % without qoh/quantity. Thus if qoh/quantity is not present for an item
-  // then we will suggest it for acceptance only when variance threshold is set to 100%
-  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) <= varianceThreshold.value : item.quantity === undefined ? false : 100 <= varianceThreshold.value
-}
-
-function isItemReadyToReject(item: any) {
-  return item.quantity > 0 ? (item.qoh > 0 ? Math.round(Math.abs(((item.quantity - item.qoh) / item.qoh) * 100)) : 100) > varianceThreshold.value : item.quantity === undefined ? false : 100 > varianceThreshold.value
-}
-
-function isItemCompletedOrRejected(item: any) {
-  return item.itemStatusId === "INV_COUNT_REJECTED" || item.itemStatusId === "INV_COUNT_COMPLETED"
-}
-
-function selectItem(checked: boolean, item: any) {
-  return item.isChecked = checked
-}
-
-function selectAll() {
-  // When all the items are already selected then unselect the items again
-  // Added check for every item selection as we need to check the items of the current segment, and filteredItems returns items based on current selected segment
-  if(areAllItemsSelected()) {
-    currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
-    return;
-  }
-
-  // When an item is having created status, in that case only we want the item to be selected, for the case of item rejected and completed we do not want all the items to be marked as checked
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: item.itemStatusId === "INV_COUNT_CREATED" && ((segmentSelected.value === "accept" && isItemReadyToAccept(item)) || (segmentSelected.value === "reject" && isItemReadyToReject(item)) || segmentSelected.value === "all") ? true : false }))
-}
-
-function areAllItemsSelected(): boolean {
-  // Only checking for those items which are in created status
-  return filteredItems.value.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED").every((item: any) => item.isChecked)
-}
-
-function segmentChanged() {
-  // When changing the segment make the isChecked property again to false.
-  currentCycleCount.value.items = currentCycleCount.value.items.map((item: any) => ({ ...item, isChecked: false }))
-}
-
-async function addProduct() {
-  const addProductModal = await modalController.create({
-    component: AddProductModal,
-    componentProps: { cycleCount: currentCycleCount.value },
-    showBackdrop: false,
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
   });
 
-  await addProductModal.present();
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = [...(cycleCounts.value || []), ...resp.data];
+
+    if (resp.data.length < pagination.pageSize) {
+      isScrollable.value = false;
+    }
+  } else {
+    isScrollable.value = false;
+  }
+
+  isLoadingMore.value = false;
+  await event.target.complete();
 }
 
-async function updateItemStatus(statusId: string, item?: any) {
-  let itemList: Array<any> = []
-  if(item) {
-    itemList = [{
-      importItemSeqId: item.importItemSeqId,
-      statusId
-    }]
-  } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        itemList.push({
-          importItemSeqId: item.importItemSeqId,
-          statusId
-        })
-      }
-    })
-  }
 
-  if(!itemList.length) {
-    return;
-  }
+const pagination = reactive({
+  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
+  pageIndex: 0
+});
 
+watch(() => filterAndSortBy, async () => {
+  await loader.present("Loading...");
   try {
-    const resp = await CountService.updateProductsInCount({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      itemList
-    })
+    pagination.pageIndex = 0;
+    const count = await fetchCycleCount({
+      workEffortId: props.workEffortId,
+      pageSize: pagination.pageSize,
+      pageIndex: pagination.pageIndex,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
 
-    const itemsCount = itemList.length
-    if (!hasError(resp)) {
-      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} ${statusId === 'INV_COUNT_REJECTED' ? 'rejected' : 'updated'}.`))
-      await fetchCountItems();
+    if (count && count.status === 200 && count.data) {
+      cycleCounts.value = count.data;
+      isScrollable.value = count.data.length >= pagination.pageSize;
     } else {
-      throw resp.data
+      throw count.data;
     }
+  } catch (error) {
+    showToast(translate("Something Went Wrong!"));
+    console.error("Error Filters Products: ", error);
+  }
+  loader.dismiss();
+},{ deep: true });
 
-  } catch(err) {
-    showToast(translate(`Failed to update ${itemList.length > 1 ? 'count items' : 'count item'}`))
-    logger.error("Failed to update items", err)
+const sessions = ref();
+const selectedProductsReview = ref<any[]>([]);
+
+
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
+
+function getSortByField () {
+  if (!sortBy.value) return null;
+
+  if (sortBy.value === 'alphabetic') return 'internalName';
+  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
+}
+
+function isSelected(product: any) {
+  return selectedProductsReview.value.some(
+    (p: any) => p.productId === product.productId
+  );
+}
+
+function toggleSelectedForReview(product: any) {
+  const index = selectedProductsReview.value.findIndex(
+    (p: any) => p.productId === product.productId
+  );
+
+  if (index === -1) {
+    selectedProductsReview.value.push(product);
+  } else {
+    selectedProductsReview.value.splice(index, 1);
   }
 }
 
-async function recountItem(item?: any) {
-  let importItemSeqIds: Array<string> = []
-  if(item) {
-    importItemSeqIds = [item.importItemSeqId]
+const isAllSelected = computed(() => {
+  return (
+    cycleCounts.value?.length > 0 && selectedProductsReview.value?.length === cycleCounts.value.length
+  );
+});
+
+function toggleSelectAll(event: CustomEvent) {
+  const isChecked = event.detail.checked;
+
+  if (isChecked) {
+    selectedProductsReview.value = cycleCounts.value.filter(
+      (cycle: any) => !cycle.decisionOutcomeEnumId
+    );
   } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        importItemSeqIds.push(item.importItemSeqId)
-      }
-    })
+    selectedProductsReview.value = [];
   }
+}
 
-  if(!importItemSeqIds.length) {
-    return;
-  }
 
+async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
+  await loader.present("Submitting Review...");
   try {
-    const resp = await CountService.recountItems({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      importItemSeqIds
-    })
+    const inventoryCountProductsList = selectedProductsReview.value.map(product => ({
+      workEffortId: props.workEffortId,
+      productId: product.productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: product.proposedVarianceQuantity,
+      systemQuantity: product.quantity,
+      countedQuantity: product.quantityOnHand,
+      decisionOutcomeEnumId: decisionOutcomeEnumId,
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }));
 
-    const itemsCount = importItemSeqIds.length
-    if (!hasError(resp)) {
-      showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} recounted.`))
-      await fetchCountItems();
+    const resp = await submitProductReview({ inventoryCountProductsList });
+
+    if (resp && resp.status === 200) {
+      const selectedProductIds = selectedProductsReview.value.map(p => p.productId);
+
+      cycleCounts.value.forEach((cycle: any) => {
+        if (selectedProductIds.includes(cycle.productId)) {
+          cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
+        }
+      });
+
+      selectedProductsReview.value = [];
     } else {
-      throw resp.data
+      throw resp.data;
     }
-
-  } catch(err) {
-    showToast(translate(`Failed to recount ${importItemSeqIds.length > 1 ? 'count items' : 'count item'}`))
-    logger.error("Failed to recount items", err)
+  } catch (error) {
+      showToast("Something Went Wrong");
+    console.error("Error while submitting: ", error);
   }
+  loader.dismiss();
 }
 
-async function completeCount() {
-  emitter.emit("presentLoader");
+async function filterProductByInternalName() {
   try {
-    const resp = await CountService.fetchCycleCountItemsCount({
-      inventoryCountImportId: props?.inventoryCountImportId,
-      statusId: "INV_COUNT_CREATED",
-    })
+    const productReviewDetail = await getProductReviewDetail({
+      workEffortId: props.workEffortId,
+      internalName: searchedProductString.value || null,
+      internalName_op: searchedProductString.value ? "contains" : null,
+      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
+      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
+      orderByField: getSortByField() ? `${getSortByField()} asc` : null
+    });
 
-    if(!hasError(resp) && resp.data?.count > 0) {
-      showToast(translate("Unable to complete the count as some items are still pending review. Please review the updated item list and try again"))
-      await fetchCountItems();
-      emitter.emit("dismissLoader")
-      return;
+    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
+      pagination.pageIndex = 0;
+      cycleCounts.value = productReviewDetail.data;
+      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
+    } else {
+      throw productReviewDetail.data;
     }
-
-    try {
-      await CountService.updateCycleCount({
-        inventoryCountImportId: currentCycleCount.value.countId,
-        statusId: "INV_COUNT_COMPLETED"
-      })
-      emitter.emit("dismissLoader")
-      router.push("/closed")
-      showToast(translate("Count has been marked as completed"))
-    } catch(err) {
-      showToast(translate("Failed to complete cycle count"))
-    }
-  } catch(err) {
-    showToast(translate("Failed to complete cycle count"))
-    logger.error(err)
+  } catch (error) {
+    showToast("Something Went Wrong");
+    console.error("Error Searching Product: ", error);
   }
-  emitter.emit("dismissLoader")
 }
 
-async function reassignCount() {
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
+}
+
+function getDcsnFilter() {
+  if (dcsnRsn.value === 'all') {
+    return null;
+  } else if (dcsnRsn.value === 'open') {
+    return 'empty';
+  } else if (dcsnRsn.value === 'accepted') {
+    return 'APPLIED';
+  } else if (dcsnRsn.value === 'rejected') {
+    return 'SKIPPED';
+  }
+}
+
+async function fetchCountSessions(productId: any) {
+  sessions.value = null;
   try {
-    await CountService.updateCycleCount({
-      inventoryCountImportId: currentCycleCount.value.countId,
-      statusId: "INV_COUNT_ASSIGNED"
-    })
-    router.push("/assigned")
-    showToast(translate("Count has been re-assigned"))
-  } catch(err) {
-    showToast(translate("Failed to re-assign cycle count"))
+    const resp = await fetchSessions({
+      workEffortId: props.workEffortId,
+      productId: productId
+    });
+
+    if (resp && resp.status && resp.data && resp.data.length) {
+      sessions.value = resp.data;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    sessions.value = [];
+    console.error("Error getting sessions for this product: ", error);
+    showToast(translate("Something Went Wrong"));
   }
 }
 
-async function acceptItem(item?: any) {
-  const payloads = []
-  if(item) {
-    payloads.push({
-      inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-      importItemSeqId: item.importItemSeqId,
-      quantity: item.quantity,
-      reason: "CYCLE_COUNT",
-      systemQOH: item.qoh,
-      varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
-    })
+async function submitSingleProductReview(productId: any, proposedVarianceQuantity: any, decisionOutcomeEnumId: string, systemQuantity: any, countedQuantity: any, cycleCount: any) {
+  await loader.present("Submitting Review...");
+  try {
+    const inventoryCountProductsList = [];
+    const inventoryCountProductMap = {
+      workEffortId: props.workEffortId,
+      productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: proposedVarianceQuantity,
+      systemQuantity,
+      countedQuantity,
+      decisionOutcomeEnumId,
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }
+    inventoryCountProductsList.push(inventoryCountProductMap);
+
+    const resp = await submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
+
+    if (resp?.status === 200) {
+      cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    showToast(translate("Something Went Wrong"));
+    console.error("Error Submitting Review: ", error);
+  }
+  loader.dismiss();
+}
+
+async function fetchInventoryCycleCount(reset = false) {
+  if (reset) {
+    pagination.pageIndex = 0;
+    isScrollable.value = true;
+  }
+
+  const resp = await fetchCycleCount({
+    workEffortId: props.workEffortId,
+    pageSize: pagination.pageSize,
+    pageIndex: pagination.pageIndex,
+    internalName: searchedProductString.value || null,
+    decisionOutcomeEnumId: getDcsnFilter(),
+    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  });
+
+  if (resp && resp.status === 200 && resp.data?.length) {
+    cycleCounts.value = resp.data;
+    isScrollable.value = resp.data.length >= pagination.pageSize;
   } else {
-    currentCycleCount.value.items.map((item: any) => {
-      if(item.isChecked) {
-        payloads.push({
-          inventoryCountImportId: currentCycleCount.value.inventoryCountImportId,
-          importItemSeqId: item.importItemSeqId,
-          quantity: item.quantity,
-          reason: "CYCLE_COUNT",
-          systemQOH: item.qoh,
-          varianceQty: (item.quantity ? +(item.quantity) : 0) - (item.qoh ? +(item.qoh) : 0)
-        })
-      }
-    })
+    cycleCounts.value = [];
+    isScrollable.value = false;
   }
-
-  const resp = await Promise.allSettled(payloads.map((payload: any) => CountService.acceptItem(payload)))
-
-  const isAnyRespHasError = resp.some((response: any) => response.status === "rejected")
-
-  const itemsCount = payloads.length
-  if(isAnyRespHasError) {
-    showToast(translate(`Failed to accept ${itemsCount > 1 ? 'count items' : 'count item'}`))
-  } else {
-    showToast(translate(`${itemsCount} ${itemsCount > 1 ? 'count items were' : 'count item was'} accepted`))
-  }
-  await fetchCountItems()
 }
 
-function openDateTimeModal() {
-  dateTimeModalOpen.value = true;
-}
-
-const handleDateTimeInput = (dateTimeValue: any) => {
-  // TODO Handle it in a better way
-  // Remove timezone and then convert to timestamp
-  // Current date time picker picks browser timezone and there is no supprt to change it
-  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
-  return DateTime.fromISO(dateTime).toMillis()
-}
-
-function updateCustomTime(event: any) {
-  const date = handleDateTimeInput(event.detail.value)
-  CountService.updateCycleCount({
-    inventoryCountImportId: currentCycleCount.value.countId,
-    dueDate: date
-  }).then(() => {
-    currentCycleCount.value.dueDate = date
-  }).catch(err => {
-    logger.info(err)
-  })
-}
-
-// Method checks whether all the items selected all counted(having some quantity) or not, as we do not allow accepting those items on which quantity is not set
-function isSelectedItemsHasQuantity() {
-  return filteredItems.value?.length > 0 && filteredItems.value.filter((item: any) => item.itemStatusId === "INV_COUNT_CREATED" && item.isChecked).every((item: any) => item.quantity >= 0)
-}
 </script>
 
 <style scoped>
-.border {
-  border-bottom : 1px solid var(--ion-color-medium);
+
+.header {
+  display: grid;
 }
 
-.list-item {
-  --columns-desktop: 6;
-  border-bottom : 1px solid var(--ion-color-medium);
+ion-item.due-date {
+  --padding-bottom: var(--spacer-sm)
+}
+
+.controls {
+  position: sticky;
+  top: 0;
+  background-color: var(--ion-background-color);
+  z-index: 999;
+}
+
+.filters {
+  display: flex;
+  gap: var(--spacer-sm);
+  align-items: end;
+}
+
+.filters>* {
+  flex: 1;
+}
+
+.list-item.count-item-rollup {
+  --columns-desktop: 5;
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
   width: 100%;
 }
 
-.header {
-  display: grid;
-  grid: "search filters"
-        /1fr 1fr;
+.list-item.count-item {
+  --columns-desktop: 5
 }
 
-.search {
-  grid-area: search;
+.list-item .item-key {
+  padding-inline-start: var(--spacer-sm);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-self: stretch;
 }
 
-.filters {
-  grid-area: filters;
+.item-key ion-item {
+  flex: 1
 }
 
-/* To remove overlapping of fab button with footer buttons */
-ion-footer ion-buttons {
-  padding-right: 80px;
-}
-
-.main-content {
-  --padding-bottom: 80px;
-}
-
-.virtual-scroller {
-  --virtual-scroller-offset: 400px;
-}
-
-@media (max-width: 991px) {
-  .header {
-    grid: "search"
-          "filters"
-          / auto;
-    padding: 0;
-  }
+.list-item .actions {
+  display: flex;
+  gap: var(--spacer-xs);
 }
 </style>

@@ -7,26 +7,30 @@ import { translate } from '@/i18n'
 import 'vue-router'
 import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
-import CountDetail from '@/views/CountDetail.vue';
 import Tabs from '@/views/Tabs.vue';
-import Draft from "@/views/Draft.vue";
-import DraftDetail from "@/views/DraftDetail.vue";
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
-import PendingReview from "@/views/PendingReview.vue";
-import PendingReviewDetail from "@/views/PendingReviewDetail.vue";
+import PendingReview from '@/views/PendingReview.vue';
+import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
+import Settings from "@/views/Settings.vue";
+import SessionCountDetail from "@/views/SessionCountDetail.vue"
+import BulkUpload from "@/views/BulkUpload.vue";
+import Draft from "@/views/Draft.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
-import Settings from "@/views/Settings.vue";
-import BulkUpload from "@/views/BulkUpload.vue"
-import HardCount from "@/views/HardCount.vue"
-import HardCountDetail from "@/views/HardCountDetail.vue"
 import ClosedDetail from "@/views/ClosedDetail.vue";
+import DraftDetail from "@/views/DraftDetail.vue";
+import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
+import PreCountedItems from "@/views/PreCountedItems.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
   interface RouteMeta {
     permissionId?: string;
+    title?: string;
+    iosIcon?: any;
+    mdIcon?: any;
+    showInMenu?: boolean;
   }
 }
 
@@ -77,61 +81,29 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'count-detail/:id',
-        name: 'CountDetail',
-        component: CountDetail,
-        props: true,
-        meta: {
-          permissionId: "APP_COUNT_VIEW"
-        }
-      },
-      {
-        path: 'count-detail/hard/:id',
-        name: 'HardCountDetail',
-        component: HardCountDetail,
-        props: true,
-        meta: {
-          permissionId: "APP_COUNT_VIEW"
-        }
-      },
-      {
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
     ],
     beforeEnter: authGuard,
   },
-  
-  {
-    path: '/bulkUpload',
-    name: 'Draft bulk',
-    component: BulkUpload,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
   {
     path: '/draft',
     name: 'Draft',
     component: Draft,
     beforeEnter: authGuard,
+    props: true,
     meta: {
-      permissionId: "APP_DRAFT_VIEW"
+      permissionId: "APP_DRAFT_VIEW",
+      showInMenu: true,
+      title: "Draft",
+      iosIcon: createOutline,
+      mdIcon: createOutline,
     }
   },
   {
-    path: '/hard-count',
-    name: 'HardCount',
-    component: HardCount,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
-  },
-  {
-    path: "/draft/:inventoryCountImportId",
-    name: "DraftDetail",
+    path: '/draft/:workEffortId',
+    name: 'DraftDetail',
     component: DraftDetail,
     beforeEnter: authGuard,
     props: true,
@@ -145,11 +117,28 @@ const routes: Array<RouteRecordRaw> = [
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW"
+      permissionId: "APP_ASSIGNED_VIEW",
+      showInMenu: true,
+      title: "Assigned",
+      iosIcon: storefrontOutline,
+      mdIcon: storefrontOutline,
     }
   },
   {
-    path: '/assigned/:inventoryCountImportId',
+    path: '/closed',
+    name: 'Closed',
+    component: Closed,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW",
+      showInMenu: true,
+      title: "Closed",
+      iosIcon: receiptOutline,
+      mdIcon: receiptOutline,
+    }
+  },
+  {
+    path: '/assigned/:workEffortId',
     name: 'AssignedDetail',
     component: AssignedDetail,
     beforeEnter: authGuard,
@@ -164,11 +153,68 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
+      permissionId: "APP_PENDING_REVIEW_VIEW",
+      showInMenu: true,
+      title: "Pending review",
+      iosIcon: mailUnreadOutline,
+      mdIcon: mailUnreadOutline,
     }
   },
   {
-    path: '/pending-review/:inventoryCountImportId',
+    path: '/pending-review/:workEffortId',
+    name: 'PendingReviewDetail',
+    component: PendingReviewDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW",
+    }
+  },
+  {
+    path: '/add-pre-counted/:workEffortId/:inventoryCountImportId',
+    name: 'PreCountedItems',
+    component: PreCountedItems,
+    props: true
+  },
+  {
+    path: '/bulkUpload',
+    name: 'Draft bulk',
+    component: BulkUpload,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_DRAFT_VIEW",
+      showInMenu: true,
+      title: "Bulk Upload",
+      iosIcon: createOutline,
+      mdIcon: createOutline
+
+    }
+  },
+  {
+    path: '/store-permissions',
+    name: 'StorePermissions',
+    component: StorePermissions,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      showInMenu: true
+    }
+  },
+  {
+    path: '/pending-review',
+    name: 'PendingReview',
+    component: PendingReview,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "APP_PENDING_REVIEW_VIEW",
+      showInMenu: true,
+      title: "Pending review",
+      iosIcon: mailUnreadOutline,
+      mdIcon: mailUnreadOutline,
+    }
+  },
+  {
+    path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
     component: PendingReviewDetail,
     beforeEnter: authGuard,
@@ -183,11 +229,15 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,  
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "APP_CLOSED_VIEW",
+      showInMenu: true,
+      title: "Closed",
+      iosIcon: receiptOutline,
+      mdIcon: receiptOutline,
     }
   },
   {
-    path: '/closed/:inventoryCountImportId',
+    path: '/closed/:workEffortId',
     name: 'ClosedDetail',
     component: ClosedDetail,
     beforeEnter: authGuard,
@@ -202,7 +252,11 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW"
+      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      showInMenu: true,
+      title: "Store permissions",
+      iosIcon: shieldCheckmarkOutline,
+      mdIcon: shieldCheckmarkOutline,
     }
   },
   {
@@ -210,12 +264,25 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Settings',
     component: Settings,
     beforeEnter: authGuard,
+    meta: {
+      showInMenu: true,
+      title: "Settings",
+      iosIcon: settingsOutline,
+      mdIcon: settingsOutline,
+    }
   },
   {
     path: '/login',
     name: 'Login',
     component: DxpLogin,
     beforeEnter: loginGuard
+  },
+  {
+    path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
+    name: 'SessionCountDetail',
+    component: SessionCountDetail,
+    beforeEnter: authGuard,
+    props: true
   }
 ];
 
@@ -246,9 +313,9 @@ router.beforeEach((to, from) => {
   // - If using ionViewWillLeave/DidLeave hook to clear the filters, the filters are also cleared when moving to and fro from the details page of the same parent page, but in this case we do not want to clear the filters
   //
   // Added check that if the `to` page has the same url pattern as the `from` page and vice-versa then do not clear the filters, used this approach as parent and child page paths are identical
-  if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
-    store.dispatch("count/clearQuery")
-  }
+  // if(!(to.path.includes(from.path) || from.path.includes(to.path))) {
+  //   store.dispatch("count/clearQuery")
+  // }
 })
 
 

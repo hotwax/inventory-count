@@ -17,131 +17,106 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <main>
-        <template v-if="isLoading">
-          <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
-        </template>
-        <section v-else-if="cycleCount.length">
-          <template v-if="selectedSegment === 'assigned'">
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ cycleCountStats(count.inventoryCountImportId)?.totalItems }} {{ translate("items") }}</ion-note>
-              </ion-card-header>
-              <ion-item lines="none">
-                {{ translate("Due date") }}
-                <ion-label slot="end">
-                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
+    <ion-content class="ion-padding" ref="pageRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <template v-if="isLoading">
+        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+      </template>
+      <template v-else>
+        <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
+          <ion-card-header>
+            <div>
+              <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
+                {{ translate("HARD COUNT") }}
+              </ion-label>
+              <ion-card-title>
+                {{ count.workEfforName }}
+              </ion-card-title>
+              <ion-card-subtitle>
+                {{ getDateWithOrdinalSuffix(count.createdDate) }}
+              </ion-card-subtitle>
+            </div>
+          </ion-card-header>
+          <ion-item lines="none">
+            {{ translate("Due date") }}
+            <ion-label slot="end">
+              <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-list>
+            <ion-list-header>
+              <ion-label>
+                Sessions
+              </ion-label>
+
+              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+                <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
+                New
+              </ion-button>
+            </ion-list-header>
+            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-label>
+                Start new session
+              </ion-label>
+            </ion-button>
+            <!-- TODO: Need to show the session on this device seperately from the other sessions -->
+              <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
+              <ion-item :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>
+                    created by {{ session.uploadedByUserLogin }}
+                  </p>
                 </ion-label>
+                <ion-note slot="end">
+                  {{ getSessionStatusDescription(session.statusId) }}
+                </ion-note>
               </ion-item>
-            </ion-card>
-          </template> 
-          <template v-else-if="selectedSegment === 'pendingReview'">
-            <ion-card button v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)">
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <ion-item>
-                {{ translate("Due date") }}
-                <ion-label slot="end">
-                  <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                </ion-label>
-              </ion-item>
-              <ion-item lines="none">
-                {{ translate("Submission date") }}
-                <ion-label slot="end">
-                  <p>{{ getSubmissionDate(count) }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-card>
-          </template>
-          <template v-else>
-            <ion-card v-for="count in cycleCount" :key="count.inventoryCountImportId" @click="navigateToStoreView(count)" button>
-              <ion-card-header>
-                <div>
-                  <ion-card-subtitle v-if="count.countTypeEnumId === 'HARD_COUNT'">
-                    <ion-label color="warning" class="overline">
-                      {{ translate("HARD COUNT") }}
-                    </ion-label>
-                  </ion-card-subtitle>
-                  <ion-card-title>
-                    {{ count.countImportName }}
-                    <ion-label>
-                      <p>{{ getDateWithOrdinalSuffix(count.createdDate) }}</p>
-                    </ion-label>
-                  </ion-card-title>
-                </div>
-                <ion-note>{{ getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") }} {{ translate((count.countTypeEnumId === "HARD_COUNT" && getCycleCountStats(count.inventoryCountImportId, count.countTypeEnumId === "HARD_COUNT") === "1") ? "item counted" : "items counted") }}</ion-note>
-              </ion-card-header>
-              <div class="header">
-                <div class="search">
-                  <ion-item>
-                    {{ translate("Due date") }}
-                    <ion-label slot="end">
-                      <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Submission date") }}
-                    <ion-label slot="end">
-                      <p>{{ getSubmissionDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item lines="none">
-                    {{ translate("Closed date") }}
-                    <ion-label slot="end">
-                      <p>{{ getClosedDate(count) }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-                <div class="filters">
-                  <ion-item>
-                    {{ translate("Rejected") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.rejectedCount }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item>
-                    {{ translate("Total variance") }}
-                    <ion-label slot="end">
-                      <p>{{ cycleCountStats(count.inventoryCountImportId)?.totalVariance }}</p>
-                    </ion-label>
-                  </ion-item>
-                </div>
-              </div>
-            </ion-card>
-          </template> 
-        </section>
-        <template v-else>
-          <p class="empty-state">{{ translate("No cycle counts found") }}</p>
-        </template>
-      </main>
+            </ion-item-group>
+
+            <ion-item v-if="selectedSegment === 'assigned'" lines="none">
+              <ion-button expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
+                {{ translate("READY FOR REVIEW") }}
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </ion-card>
+      </template>
+      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>New session</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-item>
+              <ion-label position="stacked">Name</ion-label>
+              <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
+              <ion-note slot="helper">Add a name to help identify what inventory is counted in this session</ion-note>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>Area</ion-list-header>
+
+              <ion-radio-group v-model="selectedArea">
+                <ion-item v-for="area in areas" :key="area.value">
+                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-list>
+
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="addNewSession">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
+
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -152,146 +127,274 @@
 
 <script setup>
 import {
+  IonButton,
   IonCard,
   IonCardHeader,
   IonCardSubtitle,
   IonCardTitle,
   IonContent,
   IonHeader,
+  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonItem,
+  IonItemGroup,
   IonLabel,
+  IonList,
   IonNote,
   IonPage,
   IonSegment,
   IonSegmentButton,
   IonTitle,
   IonToolbar,
-  onIonViewDidEnter
+  onIonViewDidEnter,
+  IonButtons,
+  IonModal,
+  IonFab,
+  IonFabButton,
+  IonListHeader,
+  IonRadioGroup,
+  IonRadio,
+  IonInput
 } from '@ionic/vue';
+import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router'
-import { getCycleCountStats, getDateWithOrdinalSuffix, showToast } from "@/utils"
+import { useRouter } from 'vue-router';
+import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
+const { updateWorkEffort } = useInventoryCountImport();
 const store = useStore();
-const router = useRouter()
+const router = useRouter();
 const userStore = useUserStore();
 
-const cycleCount = computed(() => store.getters["count/getCycleCountsList"]);
-const isScrollable = computed(() => store.getters["count/isCycleCountScrollable"])
-const currentFacility = computed(() => userStore.getCurrentFacility)
-const cycleCountStats = computed(() => (id) => store.getters["count/getCycleCountStats"](id))
-
+const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
+const isScrollable = computed(() => store.getters["count/isScrollable"]);
+const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
-const contentRef = ref({});
 const infiniteScrollRef = ref({});
 let isLoading = ref(false);
+const isAddSessionModalOpen = ref(false);
+const selectedWorkEffortId = ref(null);
+const pageRef = ref(null);
+const pageIndex = ref(0);
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
-onIonViewDidEnter(async() => {
+onIonViewDidEnter(async () => {
   isLoading.value = true;
-  await fetchCycleCounts();
+  pageIndex.value = 0;
+  await fetchCycleCounts(true);
   isLoading.value = false;
-})
+});
+
+function getSessionStatusDescription(statusId) {
+  if (!statusId) return "";
+  if (statusId === "SESSION_CREATED") return "Created";
+  if (statusId === "SESSION_ASSIGNED") return "In Progress";
+  if (statusId === "SESSION_SUBMITTED") return "Submitted";
+  if (statusId === "SESSION_VOIDED") return "Voided";
+}
+
+function showAddNewSessionModal(workEffortId) {
+  isAddSessionModalOpen.value = true;
+  selectedWorkEffortId.value = workEffortId;
+}
 
 function enableScrolling() {
-  const parentElement = contentRef.value.$el
-  const scrollEl = parentElement.shadowRoot.querySelector("main[part='scroll']")
-  let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef.value.$el.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
-  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-  if(distanceFromInfinite < 0) {
-    isScrollingEnabled.value = false;
-  } else {
-    isScrollingEnabled.value = true;
-  }
+  const parentElement = pageRef.value?.$el;
+  if (!parentElement) return;
+
+  const scrollEl = parentElement.shadowRoot?.querySelector("div[part='scroll']");
+  const infiniteEl = infiniteScrollRef.value?.$el;
+  if (!scrollEl || !infiniteEl) return;
+
+  const { scrollHeight, scrollTop, offsetHeight: height } = scrollEl;
+  const infiniteHeight = infiniteEl.offsetHeight;
+  const threshold = 100;
+
+  const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height;
+  isScrollingEnabled.value = distanceFromInfinite >= 0;
 }
 
 async function loadMoreCycleCount(event) {
-  // Added this check here as if added on infinite-scroll component the Loading content does not gets displayed
-  if(!(isScrollingEnabled.value && isScrollable.value)) {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
+    return;
   }
-  fetchCycleCounts(
-    undefined,
-    Math.ceil(
-      cycleCount.value?.length / (process.env.VUE_APP_VIEW_SIZE)
-    ).toString()
-  ).then(async () => {
-    await event.target.complete();
-  });
+
+  pageIndex.value += 1;
+  await fetchCycleCounts(false);
+  await event.target.complete();
 }
 
-async function fetchCycleCounts(vSize, vIndex) {
-  if(!currentFacility.value?.facilityId) {
+async function fetchCycleCounts(reset = false) {
+  if (!currentFacility.value?.facilityId) {
     showToast(translate("No facility is associated with this user"));
     return;
   }
-  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
-  const pageIndex = vIndex ? vIndex : 0;
-  const facilityId = currentFacility.value?.facilityId
+
+  if (reset) {
+    pageIndex.value = 0;
+  }
+
   const payload = {
-    pageSize,
-    pageIndex,
-    facilityId,
-    statusId: getStatusIdForCountsToBeFetched()
+    pageSize: pageSize.value,
+    pageIndex: pageIndex.value,
+    facilityId: currentFacility.value.facilityId,
+    currentStatusId: getStatusIdForCountsToBeFetched()
   };
-  await store.dispatch("count/fetchCycleCountsLists", payload);
+
+  await store.dispatch("count/getAssignedWorkEfforts", payload);
 }
 
 async function segmentChanged(value) {
   isLoading.value = true;
-  selectedSegment.value = value
-  await fetchCycleCounts()
+  selectedSegment.value = value;
+  pageIndex.value = 0;
+  await fetchCycleCounts(true);
   isLoading.value = false;
 }
 
-function navigateToStoreView(count) {
-  router.push((count.countTypeEnumId === "HARD_COUNT" && count.statusId === "INV_COUNT_ASSIGNED") ? `/tabs/count-detail/hard/${count.inventoryCountImportId}` : `/tabs/count-detail/${count.inventoryCountImportId}`);
-}
-
 function getStatusIdForCountsToBeFetched() {
-  if(selectedSegment.value === "assigned") {
-    return "INV_COUNT_ASSIGNED"
-  } else if(selectedSegment.value === "pendingReview") {
-    return "INV_COUNT_REVIEW"
-  } else {
-    return "INV_COUNT_COMPLETED"
+  if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
+  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_IN_CMPLTD";
+  return "CYCLE_CNT_IN_CLOSED";
+}
+
+const areas = [
+  { value: 'back_stock', label: 'Back stock' },
+  { value: 'display', label: 'Display' },
+  { value: 'floor_wall', label: 'Floor - wall' },
+  { value: 'floor_shelf', label: 'Floor - shelf' },
+  { value: 'overflow', label: 'Overflow' },
+  { value: 'register', label: 'Register' },
+];
+const selectedArea = ref(areas[0].value);
+const countName = ref('');
+
+async function addNewSession() {
+  try {
+    const selectedCount = cycleCounts.value.find(c => c.workEffortId === selectedWorkEffortId.value)
+    if (!selectedCount) {
+      showToast("Unable to find selected count.")
+      return
+    }
+
+    // Check the type of count
+    const isHardCount = selectedCount.workEffortPurposeTypeId === "HARD_COUNT"
+    let resp = null
+
+    if (isHardCount) {
+      // --- Create a new HARD COUNT session directly ---
+      resp = await useInventoryCountImport().createSessionOnServer({
+        countImportName: countName.value,
+        statusId: "SESSION_CREATED",
+        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        facilityAreaId: selectedArea.value,
+        createdDate: Date.now(),
+        dueDate: Date.now(),
+        workEffortId: selectedWorkEffortId.value
+      })
+    } else {
+      // --- DIRECTED COUNT: clone from oldest session ---
+      const sessions = selectedCount.sessions || []
+      if (sessions.length > 0) {
+        // Sort by createdDate ascending
+        const oldest = [...sessions].sort((a, b) => a.createdDate - b.createdDate)[0]
+        if (oldest?.inventoryCountImportId) {
+          resp = await useInventoryCountImport().cloneSession({
+            inventoryCountImportId: oldest.inventoryCountImportId,
+            facilityAreaId: selectedArea.value,
+            countImportName: countName.value,
+          })
+        } else {
+          // Fallback: no valid oldest found
+          resp = await useInventoryCountImport().createSessionOnServer({
+            countImportName: countName.value,
+            statusId: "SESSION_CREATED",
+            uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+            facilityAreaId: selectedArea.value,
+            createdDate: Date.now(),
+            dueDate: Date.now(),
+            workEffortId: selectedWorkEffortId.value
+          })
+        }
+      } else {
+        // No sessions → create new one (same as HARD COUNT)
+        resp = await useInventoryCountImport().createSessionOnServer({
+          countImportName: countName.value,
+          statusId: "SESSION_CREATED",
+          uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+          facilityAreaId: selectedArea.value,
+          createdDate: Date.now(),
+          dueDate: Date.now(),
+          workEffortId: selectedWorkEffortId.value
+        })
+      }
+    }
+
+    if (resp?.status !== 200) {
+      showToast("Something Went Wrong!")
+      console.error(resp)
+      return
+    }
+
+    // --- Update UI ---
+    showToast("Session added Successfully")
+    const index = cycleCounts.value.findIndex(w => w.workEffortId === selectedWorkEffortId.value)
+    if (index !== -1) {
+      if (!cycleCounts.value[index].sessions) cycleCounts.value[index].sessions = []
+
+      const newSession = {
+        inventoryCountImportId: resp.data.inventoryCountImportId,
+        countImportName: countName.value,
+        statusId: "SESSION_CREATED",
+        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        facilityAreaId: selectedArea.value,
+        createdDate: Date.now(),
+        dueDate: Date.now(),
+        workEffortId: selectedWorkEffortId.value
+      }
+      cycleCounts.value[index].sessions.push(newSession)
+    }
+
+    countName.value = ''
+    selectedArea.value = areas[0].value
+    isAddSessionModalOpen.value = false
+  } catch (err) {
+    console.error("Error creating session:", err)
+    showToast("Something Went Wrong!")
   }
 }
 
-function getSubmissionDate(count) {
-  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
+async function markAsCompleted(workEffortId) {
+  try {
+    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD' });
+    if (response && response.status === 200) {
+      showToast(translate("Session sent for review successfully"));
+      pageIndex.value = 0;
+      await fetchCycleCounts(true);
+    } else {
+      showToast(translate("Failed to send session for review"));
+    }
+  } catch (err) {
+    console.error("Error updating status:", err);
   }
-
-  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_REVIEW")
-  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
 }
-
-function getClosedDate(count) {
-  const history = cycleCountStats.value(count.inventoryCountImportId)?.statusHistory
-  if(!history) {
-    return "-";
-  }
-
-  const submissionStatus = history.toReversed().find((status) => status.statusId === "INV_COUNT_COMPLETED")
-  return getDateWithOrdinalSuffix(submissionStatus?.statusDate)
-}
-</script> 
+</script>
 
 <style scoped>
 section {
-  padding-bottom: 100px
+  padding-bottom: 100px;
 }
 
 ion-card {
-  min-width: 400px;
-  max-width: 650px;
+  max-width: 450px;
+  margin-inline: auto;
 }
 
 ion-card-header {
@@ -329,5 +432,3 @@ main {
   }
 }
 </style>
-
-

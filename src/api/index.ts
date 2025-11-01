@@ -3,7 +3,6 @@ import { setupCache } from "axios-cache-adapter"
 import OfflineHelper from "@/offline-helper"
 import emitter from "@/event-bus"
 import store from "@/store";
-import { StatusCodes } from "http-status-codes";
 
 axios.interceptors.request.use((config: any) => {
   // TODO: pass csrf token
@@ -43,7 +42,7 @@ axios.interceptors.response.use(function (response) {
   setTimeout(() => emitter.emit("dismissLoader"), 100);
   if (error.response) {
     // TODO Handle case for failed queue request
-    const { status } = error.response;
+    // const { status } = error.response;
     // if (status === StatusCodes.UNAUTHORIZED) {
     //   store.dispatch("user/logout");
     //   const redirectUrl = window.location.origin + '/login';
@@ -86,11 +85,10 @@ const api = async (customConfig: any) => {
     params: customConfig.params,
     // withCredentials: true
   }
-
-  const baseURL = store.getters["user/getInstanceUrl"];
+  const baseURL = store.getters["user/getBaseUrl"];
 
   if (baseURL) {
-    config.baseURL = baseURL.startsWith('http') ? baseURL.includes('/rest/s1/inventory-cycle-count') ? baseURL : `${baseURL}/rest/s1/inventory-cycle-count/` : `https://${baseURL}.hotwax.io/rest/s1/inventory-cycle-count/`;
+    config.baseURL = baseURL;
   }
 
   if(customConfig.cache) config.adapter = axiosCache.adapter;

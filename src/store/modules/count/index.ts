@@ -8,7 +8,10 @@ import RootState from '../../RootState'
 const countModule: Module<CountState, RootState> = {
   namespaced: true,
   state: {
-    list: [],
+    assignedWorkEfforts: [],
+    draftWorkEfforts: [],
+    inReviewWorkEfforts: [],
+    closedWorkEfforts: [],
     total: 0,
     isScrollable: true,
     query: {
