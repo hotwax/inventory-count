@@ -112,7 +112,7 @@ const actions: ActionTree<CountState, RootState> = {
     commit(types.COUNT_LIST_UPDATED, { list: counts, total, isScrollable });
   },
   async clearCycleCountList({ commit }) {
-    commit(types.COUNT_IN_REVIEW_WORK_EFFORTS_UPDATED, { list: [], total: 0 });
+    commit(types.COUNT_LIST_UPDATED, { list: [], total: 0 });
   }
 }
 
