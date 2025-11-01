@@ -32,6 +32,7 @@ export interface InventoryCountImportItem {
 export interface ScanEvent {
   id?: number
   scannedValue?: string
+  productId?: string
   inventoryCountImportId: string
   locationSeqId?: string | null
   quantity: number
@@ -50,8 +51,8 @@ class CommonDB extends Dexie {
     this.version(1).stores({
       products: 'productId, updatedAt',
       productIdents: '[productId+identKey], identKey, value',
-      inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested, lookupAttempted',
-      scanEvents: '++id, inventoryCountImportId, aggApplied'
+      inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested',
+      scanEvents: '++id, inventoryCountImportId, scannedValue, productId, aggApplied'
     })
   }
 }

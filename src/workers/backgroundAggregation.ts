@@ -163,26 +163,26 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
       productId = product?.productId || null
     }
 
-    if (productId) {
-        await db.table('inventoryCountRecords')
-          .where('[inventoryCountImportId+uuid]')
-          .equals([inventoryCountImportId, rec.uuid])
-          .modify({
-            productId,
-            lookupAttempted: false, // reset flag when found
-            lastUpdatedAt: now
-          })
-      } else {
-        // mark lookup attempted so we skip next time
-        await db.table('inventoryCountRecords')
-          .where('[inventoryCountImportId+uuid]')
-          .equals([inventoryCountImportId, rec.uuid])
-          .modify({
-            lookupAttempted: true,
-            lastUpdatedAt: now
-          })
-      }
-  }
+    if (!productId) {
+      continue
+    }
+
+    await db.table('inventoryCountRecords')
+      .where('[inventoryCountImportId+uuid]')
+      .equals([inventoryCountImportId, rec.uuid])
+      .modify({
+        productId,
+        lastUpdatedAt: now
+      })
+      
+    await db.table('scanEvents')
+      .where({ inventoryCountImportId })
+      .and(s => !s.productId && s.scannedValue === identifier)
+      .modify({
+        productId,
+        lastUpdatedAt: now
+      });
+    }
   return;
 }
 
@@ -257,6 +257,15 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         })
       }
 
+      if (productId) {
+        await db.table('scanEvents')
+          .where({ inventoryCountImportId })
+          .and(s => !s.productId && s.scannedValue === scannedValue)
+          .modify({
+            productId,
+            lastUpdatedAt: now
+          });
+      }
       processed++
     }
 
