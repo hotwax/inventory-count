@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface ScanEvent {
   id?: number;
   scannedValue?: string;
+  productId?: string;
   inventoryCountImportId: string;
   locationSeqId?: string | null;
   quantity: number;
@@ -302,7 +303,17 @@ export function useInventoryCountImport() {
       .reverse()
       .sortBy('createdAt');
 
-    return events || [];
+    const enriched = await Promise.all(
+      events.map(async e => {
+        if (e.productId) {
+          const product = await db.products.get(e.productId);
+          return { ...e, product };
+        }
+        return e;
+      })
+    );
+
+    return enriched || [];
   });
 
    /* API call functions moved from CountService.ts */   
