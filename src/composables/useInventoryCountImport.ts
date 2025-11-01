@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface ScanEvent {
   id?: number;
   scannedValue?: string;
+  productId?: string;
   inventoryCountImportId: string;
   locationSeqId?: string | null;
   quantity: number;
@@ -172,7 +173,6 @@ export function useInventoryCountImport() {
 
   // you can filter by type if needed (based on your existing logic)
   // for example:
-  console.log('Segment in searchInventoryItemsByIdentifier:', segment);
   if (segment === 'counted') {
     tableQuery = tableQuery.and(r => r.quantity > 0)
   } else if (segment === 'uncounted') {
@@ -180,11 +180,10 @@ export function useInventoryCountImport() {
   } else if (segment === 'undirected') {
     tableQuery = tableQuery.and(r => r.isRequested === 'N')
   }
-  
+
   const results = await tableQuery
     .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
     .toArray()
-    console.log('Search results:', results);
 
   // enrich with product info if cached
   for (const r of results) {
@@ -304,7 +303,17 @@ export function useInventoryCountImport() {
       .reverse()
       .sortBy('createdAt');
 
-    return events || [];
+    const enriched = await Promise.all(
+      events.map(async e => {
+        if (e.productId) {
+          const product = await db.products.get(e.productId);
+          return { ...e, product };
+        }
+        return e;
+      })
+    );
+
+    return enriched || [];
   });
 
    /* API call functions moved from CountService.ts */   

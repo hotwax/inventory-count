@@ -237,66 +237,119 @@
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} scans ago</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                      {{ translate("Match") }}
+                      Match
                     </ion-button>
                   </ion-item>
 
-                  <ion-item>
+                  <!-- Current unmatched scan -->
+                  <ion-item lines="none">
                     <ion-thumbnail slot="start">
                       <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
+                      <p class="overline">{{ getScanContext(item).scansAgo }} scans ago</p>
                       <p>{{ primaryId(item.product) }}</p>
                       <p>{{ secondaryId(item.product) }}</p>
                       <p>{{ item.productIdentifier }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-note slot="end">last match</ion-note>
+                  </ion-item>
+
+                  <!-- Previous good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).previousGood">
+                    <ion-thumbnail slot="start">
+                      <Image v-if="getScanContext(item).previousGood.product?.mainImageUrl"
+                            :src="getScanContext(item).previousGood.product.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">Previous good scan</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
+                    </ion-label>
+                  </ion-item>
+
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image v-if="getScanContext(item).nextGood.product?.mainImageUrl"
+                            :src="getScanContext(item).nextGood.product.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">Next good scan</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
                   </ion-item>
                 </ion-card>
               </template>
 
-              <!-- When no filtered results found for entered keyword -->
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding ion-text-center">
-                  <ion-icon :icon="searchOutline" class="ion-margin-bottom" size="large"></ion-icon>
                   <ion-label>No products found for "{{ searchKeyword }}"</ion-label>
                 </div>
               </template>
 
-              <!-- Default list when no search is active -->
               <template v-else>
                 <ion-card v-for="item in unmatchedItems" :key="item.uuid">
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} scans ago</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                      {{ translate("Match") }}
+                      Match
                     </ion-button>
                   </ion-item>
 
-                  <ion-item>
+                  <!-- Current unmatched scan -->
+                  <ion-item lines="none">
                     <ion-thumbnail slot="start">
                       <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
+                      <p class="overline">{{ getScanContext(item).scansAgo }} scans ago</p>
                       <p>{{ primaryId(item.product) }}</p>
                       <p>{{ secondaryId(item.product) }}</p>
                       <p>{{ item.productIdentifier }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-note slot="end">last match</ion-note>
+                  </ion-item>
+
+                  <!-- Previous good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).previousGood">
+                    <ion-thumbnail slot="start">
+                      <Image v-if="getScanContext(item).previousGood.product?.mainImageUrl"
+                            :src="getScanContext(item).previousGood.product.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">Previous good scan</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
+                    </ion-label>
+                  </ion-item>
+
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image v-if="getScanContext(item).nextGood.product?.mainImageUrl"
+                            :src="getScanContext(item).nextGood.product.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">Next good scan</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
                   </ion-item>
                 </ion-card>
               </template>
@@ -865,6 +918,40 @@ async function handleIndexedDBSearch() {
 function clearSearchResults() {
   searchKeyword.value = ''
   filteredItems.value = []
+}
+
+function getScanContext(item: any) {
+  if (!item || !item.productIdentifier || !events.value?.length) return {}
+
+  // Sort events by time (fallback to incremental id if present)
+  const sortedScans = [...events.value].sort((a, b) =>
+    (a.createdAt ?? 0) - (b.createdAt ?? 0)
+  )
+
+  // Find the scan that matches the productIdentifier
+  const index = sortedScans.findIndex(
+    (e) => e.scannedValue === item.productIdentifier
+  )
+  if (index === -1) return {}
+
+  const totalScans = sortedScans.length
+  const scansAgo = totalScans - index - 1
+
+  // Find previous and next good scans (those that have productId)
+  const previousGood = [...sortedScans]
+    .slice(0, index)
+    .reverse()
+    .find((e) => !!e.productId)
+
+  const nextGood = sortedScans
+    .slice(index + 1)
+    .find((e) => !!e.productId)
+
+  return {
+    scansAgo,
+    previousGood,
+    nextGood,
+  }
 }
 </script>
 
