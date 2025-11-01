@@ -57,7 +57,7 @@ const isScrollable = computed(() => store.getters["count/isScrollable"]);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
-  fetchClosedCycleCounts();
+  await fetchClosedCycleCounts();
   loader.dismiss();
 })
 
