@@ -14,7 +14,7 @@
           </ion-title>
         </ion-item>
         <ion-item lines="none">
-          <ion-searchbar v-model="productstring" @keyup.enter="handleSearch"></ion-searchbar>
+          <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
         </ion-item>
         <ion-item>
           <ion-thumbnail>
@@ -32,9 +32,8 @@
             <ion-label color="dark">
                 {{ translate(searchedProduct.sku) }}
             </ion-label>
-            <ion-input slot="end" size="small" type="number" placeholder="0" v-model.number="searchedProduct.selectedQuantity"></ion-input>
-            <!-- TODO: Add Click Event Here -->
-            <ion-button>
+            <ion-input min=1 slot="end" size="small" type="number" placeholder="0" v-model.number="searchedProduct.selectedQuantity"></ion-input>
+            <ion-button @click="addProductInScanEvent(searchedProduct)">
               {{ translate("Save") }}
             </ion-button>
           </ion-item>
@@ -101,7 +100,7 @@ const productIdentificationStore = useProductIdentificationStore();
 
 const workEffort = ref();
 const inventoryCountImport = ref();
-const productstring = ref();
+const searchedProductString = ref();
 const products = ref<any[]>([]);
 const searchedProduct = ref();
 
@@ -137,7 +136,7 @@ async function getInventoryCycleCount() {
 }
 
 async function handleSearch() {
-  if (!productstring.value.trim()) {
+  if (!searchedProductString.value.trim()) {
     return;
   }
   await getProducts();
@@ -149,14 +148,14 @@ async function getProducts() {
     const resp = await fetchProducts({
       docType: "PRODUCT",
       viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true", `internalName: ${productstring.value.trim()}`],
+      filters: ["isVirtual: false", "isVariant: true", `internalName: ${searchedProductString.value.trim()}`],
     });
 
     if (resp && !hasError(resp) && resp.data) {
       searchedProduct.value = resp.data.response.docs?.[0];
       console.log("This is searched product: ", searchedProduct.value);
       if (!searchedProduct.value) {
-        showToast(`Product Not Found by ${productstring.value}`);
+        showToast(`Product Not Found by ${searchedProductString.value}`);
       }
     }
   } catch (err) {
@@ -181,41 +180,43 @@ const fetchProducts = async (query: any): Promise<any> => {
   });
 };
 
-// async function addProductInScanEvent(product: any) {
-//   await loader.present("Loading...");
-//   try {
-//     const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
-//     console.log(product.productId, " and ", productIdentifierPref.primaryId, " and ", getProductIdentificationValue(productIdentifierPref.primaryId, product), " and ", product.productId);
-//     await recordScan({
-//       inventoryCountImportId: props.inventoryCountImportId as string,
-//       productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
-//       quantity: product.selectedQuantity,
-//     });
-//     if (products.value?.length > 0) {
-//       const existingProduct = products.value.find(p => p.productId === product.productId);
-//       console.log();
-//       if (existingProduct) {
-//         existingProduct.selectedQuantity += product.selectedQuantity;
-//       }
-//     } else {
-//       products.value.push(product);
-//     }
+async function addProductInScanEvent(product: any) {
+  await loader.present("Loading...");
+  try {
+    if (searchedProductString.value) searchedProductString.value = null;
+    const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
+    console.log(product.productId, " and ", productIdentifierPref.primaryId, " and ", getProductIdentificationValue(productIdentifierPref.primaryId, product), " and ", product.productId);
+    await recordScan({
+      inventoryCountImportId: props.inventoryCountImportId as string,
+      productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
+      quantity: product.selectedQuantity,
+    });
+    if (products.value?.length > 0) {
+      const existingProduct = products.value.find(p => p.productId === product.productId);
+      console.log("This is Existing Product: ", existingProduct);
+      if (existingProduct) {
+        existingProduct.selectedQuantity += product.selectedQuantity;
+      } else {
+        products.value.push(product);
+      }
+    } else {
+      products.value = [product];
+    }
+    searchedProduct.value = null;
+    const currentFacility: any = useUserStore().getCurrentFacility;
+    const qohResp = await ProductService.fetchProductStock({
+      productId: product.productId,
+      facilityId: currentFacility.facilityId
+    } as any);
 
-//     const currentFacility: any = useUserStore().getCurrentFacility;
-//     const qohResp = await ProductService.fetchProductStock({
-//       productId: product.productId,
-//       facilityId: currentFacility.facilityId
-//     } as any);
-
-//     if (qohResp?.status === 200 && qohResp.data?.qoh) {
-//       product.quantityOnHand = qohResp.data?.qoh;
-//     }
-//   } catch (error) {
-//     console.error("Error Adding Product to Scan Event: ", error);
-//   }
-//   searchedProduct.value = null;
-//   showToast(translate("Item Count Saved"));
-//   loader.dismiss();
-// }
+    if (qohResp?.status === 200 && qohResp.data?.qoh) {
+      product.quantityOnHand = qohResp.data?.qoh;
+    }
+  } catch (error) {
+    console.error("Error Adding Product to Scan Event: ", error);
+  }
+  showToast(translate("Item Count Saved"));
+  loader.dismiss();
+}
 
 </script>
