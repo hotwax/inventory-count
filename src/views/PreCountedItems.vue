@@ -6,7 +6,7 @@
         <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content>
+    <ion-content class="ion-padding">
       <ion-card>
         <ion-card-header>
           <ion-card-title>
@@ -14,11 +14,28 @@
           </ion-card-title>
         </ion-card-header>
         <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
-        <ion-item>
+        <ion-item lines="none">
           <ion-label>
-            {{ translate("Search for Products by Parent Name, SKU or UPC") }}
+            {{ translate("Search for products by parent name, SKU or UPC") }}
           </ion-label>
         </ion-item>
+        <ion-item lines="none">
+            <ion-thumbnail slot="start">
+              <dxp-image/>
+            </ion-thumbnail>
+            <ion-label>
+              product primary id
+            </ion-label>
+            <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProduct)">
+              <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
+              Add to count
+            </ion-button>
+          </ion-item>
+          <ion-item lines="none" button detail>
+            <ion-label>
+              {{ translate("View more results") }}
+            </ion-label>
+          </ion-item>
         <template v-if="searchedProduct">
           <ion-item lines="none">
             <ion-thumbnail>
@@ -34,53 +51,64 @@
           </ion-item>
         </template>
       </ion-card>
-      <ion-title>
-        <strong>{{ translate("Counted Items") }}</strong>
-      </ion-title>
-      <ion-card>
-        <ion-list v-if="products?.length">
-          <div v-for="product in products" :key="product.productId" class="ion-margin-vertical">
-            <ion-item lines="full">
-              <ion-thumbnail>
-                <img :src="product.mainImageUrl" />
+      <h2>
+        {{ translate("Counted Items") }}
+      </h2>
+
+      <ion-list class="pre-counted-items">
+        <ion-card>
+          <div class="item ion-padding-end">
+            <ion-item class="product" lines="none">
+              <ion-thumbnail slot="start">
+                <dxp-image/>
               </ion-thumbnail>
-              <ion-label color="dark">
-                {{ translate(product.sku) }}
+              <ion-label>
+                primary id
+                <p>secondary id</p>
+                <ion-text color="danger">
+                  Undirected
+                </ion-text>
               </ion-label>
-              <ion-input
-                :disabled="true"
-                slot="end"
-                size="small"
-                type="number"
-                placeholder="0"
-                v-model.number="product.selectedQuantity"
-              ></ion-input>
             </ion-item>
-            <ion-item v-if="product.quantityOnHand">
-              <ion-progress-bar
-                :color="product.selectedQuantity === product.quantityOnHand
-                  ? 'success'
-                  : product.selectedQuantity > product.quantityOnHand
-                  ? 'danger'
-                  : 'primary'"
-                :value="product.selectedQuantity / product.quantityOnHand"
-                class="ion-margin-horizontal"
-              ></ion-progress-bar>
-              <p slot="end">{{ product.quantityOnHand }}</p>
-            </ion-item>
+            <div class="quantity">
+              <ion-button fill="clear" color="medium" aria-label="decrease">
+                <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+              </ion-button>
+
+              <ion-item lines="full">
+                <ion-input label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0"></ion-input>
+              </ion-item>
+
+              <ion-button fill="clear" color="medium" aria-label="increase">
+                <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+              </ion-button>
+            </div>
           </div>
-        </ion-list>
-      </ion-card>
+
+          <div class="progress ion-padding">
+            <ion-progress-bar :value=".5"></ion-progress-bar>
+            <ion-label>
+              100 QoH
+            </ion-label>
+            <ion-button fill="clear" color="danger" aria-label="remove-item">
+              <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+        </ion-card>
+      </ion-list>
+      
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { translate } from '@/i18n';
-import { IonText, IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonNote, IonTitle, IonThumbnail } from '@ionic/vue';
+import { IonText, IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonNote, IonTitle, IonThumbnail, IonIcon, IonProgressBar } from '@ionic/vue';
+import { addCircleOutline, closeCircleOutline, removeCircleOutline } from 'ionicons/icons';
+import { DxpImage } from '@hotwax/dxp-components';
 
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { ref, defineProps } from 'vue';
+import { ref, defineProps, useSlots } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
@@ -215,3 +243,30 @@ async function addProductInPreCountedItems(product: any) {
 }
 
 </script>
+
+<style>
+
+.pre-counted-items { 
+  .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .quantity {
+      display: flex;
+    }
+  }
+
+  .progress {
+    display: flex;
+    gap: var(--spacer-sm);
+    align-items: center;
+    border-top: 1px solid var(--ion-color-medium);
+
+    ion-label {
+      flex: 1 0 max-content;
+    }
+  }
+}
+
+</style>
