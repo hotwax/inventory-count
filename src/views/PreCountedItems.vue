@@ -8,23 +8,18 @@
     </ion-header>
     <ion-content>
       <ion-card>
-        <ion-item lines="inset">
-          <ion-title>
-            Add Items
-          </ion-title>
-        </ion-item>
-        <ion-item lines="none">
-          <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
-        </ion-item>
+        <ion-card-header>
+          <ion-card-title>
+            {{ translate("Add Items") }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
         <ion-item>
-          <ion-thumbnail>
-            <img alt="Silhouette of mountains" src="https://ionicframework.com/docs/img/demos/thumbnail.svg" />
-          </ion-thumbnail>
           <ion-label>
             {{ translate("Search for Products by Parent Name, SKU or UPC") }}
           </ion-label>
         </ion-item>
-        <ion-card v-if="searchedProduct">
+        <template v-if="searchedProduct">
           <ion-item lines="none">
             <ion-thumbnail>
               <img :src="searchedProduct.mainImageUrl">
@@ -37,7 +32,7 @@
               {{ translate("Save") }}
             </ion-button>
           </ion-item>
-        </ion-card>
+        </template>
       </ion-card>
       <ion-title>
         <strong>{{ translate("Counted Items") }}</strong>
