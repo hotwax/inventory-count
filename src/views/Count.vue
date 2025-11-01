@@ -50,32 +50,59 @@
 
               <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                New
+                {{ translate("New") }}
               </ion-button>
             </ion-list-header>
             <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
-                Start new session
+                {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-              <ion-item :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
-                <ion-label>
-                  {{ session.countImportName }} {{ session.facilityAreaId }}
-                  <p>
-                    created by {{ session.uploadedByUserLogin }}
-                  </p>
-                </ion-label>
-                <ion-note slot="end">
-                  {{ getSessionStatusDescription(session.statusId) }}
-                </ion-note>
-              </ion-item>
-            </ion-item-group>
+                <ion-item v-if="session.lock.length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                  <ion-label>
+                    {{ session.countImportName }} {{ session.facilityAreaId }}
+                    <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
+                  </ion-label>
+                  <ion-note slot="end">
+                    {{ getSessionStatusDescription(session.statusId) }}
+                  </ion-note>
+                </ion-item>
+
+                <!-- Locked by another user -->
+                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId !== store.getters['user/getUserProfile']?.username">
+                  <ion-label>
+                    {{ session.countImportName }} {{ session.facilityAreaId }}
+                    <p>{{ translate("Session already active for") }} {{ session.lock[0].userId }}</p>
+                  </ion-label>
+                  <ion-note color="warning" slot="end">{{ translate("Locked") }}</ion-note>
+                </ion-item>
+
+                <!-- Locked by same user, same device -->
+                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                  <ion-label>
+                    {{ session.countImportName }} {{ session.facilityAreaId }}
+                    <p>{{ translate("Session already active for this device") }}</p>
+                  </ion-label>
+                  <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+                </ion-item>
+
+                <!-- Locked by same user, different device -->
+                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId !== currentDeviceId">
+                  <ion-label>
+                    {{ session.countImportName }} {{ session.facilityAreaId }}
+                    <p>{{ translate("Session already active on another device") }}</p>
+                  </ion-label>
+                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission('APP_PWA_STANDALONE_ACCESS')">
+                    {{ translate("Force Release") }}
+                  </ion-button>
+                </ion-item>
+              </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
               <ion-button expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
-                {{ translate("READY FOR REVIEW") }}
+                {{ translate("Ready for review") }}
               </ion-button>
             </ion-item>
           </ion-list>
@@ -89,18 +116,18 @@
                   <ion-icon :icon="closeOutline" slot="icon-only" />
                 </ion-button>
               </ion-buttons>
-              <ion-title>New session</ion-title>
+              <ion-title>{{ translate("New session") }}</ion-title>
             </ion-toolbar>
           </ion-header>
           <ion-content>
             <ion-item>
-              <ion-label position="stacked">Name</ion-label>
+              <ion-label position="stacked">{{ translate("Name") }}</ion-label>
               <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
-              <ion-note slot="helper">Add a name to help identify what inventory is counted in this session</ion-note>
+              <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
             </ion-item>
 
             <ion-list>
-              <ion-list-header>Area</ion-list-header>
+              <ion-list-header>{{ translate("Area") }}</ion-list-header>
 
               <ion-radio-group v-model="selectedArea">
                 <ion-item v-for="area in areas" :key="area.value">
@@ -116,7 +143,6 @@
             </ion-fab>
           </ion-content>
         </ion-modal>
-
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
@@ -165,8 +191,9 @@ import { useRouter } from 'vue-router';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { hasPermission } from '@/authorization';
 
-const { updateWorkEffort } = useInventoryCountImport();
+const { updateWorkEffort, releaseSession } = useInventoryCountImport();
 const store = useStore();
 const router = useRouter();
 const userStore = useUserStore();
@@ -183,6 +210,7 @@ const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const currentDeviceId = store.getters["user/getDeviceId"];
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -241,14 +269,16 @@ async function fetchCycleCounts(reset = false) {
     pageIndex.value = 0;
   }
 
-  const payload = {
+  const params = {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
-    currentStatusId: getStatusIdForCountsToBeFetched()
+    currentStatusId: getStatusIdForCountsToBeFetched(),
+    thruDate_op: "empty"
+    // userId: store.getters["user/getUserProfile"].username,
+    // deviceId: store.getters["user/getDeviceId"]
   };
-
-  await store.dispatch("count/getAssignedWorkEfforts", payload);
+  await store.dispatch("count/getAssignedWorkEfforts", params);
 }
 
 async function segmentChanged(value) {
@@ -383,6 +413,29 @@ async function markAsCompleted(workEffortId) {
     }
   } catch (err) {
     console.error("Error updating status:", err);
+  }
+}
+
+async function forceRelease(session) {
+  try {
+    const payload = {
+      inventoryCountImportId: session.inventoryCountImportId,
+      thruDate: Date.now(),
+      overrideByUserId: store.getters['user/getUserProfile']?.username
+    }
+
+    const resp = await releaseSession(payload)
+    if (resp?.status === 200) {
+      showToast('Session lock released successfully.')
+
+      // Remove lock locally so UI refreshes
+      session.lock = null
+    } else {
+      showToast('Failed to release session lock.')
+    }
+  } catch (err) {
+    console.error('Error releasing session lock:', err)
+    showToast('Something went wrong while releasing session.')
   }
 }
 </script>

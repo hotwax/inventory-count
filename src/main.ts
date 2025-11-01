@@ -38,6 +38,8 @@ import { dxpComponents } from '@hotwax/dxp-components'
 import { login, logout, loader } from './user-utils';
 import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getUserFacilities, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference } from '@/adapter';
 import localeMessages from './locales';
+import { db } from '@/database/commonDatabase'
+import { initDeviceId } from '@/utils/device'
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -100,6 +102,14 @@ app.config.globalProperties.$filters = {
 }
 
 
-router.isReady().then(() => {
+router.isReady().then(async () => {
+  try {
+    // Ensures the database is opened and schema initialized
+    await db.open()
+    await initDeviceId()
+    console.info('[IndexedDB] CommonDB initialized successfully')
+  } catch (error) {
+    console.error('[IndexedDB] Failed to open CommonDB:', error)
+  }
   app.mount('#app');
 });

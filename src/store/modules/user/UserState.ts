@@ -21,4 +21,5 @@ export default interface UserState {
     barcodeIdentificationPref: string;
   },
   isScrollingAnimationEnabled: boolean;
+  deviceId: string;
 }
