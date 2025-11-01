@@ -3,6 +3,7 @@ export default interface CountState {
   draftWorkEfforts: Array<any>,
   inReviewWorkEfforts: Array<any>,
   closedWorkEfforts: Array<any>,
+  list: Array<any>,
   total: number,
   isScrollable: boolean,
   query: {

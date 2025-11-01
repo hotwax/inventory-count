@@ -26,6 +26,9 @@ const getters: GetterTree<CountState, RootState> = {
   },
   isScrollable(state) {
     return state.isScrollable;
+  },
+  getList(state) {
+    return state.list ? JSON.parse(JSON.stringify(state.list)) : [];
   }
 };
 

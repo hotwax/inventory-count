@@ -15,11 +15,9 @@ import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
 import BulkUpload from "@/views/BulkUpload.vue";
-import Draft from "@/views/Draft.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
-import DraftDetail from "@/views/DraftDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
 
@@ -59,8 +57,8 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
-      if(hasPermission("APP_DRAFT_VIEW")) {
-        return "/draft"
+      if(hasPermission("APP_ASSIGNED_VIEW")) {
+        return "/assigned"
       }
       return "/tabs/count"
     },
@@ -86,30 +84,6 @@ const routes: Array<RouteRecordRaw> = [
       },
     ],
     beforeEnter: authGuard,
-  },
-  {
-    path: '/draft',
-    name: 'Draft',
-    component: Draft,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW",
-      showInMenu: true,
-      title: "Draft",
-      iosIcon: createOutline,
-      mdIcon: createOutline,
-    }
-  },
-  {
-    path: '/draft/:workEffortId',
-    name: 'DraftDetail',
-    component: DraftDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_DRAFT_VIEW"
-    }
   },
   {
     path: '/assigned',

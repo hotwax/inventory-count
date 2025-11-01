@@ -1,6 +1,7 @@
 import { MutationTree } from "vuex"	
 import CountState from "./CountState"
 import * as types from "./mutation-types"
+import { ToastPluginWeb } from "@capacitor/core";
 
 const mutations: MutationTree <CountState> = {
   [types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED](state, payload) {
@@ -28,6 +29,11 @@ const mutations: MutationTree <CountState> = {
     state.closedWorkEfforts = payload.closedWorkEfforts
     state.total = payload.total
     state.isScrollable = payload.isScrollable;
+  },
+  [types.COUNT_LIST_UPDATED] (state, payload) {
+    state.list = payload.list
+    state.total = payload.total
+    state.isScrollable = payload.isScrollable
   }
 }	
 export default mutations;	
