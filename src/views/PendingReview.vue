@@ -59,8 +59,9 @@ import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
 import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
+import { loader } from '@/user-utils';
 
-const cycleCounts = computed(() => store.getters["count/getInReviewCounts"])
+const cycleCounts = computed(() => store.getters["count/getList"])
 const isScrollable = computed(() => store.getters["count/isScrollable"])
 
 const isScrollingEnabled = ref(false);
@@ -68,11 +69,13 @@ const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
-  await fetchPendingCycleCounts()
+  await loader.present("Loading...");
+  await fetchPendingCycleCounts();
+  loader.dismiss();
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_CMPLTD'})
+  await store.dispatch("count/clearCycleCountList");
 })
 
 function enableScrolling() {

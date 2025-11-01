@@ -25,6 +25,10 @@
           <ion-chip outline>
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
+
+          <ion-item lines="none">
+            <ion-badge slot="end">{{ translate(count.currentStatusId) }}</ion-badge>
+          </ion-item>
         </div>
       </ion-list>
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
@@ -38,6 +42,7 @@
 import { translate } from '@/i18n';
 import router from '@/router';
 import store from '@/store';
+import { loader } from '@/user-utils';
 import { useUserStore } from '@hotwax/dxp-components';
 import { IonPage, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";
@@ -47,15 +52,17 @@ const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
-const cycleCounts = computed(() => store.getters["count/getClosedCounts"]);
+const cycleCounts = computed(() => store.getters["count/getList"]);
 const isScrollable = computed(() => store.getters["count/isScrollable"]);
 
 onIonViewDidEnter(async () => {
-  fetchClosedCycleCounts();
+  await loader.present("Loading...");
+  await fetchClosedCycleCounts();
+  loader.dismiss();
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_CLOSED'})
+  await store.dispatch("count/clearCycleCountList");
 })
 
 async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
@@ -64,7 +71,8 @@ async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    currentStatusId: "CYCLE_CNT_IN_CLOSED"
+    currentStatusId: "CYCLE_CNT_IN_CLOSED,CYCLE_CNT_IN_CNCL",
+    currentStatusId_op: "in"
   }
   await store.dispatch("count/getCycleCounts", payload);
 }

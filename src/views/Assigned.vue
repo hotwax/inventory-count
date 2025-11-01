@@ -60,9 +60,10 @@ import store from "@/store"
 import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 // import Filters from "@/components/Filters.vue"
 import router from "@/router"
+import { loader } from "@/user-utils";
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
-const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"])
+const cycleCounts = computed(() => store.getters["count/getList"])
 const isScrollable = computed(() => store.getters["count/isScrollable"])
 
 const isScrollingEnabled = ref(false);
@@ -70,11 +71,13 @@ const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
+  await loader.present("Loading...");
   await fetchAssignedCycleCount();
+  loader.dismiss();
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList", { workEffortStatusId: 'CYCLE_CNT_IN_PRGS'})
+  await store.dispatch("count/clearCycleCountList");
 })
 
 function enableScrolling() {
@@ -108,7 +111,8 @@ async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    currentStatusId: "CYCLE_CNT_IN_PRGS"
+    currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+    currentStatusId_op: "in"
   }
   await store.dispatch("count/getCycleCounts", payload)
 }
