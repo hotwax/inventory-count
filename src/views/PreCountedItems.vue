@@ -7,24 +7,83 @@
       </ion-toolbar>
     </ion-header>
     <ion-content>
-        <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
-        {{ workEffort?.workEfforName }}
-        <ion-list>
-          <ion-item lines="full" v-for="product in products" :key="product.productId">
-            <ion-label>
-              {{ translate(product.sku) }}
-              {{ translate(product.upc) }}              
+      <ion-card>
+        <ion-item lines="inset">
+          <ion-title>
+            Add Items
+          </ion-title>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-searchbar v-model="productstring" @keyup.enter="handleSearch"></ion-searchbar>
+        </ion-item>
+        <ion-item>
+          <ion-thumbnail>
+            <img alt="Silhouette of mountains" src="https://ionicframework.com/docs/img/demos/thumbnail.svg" />
+          </ion-thumbnail>
+          <ion-label>
+            {{ translate("Search for Products by Parent Name, SKU or UPC") }}
+          </ion-label>
+        </ion-item>
+        <ion-card v-if="searchedProduct">
+          <ion-item lines="none">
+            <ion-thumbnail>
+              <img :src="searchedProduct.mainImageUrl">
+            </ion-thumbnail>
+            <ion-label color="dark">
+                {{ translate(searchedProduct.sku) }}
             </ion-label>
-            <ion-input slot="end" size="small" type="number" placeholder="0"></ion-input>
+            <ion-input slot="end" size="small" type="number" placeholder="0" v-model.number="searchedProduct.selectedQuantity"></ion-input>
+            <!-- TODO: Add Click Event Here -->
+            <ion-button>
+              {{ translate("Save") }}
+            </ion-button>
           </ion-item>
+        </ion-card>
+      </ion-card>
+      <ion-title>
+        <strong>{{ translate("Counted Items") }}</strong>
+      </ion-title>
+      <ion-card>
+        <ion-list v-if="products?.length">
+          <div v-for="product in products" :key="product.productId" class="ion-margin-vertical">
+            <ion-item lines="full">
+              <ion-thumbnail>
+                <img :src="product.mainImageUrl" />
+              </ion-thumbnail>
+              <ion-label color="dark">
+                {{ translate(product.sku) }}
+              </ion-label>
+              <ion-input
+                :disabled="true"
+                slot="end"
+                size="small"
+                type="number"
+                placeholder="0"
+                v-model.number="product.selectedQuantity"
+              ></ion-input>
+            </ion-item>
+            <ion-item v-if="product.quantityOnHand">
+              <ion-progress-bar
+                :color="product.selectedQuantity === product.quantityOnHand
+                  ? 'success'
+                  : product.selectedQuantity > product.quantityOnHand
+                  ? 'danger'
+                  : 'primary'"
+                :value="product.selectedQuantity / product.quantityOnHand"
+                class="ion-margin-horizontal"
+              ></ion-progress-bar>
+              <p slot="end">{{ product.quantityOnHand }}</p>
+            </ion-item>
+          </div>
         </ion-list>
-      </ion-content>
+      </ion-card>
+    </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { translate } from '@/i18n';
-import { IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel } from '@ionic/vue';
+import { IonText, IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonNote, IonTitle, IonThumbnail } from '@ionic/vue';
 
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { ref, defineProps } from 'vue';
@@ -33,13 +92,18 @@ import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
 import store from '@/store';
 import { client } from '@/api';
+import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
+import { ProductService } from '@/services/ProductService';
 
-const { fetchWorkEffort, getInventoryCountImportSession } = useInventoryCountImport();
+const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport();
+
+const productIdentificationStore = useProductIdentificationStore();
 
 const workEffort = ref();
 const inventoryCountImport = ref();
-const searchedProductString = ref();
+const productstring = ref();
 const products = ref<any[]>([]);
+const searchedProduct = ref();
 
 const props = defineProps({
   workEffortId: String,
@@ -73,7 +137,7 @@ async function getInventoryCycleCount() {
 }
 
 async function handleSearch() {
-  if (!searchedProductString.value.trim()) {
+  if (!productstring.value.trim()) {
     return;
   }
   await getProducts();
@@ -83,16 +147,21 @@ async function getProducts() {
   await loader.present("Searching Product...");
   try {
     const resp = await fetchProducts({
-      keyword: searchedProductString.value.trim(),
+      docType: "PRODUCT",
       viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true"],
+      filters: ["isVirtual: false", "isVariant: true", `internalName: ${productstring.value.trim()}`],
     });
 
-    if (!hasError(resp)) {
-      products.value.push(resp.data.response.docs?.[0]);
+    if (resp && !hasError(resp) && resp.data) {
+      searchedProduct.value = resp.data.response.docs?.[0];
+      console.log("This is searched product: ", searchedProduct.value);
+      if (!searchedProduct.value) {
+        showToast(`Product Not Found by ${productstring.value}`);
+      }
     }
   } catch (err) {
     console.error("Failed to fetch products", err);
+    showToast("Something Went Wrong");
   }
   loader.dismiss();
 }
@@ -111,5 +180,42 @@ const fetchProducts = async (query: any): Promise<any> => {
     },
   });
 };
+
+// async function addProductInScanEvent(product: any) {
+//   await loader.present("Loading...");
+//   try {
+//     const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
+//     console.log(product.productId, " and ", productIdentifierPref.primaryId, " and ", getProductIdentificationValue(productIdentifierPref.primaryId, product), " and ", product.productId);
+//     await recordScan({
+//       inventoryCountImportId: props.inventoryCountImportId as string,
+//       productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
+//       quantity: product.selectedQuantity,
+//     });
+//     if (products.value?.length > 0) {
+//       const existingProduct = products.value.find(p => p.productId === product.productId);
+//       console.log();
+//       if (existingProduct) {
+//         existingProduct.selectedQuantity += product.selectedQuantity;
+//       }
+//     } else {
+//       products.value.push(product);
+//     }
+
+//     const currentFacility: any = useUserStore().getCurrentFacility;
+//     const qohResp = await ProductService.fetchProductStock({
+//       productId: product.productId,
+//       facilityId: currentFacility.facilityId
+//     } as any);
+
+//     if (qohResp?.status === 200 && qohResp.data?.qoh) {
+//       product.quantityOnHand = qohResp.data?.qoh;
+//     }
+//   } catch (error) {
+//     console.error("Error Adding Product to Scan Event: ", error);
+//   }
+//   searchedProduct.value = null;
+//   showToast(translate("Item Count Saved"));
+//   loader.dismiss();
+// }
 
 </script>

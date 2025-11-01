@@ -174,7 +174,10 @@ const routes: Array<RouteRecordRaw> = [
     path: '/add-pre-counted/:workEffortId/:inventoryCountImportId',
     name: 'PreCountedItems',
     component: PreCountedItems,
-    props: true
+    props: true,
+    meta: {
+      permissionId: "APP_COUNT_VIEW"
+    }
   },
   {
     path: '/bulkUpload',
