@@ -33,7 +33,7 @@
                 {{ translate(searchedProduct.sku) }}
             </ion-label>
             <ion-input min=1 slot="end" size="small" type="number" placeholder="0" v-model.number="searchedProduct.selectedQuantity"></ion-input>
-            <ion-button @click="addProductInScanEvent(searchedProduct)">
+            <ion-button @click="addProductInPreCountedItems(searchedProduct)">
               {{ translate("Save") }}
             </ion-button>
           </ion-item>
@@ -180,7 +180,7 @@ const fetchProducts = async (query: any): Promise<any> => {
   });
 };
 
-async function addProductInScanEvent(product: any) {
+async function addProductInPreCountedItems(product: any) {
   await loader.present("Loading...");
   try {
     if (searchedProductString.value) searchedProductString.value = null;
