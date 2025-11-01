@@ -2,7 +2,11 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" @click="router.push(`/session-count-detail/${props.workEffortId}/${workEffort?.workEffortPurposeTypeId}/${props.inventoryCountImportId}`)"/>
+        <ion-buttons slot="start">
+          <ion-button @click="confirmGoBack">
+            <ion-icon :icon="arrowBackOutline" />
+          </ion-button>
+        </ion-buttons>
         <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -19,76 +23,59 @@
             {{ translate("Search for products by parent name, SKU or UPC") }}
           </ion-label>
         </ion-item>
-        <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <dxp-image/>
-            </ion-thumbnail>
-            <ion-label>
-              product primary id
-            </ion-label>
-            <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProduct)">
-              <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-              Add to count
-            </ion-button>
-          </ion-item>
-          <ion-item lines="none" button detail>
-            <ion-label>
-              {{ translate("View more results") }}
-            </ion-label>
-          </ion-item>
-        <template v-if="searchedProduct">
-          <ion-item lines="none">
-            <ion-thumbnail>
-              <img :src="searchedProduct.mainImageUrl">
-            </ion-thumbnail>
-            <ion-label color="dark">
-                {{ translate(searchedProduct.sku) }}
-            </ion-label>
-            <ion-input min=1 slot="end" size="small" type="number" placeholder="0" v-model.number="searchedProduct.selectedQuantity"></ion-input>
-            <ion-button @click="addProductInPreCountedItems(searchedProduct)">
-              {{ translate("Save") }}
-            </ion-button>
-          </ion-item>
-        </template>
+        <ion-item v-if="searchedProduct" lines="none">
+          <ion-thumbnail slot="start">  
+            <dxp-image :src="searchedProduct.mainImageUrl"/>
+          </ion-thumbnail>
+          <ion-label>
+            {{ translate(searchedProduct.sku) }}
+          </ion-label>
+          <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProduct)">
+            <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
+            Add to count
+          </ion-button>
+        </ion-item>
+        <ion-item lines="none" button detail>
+          <ion-label>
+            {{ translate("View more results") }}
+          </ion-label>
+        </ion-item>
       </ion-card>
       <h2>
         {{ translate("Counted Items") }}
       </h2>
 
-      <ion-list class="pre-counted-items">
-        <ion-card>
+      <ion-list v-if="products.length > 0" class="pre-counted-items">
+        <ion-card v-for="product in products" :key="product.productId">
           <div class="item ion-padding-end">
             <ion-item class="product" lines="none">
               <ion-thumbnail slot="start">
-                <dxp-image/>
+                <dxp-image :src="product.mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                primary id
-                <p>secondary id</p>
+                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) }}
+                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
                 <ion-text color="danger">
                   Undirected
                 </ion-text>
               </ion-label>
             </ion-item>
             <div class="quantity">
-              <ion-button fill="clear" color="medium" aria-label="decrease">
+              <ion-button fill="clear" color="medium" aria-label="decrease" @click="product.countedQuantity--">
                 <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
-
               <ion-item lines="full">
-                <ion-input label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0"></ion-input>
+                <ion-input @keyup.enter="addPreCountedItemInScanEvents(product)" label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0" v-model.number="product.countedQuantity"></ion-input>
               </ion-item>
-
-              <ion-button fill="clear" color="medium" aria-label="increase">
+              <ion-button fill="clear" color="medium" aria-label="increase" @click="product.countedQuantity++">
                 <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
           </div>
-
           <div class="progress ion-padding">
-            <ion-progress-bar :value=".5"></ion-progress-bar>
+            <ion-progress-bar :value="product.countedQuantity ? product.countedQuantity/product.quantityOnHand : 0"></ion-progress-bar>
             <ion-label>
-              100 QoH
+              {{ product.quantityOnHand }}
             </ion-label>
             <ion-button fill="clear" color="danger" aria-label="remove-item">
               <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
@@ -96,19 +83,25 @@
           </div>
         </ion-card>
       </ion-list>
-      
     </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-button slot="end" :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="success" size="small" @click="addAllProductsToScanEvents">
+          Save
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { translate } from '@/i18n';
-import { IonText, IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonNote, IonTitle, IonThumbnail, IonIcon, IonProgressBar } from '@ionic/vue';
-import { addCircleOutline, closeCircleOutline, removeCircleOutline } from 'ionicons/icons';
+import { IonText, IonPage, IonToolbar, IonContent, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonNote, IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController } from '@ionic/vue';
+import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons';
 import { DxpImage } from '@hotwax/dxp-components';
 
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { ref, defineProps, useSlots } from 'vue';
+import { ref, defineProps, useSlots, watch, computed } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
@@ -120,11 +113,13 @@ import { ProductService } from '@/services/ProductService';
 const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport();
 
 const productIdentificationStore = useProductIdentificationStore();
+const userStore = useUserStore();
 
 const workEffort = ref();
 const inventoryCountImport = ref();
 const searchedProductString = ref();
 const products = ref<any[]>([]);
+const hasUnsavedProducts = computed(() => products.value.some(p => p.saved !== true))
 const searchedProduct = ref();
 
 const props = defineProps({
@@ -171,12 +166,11 @@ async function getProducts() {
     const resp = await fetchProducts({
       docType: "PRODUCT",
       viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true", `internalName: ${searchedProductString.value.trim()}`],
+      filters: ["isVirtual: false", "isVariant: true", `(sku: ${searchedProductString.value.trim()} OR internalName: ${searchedProductString.value.trim()} OR upc: ${searchedProductString.value.trim()})`],
     });
 
     if (resp && !hasError(resp) && resp.data) {
       searchedProduct.value = resp.data.response.docs?.[0];
-      console.log("This is searched product: ", searchedProduct.value);
       if (!searchedProduct.value) {
         showToast(`Product Not Found by ${searchedProductString.value}`);
       }
@@ -207,27 +201,33 @@ async function addProductInPreCountedItems(product: any) {
   await loader.present("Loading...");
   try {
     if (searchedProductString.value) searchedProductString.value = null;
-    const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
-    console.log(product.productId, " and ", productIdentifierPref.primaryId, " and ", getProductIdentificationValue(productIdentifierPref.primaryId, product), " and ", product.productId);
-    await recordScan({
-      inventoryCountImportId: props.inventoryCountImportId as string,
-      productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
-      quantity: product.selectedQuantity,
-    });
-    if (products.value?.length > 0) {
-      const existingProduct = products.value.find(p => p.productId === product.productId);
-      console.log("This is Existing Product: ", existingProduct);
-      if (existingProduct) {
-        existingProduct.selectedQuantity += product.selectedQuantity;
-      } else {
-        products.value.push(product);
-      }
-    } else {
-      products.value = [product];
-    }
     searchedProduct.value = null;
-    const currentFacility: any = useUserStore().getCurrentFacility;
-    const qohResp = await ProductService.fetchProductStock({
+    const existingProduct = products.value.find(p => p.productId === product.productId);
+    if (!existingProduct) {
+      products.value.push(product);
+    }
+    product.countedQuantity = 0;
+    product.saved = false;
+    await setProductQoh(product);
+  } catch (error) {
+    console.error("Error Adding Product to Scan Event: ", error);
+  }
+  loader.dismiss();
+}
+
+async function addPreCountedItemInScanEvents (product: any) {
+  const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
+  await recordScan({
+    inventoryCountImportId: props.inventoryCountImportId as string,
+    productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
+    quantity: product.countedQuantity,
+  });
+  product.saved = true;
+}
+
+async function setProductQoh (product: any) {
+  const currentFacility: any = userStore.getCurrentFacility;
+  const qohResp = await ProductService.fetchProductStock({
       productId: product.productId,
       facilityId: currentFacility.facilityId
     } as any);
@@ -235,11 +235,43 @@ async function addProductInPreCountedItems(product: any) {
     if (qohResp?.status === 200 && qohResp.data?.qoh) {
       product.quantityOnHand = qohResp.data?.qoh;
     }
+}
+
+async function addAllProductsToScanEvents() {
+  try {
+    for (const product of products.value) {
+      if (product.countedQuantity > 0) {
+        await addPreCountedItemInScanEvents(product);
+      }
+    }
   } catch (error) {
-    console.error("Error Adding Product to Scan Event: ", error);
+    console.error("Something Wnet Wrong");
   }
-  showToast(translate("Item Count Saved"));
-  loader.dismiss();
+}
+
+async function confirmGoBack() {
+  if (products.value.length === 0 || !hasUnsavedProducts.value) {
+    router.back();
+    return;
+  }
+  const alert = await alertController.create({
+    header: 'Leave this page?',
+    message: 'Any unsaved changes will be lost.',
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel'
+      },
+      {
+        text: 'Save and Go back',
+        handler: async () => {
+          await addAllProductsToScanEvents();
+          router.back();
+        }
+      }
+    ]
+  })
+  await alert.present()
 }
 
 </script>
