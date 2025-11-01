@@ -109,7 +109,7 @@
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>{{ translate("Pending match scans") }}</ion-label>
-                  <p slot="end">{{events.filter(e => e.aggApplied === 0).length}}</p>
+                  <p slot="end">{{events.filter((e: any) => e.aggApplied === 0).length}}</p>
                 </ion-item>
                 <ion-item>
                   <ion-label>{{ translate("Unmatched scans") }}</ion-label>
@@ -467,7 +467,7 @@ import {
   onIonViewDidEnter
 } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watchEffect, toRaw } from 'vue';
+import { ref, computed, defineProps, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
@@ -486,7 +486,21 @@ import { loader } from '@/user-utils';
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { recordScan, getScanEvents, loadInventoryItemsFromBackend, getUnmatchedItems, getCountedItems, getUncountedItems, getUndirectedItems, updateSession, getInventoryCountImportSession, searchInventoryItemsByIdentifier } = useInventoryCountImport();
+const {
+  recordScan,
+  getScanEvents,
+  loadInventoryItemsFromBackend,
+  getUnmatchedItems,
+  getCountedItems,
+  getUncountedItems,
+  getUndirectedItems,
+  updateSession,
+  getInventoryCountImportSession,
+  searchInventoryItemsByIdentifier,
+  getSessionLock,
+  lockSession,
+  releaseSession
+} = useInventoryCountImport();
 const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
 const store = useStore();
 
@@ -511,6 +525,8 @@ const inventoryCountImport = ref();
 const newCountName = ref();
 const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
+const currentDeviceId = store.getters["user/getDeviceId"];
+const currentLock = ref<any>(null);
 
 
 const pageRef = ref(null);
@@ -539,6 +555,7 @@ onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
   try {
     init();
+    await handleSessionLock();
     await startSession();
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     from(getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
@@ -603,6 +620,11 @@ onIonViewDidEnter(async () => {
   }
   loader.dismiss();
 
+});
+
+onBeforeUnmount(async () => {
+  await finalizeAggregationAndSync();
+  await unscheduleWorker();
 });
 
 function openEditSessionModal() {
@@ -685,6 +707,79 @@ function handleScan() {
   }
 }
 
+async function handleSessionLock() {
+  try {
+    const userId = store.getters['user/getUserProfile']?.username;
+    const inventoryCountImportId = props.inventoryCountImportId;
+    const currentDeviceId = store.getters['user/getDeviceId'];
+
+    // Fetch existing lock
+    const existingLockResp = await getSessionLock({
+      inventoryCountImportId,
+      deviceId: currentDeviceId,
+      userId: store.getters['user/getUserProfile']?.username,
+      // thruDate_op: 'empty'
+    });
+    const existingLock = existingLockResp?.data ? existingLockResp.data[0] : null;
+    currentLock.value = existingLock;
+
+    if (existingLock) {
+      if (existingLock.userId !== userId || existingLock.deviceId !== currentDeviceId) {
+        // Different user → lock session
+        sessionLocked.value = true;
+        showToast('This session is locked by another user.');
+        return;
+      }
+      // Same user + same device → continue
+      sessionLocked.value = false;
+      return;
+    }
+
+    // No lock found → create new one
+    const newLockResp = await lockSession({
+      inventoryCountImportId,
+      userId,
+      deviceId: currentDeviceId,
+      fromDate: Date.now()
+    });
+
+    if (newLockResp?.status === 200) {
+      currentLock.value = newLockResp.data;
+      showToast('Session lock acquired.');
+    } else {
+      sessionLocked.value = true;
+      showToast('Failed to acquire lock.');
+    }
+  } catch (err) {
+    console.error('Error handling session lock:', err);
+    sessionLocked.value = true;
+    showToast('Error while acquiring session lock.');
+  }
+}
+
+/** Releases the active lock */
+async function releaseSessionLock() {
+  if (!currentLock.value) return;
+
+  try {
+    const payload = {
+      inventoryCountImportId: props.inventoryCountImportId,
+      userId: store.getters['user/getUserProfile']?.username,
+      thruDate: Date.now()
+    };
+
+    const resp = await releaseSession(payload);
+    if (resp?.status === 200) {
+      showToast('Session lock released.');
+      currentLock.value = null;
+    } else {
+      showToast('Failed to release session lock.');
+    }
+  } catch (err) {
+    console.error('Error releasing session lock:', err);
+    showToast('Error while releasing session lock.');
+  }
+}
 
 function timeAgo(ts: number) {
   return dayjs(ts).fromNow();
@@ -794,8 +889,8 @@ async function saveMatchProduct() {
     isRequested: 'Y',
   };
 
-  const plainItem = structuredClone(toRaw(matchedItem.value));
-  const plainContext = structuredClone(context);
+  const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
+  const plainContext = JSON.parse(JSON.stringify(context));
 
   try {
     const result = await inventorySyncWorker.matchProductLocallyAndSync(
@@ -804,7 +899,6 @@ async function saveMatchProduct() {
       selectedProductId.value,
       plainContext
     );
-    console.log("Match product result:", result);
     if (result.success) {
       showToast("Product matched successfully");
       closeMatchModal();
@@ -816,10 +910,70 @@ async function saveMatchProduct() {
   }
 }
 
+async function finalizeAggregationAndSync() {
+  try {
+    if (!aggregationWorker) return;
+
+    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
+    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+
+    const context = {
+      omsUrl: omsInfo.url,
+      userLoginId: store.getters['user/getUserProfile']?.username,
+      maargUrl: store.getters['user/getBaseUrl'],
+      token: omsInfo.token,
+      barcodeIdentification,
+      inventoryCountTypeId: props.inventoryCountTypeId
+    };
+
+    aggregationWorker.postMessage({
+      type: 'aggregate',
+      payload: {
+        workEffortId: props.workEffortId,
+        inventoryCountImportId: props.inventoryCountImportId,
+        context
+      }
+    });
+
+    // Wait until the worker confirms completion
+    const result = await new Promise<number>((resolve) => {
+      const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
+      aggregationWorker!.onmessage = (e) => {
+        const { type, count } = e.data;
+        if (type === 'aggregationComplete') {
+          clearTimeout(timeout);
+          resolve(count);
+        }
+      };
+    });
+
+    return result;
+  } catch (err) {
+    console.error('[Session] Error during final aggregation:', err);
+    return 0;
+  }
+}
+
+/** Stop background worker schedule and terminate */
+async function unscheduleWorker() {
+  try {
+    if (aggregationWorker) {
+      console.log('[Session] Terminating background aggregation worker...');
+      aggregationWorker.terminate();
+      aggregationWorker = null;
+    }
+  } catch (err) {
+    console.error('[Session] Failed to terminate worker:', err);
+  }
+}
+
 async function submit() {
   try {
+    await finalizeAggregationAndSync();
     await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
+    await releaseSessionLock();
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -829,8 +983,10 @@ async function submit() {
 
 async function discard() {
   try {
+    await finalizeAggregationAndSync();
     await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED' });
     inventoryCountImport.value.statusId = 'SESSION_VOIDED';
+    await releaseSessionLock();
     showToast('Session discarded');
   } catch (err) {
     console.error(err);

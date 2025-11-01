@@ -6,8 +6,6 @@ import { JsonToCsvOption } from '@/types';
 import Papa from 'papaparse'
 import { useUserStore } from '@hotwax/dxp-components';
 
-const cycleCountStats = (id: string) => store.getters["count/getCycleCountStats"](id)
-
 const dateOrdinalSuffix = {
   1: 'st',
   21: 'st',
@@ -60,29 +58,7 @@ function convertIsoToMillis(isoDate: any, rangeSuffix?: string) {
   return rangeSuffix === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
 }
 
-const getDerivedStatusForCount = (count: any) => {
-  const countStats = cycleCountStats(count.inventoryCountImportId)
 
-  const history = countStats?.statusHistory
-  if(!history) {
-    return "-";
-  }
-
-  const countAssignedStatus = history.filter((status: any) => status.statusId === "INV_COUNT_ASSIGNED")
-  const countReviewStatus = history.filter((status: any) => status.statusId === "INV_COUNT_REVIEW")
-
-  if(countReviewStatus?.length > 1) {
-    return { label: "Re-submitted", color: "danger" }
-  } else if(countAssignedStatus?.length > 1 && countReviewStatus?.length >= 1) {
-    return { label: "Recount requested", color: "danger" }
-  } else if(countReviewStatus?.length === 1) {
-    return { label: "Submitted", color: "primary" }
-  } else if(countAssignedStatus?.length === 1) {
-    return { label: "Assigned", color: "primary" }
-  } else {
-    return { label: "-", color: "primary" }
-  }
-}
 
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
@@ -95,15 +71,6 @@ function timeFromNow(time: any) {
   if(!time) return "-"
   const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
   return DateTime.local().plus(timeDiff).toRelative();
-}
-
-function getCycleCountStats(id: string, isHardCount = false) {
-  const stats = cycleCountStats(id)
-  if(stats) {
-    return isHardCount ? `${stats.itemCounted}` : `${stats.itemCounted}/${stats.totalItems}`
-  } else {
-    return isHardCount ? "0" : "0/0"
-  }
 }
 
 function getFacilityName(id: string) {
@@ -192,4 +159,4 @@ const  getValidItems = (items: any) => {
   return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
 }
 
-export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getCycleCountStats, getDateTime, getDateWithOrdinalSuffix, getDerivedStatusForCount, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }

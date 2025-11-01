@@ -136,7 +136,7 @@ const actions: ActionTree<UserState, RootState> = {
     this.dispatch('product/clearCachedProducts')
 
     // Clear indexedDB storage on logout
-    deleteDB("cycleCounts");
+    // deleteDB("cycleCounts");
 
     emitter.emit('dismissLoader')
   },
@@ -166,6 +166,11 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
   },
+
+    setDeviceId({ commit }, payload) {
+      commit(types.USER_DEVICE_ID_UPDATED, payload)
+  },
+
 
   async updateCurrentFacility({ dispatch }, facility) {
     const previousEComStoreId = getProductStoreId()

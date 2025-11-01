@@ -42,6 +42,9 @@ const mutations: MutationTree <UserState> = {
   },
   [types.USER_ENABLE_SCROLLING_ANIMATION_UPDATED] (state, payload) {
     state.isScrollingAnimationEnabled = payload
-  }
+  },
+  [types.USER_DEVICE_ID_UPDATED](state, payload) {
+    state.deviceId = payload.deviceId;
+  },
 }
 export default mutations;

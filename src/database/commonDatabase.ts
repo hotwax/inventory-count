@@ -38,11 +38,17 @@ export interface ScanEvent {
   aggApplied: number
 }
 
+export interface AppPreferences {
+  key: string
+  value: string
+}
+
 class CommonDB extends Dexie {
   products!: Table<Product, string>
   productIdents!: Table<{ productId: string; identKey: string; value: string }, [string, string]>
   inventoryCountRecords!: Table<InventoryCountImportItem, [string, string]>
   scanEvents!: Table<ScanEvent, number>
+  appPreferences!: Table<AppPreferences, string>
 
   constructor() {
     super('CommonDB')
@@ -50,7 +56,8 @@ class CommonDB extends Dexie {
       products: 'productId, updatedAt',
       productIdents: '[productId+identKey], identKey, value',
       inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested',
-      scanEvents: '++id, inventoryCountImportId, aggApplied'
+      scanEvents: '++id, inventoryCountImportId, aggApplied',
+      appPreferences: 'key'
     })
   }
 }

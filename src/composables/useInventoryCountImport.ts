@@ -4,39 +4,7 @@ import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
 import api from '@/api';
 import { v4 as uuidv4 } from 'uuid';
-
-/**
- * Schema definitions
- */
-
-interface ScanEvent {
-  id?: number;
-  scannedValue?: string;
-  inventoryCountImportId: string;
-  locationSeqId?: string | null;
-  quantity: number;
-  createdAt: number; // millis
-  aggApplied: number;
-}
-
-interface InventoryCountImportItem {
-  // merged fields from InventoryCountImportItem + InventoryCountImport
-  inventoryCountImportId: string;
-  productId: string | null;
-  uuid: string;
-  productIdentifier: string;
-  locationSeqId?: string | null;
-  quantity: number;
-  status: 'active' | 'closed';
-  facilityId: string;
-  createdAt: number; // millis
-  lastScanAt: number; // millis
-  lastUpdatedAt?: number;
-  lastSyncedAt?: number | null;
-  lastSyncedBatchId?: string | null;
-  aggApplied?: number;
-  isRequested?: string;
-}
+import { db, ScanEvent, InventoryCountImportItem } from '@/database/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -44,8 +12,6 @@ interface RecordScanParams {
   quantity: number;
   locationSeqId?: string | null;
 }
-
-import { db } from '@/database/commonDatabase'
 
 /**
  * Utility Functions
@@ -70,25 +36,6 @@ export function useInventoryCountImport() {
     currentImport.value = session || null;
   }
 
-  /** Creates a new inventory import session */
-  // async function createSession(inventoryCountImportId: string, facilityId: string): Promise<void> {
-   /* Implementation yet to be done
-    const now = currentMillis();
-    const session: InventoryCountImportItem = {
-      inventoryCountImportId,
-      productId: null,
-      uuid: '',
-      productIdentifier: '',
-      quantity: 0,
-      status: 'active',
-      facilityId,
-      createdAt: now,
-      lastScanAt: now
-    };
-    await db.inventoryCountRecords.put(session);
-    currentImport.value = session; */
-  // }
-
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
@@ -106,7 +53,7 @@ export function useInventoryCountImport() {
   async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
     try {
       const resp = await api({
-        url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
+        url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
         method: 'GET',
         params: {pageSize:500}
       });
@@ -170,14 +117,14 @@ export function useInventoryCountImport() {
   let tableQuery = db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
 
-  // you can filter by type if needed (based on your existing logic)
-  // for example:
   if (segment === 'counted') {
     tableQuery = tableQuery.and(r => r.quantity > 0)
   } else if (segment === 'uncounted') {
     tableQuery = tableQuery.and(r => r.quantity === 0)
   } else if (segment === 'undirected') {
     tableQuery = tableQuery.and(r => r.isRequested === 'N')
+  } else if (segment === 'unmatched') {
+    tableQuery = tableQuery.and(r => !r.productId)
   }
 
   const results = await tableQuery
@@ -373,7 +320,7 @@ const addSessionInCount = async (payload: any): Promise<any> => {
 
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
   return await api({
-    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${params.inventoryCountImportId}`,
+    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}`,
     method: 'get',
     params
   });
@@ -422,7 +369,7 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
 async function discardSession(inventoryCountImportId: string): Promise<void> {
   try {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}`,
+      url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
         statusId: 'SESSION_VOIDED'
@@ -437,7 +384,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
 async function submitSession(inventoryCountImportId: string): Promise<void> {
   try {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}`,
+      url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
         statusId: 'SESSION_SUBMITTED'
@@ -467,7 +414,7 @@ const updateWorkEffort = async (payload: any): Promise <any> => {
 
 const updateSession = async (payload: any): Promise <any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${payload.inventoryCountImportId}`,
+    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}`,
     method: "put",
     data: payload
   })
@@ -475,7 +422,7 @@ const updateSession = async (payload: any): Promise <any> => {
 
 const cloneSession = async (payload: any): Promise <any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${payload.inventoryCountImportId}/cloneDirectedCount`,
+    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/cloneDirectedCount`,
     method: "post",
     data: payload
   })
@@ -483,9 +430,33 @@ const cloneSession = async (payload: any): Promise <any> => {
 
 const getSessionItemsByImportId = async (inventoryCountImportId: string): Promise<any> => {
   return await api({
-    url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
+    url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
     method: 'GET',
     params: {pageSize:500}
+  });
+}
+
+const getSessionLock = async (params: any): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/lock`,
+    method: 'GET',
+    params
+  });
+}
+
+const lockSession = async (payload: any): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/lock`,
+    method: 'POST',
+    data: payload
+  });
+}
+
+const releaseSession = async (payload: any): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/release`,
+    method: 'PUT',
+    data: payload
   });
 }
     
@@ -496,7 +467,6 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
     createSessionOnServer,
     syncStatus,
     loadSession,
-    // createSession,
     recordScan,
     loadInventoryItemsFromBackend,
     getInventoryRecordsFromIndexedDB,
@@ -523,6 +493,9 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
     cloneSession,
     getSessionItemsByImportId,
     getScanEvents,
-    searchInventoryItemsByIdentifier
+    searchInventoryItemsByIdentifier,
+    getSessionLock,
+    lockSession,
+    releaseSession
   };
 }
