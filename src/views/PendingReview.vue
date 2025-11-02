@@ -109,7 +109,7 @@ async function fetchPendingCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    currentStatusId: "CYCLE_CNT_IN_CMPLTD"
+    currentStatusId: "CYCLE_CNT_CMPLTD"
   }
   await store.dispatch("count/getCycleCounts", payload)
 }
