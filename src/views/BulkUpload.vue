@@ -185,7 +185,6 @@
 
 <script setup>
 import {
-  IonBackButton,
   IonButton,
   IonChip,
   IonContent,

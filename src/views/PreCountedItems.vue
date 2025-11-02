@@ -10,7 +10,7 @@
       <ion-card>
         <ion-item lines="inset">
           <ion-title>
-            Add Items
+            {{ translate("Add Items") }}
           </ion-title>
         </ion-item>
         <ion-item lines="none">

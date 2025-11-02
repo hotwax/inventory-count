@@ -44,7 +44,7 @@ import router from '@/router';
 import store from '@/store';
 import { loader } from '@/user-utils';
 import { useUserStore } from '@hotwax/dxp-components';
-import { IonPage, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { computed, ref } from 'vue';
 
@@ -71,7 +71,7 @@ async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
   const payload = {
     pageSize,
     pageIndex,
-    currentStatusId: "CYCLE_CNT_IN_CLOSED,CYCLE_CNT_IN_CNCL",
+    currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
     currentStatusId_op: "in"
   }
   await store.dispatch("count/getCycleCounts", payload);

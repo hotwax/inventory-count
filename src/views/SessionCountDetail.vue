@@ -34,7 +34,7 @@
             <ion-list>
               <ion-item v-for="event in events" :key="event.id" :class="{ unaggregated: event.aggApplied === 0 }">
                 <ion-thumbnail slot="start">
-                  <Image v-if="event.matched && event.product" :src="event.product.mainImageUrl" />
+                  <Image :src="event.product?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-badge class="scan-badge">{{ event.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
                 <ion-label>
@@ -162,7 +162,7 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -175,13 +175,13 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in uncountedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -198,7 +198,7 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -211,13 +211,13 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in undirectedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -237,66 +237,87 @@
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
                   </ion-item>
-
-                  <ion-item>
+                  <!-- Previous good scan -->
+                  <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ primaryId(item.product) }}</p>
-                      <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.productIdentifier }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
+                  </ion-item>
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
+                    <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
                 </ion-card>
               </template>
 
-              <!-- When no filtered results found for entered keyword -->
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding ion-text-center">
-                  <ion-icon :icon="searchOutline" class="ion-margin-bottom" size="large"></ion-icon>
-                  <ion-label>No products found for "{{ searchKeyword }}"</ion-label>
+                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
-              <!-- Default list when no search is active -->
               <template v-else>
                 <ion-card v-for="item in unmatchedItems" :key="item.uuid">
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
                   </ion-item>
-
-                  <ion-item>
+                  <!-- Previous good scan -->
+                  <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ primaryId(item.product) }}</p>
-                      <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.productIdentifier }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
+                  </ion-item>
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
+                    <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
                 </ion-card>
               </template>
@@ -307,12 +328,12 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
                       <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
+                      <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -320,18 +341,18 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in countedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
                       <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
+                      <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -355,13 +376,13 @@
           <ion-searchbar v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
           <div v-if="isLoading" class="empty-state ion-padding">
             <ion-spinner name="crescent" />
-            <ion-label>Searching for "{{ queryString }}"</ion-label>
+            <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
           </div>
           <template v-else-if="isSearching && products.length">
             <ion-radio-group v-model="selectedProductId">
               <ion-item v-for="product in products" :key="product.productId">
                 <ion-thumbnail slot="start">
-                  <Image v-if="product.mainImageUrl" :src="product.mainImageUrl" />
+                  <Image :src="product?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
@@ -376,7 +397,7 @@
             </ion-radio-group>
           </template>
           <div v-else-if="queryString && isSearching && !products.length" class="empty-state ion-padding">
-            <p>No results found for "{{ queryString }}"</p>
+            <p>{{ translate("No results found for") }} "{{ queryString }}"</p>
           </div>
           <div v-else class="empty-state ion-padding">
             <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -468,7 +489,7 @@ import {
   onIonViewDidEnter
 } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watchEffect, toRaw, onBeforeUnmount } from 'vue';
+import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
@@ -575,6 +596,11 @@ onIonViewDidEnter(async () => {
         totalUnits,
         unmatched: unmatchedItems.value.length
       }
+    })
+
+    watch(selectedSegment, () => {
+      searchKeyword.value = ""
+      filteredItems.value = []
     })
     // Start the background aggregation worker and schedule periodic aggregation
     aggregationWorker = new Worker(
@@ -943,6 +969,7 @@ async function finalizeAggregationAndSync() {
       aggregationWorker!.onmessage = (e) => {
         const { type, count } = e.data;
         if (type === 'aggregationComplete') {
+          console.log(`Aggregated ${count} products from scans`)
           clearTimeout(timeout);
           resolve(count);
         }
@@ -1022,6 +1049,54 @@ async function handleIndexedDBSearch() {
 function clearSearchResults() {
   searchKeyword.value = ''
   filteredItems.value = []
+}
+
+function getScanContext(item: any) {
+  if (!item || !item.productIdentifier || !events.value?.length) return {}
+
+  // newest → oldest
+  const sortedScans = [...events.value].sort(
+    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
+  )
+
+  // find the actual unmatched scan (by scannedValue, not id)
+  const index = sortedScans.findIndex(
+    (e) => e.scannedValue === item.productIdentifier
+  )
+  if (index === -1) return {}
+
+  //since list is newest → oldest, index itself is "X scans ago"
+  const scansAgo = index
+
+  //previous good scan = closest NEWER good scan (i.e. walk backwards: index-1 → 0)
+  let previousGood: any = null
+  let previousGoodIndex = -1
+  for (let i = index - 1; i >= 0; i--) {
+    if (sortedScans[i]?.productId) {
+      previousGood = sortedScans[i]
+      previousGoodIndex = i
+      break
+    }
+  }
+
+  //next good scan = closest OLDER good scan (i.e. walk forwards: index+1 → end)
+  let nextGood: any = null
+  let nextGoodIndex = -1
+  for (let i = index + 1; i < sortedScans.length; i++) {
+    if (sortedScans[i]?.productId) {
+      nextGood = sortedScans[i]
+      nextGoodIndex = i
+      break
+    }
+  }
+
+  return {
+    scansAgo,
+    previousGood,
+    previousGoodIndex,
+    nextGood,
+    nextGoodIndex,
+  }
 }
 </script>
 

@@ -45,7 +45,7 @@
           <ion-list>
             <ion-list-header>
               <ion-label>
-                Sessions
+                {{ translate("Sessions") }}
               </ion-label>
 
               <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
@@ -94,7 +94,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission('APP_PWA_STANDALONE_ACCESS')">
+                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
@@ -191,7 +191,7 @@ import { useRouter } from 'vue-router';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { hasPermission } from '@/authorization';
+import { Actions, hasPermission } from '@/authorization';
 
 const { updateWorkEffort, releaseSession } = useInventoryCountImport();
 const store = useStore();
@@ -291,8 +291,8 @@ async function segmentChanged(value) {
 
 function getStatusIdForCountsToBeFetched() {
   if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
-  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_IN_CMPLTD";
-  return "CYCLE_CNT_IN_CLOSED";
+  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_CMPLTD";
+  return "CYCLE_CNT_CLOSED";
 }
 
 const areas = [
@@ -403,7 +403,7 @@ async function addNewSession() {
 
 async function markAsCompleted(workEffortId) {
   try {
-    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD' });
+    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
     if (response && response.status === 200) {
       showToast(translate("Session sent for review successfully"));
       pageIndex.value = 0;

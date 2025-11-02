@@ -175,6 +175,14 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
         productId,
         lastUpdatedAt: now
       })
+
+    await db.table('scanEvents')
+      .where({ inventoryCountImportId })
+      .and(s => s.scannedValue === identifier)
+      .modify({
+        productId,
+        lastUpdatedAt: now
+      });
   }
   return;
 }
@@ -249,7 +257,15 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           lastUpdatedAt: now // new record, so same as createdAt
         })
       }
-
+      if (productId) {
+        await db.table('scanEvents')
+          .where({ inventoryCountImportId })
+          .and(s => s.scannedValue === scannedValue)
+          .modify({
+            productId,
+            lastUpdatedAt: now
+          });
+      }
       processed++
     }
 

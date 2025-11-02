@@ -20,7 +20,7 @@
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
               <ion-button slot="end" fill="outline" color="medium">
-                Edit
+                {{ translate("Edit") }}
               </ion-button>
             </ion-item>
             <ion-item>
@@ -42,11 +42,11 @@
           </ion-card>
           <ion-card>
             <ion-item>
-              <ion-label>First item counted</ion-label>
+              <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
-              <ion-label>Last item counted</ion-label>
+              <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
@@ -68,7 +68,7 @@
             <ion-card>
               <ion-item lines="full">
                 <ion-label>
-                  <p class="overline">Overall variance (Filtered)</p>
+                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
                   <h3>16 units</h3>
                   <p>based on 4 results</p>
                 </ion-label>
@@ -82,19 +82,19 @@
             <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
             <ion-item>
             <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
-              <ion-select-option value="all">All</ion-select-option>
-              <ion-select-option value="open">Open</ion-select-option>
-              <ion-select-option value="accepted">Accepted</ion-select-option>
-              <ion-select-option value="rejected">Rejected</ion-select-option>
+              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
+              <ion-select-option value="open">{{ translate("Open") }}</ion-select-option>
+              <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
+              <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
             </ion-select>
           </ion-item>
 
           <ion-item>
             <ion-select label="Compliance" placeholder="All" interface="popover">
-              <ion-select-option value="all">All</ion-select-option>
-              <ion-select-option value="acceptable">Acceptable</ion-select-option>
-              <ion-select-option value="rejectable">Rejectable</ion-select-option>
-              <ion-select-option value="configure">Configure threshold</ion-select-option>
+              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
+              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
+              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
+              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
             </ion-select>
           </ion-item>
           </ion-list>
@@ -102,8 +102,8 @@
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             5 results out of 1,200
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
-                <ion-select-option value="variance">Variance</ion-select-option>
+                <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
+                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
             </ion-select>
           </ion-item-divider>
         </div>
@@ -123,18 +123,18 @@
                 </div>
                 <ion-label class="stat">
                   {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
-                  <p>counted/systemic</p>
+                  <p>{{ translate("counted/systemic") }}</p>
                 </ion-label>
                 <ion-label class="stat">
                   {{ cycleCount.proposedVarianceQuantity }}
-                  <p>variance</p>
+                  <p>{{ translate("variance") }}</p>
                 </ion-label>
                 <div v-if="!cycleCount.decisionOutcomeEnumId" class="actions">
                   <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'APPLIED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
-                    Accept
+                    {{ translate("Accept") }}
                   </ion-button>
                   <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'SKIPPED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
-                    Reject
+                    {{ translate("Reject") }}
                   </ion-button>
                 </div>
                 <ion-badge
@@ -175,15 +175,15 @@
                   </ion-item>
                   <ion-label>
                     {{ session.counted }}
-                    <p>counted</p>
+                    <p>{{ translate("counted") }}</p>
                   </ion-label>
                   <ion-label>
                     {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                    <p>started</p>
+                    <p>{{ translate("started") }}</p>
                   </ion-label>
                   <ion-label>
                     {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                    <p>last updated</p>
+                    <p>{{ translate("last updated") }}</p>
                   </ion-label>
                   <ion-button fill="clear" color="medium">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
@@ -197,7 +197,7 @@
           </ion-infinite-scroll>
         </div>
         <div v-else class="empty-state">
-          <p>No Results</p>
+          <p>{{ translate("No Results") }}</p>
         </div>
         <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
           <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
@@ -215,11 +215,11 @@
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
-            Accept
+            {{ translate("Accept") }}
           </ion-button>
           <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
           <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
-            Reject
+            {{ translate("Reject") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -229,7 +229,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"

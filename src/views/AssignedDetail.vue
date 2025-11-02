@@ -20,7 +20,7 @@
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
               <ion-button slot="end" fill="outline" color="medium">
-                Edit
+                {{ translate("Edit") }}
               </ion-button>
             </ion-item>
             <ion-item>
@@ -32,12 +32,12 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">Due Date</p>
+                <p class="overline">{{ translate("Due Date") }}</p>
                 <div v-if="workEffort.dueDate">
                   <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
                 </div>
                 <div v-else>
-                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">Add Due Date</ion-button>
+                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">{{ translate("Add Due Date") }}</ion-button>
                 </div>
                 <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
                   <ion-datetime id="datetime" v-model="selectedDate" :value="getIsoFormattedDate(workEffort?.dueDate)"></ion-datetime>
@@ -49,11 +49,11 @@
           </ion-card>
           <ion-card>
             <ion-item>
-              <ion-label>First item counted</ion-label>
+              <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
-              <ion-label>Last item counted</ion-label>
+              <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
@@ -75,7 +75,7 @@
             <ion-card>
               <ion-item lines="full">
                 <ion-label>
-                  <p class="overline">Overall variance (Filtered)</p>
+                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
                   <h3>16 units</h3>
                   <p>based on 4 results</p>
                 </ion-label>
@@ -114,16 +114,16 @@
                 </div>
                 <ion-label class="stat">
                   {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
-                  <p>counted/systemic</p>
+                  <p>{{ translate("counted/systemic") }}</p>
                 </ion-label>
                 <ion-label class="stat">
                   {{ cycleCount.proposedVarianceQuantity }}
-                  <p>variance</p>
+                  <p>{{ translate("variance") }}</p>
                 </ion-label>
               </div>
               <div v-if="loadingSessions">
               <ion-spinner name="crescent"></ion-spinner>
-                <p>Loading items...</p>
+                <p>{{ translate("Loading items...") }}</p>
               </div>
               <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
                 <ion-item lines="none">
@@ -139,11 +139,11 @@
                 </ion-label>
                 <ion-label>
                   {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                  <p>started</p>
+                  <p>{{ translate("started") }}</p>
                 </ion-label>
                 <ion-label>
                   {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                  <p>last updated</p>
+                  <p>{{ translate("last updated") }}</p>
                 </ion-label>
                 <ion-button fill="clear" color="medium">
                   <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
@@ -156,7 +156,7 @@
           </ion-infinite-scroll>
         </div>
         <div v-else class="empty-state">
-          <p>No Results</p>
+          <p>{{ translate("No Results") }}</p>
         </div>
       </template>
       <template v-else>
@@ -168,7 +168,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"

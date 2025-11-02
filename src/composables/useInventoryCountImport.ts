@@ -249,7 +249,17 @@ export function useInventoryCountImport() {
       .reverse()
       .sortBy('createdAt');
 
-    return events || [];
+    const enriched = await Promise.all(
+      events.map(async e => {
+        if (e.productId) {
+          const product = await db.products.get(e.productId);
+          return { ...e, product };
+        }
+        return e;
+      })
+    );
+
+    return enriched || [];
   });
 
    /* API call functions moved from CountService.ts */   
