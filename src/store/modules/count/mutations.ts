@@ -28,6 +28,11 @@ const mutations: MutationTree <CountState> = {
     state.closedWorkEfforts = payload.closedWorkEfforts
     state.total = payload.total
     state.isScrollable = payload.isScrollable;
+  },
+  [types.COUNT_LIST_UPDATED] (state, payload) {
+    state.list = payload.list
+    state.total = payload.total
+    state.isScrollable = payload.isScrollable
   }
 }	
 export default mutations;	

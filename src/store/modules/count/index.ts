@@ -12,6 +12,7 @@ const countModule: Module<CountState, RootState> = {
     draftWorkEfforts: [],
     inReviewWorkEfforts: [],
     closedWorkEfforts: [],
+    list: [],
     total: 0,
     isScrollable: true,
     query: {

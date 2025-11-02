@@ -73,7 +73,7 @@ const userProfile = computed(() => store.getters["user/getUserProfile"]);
 const userToken = computed(() => store.getters["user/getUserToken"]);
 const instanceUrl = computed(() => store.getters["user/getInstanceUrl"]);
 
-const excludedPaths = ['/login', '/tabs/', '/session-count-detail/'];
+const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-pre-counted'];
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
