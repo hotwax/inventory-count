@@ -9,52 +9,63 @@ import { DateTime } from "luxon"
 const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getAssignedWorkEfforts({ commit, state }, params) {
-    let assignedWorkEfforts = (params.pageIndex > 0 && state.assignedWorkEfforts) ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []   
-    let total = 0
-    let isScrollable = true
+  let assignedWorkEfforts = (params.pageIndex > 0 && state.assignedWorkEfforts) ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []   
+  let total = 0
+  let isScrollable = true
 
-    if (state.query.facilityIds.length) {
-      params["facilityId"] = state.query.facilityIds.join(",")
-      params["facilityId_op"] = "in"
-    }
-    params["orderByField"] = "lastUpdatedStamp"
+  if (state.query.facilityIds.length) {
+    params["facilityId"] = state.query.facilityIds.join(",")
+    params["facilityId_op"] = "in"
+  }
+  params["orderByField"] = "lastUpdatedStamp"
 
-    try {
-      const resp = await getWorkEfforts(params)
-      if (!hasError(resp) && resp.data.length > 0) {
-        const workEfforts = resp.data
+  try {
+    const resp = await getWorkEfforts(params)
+    if (!hasError(resp) && resp.data.length > 0) {
+      const workEfforts = resp.data
+      const { getSessionLock } = useInventoryCountImport()
 
-        // For each workEffort, fetch InventoryCountImport details
-        for (const workEffort of workEfforts) {
-          try {
-            const inventoryResp = await getInventoryCountImportsByWorkEffort({
-              workEffortId: workEffort.workEffortId
-            })
-            if (!hasError(inventoryResp)) {
-              assignedWorkEfforts.push({
-                ...workEffort,
-                sessions: inventoryResp.data || []
+      for (const workEffort of workEfforts) {
+        try {
+          const inventoryResp = await getInventoryCountImportsByWorkEffort({workEffortId: workEffort.workEffortId})
+
+          if (!hasError(inventoryResp)) {
+            const sessions = await Promise.all(
+              (inventoryResp.data || []).map(async (session: any) => {
+                try {
+                  const lockResp = await getSessionLock({ inventoryCountImportId: session.inventoryCountImportId, userId: params.userId, deviceId: params.deviceId })
+                  return { ...session, lock: lockResp?.data || null }
+                } catch (err) {
+                  console.warn(`Lock fetch failed for ${session.inventoryCountImportId}`, err)
+                  return { ...session, lock: null }
+                }
               })
-            }
-          } catch (err) {
-            logger.error(`Error fetching inventory imports for workEffortId ${workEffort.workEffortId}:`, err)
+            )
+
+            assignedWorkEfforts.push({
+              ...workEffort,
+              sessions
+            })
           }
+        } catch (err) {
+          logger.error(`Error fetching inventory imports for workEffortId ${workEffort.workEffortId}:`, err)
         }
-
-        total = assignedWorkEfforts.length
-        isScrollable = workEfforts.length >= params.pageSize
-      } else {
-        if (params.pageIndex > 0) isScrollable = false
-        throw "Failed to fetch the assigned work efforts"
       }
-    } catch (err) {
-      isScrollable = false
-      if (params.pageIndex == 0) assignedWorkEfforts = []
-      logger.error(err)
-    }
 
-    commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
-  },
+      total = assignedWorkEfforts.length
+      isScrollable = workEfforts.length >= params.pageSize
+    } else {
+      if (params.pageIndex > 0) isScrollable = false
+      throw "Failed to fetch the assigned work efforts"
+    }
+  } catch (err) {
+    isScrollable = false
+    if (params.pageIndex == 0) assignedWorkEfforts = []
+    logger.error(err)
+  }
+
+  commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
+},
   async fetchCycleCountImportSystemMessages({ commit }) {
     let systemMessages;
     try {

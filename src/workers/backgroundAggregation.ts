@@ -283,7 +283,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
   }
 }
 
-async function matchProductLocallyAndSync(workEffortId: string, inventoryCountImportId: string, item: any, productId: string, context: any) {
+async function matchProductLocallyAndSync(inventoryCountImportId: string, item: any, productId: string, context: any) {
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
@@ -375,7 +375,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       headers: {
         'Authorization': `Bearer ${token}`
       },
-      url: `inventory-cycle-count/cycleCounts/inventoryCountSession/${inventoryCountImportId}/items`,
+      url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
       method: 'PUT',
       data: payload
     })

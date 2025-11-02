@@ -40,6 +40,9 @@ const getters: GetterTree <UserState, RootState> = {
   },
   isScrollingAnimationEnabled(state) {
     return state.isScrollingAnimationEnabled
+  },
+  getDeviceId(state) {
+    return state.deviceId;
   }
 }
 export default getters;
