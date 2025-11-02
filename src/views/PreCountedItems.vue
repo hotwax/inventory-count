@@ -61,7 +61,7 @@
               </ion-label>
             </ion-item>
             <div class="quantity">
-              <ion-button fill="clear" color="medium" aria-label="decrease" @click="product.countedQuantity--">
+              <ion-button fill="clear" color="medium" aria-label="decrease" @click="product.countedQuantity = Math.max(0, product.countedQuantity - 1)">
                 <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
               <ion-item lines="full">
@@ -73,7 +73,7 @@
             </div>
           </div>
           <div class="progress ion-padding">
-            <ion-progress-bar :value="product.countedQuantity ? product.countedQuantity/product.quantityOnHand : 0"></ion-progress-bar>
+            <ion-progress-bar :value="product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
             <ion-label>
               {{ product.quantityOnHand }}
             </ion-label>
@@ -245,7 +245,7 @@ async function addAllProductsToScanEvents() {
       }
     }
   } catch (error) {
-    console.error("Something Wnet Wrong");
+    console.error("Something Went Wrong");
   }
 }
 
