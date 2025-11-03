@@ -66,19 +66,11 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
 }
 
 const fetchCycleCountStatusDesc = async (): Promise<any> => {
-  const token = store.getters["user/getUserToken"]
-  const baseURL = store.getters["user/getBaseUrl"]
-  console.log("This is base url and token: ", baseURL, " and ", token);
   return api({
     url: "oms/statuses",
-    baseURL,
     method: "GET",
     params: {
       statusTypeId: "CYCLE_CNT_STATUS"
-    },
-    headers: {
-      "api_key": token,
-      "Content-Type": "application/json"
     }
   })
 }

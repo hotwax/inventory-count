@@ -7,7 +7,7 @@ const getters: GetterTree<UtilState, RootState> = {
     return state.facilityGroups
   },
   getStatusDesc: (state) => (statusId: string) => {
-    return state.statusDesc[statusId] ? state.statusDesc[statusId] : statusId
+    return state.statusDesc.find(status => status.statusId === statusId)?.description || statusId
   }
 };
 export default getters;

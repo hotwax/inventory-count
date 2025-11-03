@@ -27,7 +27,7 @@
           </ion-chip>
 
           <ion-item lines="none">
-            <ion-badge slot="end">{{ translate(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -43,6 +43,7 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import store from '@/store';
 import { loader } from '@/user-utils';
+import { getStatusDescription } from '@/utils';
 import { useUserStore } from '@hotwax/dxp-components';
 import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";

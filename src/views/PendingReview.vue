@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ translate(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -58,7 +58,7 @@ import { computed, ref } from "vue"
 import store from "@/store"
 import router from "@/router"
 import Filters from "@/components/Filters.vue"
-import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
+import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
 import { loader } from '@/user-utils';
 
 const cycleCounts = computed(() => store.getters["count/getList"])

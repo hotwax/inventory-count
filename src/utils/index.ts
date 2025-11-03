@@ -159,4 +159,8 @@ const  getValidItems = (items: any) => {
   return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
 }
 
-export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+const getStatusDescription = (statusId: string) => {
+  return store.getters["util/getStatusDesc"](statusId);
+}
+
+export { getStatusDescription, convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
