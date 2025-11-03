@@ -29,7 +29,7 @@
                 {{ translate("HARD COUNT") }}
               </ion-label>
               <ion-card-title>
-                {{ count.workEfforName }}
+                {{ count.workEffortName }}
               </ion-card-title>
               <ion-card-subtitle>
                 {{ getDateWithOrdinalSuffix(count.createdDate) }}
@@ -101,8 +101,12 @@
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
                 {{ translate("Ready for review") }}
+              </ion-button>
+              <ion-button
+                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="count.estimatedStartDate && DateTime.fromMillis(count.estimatedStartDate) >= DateTime.now()">
+                {{ translate("Move to In Progress") }}
               </ion-button>
             </ion-item>
           </ion-list>
@@ -192,6 +196,7 @@ import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
+import { DateTime } from 'luxon';
 
 const { updateWorkEffort, releaseSession } = useInventoryCountImport();
 const store = useStore();
@@ -274,11 +279,12 @@ async function fetchCycleCounts(reset = false) {
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched(),
+    currentStatusId_op: "in",
     thruDate_op: "empty"
     // userId: store.getters["user/getUserProfile"].username,
     // deviceId: store.getters["user/getDeviceId"]
   };
-  await store.dispatch("count/getAssignedWorkEfforts", params);
+  await store.dispatch("count/getCreatedAndAssignedWorkEfforts", params);
 }
 
 async function segmentChanged(value) {
@@ -290,7 +296,7 @@ async function segmentChanged(value) {
 }
 
 function getStatusIdForCountsToBeFetched() {
-  if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
+  if (selectedSegment.value === "assigned") return "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS";
   if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_CMPLTD";
   return "CYCLE_CNT_CLOSED";
 }
@@ -406,6 +412,21 @@ async function markAsCompleted(workEffortId) {
     const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
     if (response && response.status === 200) {
       showToast(translate("Session sent for review successfully"));
+      pageIndex.value = 0;
+      await fetchCycleCounts(true);
+    } else {
+      showToast(translate("Failed to send session for review"));
+    }
+  } catch (err) {
+    console.error("Error updating status:", err);
+  }
+}
+
+async function markInProgress(workEffortId) {
+  try {
+    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
+    if (response && response.status === 200) {
+      showToast(translate("Cycle Count is Active"));
       pageIndex.value = 0;
       await fetchCycleCounts(true);
     } else {
