@@ -28,7 +28,7 @@
             <dxp-image :src="searchedProduct.mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
-            {{ translate(searchedProduct.sku) }}
+            {{ searchedProduct.sku }}
           </ion-label>
           <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProduct)">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
