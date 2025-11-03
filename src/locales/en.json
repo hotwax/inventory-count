@@ -238,10 +238,12 @@
   "rejected": "rejected",
   "scans ago": "scans ago",
   "selected": "selected",
+  "sku": "sku",
   "started": "started",
   "start counting": "start counting",
   "store name": "store name",
   "systemic": "systemic",
+  "unaggregated": "unaggregated",
   "units": "{count} units",
   "variance": "variance"
 }

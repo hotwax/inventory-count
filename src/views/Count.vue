@@ -420,6 +420,7 @@ async function forceRelease(session) {
   try {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
+      fromDate: session.lock[0].fromDate,
       thruDate: Date.now(),
       overrideByUserId: store.getters['user/getUserProfile']?.username
     }
@@ -429,7 +430,7 @@ async function forceRelease(session) {
       showToast('Session lock released successfully.')
 
       // Remove lock locally so UI refreshes
-      session.lock = null
+      session.lock = []
     } else {
       showToast('Failed to release session lock.')
     }
