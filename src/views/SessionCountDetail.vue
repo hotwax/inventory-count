@@ -101,7 +101,7 @@
           <div class="statistics ion-padding">
             <ion-card>
               <ion-card-header>
-                <ion-card-title class="overline">Products counted</ion-card-title>
+                <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number">{{ stats.productsCounted }}</p>
@@ -504,6 +504,9 @@ import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { loader } from '@/user-utils';
+import { wrap } from 'comlink'
+import type { Remote } from 'comlink'
+import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
 const productIdentificationStore = useProductIdentificationStore();
@@ -547,9 +550,11 @@ const inventoryCountImport = ref();
 const newCountName = ref();
 const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
-const currentDeviceId = store.getters["user/getDeviceId"];
 const currentLock = ref<any>(null);
 
+let lockWorker: Remote<LockHeartbeatWorker> | null = null
+let lockLeaseSeconds = 300
+let lockGracePeriod = 300
 
 const pageRef = ref(null);
 
@@ -652,6 +657,10 @@ onIonViewDidEnter(async () => {
 onBeforeUnmount(async () => {
   await finalizeAggregationAndSync();
   await unscheduleWorker();
+  if (lockWorker) {
+    await lockWorker.stopHeartbeat()
+    lockWorker = null
+  }
 });
 
 function openEditSessionModal() {
@@ -739,17 +748,19 @@ async function handleSessionLock() {
     const userId = store.getters['user/getUserProfile']?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
     const currentDeviceId = store.getters['user/getDeviceId'];
+    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Fetch existing lock
     const existingLockResp = await getSessionLock({
       inventoryCountImportId,
       deviceId: currentDeviceId,
-      userId: store.getters['user/getUserProfile']?.username,
-      // thruDate_op: 'empty'
+      userId,
+      filterByDate: true
     });
-    const existingLock = existingLockResp?.data ? existingLockResp.data[0] : null;
+    const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
 
+    // --- If existing lock found ---
     if (existingLock) {
       if (existingLock.userId !== userId || existingLock.deviceId !== currentDeviceId) {
         // Different user → lock session
@@ -757,22 +768,110 @@ async function handleSessionLock() {
         showToast('This session is locked by another user.');
         return;
       }
-      // Same user + same device → continue
+
+      // Same user + same device → continue, schedule worker
       sessionLocked.value = false;
+      showToast('Existing lock found. Resuming session.');
+
+      // Schedule heartbeat worker for existing lock
+      let worker: Worker | null = null;
+      if (!lockWorker) {
+        worker = new Worker(
+          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+      }
+
+      const payload = {
+        inventoryCountImportId,
+        lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
+        leaseSeconds: lockLeaseSeconds,
+        gracePeriod: lockGracePeriod,
+        maargUrl: store.getters['user/getBaseUrl'],
+        omsUrl: omsInfo.url,
+        token: omsInfo.token,
+        userId,
+        deviceId: currentDeviceId
+      };
+
+      await lockWorker.startHeartbeat(payload);
+
+      // Message listener
+      if (worker) {
+        worker.onmessage = async (e: any) => {
+          const { type, thruDate } = e.data;
+          if (type === 'heartbeatSuccess') {
+            currentLock.value.thruDate = thruDate;
+            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockExpired') {
+            showToast('Session lock expired. Please reacquire the lock.');
+            await releaseSessionLock();
+            router.push('/tabs/count');
+          } else if (type === 'reacquireLock') {
+            showToast('Reacquiring lock...');
+            await handleSessionLock();
+          }
+        };
+      }
+
       return;
     }
 
-    // No lock found → create new one
+    // --- If no lock found, acquire a new one ---
+    const fromDate = Date.now();
     const newLockResp = await lockSession({
       inventoryCountImportId,
       userId,
       deviceId: currentDeviceId,
-      fromDate: Date.now()
+      fromDate,
+      thruDate: fromDate + lockLeaseSeconds * 1000
     });
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
       showToast('Session lock acquired.');
+
+      let worker: Worker | null = null;
+      if (!lockWorker) {
+        worker = new Worker(
+          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+      }
+
+      const payload = {
+        inventoryCountImportId,
+        lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
+        leaseSeconds: lockLeaseSeconds,
+        gracePeriod: lockGracePeriod,
+        maargUrl: store.getters['user/getBaseUrl'],
+        omsUrl: omsInfo.url,
+        token: omsInfo.token,
+        userId,
+        deviceId: currentDeviceId
+      };
+
+      await lockWorker.startHeartbeat(payload);
+
+      // Listen for messages
+      if (worker) {
+        worker.onmessage = async (e: any) => {
+          const { type, thruDate } = e.data;
+          if (type === 'heartbeatSuccess') {
+            currentLock.value.thruDate = thruDate;
+            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockExpired') {
+            showToast('Session lock expired. Please reacquire the lock.');
+            await releaseSessionLock();
+            router.push('/tabs/count');
+          } else if (type === 'reacquireLock') {
+            showToast('Reacquiring lock...');
+            await handleSessionLock();
+          }
+        };
+      }
     } else {
       sessionLocked.value = true;
       showToast('Failed to acquire lock.');
@@ -1002,6 +1101,7 @@ async function submit() {
     await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
     await releaseSessionLock();
+    if (lockWorker) await lockWorker.stopHeartbeat();
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -1015,6 +1115,7 @@ async function discard() {
     await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED' });
     inventoryCountImport.value.statusId = 'SESSION_VOIDED';
     await releaseSessionLock();
+    if (lockWorker) await lockWorker.stopHeartbeat();
     showToast('Session discarded');
   } catch (err) {
     console.error(err);
