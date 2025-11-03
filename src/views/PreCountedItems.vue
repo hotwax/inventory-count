@@ -153,7 +153,6 @@ async function getProducts() {
 
     if (resp && !hasError(resp) && resp.data) {
       searchedProduct.value = resp.data.response.docs?.[0];
-      console.log("This is searched product: ", searchedProduct.value);
       if (!searchedProduct.value) {
         showToast(`Product Not Found by ${searchedProductString.value}`);
       }
@@ -185,7 +184,6 @@ async function addProductInPreCountedItems(product: any) {
   try {
     if (searchedProductString.value) searchedProductString.value = null;
     const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
-    console.log(product.productId, " and ", productIdentifierPref.primaryId, " and ", getProductIdentificationValue(productIdentifierPref.primaryId, product), " and ", product.productId);
     await recordScan({
       inventoryCountImportId: props.inventoryCountImportId as string,
       productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
@@ -193,7 +191,6 @@ async function addProductInPreCountedItems(product: any) {
     });
     if (products.value?.length > 0) {
       const existingProduct = products.value.find(p => p.productId === product.productId);
-      console.log("This is Existing Product: ", existingProduct);
       if (existingProduct) {
         existingProduct.selectedQuantity += product.selectedQuantity;
       } else {

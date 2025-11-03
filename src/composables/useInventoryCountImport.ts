@@ -446,11 +446,18 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
   });
 }
 
-const getSessionLock = async (params: any): Promise<any> => {
+const getSessionLock = async (payload: any): Promise<any> => {
   return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/lock`,
-    method: 'GET',
-    params
+    url: `oms/dataDocumentView`,
+    method: 'POST',
+    data: {
+      dataDocumentId: 'InventoryCountImportLock',
+      customParametersMap: {
+        ...payload,
+        pageIndex: 0,
+        pageSize: 100,
+      }
+    }
   });
 }
 

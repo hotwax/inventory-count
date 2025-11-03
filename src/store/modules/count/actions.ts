@@ -33,8 +33,8 @@ const actions: ActionTree<CountState, RootState> = {
             const sessions = await Promise.all(
               (inventoryResp.data || []).map(async (session: any) => {
                 try {
-                  const lockResp = await getSessionLock({ inventoryCountImportId: session.inventoryCountImportId, userId: params.userId, deviceId: params.deviceId })
-                  return { ...session, lock: lockResp?.data || null }
+                  const lockResp = await getSessionLock({ inventoryCountImportId: session.inventoryCountImportId, userId: params.userId, deviceId: params.deviceId, filterByDate: true })
+                  return { ...session, lock: lockResp?.data?.entityValueList || null }
                 } catch (err) {
                   console.warn(`Lock fetch failed for ${session.inventoryCountImportId}`, err)
                   return { ...session, lock: null }
