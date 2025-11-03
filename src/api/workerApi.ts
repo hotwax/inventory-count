@@ -9,7 +9,13 @@ export default async function workerApi(customConfig: {
   const { url, method = "GET", data, params, baseURL, headers = {} } = customConfig;
 
   // Build URL
-  let fullUrl = baseURL ? `${baseURL}${url}` : url;
+  let baseUrl = baseURL || '';
+  if (!baseUrl.includes("rest/s1") && !baseUrl.endsWith('/')) {
+    baseUrl += '/api/'
+  } else if (!baseUrl.includes("rest/s1") && !baseUrl.endsWith('/api/') && !baseUrl.includes('/api/')) {
+    baseUrl += 'api/'
+  }
+  let fullUrl = baseUrl ? `${baseUrl}${url}` : url;
   if (params && Object.keys(params).length > 0) {
     const queryString = new URLSearchParams(params).toString();
     fullUrl += `?${queryString}`;
