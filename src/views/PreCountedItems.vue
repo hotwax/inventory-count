@@ -61,19 +61,19 @@
               </ion-label>
             </ion-item>
             <div class="quantity">
-              <ion-button fill="clear" color="medium" aria-label="decrease" @click="product.countedQuantity = Math.max(0, product.countedQuantity - 1)">
+              <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
                 <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
               <ion-item lines="full">
-                <ion-input @keyup.enter="addPreCountedItemInScanEvents(product)" label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0" v-model.number="product.countedQuantity"></ion-input>
+                <ion-input @ionInput="onManualInputChange($event, product)" label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0" v-model.number="product.countedQuantity"></ion-input>
               </ion-item>
-              <ion-button fill="clear" color="medium" aria-label="increase" @click="product.countedQuantity++">
+              <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
                 <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
           </div>
           <div class="progress ion-padding">
-            <ion-progress-bar :value="product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
+            <ion-progress-bar :value="product.countedQuantity && product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
             <ion-label>
               {{ product.quantityOnHand }}
             </ion-label>
@@ -95,185 +95,210 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n';
-import { IonText, IonPage, IonToolbar, IonContent, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonNote, IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController } from '@ionic/vue';
-import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons';
-import { DxpImage } from '@hotwax/dxp-components';
+import { translate } from '@/i18n'
+import {
+  IonPage, IonToolbar, IonContent, IonSearchbar, IonList, IonItem,
+  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle,
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController
+} from '@ionic/vue'
+import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons'
+import { DxpImage } from '@hotwax/dxp-components'
+import { ref, defineProps, computed, onMounted } from 'vue'
+import router from '@/router'
+import { loader } from '@/user-utils'
+import store from '@/store'
+import { client } from '@/api'
+import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
+import { hasError, showToast } from '@/utils'
+import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components'
+import { ProductService } from '@/services/ProductService'
 
-import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { ref, defineProps, useSlots, watch, computed } from 'vue';
-import router from '@/router';
-import { hasError, showToast } from '@/utils';
-import { loader } from '@/user-utils';
-import store from '@/store';
-import { client } from '@/api';
-import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
-import { ProductService } from '@/services/ProductService';
-
-const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport();
-
-const productIdentificationStore = useProductIdentificationStore();
-const userStore = useUserStore();
-
-const workEffort = ref();
-const inventoryCountImport = ref();
-const searchedProductString = ref();
-const products = ref<any[]>([]);
-const hasUnsavedProducts = computed(() => products.value.some(p => p.saved !== true))
-const searchedProduct = ref();
+const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport()
+const productIdentificationStore = useProductIdentificationStore()
+const userStore = useUserStore()
 
 const props = defineProps({
   workEffortId: String,
   inventoryCountImportId: String,
-});
-
-onIonViewDidEnter(async () => {
-  await loader.present("Loading...");
-  await getInventoryCycleCount();
-  loader.dismiss();
 })
+
+const workEffort = ref()
+const inventoryCountImport = ref()
+const searchedProductString = ref('')
+const searchedProduct = ref()
+const products = ref<any[]>([])
+
+const hasUnsavedProducts = computed(() =>
+  products.value.some(p => !p.saved && p.countedQuantity > 0)
+)
+
+onMounted(async () => {
+  await loader.present('Loading...')
+  await getInventoryCycleCount()
+  loader.dismiss()
+})
+
+function incrementProductQuantity(product: any) {
+  product.countedQuantity++
+  product.saved = false
+}
+
+function decrementProductQuantity(product: any) {
+  product.countedQuantity = Math.max(0, product.countedQuantity - 1)
+  product.saved = product.countedQuantity === 0
+}
+
+function onManualInputChange(event: CustomEvent, product: any) {
+  const value = Number(event.detail.value)
+  product.countedQuantity = isNaN(value) ? 0 : value
+  product.saved = value === 0
+}
 
 async function getInventoryCycleCount() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId as string });
-    if (resp?.status === 200 && resp.data) {
-      workEffort.value = resp.data;
-      const sessionResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
-      if (sessionResp?.status && sessionResp.data) {
-        inventoryCountImport.value = sessionResp.data;
-      } else {
-        throw sessionResp;
-      }
-    } else {
-      throw resp;
-    }
+    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId! })
+    if (resp?.status !== 200 || !resp.data) throw resp
+
+    workEffort.value = resp.data
+    const sessionResp = await fetchWorkEffort({ workEffortId: props.workEffortId })
+    if (sessionResp?.status !== 200 || !sessionResp.data) throw sessionResp
+
+    inventoryCountImport.value = sessionResp.data
   } catch (error) {
-    console.error(error);
-    showToast("Failed to fetch Count and Sessions Details");
+    console.error(error)
+    showToast('Failed to fetch Count and Session details')
   }
 }
 
 async function handleSearch() {
-  if (!searchedProductString.value.trim()) {
-    return;
-  }
-  await getProducts();
+  const term = searchedProductString.value.trim()
+  if (!term) return
+  await fetchProductBySearch(term)
 }
 
-async function getProducts() {
-  await loader.present("Searching Product...");
+async function fetchProductBySearch(term: string) {
+  await loader.present('Searching Product...')
   try {
     const resp = await fetchProducts({
-      docType: "PRODUCT",
+      docType: 'PRODUCT',
       viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true", `(sku: ${searchedProductString.value.trim()} OR internalName: ${searchedProductString.value.trim()} OR upc: ${searchedProductString.value.trim()})`],
-    });
+      filters: [
+        'isVirtual: false',
+        'isVariant: true',
+        `(sku: ${term} OR internalName: ${term} OR upc: ${term})`
+      ],
+    })
 
-    if (resp && !hasError(resp) && resp.data) {
-      searchedProduct.value = resp.data.response.docs?.[0];
-      if (!searchedProduct.value) {
-        showToast(`Product Not Found by ${searchedProductString.value}`);
-      }
-    }
+    const product = resp?.data?.response?.docs?.[0]
+    searchedProduct.value = product || null
+    if (!product) showToast(`Product not found by ${term}`)
   } catch (err) {
-    console.error("Failed to fetch products", err);
-    showToast("Something Went Wrong");
+    console.error('Failed to fetch products', err)
+    showToast('Something went wrong')
   }
-  loader.dismiss();
+  loader.dismiss()
 }
 
-const fetchProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
+async function fetchProducts(query: any) {
+  const omsInfo = store.getters['user/getOmsRedirectionInfo']
+  const baseURL = omsInfo.url.startsWith('http')
+    ? omsInfo.url.includes('/api')
+      ? omsInfo.url
+      : `${omsInfo.url}/api/`
+    : `https://${omsInfo.url}.hotwax.io/api/`
+
+  return client({
+    url: 'searchProducts',
+    method: 'POST',
     baseURL,
     data: query,
     headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
+      Authorization: `Bearer ${omsInfo.token}`,
+      'Content-Type': 'application/json',
     },
-  });
-};
+  })
+}
 
 async function addProductInPreCountedItems(product: any) {
-  await loader.present("Loading...");
+  await loader.present('Loading...')
   try {
-    if (searchedProductString.value) searchedProductString.value = null;
-    searchedProduct.value = null;
-    const existingProduct = products.value.find(p => p.productId === product.productId);
-    if (!existingProduct) {
-      products.value.push(product);
+    searchedProductString.value = ''
+    searchedProduct.value = null
+
+    const existing = products.value.find(p => p.productId === product.productId)
+    if (existing) {
+      showToast(translate('Product already exists in Counted Items'))
+      return
     }
-    product.countedQuantity = 0;
-    product.saved = false;
-    await setProductQoh(product);
-  } catch (error) {
-    console.error("Error Adding Product to Scan Event: ", error);
+
+    product.countedQuantity = 0
+    product.saved = false
+    await setProductQoh(product)
+    products.value.push(product)
+  } catch (err) {
+    console.error('Error adding product:', err)
   }
-  loader.dismiss();
+  loader.dismiss()
 }
 
-async function addPreCountedItemInScanEvents (product: any) {
-  const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
-  await recordScan({
-    inventoryCountImportId: props.inventoryCountImportId as string,
-    productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
-    quantity: product.countedQuantity,
-  });
-  product.saved = true;
-}
-
-async function setProductQoh (product: any) {
-  const currentFacility: any = userStore.getCurrentFacility;
-  const qohResp = await ProductService.fetchProductStock({
+async function setProductQoh(product: any) {
+  try {
+    const facility: any = userStore.getCurrentFacility
+    const resp = await ProductService.fetchProductStock({
       productId: product.productId,
-      facilityId: currentFacility.facilityId
-    } as any);
+      facilityId: facility.facilityId,
+    })
 
-    if (qohResp?.status === 200 && qohResp.data?.qoh) {
-      product.quantityOnHand = qohResp.data?.qoh;
-    }
+    product.quantityOnHand = resp?.data?.qoh || 0
+  } catch (err) {
+    console.error('Failed to fetch QOH:', err)
+  }
+}
+
+async function addPreCountedItemInScanEvents(product: any) {
+  const pref = productIdentificationStore.getProductIdentificationPref
+  await recordScan({
+    inventoryCountImportId: props.inventoryCountImportId!,
+    productIdentifier: getProductIdentificationValue(pref.primaryId, product),
+    quantity: product.countedQuantity,
+  })
+  product.saved = true
 }
 
 async function addAllProductsToScanEvents() {
   try {
-    for (const product of products.value) {
-      if (product.countedQuantity > 0) {
-        await addPreCountedItemInScanEvents(product);
-      }
+    const unsaved = products.value.filter(p => p.countedQuantity > 0 && !p.saved)
+    for (const product of unsaved) {
+      await addPreCountedItemInScanEvents(product)
     }
-  } catch (error) {
-    console.error("Something Went Wrong");
+    showToast(translate('Items Saved'))
+  } catch (err) {
+    console.error('Error saving products:', err)
   }
 }
 
 async function confirmGoBack() {
   if (products.value.length === 0 || !hasUnsavedProducts.value) {
-    router.back();
-    return;
+    router.back()
+    return
   }
+
   const alert = await alertController.create({
     header: 'Leave this page?',
     message: 'Any unsaved changes will be lost.',
     buttons: [
-      {
-        text: 'Cancel',
-        role: 'cancel'
-      },
+      { text: 'Cancel', role: 'cancel' },
       {
         text: 'Save and Go back',
         handler: async () => {
-          await addAllProductsToScanEvents();
-          router.back();
-        }
-      }
-    ]
+          await addAllProductsToScanEvents()
+          router.back()
+        },
+      },
+    ],
   })
   await alert.present()
 }
-
 </script>
 
 <style>
