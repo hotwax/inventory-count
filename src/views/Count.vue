@@ -53,14 +53,14 @@
                 {{ translate("New") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="session.lock?.length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                <ion-item v-if="session.lock?.length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -94,14 +94,14 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
+                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId === 'SESSION_CREATED' || s.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
               <ion-button

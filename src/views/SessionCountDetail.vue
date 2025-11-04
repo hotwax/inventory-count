@@ -673,7 +673,8 @@ async function updateSessionOnServer() {
     const resp = await updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,
-      facilityAreaId: selectedArea.value
+      facilityAreaId: selectedArea.value,
+      fromDate: currentLock.value.fromDate
     });
 
     if (resp?.status === 200 && resp.data) {
@@ -891,7 +892,8 @@ async function releaseSessionLock() {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
       userId: store.getters['user/getUserProfile']?.username,
-      thruDate: Date.now()
+      thruDate: Date.now(),
+      fromDate: currentLock.value.fromDate
     };
 
     const resp = await releaseSession(payload);
@@ -1112,7 +1114,7 @@ async function submit() {
 async function discard() {
   try {
     await finalizeAggregationAndSync();
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED' });
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
     inventoryCountImport.value.statusId = 'SESSION_VOIDED';
     await releaseSessionLock();
     if (lockWorker) await lockWorker.stopHeartbeat();
@@ -1125,9 +1127,10 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_CREATED' });
-    inventoryCountImport.value.statusId = 'SESSION_CREATED';
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED', fromDate: currentLock.value.fromDate });
+    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
+    await handleSessionLock();
   } catch (err) {
     console.error(err);
     showToast('Failed to reopen session');
