@@ -1127,7 +1127,7 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED', fromDate: currentLock.value.fromDate });
+    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
     await handleSessionLock();

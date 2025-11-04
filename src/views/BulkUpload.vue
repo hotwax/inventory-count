@@ -398,7 +398,6 @@ async function save() {
     idType: "SKU",
     dueDate: i[fieldMapping.value.dueDate],
     estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
-    facilityId: "",
     externalFacilityId: i[fieldMapping.value.facility],
   }));
   const data = jsonToCsv(uploadedData);
