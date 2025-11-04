@@ -23,7 +23,7 @@ const actions: ActionTree<CountState, RootState> = {
     const resp = await getWorkEfforts({
       pageSize: params.pageSize,
       pageIndex: params.pageIndex,
-      facilityId: params.currentFacility,
+      facilityId: params.facilityId,
       currentStatusId: params.currentStatusId,
       currentStatusId_op: params.currentStatusId_op
     })

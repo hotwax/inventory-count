@@ -397,6 +397,7 @@ async function save() {
     idValue: i[fieldMapping.value.productSku],
     idType: "SKU",
     dueDate: i[fieldMapping.value.dueDate],
+    estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
     facilityId: "",
     externalFacilityId: i[fieldMapping.value.facility],
   }));
