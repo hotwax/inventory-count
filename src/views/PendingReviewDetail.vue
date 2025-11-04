@@ -413,7 +413,7 @@ async function closeCycleCount() {
     }
   } catch (error) {
     console.error("Error Updating Cycle Count: ", error);
-    showToast(translate("Failed to Update ", error));
+    showToast(translate("Failed to Update Cycle Count"));
   }
   loader.dismiss();
 }
