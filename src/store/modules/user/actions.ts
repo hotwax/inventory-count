@@ -104,6 +104,7 @@ const actions: ActionTree<UserState, RootState> = {
     
       await dispatch("getProductStoreSetting")
       await dispatch('getFieldMappings')
+      await store.dispatch('util/fetchStatusDesc');
     } catch (err: any) {
       logger.error("error", err);
       return Promise.reject(new Error(err))
@@ -131,9 +132,9 @@ const actions: ActionTree<UserState, RootState> = {
     userStore.$reset()
 
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
-    this.dispatch('count/clearCycleCounts')
-    this.dispatch('count/clearCycleCountItems')
-    this.dispatch('product/clearCachedProducts')
+    this.dispatch('count/clearCycleCountList')
+    // this.dispatch('count/clearCycleCountItems')
+    // this.dispatch('product/clearCachedProducts')
 
     // Clear indexedDB storage on logout
     // deleteDB("cycleCounts");

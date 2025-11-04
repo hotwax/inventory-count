@@ -65,11 +65,22 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
   })
 }
 
+const fetchCycleCountStatusDesc = async (): Promise<any> => {
+  return api({
+    url: "oms/statuses",
+    method: "GET",
+    params: {
+      statusTypeId: "CYCLE_CNT_STATUS"
+    }
+  })
+}
+
 export const UtilService = {
   createBulkCycleCounts,
   fetchFacilities,
   fetchFacilityGroups,
   fetchGroupFacilities,
   fetchVarianceReasons,
-  getOrdinalSuffix
+  getOrdinalSuffix,
+  fetchCycleCountStatusDesc
 }

@@ -39,7 +39,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ count.currentStatusId }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -57,7 +57,7 @@ import { translate } from '@/i18n'
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import store from "@/store"
-import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
+import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
 // import Filters from "@/components/Filters.vue"
 import router from "@/router"
 import { loader } from "@/user-utils";
