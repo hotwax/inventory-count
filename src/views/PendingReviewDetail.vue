@@ -404,7 +404,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_IN_CLOSED" });
+    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED" });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);
