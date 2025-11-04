@@ -178,12 +178,6 @@
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
         </div>
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
-          <ion-fab-button>
-            <ion-icon :icon="receiptOutline" />
-          </ion-fab-button>
-        </ion-fab>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>

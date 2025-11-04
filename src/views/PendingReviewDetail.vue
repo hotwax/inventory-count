@@ -201,7 +201,7 @@
         </div>
         <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
           <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
-          <ion-fab-button>
+          <ion-fab-button @click="closeCycleCount">
             <ion-icon :icon="receiptOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -237,6 +237,7 @@ import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { loader } from "@/user-utils";
+import router from "@/router";
 
 const props = defineProps({
   workEffortId: String
@@ -355,7 +356,7 @@ const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
 
 
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview, updateWorkEffort } = useInventoryCountImport();
 
 function getSortByField () {
   if (!sortBy.value) return null;
@@ -400,6 +401,22 @@ function toggleSelectAll(event: CustomEvent) {
   }
 }
 
+async function closeCycleCount() {
+  await loader.present("Closing Cycle Count...");
+  try {
+    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_IN_CLOSED" });
+    if (resp?.status === 200 && resp.data) {
+      showToast(translate("Updated Cycle Count"));
+      router.replace(`/closed/${props.workEffortId}`);
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error Updating Cycle Count: ", error);
+    showToast(translate("Failed to Update Cycle Count"));
+  }
+  loader.dismiss();
+}
 
 async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
   await loader.present("Submitting Review...");
