@@ -151,8 +151,8 @@ function sortListByField(list: any, field = "parentProductName") {
 }
 
 const getProductStoreId = () => {
-  const currentEComStore: any = useUserStore().getCurrentEComStore;
-  return currentEComStore.productStoreId
+  const currentProductStore: any = useUserStore().getCurrentEComStore;
+  return currentProductStore.productStoreId
 };
 
 const  getValidItems = (items: any) => {
