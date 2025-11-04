@@ -407,7 +407,7 @@ async function closeCycleCount() {
     const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_IN_CLOSED" });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
-      router.push(`/closed/${props.workEffortId}`);
+      router.replace(`/closed/${props.workEffortId}`);
     } else {
       throw resp;
     }
