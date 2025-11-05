@@ -160,7 +160,7 @@
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                      <p><ion-skeleton-text animated="true" style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
