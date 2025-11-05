@@ -113,7 +113,7 @@ const actions: ActionTree<CountState, RootState> = {
         counts = newCycleCounts
       }
 
-      total = resp.data.cycleCountsCount || newCycleCounts.length
+      total = resp.data.cycleCountsCount || 0
 
       // Use total from backend to determine if scrolling should continue
       isScrollable = counts.length < total
