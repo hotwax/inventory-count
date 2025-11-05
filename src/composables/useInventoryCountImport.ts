@@ -263,7 +263,7 @@ export function useInventoryCountImport() {
   });
 
    /* API call functions moved from CountService.ts */   
-  const fetchCycleCount = async (payload: any): Promise <any>  => {
+  const getCycleCount = async (payload: any): Promise <any>  => {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
       method: "get",
@@ -271,7 +271,7 @@ export function useInventoryCountImport() {
     });
   }
 
-  const fetchSessions = async (payload: any): Promise <any> => {
+  const getSessions = async (payload: any): Promise <any> => {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
       method: "get",
@@ -279,7 +279,7 @@ export function useInventoryCountImport() {
     });
   }
 
-  const fetchWorkEffort = async (payload: any): Promise<any> => {
+  const getWorkEffort = async (payload: any): Promise<any> => {
     return api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
       method: "get"
@@ -344,7 +344,7 @@ const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
+const getCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
   return api({
     url: `inventory-cycle-count/cycleCounts/systemMessages`,
     method: "get",
@@ -360,7 +360,7 @@ const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
   });
 }
 
-const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
+const getCycleCountUploadedFileData = async (payload: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
     method: "get",
@@ -368,7 +368,7 @@ const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
   });
 }
 
-const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
+const getCycleCountImportErrors = async (payload: any): Promise <any>  => {
   return api({
     url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
     method: "get",
@@ -378,7 +378,7 @@ const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
 
 async function discardSession(inventoryCountImportId: string): Promise<void> {
   try {
-    const resp = await api({
+    await api({
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
@@ -393,7 +393,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
 
 async function submitSession(inventoryCountImportId: string): Promise<void> {
   try {
-    const resp = await api({
+    await api({
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
@@ -491,19 +491,19 @@ const releaseSession = async (payload: any): Promise<any> => {
     getCountedItems,
     getUncountedItems,
     getUndirectedItems,
-    fetchCycleCount,
-    fetchSessions,
-    fetchWorkEffort,
+    getCycleCount,
+    getSessions,
+    getWorkEffort,
+    getWorkEfforts,
     getProductReviewDetail,
     cancelCycleCountFileProcessing,
     getInventoryCountImportsByWorkEffort,
     getInventoryCountImportSession,
     bulkUploadInventoryCounts,
-    fetchCycleCountImportSystemMessages,
-    fetchCycleCountUploadedFileData,
+    getCycleCountImportSystemMessages,
+    getCycleCountUploadedFileData,
     addSessionInCount,
-    getWorkEfforts,
-    fetchCycleCountImportErrors,
+    getCycleCountImportErrors,
     submitProductReview,
     updateWorkEffort,
     updateSession,

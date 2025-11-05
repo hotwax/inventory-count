@@ -110,7 +110,7 @@
 
         <div class="results ion-margin-top" v-if="cycleCounts?.length">
           <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="getCountSessions(cycleCount.productId)">
               <div class="list-item count-item-rollup" slot="header"> 
                 <div class="item-key">
                   <!-- <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox> -->
@@ -220,7 +220,7 @@ onIonViewDidEnter(async () => {
   isLoading.value = true;
   await getWorkEffortDetails();
   if (workEffort.value) {
-    await fetchInventoryCycleCount();
+    await getInventoryCycleCount();
   }
   isLoading.value = false;
 })
@@ -243,7 +243,7 @@ const isScrollable = ref(true);
 const isLoadingMore = ref(false);
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  const workEffortResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
@@ -261,7 +261,7 @@ async function loadMoreCycleCountProductReviews(event: any) {
   isLoadingMore.value = true;
   pagination.pageIndex += 1;
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountImport().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -294,7 +294,7 @@ watch(() => filterAndSortBy, async () => {
   await loader.present("Loading...");
   try {
     pagination.pageIndex = 0;
-    const count = await fetchCycleCount({
+    const count = await useInventoryCountImport().getCycleCount({
       workEffortId: props.workEffortId,
       pageSize: pagination.pageSize,
       pageIndex: pagination.pageIndex,
@@ -320,8 +320,6 @@ watch(() => filterAndSortBy, async () => {
 
 const sessions = ref();
 
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview } = useInventoryCountImport();
-
 function getSortByField () {
   if (!sortBy.value) return null;
 
@@ -331,7 +329,7 @@ function getSortByField () {
 
 async function filterProductByInternalName() {
   try {
-    const productReviewDetail = await getProductReviewDetail({
+    const productReviewDetail = await useInventoryCountImport().getProductReviewDetail({
       workEffortId: props.workEffortId,
       internalName: searchedProductString.value || null,
       internalName_op: searchedProductString.value ? "contains" : null,
@@ -365,10 +363,10 @@ function getDcsnFilter() {
   }
 }
 
-async function fetchCountSessions(productId: any) {
+async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
-    const resp = await fetchSessions({
+    const resp = await useInventoryCountImport().getSessions({
       workEffortId: props.workEffortId,
       productId: productId
     });
@@ -385,13 +383,13 @@ async function fetchCountSessions(productId: any) {
   }
 }
 
-async function fetchInventoryCycleCount(reset = false) {
+async function getInventoryCycleCount(reset = false) {
   if (reset) {
     pagination.pageIndex = 0;
     isScrollable.value = true;
   }
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountImport().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,

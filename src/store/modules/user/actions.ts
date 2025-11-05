@@ -12,7 +12,6 @@ import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotw
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
-import { deleteDB } from "@/utils/indexeddb"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -104,7 +103,7 @@ const actions: ActionTree<UserState, RootState> = {
     
       await dispatch("getProductStoreSetting")
       await dispatch('getFieldMappings')
-      await store.dispatch('util/fetchStatusDesc');
+      await store.dispatch('util/getStatusDesc');
     } catch (err: any) {
       logger.error("error", err);
       return Promise.reject(new Error(err))
@@ -195,7 +194,7 @@ const actions: ActionTree<UserState, RootState> = {
     dispatch("getProductStoreSetting", selectedProductStore?.productStoreId);
   },
 
-  async getProductStoreSetting({ commit }, productStoreId?: string) {
+  async loadProductStoreSetting({ commit }, productStoreId?: string) {
     const payload = {
       "productStoreId": productStoreId ? productStoreId : getProductStoreId(),
       "settingTypeEnumId": "INV_CNT_VIEW_QOH,INV_FORCE_SCAN,INV_COUNT_FIRST_SCAN,BARCODE_IDEN_PREF",
@@ -204,7 +203,7 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     try {
-      const resp = await UserService.fetchProductStoreSettings(payload) as any
+      const resp = await UserService.getProductStoreSettings(payload) as any
       if(!hasError(resp) && resp.data.length) {
         const settings = resp.data.reduce((settings: any, setting: any) => {
           if(setting.settingTypeEnumId === "INV_CNT_VIEW_QOH" && setting.settingValue) {
@@ -287,7 +286,7 @@ const actions: ActionTree<UserState, RootState> = {
     let isSettingExists = false;
 
     try {
-      const resp = await UserService.fetchProductStoreSettings({
+      const resp = await UserService.getProductStoreSettings({
         "productStoreId": getProductStoreId(),
         "settingTypeEnumId": enumId
       })

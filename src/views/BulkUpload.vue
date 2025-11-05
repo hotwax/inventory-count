@@ -220,7 +220,6 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 const store = useStore();
 const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
 const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"]);
-const { bulkUploadInventoryCounts, fetchCycleCountUploadedFileData, cancelCycleCountFileProcessing, fetchCycleCountImportErrors } = useInventoryCountImport();
 
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
@@ -230,7 +229,6 @@ let content = ref([]);
 let fieldMapping = ref({});
 let fileColumns = ref([]);
 let selectedMappingId = ref(null);
-const fileUploaded = ref(false);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
 
 /* ---------- CreateMappingModal Logic ---------- */
@@ -300,7 +298,7 @@ function closeUploadPopover() {
 }
 function openErrorModal() {
   isErrorModalOpen.value = true;
-  fetchCycleCountImportErrorsFromServer();
+  getCycleCountImportErrorsFromServer();
 }
 function closeErrorModal() {
   isErrorModalOpen.value = false;
@@ -309,15 +307,15 @@ function closeErrorModal() {
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
 }
-async function fetchCycleCountImportErrorsFromServer() {
+async function getCycleCountImportErrorsFromServer() {
   try {
-    const resp = await fetchCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountImport().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) systemMessageError.value = resp?.data[0];
   } catch (err) { logger.error(err); }
 }
 async function viewFile() {
   try {
-    const resp = await fetchCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountImport().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
@@ -328,10 +326,10 @@ async function viewFile() {
 }
 async function cancelUpload() {
   try {
-    const resp = await cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
+    const resp = await useInventoryCountImport().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
-      await store.dispatch("count/fetchCycleCountImportSystemMessages");
+      await store.dispatch("count/getCycleCntImportSystemMessages");
     }
   } catch (err) {
     showToast(translate("Failed to cancel uploaded cycle count."));
@@ -368,7 +366,7 @@ function resetDefaults() {
 onIonViewDidEnter(async () => {
   resetDefaults();
   await store.dispatch("user/getFieldMappings");
-  await store.dispatch("count/fetchCycleCountImportSystemMessages");
+  await store.dispatch("count/getCycleCntImportSystemMessages");
 });
 async function parse(e) {
   const f = e.target.files[0];
@@ -405,10 +403,10 @@ async function save() {
   fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
-    const resp = await bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
+    const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
     if (!hasError(resp)) {
       resetDefaults();
-      await store.dispatch("count/fetchCycleCountImportSystemMessages");
+      await store.dispatch("count/getCycleCntImportSystemMessages");
       showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {

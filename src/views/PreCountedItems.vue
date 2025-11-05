@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { translate } from '@/i18n';
-import { IonText, IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonNote, IonTitle, IonThumbnail } from '@ionic/vue';
+import { IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonTitle, IonThumbnail } from '@ionic/vue';
 
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { ref, defineProps } from 'vue';
@@ -93,8 +93,6 @@ import store from '@/store';
 import { client } from '@/api';
 import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
 import { ProductService } from '@/services/ProductService';
-
-const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport();
 
 const productIdentificationStore = useProductIdentificationStore();
 
@@ -117,10 +115,10 @@ onIonViewDidEnter(async () => {
 
 async function getInventoryCycleCount() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId as string });
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId as string });
     if (resp?.status === 200 && resp.data) {
       workEffort.value = resp.data;
-      const sessionResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+      const sessionResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
       if (sessionResp?.status && sessionResp.data) {
         inventoryCountImport.value = sessionResp.data;
       } else {
@@ -145,7 +143,7 @@ async function handleSearch() {
 async function getProducts() {
   await loader.present("Searching Product...");
   try {
-    const resp = await fetchProducts({
+    const resp = await loadProducts({
       docType: "PRODUCT",
       viewSize: 100,
       filters: ["isVirtual: false", "isVariant: true", `internalName: ${searchedProductString.value.trim()}`],
@@ -164,7 +162,7 @@ async function getProducts() {
   loader.dismiss();
 }
 
-const fetchProducts = async (query: any): Promise<any> => {
+const loadProducts = async (query: any): Promise<any> => {
   const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
   const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
   return await client({
@@ -184,7 +182,7 @@ async function addProductInPreCountedItems(product: any) {
   try {
     if (searchedProductString.value) searchedProductString.value = null;
     const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
-    await recordScan({
+    await useInventoryCountImport().recordScan({
       inventoryCountImportId: props.inventoryCountImportId as string,
       productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
       quantity: product.selectedQuantity,
@@ -201,7 +199,7 @@ async function addProductInPreCountedItems(product: any) {
     }
     searchedProduct.value = null;
     const currentFacility: any = useUserStore().getCurrentFacility;
-    const qohResp = await ProductService.fetchProductStock({
+    const qohResp = await ProductService.getProductStock({
       productId: product.productId,
       facilityId: currentFacility.facilityId
     } as any);

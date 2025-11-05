@@ -67,7 +67,7 @@ onMounted(() => {
  * It also handles the challenge of scrolling to an element on a page that is being navigated to and scroll smoothly.
  **/
 async function navigateToDetail(item: any) {
-  if(productStoreSettings.value['showQoh'] && item.productId) await store.dispatch("product/fetchProductStock", item.productId)
+  if(productStoreSettings.value['showQoh'] && item.productId) await store.dispatch("product/loadProductStock", item.productId)
 
   router.replace({ hash: isItemAlreadyAdded(item) ? `#${item.productId}-${item.importItemSeqId}` : `#${item.scannedId}` }); 
   if(props.statusId === "INV_COUNT_ASSIGNED" && !isScrollingAnimationEnabled.value) {

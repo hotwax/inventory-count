@@ -91,10 +91,11 @@
                 <!-- Locked by same user, different device -->
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
+                    {{ session.lock }}
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
+                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(count.workEffortId, session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
@@ -191,16 +192,13 @@ import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/i
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
 
-const { updateWorkEffort, releaseSession } = useInventoryCountImport();
 const store = useStore();
-const router = useRouter();
 const userStore = useUserStore();
 
 const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
@@ -220,7 +218,7 @@ const currentDeviceId = store.getters["user/getDeviceId"];
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   pageIndex.value = 0;
-  await fetchCycleCounts(true);
+  await getCycleCounts(true);
   isLoading.value = false;
 });
 
@@ -260,11 +258,11 @@ async function loadMoreCycleCount(event) {
   }
 
   pageIndex.value += 1;
-  await fetchCycleCounts(false);
+  await getCycleCounts(false);
   await event.target.complete();
 }
 
-async function fetchCycleCounts(reset = false) {
+async function getCycleCounts(reset = false) {
   if (!currentFacility.value?.facilityId) {
     showToast(translate("No facility is associated with this user"));
     return;
@@ -291,7 +289,7 @@ async function segmentChanged(value) {
   isLoading.value = true;
   selectedSegment.value = value;
   pageIndex.value = 0;
-  await fetchCycleCounts(true);
+  await getCycleCounts(true);
   isLoading.value = false;
 }
 
@@ -409,11 +407,11 @@ async function addNewSession() {
 
 async function markAsCompleted(workEffortId) {
   try {
-    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
+    const response = await useInventoryCountImport().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
     if (response && response.status === 200) {
       showToast(translate("Session sent for review successfully"));
       pageIndex.value = 0;
-      await fetchCycleCounts(true);
+      await getCycleCounts(true);
     } else {
       showToast(translate("Failed to send session for review"));
     }
@@ -424,11 +422,11 @@ async function markAsCompleted(workEffortId) {
 
 async function markInProgress(workEffortId) {
   try {
-    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
+    const response = await useInventoryCountImport().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
     if (response && response.status === 200) {
       showToast(translate("Cycle Count is Active"));
       pageIndex.value = 0;
-      await fetchCycleCounts(true);
+      await getCycleCounts(true);
     } else {
       showToast(translate("Failed to send session for review"));
     }
@@ -437,7 +435,7 @@ async function markInProgress(workEffortId) {
   }
 }
 
-async function forceRelease(session) {
+async function forceRelease(workEffortId, session) {
   try {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
@@ -446,7 +444,7 @@ async function forceRelease(session) {
       overrideByUserId: store.getters['user/getUserProfile']?.username
     }
 
-    const resp = await releaseSession(payload)
+    const resp = await useInventoryCountImport().releaseSession(payload)
     if (resp?.status === 200) {
       showToast('Session lock released successfully.')
 

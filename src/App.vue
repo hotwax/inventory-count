@@ -57,7 +57,6 @@ import {
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { mapGetters } from 'vuex';
 import emitter from "@/event-bus";
 import { initialise, resetConfig } from '@/adapter';
 import store from "./store";

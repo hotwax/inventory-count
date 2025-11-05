@@ -511,23 +511,7 @@ import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const {
-  recordScan,
-  getScanEvents,
-  getInventoryRecordsFromIndexedDB,
-  loadInventoryItemsFromBackend,
-  getUnmatchedItems,
-  getCountedItems,
-  getUncountedItems,
-  getUndirectedItems,
-  updateSession,
-  getInventoryCountImportSession,
-  searchInventoryItemsByIdentifier,
-  getSessionLock,
-  lockSession,
-  releaseSession
-} = useInventoryCountImport();
-const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
+const { init, prefetch, getAllProductIdsFromIndexedDB } = useProductMaster();
 const store = useStore();
 
 const scannedValue = ref('');
@@ -552,6 +536,7 @@ const newCountName = ref();
 const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
 const currentLock = ref<any>(null);
+const isNewLockAcquired = ref(false);
 
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
@@ -586,12 +571,12 @@ onIonViewDidEnter(async () => {
     await handleSessionLock();
     await startSession();
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    
+    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
+
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
@@ -671,7 +656,7 @@ function openEditSessionModal() {
 
 async function updateSessionOnServer() {
   try {
-    const resp = await updateSession({
+    const resp = await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,
       facilityAreaId: selectedArea.value,
@@ -693,7 +678,7 @@ async function updateSessionOnServer() {
 
 async function startSession() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value = resp.data;
     } else {
@@ -708,11 +693,11 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    const localRecords = await getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
+    const localRecords = await useInventoryCountImport().getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
 
-    if (!localRecords?.length) {
+    if (!localRecords?.length || isNewLockAcquired.value) {
       console.log("[Session] No local records found, fetching from backend...");
-      await loadInventoryItemsFromBackend(props.inventoryCountImportId);
+      await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
     }
 
     // Prefetch product details for all related productIds
@@ -738,7 +723,7 @@ function handleScan() {
   if (!value) return;
 
   try {
-    recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
+    useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
     events.value.unshift({ scannedValue: value, quantity: 1, createdAt: Date.now() });
     filteredItems.value = [];
     searchKeyword.value = '';
@@ -758,7 +743,7 @@ async function handleSessionLock() {
     const omsInfo = store.getters['user/getOmsRedirectionInfo'];
 
     // Fetch existing lock
-    const existingLockResp = await getSessionLock({
+    const existingLockResp = await useInventoryCountImport().getSessionLock({
       inventoryCountImportId,
       deviceId: currentDeviceId,
       userId,
@@ -827,7 +812,7 @@ async function handleSessionLock() {
 
     // --- If no lock found, acquire a new one ---
     const fromDate = Date.now();
-    const newLockResp = await lockSession({
+    const newLockResp = await useInventoryCountImport().lockSession({
       inventoryCountImportId,
       userId,
       deviceId: currentDeviceId,
@@ -879,6 +864,7 @@ async function handleSessionLock() {
           }
         };
       }
+      isNewLockAcquired.value = true;
     } else {
       sessionLocked.value = true;
       showToast('Failed to acquire lock.');
@@ -902,7 +888,7 @@ async function releaseSessionLock() {
       fromDate: currentLock.value.fromDate
     };
 
-    const resp = await releaseSession(payload);
+    const resp = await useInventoryCountImport().releaseSession(payload);
     if (resp?.status === 200) {
       showToast('Session lock released.');
       currentLock.value = null;
@@ -979,7 +965,7 @@ async function handleSearch() {
 async function getProducts() {
   isLoading.value = true;
   try {
-    const resp = await fetchProducts({
+    const resp = await loadProducts({
       keyword: queryString.value.trim(),
       viewSize: 100,
       filters: ["isVirtual: false", "isVariant: true"],
@@ -994,7 +980,7 @@ async function getProducts() {
   isLoading.value = false;
 }
 
-const fetchProducts = async (query: any): Promise<any> => {
+const loadProducts = async (query: any): Promise<any> => {
   const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
   const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
   return await client({
@@ -1073,14 +1059,16 @@ async function finalizeAggregationAndSync() {
     // Wait until the worker confirms completion
     const result = await new Promise<number>((resolve) => {
       const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
-      aggregationWorker!.onmessage = (e) => {
-        const { type, count } = e.data;
-        if (type === 'aggregationComplete') {
-          console.log(`Aggregated ${count} products from scans`)
-          clearTimeout(timeout);
-          resolve(count);
-        }
-      };
+      if (aggregationWorker) {
+        aggregationWorker.onmessage = (e) => {
+          const { type, count } = e.data;
+          if (type === 'aggregationComplete') {
+            console.log(`Aggregated ${count} products from scans`)
+            clearTimeout(timeout);
+            resolve(count);
+          }
+        };
+      }
     });
 
     return result;
@@ -1110,7 +1098,7 @@ async function submit() {
       return;
     }
     await finalizeAggregationAndSync();
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
     await releaseSessionLock();
     if (lockWorker) await lockWorker.stopHeartbeat();
@@ -1124,7 +1112,7 @@ async function submit() {
 async function discard() {
   try {
     await finalizeAggregationAndSync();
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
     inventoryCountImport.value.statusId = 'SESSION_VOIDED';
     await releaseSessionLock();
     if (lockWorker) await lockWorker.stopHeartbeat();
@@ -1137,7 +1125,7 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
     await handleSessionLock();
@@ -1152,7 +1140,7 @@ async function handleIndexedDBSearch() {
     filteredItems.value = [] // show all
     return
   }
-  const results = await searchInventoryItemsByIdentifier(
+  const results = await useInventoryCountImport().searchInventoryItemsByIdentifier(
     props.inventoryCountImportId,
     searchKeyword.value,
     selectedSegment.value

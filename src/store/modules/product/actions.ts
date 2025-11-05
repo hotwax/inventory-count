@@ -11,7 +11,7 @@ import store from '@/store'
 
 const actions: ActionTree<ProductState, RootState> = {
 
-  async fetchProducts({ commit, state }, { productIds }) {
+  async getProducts({ commit, state }, { productIds }) {
     const cachedProductIds = Object.keys(state.cached);
     const remainingProductIds = productIds.filter((productId: any) => !cachedProductIds.includes(productId))
     if(!remainingProductIds.length) return;
@@ -23,7 +23,7 @@ const actions: ActionTree<ProductState, RootState> = {
         const productIdBatch = remainingProductIds.slice(index, index + batchSize);
         const productIdFilter = productIdBatch.join(' OR ');
   
-        const resp = await ProductService.fetchProducts({
+        const resp = await ProductService.loadProducts({
           filters: ['productId: (' + productIdFilter + ')'],
           viewSize: productIdBatch.length,
           fieldsToSelect: ["productName", "productId", "parentProductName", "goodIdentifications", "mainImageUrl", "internalName"]
@@ -54,7 +54,7 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
     if (payload.viewIndex === 0) emitter.emit("presentLoader");
     try {
-      resp = await ProductService.fetchProducts({
+      resp = await ProductService.loadProducts({
         "filters": ['isVirtual: false', `sku: *${payload.queryString}*`],
         "viewSize": payload.viewSize,
         "viewIndex": payload.viewIndex
@@ -78,7 +78,7 @@ const actions: ActionTree<ProductState, RootState> = {
     return resp;
   },
 
-  async fetchProductByIdentification ( { commit, state }, payload) {
+  async getProductByIdentification ( { commit, state }, payload) {
     const cachedProductIds = Object.keys(state.cached);
     if(cachedProductIds.includes(payload.scannedValue)) return state.cached[payload.scannedValue];
     const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
@@ -88,7 +88,7 @@ const actions: ActionTree<ProductState, RootState> = {
     let resp;
 
     try {
-      resp = await ProductService.fetchProducts({
+      resp = await ProductService.loadProducts({
         "filters": [productIdentifications.includes(barcodeIdentification) ? `${barcodeIdentification}: ${payload.scannedValue}` : `goodIdentifications: ${barcodeIdentification}/${payload.scannedValue}`],
         "viewSize": 1
       })
@@ -104,7 +104,7 @@ const actions: ActionTree<ProductState, RootState> = {
     return {};
   },
 
-  async fetchProductStock({ commit, state }, productId) {
+  async loadProductStock({ commit, state }, productId) {
     const currentFacility: any = useUserStore().getCurrentFacility
     const facilityId = currentFacility.facilityId; 
     // Return early if stock data for this productId already exists
@@ -113,7 +113,7 @@ const actions: ActionTree<ProductState, RootState> = {
     let productQoh = [];
 
     try {
-      const resp = await ProductService.fetchProductStock({
+      const resp = await ProductService.getProductStock({
         facilityId: facilityId,
         productId: productId
       });

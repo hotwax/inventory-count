@@ -1,7 +1,7 @@
 import api, {client} from '@/api';
 import store from '@/store';
 
-const fetchVarianceReasons = async (payload: any): Promise<any> => {
+const getVarianceReasons = async (payload: any): Promise<any> => {
   return api({
     url: "performFind",
     method: "get",
@@ -17,7 +17,7 @@ function getOrdinalSuffix(day: any) {
   return 'th';
 }
 
-const fetchFacilities = async (payload: any): Promise<any> => {
+const getFacilities = async (payload: any): Promise<any> => {
   return api({
     url: "inventory-cycle-count/facilities",
     method: "GET",
@@ -33,7 +33,7 @@ const createBulkCycleCounts = async (payload: any): Promise<any> => {
   })
 }
 
-const fetchFacilityGroups = async (payload: any): Promise<any> => {
+const getFacilityGroups = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
   const baseURL = store.getters["user/getBaseUrl"]
 
@@ -49,7 +49,7 @@ const fetchFacilityGroups = async (payload: any): Promise<any> => {
   })
 }
 
-const fetchGroupFacilities = async (payload: any): Promise<any> => {
+const getGroupFacilities = async (payload: any): Promise<any> => {
   const token = store.getters["user/getUserToken"]
   const baseURL = store.getters["user/getBaseUrl"]
   
@@ -65,7 +65,7 @@ const fetchGroupFacilities = async (payload: any): Promise<any> => {
   })
 }
 
-const fetchCycleCountStatusDesc = async (): Promise<any> => {
+const getCycleCountStatusDesc = async (): Promise<any> => {
   return api({
     url: "oms/statuses",
     method: "GET",
@@ -77,10 +77,10 @@ const fetchCycleCountStatusDesc = async (): Promise<any> => {
 
 export const UtilService = {
   createBulkCycleCounts,
-  fetchFacilities,
-  fetchFacilityGroups,
-  fetchGroupFacilities,
-  fetchVarianceReasons,
+  getFacilities,
+  getFacilityGroups,
+  getGroupFacilities,
+  getVarianceReasons,
   getOrdinalSuffix,
-  fetchCycleCountStatusDesc
+  getCycleCountStatusDesc
 }

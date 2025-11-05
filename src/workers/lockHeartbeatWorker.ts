@@ -26,11 +26,8 @@ async function startHeartbeat(payload: HeartbeatPayload) {
     lock,
     leaseSeconds = 300,
     gracePeriod = 300,
-    omsUrl,
     maargUrl,
-    token,
-    userId,
-    deviceId
+    token
   } = payload
 
   if (heartbeatTimer) clearInterval(heartbeatTimer)
@@ -51,7 +48,7 @@ async function startHeartbeat(payload: HeartbeatPayload) {
 
         if (expiredGrace) {
           self.postMessage({ type: 'lockExpired' })
-          clearInterval(heartbeatTimer!)
+          if (heartbeatTimer) clearInterval(heartbeatTimer)
           heartbeatTimer = null
           return
         } else {
