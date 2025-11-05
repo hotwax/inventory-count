@@ -33,7 +33,7 @@
                 <div v-if="workEffort.dueDate">
                   <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
                   <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getIsoFormattedDate(workEffort.dueDate)" :disabled="true">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
                     </ion-datetime>
                   </ion-modal>
                 </div>
@@ -141,33 +141,50 @@
                 </ion-badge>
                 </div>
               </div>
-              <div v-if="loadingSessions">
-              <ion-spinner name="crescent"></ion-spinner>
-                <p>{{ translate("Loading items...") }}</p>
-              </div>
-              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
-                <ion-item lines="none">
-                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+              <div slot="content" @click.stop="stopAccordianEventProp">
+                <ion-list v-if="sessions === null">
+                  <ion-item v-for="n in cycleCount.numberOfSessions" :key="n">
+                    <ion-avatar slot="start">
+                      <ion-skeleton-text :animated="true" style="width: 100%; height: 40px;"></ion-skeleton-text>
+                    </ion-avatar>
+                    <ion-label>
+                      <p><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text  :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated="true" style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                  <ion-item lines="none">
+                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                  </ion-item>
                   <ion-label>
-                    {{ session.uploadedByUserLogin }}
+                    {{ session.counted }}
+                    <p>{{ translate("counted") }}</p>
                   </ion-label>
-                </ion-item>
-
-                <ion-label>
-                  {{ session.counted }}
-                  <p>{{ translate("counted") }}</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                  <p>{{ translate("started") }}</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                  <p>{{ translate("last updated") }}</p>
-                </ion-label>
-                <ion-button fill="clear" color="medium">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                </ion-button>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                    <p>{{ translate("started") }}</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                    <p>{{ translate("last updated") }}</p>
+                  </ion-label>
+                  <ion-button fill="clear" color="medium">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  </ion-button>
+                </div>
               </div>
             </ion-accordion>
           </ion-accordion-group>
@@ -188,14 +205,13 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { loader } from "@/user-utils";
-import { getIsoFormattedDate } from "@/utils";
 
 const props = defineProps({
   workEffortId: String
@@ -354,17 +370,23 @@ function getDcsnFilter() {
 }
 
 async function fetchCountSessions(productId: any) {
-  loadingSessions.value = true;
-  sessions.value = [];
-  const resp = await fetchSessions({
-    workEffortId: props.workEffortId,
-    productId: productId
-  });
+  sessions.value = null;
+  try {
+    const resp = await fetchSessions({
+      workEffortId: props.workEffortId,
+      productId: productId
+    });
 
-  if (resp && resp.status && resp.data && resp.data.length) {
-    sessions.value = resp.data;
+    if (resp && resp.status && resp.data && resp.data.length) {
+      sessions.value = resp.data;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    sessions.value = [];
+    console.error("Error getting sessions for this product: ", error);
+    showToast(translate("Something Went Wrong"));
   }
-  loadingSessions.value = false;
 }
 
 async function fetchInventoryCycleCount(reset = false) {

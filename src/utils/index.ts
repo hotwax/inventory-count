@@ -163,11 +163,4 @@ const getStatusDescription = (statusId: string) => {
   return store.getters["util/getStatusDesc"](statusId);
 }
 
-function getIsoFormattedDate(timestamp: any): string {
-  if (!timestamp) return DateTime.now().toISO() ?? ''
-  return typeof timestamp === 'number'
-    ? DateTime.fromMillis(timestamp).toISO() ?? ''
-    : DateTime.fromISO(timestamp).toISO() ?? ''
-}
-
-export { getIsoFormattedDate, getStatusDescription, convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+export { getStatusDescription, convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }

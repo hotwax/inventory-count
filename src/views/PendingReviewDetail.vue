@@ -33,7 +33,7 @@
                 <div v-if="workEffort.dueDate">
                   <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
                   <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getIsoFormattedDate(workEffort.dueDate)" :disabled="true">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
                     </ion-datetime>
                   </ion-modal>
                 </div>
@@ -239,7 +239,6 @@ import { facilityContext, getProductIdentificationValue, useProductIdentificatio
 import { loader } from "@/user-utils";
 import router from "@/router";
 import { DateTime } from "luxon";
-import { getIsoFormattedDate } from "@/utils";
 
 const props = defineProps({
   workEffortId: String
@@ -406,7 +405,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: Date.now() });
+    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);
