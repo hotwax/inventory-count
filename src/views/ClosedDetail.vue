@@ -19,9 +19,6 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button slot="end" fill="outline" color="medium">
-                {{ translate("Edit") }}
-              </ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="businessOutline" slot="start"></ion-icon>
@@ -32,11 +29,14 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
-                <ion-datetime-button datetime="datetime"></ion-datetime-button>
-                <ion-modal :keep-contents-mounted="true">
-                  <ion-datetime id="datetime"></ion-datetime>
-                </ion-modal>
+                <p class="overline">{{ translate("Due Date") }}</p>
+                <div v-if="workEffort.dueDate">
+                  <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
+                  <ion-modal keep-contents-mounted="true">
+                    <ion-datetime id="datetime" :value="getIsoFormattedDate(workEffort.dueDate)" :disabled="true">
+                    </ion-datetime>
+                  </ion-modal>
+                </div>
               </div>
             </ion-item>
           </ion-card>
@@ -195,6 +195,7 @@ import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
 import { loader } from "@/user-utils";
+import { getIsoFormattedDate } from "@/utils";
 
 const props = defineProps({
   workEffortId: String

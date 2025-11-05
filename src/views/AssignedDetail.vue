@@ -19,7 +19,7 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button slot="end" fill="outline" color="medium">
+              <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert">
                 {{ translate("Edit") }}
               </ion-button>
             </ion-item>
@@ -168,7 +168,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner, alertController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
@@ -259,6 +259,52 @@ async function saveDueDate() {
     console.error('Error updating due date on Cycle Count', error)
   }
   isDueDateModalOpen.value = false
+}
+
+async function openEditNameAlert() {
+  const editCountNameAlert = await alertController.create({
+    header: 'Edit Count Name',
+    inputs: [
+      {
+        name: 'workEffortName',
+        type: 'text',
+        value: workEffort.value?.workEffortName
+      }
+    ],
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel',
+        handler: () => {
+          console.log('Alert cancelled')
+        },
+      },
+      {
+        text: 'Save',
+        handler: async (data) => {
+          await loader.present("Updating Cycle Count");
+          try {
+            const resp = await updateWorkEffort({
+              workEffortId: workEffort.value.workEffortId,
+              workEffortName: data.workEffortName
+            });
+
+            if (resp?.status === 200) {
+              workEffort.value.workEffortName = data.workEffortName;
+              showToast(translate("Count Name Updated Successfully"));
+            } else {
+              throw resp;
+            }
+          } catch (error) {
+            showToast(translate("Failed to Update Cycle Count Name"));
+          }
+          loader.dismiss();
+        },
+      },
+    ],
+  })
+
+  await editCountNameAlert.present();
 }
 
 
