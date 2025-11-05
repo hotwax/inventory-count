@@ -1105,6 +1105,10 @@ async function unscheduleWorker() {
 
 async function submit() {
   try {
+    if (unmatchedItems.value.length > 0) {
+      showToast("Unmatched products should be matched before submission");
+      return;
+    }
     await finalizeAggregationAndSync();
     await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
