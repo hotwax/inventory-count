@@ -511,7 +511,6 @@ import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
 const productIdentificationStore = useProductIdentificationStore();
 
-const { init, prefetch, getAllProductIdsFromIndexedDB } = useProductMaster();
 const store = useStore();
 
 const scannedValue = ref('');
@@ -567,7 +566,7 @@ const userLogin = computed(() => store.getters['user/getUserProfile']);
 onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
   try {
-    init();
+    useProductMaster().init();
     await handleSessionLock();
     await startSession();
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
@@ -693,7 +692,7 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    const localRecords = await useInventoryCountImport().getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
+    const localRecords = await useInventoryCountImport().getInventoryCountImportItems(props.inventoryCountImportId);
 
     if (!localRecords?.length || isNewLockAcquired.value) {
       console.log("[Session] No local records found, fetching from backend...");
@@ -701,8 +700,8 @@ async function startSession() {
     }
 
     // Prefetch product details for all related productIds
-    const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
-    if (productIds.length) await prefetch(productIds);
+    const productIds = await useInventoryCountImport().getSessionProductIds(props.inventoryCountImportId);
+    if (productIds.length) await useProductMaster().prefetch(productIds);
     showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);

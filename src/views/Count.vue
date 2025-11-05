@@ -95,7 +95,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(count.workEffortId, session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
+                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
@@ -435,7 +435,7 @@ async function markInProgress(workEffortId) {
   }
 }
 
-async function forceRelease(workEffortId, session) {
+async function forceRelease(session) {
   try {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
