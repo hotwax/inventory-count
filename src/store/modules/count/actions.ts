@@ -9,65 +9,59 @@ import { DateTime } from "luxon"
 const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getCreatedAndAssignedWorkEfforts({ commit, state }, params) {
-  let assignedWorkEfforts = (params.pageIndex > 0 && state.assignedWorkEfforts) ? JSON.parse(JSON.stringify(state.assignedWorkEfforts)) : []   
+  let assignedWorkEfforts =
+    params.pageIndex > 0 && state.assignedWorkEfforts
+      ? JSON.parse(JSON.stringify(state.assignedWorkEfforts))
+      : []
+
   let total = 0
   let isScrollable = true
 
+  // Filter setup
   if (state.query.facilityIds.length) {
     params["facilityId"] = state.query.facilityIds.join(",")
     params["facilityId_op"] = "in"
   }
-  params["orderByField"] = "lastUpdatedStamp"
 
   try {
+    // --- Single optimized API call ---
     const resp = await getWorkEfforts({
-      pageSize: params.pageSize,
-      pageIndex: params.pageIndex,
+      pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
+      pageIndex: params.pageIndex || 0,
       facilityId: params.facilityId,
       currentStatusId: params.currentStatusId,
       currentStatusId_op: params.currentStatusId_op
     })
-    if (!hasError(resp) && resp.data.length > 0) {
-      const workEfforts = resp.data
-      const { getSessionLock } = useInventoryCountImport()
 
+    if (!hasError(resp) && resp.data?.cycleCounts?.length > 0) {
+      const workEfforts = resp.data.cycleCounts
+      const totalCount = resp.data.cycleCountsCount || 0
+
+      // --- Push fetched work efforts directly (sessions + lock already included) ---
       for (const workEffort of workEfforts) {
-        try {
-          const inventoryResp = await getInventoryCountImportsByWorkEffort({workEffortId: workEffort.workEffortId})
-
-          if (!hasError(inventoryResp)) {
-            const sessions = await Promise.all(
-              (inventoryResp.data || []).map(async (session: any) => {
-                try {
-                  const lockResp = await getSessionLock({ inventoryCountImportId: session.inventoryCountImportId, userId: params.userId, deviceId: params.deviceId, filterByDate: true })
-                  return { ...session, lock: lockResp?.data?.entityValueList || null }
-                } catch (err) {
-                  console.warn(`Lock fetch failed for ${session.inventoryCountImportId}`, err)
-                  return { ...session, lock: null }
-                }
-              })
-            )
-
-            assignedWorkEfforts.push({
-              ...workEffort,
-              sessions
-            })
-          }
-        } catch (err) {
-          logger.error(`Error fetching inventory imports for workEffortId ${workEffort.workEffortId}:`, err)
-        }
+        assignedWorkEfforts.push({
+          ...workEffort,
+          sessions: workEffort.sessions || []
+        })
       }
 
-      total = assignedWorkEfforts.length
-      isScrollable = workEfforts.length >= params.pageSize
+      total = totalCount
+
+      // If total records <= current length, stop scrolling
+      isScrollable = assignedWorkEfforts.length < totalCount
     } else {
-      if (params.pageIndex > 0) isScrollable = false
-      throw "Failed to fetch the assigned work efforts"
+      // Empty or failed fetch
+      if (params.pageIndex > 0) {
+        isScrollable = false
+      } else {
+        assignedWorkEfforts = []
+      }
+      throw resp.data;
     }
   } catch (err) {
+    logger.error("Error fetching work efforts:", err)
     isScrollable = false
-    if (params.pageIndex == 0) assignedWorkEfforts = []
-    logger.error(err)
+    if (params.pageIndex === 0) assignedWorkEfforts = []
   }
 
   commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
@@ -95,39 +89,48 @@ const actions: ActionTree<CountState, RootState> = {
   setCountDetailPageActive({ commit }, isPageActive) {
     commit(types.COUNT_DETAIL_PAGE_ACTIVE_UPDATED, isPageActive);
   },
-  async getCycleCounts ({ commit, state }, payload) {
-    
-    // Deep clone and initialize total
-    let counts = state.list ? JSON.parse(JSON.stringify(state.list)) : [];
-    let total = 0;
-    let isScrollable = true
+  async getCycleCounts({ commit, state }, payload) {
+  // Deep clone existing list if paging
+  let counts =
+    payload.pageIndex && payload.pageIndex > 0 && state.list
+      ? JSON.parse(JSON.stringify(state.list))
+      : []
 
-    const params = {
-      ...payload,
-    }
+  let total = 0
+  let isScrollable = true
 
-    try {
-      const resp = await getWorkEfforts(params);
-      if(!hasError(resp) && resp.data.length > 0) {
-        if(payload.pageIndex && payload.pageIndex > 0) {
-          counts = counts.concat(resp.data)
-        } else {
-          counts = resp.data
-        }
-        total = resp.data.length
-        // Determine if more data can be fetched
-        isScrollable = resp.data.length >= payload.pageSize
+  const params = { ...payload }
+
+  try {
+    const resp = await getWorkEfforts(params)
+
+    if (!hasError(resp) && resp.data?.cycleCounts?.length > 0) {
+      const newCycleCounts = resp.data.cycleCounts
+
+      if (payload.pageIndex && payload.pageIndex > 0) {
+        counts = counts.concat(newCycleCounts)
       } else {
-        if (payload.pageIndex > 0) isScrollable = false
-        throw "Failed to fetch the counts"
+        counts = newCycleCounts
       }
-    } catch(err) {
-      isScrollable = false
-      if(payload.pageIndex == 0) counts = []
-      logger.error(err)
+
+      total = resp.data.cycleCountsCount || 0
+
+      // Use total from backend to determine if scrolling should continue
+      isScrollable = counts.length < total
+    } else {
+      // No data or failed fetch
+      if (payload.pageIndex > 0) isScrollable = false
+      else counts = []
+      throw resp.data;
     }
-    commit(types.COUNT_LIST_UPDATED, { list: counts, total, isScrollable });
-  },
+  } catch (err) {
+    isScrollable = false
+    if (payload.pageIndex === 0) counts = []
+    logger.error("Error fetching cycle counts:", err)
+  }
+
+  commit(types.COUNT_LIST_UPDATED, { list: counts, total, isScrollable })
+},
   async clearCycleCountList({ commit }) {
     commit(types.COUNT_LIST_UPDATED, { list: [], total: 0 });
   }
