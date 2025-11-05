@@ -301,6 +301,7 @@ async function openEditNameAlert() {
             }
           } catch (error) {
             showToast(translate("Failed to Update Cycle Count Name"));
+            console.error("Failed to update cycle count name:", error);
           }
           loader.dismiss();
         },
