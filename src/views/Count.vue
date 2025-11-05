@@ -60,7 +60,7 @@
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="session.lock?.length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                <ion-item v-if="Object.keys(session.lock).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -442,7 +442,7 @@ async function forceRelease(session) {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
-      thruDate: Date.now() + 300 * 1000,
+      thruDate: Date.now(),
       overrideByUserId: store.getters['user/getUserProfile']?.username
     }
 
@@ -451,7 +451,7 @@ async function forceRelease(session) {
       showToast('Session lock released successfully.')
 
       // Remove lock locally so UI refreshes
-      session.lock = []
+      session.lock = {}
     } else {
       showToast('Failed to release session lock.')
     }

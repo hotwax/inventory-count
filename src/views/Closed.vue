@@ -39,15 +39,15 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n';
-import router from '@/router';
-import store from '@/store';
-import { loader } from '@/user-utils';
-import { getStatusDescription } from '@/utils';
-import { useUserStore } from '@hotwax/dxp-components';
+import { computed, ref } from 'vue';
 import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { computed, ref } from 'vue';
+import { translate } from '@/i18n';
+import store from '@/store';
+import router from '@/router';
+import { useUserStore } from '@hotwax/dxp-components';
+import { getStatusDescription, getFacilityName } from '@/utils';
+import { loader } from '@/user-utils';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -76,10 +76,6 @@ async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
     currentStatusId_op: "in"
   }
   await store.dispatch("count/getCycleCounts", payload);
-}
-
-function getFacilityName(id: string) {
-  return useUserStore().getFacilites.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 function enableScrolling() {
