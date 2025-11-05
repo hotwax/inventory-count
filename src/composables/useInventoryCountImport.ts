@@ -141,7 +141,7 @@ export function useInventoryCountImport() {
   return results
 }
 
-  async function getInventoryRecordsFromIndexedDB(inventoryCountImportId: string) {
+  async function getInventoryCountImportItems(inventoryCountImportId: string) {
     try {
       const records = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -151,6 +151,26 @@ export function useInventoryCountImport() {
       return records || [];
     } catch (err) {
       console.error('Error fetching inventory records from IndexedDB:', err);
+      return [];
+    }
+  }
+
+  async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
+    try {
+      // Reuse the same Dexie DB as in useInventoryCountImport
+      const records = await db.table('inventoryCountRecords')
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .toArray();
+
+      const ids = records
+        .map((r: any) => r.productId)
+        .filter((id: string | null) => !!id && id !== '')
+        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+
+      return ids;
+    } catch (err) {
+      console.error('Error fetching productIds from IndexedDB:', err);
       return [];
     }
   }
@@ -486,7 +506,8 @@ const releaseSession = async (payload: any): Promise<any> => {
     loadSession,
     recordScan,
     loadInventoryItemsFromBackend,
-    getInventoryRecordsFromIndexedDB,
+    getInventoryCountImportItems,
+    getSessionProductIds,
     getUnmatchedItems,
     getCountedItems,
     getUncountedItems,

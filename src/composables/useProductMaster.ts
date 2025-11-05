@@ -188,26 +188,6 @@ export function useProductMaster() {
     }
   }
 
-  async function getAllProductIdsFromIndexedDB(inventoryCountImportId: string): Promise<string[]> {
-    try {
-      // Reuse the same Dexie DB as in useInventoryCountImport
-      const records = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .toArray();
-
-      const ids = records
-        .map((r: any) => r.productId)
-        .filter((id: string | null) => !!id && id !== '')
-        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
-
-      return ids;
-    } catch (err) {
-      console.error('Error fetching productIds from IndexedDB:', err);
-      return [];
-    }
-  }
-
   const upsertFromApi = async (docs: any[]) => {
     if (!cacheReady.value) throw new Error("ProductMaster not initialized");
 
@@ -359,7 +339,6 @@ export function useProductMaster() {
     upsertFromApi,
     clearCache,
     setStaleMs,
-    getAllProductIdsFromIndexedDB,
     liveProduct,
     cacheReady
   }
