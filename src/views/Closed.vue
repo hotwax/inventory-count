@@ -45,7 +45,6 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import store from '@/store';
 import router from '@/router';
-import { useUserStore } from '@hotwax/dxp-components';
 import { getStatusDescription, getFacilityName } from '@/utils';
 import { loader } from '@/user-utils';
 
@@ -58,7 +57,7 @@ const isScrollable = computed(() => store.getters["count/isScrollable"]);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
-  await fetchClosedCycleCounts();
+  await getClosedCycleCounts();
   loader.dismiss();
 })
 
@@ -66,7 +65,7 @@ onIonViewWillLeave(async () => {
   await store.dispatch("count/clearCycleCountList");
 })
 
-async function fetchClosedCycleCounts(vSize?: any, vIndex?: any) {
+async function getClosedCycleCounts(vSize?: any, vIndex?: any) {
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
   const payload = {
@@ -94,7 +93,7 @@ async function loadMoreCycleCounts(event: any) {
   if(!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
   }
-  fetchClosedCycleCounts(
+  getClosedCycleCounts(
     undefined,
     Math.ceil(
       cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)

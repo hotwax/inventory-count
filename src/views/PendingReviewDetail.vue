@@ -110,7 +110,7 @@
 
         <div class="results ion-margin-top" v-if="cycleCounts?.length">
           <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="getCountSessions(cycleCount.productId)">
               <div class="list-item count-item-rollup" slot="header"> 
                 <div class="item-key">
                   <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox>
@@ -246,7 +246,7 @@ onIonViewDidEnter(async () => {
   isLoading.value = true;
   await getWorkEffortDetails();
   if (workEffort.value) {
-    await fetchInventoryCycleCount();
+    await getInventoryCycleCount();
   }
   isLoading.value = false;
 })
@@ -268,11 +268,10 @@ const isLoadingMore = ref(false);
 
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview, updateWorkEffort } = useInventoryCountImport();
 
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  const workEffortResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
@@ -290,7 +289,7 @@ async function loadMoreCycleCountProductReviews(event: any) {
   isLoadingMore.value = true;
   pagination.pageIndex += 1;
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountImport().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -323,7 +322,7 @@ watch(() => filterAndSortBy, async () => {
   await loader.present("Loading...");
   try {
     pagination.pageIndex = 0;
-    const count = await fetchCycleCount({
+    const count = await useInventoryCountImport().getCycleCount({
       workEffortId: props.workEffortId,
       pageSize: pagination.pageSize,
       pageIndex: pagination.pageIndex,
@@ -393,7 +392,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
+    const resp = await useInventoryCountImport().updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);
@@ -421,7 +420,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
-    const resp = await submitProductReview({ inventoryCountProductsList });
+    const resp = await useInventoryCountImport().submitProductReview({ inventoryCountProductsList });
 
     if (resp && resp.status === 200) {
       const selectedProductIds = selectedProductsReview.value.map(p => p.productId);
@@ -445,7 +444,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
 async function filterProductByInternalName() {
   try {
-    const productReviewDetail = await getProductReviewDetail({
+    const productReviewDetail = await useInventoryCountImport().getProductReviewDetail({
       workEffortId: props.workEffortId,
       internalName: searchedProductString.value || null,
       internalName_op: searchedProductString.value ? "contains" : null,
@@ -483,10 +482,10 @@ function getDcsnFilter() {
   }
 }
 
-async function fetchCountSessions(productId: any) {
+async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
-    const resp = await fetchSessions({
+    const resp = await useInventoryCountImport().getSessions({
       workEffortId: props.workEffortId,
       productId: productId
     });
@@ -519,7 +518,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     }
     inventoryCountProductsList.push(inventoryCountProductMap);
 
-    const resp = await submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
+    const resp = await useInventoryCountImport().submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
 
     if (resp?.status === 200) {
       cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
@@ -533,13 +532,13 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
   loader.dismiss();
 }
 
-async function fetchInventoryCycleCount(reset = false) {
+async function getInventoryCycleCount(reset = false) {
   if (reset) {
     pagination.pageIndex = 0;
     isScrollable.value = true;
   }
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountImport().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,

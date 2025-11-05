@@ -1,7 +1,7 @@
 import { client } from '@/api';
 import store from '@/store';
 
-const fetchProducts = async (query: any): Promise <any>  => {
+const loadProducts = async (query: any): Promise <any>  => {
   const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
   const baseURL = omsRedirectionInfo.url.startsWith('http') ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
 
@@ -17,7 +17,7 @@ const fetchProducts = async (query: any): Promise <any>  => {
   });
 }
 
-const fetchProductStock = async (query: any): Promise<any> => {
+const getProductStock = async (query: any): Promise<any> => {
   const baseURL = store.getters["user/getBaseUrl"];
   const token = store.getters["user/getUserToken"]
 
@@ -34,6 +34,6 @@ const fetchProductStock = async (query: any): Promise<any> => {
 }
 
 export const ProductService = {
-  fetchProducts,
-  fetchProductStock
+  loadProducts,
+  getProductStock
 }

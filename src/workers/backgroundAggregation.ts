@@ -404,10 +404,10 @@ self.onmessage = async (e: MessageEvent) => {
   const { type, payload } = e.data
 
   if (type === 'aggregate') {
-    const { workEffortId, inventoryCountImportId, context } = payload
+    const { inventoryCountImportId, context } = payload
     const count = await aggregate(inventoryCountImportId, context)
     if (count > 0) {
-      const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+      await resolveMissingProducts(inventoryCountImportId, context)
       await syncToServer(inventoryCountImportId, context)
     }
 
@@ -415,11 +415,11 @@ self.onmessage = async (e: MessageEvent) => {
   }
 
   if (type === 'schedule') {
-    const { workEffortId, inventoryCountImportId, context, intervalMs = 10000 } = payload
+    const { inventoryCountImportId, context, intervalMs = 10000 } = payload
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       if (count > 0) {
-        const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+        await resolveMissingProducts(inventoryCountImportId, context)
         await syncToServer(inventoryCountImportId, context)
       }
 

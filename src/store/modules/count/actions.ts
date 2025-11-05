@@ -6,7 +6,6 @@ import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
 import { hasError } from "@/utils"
 import logger from "@/logger";
 import { DateTime } from "luxon"
-const { getInventoryCountImportsByWorkEffort, fetchCycleCountImportSystemMessages, getWorkEfforts } = useInventoryCountImport();
 const actions: ActionTree<CountState, RootState> = {
   async getCreatedAndAssignedWorkEfforts({ commit, state }, params) {
   let assignedWorkEfforts =
@@ -25,7 +24,7 @@ const actions: ActionTree<CountState, RootState> = {
 
   try {
     // --- Single optimized API call ---
-    const resp = await getWorkEfforts({
+    const resp = await useInventoryCountImport().getWorkEfforts({
       pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
       pageIndex: params.pageIndex || 0,
       facilityId: params.facilityId,
@@ -66,11 +65,11 @@ const actions: ActionTree<CountState, RootState> = {
 
   commit(types.COUNT_ASSIGNED_WORK_EFFORTS_UPDATED, { assignedWorkEfforts, total, isScrollable })
 },
-  async fetchCycleCountImportSystemMessages({ commit }) {
+  async getCycleCntImportSystemMessages({ commit }) {
     let systemMessages;
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
-      const resp = await fetchCycleCountImportSystemMessages({
+      const resp = await useInventoryCountImport().getCycleCountImportSystemMessages({
         systemMessageTypeId: "ImportInventoryCounts",
         initDate_from: twentyFourHoursEarlier.toMillis(),
         orderByField: 'initDate desc, processedDate desc',
@@ -102,7 +101,7 @@ const actions: ActionTree<CountState, RootState> = {
   const params = { ...payload }
 
   try {
-    const resp = await getWorkEfforts(params)
+    const resp = await useInventoryCountImport().getWorkEfforts(params)
 
     if (!hasError(resp) && resp.data?.cycleCounts?.length > 0) {
       const newCycleCounts = resp.data.cycleCounts

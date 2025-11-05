@@ -72,7 +72,7 @@ const infiniteScrollRef = ref({}) as any
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
-  await fetchAssignedCycleCount();
+  await getAssignedCycleCount();
   loader.dismiss();
 })
 
@@ -96,7 +96,7 @@ async function loadMoreCycleCounts(event: any) {
   if(!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
   }
-  fetchAssignedCycleCount(
+  getAssignedCycleCount(
     undefined,
     Math.ceil(
       cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)
@@ -105,7 +105,7 @@ async function loadMoreCycleCounts(event: any) {
     await event.target.complete()})
 }
 
-async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
+async function getAssignedCycleCount(vSize?: any, vIndex?: any) {
   const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
   const pageIndex = vIndex ? vIndex : 0;
   const payload = {

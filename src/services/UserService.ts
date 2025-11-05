@@ -49,7 +49,7 @@ const getUserProfile = async (token: any): Promise<any> => {
   }
 }
 
-const fetchProductStoreSettings = async (payload: any): Promise <any>  => {
+const getProductStoreSettings = async (payload: any): Promise <any>  => {
   return api({
     url: `inventory-cycle-count/productStores/${payload.productStoreId}/settings`,
     method: "GET",
@@ -286,7 +286,7 @@ export const UserService = {
   createProductStoreSetting,
   createUserPreference,
   deleteFieldMapping,
-  fetchProductStoreSettings,
+  getProductStoreSettings,
   getFieldMappings,
   getUserPermissions,
   getUserPreference,

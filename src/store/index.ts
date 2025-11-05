@@ -1,4 +1,4 @@
-import { createStore, useStore as useVuexStore, Store } from "vuex";
+import { createStore, useStore as useVuexStore } from "vuex";
 import createPersistedState from "vuex-persistedstate";
 import RootState from "./RootState"; // Ensure this is correctly imported
 import mutations from "./mutations";

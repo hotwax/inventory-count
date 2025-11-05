@@ -8,11 +8,11 @@ import UtilState from './UtilState';
 
 const actions: ActionTree<UtilState, RootState> = {
 
-  async fetchFacilityGroups ( { commit }) {
+  async loadFacilityGroups ( { commit }) {
     let facilityGroups = [];
 
     try {
-      const resp = await UtilService.fetchFacilityGroups({ pageSize: 200 })
+      const resp = await UtilService.getFacilityGroups({ pageSize: 200 })
       if(!hasError(resp)) {
         facilityGroups = resp.data;
       } else {
@@ -23,11 +23,11 @@ const actions: ActionTree<UtilState, RootState> = {
     }
     commit(types.UTIL_FACILITY_GROUPS_UPDATED, facilityGroups);
   },
-  async fetchStatusDesc ( {commit} ) {
+  async loadStatusDesc ( {commit} ) {
     try {
       let statusDesc = [];
 
-      const resp = await UtilService.fetchCycleCountStatusDesc();
+      const resp = await UtilService.getCycleCountStatusDesc();
 
       if (resp?.status === 200 && resp.data?.length) {
         statusDesc = resp.data;
