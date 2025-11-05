@@ -71,16 +71,16 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId !== store.getters['user/getUserProfile']?.username">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== store.getters['user/getUserProfile']?.username">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for") }} {{ session.lock[0].userId }}</p>
+                    <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
                   <ion-note color="warning" slot="end">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for this device") }}</p>
@@ -89,7 +89,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId !== currentDeviceId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
@@ -441,8 +441,8 @@ async function forceRelease(session) {
   try {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
-      fromDate: session.lock[0].fromDate,
-      thruDate: Date.now(),
+      fromDate: session.lock?.fromDate,
+      thruDate: Date.now() + 300 * 1000,
       overrideByUserId: store.getters['user/getUserProfile']?.username
     }
 

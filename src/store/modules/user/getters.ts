@@ -16,6 +16,7 @@ const getters: GetterTree <UserState, RootState> = {
     return state.current
   },
   getInstanceUrl(state) {
+    console.log('Instance URL from getter:', state.instanceUrl);
     return state.instanceUrl;
   },
   getBaseUrl(state) {
