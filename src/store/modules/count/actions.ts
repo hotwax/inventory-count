@@ -26,7 +26,7 @@ const actions: ActionTree<CountState, RootState> = {
   try {
     // --- Single optimized API call ---
     const resp = await getWorkEfforts({
-      pageSize: params.pageSize || 20,
+      pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
       pageIndex: params.pageIndex || 0,
       facilityId: params.facilityId,
       currentStatusId: params.currentStatusId,
@@ -56,7 +56,7 @@ const actions: ActionTree<CountState, RootState> = {
       } else {
         assignedWorkEfforts = []
       }
-      throw "No work efforts returned"
+      throw resp.data;
     }
   } catch (err) {
     logger.error("Error fetching work efforts:", err)
@@ -121,7 +121,7 @@ const actions: ActionTree<CountState, RootState> = {
       // No data or failed fetch
       if (payload.pageIndex > 0) isScrollable = false
       else counts = []
-      throw "Failed to fetch the counts"
+      throw resp.data;
     }
   } catch (err) {
     isScrollable = false
