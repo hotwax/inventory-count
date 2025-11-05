@@ -514,6 +514,7 @@ const productIdentificationStore = useProductIdentificationStore();
 const {
   recordScan,
   getScanEvents,
+  getInventoryRecordsFromIndexedDB,
   loadInventoryItemsFromBackend,
   getUnmatchedItems,
   getCountedItems,
@@ -707,7 +708,12 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    await loadInventoryItemsFromBackend(props.inventoryCountImportId);
+    const localRecords = await getInventoryRecordsFromIndexedDB(props.inventoryCountImportId);
+
+    if (!localRecords?.length) {
+      console.log("[Session] No local records found, fetching from backend...");
+      await loadInventoryItemsFromBackend(props.inventoryCountImportId);
+    }
 
     // Prefetch product details for all related productIds
     const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
