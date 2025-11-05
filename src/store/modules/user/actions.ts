@@ -164,7 +164,6 @@ const actions: ActionTree<UserState, RootState> = {
   * Set User Instance Url
   */
   setUserInstanceUrl({ commit }, payload) {
-    console.log('Setting user instance URL:', payload);
     commit(types.USER_INSTANCE_URL_UPDATED, payload)
     updateInstanceUrl(payload)
   },
