@@ -44,6 +44,7 @@ const actions: ActionTree<CountState, RootState> = {
           sessions: workEffort.sessions || []
         })
       }
+      console.log("Fetched work efforts:", assignedWorkEfforts)
 
       total = totalCount
 

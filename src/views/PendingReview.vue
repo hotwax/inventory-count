@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <Filters menu-id="pending-review-filter" content-id="filter"/>
+    <!-- <Filters menu-id="pending-review-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
         <ion-title>{{ translate("Pending review")}}</ion-title>
@@ -51,15 +51,15 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n'
-import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { computed, ref } from "vue"
+import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
+import { filterOutline, storefrontOutline } from "ionicons/icons";
+import { translate } from '@/i18n'
 import store from "@/store"
 import router from "@/router"
-import Filters from "@/components/Filters.vue"
 import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
 import { loader } from '@/user-utils';
+// import Filters from "@/components/Filters.vue"
 
 const cycleCounts = computed(() => store.getters["count/getList"])
 const isScrollable = computed(() => store.getters["count/isScrollable"])
