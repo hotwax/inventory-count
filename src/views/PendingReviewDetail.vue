@@ -228,17 +228,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
-import store from "@/store"
-import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
-import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
-import { loader } from "@/user-utils";
 import router from "@/router";
 import { DateTime } from "luxon";
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
+import { loader } from "@/user-utils";
 
 const props = defineProps({
   workEffortId: String
@@ -252,11 +250,6 @@ onIonViewDidEnter(async () => {
   }
   isLoading.value = false;
 })
-
-const productIdentificationStore = useProductIdentificationStore();
-
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
-
 const filterAndSortBy = reactive({
   dcsnRsn: 'all',
   sortBy: 'alphabetic'
@@ -267,15 +260,16 @@ const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
 const searchedProductString = ref(''); 
 
 const isLoading = ref(false);
-
-const loadingSessions = ref(false);
-
 const workEffort = ref();
-
 const cycleCounts = ref();
 
 const isScrollable = ref(true);
 const isLoadingMore = ref(false);
+
+const sessions = ref();
+const selectedProductsReview = ref<any[]>([]);
+const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview, updateWorkEffort } = useInventoryCountImport();
+
 
 async function getWorkEffortDetails() {
   const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
@@ -352,12 +346,6 @@ watch(() => filterAndSortBy, async () => {
   }
   loader.dismiss();
 },{ deep: true });
-
-const sessions = ref();
-const selectedProductsReview = ref<any[]>([]);
-
-
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, submitProductReview, updateWorkEffort } = useInventoryCountImport();
 
 function getSortByField () {
   if (!sortBy.value) return null;

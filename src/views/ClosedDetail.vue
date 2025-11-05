@@ -156,7 +156,7 @@
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated="true" style="width: 60%"></ion-skeleton-text></p>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
@@ -204,13 +204,12 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { defineProps, reactive, ref, toRefs, watch } from "vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
-import store from "@/store"
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
 import { loader } from "@/user-utils";
 
 const props = defineProps({
@@ -236,9 +235,6 @@ const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
 const searchedProductString = ref(''); 
 
 const isLoading = ref(false);
-
-const loadingSessions = ref(false);
-
 const workEffort = ref();
 
 const cycleCounts = ref();
@@ -411,6 +407,10 @@ async function fetchInventoryCycleCount(reset = false) {
     cycleCounts.value = [];
     isScrollable.value = false;
   }
+}
+
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
 }
 
 </script>
