@@ -19,9 +19,6 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button slot="end" fill="outline" color="medium">
-                {{ translate("Edit") }}
-              </ion-button>
             </ion-item>
             <ion-item>
               <ion-icon :icon="businessOutline" slot="start"></ion-icon>
@@ -32,11 +29,14 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">{{ getDateWithOrdinalSuffix(workEffort?.dueDate) }}</p>
-                <ion-datetime-button datetime="datetime"></ion-datetime-button>
-                <ion-modal :keep-contents-mounted="true">
-                  <ion-datetime id="datetime"></ion-datetime>
-                </ion-modal>
+                <p class="overline">{{ translate("Due Date") }}</p>
+                <div v-if="workEffort.dueDate">
+                  <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
+                  <ion-modal keep-contents-mounted="true">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
+                    </ion-datetime>
+                  </ion-modal>
+                </div>
               </div>
             </ion-item>
           </ion-card>
@@ -147,7 +147,7 @@
               </div>
               <div slot="content" @click.stop="stopAccordianEventProp">
                 <ion-list v-if="sessions === null">
-                  <ion-item v-for="n in cycleCount.numberOfSessions" :key="n">
+                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
                     <ion-avatar slot="start">
                       <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
                     </ion-avatar>
@@ -156,7 +156,7 @@
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
                       <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
@@ -229,7 +229,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
@@ -238,6 +238,7 @@ import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPart
 import { facilityContext, getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
 import { loader } from "@/user-utils";
 import router from "@/router";
+import { DateTime } from "luxon";
 
 const props = defineProps({
   workEffortId: String
@@ -404,7 +405,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED" });
+    const resp = await updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);

@@ -19,7 +19,7 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button slot="end" fill="outline" color="medium">
+              <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert">
                 {{ translate("Edit") }}
               </ion-button>
             </ion-item>
@@ -40,7 +40,7 @@
                   <ion-button datetime="datetime" @click="isDueDateModalOpen = true">{{ translate("Add Due Date") }}</ion-button>
                 </div>
                 <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
-                  <ion-datetime id="datetime" v-model="selectedDate" :value="getIsoFormattedDate(workEffort?.dueDate)"></ion-datetime>
+                  <ion-datetime id="datetime" v-model="selectedDate" :value="getDateTime(workEffort?.dueDate)"></ion-datetime>
                   <ion-item lines="none" class="ion-text-end">
                   </ion-item>
                 </ion-modal>
@@ -106,10 +106,7 @@
                     <ion-thumbnail slot="start">
                       <dxp-image></dxp-image>
                     </ion-thumbnail>
-                    <ion-label>
-                        {{ cycleCount.internalName }}
-                        <!-- <p>Secondary Id</p> -->
-                    </ion-label>
+                    <ion-label>{{ cycleCount.internalName }}</ion-label>
                   </ion-item>
                 </div>
                 <ion-label class="stat">
@@ -121,33 +118,50 @@
                   <p>{{ translate("variance") }}</p>
                 </ion-label>
               </div>
-              <div v-if="loadingSessions">
-              <ion-spinner name="crescent"></ion-spinner>
-                <p>{{ translate("Loading items...") }}</p>
-              </div>
-              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
-                <ion-item lines="none">
-                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+              <div slot="content" @click.stop="stopAccordianEventProp">
+                <ion-list v-if="sessions === null">
+                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
+                    <ion-avatar slot="start">
+                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                    </ion-avatar>
+                    <ion-label>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated="true" style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                  <ion-item lines="none">
+                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                  </ion-item>
                   <ion-label>
-                    {{ session.uploadedByUserLogin }}
+                    {{ session.counted }}
+                    <p>{{ translate("counted") }}</p>
                   </ion-label>
-                </ion-item>
-
-                <ion-label>
-                  {{ session.counted }}
-                  <p>counted</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                  <p>{{ translate("started") }}</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                  <p>{{ translate("last updated") }}</p>
-                </ion-label>
-                <ion-button fill="clear" color="medium">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                </ion-button>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                    <p>{{ translate("started") }}</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                    <p>{{ translate("last updated") }}</p>
+                  </ion-label>
+                  <ion-button fill="clear" color="medium">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  </ion-button>
+                </div>
               </div>
             </ion-accordion>
           </ion-accordion-group>
@@ -168,7 +182,7 @@
 
 <script setup lang="ts">
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
 import store from "@/store"
@@ -228,17 +242,10 @@ const selectedDate = ref('')
 watch(
   () => workEffort.value?.dueDate,
   (newVal) => {
-    selectedDate.value = getIsoFormattedDate(newVal)
+    selectedDate.value = getDateTime(newVal) || "";
   },
   { immediate: true }
 )
-
-function getIsoFormattedDate(timestamp: any): string {
-  if (!timestamp) return DateTime.now().toISO() ?? ''
-  return typeof timestamp === 'number'
-    ? DateTime.fromMillis(timestamp).toISO() ?? ''
-    : DateTime.fromISO(timestamp).toISO() ?? ''
-}
 
 async function saveDueDate() {
   try {
@@ -259,6 +266,50 @@ async function saveDueDate() {
     console.error('Error updating due date on Cycle Count', error)
   }
   isDueDateModalOpen.value = false
+}
+
+async function openEditNameAlert() {
+  const editCountNameAlert = await alertController.create({
+    header: 'Edit Count Name',
+    inputs: [
+      {
+        name: 'workEffortName',
+        type: 'text',
+        value: workEffort.value?.workEffortName
+      }
+    ],
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel'
+      },
+      {
+        text: 'Save',
+        handler: async (data) => {
+          await loader.present("Updating Cycle Count");
+          try {
+            const resp = await updateWorkEffort({
+              workEffortId: workEffort.value.workEffortId,
+              workEffortName: data.workEffortName
+            });
+
+            if (resp?.status === 200) {
+              workEffort.value.workEffortName = data.workEffortName;
+              showToast(translate("Count Name Updated Successfully"));
+            } else {
+              throw resp;
+            }
+          } catch (error) {
+            showToast(translate("Failed to Update Cycle Count Name"));
+            console.error("Failed to update cycle count name:", error);
+          }
+          loader.dismiss();
+        },
+      },
+    ],
+  })
+
+  await editCountNameAlert.present();
 }
 
 
@@ -355,17 +406,23 @@ async function filterProductByInternalName() {
 }
 
 async function fetchCountSessions(productId: any) {
-  loadingSessions.value = true;
-  sessions.value = [];
-  const resp = await fetchSessions({
-    workEffortId: props.workEffortId,
-    productId: productId
-  });
+  sessions.value = null;
+  try {
+    const resp = await fetchSessions({
+      workEffortId: props.workEffortId,
+      productId: productId
+    });
 
-  if (resp && resp.status && resp.data && resp.data.length) {
-    sessions.value = resp.data;
+    if (resp && resp.status && resp.data && resp.data.length) {
+      sessions.value = resp.data;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    sessions.value = [];
+    console.error("Error getting sessions for this product: ", error);
+    showToast(translate("Something Went Wrong"));
   }
-  loadingSessions.value = false;
 }
 
 async function fetchInventoryCycleCount(reset = false) {
