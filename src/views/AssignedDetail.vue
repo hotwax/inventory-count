@@ -120,24 +120,24 @@
               </div>
               <div slot="content" @click.stop="stopAccordianEventProp">
                 <ion-list v-if="sessions === null">
-                  <ion-item v-for="n in cycleCount.numberOfSessions" :key="n">
+                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
                     <ion-avatar slot="start">
-                      <ion-skeleton-text :animated="true" style="width: 100%; height: 40px;"></ion-skeleton-text>
+                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
                     </ion-avatar>
                     <ion-label>
-                      <p><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
-                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text  :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
-                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
                       <p><ion-skeleton-text animated="true" style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
-                      <ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></p>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                   </ion-item>
                 </ion-list>
@@ -281,10 +281,7 @@ async function openEditNameAlert() {
     buttons: [
       {
         text: 'Cancel',
-        role: 'cancel',
-        handler: () => {
-          console.log('Alert cancelled')
-        },
+        role: 'cancel'
       },
       {
         text: 'Save',
