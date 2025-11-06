@@ -1,4 +1,7 @@
 import api from '@/api';
+import { hasError } from '@hotwax/oms-api';
+import { DateTime } from 'luxon';
+import logger from '@/logger';
 
 /** Get all work efforts */
 const getWorkEfforts = async (params: any): Promise<any> => {
@@ -108,6 +111,133 @@ const submitProductReview = async (payload: any): Promise<any> => {
  */
 export function useInventoryCountRun() {
 
+  async function getCreatedAndAssignedWorkEfforts(params: any) {
+    let workEfforts: any[] = [];
+    let total = 0;
+    let isScrollable = true;
+
+    try {
+      const resp = await api({
+        url: 'inventory-cycle-count/cycleCounts/workEfforts',
+        method: 'get',
+        params: {
+          pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
+          pageIndex: params.pageIndex || 0,
+          facilityId: params.facilityId,
+          currentStatusId: params.currentStatusId,
+          currentStatusId_op: params.currentStatusId_op
+        }
+      });
+
+      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+        const fetched = resp?.data.cycleCounts;
+        const totalCount = resp?.data.cycleCountsCount || 0;
+
+        workEfforts = fetched.map((we: any) => ({
+          ...we,
+          sessions: we.sessions || []
+        }));
+
+        total = totalCount;
+        isScrollable = workEfforts.length < totalCount;
+      } else {
+        isScrollable = params.pageIndex > 0 ? false : true;
+        workEfforts = [];
+        throw resp?.data;
+      }
+    } catch (err) {
+      logger.error('Error fetching work efforts:', err);
+      isScrollable = false;
+    }
+
+    return { workEfforts, total, isScrollable };
+  }
+
+  /** Fetch cycle count import system messages (24h window) */
+  async function getCycleCntImportSystemMessages() {
+    try {
+      const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
+      const resp = await api({
+        url: 'inventory-cycle-count/cycleCounts/systemMessages',
+        method: 'get',
+        params: {
+          systemMessageTypeId: 'ImportInventoryCounts',
+          initDate_from: twentyFourHoursEarlier.toMillis(),
+          orderByField: 'initDate desc, processedDate desc',
+          pageSize: 100
+        }
+      });
+
+      if (!hasError(resp)) return resp?.data;
+      throw resp?.data;
+    } catch (err) {
+      logger.error('Error fetching system messages:', err);
+      return [];
+    }
+  }
+
+  /** Fetch generic cycle counts list */
+  async function getCycleCounts(params: any) {
+    let cycleCounts: any[] = [];
+    let total = 0;
+    let isScrollable = true;
+
+    try {
+      const resp = await api({
+        url: 'inventory-cycle-count/cycleCounts/workEfforts',
+        method: 'get',
+        params
+      });
+
+      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+        cycleCounts = resp?.data.cycleCounts;
+        total = resp?.data.cycleCountsCount || 0;
+        isScrollable = cycleCounts.length < total;
+      } else {
+        isScrollable = params.pageIndex > 0 ? false : true;
+        cycleCounts = [];
+        throw resp?.data;
+      }
+    } catch (err) {
+      logger.error('Error fetching cycle counts:', err);
+      isScrollable = false;
+    }
+
+    return { cycleCounts, total, isScrollable };
+  }
+
+  async function getAssignedCycleCounts(params: any): Promise<{ data: any[]; total: number }> {
+    try {
+      const resp = await api({
+        url: 'inventory-cycle-count/cycleCounts/workEfforts',
+        method: 'get',
+        params: {
+          pageSize: params.pageSize || Number(process.env.VUE_APP_VIEW_SIZE) || 20,
+          pageIndex: params.pageIndex || 0,
+          currentStatusId: params.currentStatusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
+          currentStatusId_op: params.currentStatusId_op || 'in'
+        }
+      })
+
+      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+        return {
+          data: resp?.data.cycleCounts,
+          total: resp?.data.cycleCountsCount || 0
+        }
+      } else {
+        return { data: [], total: 0 }
+      }
+    } catch (err) {
+      logger.error('Error fetching cycle counts:', err)
+      return { data: [], total: 0 }
+    }
+  }
+
+  /** Clear list utility */
+  function clearCycleCountList() {
+    return { cycleCounts: [], total: 0, isScrollable: false };
+  }
+
   return {
     getWorkEfforts,
     getWorkEffort,
@@ -120,6 +250,11 @@ export function useInventoryCountRun() {
     cancelCycleCountFileProcessing,
     getCycleCountUploadedFileData,
     getCycleCountImportErrors,
-    submitProductReview
+    submitProductReview,
+    getCreatedAndAssignedWorkEfforts,
+    getCycleCntImportSystemMessages,
+    getAssignedCycleCounts,
+    getCycleCounts,
+    clearCycleCountList
   };
 }

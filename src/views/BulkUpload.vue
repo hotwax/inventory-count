@@ -184,31 +184,7 @@
 </template>
 
 <script setup>
-import {
-  IonButton,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonItemDivider,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonNote,  
-  IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar,
-  onIonViewDidEnter,
-  IonModal,
-  IonPopover,
-  IonButtons,
-  IonInput,
-  IonFab,
-  IonFabButton
-} from '@ionic/vue';
+import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonInput, IonFab, IonFabButton } from '@ionic/vue';
 import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -220,7 +196,7 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
 const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
-const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"]);
+const systemMessages = ref([]);
 
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
@@ -330,7 +306,7 @@ async function cancelUpload() {
     const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
-      await store.dispatch("count/getCycleCntImportSystemMessages");
+      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
   } catch (err) {
     showToast(translate("Failed to cancel uploaded cycle count."));
@@ -367,7 +343,7 @@ function resetDefaults() {
 onIonViewDidEnter(async () => {
   resetDefaults();
   await store.dispatch("user/getFieldMappings");
-  await store.dispatch("count/getCycleCntImportSystemMessages");
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
 });
 async function parse(e) {
   const f = e.target.files[0];
@@ -407,7 +383,7 @@ async function save() {
     const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
     if (!hasError(resp)) {
       resetDefaults();
-      await store.dispatch("count/getCycleCntImportSystemMessages");
+      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
       showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {

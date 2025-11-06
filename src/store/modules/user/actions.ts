@@ -131,7 +131,7 @@ const actions: ActionTree<UserState, RootState> = {
     userStore.$reset()
 
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
-    this.dispatch('count/clearCycleCountList')
+    // this.dispatch('count/clearCycleCountList')
     // this.dispatch('count/clearCycleCountItems')
     // this.dispatch('product/clearCachedProducts')
 
