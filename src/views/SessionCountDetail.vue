@@ -471,7 +471,11 @@ import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 
-const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
+const props = defineProps<{
+  workEffortId: string;
+  inventoryCountImportId: string;
+  inventoryCountTypeId: string;
+}>();
 
 const store = useStore();
 
