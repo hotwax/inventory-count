@@ -215,6 +215,7 @@ import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const store = useStore();
@@ -309,13 +310,13 @@ function viewUploadGuide() {
 }
 async function getCycleCountImportErrorsFromServer() {
   try {
-    const resp = await useInventoryCountImport().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) systemMessageError.value = resp?.data[0];
   } catch (err) { logger.error(err); }
 }
 async function viewFile() {
   try {
-    const resp = await useInventoryCountImport().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
@@ -326,7 +327,7 @@ async function viewFile() {
 }
 async function cancelUpload() {
   try {
-    const resp = await useInventoryCountImport().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
+    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
       await store.dispatch("count/getCycleCntImportSystemMessages");

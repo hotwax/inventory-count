@@ -208,7 +208,7 @@ import { defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
 import { loader } from "@/user-utils";
 
@@ -243,7 +243,7 @@ const isScrollable = ref(true);
 const isLoadingMore = ref(false);
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
+  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
@@ -261,7 +261,7 @@ async function loadMoreCycleCountProductReviews(event: any) {
   isLoadingMore.value = true;
   pagination.pageIndex += 1;
 
-  const resp = await useInventoryCountImport().getCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -294,7 +294,7 @@ watch(() => filterAndSortBy, async () => {
   await loader.present("Loading...");
   try {
     pagination.pageIndex = 0;
-    const count = await useInventoryCountImport().getCycleCount({
+    const count = await useInventoryCountRun().getCycleCount({
       workEffortId: props.workEffortId,
       pageSize: pagination.pageSize,
       pageIndex: pagination.pageIndex,
@@ -329,7 +329,7 @@ function getSortByField () {
 
 async function filterProductByInternalName() {
   try {
-    const productReviewDetail = await useInventoryCountImport().getProductReviewDetail({
+    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
       workEffortId: props.workEffortId,
       internalName: searchedProductString.value || null,
       internalName_op: searchedProductString.value ? "contains" : null,
@@ -366,7 +366,7 @@ function getDcsnFilter() {
 async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
-    const resp = await useInventoryCountImport().getSessions({
+    const resp = await useInventoryCountRun().getSessions({
       workEffortId: props.workEffortId,
       productId: productId
     });
@@ -389,7 +389,7 @@ async function getInventoryCycleCount(reset = false) {
     isScrollable.value = true;
   }
 
-  const resp = await useInventoryCountImport().getCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
