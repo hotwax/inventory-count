@@ -86,7 +86,6 @@ const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
     params: payload
   });
 };
-};
 
 const getCycleCountImportErrors = async (payload: any): Promise<any> => {
   return api({
