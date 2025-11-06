@@ -2,7 +2,7 @@ import { ActionTree } from "vuex"
 import RootState from "@/store/RootState"
 import CountState from "./CountState"
 import * as types from "./mutation-types"
-import { useInventoryCountImport } from "@/composables/useInventoryCountImport"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { hasError } from "@/utils"
 import logger from "@/logger";
 import { DateTime } from "luxon"
@@ -24,7 +24,7 @@ const actions: ActionTree<CountState, RootState> = {
 
   try {
     // --- Single optimized API call ---
-    const resp = await useInventoryCountImport().getWorkEfforts({
+    const resp = await useInventoryCountRun().getWorkEfforts({
       pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
       pageIndex: params.pageIndex || 0,
       facilityId: params.facilityId,
@@ -69,7 +69,7 @@ const actions: ActionTree<CountState, RootState> = {
     let systemMessages;
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
-      const resp = await useInventoryCountImport().getCycleCountImportSystemMessages({
+      const resp = await useInventoryCountRun().getCycleCountImportSystemMessages({
         systemMessageTypeId: "ImportInventoryCounts",
         initDate_from: twentyFourHoursEarlier.toMillis(),
         orderByField: 'initDate desc, processedDate desc',
@@ -101,7 +101,7 @@ const actions: ActionTree<CountState, RootState> = {
   const params = { ...payload }
 
   try {
-    const resp = await useInventoryCountImport().getWorkEfforts(params)
+    const resp = await useInventoryCountRun().getWorkEfforts(params)
 
     if (!hasError(resp) && resp.data?.cycleCounts?.length > 0) {
       const newCycleCounts = resp.data.cycleCounts

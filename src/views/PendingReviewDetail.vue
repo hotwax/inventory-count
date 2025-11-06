@@ -234,7 +234,7 @@ import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutl
 import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
-import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
 import { loader } from "@/user-utils";
 
@@ -271,7 +271,7 @@ const selectedProductsReview = ref<any[]>([]);
 
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
+  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
@@ -289,7 +289,7 @@ async function loadMoreCycleCountProductReviews(event: any) {
   isLoadingMore.value = true;
   pagination.pageIndex += 1;
 
-  const resp = await useInventoryCountImport().getCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -322,7 +322,7 @@ watch(() => filterAndSortBy, async () => {
   await loader.present("Loading...");
   try {
     pagination.pageIndex = 0;
-    const count = await useInventoryCountImport().getCycleCount({
+    const count = await useInventoryCountRun().getCycleCount({
       workEffortId: props.workEffortId,
       pageSize: pagination.pageSize,
       pageIndex: pagination.pageIndex,
@@ -392,7 +392,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await useInventoryCountImport().updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
+    const resp = await useInventoryCountRun().updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);
@@ -420,7 +420,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
-    const resp = await useInventoryCountImport().submitProductReview({ inventoryCountProductsList });
+    const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList });
 
     if (resp && resp.status === 200) {
       const selectedProductIds = selectedProductsReview.value.map(p => p.productId);
@@ -444,7 +444,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
 async function filterProductByInternalName() {
   try {
-    const productReviewDetail = await useInventoryCountImport().getProductReviewDetail({
+    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
       workEffortId: props.workEffortId,
       internalName: searchedProductString.value || null,
       internalName_op: searchedProductString.value ? "contains" : null,
@@ -485,7 +485,7 @@ function getDcsnFilter() {
 async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
-    const resp = await useInventoryCountImport().getSessions({
+    const resp = await useInventoryCountRun().getSessions({
       workEffortId: props.workEffortId,
       productId: productId
     });
@@ -518,7 +518,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     }
     inventoryCountProductsList.push(inventoryCountProductMap);
 
-    const resp = await useInventoryCountImport().submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
+    const resp = await useInventoryCountRun().submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
 
     if (resp?.status === 200) {
       cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
@@ -538,7 +538,7 @@ async function getInventoryCycleCount(reset = false) {
     isScrollable.value = true;
   }
 
-  const resp = await useInventoryCountImport().getCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,

@@ -1,10 +1,9 @@
-import { ref } from 'vue';
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
 import api from '@/api';
 import { v4 as uuidv4 } from 'uuid';
-import { db, ScanEvent, InventoryCountImportItem } from '@/database/commonDatabase'
+import { db, ScanEvent } from '@/database/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -19,23 +18,7 @@ interface RecordScanParams {
 function currentMillis(): number {
   return Date.now();
 }
-
-/**
- * Main composable
- */
-export function useInventoryCountImport() {
-  const syncStatus = ref<'idle'>('idle');
-  const currentImport = ref<InventoryCountImportItem | null>(null);
-
-  /** Loads a specific inventory import record session */
-  async function loadSession(inventoryCountImportId: string): Promise<void> {
-    const session = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .first();
-    currentImport.value = session || null;
-  }
-
+/* Stateless functions */
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
@@ -283,71 +266,6 @@ export function useInventoryCountImport() {
   });
 
    /* API call functions moved from CountService.ts */   
-  const getCycleCount = async (payload: any): Promise <any>  => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  const getSessions = async (payload: any): Promise <any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  const getWorkEffort = async (payload: any): Promise<any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-      method: "get"
-    });
-  }
-
-  const getProductReviewDetail = async (payload: any): Promise<any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  async function createSessionOnServer (payload: any) {
-
-    const resp = await api({
-        url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
-        method: "post",
-        data: payload
-      })
-    return resp;
-  }
-
-const getWorkEfforts = async (params: any): Promise <any> => {
-  return api({
-    url: "inventory-cycle-count/cycleCounts/workEfforts",
-    method: "get",
-    params
-  });
-}
-
-const getInventoryCountImportsByWorkEffort = async (params: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
-    method: "get",
-  });
-}
-
-const addSessionInCount = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
-    method: "post",
-    data: payload
-  }
-  );
-}
-
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
   return await api({
     url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}`,
@@ -355,47 +273,6 @@ const getInventoryCountImportSession = async (params: { inventoryCountImportId: 
     params
   });
 }
-
-const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/upload`,
-    method: "post",
-    ...payload
-  });
-}
-
-const getCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages`,
-    method: "get",
-    params: payload
-  });
-}
-
-const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
-    method: "post",
-    data: payload
-  });
-}
-
-const getCycleCountUploadedFileData = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
-    method: "get",
-    data: payload
-  });
-}
-
-const getCycleCountImportErrors = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
-    method: "get",
-    data: payload
-  });
-}
-
 async function discardSession(inventoryCountImportId: string): Promise<void> {
   try {
     await api({
@@ -424,22 +301,6 @@ async function submitSession(inventoryCountImportId: string): Promise<void> {
     console.error(`useInventoryCountImport Failed to submit InventoryCountImport ${inventoryCountImportId}`, err)
     throw err
   }
-}
-
-const submitProductReview = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/submit`,
-    method: "post",
-    data: payload
-  })
-}
-
-const updateWorkEffort = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-    method: "put",
-    data: payload
-  })
 }
 
 const updateSession = async (payload: any): Promise <any> => {
@@ -496,44 +357,31 @@ const releaseSession = async (payload: any): Promise<any> => {
     data: payload
   });
 }
+
+/**
+ * Composable to manage InventoryCountImport related operations using singleton pattern
+ */
+export function useInventoryCountImport() {
     
   return {
-    currentImport,
+    cloneSession,
     discardSession,
-    submitSession,
-    createSessionOnServer,
-    syncStatus,
-    loadSession,
-    recordScan,
-    loadInventoryItemsFromBackend,
-    getInventoryCountImportItems,
-    getSessionProductIds,
-    getUnmatchedItems,
     getCountedItems,
+    getInventoryCountImportItems,
+    getInventoryCountImportSession,
+    getScanEvents,
+    getSessionItemsByImportId,
+    getSessionProductIds,
+    getSessionLock,
     getUncountedItems,
     getUndirectedItems,
-    getCycleCount,
-    getSessions,
-    getWorkEffort,
-    getWorkEfforts,
-    getProductReviewDetail,
-    cancelCycleCountFileProcessing,
-    getInventoryCountImportsByWorkEffort,
-    getInventoryCountImportSession,
-    bulkUploadInventoryCounts,
-    getCycleCountImportSystemMessages,
-    getCycleCountUploadedFileData,
-    addSessionInCount,
-    getCycleCountImportErrors,
-    submitProductReview,
-    updateWorkEffort,
-    updateSession,
-    cloneSession,
-    getSessionItemsByImportId,
-    getScanEvents,
-    searchInventoryItemsByIdentifier,
-    getSessionLock,
+    getUnmatchedItems,
+    loadInventoryItemsFromBackend,
     lockSession,
-    releaseSession
+    recordScan,
+    releaseSession,
+    searchInventoryItemsByIdentifier,
+    submitSession,
+    updateSession
   };
 }

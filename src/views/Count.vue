@@ -97,7 +97,6 @@
                 <!-- Locked by same user, different device -->
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
-                    {{ session.lock }}
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
@@ -200,6 +199,7 @@ import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@hotwax/dxp-components';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
@@ -330,7 +330,7 @@ async function addNewSession() {
 
     if (isHardCount) {
       // --- Create a new HARD COUNT session directly ---
-      resp = await useInventoryCountImport().createSessionOnServer({
+      resp = await useInventoryCountRun().createSessionOnServer({
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
         uploadedByUserLogin: store.getters["user/getUserProfile"].username,
@@ -353,7 +353,7 @@ async function addNewSession() {
           })
         } else {
           // Fallback: no valid oldest found
-          resp = await useInventoryCountImport().createSessionOnServer({
+          resp = await useInventoryCountRun().createSessionOnServer({
             countImportName: countName.value,
             statusId: "SESSION_CREATED",
             uploadedByUserLogin: store.getters["user/getUserProfile"].username,
@@ -365,7 +365,7 @@ async function addNewSession() {
         }
       } else {
         // No sessions → create new one (same as HARD COUNT)
-        resp = await useInventoryCountImport().createSessionOnServer({
+        resp = await useInventoryCountRun().createSessionOnServer({
           countImportName: countName.value,
           statusId: "SESSION_CREATED",
           uploadedByUserLogin: store.getters["user/getUserProfile"].username,
@@ -413,7 +413,7 @@ async function addNewSession() {
 
 async function markAsCompleted(workEffortId) {
   try {
-    const response = await useInventoryCountImport().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
+    const response = await useInventoryCountRun().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
     if (response && response.status === 200) {
       showToast(translate("Session sent for review successfully"));
       pageIndex.value = 0;
@@ -428,7 +428,7 @@ async function markAsCompleted(workEffortId) {
 
 async function markInProgress(workEffortId) {
   try {
-    const response = await useInventoryCountImport().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
+    const response = await useInventoryCountRun().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
     if (response && response.status === 200) {
       showToast(translate("Cycle Count is Active"));
       pageIndex.value = 0;
