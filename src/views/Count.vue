@@ -42,6 +42,12 @@
               <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
             </ion-label>
           </ion-item>
+          <ion-item v-if="count.estimatedStartDate" lines="none">
+            {{ translate("Start date") }}
+            <ion-label slot="end">
+              <p>{{ getDateWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+            </ion-label>
+          </ion-item>
           <ion-list>
             <ion-list-header>
               <ion-label>

@@ -5,7 +5,7 @@ name: Deploy to Firebase Hosting on merge
 'on':
   push:
     branches:
-      - main
+      - inventory-count-3.0
 jobs:
   call-workflow-in-another-repo:
     uses: hotwax/dxp-components/.github/workflows/common-firebase-hosting-merge.yml@main

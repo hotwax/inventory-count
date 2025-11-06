@@ -1073,7 +1073,7 @@ async function unscheduleWorker() {
 async function submit() {
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast("Unmatched products should be matched before submission");
+      showToast(translate("Unmatched products should be matched before submission"));
       return;
     }
     await finalizeAggregationAndSync();

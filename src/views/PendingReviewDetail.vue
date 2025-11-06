@@ -414,8 +414,8 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       productId: product.productId,
       facilityId: workEffort.value.facilityId,
       varianceQuantity: product.proposedVarianceQuantity,
-      systemQuantity: product.quantity,
-      countedQuantity: product.quantityOnHand,
+      systemQuantity: product.quantityOnHand,
+      countedQuantity: product.quantity,
       decisionOutcomeEnumId: decisionOutcomeEnumId,
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
