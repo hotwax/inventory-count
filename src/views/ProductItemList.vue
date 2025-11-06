@@ -46,7 +46,10 @@ import emitter from '@/event-bus';
 const router = useRouter();
 const store = useStore();
 const productIdentificationStore = useProductIdentificationStore()
-const props = defineProps(['item', 'statusId']);
+const props = defineProps(
+  ['item',
+  'statusId'
+]);
 
 
 const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])

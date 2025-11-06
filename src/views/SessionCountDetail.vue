@@ -386,11 +386,8 @@
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
-                    {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId,
-                      product) || product.productName }}
-                    <p>{{
-                      getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId,
-                      product) }}</p>
+                    {{ primaryId(product) || product.productName }}
+                    <p>{{ secondaryId(product) }}</p>
                   </ion-label>
                 </ion-radio>
               </ion-item>
@@ -453,41 +450,7 @@
 
 
 <script setup lang="ts">
-import {
-  IonBackButton,
-  IonButtons,
-  IonBadge,
-  IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonNote,
-  IonPage,
-  IonSearchbar,
-  IonSpinner,
-  IonSegment,
-  IonSegmentButton,
-  IonSegmentContent,
-  IonSegmentView,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  IonFab,
-  IonFabButton,
-  IonModal,
-  IonRadio,
-  IonRadioGroup,
-  onIonViewDidEnter
-} from '@ionic/vue';
+import { IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -498,7 +461,7 @@ import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
 import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
@@ -508,8 +471,11 @@ import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 
-const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
-const productIdentificationStore = useProductIdentificationStore();
+const props = defineProps<{
+  workEffortId: string;
+  inventoryCountImportId: string;
+  inventoryCountTypeId: string;
+}>();
 
 const store = useStore();
 
@@ -566,7 +532,6 @@ const userLogin = computed(() => store.getters['user/getUserProfile']);
 onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
   try {
-    useProductMaster().init();
     await handleSessionLock();
     await startSession();
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
@@ -905,40 +870,55 @@ function timeAgo(ts: number) {
 }
 
 // helper: pick primary/secondary id from enriched product.goodIdentifications
-const primaryId = (p?: any) => {
-  if (!p) return ''
+const primaryId = (product?: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getPrimaryId()
 
-  const pref = productIdentificationStore.getProductIdentificationPref.primaryId
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
   }
 
   // Try preference, then fallback to SKU or productId
-  return resolve(pref) || resolve('SKU') || p.productId || ''
+  return resolve(pref) || resolve('SKU') || product.productId || ''
 }
 
-const secondaryId = (p?: any) => {
-  if (!p) return ''
+const secondaryId = (product: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getSecondaryId()
 
-  const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
+  // Parse any flat "TYPE/VALUE" strings (from Solr)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
   }
 
   // Try preference, then fallback to productId
-  return resolve(pref) || p.productId || ''
+  return resolve(pref) || product.productId || ''
 }
 
 function openMatchModal(item: any) {

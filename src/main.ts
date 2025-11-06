@@ -40,6 +40,8 @@ import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getECom
 import localeMessages from './locales';
 import { db } from '@/database/commonDatabase'
 import { initDeviceId } from '@/utils/device'
+import { useProductMaster } from './composables/useProductMaster';
+import { useProductStoreSettings } from './composables/useProductStoreSettings';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -107,7 +109,8 @@ router.isReady().then(async () => {
     // Ensures the database is opened and schema initialized
     await db.open()
     await initDeviceId()
-    console.info('[IndexedDB] CommonDB initialized successfully')
+    await useProductMaster().init();
+    await useProductStoreSettings().init();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }
