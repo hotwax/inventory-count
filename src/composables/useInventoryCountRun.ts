@@ -83,8 +83,9 @@ const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
     method: "get",
-    data: payload
+    params: payload
   });
+};
 };
 
 const getCycleCountImportErrors = async (payload: any): Promise<any> => {
