@@ -109,8 +109,8 @@ router.isReady().then(async () => {
     // Ensures the database is opened and schema initialized
     await db.open()
     await initDeviceId()
-    useProductMaster().init();
-    useProductStoreSettings().init();
+    await useProductMaster().init();
+    await useProductStoreSettings().init();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }
