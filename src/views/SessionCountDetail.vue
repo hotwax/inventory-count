@@ -867,6 +867,7 @@ function timeAgo(ts: number) {
 
 // helper: pick primary/secondary id from enriched product.goodIdentifications
 const primaryId = (product?: any) => {
+  if (!product) return ''
   const pref = useProductStoreSettings().getPrimaryId()
 
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
@@ -891,6 +892,7 @@ const primaryId = (product?: any) => {
 }
 
 const secondaryId = (product: any) => {
+  if (!product) return ''
   const pref = useProductStoreSettings().getSecondaryId()
 
   // Parse any flat "TYPE/VALUE" strings (from Solr)
