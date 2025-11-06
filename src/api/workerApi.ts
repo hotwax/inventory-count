@@ -6,7 +6,17 @@ export default async function workerApi(customConfig: {
   baseURL?: string;
   headers?: Record<string, string>;
 }) {
-  const { url, method = "GET", data, params, baseURL, headers = {} } = customConfig;
+  const { url, method = "GET", data, params, headers = {} } = customConfig;
+  let { baseURL } = customConfig; 
+
+  if (baseURL && !/^https?:\/\//i.test(baseURL)) {
+    baseURL = `https://${baseURL}`;
+  }
+
+  if (baseURL && !baseURL.includes("hotwax.io")) {
+    baseURL = baseURL.replace(/\/+$/, "");
+    baseURL = `${baseURL}.hotwax.io`;
+  }
 
   // Build URL
   let baseUrl = baseURL || '';
