@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -55,10 +55,9 @@ import { ref } from "vue";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import store from "@/store"
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 import { loader } from "@/user-utils";
 // import Filters from "@/components/Filters.vue"
 

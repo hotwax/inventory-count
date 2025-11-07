@@ -103,7 +103,7 @@ const actions: ActionTree<UserState, RootState> = {
     
       await dispatch("getProductStoreSetting")
       await dispatch('getFieldMappings')
-      await store.dispatch('util/getStatusDesc');
+      // await store.dispatch('util/getStatusDesc');
     } catch (err: any) {
       logger.error("error", err);
       return Promise.reject(new Error(err))

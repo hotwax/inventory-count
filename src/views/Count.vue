@@ -260,7 +260,7 @@ async function getCycleCounts(reset = false) {
   };
 
   try {
-    const { workEfforts, total, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
+    const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
 
     if (pageIndex.value === 0) {
       cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);

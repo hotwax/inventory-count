@@ -1,7 +1,34 @@
+import { ref } from 'vue';
 import api from '@/api';
 import { hasError } from '@hotwax/oms-api';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
+
+const statuses = ref<any[]>([])
+let statusesLoaded = false
+
+async function loadStatusDescription() {
+  if (statusesLoaded && statuses.value.length) return statuses.value
+  try {
+    const resp = await getCycleCountStatusDesc()
+    if (resp?.status === 200 && resp.data?.length) {
+      statuses.value = resp.data
+      statusesLoaded = true
+    } else {
+      logger.warn('No statuses found or response invalid:', resp)
+      statuses.value = []
+    }
+  } catch (error) {
+    logger.error('Failed to fetch cycle count status descriptions', error)
+    statuses.value = []
+  }
+  return statuses.value
+}
+
+function getStatusDescription(statusId: string): string {
+  const found = statuses.value.find((s: any) => s.statusId === statusId)
+  return found?.description || statusId
+}
 
 /** Get all work efforts */
 const getWorkEfforts = async (params: any): Promise<any> => {
@@ -103,6 +130,16 @@ const submitProductReview = async (payload: any): Promise<any> => {
     url: `inventory-cycle-count/cycleCounts/submit`,
     method: "post",
     data: payload
+  })
+}
+
+const getCycleCountStatusDesc = async (): Promise<any> => {
+  return api({
+    url: "oms/statuses",
+    method: "GET",
+    params: {
+      statusTypeId: "CYCLE_CNT_STATUS"
+    }
   })
 }
 
@@ -243,6 +280,7 @@ export function useInventoryCountRun() {
     getWorkEffort,
     getProductReviewDetail,
     getCycleCount,
+    getCycleCountStatusDesc,
     getSessions,
     updateWorkEffort,
     createSessionOnServer,
@@ -255,6 +293,8 @@ export function useInventoryCountRun() {
     getCycleCntImportSystemMessages,
     getAssignedCycleCounts,
     getCycleCounts,
-    clearCycleCountList
+    clearCycleCountList,
+    loadStatusDescription,
+    getStatusDescription
   };
 }

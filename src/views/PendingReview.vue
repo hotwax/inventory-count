@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -57,7 +57,7 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
-import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 import { loader } from '@/user-utils';
 // import Filters from "@/components/Filters.vue"
 
@@ -112,7 +112,7 @@ async function getPendingCycleCounts() {
     currentStatusId: "CYCLE_CNT_CMPLTD"
   }
 
-  const { cycleCounts: data, total, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
+  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
 
   if (data.length) {
     if (pageIndex.value > 0) {

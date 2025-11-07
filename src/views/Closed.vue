@@ -27,7 +27,7 @@
           </ion-chip>
 
           <ion-item lines="none">
-            <ion-badge slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -45,7 +45,7 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getStatusDescription, getFacilityName } from '@/utils';
+import { getFacilityName } from '@/utils';
 import { loader } from '@/user-utils';
 
 const isScrollingEnabled = ref(false);
@@ -89,7 +89,7 @@ async function getClosedCycleCounts() {
     currentStatusId_op: "in"
   };
 
-  const { cycleCounts: data, total, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
+  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
 
   if (data.length) {
     if (pageIndex.value > 0) {

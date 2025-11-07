@@ -43,6 +43,7 @@ import { db } from '@/database/commonDatabase'
 import { initDeviceId } from '@/utils/device'
 import { useProductMaster } from './composables/useProductMaster';
 import { useProductStoreSettings } from './composables/useProductStoreSettings';
+import { useInventoryCountRun } from './composables/useInventoryCountRun';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -113,6 +114,7 @@ router.isReady().then(async () => {
     await initDeviceId()
     await useProductMaster().init();
     await useProductStoreSettings().init();
+    await useInventoryCountRun().loadStatusDescription();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }
