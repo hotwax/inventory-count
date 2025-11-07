@@ -463,7 +463,6 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
 import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
-import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { loader } from '@/user-utils';
@@ -944,7 +943,7 @@ async function handleSearch() {
 async function getProducts() {
   isLoading.value = true;
   try {
-    const resp = await loadProducts({
+    const resp = await useProductMaster().loadProducts({
       keyword: queryString.value.trim(),
       viewSize: 100,
       filters: ["isVirtual: false", "isVariant: true"],
@@ -958,21 +957,6 @@ async function getProducts() {
   }
   isLoading.value = false;
 }
-
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 async function saveMatchProduct() {
   if (!selectedProductId.value) {

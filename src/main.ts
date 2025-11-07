@@ -35,6 +35,8 @@ import permissionPlugin, { Actions, hasPermission } from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { dxpComponents } from '@hotwax/dxp-components'
+import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { login, logout, loader } from './user-utils';
 import { fetchGoodIdentificationTypes, getConfig, getAvailableTimeZones, getEComStores, getEComStoresByFacility, getUserFacilities, getProductIdentificationPref, getUserPreference, initialise, setProductIdentificationPref, setUserTimeZone, setUserPreference } from '@/adapter';
 import localeMessages from './locales';
@@ -56,6 +58,7 @@ const app = createApp(App)
     rules: permissionRules,
     actions: permissionActions
   })
+  .use(createPinia().use(piniaPluginPersistedstate))
   .use(dxpComponents, {
     Actions,
     defaultImgUrl: require("@/assets/images/defaultImage.png"),
@@ -111,8 +114,8 @@ router.isReady().then(async () => {
     await db.open()
     await initDeviceId()
     await useProductMaster().init();
-    await useProductStoreSettings().init();
-    await useInventoryCountRun().loadStatusDescription();
+   // await useProductStoreSettings().init();
+   // await useInventoryCountRun().loadStatusDescription();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }

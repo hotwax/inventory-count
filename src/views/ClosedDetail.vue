@@ -205,7 +205,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";

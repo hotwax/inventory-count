@@ -9,6 +9,10 @@ import { translate } from "@/i18n"
 import { Settings } from "luxon";
 import { resetConfig, updateToken, updateInstanceUrl } from "@/adapter"
 import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotwax/dxp-components"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
+import { useUserProfile } from "@/stores/useUserProfile"
+import { useProductStore } from "@/stores/useProductStore"
+import { useFacilityStore } from "@/stores/useFacilityStore"
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
@@ -18,7 +22,7 @@ const actions: ActionTree<UserState, RootState> = {
     /**
   * Login user and return token
   */
-  async login ({ commit, dispatch }, payload) {
+  async login({ commit, dispatch }, payload) {
     try {
 
       // TODO: implement support for permission check
@@ -32,9 +36,11 @@ const actions: ActionTree<UserState, RootState> = {
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
 
-      const serverPermissions: Array<string> = await UserService.getUserPermissions({
-        permissionIds: [...new Set(serverPermissionsFromRules)]
-      }, omsRedirectionUrl, token);
+      const serverPermissions = await useUserProfile().loadUserPermissions(
+        { permissionIds: [...new Set(serverPermissionsFromRules)] },
+        omsRedirectionUrl || oms,
+        token
+      )
 
       const appPermissions = prepareAppPermissions(serverPermissions);
 
@@ -44,7 +50,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (permissionId) {
         // As the token is not yet set in the state passing token headers explicitly
         // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
         // If there are any errors or permission check fails do not allow user to login
         if (!hasPermission) {
           const permissionError = 'You do not have permission to access the app.';
@@ -54,9 +60,9 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      const api_key = await UserService.login(token)
+      const api_key = await useUserProfile().login(token, oms)
 
-      const userProfile = await UserService.getUserProfile(api_key);
+      const userProfile = await useUserProfile().fetchUserProfile(api_key, oms);
 
       if (userProfile.timeZone) {
         Settings.defaultZone = userProfile.timeZone;
@@ -80,14 +86,14 @@ const actions: ActionTree<UserState, RootState> = {
         facilityTypeId_not: "Y"
       });
       await useUserStore().getFacilityPreference("SELECTED_FACILITY", userProfile?.userId)
-      if(!facilities.length) throw "Unable to login. User is not associated with any facility"
+      if (!facilities.length) throw "Unable to login. User is not associated with any facility"
       const currentFacility: any = useUserStore().getCurrentFacility
       isAdminUser ? await useUserStore().getEComStores() : await useUserStore().getEComStoresByFacility(currentFacility?.facilityId)
       await useUserStore().getEComStorePreference("SELECTED_BRAND", userProfile?.userId)
       const preferredStore: any = useUserStore().getCurrentEComStore
 
       setPermissions(appPermissions);
-      if(omsRedirectionUrl && token) {
+      if (omsRedirectionUrl && token) {
         dispatch("setOmsRedirectionInfo", { url: omsRedirectionUrl, token })
       }
 
@@ -95,50 +101,52 @@ const actions: ActionTree<UserState, RootState> = {
 
       commit(types.USER_PERMISSIONS_UPDATED, appPermissions);
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
-      commit(types.USER_INFO_UPDATED, userProfile);
+      // commit(types.USER_INFO_UPDATED, userProfile);
 
+      useUserProfile().setUserProfile(userProfile);
       // Get product identification from api using dxp-component
       await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
-      .catch((error) => logger.error(error));
-    
-      await dispatch("getProductStoreSetting")
-      await dispatch('getFieldMappings')
+        .catch((error) => logger.error(error));
+
+      await useUserProfile().fetchProductStoreSettings(preferredStore.productStoreId)
+      await useUserProfile().fetchFieldMappings()
+      await useInventoryCountRun().loadStatusDescription();
       // await store.dispatch('util/getStatusDesc');
     } catch (err: any) {
       logger.error("error", err);
       return Promise.reject(new Error(err))
     }
   },
-  
+
   /**
   * Logout user
   */
-  async logout({ commit, dispatch }, payload = { isUserUnauthorised: false }) {
-    if(!payload.isUserUnauthorised) emitter.emit('presentLoader', { message: 'Logging out', backdropDismiss: false })
+  async logout({commit}, payload = { isUserUnauthorised: false }) {
+    if (!payload.isUserUnauthorised) emitter.emit('presentLoader', { message: 'Logging out', backdropDismiss: false })
 
-    const authStore = useAuthStore()
-    const userStore = useUserStore()
+  const authStore = useAuthStore()
+  const dxpUserStore = useUserStore()
+  const userProfileStore = useUserProfile()
 
-    // TODO add any other tasks if need
-    commit(types.USER_END_SESSION)
-    // this.dispatch("util/clearUtilState");
-    dispatch("setOmsRedirectionInfo", { url: "", token: "" })
-    resetConfig();
-    resetPermissions();
+  // Reset all pinia states
+  userProfileStore.$reset()
+  authStore.$reset()
+  dxpUserStore.$reset()
 
-    // reset plugin state on logout
-    authStore.$reset()
-    userStore.$reset()
+  // Reset configs and permissions
+  resetConfig()
+  resetPermissions()
 
-    commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, barcodeIdentificationPref: "internalName" })
-    // this.dispatch('count/clearCycleCountList')
-    // this.dispatch('count/clearCycleCountItems')
-    // this.dispatch('product/clearCachedProducts')
-
-    // Clear indexedDB storage on logout
-    // deleteDB("cycleCounts");
-
-    emitter.emit('dismissLoader')
+  // Reset default store settings
+    userProfileStore.$patch((state: any) => {
+      state.settings = {
+        showQoh: false,
+        forceScan: false,
+        isFirstScanCountEnabled: false,
+        barcodeIdentificationPref: 'internalName'
+      }
+    })
+      emitter.emit('dismissLoader')
   },
 
   /**
@@ -147,7 +155,7 @@ const actions: ActionTree<UserState, RootState> = {
   async setUserTimeZone({ state, commit }, payload) {
     const current: any = state.current;
     // TODO: add support to change the user time on server, currently api to update user is not available
-    if(current.timeZone !== payload.tzId) {
+    if (current.timeZone !== payload.tzId) {
       current.timeZone = payload.tzId;
       commit(types.USER_INFO_UPDATED, current);
       Settings.defaultZone = current.timeZone;
@@ -167,8 +175,8 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-    setDeviceId({ commit }, payload) {
-      commit(types.USER_DEVICE_ID_UPDATED, payload)
+  setDeviceId({ commit }, payload) {
+    commit(types.USER_DEVICE_ID_UPDATED, payload)
   },
 
 

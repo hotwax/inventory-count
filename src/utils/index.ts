@@ -15,8 +15,6 @@ const dateOrdinalSuffix = {
   23: 'rd'
 } as any
 
-// TODO Use separate files for specific utilities
-
 // TODO Remove it when HC APIs are fully REST compliant
 const hasError = (response: any) => {
   return typeof response.data != "object" || !!response.data._ERROR_MESSAGE_ || !!response.data._ERROR_MESSAGE_LIST_ || !!response.data.error;
@@ -40,24 +38,9 @@ const showToast = async (message: string, configButtons?: any) => {
   return toast.present();
 }
 
-const handleDateTimeInput = (dateTimeValue: any) => {
-  // TODO Handle it in a better way
-  // Remove timezone and then convert to timestamp
-  // Current date time picker picks browser timezone and there is no supprt to change it
-  const dateTime = DateTime.fromISO(dateTimeValue, { setZone: true}).toFormat("yyyy-MM-dd'T'HH:mm:ss")
-  return DateTime.fromISO(dateTime).toMillis()
-}
-
 const getDateTime = (time: any) => {
   return time ? DateTime.fromMillis(time).toISO() : ''
 }
-
-// Converts ISO date to milliseconds at start or end of day, considering timezone
-function convertIsoToMillis(isoDate: any, rangeSuffix?: string) {
-  return rangeSuffix === "from" ? DateTime.fromISO(isoDate, {setZone: true}).startOf("day").toMillis() : DateTime.fromISO(isoDate, {setZone: true}).endOf("day").toMillis()
-}
-
-
 
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
@@ -66,39 +49,8 @@ function getDateWithOrdinalSuffix(time: any) {
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
-function timeFromNow(time: any) {
-  if(!time) return "-"
-  const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
-  return DateTime.local().plus(timeDiff).toRelative();
-}
-
 function getFacilityName(id: string) {
   return useUserStore().getFacilites.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function getPartyName(item: any) {
-  return item.countedByGroupName ? item.countedByGroupName : item.countedByFirstName ? item.countedByFirstName + " " + item.countedByLastName : item.countedByUserLoginId ? item.countedByUserLoginId : "-"
-}
-
-const getProductIdentificationValue = (productIdentifier: string, product: any) => {
-
-  // handled this case as on page load initially the data is not available, so not to execute furthur code
-  // untill product are not available
-  if(!Object.keys(product).length) {
-    return;
-  }
-
-  let value = product[productIdentifier]
-
-  // considered that the goodIdentification will always have values in the format "productIdentifier/value" and there will be no entry like "productIdentifier/"
-  const identification = product['goodIdentifications']?.find((identification: string) => identification.startsWith(productIdentifier + "/"))
-
-  if(identification) {
-    const goodIdentification = identification.split('/')
-    value = goodIdentification[1]
-  }
-
-  return value;
 }
 
 const parseCsv = async (file: File, options?: any) => {
@@ -139,16 +91,6 @@ const downloadCsv = (csv: any, fileName: any) => {
   return blob;
 };
 
-function sortListByField(list: any, field = "parentProductName") {
-  return list.sort((a: any, b: any) => {
-    if (!a[field] && b[field]) return 1;  // If 'item1' has no field, it goes after 'item2'
-    if (a[field] && !b[field]) return -1; // If 'item2' has no field, it goes after 'item1'
-    if (a[field] < b[field]) return -1;   // Normal alphabetical sorting
-    if (a[field] > b[field]) return 1;    // Normal alphabetical sorting
-    return 0;                             // If fields are equal
-  });
-}
-
 const getProductStoreId = () => {
   const currentEComStore: any = useUserStore().getCurrentEComStore;
   return currentEComStore.productStoreId
@@ -158,4 +100,4 @@ const  getValidItems = (items: any) => {
   return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
 }
 
-export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+export { downloadCsv, getValidItems, jsonToCsv, showToast, hasError, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getProductStoreId, parseCsv }
