@@ -2,24 +2,23 @@
   <ion-page>
     <ion-content>
       <div class="flex">
-        <form class="login-container" @keyup.enter="handleSubmit" @submit.prevent>
+        <form class="login-container" @submit.prevent="handleSubmit">
           <section>
             <ion-item lines="full">
               <ion-input
                 :label="$t('Username')"
                 label-placement="fixed"
-                name="username"
                 v-model="username"
                 id="username"
                 type="text"
                 required
               />
             </ion-item>
+
             <ion-item lines="none">
               <ion-input
                 :label="$t('Password')"
                 label-placement="fixed"
-                name="password"
                 v-model="password"
                 id="password"
                 type="password"
@@ -42,12 +41,6 @@
           </section>
         </form>
       </div>
-
-      <ion-fab @click="router.push('/')" vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button color="medium">
-          <ion-icon :icon="gridOutline" />
-        </ion-fab-button>
-      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
@@ -55,7 +48,6 @@
 <script setup lang="ts">
 import {
   IonButton,
-  IonChip,
   IonContent,
   IonFab,
   IonFabButton,
@@ -78,7 +70,6 @@ const authStore = useAuthStore();
 
 const username = ref("");
 const password = ref("");
-
 const isLoggingIn = ref(false);
 let loader: any = null;
 
@@ -86,7 +77,6 @@ onMounted(() => {
   login();
 })
 
-// Utility functions
 const presentLoader = async (message: string) => {
   if (!loader) {
     loader = await loadingController.create({
@@ -105,36 +95,34 @@ const dismissLoader = async () => {
   }
 };
 
-const handleSubmit = () => {
-  if (!username.value && !password.value) {
-    login();
+const handleSubmit = async () => {
+  if (!username.value || !password.value) {
+    showToast(translate("Please fill in the user details"));
+    return;
   }
+  await login();
 };
 
 const login = async () => {
   const route = router.currentRoute.value;
-  console.log("This is current route", route.query);
-
-  if (!route.query && (!username.value || !password.value)) {
-    showToast(translate("Please fill in the user details"));
-    return;
-  }
-
-  isLoggingIn.value = true;
-  await presentLoader("Logging in...");
   const { oms, omsRedirectionUrl, token } = route.query;
+
   try {
+    isLoggingIn.value = true;
+    await presentLoader("Logging in...");
+
     await authStore.login({
       username: username.value.trim() || null,
       password: password.value || null,
-      token: token as any || null,
-      oms: oms as any || 'https://dev-maarg.hotwax.io',
-      omsRedirectionUrl: omsRedirectionUrl as any || 'https://dev-oms.hotwax.io'
+      token: token as string | null,
+      oms: (oms as string) || "https://dev-maarg.hotwax.io",
+      omsRedirectionUrl:
+        (omsRedirectionUrl as string) || "https://dev-oms.hotwax.io",
     });
-    // Successful login
+
     router.push("/");
   } catch (error) {
-    console.error(error);
+    console.error("[Login Error]", error);
     showToast(translate("Login failed. Please try again."));
   } finally {
     isLoggingIn.value = false;
@@ -142,7 +130,6 @@ const login = async () => {
   }
 };
 
-// cleanup any active loader when leaving the page
 onUnmounted(() => {
   dismissLoader();
 });

@@ -58,7 +58,7 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { initialise, resetConfig } from '@/adapter';
+import { initialise, resetConfig } from '@/services/RemoteAPI';
 import store from "./store";
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
