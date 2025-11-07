@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { translate } from '@/i18n';
 import { IonPage, IonToolbar, IonContent, IonBackButton, onIonViewDidEnter, IonSearchbar, IonList, IonItem, IonInput, IonLabel, IonButton, IonCard, IonTitle, IonThumbnail } from '@ionic/vue';
-
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { ref, defineProps } from 'vue';
 import router from '@/router';
@@ -118,7 +118,7 @@ async function getInventoryCycleCount() {
     const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId as string });
     if (resp?.status === 200 && resp.data) {
       workEffort.value = resp.data;
-      const sessionResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
+      const sessionResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
       if (sessionResp?.status && sessionResp.data) {
         inventoryCountImport.value = sessionResp.data;
       } else {
