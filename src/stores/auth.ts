@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
-import api, { updateToken, updateInstanceUrl, client } from '@/services/RemoteAPI';
+import api, { client, initialise } from '@/services/RemoteAPI';
+import { getConfig } from '@/services/RemoteAPI';
+import emitter from '@/event-bus';
+import { loader } from '@/user-utils';
 
 export interface LoginPayload {
   username: string | null;
@@ -50,18 +53,20 @@ export const useAuthStore = defineStore('authStore', {
     },
     getOMS: (state) => state.oms,
     getBaseUrl: (state) => {
-      const baseURL = state.oms;
-      if (!baseURL) return '';
-      if (baseURL.startsWith('http')) {
-        return baseURL.includes('/api') ? baseURL : `${baseURL}/api/`;
-      }
-      return `https://${baseURL}.hotwax.io/api/`;
+      const baseURL = state.oms
+      const appConfig = getConfig()
+
+      console.log("This is app config: ", appConfig);
+
+      if (baseURL && appConfig.systemType === "MOQUI") return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
+      else if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
+
+      return "";
     },
   },
   actions: {
     setOMS(oms: string) {
       this.oms = oms;
-      updateInstanceUrl(oms);
     },
     checkAuthenticated() {
       const { value, expiration } = this.token;
@@ -70,10 +75,12 @@ export const useAuthStore = defineStore('authStore', {
       return true;
     },
     async login(payload: LoginPayload) {
+      this.setOMS(payload.oms as any);
 
-      const baseURL = "https://dev-maarg.hotwax.io/rest/s1/"
+      const baseURL = this.getBaseUrl;
 
       const requestBody = {} as any;
+      // const omsRedirectionUrl = payload.omsRedirectionUrl as any;
 
       if(payload.token && payload.token !== null) requestBody.token = payload.token;
       else { requestBody.username = payload.username; requestBody.password = payload.password }
@@ -99,7 +106,21 @@ export const useAuthStore = defineStore('authStore', {
       } catch(err) {
         return Promise.reject("Sorry, login failed. Please try again");
       }
-      updateToken(this.token.value);
+      
+      initialise({
+        token: this.token.value,
+        instanceUrl: this.getBaseUrl.replace("inventory-cycle-count/", ""),
+        events: {
+          responseError: () => setTimeout(() => function dismissLoader() {
+            if (loader.value) {
+              loader.value.dismiss();
+              loader.value = null as any;
+            }
+          }, 100),
+          queueTask: (payload: any) => emitter.emit("queueTask", payload)
+        },
+        systemType: "MOQUI"
+      });
 
       try {
         const profileResp = await api({
@@ -129,7 +150,6 @@ export const useAuthStore = defineStore('authStore', {
           value: '',
           expiration: undefined,
         };
-        updateToken('');
       }
     },
     setToken(token: string, expirationTime?: number) {
@@ -137,7 +157,6 @@ export const useAuthStore = defineStore('authStore', {
         value: token,
         expiration: expirationTime,
       };
-      updateToken(token);
     },
     setCurrent(current: any) {
       this.current = current;

@@ -1,4 +1,4 @@
-import api, {client} from "@/api"
+import api, {client} from "@/services/RemoteAPI"
 import store from "@/store";
 import { hasError } from "@/utils";
 

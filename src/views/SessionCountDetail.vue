@@ -463,7 +463,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
 import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
-import { client } from "@/api";
+import { client } from "@/services/RemoteAPI";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { loader } from '@/user-utils';

@@ -12,7 +12,7 @@ const requestInterceptor = async (config: any) => {
 }
 
 // configuration passed from the app
-let appConfig = {};
+let appConfig = {} as any;
 
 const responseSuccessInterceptor = (response: any) => {
   // Any status code that lie within the range of 2xx cause this function to trigger

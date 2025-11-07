@@ -120,7 +120,7 @@ const login = async () => {
         (omsRedirectionUrl as string) || "https://dev-oms.hotwax.io",
     });
 
-    router.push("/");
+    router.replace("/");
   } catch (error) {
     console.error("[Login Error]", error);
     showToast(translate("Login failed. Please try again."));

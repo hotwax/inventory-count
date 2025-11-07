@@ -1,4 +1,4 @@
-import { client } from '@/api';
+import { client } from '@/services/RemoteAPI';
 import store from '@/store';
 
 const loadProducts = async (query: any): Promise <any>  => {

@@ -122,7 +122,7 @@ onUnmounted(() => {
   emitter.off("dismissLoader", dismissLoader);
   resetConfig();
 });
-
+console.log("This should run before login");
 initialise({
   token: userToken.value,
   instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""),

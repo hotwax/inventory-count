@@ -90,9 +90,10 @@ import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
 import store from '@/store';
-import { client } from '@/api';
+import { client } from '@/services/RemoteAPI';
 import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
 import { ProductService } from '@/services/ProductService';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 
 const productIdentificationStore = useProductIdentificationStore();
 
@@ -118,7 +119,7 @@ async function getInventoryCycleCount() {
     const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId as string });
     if (resp?.status === 200 && resp.data) {
       workEffort.value = resp.data;
-      const sessionResp = await useInventoryCountImport().getWorkEffort({ workEffortId: props.workEffortId });
+      const sessionResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
       if (sessionResp?.status && sessionResp.data) {
         inventoryCountImport.value = sessionResp.data;
       } else {

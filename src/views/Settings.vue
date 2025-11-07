@@ -109,7 +109,8 @@ import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";
+import { goToOms } from "@hotwax/dxp-components";
+import { useAuthStore } from "@/stores/auth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -133,12 +134,12 @@ onMounted(async () => {
 function logout() {
   store.dispatch("user/logout").then(() => {
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
 }
 
 function goToLaunchpad() {
-  window.location.href = `${getAppLoginUrl()}`
+  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
 }
 
 async function setFacility(facility: any) {

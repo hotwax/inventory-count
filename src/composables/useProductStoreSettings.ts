@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import api from '@/api'
+import api from '@/services/RemoteAPI'
 import { hasError } from '@hotwax/oms-api'
 import { useProductMaster } from './useProductMaster'
 import { getProductStoreId } from '@/utils'
