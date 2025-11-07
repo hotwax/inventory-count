@@ -5,7 +5,7 @@ import { hasPermission } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import 'vue-router'
-import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
+import { getAppLoginUrl } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -20,6 +20,8 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
+import { useAuthStore } from "@/stores/auth";
+import Login from "@/views/Login.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -33,23 +35,29 @@ declare module 'vue-router' {
 }
 
 const authGuard = async (to: any, from: any, next: any) => {
+  console.log("This is in auth guard");
   const authStore = useAuthStore()
-  const appLoginUrl = getAppLoginUrl();
-  if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
+  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+  console.log("is auth: ", authStore.isAuthenticated);
+  if (!authStore.isAuthenticated) {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = authStore.isEmbedded ? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`
+    window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
+  console.log("This is in login guard");
+  const authStore = useAuthStore();
+  console.log(authStore.checkAuthenticated());
+  if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
+    console.log("Not going here, right?");
     next('/')
   }
+    console.log("going here, right?");
   next();
 };
 
@@ -251,7 +259,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: DxpLogin,
+    component: Login,
     beforeEnter: loginGuard
   },
   {

@@ -42,8 +42,14 @@ import { db } from '@/database/commonDatabase'
 import { initDeviceId } from '@/utils/device'
 import { useProductMaster } from './composables/useProductMaster';
 import { useProductStoreSettings } from './composables/useProductStoreSettings';
+import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+
+const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate);
 
 const app = createApp(App)
+  .use(pinia)
   .use(IonicVue, {
     mode: 'md',
     innerHTMLTemplatesEnabled: true
@@ -55,29 +61,6 @@ const app = createApp(App)
     rules: permissionRules,
     actions: permissionActions
   })
-  .use(dxpComponents, {
-    Actions,
-    defaultImgUrl: require("@/assets/images/defaultImage.png"),
-    login,
-    logout,
-    loader,
-    appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-    fetchGoodIdentificationTypes,
-    getAvailableTimeZones,
-    getConfig,
-    getEComStores,
-    getEComStoresByFacility,
-    getProductIdentificationPref,
-    getUserFacilities,
-    getUserPreference,
-    hasPermission,
-    initialise,
-    localeMessages,
-    setProductIdentificationPref,
-    setUserPreference,
-    setUserTimeZone
-  });
-
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
   formatDate(value: any, inFormat?: any, outFormat?: string) {
@@ -110,7 +93,7 @@ router.isReady().then(async () => {
     await db.open()
     await initDeviceId()
     await useProductMaster().init();
-    await useProductStoreSettings().init();
+    // await useProductStoreSettings().init();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }
