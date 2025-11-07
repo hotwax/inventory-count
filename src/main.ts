@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
 import { DateTime } from 'luxon';
-import { createPinia } from 'pinia'
 
 
 import { IonicVue } from '@ionic/vue';
@@ -51,7 +50,6 @@ const app = createApp(App)
     innerHTMLTemplatesEnabled: true
   })
   .use(router)
-  .use(createPinia())
   .use(i18n)
   .use(store)
   .use(permissionPlugin, {
