@@ -1,6 +1,5 @@
 import { toastController } from '@ionic/vue';
 import { DateTime } from "luxon";
-import store from "@/store";
 import { saveAs } from 'file-saver';
 import { JsonToCsvOption } from '@/types';
 import Papa from 'papaparse'
@@ -159,8 +158,4 @@ const  getValidItems = (items: any) => {
   return (items ?? []).filter((item: any) => item.itemStatusId !== "INV_COUNT_VOIDED")
 }
 
-const getStatusDescription = (statusId: string) => {
-  return store.getters["util/getStatusDesc"](statusId);
-}
-
-export { getStatusDescription, convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }
+export { convertIsoToMillis, downloadCsv, getValidItems, jsonToCsv, showToast, hasError, handleDateTimeInput, getDateTime, getDateWithOrdinalSuffix, getFacilityName, getPartyName, getProductIdentificationValue, getProductStoreId, timeFromNow, parseCsv, sortListByField }

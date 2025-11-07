@@ -10,6 +10,9 @@ export default async function workerApi(customConfig: {
 
   // Build URL
   let baseUrl = baseURL || '';
+  if (baseUrl && !baseUrl.startsWith("http://") && !baseUrl.startsWith("https://") && !baseUrl.includes(".") && !baseUrl.includes("/")) {
+    baseUrl = `https://${baseUrl}.hotwax.io`;
+  }
   if (!baseUrl.includes("rest/s1") && !baseUrl.endsWith('/')) {
     baseUrl += '/api/'
   } else if (!baseUrl.includes("rest/s1") && !baseUrl.endsWith('/api/') && !baseUrl.includes('/api/')) {

@@ -135,7 +135,6 @@ initialise({
 
 const menuOrder = [
   "/bulkUpload",
-  "/draft",
   "/assigned",
   "/pending-review",
   "/closed",

@@ -6,8 +6,6 @@ import getters from "./getters";
 import actions from "./actions";
 import userModule from "./modules/user";
 // import productModule from "./modules/product";
-import countModule from "./modules/count";
-import utilModule from "./modules/util";
 import { setPermissions } from "@/authorization"
 
 
@@ -18,7 +16,7 @@ import { setPermissions } from "@/authorization"
 const state: any = {}
 
 const persistState = createPersistedState({
-  paths: ["user", "product.cached", "count.cachedUnmatchProducts", "util.statusDesc"],
+  paths: ["user"],
   fetchBeforeUse: true
 })
 
@@ -31,9 +29,6 @@ const store = createStore<RootState>({
   plugins: [ persistState ],
   modules: {
     user: userModule,
-    // product: productModule,
-    count: countModule,
-    util: utilModule,
   },
 })
 

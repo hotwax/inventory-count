@@ -311,6 +311,14 @@ const updateSession = async (payload: any): Promise <any> => {
   })
 }
 
+const bulkUploadInventoryCounts = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/upload`,
+    method: "post",
+    ...payload
+  });
+}
+
 const cloneSession = async (payload: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/cloneDirectedCount`,
@@ -364,6 +372,7 @@ const releaseSession = async (payload: any): Promise<any> => {
 export function useInventoryCountImport() {
     
   return {
+    bulkUploadInventoryCounts,
     cloneSession,
     discardSession,
     getCountedItems,

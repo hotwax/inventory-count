@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router';
 import { DateTime } from 'luxon';
+import { createPinia } from 'pinia'
 
 
 import { IonicVue } from '@ionic/vue';
@@ -42,6 +43,7 @@ import { db } from '@/database/commonDatabase'
 import { initDeviceId } from '@/utils/device'
 import { useProductMaster } from './composables/useProductMaster';
 import { useProductStoreSettings } from './composables/useProductStoreSettings';
+import { useInventoryCountRun } from './composables/useInventoryCountRun';
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -49,6 +51,7 @@ const app = createApp(App)
     innerHTMLTemplatesEnabled: true
   })
   .use(router)
+  .use(createPinia())
   .use(i18n)
   .use(store)
   .use(permissionPlugin, {
@@ -111,6 +114,7 @@ router.isReady().then(async () => {
     await initDeviceId()
     await useProductMaster().init();
     await useProductStoreSettings().init();
+    await useInventoryCountRun().loadStatusDescription();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }

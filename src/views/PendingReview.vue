@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -51,31 +51,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { ref } from "vue"
 import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import store from "@/store"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
-import { getDateWithOrdinalSuffix, getFacilityName, getStatusDescription } from "@/utils"
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 import { loader } from '@/user-utils';
 // import Filters from "@/components/Filters.vue"
 
-const cycleCounts = computed(() => store.getters["count/getList"])
-const isScrollable = computed(() => store.getters["count/isScrollable"])
+const cycleCounts = ref<any[]>([]);
+const isScrollable = ref(true)
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
+const pageIndex = ref(0)
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
+
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
+  pageIndex.value = 0;
   await getPendingCycleCounts();
   loader.dismiss();
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList");
+  await useInventoryCountRun().clearCycleCountList();
 })
 
 function enableScrolling() {
@@ -91,27 +95,35 @@ function enableScrolling() {
 }
 
 async function loadMoreCycleCounts(event: any) {
-  if(!(isScrollingEnabled.value && isScrollable.value)) {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
+    return;
   }
-  getPendingCycleCounts(
-    undefined,
-    Math.ceil(
-      cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)
-    ).toString()
-  ).then(async () => {
-    await event.target.complete()})
+
+  pageIndex.value++;
+  await getPendingCycleCounts();
+  await event.target.complete();
 }
 
-async function getPendingCycleCounts(vSize?: any, vIndex?: any) {
-  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
-  const pageIndex = vIndex ? vIndex : 0;
-  const payload = {
-    pageSize,
-    pageIndex,
+async function getPendingCycleCounts() {
+  const params = {
+    pageSize: pageSize.value,
+    pageIndex: pageIndex.value,
     currentStatusId: "CYCLE_CNT_CMPLTD"
   }
-  await store.dispatch("count/getCycleCounts", payload)
+
+  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
+
+  if (data.length) {
+    if (pageIndex.value > 0) {
+      cycleCounts.value = cycleCounts.value.concat(data)
+    } else {
+      cycleCounts.value = data
+    }
+    isScrollable.value = scrollable
+  } else {
+    isScrollable.value = false
+  }
 }
 </script>
 

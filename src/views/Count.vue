@@ -162,37 +162,7 @@
 </template>
 
 <script setup>
-import {
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem,
-  IonItemGroup,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonTitle,
-  IonToolbar,
-  onIonViewDidEnter,
-  IonButtons,
-  IonModal,
-  IonFab,
-  IonFabButton,
-  IonListHeader,
-  IonRadioGroup,
-  IonRadio,
-  IonInput
-} from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -207,18 +177,19 @@ import { DateTime } from 'luxon';
 const store = useStore();
 const userStore = useUserStore();
 
-const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
-const isScrollable = computed(() => store.getters["count/isScrollable"]);
+const cycleCounts = ref([]);
+const isScrollable = ref(true);
+let isLoading = ref(false);
+const pageIndex = ref(0);
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+
 const currentFacility = computed(() => userStore.getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
-let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 const currentDeviceId = store.getters["user/getDeviceId"];
 
 onIonViewDidEnter(async () => {
@@ -270,12 +241,13 @@ async function loadMoreCycleCount(event) {
 
 async function getCycleCounts(reset = false) {
   if (!currentFacility.value?.facilityId) {
-    showToast(translate("No facility is associated with this user"));
+    showToast(translate('No facility is associated with this user'));
     return;
   }
 
   if (reset) {
     pageIndex.value = 0;
+    cycleCounts.value.splice(0);
   }
 
   const params = {
@@ -283,13 +255,28 @@ async function getCycleCounts(reset = false) {
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched(),
-    currentStatusId_op: "in",
-    thruDate_op: "empty"
-    // userId: store.getters["user/getUserProfile"].username,
-    // deviceId: store.getters["user/getDeviceId"]
+    currentStatusId_op: 'in',
+    thruDate_op: 'empty'
   };
-  await store.dispatch("count/getCreatedAndAssignedWorkEfforts", params);
+
+  try {
+    const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
+
+    if (pageIndex.value === 0) {
+      cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);
+    } else {
+      cycleCounts.value.push(...workEfforts);
+    }
+
+    isScrollable.value = scrollable;
+  } catch (err) {
+    console.error('Error loading cycle counts:', err);
+    showToast(translate('Failed to load cycle counts.'));
+  } finally {
+    isLoading.value = false;
+  }
 }
+
 
 async function segmentChanged(value) {
   isLoading.value = true;
@@ -412,33 +399,25 @@ async function addNewSession() {
 }
 
 async function markAsCompleted(workEffortId) {
-  try {
-    const response = await useInventoryCountRun().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_CMPLTD' });
-    if (response && response.status === 200) {
-      showToast(translate("Session sent for review successfully"));
-      pageIndex.value = 0;
-      await getCycleCounts(true);
-    } else {
-      showToast(translate("Failed to send session for review"));
-    }
-  } catch (err) {
-    console.error("Error updating status:", err);
-  }
+  const response = await useInventoryCountRun().updateWorkEffort({
+    workEffortId,
+    currentStatusId: 'CYCLE_CNT_CMPLTD'
+  });
+  if (response?.status === 200) {
+    showToast(translate('Session sent for review successfully'));
+    await getCycleCounts(true);
+  } else showToast(translate('Failed to send session for review'));
 }
 
 async function markInProgress(workEffortId) {
-  try {
-    const response = await useInventoryCountRun().updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_PRGS' });
-    if (response && response.status === 200) {
-      showToast(translate("Cycle Count is Active"));
-      pageIndex.value = 0;
-      await getCycleCounts(true);
-    } else {
-      showToast(translate("Failed to send session for review"));
-    }
-  } catch (err) {
-    console.error("Error updating status:", err);
-  }
+  const response = await useInventoryCountRun().updateWorkEffort({
+    workEffortId,
+    currentStatusId: 'CYCLE_CNT_IN_PRGS'
+  });
+  if (response?.status === 200) {
+    showToast(translate('Cycle Count is Active'));
+    await getCycleCounts(true);
+  } else showToast(translate('Failed to activate cycle count'));
 }
 
 async function forceRelease(session) {
