@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
           <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()">
@@ -38,22 +38,22 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t('OMS instance') }}
+              {{ translate('OMS instance') }}
             </ion-card-subtitle>
             <ion-card-title>
               {{ oms }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
+            {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
-            {{ $t('Go to OMS') }}
+          <ion-button :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+            {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <DxpFacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility($event)"/>
-        <DxpProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore($event)" />
+        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility"/>
+        <ProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore"/>
       </section>
       <hr />
       <div class="section-header">
@@ -79,7 +79,9 @@
           </ion-item>
         </ion-card> -->
 
-        <DxpProductIdentifier />
+        <!-- 
+        TODO: Use ProductIdentifier
+        <DxpProductIdentifier /> -->
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
         <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
 
@@ -109,11 +111,14 @@ import { computed, onMounted, ref } from "vue";
 import { useStore } from "vuex";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";
+import { goToOms } from "@hotwax/dxp-components";
+import { useAuthStore } from "@/stores/auth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import ForceScanCard from "@/components/ForceScanCard.vue";
+import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
+import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 
 const store = useStore()
 const authStore = useAuthStore();
@@ -133,12 +138,12 @@ onMounted(async () => {
 function logout() {
   store.dispatch("user/logout").then(() => {
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
 }
 
 function goToLaunchpad() {
-  window.location.href = `${getAppLoginUrl()}`
+  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
 }
 
 async function setFacility(facility: any) {

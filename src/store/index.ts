@@ -6,7 +6,6 @@ import getters from "./getters";
 import actions from "./actions";
 import userModule from "./modules/user";
 // import productModule from "./modules/product";
-import { setPermissions } from "@/authorization"
 
 
 // TODO check how to register it from the components only
@@ -32,7 +31,7 @@ const store = createStore<RootState>({
   },
 })
 
-setPermissions(store.getters['user/getUserPermissions']);
+//  setPermissions(useUserProfile().getUserPermissions);
 
 export default store
 export function useStore(): typeof store {

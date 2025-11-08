@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
-import api, { client } from '@/api'
+import api, { client } from '@/services/RemoteAPI';
 import { hasError, showToast } from '@/utils'
 import logger from '@/logger'
 import { translate } from '@/i18n'
+import { prepareAppPermissions } from '@/authorization';
 
-export const useUserProfile = defineStore('userProfile', {
+export const useUserProfileNew = defineStore('userProfile', {
   state: () => ({
     current: null as any,
-    permissions: [] as string[],
+    permissions: [] as any,
     fieldMappings: {} as Record<string, any>,
     currentMapping: {
       id: '',
@@ -38,6 +39,9 @@ export const useUserProfile = defineStore('userProfile', {
   },
 
   actions: {
+    fetchUserPermissions() {
+      return this.permissions;
+    },
     /** Initialize after login */
     async setUserProfile(profile: any) {
       this.current = profile
@@ -288,7 +292,7 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user-level permissions
      */
-    async loadUserPermissions(payload: any, url: string, token: string): Promise<string[]> {
+    async loadUserPermissions(payload: any, url: string, token: string): Promise<any[]> {
       const baseURL = url.startsWith('http')
         ? url.includes('/api')
           ? url
@@ -355,7 +359,11 @@ export const useUserProfile = defineStore('userProfile', {
           }
         }
 
-        this.permissions = serverPermissions
+        const appPermissions = prepareAppPermissions(serverPermissions)
+
+        this.permissions = appPermissions
+
+        // Return the normalized list for use in login() and setPermissions()
         return serverPermissions
       } catch (err) {
         logger.error('loadUserPermissions failed', err)

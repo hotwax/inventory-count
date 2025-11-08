@@ -168,7 +168,7 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
-import { useUserStore } from '@hotwax/dxp-components';
+import { useUserStore } from '@/stores/user';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';

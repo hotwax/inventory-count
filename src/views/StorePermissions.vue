@@ -48,7 +48,7 @@ import { translate } from '@/i18n'
 import store from "@/store";
 import { computed } from "vue";
 import ForceScanCard from "@/components/ForceScanCard.vue";
-import { useProductIdentificationStore } from '@hotwax/dxp-components';
+import { useProductIdentificationStore } from '@/stores/productIdentification';
 
 const productIdentificationStore = useProductIdentificationStore();
 

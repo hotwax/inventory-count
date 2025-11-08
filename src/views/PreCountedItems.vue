@@ -89,7 +89,9 @@ import { ref, defineProps } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
-import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
+import { getProductIdentificationValue } from '@hotwax/dxp-components';
+import { useProductIdentificationStore } from '@/stores/productIdentification';
+import { useUserStore } from '@/stores/user';
 import { useProductMaster } from '@/composables/useProductMaster';
 
 const productIdentificationStore = useProductIdentificationStore();

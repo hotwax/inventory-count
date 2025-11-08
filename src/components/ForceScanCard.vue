@@ -40,7 +40,8 @@ import store from "@/store";
 import { computed } from "vue";
 import router from "@/router";
 import { hasPermission } from "@/authorization"
-import { useProductIdentificationStore } from "@hotwax/dxp-components";
+// import { useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useProductIdentificationStore } from "@/stores/productIdentification";
 
 const productIdentificationStore = useProductIdentificationStore();
 

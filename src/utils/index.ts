@@ -3,7 +3,8 @@ import { DateTime } from "luxon";
 import { saveAs } from 'file-saver';
 import { JsonToCsvOption } from '@/types';
 import Papa from 'papaparse'
-import { useUserStore } from '@hotwax/dxp-components';
+// import { useUserStore } from '@hotwax/dxp-components';
+import { useUserStore } from '@/stores/user';
 
 const dateOrdinalSuffix = {
   1: 'st',
@@ -50,7 +51,8 @@ function getDateWithOrdinalSuffix(time: any) {
 }
 
 function getFacilityName(id: string) {
-  return useUserStore().getFacilites.find((facility: any) => facility.facilityId === id)?.facilityName || id
+  const facilities: any[] = useUserStore().getFacilities || [];
+  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 const parseCsv = async (file: File, options?: any) => {

@@ -8,9 +8,12 @@ import logger from "@/logger"
 import { translate } from "@/i18n"
 import { Settings } from "luxon";
 import { resetConfig, updateToken, updateInstanceUrl } from "@/adapter"
-import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotwax/dxp-components"
+// import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotwax/dxp-components"
+import { useAuthStore } from "@/stores/auth"
+import { useUserStore } from "@/stores/user"
+import { useProductIdentificationStore } from "@/stores/productIdentification"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { useUserProfile } from "@/stores/useUserProfile"
+import { useUserProfileNew } from "@/stores/useUserProfile"
 import { useProductStore } from "@/stores/useProductStore"
 import { useFacilityStore } from "@/stores/useFacilityStore"
 import emitter from "@/event-bus"
@@ -36,7 +39,7 @@ const actions: ActionTree<UserState, RootState> = {
       const serverPermissionsFromRules = getServerPermissionsFromRules();
       if (permissionId) serverPermissionsFromRules.push(permissionId);
 
-      const serverPermissions = await useUserProfile().loadUserPermissions(
+      const serverPermissions = await useUserProfileNew().loadUserPermissions(
         { permissionIds: [...new Set(serverPermissionsFromRules)] },
         omsRedirectionUrl || oms,
         token
@@ -60,9 +63,9 @@ const actions: ActionTree<UserState, RootState> = {
         }
       }
 
-      const api_key = await useUserProfile().login(token, oms)
+      const api_key = await useUserProfileNew().login(token, oms)
 
-      const userProfile = await useUserProfile().fetchUserProfile(api_key, oms);
+      const userProfile = await useUserProfileNew().fetchUserProfile(api_key, oms);
 
       if (userProfile.timeZone) {
         Settings.defaultZone = userProfile.timeZone;
@@ -73,13 +76,13 @@ const actions: ActionTree<UserState, RootState> = {
       authStore.$patch({
         token: { value: api_key, expiration: authStore.token.expiration as any },
         oms,
-        isEmbedded: authStore.isEmbedded,
-        shop: authStore.shop as any,
-        host: authStore.host as any
+        // isEmbedded: authStore.isEmbedded,
+        // shop: authStore.shop as any,
+        // host: authStore.host as any
       })
 
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-      const facilities = await useUserStore().getUserFacilities(isAdminUser ? "" : userProfile.partyId, "", isAdminUser, {
+      const facilities = await useUserStore().getDxpUserFacilities(isAdminUser ? "" : userProfile.partyId, "", isAdminUser, {
         parentTypeId: "VIRTUAL_FACILITY",
         parentTypeId_not: "Y",
         facilityTypeId: "VIRTUAL_FACILITY",
@@ -88,7 +91,7 @@ const actions: ActionTree<UserState, RootState> = {
       await useUserStore().getFacilityPreference("SELECTED_FACILITY", userProfile?.userId)
       if (!facilities.length) throw "Unable to login. User is not associated with any facility"
       const currentFacility: any = useUserStore().getCurrentFacility
-      isAdminUser ? await useUserStore().getEComStores() : await useUserStore().getEComStoresByFacility(currentFacility?.facilityId)
+      isAdminUser ? await useUserStore().getDxpEComStores() : await useUserStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
       await useUserStore().getEComStorePreference("SELECTED_BRAND", userProfile?.userId)
       const preferredStore: any = useUserStore().getCurrentEComStore
 
@@ -103,13 +106,13 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_TOKEN_CHANGED, { newToken: api_key })
       // commit(types.USER_INFO_UPDATED, userProfile);
 
-      useUserProfile().setUserProfile(userProfile);
+      useUserProfileNew().setUserProfile(userProfile);
       // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+      await useProductIdentificationStore().getDxpIdentificationPref(preferredStore.productStoreId)
         .catch((error) => logger.error(error));
 
-      await useUserProfile().fetchProductStoreSettings(preferredStore.productStoreId)
-      await useUserProfile().fetchFieldMappings()
+      await useUserProfileNew().fetchProductStoreSettings(preferredStore.productStoreId)
+      await useUserProfileNew().fetchFieldMappings()
       await useInventoryCountRun().loadStatusDescription();
       // await store.dispatch('util/getStatusDesc');
     } catch (err: any) {
@@ -126,7 +129,7 @@ const actions: ActionTree<UserState, RootState> = {
 
   const authStore = useAuthStore()
   const dxpUserStore = useUserStore()
-  const userProfileStore = useUserProfile()
+  const userProfileStore = useUserProfileNew()
 
   // Reset all pinia states
   userProfileStore.$reset()
@@ -183,13 +186,13 @@ const actions: ActionTree<UserState, RootState> = {
   async updateCurrentFacility({ dispatch }, facility) {
     const previousEComStoreId = getProductStoreId()
     const userProfile = store.getters["user/getUserProfile"]
-    await useUserStore().getEComStoresByFacility(facility.facilityId);
+    await useUserStore().getDxpEComStoresByFacility(facility.facilityId);
     await useUserStore().getEComStorePreference('SELECTED_BRAND', userProfile.userId);
     const preferredStore: any = useUserStore().getCurrentEComStore
 
     if(previousEComStoreId !== preferredStore.productStoreId) {
       dispatch("getProductStoreSetting", preferredStore.productStoreId)
-      await useProductIdentificationStore().getIdentificationPref(preferredStore.productStoreId)
+      await useProductIdentificationStore().getDxpIdentificationPref(preferredStore.productStoreId)
       .catch((error) => logger.error(error));
     }
   },
@@ -197,7 +200,7 @@ const actions: ActionTree<UserState, RootState> = {
   async updateCurrentProductStore({ commit, dispatch }, selectedProductStore) {
     commit(types.USER_PRODUCT_STORE_SETTING_UPDATED, { showQoh: false, forceScan: false, isFirstScanCountEnabled: false, barcodeIdentificationPref: "internalName" })
 
-    await useProductIdentificationStore().getIdentificationPref(selectedProductStore.productStoreId)
+    await useProductIdentificationStore().getDxpIdentificationPref(selectedProductStore.productStoreId)
       .catch((error) => logger.error(error));
     dispatch("getProductStoreSetting", selectedProductStore?.productStoreId);
   },
