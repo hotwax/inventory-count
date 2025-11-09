@@ -92,7 +92,7 @@ import { loader } from '@/user-utils';
 import store from '@/store';
 import { client } from '@/api';
 import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
-import { ProductService } from '@/services/ProductService';
+import { useProductMaster } from '@/composables/useProductMaster';
 
 const productIdentificationStore = useProductIdentificationStore();
 
@@ -143,7 +143,7 @@ async function handleSearch() {
 async function getProducts() {
   await loader.present("Searching Product...");
   try {
-    const resp = await loadProducts({
+    const resp = await useProductMaster().loadProducts({
       docType: "PRODUCT",
       viewSize: 100,
       filters: ["isVirtual: false", "isVariant: true", `internalName: ${searchedProductString.value.trim()}`],
@@ -161,21 +161,6 @@ async function getProducts() {
   }
   loader.dismiss();
 }
-
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 async function addProductInPreCountedItems(product: any) {
   await loader.present("Loading...");
@@ -199,7 +184,7 @@ async function addProductInPreCountedItems(product: any) {
     }
     searchedProduct.value = null;
     const currentFacility: any = useUserStore().getCurrentFacility;
-    const qohResp = await ProductService.getProductStock({
+    const qohResp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: currentFacility.facilityId
     } as any);

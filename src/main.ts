@@ -111,8 +111,6 @@ router.isReady().then(async () => {
     await db.open()
     await initDeviceId()
     await useProductMaster().init();
-    await useProductStoreSettings().init();
-    await useInventoryCountRun().loadStatusDescription();
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }

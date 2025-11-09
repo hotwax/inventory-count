@@ -30,6 +30,29 @@ async function startHeartbeat(payload: HeartbeatPayload) {
     token
   } = payload
 
+  const resp = await workerApi({
+    baseURL: payload.maargUrl,
+    url: `oms/dataDocumentView`,
+    method: 'POST',
+    data: {
+      dataDocumentId: 'InventoryCountImportLock',
+      filterByDate: true,
+      pageIndex: 0,
+      pageSize: 100,
+      customParametersMap: {
+        inventoryCountImportId: inventoryCountImportId,
+        fromDate: lock.fromDate
+      }
+    }
+  })
+
+  const activeLock = resp?.data?.entityValueList?.[0] || null
+  if (!activeLock) {
+    if (heartbeatTimer) clearInterval(heartbeatTimer)
+    postMessage({ type: 'lockForceReleased' })
+    return
+  }
+
   if (heartbeatTimer) clearInterval(heartbeatTimer)
 
   heartbeatTimer = setInterval(async () => {

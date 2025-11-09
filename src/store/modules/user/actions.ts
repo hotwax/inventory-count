@@ -12,6 +12,8 @@ import { useAuthStore, useProductIdentificationStore, useUserStore } from "@hotw
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
+import { useProductStoreSettings } from "@/composables/useProductStoreSettings"
 
 const actions: ActionTree<UserState, RootState> = {
 
@@ -44,7 +46,7 @@ const actions: ActionTree<UserState, RootState> = {
       if (permissionId) {
         // As the token is not yet set in the state passing token headers explicitly
         // TODO Abstract this out, how token is handled should be part of the method not the callee
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId );
+        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
         // If there are any errors or permission check fails do not allow user to login
         if (!hasPermission) {
           const permissionError = 'You do not have permission to access the app.';
@@ -103,6 +105,8 @@ const actions: ActionTree<UserState, RootState> = {
     
       await dispatch("getProductStoreSetting")
       await dispatch('getFieldMappings')
+      await useProductStoreSettings().init();
+      await useInventoryCountRun().loadStatusDescription();
       // await store.dispatch('util/getStatusDesc');
     } catch (err: any) {
       logger.error("error", err);
@@ -167,8 +171,8 @@ const actions: ActionTree<UserState, RootState> = {
     updateInstanceUrl(payload)
   },
 
-    setDeviceId({ commit }, payload) {
-      commit(types.USER_DEVICE_ID_UPDATED, payload)
+  setDeviceId({ commit }, payload) {
+    commit(types.USER_DEVICE_ID_UPDATED, payload)
   },
 
 
