@@ -33,6 +33,10 @@ async function startHeartbeat(payload: HeartbeatPayload) {
   const resp = await workerApi({
     baseURL: payload.maargUrl,
     url: `oms/dataDocumentView`,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
     method: 'POST',
     data: {
       dataDocumentId: 'InventoryCountImportLock',
@@ -45,6 +49,8 @@ async function startHeartbeat(payload: HeartbeatPayload) {
       }
     }
   })
+
+  console.log('[LockHeartbeatWorker] Current lock status response:', resp)
 
   const activeLock = resp?.data?.entityValueList?.[0] || null
   if (!activeLock) {
