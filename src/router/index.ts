@@ -1,11 +1,9 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import store from "@/store";
-import { hasPermission } from '@/authorization';
+import { hasPermission, setPermissions } from '@/authorization';
 import { showToast } from '@/utils'
 import { translate } from '@/i18n'
 import 'vue-router'
-import { DxpLogin, getAppLoginUrl, useAuthStore } from '@hotwax/dxp-components';
 import { loader } from '@/user-utils';
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -20,6 +18,9 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
+import { useAuthStore } from "@/stores/auth";
+import Login from "@/views/Login.vue";
+import { useUserProfileNew } from "@/stores/useUserProfile";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -34,20 +35,20 @@ declare module 'vue-router' {
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  const appLoginUrl = getAppLoginUrl();
-  if (!authStore.isAuthenticated || !store.getters['user/isAuthenticated']) {
+  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+  if (!authStore.isAuthenticated) {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = authStore.isEmbedded ? appLoginUrl : `${appLoginUrl}?redirectUrl=${redirectUrl}`
+    window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
     loader.dismiss()
   }
   next()
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (authStore.isAuthenticated && !to.query?.token && !to.query?.oms) {
+  const authStore = useAuthStore();
+  if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
     next('/')
   }
   next();
@@ -251,7 +252,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/login',
     name: 'Login',
-    component: DxpLogin,
+    component: Login,
     beforeEnter: loginGuard
   },
   {
@@ -269,6 +270,7 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
+
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast

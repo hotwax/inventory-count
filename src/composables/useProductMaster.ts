@@ -1,8 +1,11 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import store from '@/store'
-import { client } from '@/api'
+import { client } from '@/services/RemoteAPI';
 import workerApi from "@/api/workerApi";
+// Setup Dexie database
+import { db } from '@/database/commonDatabase'
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
 // Product structure
 export interface Product {
@@ -21,337 +24,374 @@ export interface Identification {
   value: string
 }
 
-// Setup Dexie database
-import { db } from '@/database/commonDatabase'
 
-export function useProductMaster() {
-  const staleMs = ref(24 * 60 * 60 * 1000)
-  const cacheReady = ref(false)
-  const duplicateIdentifiers = ref(false)
-  const retentionPolicy = ref('keep')
+const staleMs = ref(24 * 60 * 60 * 1000)
+const cacheReady = ref(false)
+const duplicateIdentifiers = ref(false)
+const retentionPolicy = ref('keep')
 
-  const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy: rp = 'keep' }: { staleMs?: number, duplicateIdentifiers?: boolean, retentionPolicy?: string } = {}) => {
-    if (ttl !== undefined) staleMs.value = ttl
-    duplicateIdentifiers.value = dup
-    retentionPolicy.value = rp
-    cacheReady.value = true
-  }
+const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy: rp = 'keep' }: { staleMs?: number, duplicateIdentifiers?: boolean, retentionPolicy?: string } = {}) => {
+  if (ttl !== undefined) staleMs.value = ttl
+  duplicateIdentifiers.value = dup
+  retentionPolicy.value = rp
+  cacheReady.value = true
+}
 
-  const makeIdentKey = (type: string) => type
+const makeIdentKey = (type: string) => type
 
-  const getFromSolr = async (productIds: string[]): Promise<Product[]> => {
-    const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-    const baseURL = omsRedirectionInfo.url.startsWith('http')
-      ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/`
-      : `https://${omsRedirectionInfo.url}.hotwax.io/api/`
+const getByIds = async (productIds: string[]): Promise<Product[]> => {
+  const baseURL = useAuthStore().getBaseUrl;
 
-    const batchSize = 250
-    const results: Product[] = []
-    let index = 0
+  const batchSize = 250
+  const results: Product[] = []
+  let index = 0
 
-    do {
-      const batch = productIds.slice(index, index + batchSize)
-      const filter = `productId: (${batch.join(' OR ')})`
-      const resp = await client({
-        url: "searchProducts",
-        method: "POST",
-        baseURL,
-        data: {
-          filters: [filter],
-          viewSize: batch.length,
-          fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-        },
-        headers: {
-          "Authorization": 'Bearer ' + omsRedirectionInfo.token,
-          'Content-Type': 'application/json'
-        }
-      })
+  do {
+    const batch = productIds.slice(index, index + batchSize)
+    const filter = `productId: (${batch.join(' OR ')})`
 
-      if (resp.data?.response?.docs?.length) {
-        results.push(...resp.data.response.docs.map(mapApiDocToProduct))
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: batch.length,
+      fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
+    });
+
+    const resp = await client({
+      url: "inventory-cycle-count/runSolrQuery",
+      method: "POST",
+      baseURL,
+      data: query,
+      headers: {
+        "Authorization": 'Bearer ' + useAuthStore().token.value,
+        'Content-Type': 'application/json'
       }
-      index += batchSize
-    } while (index < productIds.length)
-    return results
+    })
+
+    if (resp.data?.response?.docs?.length) {
+      results.push(...resp.data.response.docs.map(mapApiDocToProduct))
+    }
+    index += batchSize
+  } while (index < productIds.length)
+  return results
+}
+
+const getById = async (productId: string, opts?: { refresh?: boolean }) => {
+  if (!cacheReady.value) throw new Error("ProductMaster not initialized")
+
+  const now = Date.now()
+  const product = await db.products.get(productId)
+
+  if (product && (!opts?.refresh || now - product.updatedAt < staleMs.value)) {
+    return { product, status: 'hit' as const }
   }
 
-  const getById = async (productId: string, opts?: { refresh?: boolean }) => {
-    if (!cacheReady.value) throw new Error("ProductMaster not initialized")
-
-    const now = Date.now()
-    const product = await db.products.get(productId)
-
-    if (product && (!opts?.refresh || now - product.updatedAt < staleMs.value)) {
-      return { product, status: 'hit' as const }
-    }
-
-    try {
-      const docs = await getFromSolr([productId])
-      if (docs?.length) {
-        // upsert the fetched product into IndexedDB
-        await upsertFromApi(docs)
-
-        // read back the normalized product from IndexedDB
-        const updatedProduct = await db.products.get(productId)
-
-        if (updatedProduct) {
-          return { product: updatedProduct, status: product ? 'stale-refreshed' as const : 'miss-refreshed' as const }
-        }
-      }
-    } catch (err) {
-      console.error("Solr fetch or upsert failed in getById:", err)
-    }
-    return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
-  }
-
-  const findByIdentification = async (idValue: string) => {
-    if (!cacheReady.value) throw new Error("ProductMaster not initialized")
-    if (!idValue) return { product: undefined, identificationValue: undefined }
-
-    // Since Dexie cannot query inside arrays directly, we need to scan manually:
-    const allProducts = await db.products.toArray()
-    const matchedProduct = allProducts.find(p =>
-      p.goodIdentifications?.some(ident => ident.value === idValue)
-    )
-
-    if (!matchedProduct) return { product: undefined, identificationValue: undefined }
-
-    return { product: matchedProduct, identificationValue: idValue }
-  }
-
-  const getByIdentificationFromSolr = async (idValue: string) => {
-    const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
-    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
-    const productIdentifications = process.env.VUE_APP_PRDT_IDENT
-      ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
-      : [];
-
-    const baseURL = omsRedirectionInfo.url.startsWith('http')
-      ? omsRedirectionInfo.url.includes('/api')
-        ? omsRedirectionInfo.url
-        : `${omsRedirectionInfo.url}/api/`
-      : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-
-    // Build Solr filter dynamically
-    const filter = productIdentifications.includes(barcodeIdentification)
-      ? `${barcodeIdentification}: ${idValue}`
-      : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
-
-    try {
-      const resp = await client({
-        url: 'searchProducts',
-        method: 'POST',
-        baseURL,
-        data: {
-          filters: [filter],
-          viewSize: 1,
-          fieldsToSelect: [
-            'productId',
-            'productName',
-            'parentProductName',
-            'internalName',
-            'mainImageUrl',
-            'goodIdentifications'
-          ]
-        },
-        headers: {
-          'Authorization': 'Bearer ' + omsRedirectionInfo.token,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const docs = resp.data?.response?.docs || [];
-      if (docs.length) {
-        const mapped = mapApiDocToProduct(docs[0]);
-        await upsertFromApi([mapped]);
-        return { product: mapped, status: 'fresh' as const };
-      }
-    } catch (err) {
-      console.error('Failed to fetch product by identification from Solr:', err);
-    }
-
-    return { product: undefined, status: 'miss' as const };
-  };
-
-  const prefetch = async (productIds: string[]) => {
-    if (!cacheReady.value) throw new Error("ProductMaster not initialized")
-
-    const existing = await db.products.toArray()
-    const existingIds = new Set(existing.map(p => p.productId))
-    const idsToFetch = productIds.filter(id => !existingIds.has(id))
-
-    if (idsToFetch.length === 0) return
-    const docs = await getFromSolr(idsToFetch)
-    if (docs.length) {
+  try {
+    const docs = await getByIds([productId])
+    if (docs?.length) {
+      // upsert the fetched product into IndexedDB
       await upsertFromApi(docs)
+
+      // read back the normalized product from IndexedDB
+      const updatedProduct = await db.products.get(productId)
+
+      if (updatedProduct) {
+        return { product: updatedProduct, status: product ? 'stale-refreshed' as const : 'miss-refreshed' as const }
+      }
     }
+  } catch (err) {
+    console.error("Solr fetch or upsert failed in getById:", err)
+  }
+  return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
+}
+
+const findByIdentification = async (idValue: string) => {
+  if (!cacheReady.value) throw new Error("ProductMaster not initialized")
+  if (!idValue) return { product: undefined, identificationValue: undefined }
+
+  // Since Dexie cannot query inside arrays directly, we need to scan manually:
+  const allProducts = await db.products.toArray()
+  const matchedProduct = allProducts.find(p =>
+    p.goodIdentifications?.some(ident => ident.value === idValue)
+  )
+
+  if (!matchedProduct) return { product: undefined, identificationValue: undefined }
+
+  return { product: matchedProduct, identificationValue: idValue }
+}
+
+const getByIdentificationFromSolr = async (idValue: string) => {
+  const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+  const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+  const productIdentifications = process.env.VUE_APP_PRDT_IDENT
+    ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
+    : [];
+
+  const baseURL = useAuthStore().getBaseUrl;
+
+  // Build Solr filter dynamically
+  const filter = productIdentifications.includes(barcodeIdentification)
+    ? `${barcodeIdentification}: ${idValue}`
+    : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
+
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: 1,
+      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+    });
+
+  try {
+    const resp = await client({
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      baseURL,
+      data: query,
+      headers: {
+        'Authorization': 'Bearer ' + useAuthStore().token.value,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const products = resp.data?.response?.docs || [];
+    if (products.length) {
+      const mapped = mapApiDocToProduct(products[0]);
+      await upsertFromApi([mapped]);
+      return { product: mapped, status: 'fresh' as const };
+    }
+  } catch (err) {
+    console.error('Failed to fetch product by identification from Solr:', err);
   }
 
-  async function getAllProductIdsFromIndexedDB(inventoryCountImportId: string): Promise<string[]> {
-    try {
-      // Reuse the same Dexie DB as in useInventoryCountImport
-      const records = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .toArray();
+  return { product: undefined, status: 'miss' as const };
+};
 
-      const ids = records
-        .map((r: any) => r.productId)
-        .filter((id: string | null) => !!id && id !== '')
-        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+const prefetch = async (productIds: string[]) => {
+  if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
-      return ids;
-    } catch (err) {
-      console.error('Error fetching productIds from IndexedDB:', err);
-      return [];
-    }
+  const existing = await db.products.toArray()
+  const existingIds = new Set(existing.map(p => p.productId))
+  const idsToFetch = productIds.filter(id => !existingIds.has(id))
+
+  if (idsToFetch.length === 0) return
+  const docs = await getByIds(idsToFetch)
+  if (docs.length) {
+    await upsertFromApi(docs)
   }
+}
 
-  const upsertFromApi = async (docs: any[]) => {
-    if (!cacheReady.value) throw new Error("ProductMaster not initialized");
+const upsertFromApi = async (docs: any[]) => {
+  if (!cacheReady.value) throw new Error("ProductMaster not initialized");
 
-    const now = Date.now();
-    const products = docs.map(doc => ({
-      ...mapApiDocToProduct(doc),
-      updatedAt: now
-    }));
+  const now = Date.now();
+  const products = docs.map(doc => ({
+    ...mapApiDocToProduct(doc),
+    updatedAt: now
+  }));
 
-    await db.transaction('rw', db.products, db.productIdents, async () => {
-      for (const product of products) {
-        await db.products.put(product);
+  await db.transaction('rw', db.products, db.productIdents, async () => {
+    for (const product of products) {
+      await db.products.put(product);
 
-        if (product.goodIdentifications?.length) {
-          for (const ident of product.goodIdentifications) {
-            const identKey = (makeIdentKey(ident.type) || ident.type).trim();
-            const idValue = ident.value?.trim();
+      if (product.goodIdentifications?.length) {
+        for (const ident of product.goodIdentifications) {
+          const identKey = (makeIdentKey(ident.type) || ident.type).trim();
+          const idValue = ident.value?.trim();
 
-            if (!identKey || !idValue) continue;
+          if (!identKey || !idValue) continue;
 
-            const existingIdent = await db.productIdents
-              .where('[productId+identKey]')
-              .equals([product.productId, identKey])
-              .first();
+          const existingIdent = await db.productIdents
+            .where('[productId+identKey]')
+            .equals([product.productId, identKey])
+            .first();
 
-            if (existingIdent) {
-              await db.productIdents.update(existingIdent, { value: idValue });
-            } else {
-              await db.productIdents.put({
-                productId: product.productId,
-                identKey,
-                value: idValue
-              });
-            }
+          if (existingIdent) {
+            await db.productIdents.update(existingIdent, { value: idValue });
+          } else {
+            await db.productIdents.put({
+              productId: product.productId,
+              identKey,
+              value: idValue
+            });
           }
         }
       }
-    });
-  };
-
-  async function findProductByIdentification(idType: string, value: string, context: any) {
-    const ident = await db.table('productIdents')
-      .where('value')
-      .equalsIgnoreCase(value)
-      .first()
-    if (ident) return ident.productId
-
-    if (!context?.token || !context?.omsUrl) return null
-    if (!idType) idType = context.barcodeIdentification
-
-    try {
-      const resp = await workerApi({
-        baseURL: context.omsUrl,
-        headers: {
-          'Authorization': `Bearer ${context.token}`,
-          'Content-Type': 'application/json'
-        },
-        url: 'searchProducts',
-        method: 'POST',
-        data: {
-          filters: [`goodIdentifications:${idType}/${value}`],
-          viewSize: 1,
-          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
-        }
-      })
-
-      const productId = resp?.response?.docs?.[0]?.productId
-
-      if (productId) {
-        await db.table('productIdents').put({
-          productId,
-          identKey: idType,
-          value
-        })
-        return productId
-      }
-
-      return null
-    } catch (err) {
-      console.warn('Solr lookup failed for', value, err)
-      return null
     }
-  }
+  });
+};
 
-  const clearCache = async () => {
-    await db.transaction('rw', db.products, db.productIdents, async () => {
-      await db.products.clear()
-      await db.productIdents.clear()
+async function findProductByIdentification(idType: string, value: string, context: any) {
+  const ident = await db.table('productIdents')
+    .where('value')
+    .equalsIgnoreCase(value)
+    .first()
+  if (ident) return ident.productId
+
+  if (!context?.token || !context?.omsUrl) return null
+  if (!idType) idType = context.barcodeIdentification
+
+  const query = useProductMaster().buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
+  try {
+    const resp = await workerApi({
+      baseURL: context.omsUrl,
+      headers: {
+        'Authorization': `Bearer ${context.token}`,
+        'Content-Type': 'application/json'
+      },
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      data: query
     })
-  }
 
-  const setStaleMs = (ms: number) => {
-    staleMs.value = ms
-  }
+    const productId = resp?.response?.docs?.[0]?.productId
 
-  const liveProduct = (productId: string) => {
-    return liveQuery(() =>
-      db.products.get(productId)
-    )
-  }
+    if (productId) {
+      await db.table('productIdents').put({
+        productId,
+        identKey: idType,
+        value
+      })
+      return productId
+    }
 
-  const mapApiDocToProduct = (doc: any): Product => {
-    // Normalize goodIdentifications (convert "SKU/123" → { type: "SKU", value: "123" })
-    const normalizedIdents = (doc.goodIdentifications || []).map((ident: any) => {
-      // Case 1: ident is a string like "SKU/123"
-      if (typeof ident === 'string') {
-        const slashIndex = ident.indexOf('/');
-        let type = '';
-        let value = '';
-        if (slashIndex !== -1) {
-          type = ident.substring(0, slashIndex).trim();
-          value = ident.substring(slashIndex + 1).trim();
-        } else {
-          // If no slash found, treat the whole string as value
-          value = ident.trim();
-        }
-        return { type, value };
+    return null
+  } catch (err) {
+    console.warn('Solr lookup failed for', value, err)
+    return null
+  }
+}
+
+const clearCache = async () => {
+  await db.transaction('rw', db.products, db.productIdents, async () => {
+    await db.products.clear()
+    await db.productIdents.clear()
+  })
+}
+
+const setStaleMs = (ms: number) => {
+  staleMs.value = ms
+}
+
+const liveProduct = (productId: string) => {
+  return liveQuery(() =>
+    db.products.get(productId)
+  )
+}
+
+const mapApiDocToProduct = (doc: any): Product => {
+  // Normalize goodIdentifications (convert "SKU/123" → { type: "SKU", value: "123" })
+  const normalizedIdents = (doc.goodIdentifications || []).map((ident: any) => {
+    // Case 1: ident is a string like "SKU/123"
+    if (typeof ident === 'string') {
+      const slashIndex = ident.indexOf('/');
+      let type = '';
+      let value = '';
+      if (slashIndex !== -1) {
+        type = ident.substring(0, slashIndex).trim();
+        value = ident.substring(slashIndex + 1).trim();
+      } else {
+        // If no slash found, treat the whole string as value
+        value = ident.trim();
       }
+      return { type, value };
+    }
 
-      // Case 2: ident is an object like { type: "SKU", value: "123" }
-      if (ident && typeof ident === 'object') {
-        const type = String(ident.type || '').trim();
-        const value = String(ident.value || '').trim();
-        return { type, value };
-      }
+    // Case 2: ident is an object like { type: "SKU", value: "123" }
+    if (ident && typeof ident === 'object') {
+      const type = String(ident.type || '').trim();
+      const value = String(ident.value || '').trim();
+      return { type, value };
+    }
 
-      return { type: '', value: '' };
-    });
-    return {
-      productId: doc.productId,
-      productName: doc.productName || '',
-      parentProductName: doc.parentProductName || '',
-      internalName: doc.internalName || '',
-      mainImageUrl: doc.mainImageUrl || '',
-      goodIdentifications: normalizedIdents,
-      updatedAt: Date.now()
-    };
+    return { type: '', value: '' };
+  });
+  return {
+    productId: doc.productId,
+    productName: doc.productName || '',
+    parentProductName: doc.parentProductName || '',
+    internalName: doc.internalName || '',
+    mainImageUrl: doc.mainImageUrl || '',
+    goodIdentifications: normalizedIdents,
+    updatedAt: Date.now()
   };
+};
 
+const getProductStock = async (query: any): Promise<any> => {
+  const baseURL = useAuthStore().getBaseUrl;
+  const token = useAuthStore().token.value;
+
+  return await client({
+    url: "poorti/getInventoryAvailableByFacility",
+    method: "GET",
+    baseURL,
+    params: query,
+    headers: {
+      Api_Key: token,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+const loadProducts = async (query: any): Promise<any> => {
+  const baseURL = useAuthStore().getBaseUrl;
+  return await client({
+    url: "inventory-cycle-count/runSolrQuery",
+    method: "POST",
+    baseURL,
+    data: query,
+    headers: {
+      Authorization: "Bearer " + useAuthStore().token.value,
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+const buildProductQuery = (params: any): Record<string, any> => {
+  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewIndex = params.viewIndex || 0
+
+  const payload: any = {
+    json: {
+      params: {
+        rows: viewSize,
+        'q.op': 'AND',
+        start: viewIndex * viewSize,
+      },
+      query: '(*:*)',
+      filter: [`docType:${params.docType || 'PRODUCT'}`],
+    },
+  }
+
+  if (params.keyword) {
+    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    payload.json.params['qf'] =
+      params.queryFields ||
+      'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
+    payload.json.params['defType'] = 'edismax'
+  }
+
+  if (params.filter) {
+    console.log("This is params: ", params.filter);
+    const filters = params.filter.split(',').map((filter: any) => filter.trim())
+    filters.forEach((filter: any) => payload.json.filter.push(filter))
+  }
+
+  if (params.facet) {
+    payload.json.facet = params.facet
+  }
+  return payload
+}
+
+export function useProductMaster() {
 
   return {
     init,
     getById,
-    getFromSolr,
+    getByIds,
+    getProductStock,
+    loadProducts,
     findByIdentification,
     findProductByIdentification,
     getByIdentificationFromSolr,
@@ -359,8 +399,8 @@ export function useProductMaster() {
     upsertFromApi,
     clearCache,
     setStaleMs,
-    getAllProductIdsFromIndexedDB,
     liveProduct,
-    cacheReady
+    cacheReady,
+    buildProductQuery
   }
 }

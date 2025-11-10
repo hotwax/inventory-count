@@ -1,10 +1,9 @@
-import { ref } from 'vue';
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
-import api from '@/api';
+import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
-import { db, ScanEvent, InventoryCountImportItem } from '@/database/commonDatabase'
+import { db, ScanEvent } from '@/database/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -19,23 +18,7 @@ interface RecordScanParams {
 function currentMillis(): number {
   return Date.now();
 }
-
-/**
- * Main composable
- */
-export function useInventoryCountImport() {
-  const syncStatus = ref<'idle'>('idle');
-  const currentImport = ref<InventoryCountImportItem | null>(null);
-
-  /** Loads a specific inventory import record session */
-  async function loadSession(inventoryCountImportId: string): Promise<void> {
-    const session = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .first();
-    currentImport.value = session || null;
-  }
-
+/* Stateless functions */
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
@@ -51,97 +34,110 @@ export function useInventoryCountImport() {
 
   /** Load inventory items from backend into Dexie */
   async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
-    try {
+  const pageSize = 500
+  let pageIndex = 0
+  let totalFetched = 0
+  let hasMore = true
+
+  try {
+    while (hasMore) {
       const resp = await api({
         url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
         method: 'GET',
-        params: {pageSize:500}
-      });
+        params: { pageSize, pageIndex }
+      })
 
-      if (!hasError(resp) && resp?.data?.length) {
-        const items = resp.data;
-        const productIds = [...new Set(items.map((item: any) => item.productId).filter(Boolean))] as any
+      if (hasError(resp) || !resp?.data?.length) {
+        hasMore = false
+        break
+      }
 
+      const items = resp.data
+      totalFetched += items.length
+
+      // --- Store items batch-wise directly into IndexedDB ---
+      await db.transaction('rw', db.inventoryCountRecords, async () => {
+        for (const item of items) {
+          await db.inventoryCountRecords.put({
+            inventoryCountImportId: item.inventoryCountImportId,
+            productId: item.productId || null,
+            uuid: item.uuid || uuidv4(),
+            isRequested: item.isRequested || 'Y',
+            productIdentifier: item.productIdentifier || '',
+            locationSeqId: item.locationSeqId || null,
+            quantity: item.quantity || 0,
+            status: 'active',
+            facilityId: '',
+            createdAt: item.createdDate || currentMillis(),
+            lastScanAt: item.lastUpdatedStamp || currentMillis(),
+            lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
+            lastSyncedAt: null,
+            lastSyncedBatchId: null,
+            aggApplied: 0
+          })
+        }
+      })
+
+      // --- Handle product caching batch-wise ---
+      const productIds = [...new Set(items.map((i: any) => i.productId).filter(Boolean))] as any
       if (productIds.length) {
         try {
-          const existingProducts = await db.products.bulkGet(productIds);
-          const existingIds = new Set(existingProducts.filter(Boolean).map((p: any) => p.productId));
-
-          const missingIds = productIds.filter((id: string) => !existingIds.has(id));
+          const existingProducts = await db.products.bulkGet(productIds)
+          const existingIds = new Set(existingProducts.filter(Boolean).map((product: any) => product.productId))
+          const missingIds = productIds.filter((id: string) => !existingIds.has(id))
 
           if (missingIds.length) {
-            const productMaster = useProductMaster();
-            const { getFromSolr, upsertFromApi } = productMaster as any;
-            const newProducts = await getFromSolr(missingIds);
-
-            if (newProducts?.length) {
-              await upsertFromApi(newProducts);
-            }
+            const { getFromSolr, upsertFromApi } = useProductMaster() as any
+            const newProducts = await getFromSolr(missingIds)
+            if (newProducts?.length) await upsertFromApi(newProducts)
           }
         } catch (err) {
-          console.warn("Failed to verify or fetch missing products:", err);
+          console.warn("[loadInventoryItemsFromBackend] Failed to fetch missing products:", err)
         }
       }
-        await db.transaction('rw', db.inventoryCountRecords, async () => {
-          for (const item of items) {
-            await db.inventoryCountRecords.put({
-              inventoryCountImportId: item.inventoryCountImportId,
-              productId: item.productId || null,
-              uuid: item.uuid || uuidv4(),
-              isRequested: item.isRequested || 'Y',
-              productIdentifier: item.productIdentifier || '',
-              locationSeqId: item.locationSeqId || null,
-              quantity: item.quantity || 0,              // default 0 until user scans
-              status: 'active',
-              facilityId: '',
-              createdAt: item.createdDate || currentMillis(),
-              lastScanAt: item.lastUpdatedStamp || currentMillis(),
-              lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
-              lastSyncedAt: null,
-              lastSyncedBatchId: null,
-              aggApplied: 0
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.error('Error loading inventory items', err);
+
+      // --- Stop when fewer than pageSize returned ---
+      if (items.length < pageSize) hasMore = false
+      else pageIndex++
     }
+
+  } catch (err) {
+    console.error('[loadInventoryItemsFromBackend] Error:', err)
   }
-
-  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
-  if (!keyword?.trim()) return []
-
-  const value = keyword.trim().toLowerCase()
-
-  let tableQuery = db.table('inventoryCountRecords')
-    .where({ inventoryCountImportId })
-
-  if (segment === 'counted') {
-    tableQuery = tableQuery.and(r => r.quantity > 0)
-  } else if (segment === 'uncounted') {
-    tableQuery = tableQuery.and(r => r.quantity === 0)
-  } else if (segment === 'undirected') {
-    tableQuery = tableQuery.and(r => r.isRequested === 'N')
-  } else if (segment === 'unmatched') {
-    tableQuery = tableQuery.and(r => !r.productId)
-  }
-
-  const results = await tableQuery
-    .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
-    .toArray()
-
-  // enrich with product info if cached
-  for (const r of results) {
-    if (r.productId) {
-      const p = await db.table('products').get(r.productId)
-      if (p) r.product = p
-    }
-  }
-  return results
 }
 
-  async function getInventoryRecordsFromIndexedDB(inventoryCountImportId: string) {
+  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
+    if (!keyword?.trim()) return []
+
+    const value = keyword.trim().toLowerCase()
+
+    let tableQuery = db.table('inventoryCountRecords').where({ inventoryCountImportId })
+
+    if (segment === 'counted') {
+      tableQuery = tableQuery.and(item => item.quantity > 0)
+    } else if (segment === 'uncounted') {
+      tableQuery = tableQuery.and(item => item.quantity === 0)
+    } else if (segment === 'undirected') {
+      tableQuery = tableQuery.and(item => item.isRequested === 'N')
+    } else if (segment === 'unmatched') {
+      tableQuery = tableQuery.and(item => !item.productId)
+    }
+
+    const resultSet = await tableQuery
+      .filter(item => (item.productIdentifier || '').toLowerCase().includes(value))
+      .toArray()
+
+    // enrich with product info if cached
+    for (const item of resultSet) {
+      if (item.productId) {
+        const product = await db.table('products').get(item.productId)
+        if (product) item.product = product
+      }
+    }
+    return resultSet
+  }
+
+  async function getInventoryCountImportItems(inventoryCountImportId: string) {
     try {
       const records = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -155,85 +151,105 @@ export function useInventoryCountImport() {
     }
   }
 
+  async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
+    try {
+      // Reuse the same Dexie DB as in useInventoryCountImport
+      const records = await db.table('inventoryCountRecords')
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .toArray();
+
+      const ids = records
+        .map((item: any) => item.productId)
+        .filter((id: string | null) => !!id && id !== '')
+        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+
+      return ids;
+    } catch (err) {
+      console.error('Error fetching productIds from IndexedDB:', err);
+      return [];
+    }
+  }
+
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => !r.productId)
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(item => !item.productId)
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-    return items.map(item => ({
-      ...item,
-      product: productMap.get(item.productId || '')
-    }))
-  });
+      return items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId || '')
+      }))
+    });
 
   const getCountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
-    return items.map((item) => {
-      const product = productMap.get(item.productId || "");
-      let unmatched = false;
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
+      return items.map((item) => {
+        const product = productMap.get(item.productId || "");
+        let unmatched = false;
 
-      if (product) {
-        const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
-        ].map((v) => (v || "").toLowerCase());
+        if (product) {
+          const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
+          ].map((v) => (v || "").toLowerCase());
 
-        // Mark as unmatched if productIdentifier doesn't appear in product details
-        if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
-          unmatched = true;
+          // Mark as unmatched if productIdentifier doesn't appear in product details
+          if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
+            unmatched = true;
+          }
         }
-      }
-      return {
-        ...item,
-        product,
-        unmatched,
-      };
+        return {
+          ...item,
+          product,
+          unmatched,
+        };
+      });
     });
-  });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => (Number(r.quantity) || 0) === 0)
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(item => (Number(item.quantity) || 0) === 0)
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-    return items.map(item => ({
-      ...item,
-      product: productMap.get(item.productId || '')
-    }))
-  });
+      return items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId || '')
+      }))
+    });
 
   const getUndirectedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => r.isRequested === 'N' && Boolean(r.productId))
+        .filter(item => item.isRequested === 'N' && Boolean(item.productId))
         .toArray();
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
         ...item,
@@ -242,82 +258,27 @@ export function useInventoryCountImport() {
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
-  liveQuery(async () => {
-    const events = await db.scanEvents
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .reverse()
-      .sortBy('createdAt');
+    liveQuery(async () => {
+      const events = await db.scanEvents
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .reverse()
+        .sortBy('createdAt');
 
-    return events || [];
-  });
+      const enriched = await Promise.all(
+        events.map(async e => {
+          if (e.productId) {
+            const product = await db.products.get(e.productId);
+            return { ...e, product };
+          }
+          return e;
+        })
+      );
+
+      return enriched || [];
+    });
 
    /* API call functions moved from CountService.ts */   
-  const fetchCycleCount = async (payload: any): Promise <any>  => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  const fetchSessions = async (payload: any): Promise <any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  const fetchWorkEffort = async (payload: any): Promise<any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-      method: "get"
-    });
-  }
-
-  const getProductReviewDetail = async (payload: any): Promise<any> => {
-    return api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews`,
-      method: "get",
-      params: payload
-    });
-  }
-
-  async function createSessionOnServer (payload: any) {
-
-    const resp = await api({
-        url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
-        method: "post",
-        data: payload
-      })
-    return resp;
-  }
-
-const getWorkEfforts = async (params: any): Promise <any> => {
-  return api({
-    url: "inventory-cycle-count/cycleCounts/workEfforts",
-    method: "get",
-    params
-  });
-}
-
-const getInventoryCountImportsByWorkEffort = async (params: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
-    method: "get",
-  });
-}
-
-const addSessionInCount = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/sessions`,
-    method: "post",
-    data: payload
-  }
-  );
-}
-
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
   return await api({
     url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}`,
@@ -325,50 +286,9 @@ const getInventoryCountImportSession = async (params: { inventoryCountImportId: 
     params
   });
 }
-
-const bulkUploadInventoryCounts = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/upload`,
-    method: "post",
-    ...payload
-  });
-}
-
-const fetchCycleCountImportSystemMessages = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages`,
-    method: "get",
-    params: payload
-  });
-}
-
-const cancelCycleCountFileProcessing = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
-    method: "post",
-    data: payload
-  });
-}
-
-const fetchCycleCountUploadedFileData = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
-    method: "get",
-    data: payload
-  });
-}
-
-const fetchCycleCountImportErrors = async (payload: any): Promise <any>  => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
-    method: "get",
-    data: payload
-  });
-}
-
 async function discardSession(inventoryCountImportId: string): Promise<void> {
   try {
-    const resp = await api({
+    await api({
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
@@ -383,7 +303,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
 
 async function submitSession(inventoryCountImportId: string): Promise<void> {
   try {
-    const resp = await api({
+    await api({
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}`,
       method: 'PUT',
       data: {
@@ -396,28 +316,20 @@ async function submitSession(inventoryCountImportId: string): Promise<void> {
   }
 }
 
-const submitProductReview = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/submit`,
-    method: "post",
-    data: payload
-  })
-}
-
-const updateWorkEffort = async (payload: any): Promise <any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-    method: "put",
-    data: payload
-  })
-}
-
 const updateSession = async (payload: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}`,
     method: "put",
     data: payload
   })
+}
+
+const bulkUploadInventoryCounts = async (payload: any): Promise <any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/upload`,
+    method: "post",
+    ...payload
+  });
 }
 
 const cloneSession = async (payload: any): Promise <any> => {
@@ -436,66 +348,63 @@ const getSessionItemsByImportId = async (inventoryCountImportId: string): Promis
   });
 }
 
-const getSessionLock = async (params: any): Promise<any> => {
+const getSessionLock = async (payload: any): Promise<any> => {
   return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/lock`,
-    method: 'GET',
-    params
-  });
-}
-
-const lockSession = async (payload: any): Promise<any> => {
-  return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/lock`,
+    url: `oms/dataDocumentView`,
     method: 'POST',
-    data: payload
+    data: {
+      dataDocumentId: 'InventoryCountImportLock',
+      filterByDate: true,
+      pageIndex: 0,
+      pageSize: 100,
+      customParametersMap: {
+        ...payload
+      }
+    }
   });
 }
 
-const releaseSession = async (payload: any): Promise<any> => {
-  return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/release`,
-    method: 'PUT',
-    data: payload
-  });
-}
+  const lockSession = async (payload: any): Promise<any> => {
+    return await api({
+      url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/lock`,
+      method: 'POST',
+      data: payload
+    });
+  }
+
+  const releaseSession = async (payload: any): Promise<any> => {
+    return await api({
+      url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/release`,
+      method: 'PUT',
+      data: payload
+    });
+  }
+
+/**
+ * Composable to manage InventoryCountImport related operations using singleton pattern
+ */
+export function useInventoryCountImport() {
     
   return {
-    currentImport,
+    bulkUploadInventoryCounts,
+    cloneSession,
     discardSession,
-    submitSession,
-    createSessionOnServer,
-    syncStatus,
-    loadSession,
-    recordScan,
-    loadInventoryItemsFromBackend,
-    getInventoryRecordsFromIndexedDB,
-    getUnmatchedItems,
     getCountedItems,
+    getInventoryCountImportItems,
+    getInventoryCountImportSession,
+    getScanEvents,
+    getSessionItemsByImportId,
+    getSessionProductIds,
+    getSessionLock,
     getUncountedItems,
     getUndirectedItems,
-    fetchCycleCount,
-    fetchSessions,
-    fetchWorkEffort,
-    getProductReviewDetail,
-    cancelCycleCountFileProcessing,
-    getInventoryCountImportsByWorkEffort,
-    getInventoryCountImportSession,
-    bulkUploadInventoryCounts,
-    fetchCycleCountImportSystemMessages,
-    fetchCycleCountUploadedFileData,
-    addSessionInCount,
-    getWorkEfforts,
-    fetchCycleCountImportErrors,
-    submitProductReview,
-    updateWorkEffort,
-    updateSession,
-    cloneSession,
-    getSessionItemsByImportId,
-    getScanEvents,
-    searchInventoryItemsByIdentifier,
-    getSessionLock,
+    getUnmatchedItems,
+    loadInventoryItemsFromBackend,
     lockSession,
-    releaseSession
+    recordScan,
+    releaseSession,
+    searchInventoryItemsByIdentifier,
+    submitSession,
+    updateSession
   };
 }

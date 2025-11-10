@@ -34,7 +34,7 @@
             <ion-list>
               <ion-item v-for="event in events" :key="event.id" :class="{ unaggregated: event.aggApplied === 0 }">
                 <ion-thumbnail slot="start">
-                  <Image v-if="event.matched && event.product" :src="event.product.mainImageUrl" />
+                  <Image :src="event.product?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-badge class="scan-badge">{{ event.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
                 <ion-label>
@@ -62,7 +62,7 @@
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
                 <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
-                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
+                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
             <!-- When session is SUBMITTED: show only Re-open button -->
@@ -101,7 +101,7 @@
           <div class="statistics ion-padding">
             <ion-card>
               <ion-card-header>
-                <ion-card-title class="overline">Products counted</ion-card-title>
+                <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number">{{ stats.productsCounted }}</p>
@@ -162,7 +162,7 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -175,13 +175,13 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in uncountedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -198,7 +198,7 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -211,13 +211,13 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in undirectedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
@@ -237,66 +237,87 @@
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
                   </ion-item>
-
-                  <ion-item>
+                  <!-- Previous good scan -->
+                  <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ primaryId(item.product) }}</p>
-                      <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.productIdentifier }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
+                  </ion-item>
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
+                    <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
                 </ion-card>
               </template>
 
-              <!-- When no filtered results found for entered keyword -->
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding ion-text-center">
-                  <ion-icon :icon="searchOutline" class="ion-margin-bottom" size="large"></ion-icon>
-                  <ion-label>No products found for "{{ searchKeyword }}"</ion-label>
+                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
-              <!-- Default list when no search is active -->
               <template v-else>
                 <ion-card v-for="item in unmatchedItems" :key="item.uuid">
                   <ion-item>
                     <ion-label>
                       <h2>{{ item.productIdentifier }}</h2>
+                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ item.quantity }} units</p>
                     </ion-label>
                     <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
                   </ion-item>
-
-                  <ion-item>
+                  <!-- Previous good scan -->
+                  <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ timeAgo(item.createdAt) }}</p>
-                      <p>{{ primaryId(item.product) }}</p>
-                      <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.productIdentifier }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
-                    <ion-note slot="end">{{ translate("last match") }}</ion-note>
-                    <ion-icon :icon="chevronDownCircleOutline" slot="end"></ion-icon>
+                    <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
+                  </ion-item>
+                  <!-- Next good scan -->
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                    <ion-thumbnail slot="start">
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-label>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                    </ion-label>
+                    <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
                 </ion-card>
               </template>
@@ -307,12 +328,12 @@
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
                       <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
+                      <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -320,18 +341,18 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>No products found</ion-label>
+                  <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
                 <ion-card v-for="item in countedItems" :key="item.uuid">
-                  <Image v-if="item.product?.mainImageUrl" :src="item.product.mainImageUrl" />
+                  <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
                       {{ primaryId(item.product) }}
                       <p>{{ secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
+                      <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
                 </ion-card>
@@ -355,28 +376,25 @@
           <ion-searchbar v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
           <div v-if="isLoading" class="empty-state ion-padding">
             <ion-spinner name="crescent" />
-            <ion-label>Searching for "{{ queryString }}"</ion-label>
+            <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
           </div>
           <template v-else-if="isSearching && products.length">
             <ion-radio-group v-model="selectedProductId">
               <ion-item v-for="product in products" :key="product.productId">
                 <ion-thumbnail slot="start">
-                  <Image v-if="product.mainImageUrl" :src="product.mainImageUrl" />
+                  <Image :src="product?.mainImageUrl" />
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
-                    {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId,
-                      product) || product.productName }}
-                    <p>{{
-                      getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId,
-                      product) }}</p>
+                    {{ primaryId(product) || product.productName }}
+                    <p>{{ secondaryId(product) }}</p>
                   </ion-label>
                 </ion-radio>
               </ion-item>
             </ion-radio-group>
           </template>
           <div v-else-if="queryString && isSearching && !products.length" class="empty-state ion-padding">
-            <p>No results found for "{{ queryString }}"</p>
+            <p>{{ translate("No results found for") }} "{{ queryString }}"</p>
           </div>
           <div v-else class="empty-state ion-padding">
             <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -432,78 +450,32 @@
 
 
 <script setup lang="ts">
-import {
-  IonBackButton,
-  IonButtons,
-  IonBadge,
-  IonButton,
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonNote,
-  IonPage,
-  IonSearchbar,
-  IonSpinner,
-  IonSegment,
-  IonSegmentButton,
-  IonSegmentContent,
-  IonSegmentView,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
-  IonFab,
-  IonFabButton,
-  IonModal,
-  IonRadio,
-  IonRadioGroup,
-  onIonViewDidEnter
-} from '@ionic/vue';
+import { IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watchEffect, toRaw, onBeforeUnmount } from 'vue';
+import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
-import { useStore } from '@/store';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { getProductIdentificationValue, useProductIdentificationStore } from "@hotwax/dxp-components";
+import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
-import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { loader } from '@/user-utils';
+import { wrap } from 'comlink'
+import type { Remote } from 'comlink'
+import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
-const props = defineProps<{ workEffortId: string; inventoryCountImportId: string; inventoryCountTypeId: string; }>();
-const productIdentificationStore = useProductIdentificationStore();
-
-const {
-  recordScan,
-  getScanEvents,
-  loadInventoryItemsFromBackend,
-  getUnmatchedItems,
-  getCountedItems,
-  getUncountedItems,
-  getUndirectedItems,
-  updateSession,
-  getInventoryCountImportSession,
-  searchInventoryItemsByIdentifier,
-  getSessionLock,
-  lockSession,
-  releaseSession
-} = useInventoryCountImport();
-const { init, prefetch, getAllProductIdsFromIndexedDB, cacheReady } = useProductMaster();
-const store = useStore();
+const props = defineProps<{
+  workEffortId: string;
+  inventoryCountImportId: string;
+  inventoryCountTypeId: string;
+}>();
 
 const scannedValue = ref('');
 const events = ref<any[]>([]);
@@ -526,9 +498,12 @@ const inventoryCountImport = ref();
 const newCountName = ref();
 const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
-const currentDeviceId = store.getters["user/getDeviceId"];
 const currentLock = ref<any>(null);
+const isNewLockAcquired = ref(false);
 
+let lockWorker: Remote<LockHeartbeatWorker> | null = null
+let lockLeaseSeconds = 300
+let lockGracePeriod = 300
 
 const pageRef = ref(null);
 
@@ -550,21 +525,20 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => store.getters['user/getUserProfile']);
+const userLogin = computed(() => useUserProfileNew().getUserProfile);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
   try {
-    init();
     await handleSessionLock();
     await startSession();
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    
+    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
+
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
@@ -576,6 +550,11 @@ onIonViewDidEnter(async () => {
         unmatched: unmatchedItems.value.length
       }
     })
+
+    watch(selectedSegment, () => {
+      searchKeyword.value = ""
+      filteredItems.value = []
+    })
     // Start the background aggregation worker and schedule periodic aggregation
     aggregationWorker = new Worker(
       new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
@@ -584,7 +563,7 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessage = (e) => {
       const { type, count } = e.data
       if (type === 'aggregationComplete') {
-        console.log(`Aggregated ${count} products from scans`)
+        console.info(`Aggregated ${count} products from scans`)
       }
     }
     aggregationWorker.onerror = (err) => {
@@ -594,9 +573,8 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    const omsInfo = store.getters['user/getOmsRedirectionInfo']
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
 
     aggregationWorker.postMessage({
@@ -606,10 +584,10 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: omsInfo.url,
-          userLoginId: store.getters['user/getUserProfile']?.username,
-          maargUrl: store.getters['user/getBaseUrl'],
-          token: omsInfo.token,
+          omsUrl: useAuthStore().getOmsRedirectionUrl,
+          userLoginId: useUserProfileNew().getUserProfile?.username,
+          maargUrl: useAuthStore().getBaseUrl,
+          token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId
         }
@@ -626,6 +604,10 @@ onIonViewDidEnter(async () => {
 onBeforeUnmount(async () => {
   await finalizeAggregationAndSync();
   await unscheduleWorker();
+  if (lockWorker) {
+    await lockWorker.stopHeartbeat()
+    lockWorker = null
+  }
 });
 
 function openEditSessionModal() {
@@ -635,10 +617,11 @@ function openEditSessionModal() {
 
 async function updateSessionOnServer() {
   try {
-    const resp = await updateSession({
+    const resp = await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,
-      facilityAreaId: selectedArea.value
+      facilityAreaId: selectedArea.value,
+      fromDate: currentLock.value.fromDate
     });
 
     if (resp?.status === 200 && resp.data) {
@@ -656,7 +639,7 @@ async function updateSessionOnServer() {
 
 async function startSession() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value = resp.data;
     } else {
@@ -671,11 +654,16 @@ async function startSession() {
     }
 
     // Load InventoryCountImportItem records into IndexedDB
-    await loadInventoryItemsFromBackend(props.inventoryCountImportId);
+    const localRecords = await useInventoryCountImport().getInventoryCountImportItems(props.inventoryCountImportId);
+
+    if (!localRecords?.length || isNewLockAcquired.value) {
+      console.log("[Session] No local records found, fetching from backend...");
+      await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
+    }
 
     // Prefetch product details for all related productIds
-    const productIds = await getAllProductIdsFromIndexedDB(props.inventoryCountImportId);
-    if (productIds.length) await prefetch(productIds);
+    const productIds = await useInventoryCountImport().getSessionProductIds(props.inventoryCountImportId);
+    if (productIds.length) await useProductMaster().prefetch(productIds);
     showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
@@ -696,7 +684,7 @@ function handleScan() {
   if (!value) return;
 
   try {
-    recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
+    useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
     events.value.unshift({ scannedValue: value, quantity: 1, createdAt: Date.now() });
     filteredItems.value = [];
     searchKeyword.value = '';
@@ -710,20 +698,20 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = store.getters['user/getUserProfile']?.username;
+    const userId = useUserProfileNew().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = store.getters['user/getDeviceId'];
+    const currentDeviceId = useUserProfileNew().getDeviceId;
 
     // Fetch existing lock
-    const existingLockResp = await getSessionLock({
+    const existingLockResp = await useInventoryCountImport().getSessionLock({
       inventoryCountImportId,
       deviceId: currentDeviceId,
-      userId: store.getters['user/getUserProfile']?.username,
-      // thruDate_op: 'empty'
+      userId,
     });
-    const existingLock = existingLockResp?.data ? existingLockResp.data[0] : null;
+    const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
 
+    // --- If existing lock found ---
     if (existingLock) {
       if (existingLock.userId !== userId || existingLock.deviceId !== currentDeviceId) {
         // Different user → lock session
@@ -731,22 +719,114 @@ async function handleSessionLock() {
         showToast('This session is locked by another user.');
         return;
       }
-      // Same user + same device → continue
+
+      // Same user + same device → continue, schedule worker
       sessionLocked.value = false;
+      showToast('Existing lock found. Resuming session.');
+
+      // Schedule heartbeat worker for existing lock
+      let worker: Worker | null = null;
+      if (!lockWorker) {
+        worker = new Worker(
+          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+      }
+
+      const payload = {
+        inventoryCountImportId,
+        lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
+        leaseSeconds: lockLeaseSeconds,
+        gracePeriod: lockGracePeriod,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
+        userId,
+        deviceId: currentDeviceId
+      };
+
+      await lockWorker.startHeartbeat(payload);
+
+      // Message listener
+      if (worker) {
+        worker.onmessage = async (e: any) => {
+          const { type, thruDate } = e.data;
+          if (type === 'heartbeatSuccess') {
+            currentLock.value.thruDate = thruDate;
+            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockExpired') {
+            showToast('Session lock expired. Please reacquire the lock.');
+            await releaseSessionLock();
+            router.push('/tabs/count');
+          } else if (type === 'reacquireLock') {
+            showToast('Reacquiring lock...');
+            await handleSessionLock();
+          }
+        };
+      }
+
       return;
     }
 
-    // No lock found → create new one
-    const newLockResp = await lockSession({
+    // --- If no lock found, acquire a new one ---
+    const fromDate = Date.now();
+    const newLockResp = await useInventoryCountImport().lockSession({
       inventoryCountImportId,
       userId,
       deviceId: currentDeviceId,
-      fromDate: Date.now()
+      fromDate,
+      thruDate: fromDate + lockLeaseSeconds * 1000
     });
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
       showToast('Session lock acquired.');
+
+      let worker: Worker | null = null;
+      if (!lockWorker) {
+        worker = new Worker(
+          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+      }
+
+      const payload = {
+        inventoryCountImportId,
+        lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
+        leaseSeconds: lockLeaseSeconds,
+        gracePeriod: lockGracePeriod,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
+        userId,
+        deviceId: currentDeviceId
+      };
+
+      await lockWorker.startHeartbeat(payload);
+
+      // Listen for messages
+      if (worker) {
+        worker.onmessage = async (e: any) => {
+          const { type, thruDate } = e.data;
+          if (type === 'heartbeatSuccess') {
+            currentLock.value.thruDate = thruDate;
+            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockForceReleased') {
+            showToast('Session lock was force-released by another user.');
+            await releaseSessionLock();
+            if (lockWorker) await lockWorker.stopHeartbeat();
+            router.push('/tabs/count');
+          } else if (type === 'lockExpired') {
+            showToast('Session lock expired. Please reacquire the lock.');
+            await releaseSessionLock();
+            router.push('/tabs/count');
+          } else if (type === 'reacquireLock') {
+            showToast('Reacquiring lock...');
+            await handleSessionLock();
+          }
+        };
+      }
+      isNewLockAcquired.value = true;
     } else {
       sessionLocked.value = true;
       showToast('Failed to acquire lock.');
@@ -765,11 +845,12 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: store.getters['user/getUserProfile']?.username,
-      thruDate: Date.now()
+      userId: useUserProfileNew().getUserProfile?.username,
+      thruDate: Date.now(),
+      fromDate: currentLock.value.fromDate
     };
 
-    const resp = await releaseSession(payload);
+    const resp = await useInventoryCountImport().releaseSession(payload);
     if (resp?.status === 200) {
       showToast('Session lock released.');
       currentLock.value = null;
@@ -787,40 +868,55 @@ function timeAgo(ts: number) {
 }
 
 // helper: pick primary/secondary id from enriched product.goodIdentifications
-const primaryId = (p?: any) => {
-  if (!p) return ''
+const primaryId = (product?: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getPrimaryId()
 
-  const pref = productIdentificationStore.getProductIdentificationPref.primaryId
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
   }
 
   // Try preference, then fallback to SKU or productId
-  return resolve(pref) || resolve('SKU') || p.productId || ''
+  return resolve(pref) || resolve('SKU') || product.productId || ''
 }
 
-const secondaryId = (p?: any) => {
-  if (!p) return ''
+const secondaryId = (product: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getSecondaryId()
 
-  const pref = productIdentificationStore.getProductIdentificationPref.secondaryId
+  // Parse any flat "TYPE/VALUE" strings (from Solr)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return p.goodIdentifications?.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return p.internalName || ''
-    if (type === 'productId') return p.productId || ''
-    return p.goodIdentifications?.find((i: any) => i.type === type)?.value || ''
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
   }
 
   // Try preference, then fallback to productId
-  return resolve(pref) || p.productId || ''
+  return resolve(pref) || product.productId || ''
 }
 
 function openMatchModal(item: any) {
@@ -844,49 +940,36 @@ async function handleSearch() {
 }
 
 async function getProducts() {
-  isLoading.value = true;
-  try {
-    const resp = await fetchProducts({
-      keyword: queryString.value.trim(),
-      viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true"],
-    });
 
-    if (!hasError(resp)) {
-      products.value = resp.data.response.docs;
+  const queryPayload = useProductMaster().buildProductQuery({
+    keyword: queryString.value.trim(),
+    viewSize: 100,
+    filter: 'isVirtual:false,isVariant:true',
+  })
+
+  isLoading.value = true
+  try {
+    const resp = await useProductMaster().loadProducts(queryPayload)
+    if (resp?.status === 200 && resp.data?.response?.docs) {
+      products.value = resp.data.response.docs.length ? resp.data.response.docs : []
     }
   } catch (err) {
-    console.error("Failed to fetch products", err);
+    console.error('Failed to fetch products', err)
+  } finally {
+    isLoading.value = false
   }
-  isLoading.value = false;
 }
-
-const fetchProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 async function saveMatchProduct() {
   if (!selectedProductId.value) {
     showToast("Please select a product to match");
     return;
   }
-  const omsInfo = store.getters["user/getOmsRedirectionInfo"];
   const context = {
-    maargUrl: store.getters["user/getBaseUrl"],
-    token: omsInfo?.token,
-    omsUrl: omsInfo?.url,
-    userLoginId: store.getters["user/getUserProfile"]?.username,
+    maargUrl: useAuthStore().getBaseUrl,
+    token: useAuthStore().token.value,
+    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    userLoginId: useUserProfileNew().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -915,15 +998,14 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
 
     const context = {
-      omsUrl: omsInfo.url,
-      userLoginId: store.getters['user/getUserProfile']?.username,
-      maargUrl: store.getters['user/getBaseUrl'],
-      token: omsInfo.token,
+      omsUrl: useAuthStore().getOmsRedirectionUrl,
+      userLoginId: useUserProfileNew().getUserProfile?.username,
+      maargUrl: useAuthStore().getBaseUrl,
+      token: useAuthStore().token.value,
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId
     };
@@ -940,13 +1022,16 @@ async function finalizeAggregationAndSync() {
     // Wait until the worker confirms completion
     const result = await new Promise<number>((resolve) => {
       const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
-      aggregationWorker!.onmessage = (e) => {
-        const { type, count } = e.data;
-        if (type === 'aggregationComplete') {
-          clearTimeout(timeout);
-          resolve(count);
-        }
-      };
+      if (aggregationWorker) {
+        aggregationWorker.onmessage = (e) => {
+          const { type, count } = e.data;
+          if (type === 'aggregationComplete') {
+            console.log(`Aggregated ${count} products from scans`)
+            clearTimeout(timeout);
+            resolve(count);
+          }
+        };
+      }
     });
 
     return result;
@@ -971,10 +1056,15 @@ async function unscheduleWorker() {
 
 async function submit() {
   try {
+    if (unmatchedItems.value.length > 0) {
+      showToast(translate("Unmatched products should be matched before submission"));
+      return;
+    }
     await finalizeAggregationAndSync();
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
     await releaseSessionLock();
+    if (lockWorker) await lockWorker.stopHeartbeat();
     showToast('Session submitted successfully');
   } catch (err) {
     console.error(err);
@@ -985,9 +1075,10 @@ async function submit() {
 async function discard() {
   try {
     await finalizeAggregationAndSync();
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED' });
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
     inventoryCountImport.value.statusId = 'SESSION_VOIDED';
     await releaseSessionLock();
+    if (lockWorker) await lockWorker.stopHeartbeat();
     showToast('Session discarded');
   } catch (err) {
     console.error(err);
@@ -997,9 +1088,10 @@ async function discard() {
 
 async function reopen() {
   try {
-    await updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_CREATED' });
-    inventoryCountImport.value.statusId = 'SESSION_CREATED';
+    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
+    await handleSessionLock();
   } catch (err) {
     console.error(err);
     showToast('Failed to reopen session');
@@ -1011,7 +1103,7 @@ async function handleIndexedDBSearch() {
     filteredItems.value = [] // show all
     return
   }
-  const results = await searchInventoryItemsByIdentifier(
+  const results = await useInventoryCountImport().searchInventoryItemsByIdentifier(
     props.inventoryCountImportId,
     searchKeyword.value,
     selectedSegment.value
@@ -1022,6 +1114,54 @@ async function handleIndexedDBSearch() {
 function clearSearchResults() {
   searchKeyword.value = ''
   filteredItems.value = []
+}
+
+function getScanContext(item: any) {
+  if (!item || !item.productIdentifier || !events.value?.length) return {}
+
+  // newest → oldest
+  const sortedScans = [...events.value].sort(
+    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
+  )
+
+  // find the actual unmatched scan (by scannedValue, not id)
+  const index = sortedScans.findIndex(
+    (e) => e.scannedValue === item.productIdentifier
+  )
+  if (index === -1) return {}
+
+  //since list is newest → oldest, index itself is "X scans ago"
+  const scansAgo = index
+
+  //previous good scan = closest NEWER good scan (i.e. walk backwards: index-1 → 0)
+  let previousGood: any = null
+  let previousGoodIndex = -1
+  for (let i = index - 1; i >= 0; i--) {
+    if (sortedScans[i]?.productId) {
+      previousGood = sortedScans[i]
+      previousGoodIndex = i
+      break
+    }
+  }
+
+  //next good scan = closest OLDER good scan (i.e. walk forwards: index+1 → end)
+  let nextGood: any = null
+  let nextGoodIndex = -1
+  for (let i = index + 1; i < sortedScans.length; i++) {
+    if (sortedScans[i]?.productId) {
+      nextGood = sortedScans[i]
+      nextGoodIndex = i
+      break
+    }
+  }
+
+  return {
+    scansAgo,
+    previousGood,
+    previousGoodIndex,
+    nextGood,
+    nextGoodIndex,
+  }
 }
 </script>
 

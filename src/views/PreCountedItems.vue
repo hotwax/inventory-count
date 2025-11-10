@@ -25,7 +25,7 @@
         </ion-item>
         <ion-item v-if="searchedProduct" lines="none">
           <ion-thumbnail slot="start">  
-            <dxp-image :src="searchedProduct.mainImageUrl"/>
+            <img :src="searchedProduct.mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
             {{ searchedProduct.sku }}
@@ -53,8 +53,8 @@
                 <dxp-image :src="product.mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                {{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.primaryId, product) }}
-                <p>{{ getProductIdentificationValue(productIdentificationStore.getProductIdentificationPref.secondaryId, product) }}</p>
+                {{ useProductStoreSettings().getProductIdentificationValue(product.productId, productIdentificationStore.getProductIdentificationPref.primaryId) }}
+                <p>{{ useProductStoreSettings().getProductIdentificationValue(product.productId, productIdentificationStore.getProductIdentificationPref.secondaryId) }}</p>
                 <ion-text color="danger">
                   Undirected
                 </ion-text>
@@ -102,20 +102,23 @@ import {
   IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons'
-import { DxpImage } from '@hotwax/dxp-components'
 import { ref, defineProps, computed, onMounted } from 'vue'
 import router from '@/router'
 import { loader } from '@/user-utils'
-import store from '@/store'
-import { client } from '@/api'
+import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
-import { hasError, showToast } from '@/utils'
-import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components'
+import { showToast } from '@/utils'
 import { ProductService } from '@/services/ProductService'
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
+import { useProductIdentificationStore } from '@/stores/productIdentification'
+import { useAuthStore } from '@/stores/auth'
+import { useFacilityStore } from '@/stores/useFacilityStore'
+import { useProductMaster } from '@/composables/useProductMaster'
+import { useProductStoreSettings } from '@/composables/useProductStoreSettings'
 
-const { fetchWorkEffort, getInventoryCountImportSession, recordScan } = useInventoryCountImport()
+const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
+const { getWorkEffort } = useInventoryCountRun();
 const productIdentificationStore = useProductIdentificationStore()
-const userStore = useUserStore()
 
 const props = defineProps({
   workEffortId: String,
@@ -160,7 +163,7 @@ async function getInventoryCycleCount() {
     if (resp?.status !== 200 || !resp.data) throw resp
 
     workEffort.value = resp.data
-    const sessionResp = await fetchWorkEffort({ workEffortId: props.workEffortId })
+    const sessionResp = await getWorkEffort({ workEffortId: props.workEffortId })
     if (sessionResp?.status !== 200 || !sessionResp.data) throw sessionResp
 
     inventoryCountImport.value = sessionResp.data
@@ -177,17 +180,12 @@ async function handleSearch() {
 }
 
 async function fetchProductBySearch(term: string) {
+  const query = useProductMaster().buildProductQuery({
+    filter: `isVirtual: false,isVariant: true,(sku: ${term} OR internalName: ${term} OR upc: ${term})` as string,
+  })
   await loader.present('Searching Product...')
   try {
-    const resp = await fetchProducts({
-      docType: 'PRODUCT',
-      viewSize: 100,
-      filters: [
-        'isVirtual: false',
-        'isVariant: true',
-        `(sku: ${term} OR internalName: ${term} OR upc: ${term})`
-      ],
-    })
+    const resp = await fetchProducts(query);
 
     const product = resp?.data?.response?.docs?.[0]
     searchedProduct.value = product || null
@@ -200,20 +198,15 @@ async function fetchProductBySearch(term: string) {
 }
 
 async function fetchProducts(query: any) {
-  const omsInfo = store.getters['user/getOmsRedirectionInfo']
-  const baseURL = omsInfo.url.startsWith('http')
-    ? omsInfo.url.includes('/api')
-      ? omsInfo.url
-      : `${omsInfo.url}/api/`
-    : `https://${omsInfo.url}.hotwax.io/api/`
+  const baseURL = useAuthStore().getBaseUrl;
 
   return client({
-    url: 'searchProducts',
+    url: 'inventory-cycle-count/runSolrQuery',
     method: 'POST',
     baseURL,
     data: query,
     headers: {
-      Authorization: `Bearer ${omsInfo.token}`,
+      Authorization: `Bearer ${useAuthStore().token.value}`,
       'Content-Type': 'application/json',
     },
   })
@@ -243,8 +236,8 @@ async function addProductInPreCountedItems(product: any) {
 
 async function setProductQoh(product: any) {
   try {
-    const facility: any = userStore.getCurrentFacility
-    const resp = await ProductService.fetchProductStock({
+    const facility: any = useFacilityStore().getCurrentFacility
+    const resp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: facility.facilityId,
     })
@@ -259,7 +252,7 @@ async function addPreCountedItemInScanEvents(product: any) {
   const pref = productIdentificationStore.getProductIdentificationPref
   await recordScan({
     inventoryCountImportId: props.inventoryCountImportId!,
-    productIdentifier: getProductIdentificationValue(pref.primaryId, product),
+    productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, useProductIdentificationStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
   product.saved = true

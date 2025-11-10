@@ -2,11 +2,11 @@ import axios from "axios";
 import { setupCache } from "axios-cache-adapter"
 import OfflineHelper from "@/offline-helper"
 import emitter from "@/event-bus"
-import store from "@/store";
+import { useAuthStore } from "@/stores/auth";
 
 axios.interceptors.request.use((config: any) => {
   // TODO: pass csrf token
-  const token = store.getters["user/getUserToken"];
+  const token = useAuthStore().token.value;
 
   if (token) {
     config.headers["api_key"] =  token;
@@ -85,7 +85,7 @@ const api = async (customConfig: any) => {
     params: customConfig.params,
     // withCredentials: true
   }
-  const baseURL = store.getters["user/getBaseUrl"];
+  const baseURL = useAuthStore().getBaseUrl;
 
   if (baseURL) {
     config.baseURL = baseURL;

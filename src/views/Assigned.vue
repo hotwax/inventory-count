@@ -31,15 +31,14 @@
           <ion-chip outline>
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
-          
-
+      
           <ion-label>
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ count.currentStatusId }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -52,32 +51,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { translate } from '@/i18n'
-import { filterOutline, storefrontOutline } from "ionicons/icons";
+import { ref } from "vue";
 import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
-import store from "@/store"
-import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
-// import Filters from "@/components/Filters.vue"
+import { filterOutline, storefrontOutline } from "ionicons/icons";
+import { translate } from '@/i18n'
 import router from "@/router"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
+import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
 import { loader } from "@/user-utils";
+// import Filters from "@/components/Filters.vue"
+
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 
-const cycleCounts = computed(() => store.getters["count/getList"])
-const isScrollable = computed(() => store.getters["count/isScrollable"])
+const cycleCounts = ref<any[]>([])
+const isScrollable = ref(true);
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
+const pageIndex = ref(0);
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
-  await fetchAssignedCycleCount();
+  pageIndex.value = 0;
+  await getAssignedCycleCounts();
   loader.dismiss();
 })
 
 onIonViewWillLeave(async () => {
-  await store.dispatch("count/clearCycleCountList");
+  await useInventoryCountRun().clearCycleCountList();
 })
 
 function enableScrolling() {
@@ -93,28 +97,35 @@ function enableScrolling() {
 }
 
 async function loadMoreCycleCounts(event: any) {
-  if(!(isScrollingEnabled.value && isScrollable.value)) {
+  if (!(isScrollingEnabled.value && isScrollable.value)) {
     await event.target.complete();
+    return;
   }
-  fetchAssignedCycleCount(
-    undefined,
-    Math.ceil(
-      cycleCounts.value?.length / (process.env.VUE_APP_VIEW_SIZE as any)
-    ).toString()
-  ).then(async () => {
-    await event.target.complete()})
+
+  pageIndex.value++;
+  await getAssignedCycleCounts();
+  await event.target.complete();
 }
 
-async function fetchAssignedCycleCount(vSize?: any, vIndex?: any) {
-  const pageSize = vSize ? vSize : process.env.VUE_APP_VIEW_SIZE;
-  const pageIndex = vIndex ? vIndex : 0;
-  const payload = {
-    pageSize,
-    pageIndex,
+async function getAssignedCycleCounts() {
+  const params = {
+    pageSize: pageSize.value,
+    pageIndex: pageIndex.value,
     currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
     currentStatusId_op: "in"
+  };
+
+  const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
+  if (data.length) {
+    if (pageIndex.value > 0) {
+      cycleCounts.value = cycleCounts.value.concat(data);
+    } else {
+      cycleCounts.value = data;
+    }
+    isScrollable.value = cycleCounts.value.length < total;
+  } else {
+    isScrollable.value = false;
   }
-  await store.dispatch("count/getCycleCounts", payload)
 }
 </script>
 

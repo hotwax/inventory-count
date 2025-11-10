@@ -19,8 +19,8 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button slot="end" fill="outline" color="medium">
-                Edit
+              <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert">
+                {{ translate("Edit") }}
               </ion-button>
             </ion-item>
             <ion-item>
@@ -32,15 +32,15 @@
             <ion-item class="due-date">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
-                <p class="overline">Due Date</p>
+                <p class="overline">{{ translate("Due Date") }}</p>
                 <div v-if="workEffort.dueDate">
                   <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
                 </div>
                 <div v-else>
-                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">Add Due Date</ion-button>
+                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">{{ translate("Add Due Date") }}</ion-button>
                 </div>
                 <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
-                  <ion-datetime id="datetime" v-model="selectedDate" :value="getIsoFormattedDate(workEffort?.dueDate)"></ion-datetime>
+                  <ion-datetime id="datetime" v-model="selectedDate" :value="getDateTime(workEffort?.dueDate)"></ion-datetime>
                   <ion-item lines="none" class="ion-text-end">
                   </ion-item>
                 </ion-modal>
@@ -49,11 +49,11 @@
           </ion-card>
           <ion-card>
             <ion-item>
-              <ion-label>First item counted</ion-label>
+              <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
-              <ion-label>Last item counted</ion-label>
+              <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
             </ion-item>
             <ion-item>
@@ -75,7 +75,7 @@
             <ion-card>
               <ion-item lines="full">
                 <ion-label>
-                  <p class="overline">Overall variance (Filtered)</p>
+                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
                   <h3>16 units</h3>
                   <p>based on 4 results</p>
                 </ion-label>
@@ -99,55 +99,69 @@
 
         <div class="results ion-margin-top" v-if="cycleCounts?.length">
           <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="fetchCountSessions(cycleCount.productId)">
+            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="getCountSessions(cycleCount.productId)">
               <div class="list-item count-item-rollup" slot="header"> 
                 <div class="item-key">
                   <ion-item lines="none">
                     <ion-thumbnail slot="start">
                       <dxp-image></dxp-image>
                     </ion-thumbnail>
-                    <ion-label>
-                        {{ cycleCount.internalName }}
-                        <!-- <p>Secondary Id</p> -->
-                    </ion-label>
+                    <ion-label>{{ cycleCount.internalName }}</ion-label>
                   </ion-item>
                 </div>
                 <ion-label class="stat">
                   {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
-                  <p>counted/systemic</p>
+                  <p>{{ translate("counted/systemic") }}</p>
                 </ion-label>
                 <ion-label class="stat">
                   {{ cycleCount.proposedVarianceQuantity }}
-                  <p>variance</p>
+                  <p>{{ translate("variance") }}</p>
                 </ion-label>
               </div>
-              <div v-if="loadingSessions">
-              <ion-spinner name="crescent"></ion-spinner>
-                <p>Loading items...</p>
-              </div>
-              <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" slot="content">
-                <ion-item lines="none">
-                  <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+              <div slot="content" @click.stop="stopAccordianEventProp">
+                <ion-list v-if="sessions === null">
+                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
+                    <ion-avatar slot="start">
+                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                    </ion-avatar>
+                    <ion-label>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
+                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                  <ion-item lines="none">
+                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                  </ion-item>
                   <ion-label>
-                    {{ session.uploadedByUserLogin }}
+                    {{ session.counted }}
+                    <p>{{ translate("counted") }}</p>
                   </ion-label>
-                </ion-item>
-
-                <ion-label>
-                  {{ session.counted }}
-                  <p>counted</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                  <p>started</p>
-                </ion-label>
-                <ion-label>
-                  {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                  <p>last updated</p>
-                </ion-label>
-                <ion-button fill="clear" color="medium">
-                  <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                </ion-button>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                    <p>{{ translate("started") }}</p>
+                  </ion-label>
+                  <ion-label>
+                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                    <p>{{ translate("last updated") }}</p>
+                  </ion-label>
+                  <ion-button fill="clear" color="medium">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  </ion-button>
+                </div>
               </div>
             </ion-accordion>
           </ion-accordion-group>
@@ -156,7 +170,7 @@
           </ion-infinite-scroll>
         </div>
         <div v-else class="empty-state">
-          <p>No Results</p>
+          <p>{{ translate("No Results") }}</p>
         </div>
       </template>
       <template v-else>
@@ -167,17 +181,14 @@
 </template>
 
 <script setup lang="ts">
-import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, modalController, onIonViewWillEnter, onIonViewWillLeave, onIonViewDidEnter, IonSpinner } from "@ionic/vue";
+import { defineProps, reactive, ref, toRefs, watch } from "vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
-import { computed, defineProps, nextTick, reactive, ref, toRefs, watch } from "vue";
-import store from "@/store"
-import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
-import { showToast, getDateWithOrdinalSuffix, hasError, getFacilityName, getPartyName, getValidItems, timeFromNow, getDateTime, sortListByField } from "@/utils"
+import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
+import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
 import { loader } from "@/user-utils";
 import { DateTime } from "luxon";
-
-const { getProductReviewDetail, fetchSessions, fetchWorkEffort, fetchCycleCount, updateWorkEffort } = useInventoryCountImport();
 
 const props = defineProps({
   workEffortId: String
@@ -187,7 +198,7 @@ onIonViewDidEnter(async () => {
   isLoading.value = true;
   await getWorkEffortDetails();
   if (workEffort.value) {
-    await fetchInventoryCycleCount();
+    await getInventoryCycleCount();
   }
   isLoading.value = false;
 })
@@ -202,9 +213,6 @@ const searchedProductString = ref('');
 
 
 const isLoading = ref(false);
-
-const loadingSessions = ref(false);
-
 const workEffort = ref();
 
 const cycleCounts = ref();
@@ -213,7 +221,7 @@ const isScrollable = ref(true);
 const isLoadingMore = ref(false);
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await fetchWorkEffort({ workEffortId: props.workEffortId });
+  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
@@ -228,22 +236,15 @@ const selectedDate = ref('')
 watch(
   () => workEffort.value?.dueDate,
   (newVal) => {
-    selectedDate.value = getIsoFormattedDate(newVal)
+    selectedDate.value = getDateTime(newVal) || "";
   },
   { immediate: true }
 )
 
-function getIsoFormattedDate(timestamp: any): string {
-  if (!timestamp) return DateTime.now().toISO() ?? ''
-  return typeof timestamp === 'number'
-    ? DateTime.fromMillis(timestamp).toISO() ?? ''
-    : DateTime.fromISO(timestamp).toISO() ?? ''
-}
-
 async function saveDueDate() {
   try {
     const dueDate = DateTime.fromISO(selectedDate.value).toMillis()
-    const resp = await updateWorkEffort({
+    const resp = await useInventoryCountRun().updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
       dueDate
     })
@@ -261,6 +262,50 @@ async function saveDueDate() {
   isDueDateModalOpen.value = false
 }
 
+async function openEditNameAlert() {
+  const editCountNameAlert = await alertController.create({
+    header: 'Edit Count Name',
+    inputs: [
+      {
+        name: 'workEffortName',
+        type: 'text',
+        value: workEffort.value?.workEffortName
+      }
+    ],
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel'
+      },
+      {
+        text: 'Save',
+        handler: async (data) => {
+          await loader.present("Updating Cycle Count");
+          try {
+            const resp = await useInventoryCountRun().updateWorkEffort({
+              workEffortId: workEffort.value.workEffortId,
+              workEffortName: data.workEffortName
+            });
+
+            if (resp?.status === 200) {
+              workEffort.value.workEffortName = data.workEffortName;
+              showToast(translate("Count Name Updated Successfully"));
+            } else {
+              throw resp;
+            }
+          } catch (error) {
+            showToast(translate("Failed to Update Cycle Count Name"));
+            console.error("Failed to update cycle count name:", error);
+          }
+          loader.dismiss();
+        },
+      },
+    ],
+  })
+
+  await editCountNameAlert.present();
+}
+
 
 async function loadMoreCycleCountProductReviews(event: any) {
   if (isLoadingMore.value || !isScrollable.value) {
@@ -271,7 +316,7 @@ async function loadMoreCycleCountProductReviews(event: any) {
   isLoadingMore.value = true;
   pagination.pageIndex += 1;
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -302,7 +347,7 @@ watch(() => searchAndSortBy, async () => {
   await loader.present("Loading...");
   try {
     pagination.pageIndex = 0;
-    const count = await fetchCycleCount({
+    const count = await useInventoryCountRun().getCycleCount({
       workEffortId: props.workEffortId,
       pageSize: pagination.pageSize,
       pageIndex: pagination.pageIndex,
@@ -335,7 +380,7 @@ function getSortByField () {
 
 async function filterProductByInternalName() {
   try {
-    const productReviewDetail = await getProductReviewDetail({
+    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
       workEffortId: props.workEffortId,
       internalName: searchedProductString.value || null,
       internalName_op: searchedProductString.value ? "contains" : null,
@@ -354,27 +399,33 @@ async function filterProductByInternalName() {
   }
 }
 
-async function fetchCountSessions(productId: any) {
-  loadingSessions.value = true;
-  sessions.value = [];
-  const resp = await fetchSessions({
-    workEffortId: props.workEffortId,
-    productId: productId
-  });
+async function getCountSessions(productId: any) {
+  sessions.value = null;
+  try {
+    const resp = await useInventoryCountRun().getSessions({
+      workEffortId: props.workEffortId,
+      productId: productId
+    });
 
-  if (resp && resp.status && resp.data && resp.data.length) {
-    sessions.value = resp.data;
+    if (resp && resp.status && resp.data && resp.data.length) {
+      sessions.value = resp.data;
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    sessions.value = [];
+    console.error("Error getting sessions for this product: ", error);
+    showToast(translate("Something Went Wrong"));
   }
-  loadingSessions.value = false;
 }
 
-async function fetchInventoryCycleCount(reset = false) {
+async function getInventoryCycleCount(reset = false) {
   if (reset) {
     pagination.pageIndex = 0;
     isScrollable.value = true;
   }
 
-  const resp = await fetchCycleCount({
+  const resp = await useInventoryCountRun().getCycleCount({
     workEffortId: props.workEffortId,
     pageSize: pagination.pageSize,
     pageIndex: pagination.pageIndex,
@@ -388,6 +439,10 @@ async function fetchInventoryCycleCount(reset = false) {
     cycleCounts.value = [];
     isScrollable.value = false;
   }
+}
+
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
 }
 
 </script>

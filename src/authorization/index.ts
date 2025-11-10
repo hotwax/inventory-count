@@ -101,7 +101,9 @@ const resetPermissions = () => setPermissions([]);
  * @param permission 
  * @returns 
  */
-const hasPermission = (permission: string) => ability.can(permission);
+const hasPermission = (permission: string) => {
+    return ability.can(permission);
+}
 
 export { Actions, getServerPermissionsFromRules, hasPermission, prepareAppPermissions, resetPermissions, setPermissions};
 

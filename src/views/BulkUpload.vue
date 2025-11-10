@@ -184,44 +184,24 @@
 </template>
 
 <script setup>
-import {
-  IonBackButton,
-  IonButton,
-  IonChip,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonItem,
-  IonItemDivider,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonNote,  
-  IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonTitle,
-  IonToolbar,
-  onIonViewDidEnter,
-  IonModal,
-  IonPopover,
-  IonButtons,
-  IonInput,
-  IonFab,
-  IonFabButton
-} from '@ionic/vue';
+import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonInput, IonFab, IonFabButton } from '@ionic/vue';
 import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
-import { useStore } from 'vuex';
 import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
-const store = useStore();
-const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
-const systemMessages = computed(() => store.getters["count/getCycleCountImportSystemMessages"]);
-const { bulkUploadInventoryCounts, fetchCycleCountUploadedFileData, cancelCycleCountFileProcessing, fetchCycleCountImportErrors } = useInventoryCountImport();
+const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
+const systemMessages = ref([]);
+
+onIonViewDidEnter(async () => {
+  resetDefaults();
+  await useUserProfileNew().fetchFieldMappings();
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+});
 
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
@@ -231,7 +211,6 @@ let content = ref([]);
 let fieldMapping = ref({});
 let fileColumns = ref([]);
 let selectedMappingId = ref(null);
-const fileUploaded = ref(false);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
 
 /* ---------- CreateMappingModal Logic ---------- */
@@ -274,12 +253,12 @@ async function saveMapping() {
     return;
   }
   const id = generateUniqueMappingPrefId();
-  await store.dispatch("user/createFieldMapping", {
+  await useUserProfileNew().createFieldMapping({
     id,
     name: mappingName.value,
     value: modalFieldMapping.value,
     mappingType: "INVCOUNT"
-  });
+  })
   showToast(translate("Mapping saved"));
   closeCreateMappingModal();
 }
@@ -301,7 +280,7 @@ function closeUploadPopover() {
 }
 function openErrorModal() {
   isErrorModalOpen.value = true;
-  fetchCycleCountImportErrorsFromServer();
+  getCycleCountImportErrorsFromServer();
 }
 function closeErrorModal() {
   isErrorModalOpen.value = false;
@@ -310,15 +289,15 @@ function closeErrorModal() {
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
 }
-async function fetchCycleCountImportErrorsFromServer() {
+async function getCycleCountImportErrorsFromServer() {
   try {
-    const resp = await fetchCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) systemMessageError.value = resp?.data[0];
   } catch (err) { logger.error(err); }
 }
 async function viewFile() {
   try {
-    const resp = await fetchCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
     if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
@@ -329,10 +308,10 @@ async function viewFile() {
 }
 async function cancelUpload() {
   try {
-    const resp = await cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
+    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
-      await store.dispatch("count/fetchCycleCountImportSystemMessages");
+      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
   } catch (err) {
     showToast(translate("Failed to cancel uploaded cycle count."));
@@ -343,7 +322,7 @@ async function cancelUpload() {
 
 /* ---------- Bulk Upload Logic ---------- */
 function getFilteredFields(fields, required = true) {
-  return Object.keys(fields).reduce((r, k) => { if (fields[k].required === required) r[k] = fields[k]; return r; }, {});
+  return Object.keys(fields).reduce((row, key) => { if (fields[key].required === required) row[key] = fields[key]; return row; }, {});
 }
 function extractFilename(path) {
   if (!path) return;
@@ -366,11 +345,7 @@ function resetDefaults() {
   file.value.value = "";
   selectedMappingId.value = null;
 }
-onIonViewDidEnter(async () => {
-  resetDefaults();
-  await store.dispatch("user/getFieldMappings");
-  await store.dispatch("count/fetchCycleCountImportSystemMessages");
-});
+
 async function parse(e) {
   const f = e.target.files[0];
   try {
@@ -398,7 +373,7 @@ async function save() {
     idValue: i[fieldMapping.value.productSku],
     idType: "SKU",
     dueDate: i[fieldMapping.value.dueDate],
-    facilityId: "",
+    estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
     externalFacilityId: i[fieldMapping.value.facility],
   }));
   const data = jsonToCsv(uploadedData);
@@ -406,10 +381,10 @@ async function save() {
   fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
-    const resp = await bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
+    const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
     if (!hasError(resp)) {
       resetDefaults();
-      await store.dispatch("count/fetchCycleCountImportSystemMessages");
+      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
       showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {

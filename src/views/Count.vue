@@ -29,7 +29,7 @@
                 {{ translate("HARD COUNT") }}
               </ion-label>
               <ion-card-title>
-                {{ count.workEfforName }}
+                {{ count.workEffortName }}
               </ion-card-title>
               <ion-card-subtitle>
                 {{ getDateWithOrdinalSuffix(count.createdDate) }}
@@ -42,25 +42,31 @@
               <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
             </ion-label>
           </ion-item>
+          <ion-item v-if="count.estimatedStartDate" lines="none">
+            {{ translate("Start date") }}
+            <ion-label slot="end">
+              <p>{{ getDateWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+            </ion-label>
+          </ion-item>
           <ion-list>
             <ion-list-header>
               <ion-label>
-                Sessions
+                {{ translate("Sessions") }}
               </ion-label>
 
-              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                 {{ translate("New") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="count.sessions?.length === 0" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="session.lock.length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -71,16 +77,19 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId !== store.getters['user/getUserProfile']?.username">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfileNew().getUserProfile.username">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for") }} {{ session.lock[0].userId }}</p>
+                    <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-note color="warning" slot="end">{{ translate("Locked") }}</ion-note>
+                  <ion-button v-if="selectedSegment === 'assigned' && hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                    {{ translate("Force Release") }}
+                  </ion-button>
+                  <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for this device") }}</p>
@@ -89,20 +98,24 @@
                 </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock[0].userId && session.lock[0].userId === store.getters['user/getUserProfile']?.username && session.lock[0].deviceId !== currentDeviceId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission('APP_PWA_STANDALONE_ACCESS')">
+                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId !== 'SESSION_SUBMITTED')">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId === 'SESSION_CREATED' || s.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
+              </ion-button>
+              <ion-button
+                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="count.estimatedStartDate && DateTime.fromMillis(count.estimatedStartDate) >= DateTime.now()">
+                {{ translate("Move to In Progress") }}
               </ion-button>
             </ion-item>
           </ion-list>
@@ -152,70 +165,40 @@
 </template>
 
 <script setup>
-import {
-  IonButton,
-  IonCard,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
-  IonContent,
-  IonHeader,
-  IonIcon,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
-  IonItem,
-  IonItemGroup,
-  IonLabel,
-  IonList,
-  IonNote,
-  IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonTitle,
-  IonToolbar,
-  onIonViewDidEnter,
-  IonButtons,
-  IonModal,
-  IonFab,
-  IonFabButton,
-  IonListHeader,
-  IonRadioGroup,
-  IonRadio,
-  IonInput
-} from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import router from '@/router';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
-import { useUserStore } from '@hotwax/dxp-components';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
+import { DateTime } from 'luxon';
+import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useFacilityStore } from '@/stores/useFacilityStore';
 
-const { updateWorkEffort, releaseSession } = useInventoryCountImport();
-const store = useStore();
-const router = useRouter();
-const userStore = useUserStore();
 
-const cycleCounts = computed(() => store.getters["count/getAssignedWorkEfforts"]);
-const isScrollable = computed(() => store.getters["count/isScrollable"]);
-const currentFacility = computed(() => userStore.getCurrentFacility);
+const cycleCounts = ref([]);
+const isScrollable = ref(true);
+let isLoading = ref(false);
+const pageIndex = ref(0);
+const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+
+const currentFacility = computed(() => useFacilityStore().getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
-let isLoading = ref(false);
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
-const currentDeviceId = store.getters["user/getDeviceId"];
+const currentDeviceId = useUserProfileNew().getDeviceId;
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   pageIndex.value = 0;
-  await fetchCycleCounts(true);
+  await getCycleCounts(true);
   isLoading.value = false;
 });
 
@@ -255,18 +238,19 @@ async function loadMoreCycleCount(event) {
   }
 
   pageIndex.value += 1;
-  await fetchCycleCounts(false);
+  await getCycleCounts(false);
   await event.target.complete();
 }
 
-async function fetchCycleCounts(reset = false) {
+async function getCycleCounts(reset = false) {
   if (!currentFacility.value?.facilityId) {
-    showToast(translate("No facility is associated with this user"));
+    showToast(translate('No facility is associated with this user'));
     return;
   }
 
   if (reset) {
     pageIndex.value = 0;
+    cycleCounts.value.splice(0);
   }
 
   const params = {
@@ -274,25 +258,41 @@ async function fetchCycleCounts(reset = false) {
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     currentStatusId: getStatusIdForCountsToBeFetched(),
-    thruDate_op: "empty"
-    // userId: store.getters["user/getUserProfile"].username,
-    // deviceId: store.getters["user/getDeviceId"]
+    currentStatusId_op: 'in',
+    thruDate_op: 'empty'
   };
-  await store.dispatch("count/getAssignedWorkEfforts", params);
+
+  try {
+    const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
+
+    if (pageIndex.value === 0) {
+      cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);
+    } else {
+      cycleCounts.value.push(...workEfforts);
+    }
+
+    isScrollable.value = scrollable;
+  } catch (err) {
+    console.error('Error loading cycle counts:', err);
+    showToast(translate('Failed to load cycle counts.'));
+  } finally {
+    isLoading.value = false;
+  }
 }
+
 
 async function segmentChanged(value) {
   isLoading.value = true;
   selectedSegment.value = value;
   pageIndex.value = 0;
-  await fetchCycleCounts(true);
+  await getCycleCounts(true);
   isLoading.value = false;
 }
 
 function getStatusIdForCountsToBeFetched() {
-  if (selectedSegment.value === "assigned") return "CYCLE_CNT_IN_PRGS";
-  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_IN_CMPLTD";
-  return "CYCLE_CNT_IN_CLOSED";
+  if (selectedSegment.value === "assigned") return "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS";
+  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_CMPLTD";
+  return "CYCLE_CNT_CLOSED";
 }
 
 const areas = [
@@ -320,10 +320,10 @@ async function addNewSession() {
 
     if (isHardCount) {
       // --- Create a new HARD COUNT session directly ---
-      resp = await useInventoryCountImport().createSessionOnServer({
+      resp = await useInventoryCountRun().createSessionOnServer({
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -343,10 +343,10 @@ async function addNewSession() {
           })
         } else {
           // Fallback: no valid oldest found
-          resp = await useInventoryCountImport().createSessionOnServer({
+          resp = await useInventoryCountRun().createSessionOnServer({
             countImportName: countName.value,
             statusId: "SESSION_CREATED",
-            uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+            uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
             facilityAreaId: selectedArea.value,
             createdDate: Date.now(),
             dueDate: Date.now(),
@@ -355,10 +355,10 @@ async function addNewSession() {
         }
       } else {
         // No sessions → create new one (same as HARD COUNT)
-        resp = await useInventoryCountImport().createSessionOnServer({
+        resp = await useInventoryCountRun().createSessionOnServer({
           countImportName: countName.value,
           statusId: "SESSION_CREATED",
-          uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+          uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
           facilityAreaId: selectedArea.value,
           createdDate: Date.now(),
           dueDate: Date.now(),
@@ -383,7 +383,7 @@ async function addNewSession() {
         inventoryCountImportId: resp.data.inventoryCountImportId,
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -402,40 +402,79 @@ async function addNewSession() {
 }
 
 async function markAsCompleted(workEffortId) {
-  try {
-    const response = await updateWorkEffort({ workEffortId, currentStatusId: 'CYCLE_CNT_IN_CMPLTD' });
-    if (response && response.status === 200) {
-      showToast(translate("Session sent for review successfully"));
-      pageIndex.value = 0;
-      await fetchCycleCounts(true);
-    } else {
-      showToast(translate("Failed to send session for review"));
-    }
-  } catch (err) {
-    console.error("Error updating status:", err);
-  }
+  const response = await useInventoryCountRun().updateWorkEffort({
+    workEffortId,
+    currentStatusId: 'CYCLE_CNT_CMPLTD'
+  });
+  if (response?.status === 200) {
+    showToast(translate('Session sent for review successfully'));
+    await getCycleCounts(true);
+  } else showToast(translate('Failed to send session for review'));
+}
+
+async function markInProgress(workEffortId) {
+  const response = await useInventoryCountRun().updateWorkEffort({
+    workEffortId,
+    currentStatusId: 'CYCLE_CNT_IN_PRGS'
+  });
+  if (response?.status === 200) {
+    showToast(translate('Cycle Count is Active'));
+    await getCycleCounts(true);
+  } else showToast(translate('Failed to activate cycle count'));
 }
 
 async function forceRelease(session) {
   try {
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
+      fromDate: session.lock?.fromDate,
       thruDate: Date.now(),
-      overrideByUserId: store.getters['user/getUserProfile']?.username
+      overrideByUserId: useUserProfileNew().getUserProfile.username
     }
 
-    const resp = await releaseSession(payload)
+    const resp = await useInventoryCountImport().releaseSession(payload)
     if (resp?.status === 200) {
       showToast('Session lock released successfully.')
 
       // Remove lock locally so UI refreshes
-      session.lock = null
+      session.lock = {}
     } else {
       showToast('Failed to release session lock.')
     }
   } catch (err) {
     console.error('Error releasing session lock:', err)
     showToast('Something went wrong while releasing session.')
+  }
+}
+
+async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
+  try {
+    const userId = useUserProfileNew().getUserProfile.username;
+    const deviceId = useUserProfileNew().getDeviceId;
+
+    // Fetch the active lock for this session
+    const resp = await useInventoryCountImport().getSessionLock({
+      inventoryCountImportId: session.inventoryCountImportId,
+    });
+
+    const activeLock = resp?.data?.entityValueList?.[0];
+
+    // If another user is already working, block navigation
+    if (activeLock && activeLock.userId && activeLock.userId !== userId) {
+      showToast(`This session is already active for ${activeLock.userId}.`);
+      return;
+    }
+
+    //If same user but different device
+    if (activeLock && activeLock.userId === userId && activeLock.deviceId !== deviceId) {
+      showToast("This session is already active on another device.");
+      return;
+    }
+    //Safe to navigate
+    router.push(`/session-count-detail/${session.workEffortId}/${workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
+  } catch (err) {
+    console.error('Error checking session lock before navigation:', err);
+    showToast("Failed to check session lock. Please try again.");
   }
 }
 </script>

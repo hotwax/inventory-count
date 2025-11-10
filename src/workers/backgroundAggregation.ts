@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/api/workerApi";
 import { expose } from 'comlink';
 import { db } from '@/database/commonDatabase';
+import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -34,25 +35,20 @@ async function getById(productId: string, context: any) {
   }
 
   try {
-    let baseUrl = context.omsUrl
-    if (!baseUrl.endsWith('/')) {
-      baseUrl += '/api/'
-    } else if (!baseUrl.endsWith('/api/') && !baseUrl.includes('/api/')) {
-      baseUrl += 'api/'
-    }
+    const query = useProductMaster().buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
-      data: {
-        filters: [`productId: ${productId}`],
-        viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-      }
+      data: query
     })
 
     const doc = resp?.response?.docs?.[0]
@@ -76,23 +72,24 @@ async function findProductByIdentification(idType: string, value: string, contex
   const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
   if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
+  if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
   try {
+    const query = useProductMaster().buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
-        viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-      }
+      data: query
     })
 
     const productId = resp?.response?.docs?.[0]?.productId
@@ -117,20 +114,20 @@ function ensureProductStored(productId: string | null, context: any) {
     try {
       const existing = await db.table('products').get(productId);
       if (existing) return;
-
+      const query = useProductMaster().buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
       const resp = await workerApi({
-        baseURL: context.omsUrl,
+        baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'searchProducts',
+        url: 'inventory-cycle-count/runSolrQuery',
         method: 'POST',
-        data: {
-          filters: [`productId:${productId}`],
-          viewSize: 1,
-          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
-        }
+        data: query
       });
 
       const doc = resp?.response?.docs?.[0];
@@ -146,7 +143,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
   // get all records in this session where productId is null / empty
   const unresolved = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
-    .and(r => !r.productId) // null, undefined, empty
+    .and(item => !item.productId) // null, undefined, empty
     .toArray()
 
   if (!unresolved.length) return 0
@@ -175,6 +172,14 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
         productId,
         lastUpdatedAt: now
       })
+
+    await db.table('scanEvents')
+      .where({ inventoryCountImportId })
+      .and(s => s.scannedValue === identifier)
+      .modify({
+        productId,
+        lastUpdatedAt: now
+      });
   }
   return;
 }
@@ -222,7 +227,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
       const existing = await db.table('inventoryCountRecords')
         .where({ inventoryCountImportId })
-        .and(r => (productId && r.productId === productId) || r.productIdentifier === scannedValue)
+        .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
         .first()
 
       // if (productId) ensureProductStored(productId, context);
@@ -249,7 +254,15 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           lastUpdatedAt: now // new record, so same as createdAt
         })
       }
-
+      if (productId) {
+        await db.table('scanEvents')
+          .where({ inventoryCountImportId })
+          .and(s => s.scannedValue === scannedValue)
+          .modify({
+            productId,
+            lastUpdatedAt: now
+          });
+      }
       processed++
     }
 
@@ -279,7 +292,7 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 
       const existing = await table
         .where({ inventoryCountImportId })
-        .and((r: any) => r.uuid === item?.uuid)
+        .and((itm: any) => itm.uuid === item?.uuid)
         .first();
 
       if (existing) {
@@ -394,10 +407,10 @@ self.onmessage = async (e: MessageEvent) => {
   const { type, payload } = e.data
 
   if (type === 'aggregate') {
-    const { workEffortId, inventoryCountImportId, context } = payload
+    const { inventoryCountImportId, context } = payload
     const count = await aggregate(inventoryCountImportId, context)
     if (count > 0) {
-      const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+      await resolveMissingProducts(inventoryCountImportId, context)
       await syncToServer(inventoryCountImportId, context)
     }
 
@@ -405,11 +418,11 @@ self.onmessage = async (e: MessageEvent) => {
   }
 
   if (type === 'schedule') {
-    const { workEffortId, inventoryCountImportId, context, intervalMs = 10000 } = payload
+    const { inventoryCountImportId, context, intervalMs = 10000 } = payload
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       if (count > 0) {
-        const resolved = await resolveMissingProducts(inventoryCountImportId, context)
+        await resolveMissingProducts(inventoryCountImportId, context)
         await syncToServer(inventoryCountImportId, context)
       }
 
