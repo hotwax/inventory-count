@@ -58,19 +58,20 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { initialise, resetConfig } from '@/adapter';
-import store from "./store";
+import { initialise, resetConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { getProductStoreId } from './utils';
 import logger from './logger';
-import { useProductIdentificationStore } from '@hotwax/dxp-components';
+import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
+import { useUserProfileNew } from './stores/useUserProfile';
+import { useAuthStore } from './stores/auth';
 
 const router = useRouter();
-const userProfile = computed(() => store.getters["user/getUserProfile"]);
-const userToken = computed(() => store.getters["user/getUserToken"]);
-const instanceUrl = computed(() => store.getters["user/getInstanceUrl"]);
+const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userToken = computed(() => useAuthStore().token.value);
+const instanceUrl = computed(() => useAuthStore().getBaseUrl);
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-pre-counted'];
 const showMenu = computed(() => {
@@ -112,7 +113,7 @@ onMounted(async () => {
 
   if (userToken.value && getProductStoreId()) {
     await useProductIdentificationStore()
-      .getIdentificationPref(getProductStoreId())
+      .getDxpIdentificationPref(getProductStoreId())
       .catch((error: any) => logger.error(error));
   }
 });

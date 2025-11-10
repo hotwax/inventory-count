@@ -1,10 +1,11 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import store from '@/store'
-import { client } from '@/api'
+import { client } from '@/services/RemoteAPI';
 import workerApi from "@/api/workerApi";
 // Setup Dexie database
 import { db } from '@/database/commonDatabase'
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
 // Product structure
 export interface Product {
@@ -39,10 +40,7 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-  const baseURL = omsRedirectionInfo.url.startsWith('http')
-    ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/`
-    : `https://${omsRedirectionInfo.url}.hotwax.io/api/`
+  const baseURL = useAuthStore().getBaseUrl;
 
   const batchSize = 250
   const results: Product[] = []
@@ -52,22 +50,22 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
     const batch = productIds.slice(index, index + batchSize)
     const filter = `productId: (${batch.join(' OR ')})`
     const resp = await client({
-      url: "searchProducts",
-      method: "POST",
+      url: "inventory-cycle-count/products",
+      method: "GET",
       baseURL,
-      data: {
-        filters: [filter],
+      params: {
+        filter: filter,
         viewSize: batch.length,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
+        fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
       },
       headers: {
-        "Authorization": 'Bearer ' + omsRedirectionInfo.token,
+        "Authorization": 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     })
 
-    if (resp.data?.response?.docs?.length) {
-      results.push(...resp.data.response.docs.map(mapApiDocToProduct))
+    if (resp.data?.productDetail?.products?.length) {
+      results.push(...resp.data.productDetail.products.map(mapApiDocToProduct))
     }
     index += batchSize
   } while (index < productIds.length)
@@ -119,18 +117,13 @@ const findByIdentification = async (idValue: string) => {
 }
 
 const getByIdentificationFromSolr = async (idValue: string) => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const productStoreSettings = store.getters["user/getProductStoreSettings"];
+  const productStoreSettings = useUserProfileNew().getProductStoreSettings;
   const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
   const productIdentifications = process.env.VUE_APP_PRDT_IDENT
     ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
     : [];
 
-  const baseURL = omsRedirectionInfo.url.startsWith('http')
-    ? omsRedirectionInfo.url.includes('/api')
-      ? omsRedirectionInfo.url
-      : `${omsRedirectionInfo.url}/api/`
-    : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+  const baseURL = useAuthStore().getBaseUrl;
 
   // Build Solr filter dynamically
   const filter = productIdentifications.includes(barcodeIdentification)
@@ -139,30 +132,23 @@ const getByIdentificationFromSolr = async (idValue: string) => {
 
   try {
     const resp = await client({
-      url: 'searchProducts',
-      method: 'POST',
+      url: 'inventory-cycle-count/products',
+      method: 'GET',
       baseURL,
-      data: {
-        filters: [filter],
+      params: {
+        filter: filter,
         viewSize: 1,
-        fieldsToSelect: [
-          'productId',
-          'productName',
-          'parentProductName',
-          'internalName',
-          'mainImageUrl',
-          'goodIdentifications'
-        ]
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       },
       headers: {
-        'Authorization': 'Bearer ' + omsRedirectionInfo.token,
+        'Authorization': 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     });
 
-    const docs = resp.data?.response?.docs || [];
-    if (docs.length) {
-      const mapped = mapApiDocToProduct(docs[0]);
+    const products = resp.data?.productDetail?.products || [];
+    if (products.length) {
+      const mapped = mapApiDocToProduct(products[0]);
       await upsertFromApi([mapped]);
       return { product: mapped, status: 'fresh' as const };
     }
@@ -244,16 +230,16 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
-      method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
+      url: 'inventory-cycle-count/products',
+      method: 'GET',
+      params: {
+        filter: `goodIdentifications:${idType}/${value}`,
         viewSize: 1,
-        fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       }
     })
 
-    const productId = resp?.response?.docs?.[0]?.productId
+    const productId = resp?.productDetail?.products?.[0]?.productId
 
     if (productId) {
       await db.table('productIdents').put({
@@ -270,21 +256,6 @@ async function findProductByIdentification(idType: string, value: string, contex
     return null
   }
 }
-
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 const clearCache = async () => {
   await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -342,8 +313,8 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"];
-  const token = store.getters["user/getUserToken"]
+  const baseURL = useAuthStore().getBaseUrl;
+  const token = useAuthStore().token.value;
 
   return await client({
     url: "poorti/getInventoryAvailableByFacility",
@@ -356,6 +327,20 @@ const getProductStock = async (query: any): Promise<any> => {
     }
   });
 }
+
+const loadProducts = async (query: any): Promise<any> => {
+  const baseURL = useAuthStore().getBaseUrl;
+  return await client({
+    url: "inventory-cycle-count/products",
+    method: "GET",
+    baseURL,
+    params: query,
+    headers: {
+      Authorization: "Bearer " + useAuthStore().token.value,
+      "Content-Type": "application/json",
+    },
+  });
+};
 
 export function useProductMaster() {
 

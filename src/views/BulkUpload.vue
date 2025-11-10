@@ -188,15 +188,20 @@ import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDiv
 import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
-import { useStore } from 'vuex';
 import logger from "@/logger";
 import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
-const store = useStore();
-const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
+const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
 const systemMessages = ref([]);
+
+onIonViewDidEnter(async () => {
+  resetDefaults();
+  await useUserProfileNew().fetchFieldMappings();
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+});
 
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
@@ -248,12 +253,12 @@ async function saveMapping() {
     return;
   }
   const id = generateUniqueMappingPrefId();
-  await store.dispatch("user/createFieldMapping", {
+  await useUserProfileNew().createFieldMapping({
     id,
     name: mappingName.value,
     value: modalFieldMapping.value,
     mappingType: "INVCOUNT"
-  });
+  })
   showToast(translate("Mapping saved"));
   closeCreateMappingModal();
 }
@@ -340,11 +345,7 @@ function resetDefaults() {
   file.value.value = "";
   selectedMappingId.value = null;
 }
-onIonViewDidEnter(async () => {
-  resetDefaults();
-  await store.dispatch("user/getFieldMappings");
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-});
+
 async function parse(e) {
   const f = e.target.files[0];
   try {

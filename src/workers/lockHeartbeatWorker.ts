@@ -11,7 +11,6 @@ interface HeartbeatPayload {
   lock: any
   leaseSeconds?: number
   gracePeriod?: number
-  omsUrl: string
   maargUrl: string
   token: string
   userId: string

@@ -62,7 +62,7 @@
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
                 <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
-                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
+                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
             <!-- When session is SUBMITTED: show only Re-open button -->
@@ -456,28 +456,26 @@ import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount 
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast, hasError } from '@/utils';
-import { useStore } from '@/store';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
 import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
-import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { loader } from '@/user-utils';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
 const props = defineProps<{
   workEffortId: string;
   inventoryCountImportId: string;
   inventoryCountTypeId: string;
 }>();
-
-const store = useStore();
 
 const scannedValue = ref('');
 const events = ref<any[]>([]);
@@ -527,7 +525,7 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => store.getters['user/getUserProfile']);
+const userLogin = computed(() => useUserProfileNew().getUserProfile);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
@@ -575,9 +573,8 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    const omsInfo = store.getters['user/getOmsRedirectionInfo']
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
 
     aggregationWorker.postMessage({
@@ -587,10 +584,10 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: omsInfo.url,
-          userLoginId: store.getters['user/getUserProfile']?.username,
-          maargUrl: store.getters['user/getBaseUrl'],
-          token: omsInfo.token,
+          omsUrl: useAuthStore().getOmsRedirectionUrl,
+          userLoginId: useUserProfileNew().getUserProfile?.username,
+          maargUrl: useAuthStore().getBaseUrl,
+          token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId
         }
@@ -701,10 +698,9 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = store.getters['user/getUserProfile']?.username;
+    const userId = useUserProfileNew().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = store.getters['user/getDeviceId'];
-    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
+    const currentDeviceId = useUserProfileNew().getDeviceId;
 
     // Fetch existing lock
     const existingLockResp = await useInventoryCountImport().getSessionLock({
@@ -743,9 +739,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: store.getters['user/getBaseUrl'],
-        omsUrl: omsInfo.url,
-        token: omsInfo.token,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -801,9 +796,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: store.getters['user/getBaseUrl'],
-        omsUrl: omsInfo.url,
-        token: omsInfo.token,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -851,7 +845,7 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: store.getters['user/getUserProfile']?.username,
+      userId: useUserProfileNew().getUserProfile?.username,
       thruDate: Date.now(),
       fromDate: currentLock.value.fromDate
     };
@@ -951,11 +945,11 @@ async function getProducts() {
     const resp = await useProductMaster().loadProducts({
       keyword: queryString.value.trim(),
       viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true"],
+      filter: `isVirtual: false, isVariant: true`,
     });
 
-    if (!hasError(resp)) {
-      products.value = resp.data.response.docs;
+    if (resp?.status === 200 && resp.data?.productDetail?.products?.length) {
+      products.value = resp.data.productDetail.products;
     }
   } catch (err) {
     console.error("Failed to fetch products", err);
@@ -968,12 +962,11 @@ async function saveMatchProduct() {
     showToast("Please select a product to match");
     return;
   }
-  const omsInfo = store.getters["user/getOmsRedirectionInfo"];
   const context = {
-    maargUrl: store.getters["user/getBaseUrl"],
-    token: omsInfo?.token,
-    omsUrl: omsInfo?.url,
-    userLoginId: store.getters["user/getUserProfile"]?.username,
+    maargUrl: useAuthStore().getBaseUrl,
+    token: useAuthStore().token.value,
+    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    userLoginId: useUserProfileNew().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -1002,15 +995,14 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
 
     const context = {
-      omsUrl: omsInfo.url,
-      userLoginId: store.getters['user/getUserProfile']?.username,
-      maargUrl: store.getters['user/getBaseUrl'],
-      token: omsInfo.token,
+      omsUrl: useAuthStore().getOmsRedirectionUrl,
+      userLoginId: useUserProfileNew().getUserProfile?.username,
+      maargUrl: useAuthStore().getBaseUrl,
+      token: useAuthStore().token.value,
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId
     };

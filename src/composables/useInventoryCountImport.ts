@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import { hasError } from '@hotwax/oms-api';
-import api from '@/api';
+import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/database/commonDatabase'
 

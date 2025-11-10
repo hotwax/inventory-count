@@ -2,7 +2,7 @@ export default async function workerApi(customConfig: {
   url: string;
   method?: string;
   data?: any;
-  params?: Record<string, string>;
+  params?: any;
   baseURL?: string;
   headers?: Record<string, string>;
 }) {

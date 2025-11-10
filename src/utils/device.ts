@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/database/commonDatabase'
-import store from '@/store'
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
 export async function initDeviceId() {
   const pref = await db.appPreferences.get("deviceId");
@@ -15,7 +15,7 @@ export async function initDeviceId() {
   }
 
   // Store it in Vuex state
-  store.dispatch("user/setDeviceId", { "deviceId": pref?.value || deviceId });
+  useUserProfileNew().setDeviceId(pref?.value as string);
 
   return deviceId;
 }
