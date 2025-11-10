@@ -119,14 +119,11 @@ import { closeOutline, saveOutline } from "ionicons/icons";
 import { computed, onBeforeMount, ref } from "vue";
 import { translate} from '../i18n'
 import { DateTime } from 'luxon' 
-import { useUserStore } from '@/stores/user'
 import { useUserProfileNew } from '@/stores/useUserProfile';
 
-const userStore = useUserStore();
-
 const userProfile: any = computed(() => useUserProfileNew().getUserProfile);
-const timeZones = computed(() => userStore.getTimeZones)
-const currentTimeZoneId = computed(() => userStore.getCurrentTimeZone)
+const timeZones = computed(() => useUserProfileNew().getTimeZones)
+const currentTimeZoneId = computed(() => useUserProfileNew().getCurrentTimeZone)
 
 const isLoading = ref(true);
 const timeZoneModal = ref();
@@ -162,10 +159,10 @@ const closeModal = () => {
 
 onBeforeMount(async () => {
   isLoading.value = true;
-  await userStore.getDxpAvailableTimeZones();
+  await useUserProfileNew().getDxpAvailableTimeZones();
 
   if(userProfile.value && userProfile.value.userTimeZone) {
-    userStore.currentTimeZoneId = userProfile.value.userTimeZone
+    useUserProfileNew().currentTimeZoneId = userProfile.value.userTimeZone
     timeZoneId.value = userProfile.value.userTimeZone
   }
 
@@ -178,7 +175,7 @@ onBeforeMount(async () => {
 })
 
 async function setUserTimeZone() {
-  await userStore.setDxpUserTimeZone(timeZoneId.value).then((tzId) => {
+  await useUserProfileNew().setDxpUserTimeZone(timeZoneId.value).then((tzId) => {
     emit('timeZoneUpdated', tzId);
   }).catch(err => err)
   closeModal();

@@ -9,10 +9,11 @@ import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } 
 import logger from '@/logger';
 import { showToast } from '@/utils';
 import { translate } from '@/i18n';
-import { useUserStore } from './user';
 import { useProductIdentificationStore } from './productIdentification';
 import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
+import { useProductStore } from './useProductStore';
+import { useFacilityStore } from './useFacilityStore';
 
 export interface LoginPayload {
   username: string | null;
@@ -63,16 +64,19 @@ export const useAuthStore = defineStore('authStore', {
       return !!(state.token.value && !isTokenExpired);
     },
     getOMS: (state) => state.oms,
-    getOmsRedirectionUrl: (state) => state.omsRedirectionUrl,
+    getOmsRedirectionUrl: (state) => {
+      const baseURL = state.omsRedirectionUrl;
+      console.log("This is in auth store: ", baseURL);
+      if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
+      return ""
+    },
     getBaseUrl: (state) => {
       const baseURL = state.oms
       const appConfig = getConfig()
 
       console.log("This is app config: ", appConfig);
 
-      if (baseURL && !baseURL.includes('api') && state.systemType === "MOQUI") return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
-      else if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
-
+      if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
     },
   },
@@ -151,18 +155,18 @@ export const useAuthStore = defineStore('authStore', {
         }
 
       const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-      const facilities = await useUserStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
+      const facilities = await useFacilityStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
         parentTypeId: "VIRTUAL_FACILITY",
         parentTypeId_not: "Y",
         facilityTypeId: "VIRTUAL_FACILITY",
         facilityTypeId_not: "Y"
       });
-      await useUserStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
+      await useFacilityStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
       if (!facilities.length) throw "Unable to login. User is not associated with any facility"
-      const currentFacility: any = useUserStore().getCurrentFacility
-      isAdminUser ? await useUserStore().getDxpEComStores() : await useUserStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
-      await useUserStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
-      const preferredStore: any = useUserStore().getCurrentEComStore
+      const currentFacility: any = useFacilityStore().getCurrentFacility
+      isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
+      await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
+      const preferredStore: any = useProductStore().getCurrentProductStore
 
       setPermissions(appPermissions);
 
@@ -189,21 +193,6 @@ export const useAuthStore = defineStore('authStore', {
         },
         systemType: "MOQUI"
       });
-
-
-      // try {
-      //   const profileResp = await api({
-      //     url: 'admin/user/profile',
-      //     method: 'get',
-      //   });
-      //   if (profileResp?.status === 200 && profileResp.data) {
-      //     this.current = profileResp.data;
-      //   } else {
-      //     throw new Error('Unable to load profile.');
-      //   }
-      // } catch (error) {
-      //   console.error('Failed to fetch user profile', error);
-      // }
       await useProductStoreSettings().init();
       await useInventoryCountRun().loadStatusDescription();
     },

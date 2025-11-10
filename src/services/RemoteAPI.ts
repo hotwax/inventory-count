@@ -3,7 +3,6 @@ import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import merge from 'deepmerge';
 import { useAuthStore } from '@/stores/auth';
-import { loader } from '@/user-utils';
 import emitter from '@/event-bus';
 
 const requestInterceptor = async (config: any) => {

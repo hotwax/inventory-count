@@ -30,20 +30,15 @@ import '@hotwax/apps-theme';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
 import i18n from './i18n'
-import store from './store'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import { login, logout, loader } from './user-utils';
-import localeMessages from './locales';
 import { db } from '@/database/commonDatabase'
 import { initDeviceId } from '@/utils/device'
 import { useUserProfileNew } from './stores/useUserProfile';
 import { useProductMaster } from './composables/useProductMaster';
-import { useProductStoreSettings } from './composables/useProductStoreSettings';
-import { useInventoryCountRun } from './composables/useInventoryCountRun';
 import { setPermissions } from '@/authorization';
 
 
@@ -56,7 +51,6 @@ const app = createApp(App)
   .use(pinia)
   .use(router)
   .use(i18n)
-  .use(store)
   .use(permissionPlugin, {
     rules: permissionRules,
     actions: permissionActions
@@ -96,7 +90,7 @@ app.config.globalProperties.$filters = {
   },
   formatUtcDate(value: any, inFormat?: any, outFormat?: string) {
     // TODO Make default format configurable and from environment variables
-    const userProfile = store.getters['user/getUserProfile'];
+    const userProfile = useUserProfileNew().getUserProfile;
     // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
     return DateTime.fromISO(value, { zone: 'utc' }).setZone(userProfile.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
   },

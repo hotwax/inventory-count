@@ -23,22 +23,21 @@
     
 <script setup lang="ts">
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/vue';
-import { useUserStore } from '@/stores/user'
 import { computed } from 'vue';
 import { translate } from '../i18n'
 import { defineProps } from "vue";
+import { useProductStore } from '@/stores/useProductStore';
 
-const userStore = useUserStore();
 const props = defineProps<{
   onUpdateEComStore?: (store: any) => void
 }>()
 
-const eComStores = computed(() => userStore.getProductStores) as any;
-const currentEComStore = computed(() => userStore.getCurrentEComStore);
+const eComStores = computed(() => useProductStore().getProductStores) as any;
+const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 
 async function updateEComStore(eComStoreId: any) {
   const selectedProductStore = eComStores.value.find((store: any) => store.productStoreId == eComStoreId)
-  await userStore.setEComStorePreference(selectedProductStore)
+  await useProductStore().setEComStorePreference(selectedProductStore)
   props.onUpdateEComStore?.(selectedProductStore)
 }
 </script>

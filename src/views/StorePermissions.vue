@@ -45,23 +45,24 @@ import {
   onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
-import store from "@/store";
 import { computed } from "vue";
 import ForceScanCard from "@/components/ForceScanCard.vue";
 import { useProductIdentificationStore } from '@/stores/productIdentification';
+import { useUserProfileNew } from "@/stores/useUserProfile";
+import { getProductStoreId } from "@/utils";
 
 const productIdentificationStore = useProductIdentificationStore();
 
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
 
 onIonViewWillEnter(async () => {
-  await store.dispatch("user/getProductStoreSetting")
+  await useUserProfileNew().fetchProductStoreSettings(getProductStoreId())
   productIdentificationStore.prepareProductIdentifierOptions();
 })
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();
-  store.dispatch("user/setProductStoreSetting", { key, value: !productStoreSettings.value[key] })
+  useUserProfileNew().setProductStoreSetting(key, !productStoreSettings.value[key], getProductStoreId())
 }
 </script>
 

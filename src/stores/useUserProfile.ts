@@ -2,8 +2,10 @@ import { defineStore } from 'pinia'
 import api, { client } from '@/services/RemoteAPI';
 import { hasError, showToast } from '@/utils'
 import logger from '@/logger'
-import { translate } from '@/i18n'
+import i18n, { translate } from '@/i18n'
 import { prepareAppPermissions } from '@/authorization';
+import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
+import { DateTime } from 'luxon';
 
 export const useUserProfileNew = defineStore('userProfile', {
   state: () => ({
@@ -16,29 +18,93 @@ export const useUserProfileNew = defineStore('userProfile', {
       name: '',
       value: {}
     },
+    localeOptions: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : { "en-US": "English" },
+    locale: 'en-US',
+    currentTimeZoneId: '',
+    timeZones: [],
     settings: {
       isFirstScanCountEnabled: false,
       forceScan: false,
       showQoh: false,
-      barcodeIdentificationPref: 'internalName'
     } as any,
-    isScrollingAnimationEnabled: false,
     deviceId: '',
   }),
 
   persist: true,
 
   getters: {
+    getLocale: (state) => state.locale,
+    getLocaleOptions: (state) => state.localeOptions,
+    getTimeZones: (state) => state.timeZones,
+    getCurrentTimeZone: (state) => state.currentTimeZoneId,
     getUserProfile: (state) => state.current,
     getUserPermissions: (state) => state.permissions,
     getFieldMappings: (state) => (type?: string) =>
       type ? state.fieldMappings[type] || {} : state.fieldMappings,
     getProductStoreSettings: (state) => state.settings,
     getDeviceId: (state) => state.deviceId,
-    getIsScrollingAnimationEnabled: (state) => state.isScrollingAnimationEnabled,
   },
 
   actions: {
+    async setLocale(locale: string) {
+      let newLocale, matchingLocale
+      newLocale = this.locale
+      // handling if locale is not coming from userProfile
+      try {
+        // const appState = appContext.config.globalProperties.$store;
+        const userProfile = useUserProfileNew().getUserProfile
+        if (locale) {
+          matchingLocale = Object.keys(this.localeOptions).find((option: string) => option === locale)
+          // If exact locale is not found, try to match the first two characters i.e primary code
+          matchingLocale = matchingLocale || Object.keys(this.localeOptions).find((option: string) => option.slice(0, 2) === locale.slice(0, 2))
+          newLocale = matchingLocale || this.locale
+          // update locale in state and globally
+        //   if(userContext.setUserLocale) await userContext.setUserLocale({ userId: userProfile.userId, newLocale })
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        i18n.global.locale = newLocale
+        this.locale = newLocale
+      }
+    },
+    async setDxpUserTimeZone(tzId: string) {
+      // Do not make any api call if the user clicks the same timeZone again that is already selected
+      if(this.currentTimeZoneId === tzId) {
+        return;
+      }
+
+      try {
+        // const appState = appContext.config.globalProperties.$store;
+        const userProfile = useUserProfileNew().getUserProfile;
+
+        await setUserTimeZone({ userId: userProfile.userId, tzId })
+        this.currentTimeZoneId = tzId
+
+        showToast(translate("Time zone updated successfully"));
+        return Promise.resolve(tzId)
+      } catch(err) {
+        console.error('Error', err)
+        return Promise.reject('')
+      }
+    },
+    async getDxpAvailableTimeZones() {
+      // Do not fetch timeZones information, if already available
+      if(this.timeZones.length) {
+        return;
+      }
+
+      try {
+        // const resp = await userContext.getAvailableTimeZones()
+        const resp = await getAvailableTimeZones();
+        this.timeZones = resp.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
+      } catch(err) {
+        console.error('Error', err)
+      }
+    },
+    updateTimeZone(tzId: string) {
+      this.currentTimeZoneId = tzId
+    },
     fetchUserPermissions() {
       return this.permissions;
     },
@@ -50,11 +116,6 @@ export const useUserProfileNew = defineStore('userProfile', {
     setDeviceId(deviceId: string) {
       this.deviceId = deviceId
     },
-
-    setScrollingAnimationPreference(enabled: boolean) {
-      this.isScrollingAnimationEnabled = enabled
-    },
-
     async fetchProductStoreSettings(productStoreId: string) {
       try {
         const resp = await api({

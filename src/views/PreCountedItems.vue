@@ -89,8 +89,6 @@ import { ref, defineProps } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
-import store from '@/store';
-import { client } from '@/api';
 import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
 import { useProductMaster } from '@/composables/useProductMaster';
 
@@ -144,13 +142,12 @@ async function getProducts() {
   await loader.present("Searching Product...");
   try {
     const resp = await useProductMaster().loadProducts({
-      docType: "PRODUCT",
-      viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true", `internalName: ${searchedProductString.value.trim()}`],
+      viewSize: 1,
+      filter: `isVirtual: false, isVariant: true, internalName: ${searchedProductString.value.trim()}`,
     });
 
     if (resp && !hasError(resp) && resp.data) {
-      searchedProduct.value = resp.data.response.docs?.[0];
+      searchedProduct.value = resp.data.productDetail.products?.[0];
       if (!searchedProduct.value) {
         showToast(`Product Not Found by ${searchedProductString.value}`);
       }

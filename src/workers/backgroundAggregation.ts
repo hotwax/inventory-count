@@ -35,17 +35,17 @@ async function getById(productId: string, context: any) {
 
   try {
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
-      method: 'POST',
-      data: {
-        filters: [`productId: ${productId}`],
+      url: 'inventory-cycle-count/products',
+      method: 'GET',
+      params: {
+        filter: `productId: ${productId}`,
         viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       }
     })
 
@@ -70,22 +70,24 @@ async function findProductByIdentification(idType: string, value: string, contex
   const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
   if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
+  if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
+
+  console.log("This is idType: ", idType);
 
   try {
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
-      method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
+      url: 'inventory-cycle-count/products',
+      method: 'GET',
+      params: {
+        filter: `goodIdentifications:${idType}/${value}`,
         viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       }
     })
 
@@ -113,17 +115,17 @@ function ensureProductStored(productId: string | null, context: any) {
       if (existing) return;
 
       const resp = await workerApi({
-        baseURL: context.omsUrl,
+        baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'searchProducts',
-        method: 'POST',
-        data: {
-          filters: [`productId:${productId}`],
+        url: 'inventory-cycle-count/products',
+        method: 'GET',
+        params: {
+          filter: `productId:${productId}`,
           viewSize: 1,
-          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
+          fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
         }
       });
 

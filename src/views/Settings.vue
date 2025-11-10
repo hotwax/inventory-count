@@ -47,7 +47,7 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink" @click="goToOms(useAuthStore().token.value , omsRedirectionLink)" fill="clear">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -84,22 +84,6 @@
         <DxpProductIdentifier /> -->
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
         <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
-
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate("Scrolling animation") }}
-            </ion-card-title>
-          </ion-card-header>
-
-          <ion-card-content>
-            {{ translate("Enable the scrolling animation on the hard count's detail page.") }}
-          </ion-card-content>
-
-          <ion-item lines="none">
-            <ion-toggle label-placement="start" v-model="isScrollingAnimationEnabled" @click.prevent="updateScrollingAnimationPreference($event)">{{ translate("Enable animation") }}</ion-toggle>
-          </ion-item>
-        </ion-card>
       </section>
     </ion-content>
   </ion-page>
@@ -108,10 +92,8 @@
 <script setup lang="ts">
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { useStore } from "vuex";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { goToOms } from "@hotwax/dxp-components";
 import { useAuthStore } from "@/stores/auth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -119,24 +101,25 @@ import { DateTime } from "luxon";
 import ForceScanCard from "@/components/ForceScanCard.vue";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
+import { useUserProfileNew } from "@/stores/useUserProfile";
+import { getProductStoreId } from "@/utils";
+import { useFacilityStore } from "@/stores/useFacilityStore";
+import { useProductStore } from "@/stores/useProductStore";
 
-const store = useStore()
-const authStore = useAuthStore();
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
-const userProfile = computed(() => store.getters["user/getUserProfile"])
-const oms = computed(() => store.getters["user/getInstanceUrl"])
-const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
-const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const oms = useAuthStore().oms
+const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await store.dispatch("user/getProductStoreSetting")
+  await useUserProfileNew().fetchProductStoreSettings(getProductStoreId())
 })
 
 function logout() {
-  store.dispatch("user/logout").then(() => {
+  useAuthStore().logout().then(() => {
     const redirectUrl = window.location.origin + '/login'
     window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
@@ -147,21 +130,21 @@ function goToLaunchpad() {
 }
 
 async function setFacility(facility: any) {
-  await store.dispatch("user/updateCurrentFacility", facility)
+  await useFacilityStore().setFacilityPreference(facility);
 }
 
 async function setProductStore(selectedProductStore: any) {
-  await store.dispatch("user/updateCurrentProductStore", selectedProductStore)
-}
-
-function updateScrollingAnimationPreference(event: any) {
-  event.stopImmediatePropagation();
-
-  store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
+  await useProductStore().setEComStorePreference(selectedProductStore)
 }
 
 function getDateTime(time: any) {
   return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
+}
+
+const goToOms = (token: string, oms: string) => {
+  const link = (oms.startsWith('http') ? oms.replace(/\/api\/?|\/$/, "") : `https://${oms}.hotwax.io`) + `/commerce/control/main?token=${token}`
+  
+  window.open(link, '_blank', 'noopener, noreferrer')
 }
 </script>
 

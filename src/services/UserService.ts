@@ -1,9 +1,9 @@
 import api, {client} from "@/api"
-import store from "@/store";
+import { useAuthStore } from "@/stores/auth";
 import { hasError } from "@/utils";
 
 const login = async (token: string): Promise <any> => {
-  const baseURL = store.getters["user/getBaseUrl"]
+  const baseURL = useAuthStore().getBaseUrl
   let api_key = ""
 
   try {
@@ -31,7 +31,7 @@ const login = async (token: string): Promise <any> => {
 }
 
 const getUserProfile = async (token: any): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"]
+  const baseURL = useAuthStore().getBaseUrl
   try {
     const resp = await client({
       url: "admin/user/profile",
@@ -205,8 +205,8 @@ const getFieldMappings = async (payload: any): Promise <any> => {
 }
 
 const createUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"]
-  const token = store.getters["user/getUserToken"]
+  const baseURL = useAuthStore().getBaseUrl;
+  const token = useAuthStore().token.value;
 
   try {
     const resp = await client({
@@ -231,8 +231,8 @@ const createUserPreference = async(userId: string, preferenceKey: string, prefer
 }
 
 const updateUserPreference = async(userId: string, preferenceKey: string, preferenceValue: string): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"]
-  const token = store.getters["user/getUserToken"]
+  const baseURL = useAuthStore().getBaseUrl
+  const token = useAuthStore().token.value
 
   try {
     const resp = await client({
@@ -257,8 +257,8 @@ const updateUserPreference = async(userId: string, preferenceKey: string, prefer
 }
 
 const getUserPreference = async(userId: string, preferenceKey: string): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"]
-  const token = store.getters["user/getUserToken"]
+  const baseURL = useAuthStore().getBaseUrl
+  const token = useAuthStore().token.value
 
   try {
     const resp = await client({

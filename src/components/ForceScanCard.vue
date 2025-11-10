@@ -36,25 +36,25 @@ import {
   IonToggle
 } from "@ionic/vue";
 import { translate } from '@/i18n'
-import store from "@/store";
 import { computed } from "vue";
 import router from "@/router";
 import { hasPermission } from "@/authorization"
-// import { useProductIdentificationStore } from "@hotwax/dxp-components";
 import { useProductIdentificationStore } from "@/stores/productIdentification";
+import { useUserProfileNew } from "@/stores/useUserProfile";
+import { getProductStoreId } from "@/utils";
 
 const productIdentificationStore = useProductIdentificationStore();
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
-const productStoreSettings = computed(() => store.getters["user/getProductStoreSettings"])
+const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
 const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions)
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();
-  store.dispatch("user/setProductStoreSetting", { key, value: !productStoreSettings.value[key] })
+  useUserProfileNew().setProductStoreSetting(key, productStoreSettings.value[key], getProductStoreId())
 }
 
 function setBarcodeIdentificationPref(value: any) {
-  store.dispatch("user/setProductStoreSetting", { key: "barcodeIdentificationPref", value })
+  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, getProductStoreId());
 }
 </script>
