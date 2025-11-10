@@ -23,7 +23,6 @@
             </ion-toggle>
           </ion-item>
         </ion-card>
-        <ForceScanCard />
       </div>
     </ion-content> 
   </ion-page>
@@ -46,7 +45,6 @@ import {
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed } from "vue";
-import ForceScanCard from "@/components/ForceScanCard.vue";
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { useUserProfileNew } from "@/stores/useUserProfile";
 import { getProductStoreId } from "@/utils";

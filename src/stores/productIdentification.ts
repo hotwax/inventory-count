@@ -65,5 +65,6 @@ export const useProductIdentificationStore = defineStore('productIdentification'
       this.productIdentificationOptions = Array.from(new Set([...productIdentificationOptions, ...fetchedGoodIdentificationOptions])).sort() as any;
       this.goodIdentificationOptions = fetchedGoodIdentificationOptions
     }
-  }
+  },
+  persist: true
 })

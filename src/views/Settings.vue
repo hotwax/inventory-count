@@ -78,12 +78,9 @@
             <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
           </ion-item>
         </ion-card> -->
-
-        <!-- 
-        TODO: Use ProductIdentifier
-        <DxpProductIdentifier /> -->
+        <ProductIdentifier v-if="!router.currentRoute.value.fullPath.includes('/tabs/')"/>
         <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
-        <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <ForceScanCard/>
       </section>
     </ion-content>
   </ion-page>
@@ -105,6 +102,7 @@ import { useUserProfileNew } from "@/stores/useUserProfile";
 import { getProductStoreId } from "@/utils";
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import { useProductStore } from "@/stores/useProductStore";
+import ProductIdentifier from "@/components/ProductIdentifier.vue"
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any

@@ -63,7 +63,6 @@ import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { getProductStoreId } from './utils';
 import logger from './logger';
-// import { useProductIdentificationStore } from '@hotwax/dxp-components';
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
 import { useUserProfileNew } from './stores/useUserProfile';
