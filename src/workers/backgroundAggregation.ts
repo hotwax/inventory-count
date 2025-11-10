@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/api/workerApi";
 import { expose } from 'comlink';
 import { db } from '@/database/commonDatabase';
+import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -34,19 +35,20 @@ async function getById(productId: string, context: any) {
   }
 
   try {
+    const query = useProductMaster().buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/products',
-      method: 'GET',
-      params: {
-        filter: `productId: ${productId}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      }
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      data: query
     })
 
     const doc = resp?.response?.docs?.[0]
@@ -73,22 +75,21 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
-  console.log("This is idType: ", idType);
-
   try {
+    const query = useProductMaster().buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/products',
-      method: 'GET',
-      params: {
-        filter: `goodIdentifications:${idType}/${value}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      }
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      data: query
     })
 
     const productId = resp?.response?.docs?.[0]?.productId
@@ -113,20 +114,20 @@ function ensureProductStored(productId: string | null, context: any) {
     try {
       const existing = await db.table('products').get(productId);
       if (existing) return;
-
+      const query = useProductMaster().buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
       const resp = await workerApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'inventory-cycle-count/products',
-        method: 'GET',
-        params: {
-          filter: `productId:${productId}`,
-          viewSize: 1,
-          fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-        }
+        url: 'inventory-cycle-count/runSolrQuery',
+        method: 'POST',
+        data: query
       });
 
       const doc = resp?.response?.docs?.[0];

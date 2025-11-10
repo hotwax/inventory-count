@@ -49,23 +49,26 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
   do {
     const batch = productIds.slice(index, index + batchSize)
     const filter = `productId: (${batch.join(' OR ')})`
+
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: batch.length,
+      fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
+    });
+
     const resp = await client({
-      url: "inventory-cycle-count/products",
-      method: "GET",
+      url: "inventory-cycle-count/runSolrQuery",
+      method: "POST",
       baseURL,
-      params: {
-        filter: filter,
-        viewSize: batch.length,
-        fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
-      },
+      data: query,
       headers: {
         "Authorization": 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     })
 
-    if (resp.data?.productDetail?.products?.length) {
-      results.push(...resp.data.productDetail.products.map(mapApiDocToProduct))
+    if (resp.data?.response?.docs?.length) {
+      results.push(...resp.data.response.docs.map(mapApiDocToProduct))
     }
     index += batchSize
   } while (index < productIds.length)
@@ -130,23 +133,25 @@ const getByIdentificationFromSolr = async (idValue: string) => {
     ? `${barcodeIdentification}: ${idValue}`
     : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
 
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: 1,
+      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+    });
+
   try {
     const resp = await client({
-      url: 'inventory-cycle-count/products',
-      method: 'GET',
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
       baseURL,
-      params: {
-        filter: filter,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      },
+      data: query,
       headers: {
         'Authorization': 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     });
 
-    const products = resp.data?.productDetail?.products || [];
+    const products = resp.data?.response?.docs || [];
     if (products.length) {
       const mapped = mapApiDocToProduct(products[0]);
       await upsertFromApi([mapped]);
@@ -223,6 +228,11 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!context?.token || !context?.omsUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
+  const query = useProductMaster().buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
   try {
     const resp = await workerApi({
       baseURL: context.omsUrl,
@@ -230,16 +240,12 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/products',
-      method: 'GET',
-      params: {
-        filter: `goodIdentifications:${idType}/${value}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      }
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      data: query
     })
 
-    const productId = resp?.productDetail?.products?.[0]?.productId
+    const productId = resp?.response?.docs?.[0]?.productId
 
     if (productId) {
       await db.table('productIdents').put({
@@ -331,16 +337,51 @@ const getProductStock = async (query: any): Promise<any> => {
 const loadProducts = async (query: any): Promise<any> => {
   const baseURL = useAuthStore().getBaseUrl;
   return await client({
-    url: "inventory-cycle-count/products",
-    method: "GET",
+    url: "inventory-cycle-count/runSolrQuery",
+    method: "POST",
     baseURL,
-    params: query,
+    data: query,
     headers: {
       Authorization: "Bearer " + useAuthStore().token.value,
       "Content-Type": "application/json",
     },
   });
 };
+
+const buildProductQuery = (params: any): Record<string, any> => {
+  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewIndex = params.viewIndex || 0
+
+  const payload: any = {
+    json: {
+      params: {
+        rows: viewSize,
+        'q.op': 'AND',
+        start: viewIndex * viewSize,
+      },
+      query: '(*:*)',
+      filter: [`docType:${params.docType || 'PRODUCT'}`],
+    },
+  }
+
+  if (params.keyword) {
+    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    payload.json.params['qf'] =
+      params.queryFields ||
+      'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
+    payload.json.params['defType'] = 'edismax'
+  }
+
+  if (params.filter) {
+    const filters = params.filter.split(',').map((filter: any) => filter.trim())
+    filters.forEach((filter: any) => payload.json.filter.push(filter))
+  }
+
+  if (params.facet) {
+    payload.json.facet = params.facet
+  }
+  return payload
+}
 
 export function useProductMaster() {
 
@@ -358,6 +399,7 @@ export function useProductMaster() {
     clearCache,
     setStaleMs,
     liveProduct,
-    cacheReady
+    cacheReady,
+    buildProductQuery
   }
 }

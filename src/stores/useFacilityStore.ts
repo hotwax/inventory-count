@@ -36,8 +36,6 @@ export const useFacilityStore = defineStore('facilityStore', {
     async getDxpUserFacilities(partyId: any, facilityGroupId: any, isAdminUser: boolean, payload = {}) {
       const authStore = useAuthStore();
 
-      console.log("Auth Store: ", authStore);
-
       try {
         const response = await getUserFacilities(authStore.token.value, authStore.getBaseUrl, partyId, facilityGroupId, isAdminUser, payload);
         this.facilities = response;

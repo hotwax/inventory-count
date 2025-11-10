@@ -66,15 +66,12 @@ export const useAuthStore = defineStore('authStore', {
     getOMS: (state) => state.oms,
     getOmsRedirectionUrl: (state) => {
       const baseURL = state.omsRedirectionUrl;
-      console.log("This is in auth store: ", baseURL);
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
       return ""
     },
     getBaseUrl: (state) => {
       const baseURL = state.oms
       const appConfig = getConfig()
-
-      console.log("This is app config: ", appConfig);
 
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
@@ -115,9 +112,7 @@ export const useAuthStore = defineStore('authStore', {
             "Content-Type": "application/json"
           }
         }) as any;
-        console.log(resp.data);
         if (resp?.status === 200 && resp.data.token) {
-          console.log("This is token: ", resp.data.token);
           this.token.value = resp.data.token;
           this.token.expiration = resp.data.expirationTime;
           this.omsRedirectionUrl = payload.omsRedirectionUrl as any;
@@ -176,8 +171,6 @@ export const useAuthStore = defineStore('authStore', {
       } catch (err) {
         return Promise.reject("Sorry, login failed. Please try again");
       }
-
-      console.log("Initialising API with token and baseURL", this.getBaseUrl);
 
       initialise({
         token: this.token.value,

@@ -89,8 +89,10 @@ import { ref, defineProps } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
-import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
+import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { useProductMaster } from '@/composables/useProductMaster';
+import { useFacilityStore } from '@/stores/useFacilityStore';
+import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 
 const productIdentificationStore = useProductIdentificationStore();
 
@@ -139,24 +141,34 @@ async function handleSearch() {
 }
 
 async function getProducts() {
+  const searchTerm = searchedProductString.value.trim();
   await loader.present("Searching Product...");
   try {
-    const resp = await useProductMaster().loadProducts({
+    const queryPayload = useProductMaster().buildProductQuery({
+      keyword: searchTerm,
       viewSize: 1,
-      filter: `isVirtual: false, isVariant: true, internalName: ${searchedProductString.value.trim()}`,
+      filters: {
+        isVirtual: { value: 'false' },
+        isVariant: { value: 'true' },
+        internalName: { value: `"${searchTerm}"` } // quoted for exact match
+      }
     });
 
-    if (resp && !hasError(resp) && resp.data) {
-      searchedProduct.value = resp.data.productDetail.products?.[0];
-      if (!searchedProduct.value) {
-        showToast(`Product Not Found by ${searchedProductString.value}`);
-      }
+    const resp = await useProductMaster().loadProducts(queryPayload);
+
+    if (resp && !hasError(resp) && resp.data?.response?.docs?.length) {
+      searchedProduct.value = resp.data.response.docs[0];
+    } else {
+      searchedProduct.value = null;
+      showToast(`Product not found for "${searchTerm}"`);
     }
+
   } catch (err) {
     console.error("Failed to fetch products", err);
-    showToast("Something Went Wrong");
+    showToast("Something went wrong while searching for product");
+  } finally {
+    await loader.dismiss();
   }
-  loader.dismiss();
 }
 
 async function addProductInPreCountedItems(product: any) {
@@ -166,7 +178,7 @@ async function addProductInPreCountedItems(product: any) {
     const productIdentifierPref = productIdentificationStore.getProductIdentificationPref;
     await useInventoryCountImport().recordScan({
       inventoryCountImportId: props.inventoryCountImportId as string,
-      productIdentifier: getProductIdentificationValue(productIdentifierPref.primaryId, product),
+      productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, productIdentifierPref.primaryId),
       quantity: product.selectedQuantity,
     });
     if (products.value?.length > 0) {
@@ -180,7 +192,7 @@ async function addProductInPreCountedItems(product: any) {
       products.value = [product];
     }
     searchedProduct.value = null;
-    const currentFacility: any = useUserStore().getCurrentFacility;
+    const currentFacility: any = useFacilityStore().getCurrentFacility;
     const qohResp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: currentFacility.facilityId

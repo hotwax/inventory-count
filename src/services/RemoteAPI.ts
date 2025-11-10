@@ -179,19 +179,12 @@ const api = async (customConfig: any) => {
   // if passing responseType in payload then only adding it as responseType
   if (customConfig.responseType) config['responseType'] = customConfig.responseType
 
-  console.log("API Request before baseURL: ", config);
-  console.log("Custom Config: ", customConfig);
-
   config.baseURL = useAuthStore().getBaseUrl;
-
-  console.log("API Request Config: ", config);
   if (customConfig.cache) {
     console.warn('Caching is not enabled in this build. Ignoring cache flag for request:', customConfig.url);
   }
 
-  console.log("Final API Request Config: ", config.headers);
   if (customConfig.queue) {
-    console.log("Queueing request: ", useAuthStore().token.value);
     if (!config.headers) config.headers = { ...axios.defaults.headers.common, ...config.headers, "Authorization": `Bearer ${useAuthStore().token.value}` };
 
     if (config.events.queueTask) {

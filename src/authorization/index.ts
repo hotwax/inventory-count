@@ -87,9 +87,7 @@ const prepareAppPermissions = (serverPermissions: any) => {
 const setPermissions = (permissions: any) => {
     // If the user has passed undefined or null, it should not break the code
     if (!permissions) permissions = [];
-    console.log("Setting permissions: ", typeof(permissions));
     ability.update(permissions)
-    console.log("Current permissions: ", ability.rules);
     return true;
 };
 
@@ -104,7 +102,6 @@ const resetPermissions = () => setPermissions([]);
  * @returns 
  */
 const hasPermission = (permission: string) => {
-    console.log("Checking permission for: ", permission, ability.can(permission));
     return ability.can(permission);
 }
 
@@ -117,7 +114,6 @@ export default {
         // Rules and Actions could be app and OMS package specific
         Rules = options.rules;
         Actions = options.actions;
-        console.log("\n\n=============Setting rules: ", Rules, Actions);
 
         // TODO Check why global properties is not working and apply across.
         app.config.globalProperties.$permission = this;

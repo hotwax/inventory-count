@@ -940,21 +940,24 @@ async function handleSearch() {
 }
 
 async function getProducts() {
-  isLoading.value = true;
-  try {
-    const resp = await useProductMaster().loadProducts({
-      keyword: queryString.value.trim(),
-      viewSize: 100,
-      filter: `isVirtual: false, isVariant: true`,
-    });
 
-    if (resp?.status === 200 && resp.data?.productDetail?.products?.length) {
-      products.value = resp.data.productDetail.products;
+  const queryPayload = useProductMaster().buildProductQuery({
+    keyword: queryString.value.trim(),
+    viewSize: 100,
+    filter: 'isVirtual:false,isVariant:true',
+  })
+
+  isLoading.value = true
+  try {
+    const resp = await useProductMaster().loadProducts(queryPayload)
+    if (resp?.status === 200 && resp.data?.response?.docs) {
+      products.value = resp.data.response.docs.length ? resp.data.response.docs : []
     }
   } catch (err) {
-    console.error("Failed to fetch products", err);
+    console.error('Failed to fetch products', err)
+  } finally {
+    isLoading.value = false
   }
-  isLoading.value = false;
 }
 
 async function saveMatchProduct() {

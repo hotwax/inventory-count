@@ -73,7 +73,7 @@ async function init() {
  * Returns goodIdentification value for a product (from IndexedDB or Solr)
  * Uses useProductMaster for unified access.
  */
-async function getProductIdentificationValue(productId: string, type: string): Promise<string | undefined> {
+async function getProductIdentificationValue(productId: string, type: string): Promise<any> {
   if (!type || !productId) return undefined
   const productMaster = useProductMaster()
 

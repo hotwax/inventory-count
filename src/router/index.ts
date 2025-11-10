@@ -34,7 +34,6 @@ declare module 'vue-router' {
 }
 
 const authGuard = async (to: any, from: any, next: any) => {
-  console.log("This is in auth guard: ", useUserProfileNew().fetchUserPermissions());
   const authStore = useAuthStore()
   const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
   if (!authStore.isAuthenticated) {
@@ -48,14 +47,10 @@ const authGuard = async (to: any, from: any, next: any) => {
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  console.log("This is in login guard");
   const authStore = useAuthStore();
-  console.log(authStore.checkAuthenticated());
   if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
-    console.log("Not going here, right?");
     next('/')
   }
-    console.log("going here, right?");
   next();
 };
 
