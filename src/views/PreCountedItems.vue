@@ -89,9 +89,9 @@ import { ref, defineProps } from 'vue';
 import router from '@/router';
 import { hasError, showToast } from '@/utils';
 import { loader } from '@/user-utils';
-import { getProductIdentificationValue } from '@hotwax/dxp-components';
-import { useProductIdentificationStore } from '@/stores/productIdentification';
-import { useUserStore } from '@/stores/user';
+import store from '@/store';
+import { client } from '@/api';
+import { useProductIdentificationStore, getProductIdentificationValue, useUserStore } from '@hotwax/dxp-components';
 import { useProductMaster } from '@/composables/useProductMaster';
 
 const productIdentificationStore = useProductIdentificationStore();
@@ -184,7 +184,7 @@ async function addProductInPreCountedItems(product: any) {
     }
     searchedProduct.value = null;
     const currentFacility: any = useUserStore().getCurrentFacility;
-    const qohResp = await useProductMaster().getProductInventory({
+    const qohResp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: currentFacility.facilityId
     } as any);

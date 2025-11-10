@@ -93,36 +93,35 @@ function currentMillis(): number {
   }
 
   async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
-  if (!keyword?.trim()) return []
+    if (!keyword?.trim()) return []
 
-  const value = keyword.trim().toLowerCase()
+    const value = keyword.trim().toLowerCase()
 
-  let tableQuery = db.table('inventoryCountRecords')
-    .where({ inventoryCountImportId })
+    let tableQuery = db.table('inventoryCountRecords').where({ inventoryCountImportId })
 
-  if (segment === 'counted') {
-    tableQuery = tableQuery.and(r => r.quantity > 0)
-  } else if (segment === 'uncounted') {
-    tableQuery = tableQuery.and(r => r.quantity === 0)
-  } else if (segment === 'undirected') {
-    tableQuery = tableQuery.and(r => r.isRequested === 'N')
-  } else if (segment === 'unmatched') {
-    tableQuery = tableQuery.and(r => !r.productId)
-  }
-
-  const results = await tableQuery
-    .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
-    .toArray()
-
-  // enrich with product info if cached
-  for (const r of results) {
-    if (r.productId) {
-      const p = await db.table('products').get(r.productId)
-      if (p) r.product = p
+    if (segment === 'counted') {
+      tableQuery = tableQuery.and(r => r.quantity > 0)
+    } else if (segment === 'uncounted') {
+      tableQuery = tableQuery.and(r => r.quantity === 0)
+    } else if (segment === 'undirected') {
+      tableQuery = tableQuery.and(r => r.isRequested === 'N')
+    } else if (segment === 'unmatched') {
+      tableQuery = tableQuery.and(r => !r.productId)
     }
+
+    const results = await tableQuery
+      .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
+      .toArray()
+
+    // enrich with product info if cached
+    for (const r of results) {
+      if (r.productId) {
+        const p = await db.table('products').get(r.productId)
+        if (p) r.product = p
+      }
+    }
+    return results
   }
-  return results
-}
 
   async function getInventoryCountImportItems(inventoryCountImportId: string) {
     try {
@@ -160,71 +159,71 @@ function currentMillis(): number {
 
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => !r.productId)
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(r => !r.productId)
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
 
-    return items.map(item => ({
-      ...item,
-      product: productMap.get(item.productId || '')
-    }))
-  });
+      return items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId || '')
+      }))
+    });
 
   const getCountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
-    return items.map((item) => {
-      const product = productMap.get(item.productId || "");
-      let unmatched = false;
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      return items.map((item) => {
+        const product = productMap.get(item.productId || "");
+        let unmatched = false;
 
-      if (product) {
-        const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
-        ].map((v) => (v || "").toLowerCase());
+        if (product) {
+          const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
+          ].map((v) => (v || "").toLowerCase());
 
-        // Mark as unmatched if productIdentifier doesn't appear in product details
-        if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
-          unmatched = true;
+          // Mark as unmatched if productIdentifier doesn't appear in product details
+          if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
+            unmatched = true;
+          }
         }
-      }
-      return {
-        ...item,
-        product,
-        unmatched,
-      };
+        return {
+          ...item,
+          product,
+          unmatched,
+        };
+      });
     });
-  });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
-    const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .filter(r => (Number(r.quantity) || 0) === 0)
-      .toArray()
+      const items = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .filter(r => (Number(r.quantity) || 0) === 0)
+        .toArray()
 
-    const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
-    const products = await db.products.bulkGet(productIds)
-    const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const products = await db.products.bulkGet(productIds)
+      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
 
-    return items.map(item => ({
-      ...item,
-      product: productMap.get(item.productId || '')
-    }))
-  });
+      return items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId || '')
+      }))
+    });
 
   const getUndirectedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
@@ -245,25 +244,25 @@ function currentMillis(): number {
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
-  liveQuery(async () => {
-    const events = await db.scanEvents
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
-      .reverse()
-      .sortBy('createdAt');
+    liveQuery(async () => {
+      const events = await db.scanEvents
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .reverse()
+        .sortBy('createdAt');
 
-    const enriched = await Promise.all(
-      events.map(async e => {
-        if (e.productId) {
-          const product = await db.products.get(e.productId);
-          return { ...e, product };
-        }
-        return e;
-      })
-    );
+      const enriched = await Promise.all(
+        events.map(async e => {
+          if (e.productId) {
+            const product = await db.products.get(e.productId);
+            return { ...e, product };
+          }
+          return e;
+        })
+      );
 
-    return enriched || [];
-  });
+      return enriched || [];
+    });
 
    /* API call functions moved from CountService.ts */   
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
@@ -341,30 +340,31 @@ const getSessionLock = async (payload: any): Promise<any> => {
     method: 'POST',
     data: {
       dataDocumentId: 'InventoryCountImportLock',
+      filterByDate: true,
+      pageIndex: 0,
+      pageSize: 100,
       customParametersMap: {
-        ...payload,
-        pageIndex: 0,
-        pageSize: 100,
+        ...payload
       }
     }
   });
 }
 
-const lockSession = async (payload: any): Promise<any> => {
-  return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/lock`,
-    method: 'POST',
-    data: payload
-  });
-}
+  const lockSession = async (payload: any): Promise<any> => {
+    return await api({
+      url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/lock`,
+      method: 'POST',
+      data: payload
+    });
+  }
 
-const releaseSession = async (payload: any): Promise<any> => {
-  return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/release`,
-    method: 'PUT',
-    data: payload
-  });
-}
+  const releaseSession = async (payload: any): Promise<any> => {
+    return await api({
+      url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/release`,
+      method: 'PUT',
+      data: payload
+    });
+  }
 
 /**
  * Composable to manage InventoryCountImport related operations using singleton pattern

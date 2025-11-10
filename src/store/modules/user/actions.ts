@@ -19,6 +19,7 @@ import { useFacilityStore } from "@/stores/useFacilityStore"
 import emitter from "@/event-bus"
 import { getServerPermissionsFromRules, prepareAppPermissions, resetPermissions, setPermissions } from "@/authorization"
 import store from "@/store"
+import { useProductStoreSettings } from "@/composables/useProductStoreSettings"
 
 const actions: ActionTree<UserState, RootState> = {
 

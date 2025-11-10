@@ -66,7 +66,7 @@
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" :router-link="selectedSegment === 'assigned' ? `/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}` : undefined">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -82,7 +82,10 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-note color="warning" slot="end">{{ translate("Locked") }}</ion-note>
+                  <ion-button v-if="selectedSegment === 'assigned' && hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                    {{ translate("Force Release") }}
+                  </ion-button>
+                  <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
@@ -100,7 +103,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :show="hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)">
+                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
@@ -167,6 +170,7 @@ import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/i
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
+import router from '@/router';
 import { getDateWithOrdinalSuffix, showToast } from "@/utils";
 import { useUserStore } from '@/stores/user';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -441,6 +445,37 @@ async function forceRelease(session) {
   } catch (err) {
     console.error('Error releasing session lock:', err)
     showToast('Something went wrong while releasing session.')
+  }
+}
+
+async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
+  try {
+    const userId = store.getters['user/getUserProfile']?.username;
+    const deviceId = store.getters['user/getDeviceId'];
+
+    // Fetch the active lock for this session
+    const resp = await useInventoryCountImport().getSessionLock({
+      inventoryCountImportId: session.inventoryCountImportId,
+    });
+
+    const activeLock = resp?.data?.entityValueList?.[0];
+
+    // If another user is already working, block navigation
+    if (activeLock && activeLock.userId && activeLock.userId !== userId) {
+      showToast(`This session is already active for ${activeLock.userId}.`);
+      return;
+    }
+
+    //If same user but different device
+    if (activeLock && activeLock.userId === userId && activeLock.deviceId !== deviceId) {
+      showToast("This session is already active on another device.");
+      return;
+    }
+    //Safe to navigate
+    router.push(`/session-count-detail/${session.workEffortId}/${workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
+  } catch (err) {
+    console.error('Error checking session lock before navigation:', err);
+    showToast("Failed to check session lock. Please try again.");
   }
 }
 </script>

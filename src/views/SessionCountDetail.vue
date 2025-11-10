@@ -564,7 +564,7 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessage = (e) => {
       const { type, count } = e.data
       if (type === 'aggregationComplete') {
-        console.log(`Aggregated ${count} products from scans`)
+        console.info(`Aggregated ${count} products from scans`)
       }
     }
     aggregationWorker.onerror = (err) => {
@@ -710,7 +710,6 @@ async function handleSessionLock() {
       inventoryCountImportId,
       deviceId: currentDeviceId,
       userId,
-      filterByDate: true
     });
     const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
@@ -817,6 +816,11 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockForceReleased') {
+            showToast('Session lock was force-released by another user.');
+            await releaseSessionLock();
+            if (lockWorker) await lockWorker.stopHeartbeat();
+            router.push('/tabs/count');
           } else if (type === 'lockExpired') {
             showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();

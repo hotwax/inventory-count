@@ -38,7 +38,7 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 
 const makeIdentKey = (type: string) => type
 
-const getFromSolr = async (productIds: string[]): Promise<Product[]> => {
+const getByIds = async (productIds: string[]): Promise<Product[]> => {
   const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
   const baseURL = omsRedirectionInfo.url.startsWith('http')
     ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/`
@@ -85,7 +85,7 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
   }
 
   try {
-    const docs = await getFromSolr([productId])
+    const docs = await getByIds([productId])
     if (docs?.length) {
       // upsert the fetched product into IndexedDB
       await upsertFromApi(docs)
@@ -181,7 +181,7 @@ const prefetch = async (productIds: string[]) => {
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
-  const docs = await getFromSolr(idsToFetch)
+  const docs = await getByIds(idsToFetch)
   if (docs.length) {
     await upsertFromApi(docs)
   }
@@ -271,6 +271,21 @@ async function findProductByIdentification(idType: string, value: string, contex
   }
 }
 
+const loadProducts = async (query: any): Promise<any> => {
+  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
+  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+  return await client({
+    url: "searchProducts",
+    method: "POST",
+    baseURL,
+    data: query,
+    headers: {
+      Authorization: "Bearer " + omsRedirectionInfo.token,
+      "Content-Type": "application/json",
+    },
+  });
+};
+
 const clearCache = async () => {
   await db.transaction('rw', db.products, db.productIdents, async () => {
     await db.products.clear()
@@ -326,7 +341,7 @@ const mapApiDocToProduct = (doc: any): Product => {
   };
 };
 
-const getProductInventory = async (query: any): Promise<any> => {
+const getProductStock = async (query: any): Promise<any> => {
   const baseURL = store.getters["user/getBaseUrl"];
   const token = store.getters["user/getUserToken"]
 
@@ -342,28 +357,14 @@ const getProductInventory = async (query: any): Promise<any> => {
   });
 }
 
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
-
 export function useProductMaster() {
 
   return {
     init,
     getById,
-    getFromSolr,
-    getProductInventory,
+    getByIds,
+    getProductStock,
+    loadProducts,
     findByIdentification,
     findProductByIdentification,
     getByIdentificationFromSolr,
@@ -372,7 +373,6 @@ export function useProductMaster() {
     clearCache,
     setStaleMs,
     liveProduct,
-    loadProducts,
     cacheReady
   }
 }
