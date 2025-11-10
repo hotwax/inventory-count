@@ -34,63 +34,79 @@ function currentMillis(): number {
 
   /** Load inventory items from backend into Dexie */
   async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
-    try {
+  const pageSize = 500
+  let pageIndex = 0
+  let totalFetched = 0
+  let hasMore = true
+
+  try {
+    while (hasMore) {
       const resp = await api({
         url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
         method: 'GET',
-        params: {pageSize:500}
-      });
+        params: { pageSize, pageIndex }
+      })
 
-      if (!hasError(resp) && resp?.data?.length) {
-        const items = resp.data;
-        const productIds = [...new Set(items.map((item: any) => item.productId).filter(Boolean))] as any
+      if (hasError(resp) || !resp?.data?.length) {
+        hasMore = false
+        break
+      }
 
+      const items = resp.data
+      totalFetched += items.length
+      console.log(`[loadInventoryItemsFromBackend] Fetched batch ${pageIndex + 1}: ${items.length} items (total: ${totalFetched})`)
+
+      // --- Store items batch-wise directly into IndexedDB ---
+      await db.transaction('rw', db.inventoryCountRecords, async () => {
+        for (const item of items) {
+          await db.inventoryCountRecords.put({
+            inventoryCountImportId: item.inventoryCountImportId,
+            productId: item.productId || null,
+            uuid: item.uuid || uuidv4(),
+            isRequested: item.isRequested || 'Y',
+            productIdentifier: item.productIdentifier || '',
+            locationSeqId: item.locationSeqId || null,
+            quantity: item.quantity || 0,
+            status: 'active',
+            facilityId: '',
+            createdAt: item.createdDate || currentMillis(),
+            lastScanAt: item.lastUpdatedStamp || currentMillis(),
+            lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
+            lastSyncedAt: null,
+            lastSyncedBatchId: null,
+            aggApplied: 0
+          })
+        }
+      })
+
+      // --- Handle product caching batch-wise ---
+      const productIds = [...new Set(items.map((i: any) => i.productId).filter(Boolean))] as any
       if (productIds.length) {
         try {
-          const existingProducts = await db.products.bulkGet(productIds);
-          const existingIds = new Set(existingProducts.filter(Boolean).map((p: any) => p.productId));
-
-          const missingIds = productIds.filter((id: string) => !existingIds.has(id));
+          const existingProducts = await db.products.bulkGet(productIds)
+          const existingIds = new Set(existingProducts.filter(Boolean).map((product: any) => product.productId))
+          const missingIds = productIds.filter((id: string) => !existingIds.has(id))
 
           if (missingIds.length) {
-            const productMaster = useProductMaster();
-            const { getFromSolr, upsertFromApi } = productMaster as any;
-            const newProducts = await getFromSolr(missingIds);
-
-            if (newProducts?.length) {
-              await upsertFromApi(newProducts);
-            }
+            const { getFromSolr, upsertFromApi } = useProductMaster() as any
+            const newProducts = await getFromSolr(missingIds)
+            if (newProducts?.length) await upsertFromApi(newProducts)
           }
         } catch (err) {
-          console.warn("Failed to verify or fetch missing products:", err);
+          console.warn("[loadInventoryItemsFromBackend] Failed to fetch missing products:", err)
         }
       }
-        await db.transaction('rw', db.inventoryCountRecords, async () => {
-          for (const item of items) {
-            await db.inventoryCountRecords.put({
-              inventoryCountImportId: item.inventoryCountImportId,
-              productId: item.productId || null,
-              uuid: item.uuid || uuidv4(),
-              isRequested: item.isRequested || 'Y',
-              productIdentifier: item.productIdentifier || '',
-              locationSeqId: item.locationSeqId || null,
-              quantity: item.quantity || 0,              // default 0 until user scans
-              status: 'active',
-              facilityId: '',
-              createdAt: item.createdDate || currentMillis(),
-              lastScanAt: item.lastUpdatedStamp || currentMillis(),
-              lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
-              lastSyncedAt: null,
-              lastSyncedBatchId: null,
-              aggApplied: 0
-            });
-          }
-        });
-      }
-    } catch (err) {
-      console.error('Error loading inventory items', err);
+
+      // --- Stop when fewer than pageSize returned ---
+      if (items.length < pageSize) hasMore = false
+      else pageIndex++
     }
+
+    console.log(`[loadInventoryItemsFromBackend] Completed: ${totalFetched} total items stored.`)
+  } catch (err) {
+    console.error('[loadInventoryItemsFromBackend] Error:', err)
   }
+}
 
   async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
     if (!keyword?.trim()) return []
@@ -100,27 +116,27 @@ function currentMillis(): number {
     let tableQuery = db.table('inventoryCountRecords').where({ inventoryCountImportId })
 
     if (segment === 'counted') {
-      tableQuery = tableQuery.and(r => r.quantity > 0)
+      tableQuery = tableQuery.and(item => item.quantity > 0)
     } else if (segment === 'uncounted') {
-      tableQuery = tableQuery.and(r => r.quantity === 0)
+      tableQuery = tableQuery.and(item => item.quantity === 0)
     } else if (segment === 'undirected') {
-      tableQuery = tableQuery.and(r => r.isRequested === 'N')
+      tableQuery = tableQuery.and(item => item.isRequested === 'N')
     } else if (segment === 'unmatched') {
-      tableQuery = tableQuery.and(r => !r.productId)
+      tableQuery = tableQuery.and(item => !item.productId)
     }
 
-    const results = await tableQuery
-      .filter(r => (r.productIdentifier || '').toLowerCase().includes(value))
+    const resultSet = await tableQuery
+      .filter(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
 
     // enrich with product info if cached
-    for (const r of results) {
-      if (r.productId) {
-        const p = await db.table('products').get(r.productId)
-        if (p) r.product = p
+    for (const item of resultSet) {
+      if (item.productId) {
+        const product = await db.table('products').get(item.productId)
+        if (product) item.product = product
       }
     }
-    return results
+    return resultSet
   }
 
   async function getInventoryCountImportItems(inventoryCountImportId: string) {
@@ -146,7 +162,7 @@ function currentMillis(): number {
         .toArray();
 
       const ids = records
-        .map((r: any) => r.productId)
+        .map((item: any) => item.productId)
         .filter((id: string | null) => !!id && id !== '')
         .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
 
@@ -162,12 +178,12 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => !r.productId)
+        .filter(item => !item.productId)
         .toArray()
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
         ...item,
@@ -180,12 +196,12 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => ((Number(r.quantity) || 0) > 0 && r.isRequested === 'Y' && Boolean(r.productId)))
+        .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
         .toArray()
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
       return items.map((item) => {
         const product = productMap.get(item.productId || "");
         let unmatched = false;
@@ -212,12 +228,12 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => (Number(r.quantity) || 0) === 0)
+        .filter(item => (Number(item.quantity) || 0) === 0)
         .toArray()
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
         ...item,
@@ -230,12 +246,12 @@ function currentMillis(): number {
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(r => r.isRequested === 'N' && Boolean(r.productId))
+        .filter(item => item.isRequested === 'N' && Boolean(item.productId))
         .toArray();
 
       const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
-      const productMap = new Map(products.filter(Boolean).map((p: any) => [p.productId, p]))
+      const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
         ...item,

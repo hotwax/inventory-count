@@ -317,7 +317,7 @@ async function cancelUpload() {
 
 /* ---------- Bulk Upload Logic ---------- */
 function getFilteredFields(fields, required = true) {
-  return Object.keys(fields).reduce((r, k) => { if (fields[k].required === required) r[k] = fields[k]; return r; }, {});
+  return Object.keys(fields).reduce((row, key) => { if (fields[key].required === required) row[key] = fields[key]; return row; }, {});
 }
 function extractFilename(path) {
   if (!path) return;

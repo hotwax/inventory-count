@@ -140,7 +140,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
   // get all records in this session where productId is null / empty
   const unresolved = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
-    .and(r => !r.productId) // null, undefined, empty
+    .and(item => !item.productId) // null, undefined, empty
     .toArray()
 
   if (!unresolved.length) return 0
@@ -224,7 +224,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
       const existing = await db.table('inventoryCountRecords')
         .where({ inventoryCountImportId })
-        .and(r => (productId && r.productId === productId) || r.productIdentifier === scannedValue)
+        .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
         .first()
 
       // if (productId) ensureProductStored(productId, context);
@@ -289,7 +289,7 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 
       const existing = await table
         .where({ inventoryCountImportId })
-        .and((r: any) => r.uuid === item?.uuid)
+        .and((itm: any) => itm.uuid === item?.uuid)
         .first();
 
       if (existing) {
