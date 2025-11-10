@@ -355,13 +355,13 @@ function getSortByField () {
 
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
-    (p: any) => p.productId === product.productId
+    (selectedProduct: any) => selectedProduct.productId === product.productId
   );
 }
 
 function toggleSelectedForReview(product: any) {
   const index = selectedProductsReview.value.findIndex(
-    (p: any) => p.productId === product.productId
+    (selectedProduct: any) => selectedProduct.productId === product.productId
   );
 
   if (index === -1) {
@@ -423,7 +423,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList });
 
     if (resp && resp.status === 200) {
-      const selectedProductIds = selectedProductsReview.value.map(p => p.productId);
+      const selectedProductIds = selectedProductsReview.value.map(product => product.productId);
 
       cycleCounts.value.forEach((cycle: any) => {
         if (selectedProductIds.includes(cycle.productId)) {

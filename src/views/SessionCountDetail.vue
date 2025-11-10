@@ -565,7 +565,7 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessage = (e) => {
       const { type, count } = e.data
       if (type === 'aggregationComplete') {
-        console.log(`Aggregated ${count} products from scans`)
+        console.info(`Aggregated ${count} products from scans`)
       }
     }
     aggregationWorker.onerror = (err) => {
@@ -711,7 +711,6 @@ async function handleSessionLock() {
       inventoryCountImportId,
       deviceId: currentDeviceId,
       userId,
-      filterByDate: true
     });
     const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
@@ -818,6 +817,11 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockForceReleased') {
+            showToast('Session lock was force-released by another user.');
+            await releaseSessionLock();
+            if (lockWorker) await lockWorker.stopHeartbeat();
+            router.push('/tabs/count');
           } else if (type === 'lockExpired') {
             showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
@@ -944,7 +948,7 @@ async function handleSearch() {
 async function getProducts() {
   isLoading.value = true;
   try {
-    const resp = await loadProducts({
+    const resp = await useProductMaster().loadProducts({
       keyword: queryString.value.trim(),
       viewSize: 100,
       filters: ["isVirtual: false", "isVariant: true"],
@@ -958,21 +962,6 @@ async function getProducts() {
   }
   isLoading.value = false;
 }
-
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 async function saveMatchProduct() {
   if (!selectedProductId.value) {

@@ -138,7 +138,8 @@ const getCycleCountStatusDesc = async (): Promise<any> => {
     url: "oms/statuses",
     method: "GET",
     params: {
-      statusTypeId: "CYCLE_CNT_STATUS"
+      statusTypeId: "CYCLE_CNT_STATUS",
+      pageSize: 20
     }
   })
 }
