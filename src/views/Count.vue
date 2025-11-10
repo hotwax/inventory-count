@@ -458,8 +458,6 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
       inventoryCountImportId: session.inventoryCountImportId,
     });
 
-    console.log('Session lock response:', resp);
-
     const activeLock = resp?.data?.entityValueList?.[0];
 
     // If another user is already working, block navigation

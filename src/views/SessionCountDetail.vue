@@ -565,7 +565,7 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessage = (e) => {
       const { type, count } = e.data
       if (type === 'aggregationComplete') {
-        console.log(`Aggregated ${count} products from scans`)
+        console.info(`Aggregated ${count} products from scans`)
       }
     }
     aggregationWorker.onerror = (err) => {

@@ -50,8 +50,6 @@ async function startHeartbeat(payload: HeartbeatPayload) {
     }
   })
 
-  console.log('[LockHeartbeatWorker] Current lock status response:', resp)
-
   const activeLock = resp?.data?.entityValueList?.[0] || null
   if (!activeLock) {
     if (heartbeatTimer) clearInterval(heartbeatTimer)
