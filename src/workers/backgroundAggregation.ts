@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
-import workerApi from "@/api/workerApi";
+import workerApi from "@/services/workerApi";
 import { expose } from 'comlink';
-import { db } from '@/database/commonDatabase';
+import { db } from '@/services/commonDatabase';
+import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -25,6 +26,43 @@ let isSyncing = false
 // const store = useStore();
 
 // Product Lookup Helper
+
+const buildProductQuery = (params: any): Record<string, any> => {
+  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewIndex = params.viewIndex || 0
+
+  const payload: any = {
+    json: {
+      params: {
+        rows: viewSize,
+        'q.op': 'AND',
+        start: viewIndex * viewSize,
+      },
+      query: '(*:*)',
+      filter: [`docType:${params.docType || 'PRODUCT'}`],
+    },
+  }
+
+  if (params.keyword) {
+    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    payload.json.params['qf'] =
+      params.queryFields ||
+      'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
+    payload.json.params['defType'] = 'edismax'
+  }
+
+  if (params.filter) {
+    const filters = params.filter.split(',').map((filter: any) => filter.trim())
+    filters.forEach((filter: any) => payload.json.filter.push(filter))
+  }
+
+  if (params.facet) {
+    payload.json.facet = params.facet
+  }
+  return payload
+}
+
+
 async function getById(productId: string, context: any) {
   const now = Date.now()
   const cached = await db.table('products').get(productId)
@@ -34,19 +72,20 @@ async function getById(productId: string, context: any) {
   }
 
   try {
+    const query = buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
-      data: {
-        filters: [`productId: ${productId}`],
-        viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-      }
+      data: query
     })
 
     const doc = resp?.response?.docs?.[0]
@@ -70,23 +109,24 @@ async function findProductByIdentification(idType: string, value: string, contex
   const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
   if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
+  if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
   try {
+    const query = buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
-        viewSize: 1,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-      }
+      data: query
     })
 
     const productId = resp?.response?.docs?.[0]?.productId
@@ -111,20 +151,20 @@ function ensureProductStored(productId: string | null, context: any) {
     try {
       const existing = await db.table('products').get(productId);
       if (existing) return;
-
+      const query = buildProductQuery({
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
       const resp = await workerApi({
-        baseURL: context.omsUrl,
+        baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'searchProducts',
+        url: 'inventory-cycle-count/runSolrQuery',
         method: 'POST',
-        data: {
-          filters: [`productId:${productId}`],
-          viewSize: 1,
-          fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
-        }
+        data: query
       });
 
       const doc = resp?.response?.docs?.[0];

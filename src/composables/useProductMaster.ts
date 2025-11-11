@@ -1,10 +1,12 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import store from '@/store'
-import { client } from '@/api'
-import workerApi from "@/api/workerApi";
+import { client } from '@/services/RemoteAPI';
+import workerApi from "@/services/workerApi";
 // Setup Dexie database
-import { db } from '@/database/commonDatabase'
+import { db } from '@/services/commonDatabase'
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useProductStoreSettings } from './useProductStoreSettings';
 
 // Product structure
 export interface Product {
@@ -39,10 +41,7 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"]
-  const baseURL = omsRedirectionInfo.url.startsWith('http')
-    ? omsRedirectionInfo.url.includes('/api') ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/`
-    : `https://${omsRedirectionInfo.url}.hotwax.io/api/`
+  const baseURL = useAuthStore().getBaseUrl;
 
   const batchSize = 250
   const results: Product[] = []
@@ -51,17 +50,20 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
   do {
     const batch = productIds.slice(index, index + batchSize)
     const filter = `productId: (${batch.join(' OR ')})`
+
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: batch.length,
+      fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
+    });
+
     const resp = await client({
-      url: "searchProducts",
+      url: "inventory-cycle-count/runSolrQuery",
       method: "POST",
       baseURL,
-      data: {
-        filters: [filter],
-        viewSize: batch.length,
-        fieldsToSelect: ["productId", "productName", "parentProductName", "internalName", "mainImageUrl", "goodIdentifications"]
-      },
+      data: query,
       headers: {
-        "Authorization": 'Bearer ' + omsRedirectionInfo.token,
+        "Authorization": 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     })
@@ -119,50 +121,40 @@ const findByIdentification = async (idValue: string) => {
 }
 
 const getByIdentificationFromSolr = async (idValue: string) => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const productStoreSettings = store.getters["user/getProductStoreSettings"];
+  const productStoreSettings = useUserProfileNew().getProductStoreSettings;
   const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
   const productIdentifications = process.env.VUE_APP_PRDT_IDENT
     ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
     : [];
 
-  const baseURL = omsRedirectionInfo.url.startsWith('http')
-    ? omsRedirectionInfo.url.includes('/api')
-      ? omsRedirectionInfo.url
-      : `${omsRedirectionInfo.url}/api/`
-    : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
+  const baseURL = useAuthStore().getBaseUrl;
 
   // Build Solr filter dynamically
   const filter = productIdentifications.includes(barcodeIdentification)
     ? `${barcodeIdentification}: ${idValue}`
     : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
 
+    const query = useProductMaster().buildProductQuery({
+      filter: filter,
+      viewSize: 1,
+      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+    });
+
   try {
     const resp = await client({
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
       baseURL,
-      data: {
-        filters: [filter],
-        viewSize: 1,
-        fieldsToSelect: [
-          'productId',
-          'productName',
-          'parentProductName',
-          'internalName',
-          'mainImageUrl',
-          'goodIdentifications'
-        ]
-      },
+      data: query,
       headers: {
-        'Authorization': 'Bearer ' + omsRedirectionInfo.token,
+        'Authorization': 'Bearer ' + useAuthStore().token.value,
         'Content-Type': 'application/json'
       }
     });
 
-    const docs = resp.data?.response?.docs || [];
-    if (docs.length) {
-      const mapped = mapApiDocToProduct(docs[0]);
+    const products = resp.data?.response?.docs || [];
+    if (products.length) {
+      const mapped = mapApiDocToProduct(products[0]);
       await upsertFromApi([mapped]);
       return { product: mapped, status: 'fresh' as const };
     }
@@ -237,6 +229,11 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!context?.token || !context?.omsUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
+  const query = useProductMaster().buildProductQuery({
+        filter: `goodIdentifications:${idType}/${value}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
   try {
     const resp = await workerApi({
       baseURL: context.omsUrl,
@@ -244,13 +241,9 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'searchProducts',
+      url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
-      data: {
-        filters: [`goodIdentifications:${idType}/${value}`],
-        viewSize: 1,
-        fieldsToSelect: ['productId', 'productName', 'parentProductName', 'internalName', 'mainImageUrl', 'goodIdentifications']
-      }
+      data: query
     })
 
     const productId = resp?.response?.docs?.[0]?.productId
@@ -270,21 +263,6 @@ async function findProductByIdentification(idType: string, value: string, contex
     return null
   }
 }
-
-const loadProducts = async (query: any): Promise<any> => {
-  const omsRedirectionInfo = store.getters["user/getOmsRedirectionInfo"];
-  const baseURL = omsRedirectionInfo.url.startsWith("http") ? omsRedirectionInfo.url.includes("/api") ? omsRedirectionInfo.url : `${omsRedirectionInfo.url}/api/` : `https://${omsRedirectionInfo.url}.hotwax.io/api/`;
-  return await client({
-    url: "searchProducts",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + omsRedirectionInfo.token,
-      "Content-Type": "application/json",
-    },
-  });
-};
 
 const clearCache = async () => {
   await db.transaction('rw', db.products, db.productIdents, async () => {
@@ -342,8 +320,8 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = store.getters["user/getBaseUrl"];
-  const token = store.getters["user/getUserToken"]
+  const baseURL = useAuthStore().getBaseUrl;
+  const token = useAuthStore().token.value;
 
   return await client({
     url: "poorti/getInventoryAvailableByFacility",
@@ -351,10 +329,112 @@ const getProductStock = async (query: any): Promise<any> => {
     baseURL,
     params: query,
     headers: {
-      Api_Key: token,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
   });
+}
+
+const loadProducts = async (query: any): Promise<any> => {
+  const baseURL = useAuthStore().getBaseUrl;
+  return await client({
+    url: "inventory-cycle-count/runSolrQuery",
+    method: "POST",
+    baseURL,
+    data: query,
+    headers: {
+      Authorization: "Bearer " + useAuthStore().token.value,
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+const buildProductQuery = (params: any): Record<string, any> => {
+  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewIndex = params.viewIndex || 0
+
+  const payload: any = {
+    json: {
+      params: {
+        rows: viewSize,
+        'q.op': 'AND',
+        start: viewIndex * viewSize,
+      },
+      query: '(*:*)',
+      filter: [`docType:${params.docType || 'PRODUCT'}`],
+    },
+  }
+
+  if (params.keyword) {
+    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    payload.json.params['qf'] =
+      params.queryFields ||
+      'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
+    payload.json.params['defType'] = 'edismax'
+  }
+
+  if (params.filter) {
+    console.log("This is params: ", params.filter);
+    const filters = params.filter.split(',').map((filter: any) => filter.trim())
+    filters.forEach((filter: any) => payload.json.filter.push(filter))
+  }
+
+  if (params.facet) {
+    payload.json.facet = params.facet
+  }
+  return payload
+}
+
+// helper: pick primary/secondary id from enriched product.goodIdentifications
+const primaryId = (product?: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getPrimaryId()
+
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+  }
+
+  // Try preference, then fallback to SKU or productId
+  return resolve(pref) || resolve('SKU') || product.productId || ''
+}
+
+const secondaryId = (product: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getSecondaryId()
+
+  // Parse any flat "TYPE/VALUE" strings (from Solr)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+  }
+
+  // Try preference, then fallback to productId
+  return resolve(pref) || product.productId || ''
 }
 
 export function useProductMaster() {
@@ -373,6 +453,9 @@ export function useProductMaster() {
     clearCache,
     setStaleMs,
     liveProduct,
-    cacheReady
+    cacheReady,
+    buildProductQuery,
+    primaryId,
+    secondaryId
   }
 }

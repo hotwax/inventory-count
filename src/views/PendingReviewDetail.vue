@@ -229,14 +229,14 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
-import { loader } from "@/user-utils";
+import { loader, showToast } from "@/services/uiUtils"
+import { useFacilityStore } from "@/stores/useFacilityStore";
 
 const props = defineProps({
   workEffortId: String
@@ -554,6 +554,30 @@ async function getInventoryCycleCount(reset = false) {
     cycleCounts.value = [];
     isScrollable.value = false;
   }
+}
+
+const getDateTime = (time: any) => {
+  return time ? DateTime.fromMillis(time).toISO() : ''
+}
+
+function getFacilityName(id: string) {
+  const facilities: any[] = useFacilityStore().getFacilities || [];
+  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+} as any
+function getDateWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
 </script>

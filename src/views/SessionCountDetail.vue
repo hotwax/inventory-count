@@ -46,7 +46,7 @@
             </ion-list>
           </div>
 
-          <ion-card class="add-pre-counted" button
+          <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
             @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
@@ -62,7 +62,7 @@
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
                 <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
-                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin.username }}</p>
+                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
             <!-- When session is SUBMITTED: show only Re-open button -->
@@ -165,8 +165,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -184,8 +184,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -201,8 +201,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -220,8 +220,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -252,8 +252,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
@@ -265,8 +265,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
@@ -300,8 +300,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
@@ -313,8 +313,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
@@ -331,8 +331,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
@@ -350,8 +350,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
@@ -386,8 +386,8 @@
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
-                    {{ primaryId(product) || product.productName }}
-                    <p>{{ secondaryId(product) }}</p>
+                    {{ useProductMaster().primaryId(product) || product.productName }}
+                    <p>{{ useProductMaster().secondaryId(product) }}</p>
                   </ion-label>
                 </ion-radio>
               </ion-item>
@@ -455,29 +455,25 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutl
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast, hasError } from '@/utils';
-import { useStore } from '@/store';
+import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
-import { client } from "@/api";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
-import { loader } from '@/user-utils';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import { useAuthStore } from '@/stores/auth';
+import { useUserProfileNew } from '@/stores/useUserProfile';
 
 const props = defineProps<{
   workEffortId: string;
   inventoryCountImportId: string;
   inventoryCountTypeId: string;
 }>();
-
-const store = useStore();
 
 const scannedValue = ref('');
 const events = ref<any[]>([]);
@@ -527,7 +523,7 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => store.getters['user/getUserProfile']);
+const userLogin = computed(() => useUserProfileNew().getUserProfile);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading session details...");
@@ -544,8 +540,8 @@ onIonViewDidEnter(async () => {
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, i) => sum + (i.quantity || 0), 0)
-      const distinctProducts = new Set(countedItems.value.map(i => i.uuid)).size
+      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
         totalUnits,
@@ -575,9 +571,8 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    const omsInfo = store.getters['user/getOmsRedirectionInfo']
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
 
     aggregationWorker.postMessage({
@@ -587,10 +582,10 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: omsInfo.url,
-          userLoginId: store.getters['user/getUserProfile']?.username,
-          maargUrl: store.getters['user/getBaseUrl'],
-          token: omsInfo.token,
+          omsUrl: useAuthStore().getOmsRedirectionUrl,
+          userLoginId: useUserProfileNew().getUserProfile?.username,
+          maargUrl: useAuthStore().getBaseUrl,
+          token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId
         }
@@ -701,10 +696,9 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = store.getters['user/getUserProfile']?.username;
+    const userId = useUserProfileNew().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = store.getters['user/getDeviceId'];
-    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
+    const currentDeviceId = useUserProfileNew().getDeviceId;
 
     // Fetch existing lock
     const existingLockResp = await useInventoryCountImport().getSessionLock({
@@ -743,9 +737,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: store.getters['user/getBaseUrl'],
-        omsUrl: omsInfo.url,
-        token: omsInfo.token,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -801,9 +794,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: store.getters['user/getBaseUrl'],
-        omsUrl: omsInfo.url,
-        token: omsInfo.token,
+        maargUrl: useAuthStore().getBaseUrl,
+        token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -851,7 +843,7 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: store.getters['user/getUserProfile']?.username,
+      userId: useUserProfileNew().getUserProfile?.username,
       thruDate: Date.now(),
       fromDate: currentLock.value.fromDate
     };
@@ -871,58 +863,6 @@ async function releaseSessionLock() {
 
 function timeAgo(ts: number) {
   return dayjs(ts).fromNow();
-}
-
-// helper: pick primary/secondary id from enriched product.goodIdentifications
-const primaryId = (product?: any) => {
-  if (!product) return ''
-  const pref = useProductStoreSettings().getPrimaryId()
-
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return g
-      }) : []
-
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return product.internalName || ''
-    if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
-  }
-
-  // Try preference, then fallback to SKU or productId
-  return resolve(pref) || resolve('SKU') || product.productId || ''
-}
-
-const secondaryId = (product: any) => {
-  if (!product) return ''
-  const pref = useProductStoreSettings().getSecondaryId()
-
-  // Parse any flat "TYPE/VALUE" strings (from Solr)
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return g
-      }) : []
-
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return product.internalName || ''
-    if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
-  }
-
-  // Try preference, then fallback to productId
-  return resolve(pref) || product.productId || ''
 }
 
 function openMatchModal(item: any) {
@@ -946,21 +886,24 @@ async function handleSearch() {
 }
 
 async function getProducts() {
-  isLoading.value = true;
-  try {
-    const resp = await useProductMaster().loadProducts({
-      keyword: queryString.value.trim(),
-      viewSize: 100,
-      filters: ["isVirtual: false", "isVariant: true"],
-    });
 
-    if (!hasError(resp)) {
-      products.value = resp.data.response.docs;
+  const queryPayload = useProductMaster().buildProductQuery({
+    keyword: queryString.value.trim(),
+    viewSize: 100,
+    filter: 'isVirtual:false,isVariant:true',
+  })
+
+  isLoading.value = true
+  try {
+    const resp = await useProductMaster().loadProducts(queryPayload)
+    if (resp?.status === 200 && resp.data?.response?.docs) {
+      products.value = resp.data.response.docs.length ? resp.data.response.docs : []
     }
   } catch (err) {
-    console.error("Failed to fetch products", err);
+    console.error('Failed to fetch products', err)
+  } finally {
+    isLoading.value = false
   }
-  isLoading.value = false;
 }
 
 async function saveMatchProduct() {
@@ -968,12 +911,11 @@ async function saveMatchProduct() {
     showToast("Please select a product to match");
     return;
   }
-  const omsInfo = store.getters["user/getOmsRedirectionInfo"];
   const context = {
-    maargUrl: store.getters["user/getBaseUrl"],
-    token: omsInfo?.token,
-    omsUrl: omsInfo?.url,
-    userLoginId: store.getters["user/getUserProfile"]?.username,
+    maargUrl: useAuthStore().getBaseUrl,
+    token: useAuthStore().token.value,
+    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    userLoginId: useUserProfileNew().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -1002,15 +944,14 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const omsInfo = store.getters['user/getOmsRedirectionInfo'];
-    const productStoreSettings = store.getters["user/getProductStoreSettings"];
+    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
 
     const context = {
-      omsUrl: omsInfo.url,
-      userLoginId: store.getters['user/getUserProfile']?.username,
-      maargUrl: store.getters['user/getBaseUrl'],
-      token: omsInfo.token,
+      omsUrl: useAuthStore().getOmsRedirectionUrl,
+      userLoginId: useUserProfileNew().getUserProfile?.username,
+      maargUrl: useAuthStore().getBaseUrl,
+      token: useAuthStore().token.value,
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId
     };

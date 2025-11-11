@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import api from '@/api'
-import { hasError } from '@hotwax/oms-api'
+import api from '@/services/RemoteAPI';
+import { hasError } from '@/stores/auth'
 import { useProductMaster } from './useProductMaster'
-import { getProductStoreId } from '@/utils'
+import { useProductStore } from '@/stores/useProductStore'
 
 interface ProductIdentificationPref {
   primaryId: string
@@ -50,7 +50,7 @@ async function init() {
 
   isLoading.value = true
   try {
-    const productStoreId = await getProductStoreId()
+    const productStoreId = await useProductStore().getCurrentProductStore.productStoreId
     const { primaryId, secondaryId } = await getProductIdentifications(productStoreId)
 
     productStore.value = {
@@ -73,7 +73,7 @@ async function init() {
  * Returns goodIdentification value for a product (from IndexedDB or Solr)
  * Uses useProductMaster for unified access.
  */
-async function getProductIdentificationValue(productId: string, type: string): Promise<string | undefined> {
+async function getProductIdentificationValue(productId: string, type: string): Promise<any> {
   if (!type || !productId) return undefined
   const productMaster = useProductMaster()
 

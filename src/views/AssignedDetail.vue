@@ -182,13 +182,13 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { showToast, getDateWithOrdinalSuffix, getFacilityName, getDateTime } from "@/utils"
-import { loader } from "@/user-utils";
+import { loader, showToast } from "@/services/uiUtils";
 import { DateTime } from "luxon";
+import { useFacilityStore } from "@/stores/useFacilityStore";
 
 const props = defineProps({
   workEffortId: String
@@ -443,6 +443,30 @@ async function getInventoryCycleCount(reset = false) {
 
 function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
+}
+
+const getDateTime = (time: any) => {
+  return time ? DateTime.fromMillis(time).toISO() : ''
+}
+
+function getFacilityName(id: string) {
+  const facilities: any[] = useFacilityStore().getFacilities || [];
+  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+} as any
+function getDateWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
 </script>

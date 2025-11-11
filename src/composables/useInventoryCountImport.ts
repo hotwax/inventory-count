@@ -1,9 +1,9 @@
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
-import { hasError } from '@hotwax/oms-api';
-import api from '@/api';
+import { hasError } from '@/stores/auth';
+import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
-import { db, ScanEvent } from '@/database/commonDatabase'
+import { db, ScanEvent } from '@/services/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -54,7 +54,6 @@ function currentMillis(): number {
 
       const items = resp.data
       totalFetched += items.length
-      console.log(`[loadInventoryItemsFromBackend] Fetched batch ${pageIndex + 1}: ${items.length} items (total: ${totalFetched})`)
 
       // --- Store items batch-wise directly into IndexedDB ---
       await db.transaction('rw', db.inventoryCountRecords, async () => {
@@ -102,7 +101,6 @@ function currentMillis(): number {
       else pageIndex++
     }
 
-    console.log(`[loadInventoryItemsFromBackend] Completed: ${totalFetched} total items stored.`)
   } catch (err) {
     console.error('[loadInventoryItemsFromBackend] Error:', err)
   }

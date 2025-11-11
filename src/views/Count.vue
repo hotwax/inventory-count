@@ -77,7 +77,7 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== store.getters['user/getUserProfile']?.username">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfileNew().getUserProfile.username">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
@@ -89,7 +89,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for this device") }}</p>
@@ -98,7 +98,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === store.getters['user/getUserProfile']?.username && session.lock?.deviceId !== currentDeviceId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
@@ -169,17 +169,15 @@ import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCo
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
-import { useStore } from 'vuex';
 import router from '@/router';
-import { getDateWithOrdinalSuffix, showToast } from "@/utils";
-import { useUserStore } from '@hotwax/dxp-components';
+import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { Actions, hasPermission } from '@/authorization';
+import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
+import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useFacilityStore } from '@/stores/useFacilityStore';
 
-const store = useStore();
-const userStore = useUserStore();
 
 const cycleCounts = ref([]);
 const isScrollable = ref(true);
@@ -187,14 +185,14 @@ let isLoading = ref(false);
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
-const currentFacility = computed(() => userStore.getCurrentFacility);
+const currentFacility = computed(() => useFacilityStore().getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const currentDeviceId = store.getters["user/getDeviceId"];
+const currentDeviceId = useUserProfileNew().getDeviceId;
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -324,7 +322,7 @@ async function addNewSession() {
       resp = await useInventoryCountRun().createSessionOnServer({
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -347,7 +345,7 @@ async function addNewSession() {
           resp = await useInventoryCountRun().createSessionOnServer({
             countImportName: countName.value,
             statusId: "SESSION_CREATED",
-            uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+            uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
             facilityAreaId: selectedArea.value,
             createdDate: Date.now(),
             dueDate: Date.now(),
@@ -359,7 +357,7 @@ async function addNewSession() {
         resp = await useInventoryCountRun().createSessionOnServer({
           countImportName: countName.value,
           statusId: "SESSION_CREATED",
-          uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+          uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
           facilityAreaId: selectedArea.value,
           createdDate: Date.now(),
           dueDate: Date.now(),
@@ -384,7 +382,7 @@ async function addNewSession() {
         inventoryCountImportId: resp.data.inventoryCountImportId,
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: store.getters["user/getUserProfile"].username,
+        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -430,7 +428,7 @@ async function forceRelease(session) {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
       thruDate: Date.now(),
-      overrideByUserId: store.getters['user/getUserProfile']?.username
+      overrideByUserId: useUserProfileNew().getUserProfile.username
     }
 
     const resp = await useInventoryCountImport().releaseSession(payload)
@@ -450,8 +448,8 @@ async function forceRelease(session) {
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
   try {
-    const userId = store.getters['user/getUserProfile']?.username;
-    const deviceId = store.getters['user/getDeviceId'];
+    const userId = useUserProfileNew().getUserProfile.username;
+    const deviceId = useUserProfileNew().getDeviceId;
 
     // Fetch the active lock for this session
     const resp = await useInventoryCountImport().getSessionLock({
@@ -477,6 +475,22 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     console.error('Error checking session lock before navigation:', err);
     showToast("Failed to check session lock. Please try again.");
   }
+}
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+}
+
+function getDateWithOrdinalSuffix(time) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 

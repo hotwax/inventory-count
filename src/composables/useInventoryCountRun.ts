@@ -1,33 +1,28 @@
-import { ref } from 'vue';
-import api from '@/api';
-import { hasError } from '@hotwax/oms-api';
+import api from '@/services/RemoteAPI';
+import { hasError } from '@/stores/auth';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
-
-const statuses = ref<any[]>([])
-let statusesLoaded = false
+import { useProductStore } from '@/stores/useProductStore';
 
 async function loadStatusDescription() {
-  if (statusesLoaded && statuses.value.length) return statuses.value
+    // Skip reload if already present
+    if (useProductStore().statusDesc?.length) {
+      return useProductStore().statusDesc;
+    }
+
   try {
     const resp = await getCycleCountStatusDesc()
     if (resp?.status === 200 && resp.data?.length) {
-      statuses.value = resp.data
-      statusesLoaded = true
+      useProductStore().setStatusDescriptions(resp.data);
     } else {
       logger.warn('No statuses found or response invalid:', resp)
-      statuses.value = []
+      useProductStore().setStatusDescriptions([]);
     }
   } catch (error) {
     logger.error('Failed to fetch cycle count status descriptions', error)
-    statuses.value = []
+    useProductStore().setStatusDescriptions([]);
   }
-  return statuses.value
-}
-
-function getStatusDescription(statusId: string): string {
-  const found = statuses.value.find((s: any) => s.statusId === statusId)
-  return found?.description || statusId
+  return useProductStore().statusDesc;
 }
 
 /** Get all work efforts */
@@ -148,6 +143,7 @@ const getCycleCountStatusDesc = async (): Promise<any> => {
  * Composable for work-effort (cycle count run) level operations
  */
 export function useInventoryCountRun() {
+  
 
   async function getCreatedAndAssignedWorkEfforts(params: any) {
     let workEfforts: any[] = [];
@@ -295,7 +291,6 @@ export function useInventoryCountRun() {
     getAssignedCycleCounts,
     getCycleCounts,
     clearCycleCountList,
-    loadStatusDescription,
-    getStatusDescription
+    loadStatusDescription
   };
 }

@@ -22,7 +22,7 @@
               <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" v-if="!authStore.isEmbedded" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
           <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()">
@@ -38,22 +38,22 @@
         <ion-card>
           <ion-card-header>
             <ion-card-subtitle>
-              {{ $t('OMS instance') }}
+              {{ translate('OMS instance') }}
             </ion-card-subtitle>
             <ion-card-title>
               {{ oms }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            {{ $t('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
+            {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
           <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
             {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <DxpFacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility($event)"/>
-        <DxpProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore($event)" />
+        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility"/>
+        <ProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore"/>
       </section>
       <hr />
       <div class="section-header">
@@ -78,24 +78,18 @@
             <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
           </ion-item>
         </ion-card> -->
-
-        <DxpProductIdentifier />
-        <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
-        <ForceScanCard v-if="router.currentRoute.value.fullPath.includes('/tabs/')"/>
-
+        <ProductIdentifier v-if="!router.currentRoute.value.fullPath.includes('/tabs/')"/>
         <ion-card>
           <ion-card-header>
             <ion-card-title>
-              {{ translate("Scrolling animation") }}
+              {{ translate('Force scan') }}
             </ion-card-title>
           </ion-card-header>
-
-          <ion-card-content>
-            {{ translate("Enable the scrolling animation on the hard count's detail page.") }}
-          </ion-card-content>
-
-          <ion-item lines="none">
-            <ion-toggle label-placement="start" v-model="isScrollingAnimationEnabled" @click.prevent="updateScrollingAnimationPreference($event)">{{ translate("Enable animation") }}</ion-toggle>
+          <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
+          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+              <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+            </ion-select>
           </ion-item>
         </ion-card>
       </section>
@@ -104,59 +98,72 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { useStore } from "vuex";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { goToOms, useAuthStore, getAppLoginUrl } from "@hotwax/dxp-components";
+import { useAuthStore } from "@/stores/auth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
-import ForceScanCard from "@/components/ForceScanCard.vue";
+import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
+import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
+import { useUserProfileNew } from "@/stores/useUserProfile";
+import { useProductStore } from "@/stores/useProductStore";
+import { useFacilityStore } from "@/stores/useFacilityStore";
+import ProductIdentifier from "@/components/ProductIdentifier.vue"
+import { useProductIdentificationStore } from "@/stores/productIdentification";
 
-const store = useStore()
-const authStore = useAuthStore();
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
-const userProfile = computed(() => store.getters["user/getUserProfile"])
-const oms = computed(() => store.getters["user/getInstanceUrl"])
-const omsRedirectionInfo = computed(() => store.getters["user/getOmsRedirectionInfo"])
-const isScrollingAnimationEnabled = computed(() => store.getters["user/isScrollingAnimationEnabled"])
+const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const oms = useAuthStore().oms
+const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await store.dispatch("user/getProductStoreSetting")
+  await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
 })
 
 function logout() {
-  store.dispatch("user/logout").then(() => {
+  useAuthStore().logout().then(() => {
     const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${getAppLoginUrl()}?isLoggedOut=true&redirectUrl=${redirectUrl}`
+    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
   })
 }
 
 function goToLaunchpad() {
-  window.location.href = `${getAppLoginUrl()}`
+  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
 }
 
 async function setFacility(facility: any) {
-  await store.dispatch("user/updateCurrentFacility", facility)
+  await useFacilityStore().setFacilityPreference(facility);
 }
 
 async function setProductStore(selectedProductStore: any) {
-  await store.dispatch("user/updateCurrentProductStore", selectedProductStore)
-}
-
-function updateScrollingAnimationPreference(event: any) {
-  event.stopImmediatePropagation();
-
-  store.dispatch("user/updateScrollingAnimationPreference", !isScrollingAnimationEnabled.value)
+  await useProductStore().setEComStorePreference(selectedProductStore)
 }
 
 function getDateTime(time: any) {
   return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
+}
+
+const goToOms = (token: string, oms: string) => {
+  const link = (oms.startsWith('http') ? oms.replace(/\/api\/?|\/$/, "") : `https://${oms}.hotwax.io`) + `/commerce/control/main?token=${token}`
+  
+  window.open(link, '_blank', 'noopener, noreferrer')
+}
+
+/* Force Scan Card Logic */
+const productIdentificationStore = useProductIdentificationStore();
+
+const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
+const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
+const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions) as any
+
+function setBarcodeIdentificationPref(value: any) {
+  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>
 

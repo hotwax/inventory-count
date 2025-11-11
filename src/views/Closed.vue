@@ -27,7 +27,7 @@
           </ion-chip>
 
           <ion-item lines="none">
-            <ion-badge slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -45,8 +45,9 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getFacilityName } from '@/utils';
-import { loader } from '@/user-utils';
+import { loader } from '@/services/uiUtils';
+import { useFacilityStore } from '@/stores/useFacilityStore';
+import { useProductStore } from '@/stores/useProductStore';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -112,6 +113,11 @@ async function loadMoreCycleCounts(event: any) {
   pageIndex.value++;
   await getClosedCycleCounts();
   await event.target.complete();
+}
+
+function getFacilityName(id: string) {
+  const facilities: any[] = useFacilityStore().getFacilities || [];
+  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 </script>
 

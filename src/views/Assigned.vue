@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -57,8 +57,10 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getDateWithOrdinalSuffix, getFacilityName } from "@/utils"
-import { loader } from "@/user-utils";
+import { useFacilityStore } from "@/stores/useFacilityStore";
+import { loader } from "@/services/uiUtils";
+import { DateTime } from "luxon";
+import { useProductStore } from "@/stores/useProductStore";
 // import Filters from "@/components/Filters.vue"
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
@@ -127,6 +129,29 @@ async function getAssignedCycleCounts() {
     isScrollable.value = false;
   }
 }
+
+function getFacilityName(id: string) {
+  const facilities: any[] = useFacilityStore().getFacilities || [];
+  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+} as any;
+
+function getDateWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+}
+
 </script>
 
 <style scoped>

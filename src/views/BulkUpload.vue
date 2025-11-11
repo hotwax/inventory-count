@@ -188,15 +188,23 @@ import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDiv
 import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
-import { useStore } from 'vuex';
 import logger from "@/logger";
-import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
+import { hasError } from '@/stores/auth';
+import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { useUserProfileNew } from '@/stores/useUserProfile';
+import { saveAs } from 'file-saver';
+import Papa from 'papaparse'
 
-const store = useStore();
-const fieldMappings = computed(() => store.getters["user/getFieldMappings"]);
+const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
 const systemMessages = ref([]);
+
+onIonViewDidEnter(async () => {
+  resetDefaults();
+  await useUserProfileNew().fetchFieldMappings();
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+});
 
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
@@ -248,12 +256,12 @@ async function saveMapping() {
     return;
   }
   const id = generateUniqueMappingPrefId();
-  await store.dispatch("user/createFieldMapping", {
+  await useUserProfileNew().createFieldMapping({
     id,
     name: mappingName.value,
     value: modalFieldMapping.value,
     mappingType: "INVCOUNT"
-  });
+  })
   showToast(translate("Mapping saved"));
   closeCreateMappingModal();
 }
@@ -340,11 +348,7 @@ function resetDefaults() {
   file.value.value = "";
   selectedMappingId.value = null;
 }
-onIonViewDidEnter(async () => {
-  resetDefaults();
-  await store.dispatch("user/getFieldMappings");
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-});
+
 async function parse(e) {
   const f = e.target.files[0];
   try {
@@ -375,7 +379,11 @@ async function save() {
     estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
     externalFacilityId: i[fieldMapping.value.facility],
   }));
-  const data = jsonToCsv(uploadedData);
+  const data = jsonToCsv(uploadedData, {
+    parse: {},
+    download: false,
+    name: fileName.value
+  });
   const fd = new FormData();
   fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
@@ -398,6 +406,45 @@ function mapFields(m, id) {
   fieldMapping.value = data.value;
   selectedMappingId.value = id;
 }
+const parseCsv = async (file, options) => {
+  return new Promise ((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+const jsonToCsv = (file, options) => {
+  console.log("file", options);
+  const csv = Papa.unparse(file, {
+    ...options.parse
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  if (options.download) {
+    saveAs(blob, options.name ? options.name : "default.csv");
+  }
+
+  return blob;
+};
+
+const downloadCsv = (csv, fileName) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  saveAs(blob, fileName ? fileName : "CycleCountImport.csv");
+
+  return blob;
+};
+
 </script>
 
 <style scoped>
