@@ -28,7 +28,7 @@ type TokenState = {
   expiration?: number;
 };
 
-const hasError = (response: any): boolean => {
+export const hasError = (response: any): boolean => {
   const data = response?.data ?? response;
   if (!data || typeof data !== 'object') return false;
   if (typeof data._ERROR_MESSAGE_ === 'string' && data._ERROR_MESSAGE_.length) {
