@@ -47,8 +47,8 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink" @click="goToOms(useAuthStore().token.value , omsRedirectionLink)" fill="clear">
-            {{ translate('Go to OMS') }}
+          <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+            {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
@@ -188,11 +188,5 @@ function setBarcodeIdentificationPref(value: any) {
     justify-content: space-between;
     align-items: center;
     padding: var(--spacer-xs) 10px 0px;
-  }
-  /* Added conditional hiding in standalone mode that respects user permissions */
-  @media (display-mode: standalone) {
-    [standalone-hidden] {
-      display: none;
-    }
   }
 </style>
