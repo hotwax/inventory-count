@@ -1,5 +1,5 @@
 import api, { client, getConfig } from '@/services/RemoteAPI';
-import { hasError } from '@/utils';
+import { hasError } from '@/stores/auth';
 import { transform } from 'node-json-transform';
 
 const stockTransformRule = {

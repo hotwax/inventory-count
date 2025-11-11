@@ -235,8 +235,7 @@ import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { showToast } from "@/utils"
-import { loader } from "@/user-utils";
+import { loader, showToast } from "@/services/uiUtils"
 import { useFacilityStore } from "@/stores/useFacilityStore";
 
 const props = defineProps({

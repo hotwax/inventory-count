@@ -35,8 +35,8 @@ import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import { db } from '@/database/commonDatabase'
-import { initDeviceId } from '@/utils/device'
+import { db } from '@/services/commonDatabase'
+import { initDeviceId } from '@/services/device'
 import { useUserProfileNew } from './stores/useUserProfile';
 import { useProductMaster } from './composables/useProductMaster';
 import { setPermissions } from '@/authorization';

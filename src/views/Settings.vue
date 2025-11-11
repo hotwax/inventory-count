@@ -79,15 +79,26 @@
           </ion-item>
         </ion-card> -->
         <ProductIdentifier v-if="!router.currentRoute.value.fullPath.includes('/tabs/')"/>
-        <!-- render the ForceScanCard component only if the current route path includes '/tabs/'(Store view) -->
-        <ForceScanCard/>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate('Force scan') }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
+          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+              <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonToggle } from "@ionic/vue";
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
@@ -95,13 +106,13 @@ import { useAuthStore } from "@/stores/auth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
-import ForceScanCard from "@/components/ForceScanCard.vue";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 import { useUserProfileNew } from "@/stores/useUserProfile";
 import { useProductStore } from "@/stores/useProductStore";
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
+import { useProductIdentificationStore } from "@/stores/productIdentification";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
@@ -142,6 +153,17 @@ const goToOms = (token: string, oms: string) => {
   const link = (oms.startsWith('http') ? oms.replace(/\/api\/?|\/$/, "") : `https://${oms}.hotwax.io`) + `/commerce/control/main?token=${token}`
   
   window.open(link, '_blank', 'noopener, noreferrer')
+}
+
+/* Force Scan Card Logic */
+const productIdentificationStore = useProductIdentificationStore();
+
+const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
+const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
+const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions) as any
+
+function setBarcodeIdentificationPref(value: any) {
+  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>
 

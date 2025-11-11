@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -58,8 +58,9 @@ import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { useFacilityStore } from "@/stores/useFacilityStore";
-import { loader } from "@/user-utils";
+import { loader } from "@/services/uiUtils";
 import { DateTime } from "luxon";
+import { useProductStore } from "@/stores/useProductStore";
 // import Filters from "@/components/Filters.vue"
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";

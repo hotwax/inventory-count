@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { db } from '@/database/commonDatabase'
+import { db } from '@/services/commonDatabase'
 import { useUserProfileNew } from '@/stores/useUserProfile';
 
 export async function initDeviceId() {

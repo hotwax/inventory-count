@@ -3,7 +3,7 @@ import { useProductMaster } from './useProductMaster';
 import { hasError } from '@/stores/auth';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
-import { db, ScanEvent } from '@/database/commonDatabase'
+import { db, ScanEvent } from '@/services/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;

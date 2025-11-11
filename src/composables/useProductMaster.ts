@@ -1,9 +1,9 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
 import { client } from '@/services/RemoteAPI';
-import workerApi from "@/api/workerApi";
+import workerApi from "@/services/workerApi";
 // Setup Dexie database
-import { db } from '@/database/commonDatabase'
+import { db } from '@/services/commonDatabase'
 import { useAuthStore } from '@/stores/auth';
 import { useUserProfileNew } from '@/stores/useUserProfile';
 import { useProductStoreSettings } from './useProductStoreSettings';

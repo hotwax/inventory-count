@@ -38,7 +38,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge slot="end">{{ useInventoryCountRun().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -57,9 +57,10 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
-import { loader } from '@/user-utils';
+import { loader } from '@/services/uiUtils';
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import { DateTime } from "luxon";
+import { useProductStore } from "@/stores/useProductStore";
 // import Filters from "@/components/Filters.vue"
 
 const cycleCounts = ref<any[]>([]);

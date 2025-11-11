@@ -63,7 +63,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { arrowForwardOutline, gridOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
-import { showToast } from "@/utils";
+import { showToast } from "@/services/uiUtils";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -115,15 +115,16 @@ const login = async () => {
       username: username.value.trim() || null,
       password: password.value || null,
       token: token as string | null,
-      oms: (oms as string) || "https://dev-maarg.hotwax.io",
+      oms: (oms as string) || "",
       omsRedirectionUrl:
-        (omsRedirectionUrl as string) || "https://dev-oms.hotwax.io",
+        (omsRedirectionUrl as string) || "",
     });
 
     router.replace("/");
   } catch (error) {
     console.error("[Login Error]", error);
     showToast(translate("Login failed. Please try again."));
+    window.location.href = process.env.VUE_APP_LOGIN_URL || "";
   } finally {
     isLoggingIn.value = false;
     await dismissLoader();

@@ -1,5 +1,5 @@
 import { expose } from 'comlink'
-import workerApi from '@/api/workerApi'
+import workerApi from '@/services/workerApi'
 
 export interface LockHeartbeatWorker {
   startHeartbeat: (payload: HeartbeatPayload) => void

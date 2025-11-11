@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/services/RemoteAPI';
-import { hasError } from '@/utils'
+import { hasError } from '@/stores/auth';
 import logger from '@/logger'
 import { useAuthStore } from './auth';
 import { getEComStores, getEComStoresByFacility, getUserPreference, setUserPreference } from '@/adapter';
@@ -9,11 +9,13 @@ import { useUserProfileNew } from './useUserProfile';
 export const useProductStore = defineStore('productStore', {
   state: () => ({
     productStores: [] as any[],
-    current: null as any
+    current: null as any,
+    statusDesc: [] as any[]
   }),
   getters: {
     getCurrentProductStore: (state) => state.current,
-    getProductStores: (state) => state.productStores
+    getProductStores: (state) => state.productStores,
+    getStatusDescriptions: (state) => state.statusDesc
   },
   persist: true,
 
@@ -89,6 +91,13 @@ export const useProductStore = defineStore('productStore', {
         console.error('error', error)
       }
       this.current = payload;
+    },
+    setStatusDescriptions(statuses: any[]) {
+      this.statusDesc = statuses || [];
+    },
+    getStatusDescription(statusId: string): string {
+      const found = this.statusDesc.find((s: any) => s.statusId === statusId);
+      return found?.description || statusId;
     }
   }
 })

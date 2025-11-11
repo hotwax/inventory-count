@@ -455,16 +455,14 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutl
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast, hasError } from '@/utils';
+import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
-import { loader } from '@/user-utils';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
@@ -542,8 +540,8 @@ onIonViewDidEnter(async () => {
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, i) => sum + (i.quantity || 0), 0)
-      const distinctProducts = new Set(countedItems.value.map(i => i.uuid)).size
+      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
         totalUnits,

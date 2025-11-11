@@ -1,10 +1,9 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import { hasPermission, setPermissions } from '@/authorization';
-import { showToast } from '@/utils'
+import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
-import { loader } from '@/user-utils';
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";

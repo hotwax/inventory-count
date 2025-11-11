@@ -21,5 +21,4 @@ module.exports = {
     }
   },
   runtimeCompiler: true,
-  transpileDependencies: ['@hotwax/dxp-components']
 }

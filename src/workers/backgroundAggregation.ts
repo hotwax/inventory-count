@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
-import workerApi from "@/api/workerApi";
+import workerApi from "@/services/workerApi";
 import { expose } from 'comlink';
-import { db } from '@/database/commonDatabase';
+import { db } from '@/services/commonDatabase';
 import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {

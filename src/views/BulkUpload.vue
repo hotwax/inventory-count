@@ -189,12 +189,12 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, c
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
-import { hasError, showToast } from "@/utils";
+import { hasError } from '@/stores/auth';
+import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { useUserProfileNew } from '@/stores/useUserProfile';
 import { saveAs } from 'file-saver';
-import { JsonToCsvOption } from '@/types';
 import Papa from 'papaparse'
 
 const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
@@ -379,7 +379,11 @@ async function save() {
     estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
     externalFacilityId: i[fieldMapping.value.facility],
   }));
-  const data = jsonToCsv(uploadedData);
+  const data = jsonToCsv(uploadedData, {
+    parse: {},
+    download: false,
+    name: fileName.value
+  });
   const fd = new FormData();
   fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
@@ -420,6 +424,7 @@ const parseCsv = async (file, options) => {
 }
 
 const jsonToCsv = (file, options) => {
+  console.log("file", options);
   const csv = Papa.unparse(file, {
     ...options.parse
   });
