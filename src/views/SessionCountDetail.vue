@@ -165,8 +165,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -184,8 +184,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -201,8 +201,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -220,8 +220,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} units</p>
                     </ion-label>
                   </ion-item>
@@ -252,8 +252,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
@@ -265,8 +265,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
@@ -300,8 +300,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).previousGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
@@ -313,8 +313,8 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
-                      <p>{{ primaryId(getScanContext(item).nextGood.product) }}</p>
-                      <p>{{ secondaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
+                      <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
@@ -331,8 +331,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
@@ -350,8 +350,8 @@
                   <Image :src="item.product?.mainImageUrl" />
                   <ion-item>
                     <ion-label>
-                      {{ primaryId(item.product) }}
-                      <p>{{ secondaryId(item.product) }}</p>
+                      {{ useProductMaster().primaryId(item.product) }}
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       <p>{{ item.quantity }} {{ translate("units") }}</p>
                     </ion-label>
                   </ion-item>
@@ -386,8 +386,8 @@
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
-                    {{ primaryId(product) || product.productName }}
-                    <p>{{ secondaryId(product) }}</p>
+                    {{ useProductMaster().primaryId(product) || product.productName }}
+                    <p>{{ useProductMaster().secondaryId(product) }}</p>
                   </ion-label>
                 </ion-radio>
               </ion-item>
@@ -865,58 +865,6 @@ async function releaseSessionLock() {
 
 function timeAgo(ts: number) {
   return dayjs(ts).fromNow();
-}
-
-// helper: pick primary/secondary id from enriched product.goodIdentifications
-const primaryId = (product?: any) => {
-  if (!product) return ''
-  const pref = useProductStoreSettings().getPrimaryId()
-
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return g
-      }) : []
-
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return product.internalName || ''
-    if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
-  }
-
-  // Try preference, then fallback to SKU or productId
-  return resolve(pref) || resolve('SKU') || product.productId || ''
-}
-
-const secondaryId = (product: any) => {
-  if (!product) return ''
-  const pref = useProductStoreSettings().getSecondaryId()
-
-  // Parse any flat "TYPE/VALUE" strings (from Solr)
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return g
-      }) : []
-
-  const resolve = (type: string) => {
-    if (!type) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
-    if (type === 'internalName') return product.internalName || ''
-    if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
-  }
-
-  // Try preference, then fallback to productId
-  return resolve(pref) || product.productId || ''
 }
 
 function openMatchModal(item: any) {

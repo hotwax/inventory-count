@@ -50,11 +50,11 @@
           <div class="item ion-padding-end">
             <ion-item class="product" lines="none">
               <ion-thumbnail slot="start">
-                <dxp-image :src="product.mainImageUrl"/>
+                <img :src="product.mainImageUrl"/>
               </ion-thumbnail>
               <ion-label>
-                {{ useProductStoreSettings().getProductIdentificationValue(product.productId, productIdentificationStore.getProductIdentificationPref.primaryId) }}
-                <p>{{ useProductStoreSettings().getProductIdentificationValue(product.productId, productIdentificationStore.getProductIdentificationPref.secondaryId) }}</p>
+                {{ useProductMaster().primaryId(product) }}
+                <p>{{ useProductMaster().secondaryId(product) }}</p>
                 <ion-text color="danger">
                   Undirected
                 </ion-text>
