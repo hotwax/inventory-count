@@ -6,6 +6,7 @@ import workerApi from "@/api/workerApi";
 import { db } from '@/database/commonDatabase'
 import { useAuthStore } from '@/stores/auth';
 import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useProductStoreSettings } from './useProductStoreSettings';
 
 // Product structure
 export interface Product {
@@ -328,7 +329,7 @@ const getProductStock = async (query: any): Promise<any> => {
     baseURL,
     params: query,
     headers: {
-      Api_Key: token,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
   });
@@ -373,6 +374,7 @@ const buildProductQuery = (params: any): Record<string, any> => {
   }
 
   if (params.filter) {
+    console.log("This is params: ", params.filter);
     const filters = params.filter.split(',').map((filter: any) => filter.trim())
     filters.forEach((filter: any) => payload.json.filter.push(filter))
   }
@@ -381,6 +383,58 @@ const buildProductQuery = (params: any): Record<string, any> => {
     payload.json.facet = params.facet
   }
   return payload
+}
+
+// helper: pick primary/secondary id from enriched product.goodIdentifications
+const primaryId = (product?: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getPrimaryId()
+
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+  }
+
+  // Try preference, then fallback to SKU or productId
+  return resolve(pref) || resolve('SKU') || product.productId || ''
+}
+
+const secondaryId = (product: any) => {
+  if (!product) return ''
+  const pref = useProductStoreSettings().getSecondaryId()
+
+  // Parse any flat "TYPE/VALUE" strings (from Solr)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
+        if (typeof g === 'string' && g.includes('/')) {
+          const [type, value] = g.split('/', 2)
+          return { type: type?.trim(), value: value?.trim() }
+        }
+        return g
+      }) : []
+
+  const resolve = (type: string) => {
+    if (!type) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+  }
+
+  // Try preference, then fallback to productId
+  return resolve(pref) || product.productId || ''
 }
 
 export function useProductMaster() {
@@ -400,6 +454,8 @@ export function useProductMaster() {
     setStaleMs,
     liveProduct,
     cacheReady,
-    buildProductQuery
+    buildProductQuery,
+    primaryId,
+    secondaryId
   }
 }
