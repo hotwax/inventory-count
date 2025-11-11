@@ -47,20 +47,20 @@ import { translate } from '@/i18n'
 import { computed } from "vue";
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { useUserProfileNew } from "@/stores/useUserProfile";
-import { getProductStoreId } from "@/utils";
+import { useProductStore } from "@/stores/useProductStore";
 
 const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
 
 onIonViewWillEnter(async () => {
-  await useUserProfileNew().fetchProductStoreSettings(getProductStoreId())
+  await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
   productIdentificationStore.prepareProductIdentifierOptions();
 })
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();
-  useUserProfileNew().setProductStoreSetting(key, !productStoreSettings.value[key], getProductStoreId())
+  useUserProfileNew().setProductStoreSetting(key, !productStoreSettings.value[key], useProductStore().getCurrentProductStore.productStoreId)
 }
 </script>
 

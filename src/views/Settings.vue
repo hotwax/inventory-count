@@ -99,9 +99,8 @@ import ForceScanCard from "@/components/ForceScanCard.vue";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 import { useUserProfileNew } from "@/stores/useUserProfile";
-import { getProductStoreId } from "@/utils";
-import { useFacilityStore } from "@/stores/useFacilityStore";
 import { useProductStore } from "@/stores/useProductStore";
+import { useFacilityStore } from "@/stores/useFacilityStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
 
 const appVersion = ref("")
@@ -113,7 +112,7 @@ const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await useUserProfileNew().fetchProductStoreSettings(getProductStoreId())
+  await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
 })
 
 function logout() {

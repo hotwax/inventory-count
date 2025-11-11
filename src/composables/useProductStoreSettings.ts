@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import api from '@/services/RemoteAPI';
 import { hasError } from '@hotwax/oms-api'
 import { useProductMaster } from './useProductMaster'
-import { getProductStoreId } from '@/utils'
+import { useProductStore } from '@/stores/useProductStore'
 
 interface ProductIdentificationPref {
   primaryId: string
@@ -50,7 +50,7 @@ async function init() {
 
   isLoading.value = true
   try {
-    const productStoreId = await getProductStoreId()
+    const productStoreId = await useProductStore().getCurrentProductStore.productStoreId
     const { primaryId, secondaryId } = await getProductIdentifications(productStoreId)
 
     productStore.value = {

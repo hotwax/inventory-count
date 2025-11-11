@@ -41,7 +41,7 @@ import router from "@/router";
 import { hasPermission } from "@/authorization"
 import { useProductIdentificationStore } from "@/stores/productIdentification";
 import { useUserProfileNew } from "@/stores/useUserProfile";
-import { getProductStoreId } from "@/utils";
+import { useProductStore } from "@/stores/useProductStore";
 
 const productIdentificationStore = useProductIdentificationStore();
 
@@ -51,10 +51,10 @@ const productIdentifications = computed(() => productIdentificationStore.getGood
 
 function updateProductStoreSetting(event: any, key: string) {
   event.stopImmediatePropagation();
-  useUserProfileNew().setProductStoreSetting(key, productStoreSettings.value[key], getProductStoreId())
+  useUserProfileNew().setProductStoreSetting(key, productStoreSettings.value[key], useProductStore().getCurrentProductStore.productStoreId);
 }
 
 function setBarcodeIdentificationPref(value: any) {
-  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, getProductStoreId());
+  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>

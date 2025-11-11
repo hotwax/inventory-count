@@ -171,7 +171,7 @@ import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import { useStore } from 'vuex';
 import router from '@/router';
-import { getDateWithOrdinalSuffix, showToast } from "@/utils";
+import { showToast } from "@/utils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
@@ -476,6 +476,22 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     console.error('Error checking session lock before navigation:', err);
     showToast("Failed to check session lock. Please try again.");
   }
+}
+const dateOrdinalSuffix = {
+  1: 'st',
+  21: 'st',
+  31: 'st',
+  2: 'nd',
+  22: 'nd',
+  3: 'rd',
+  23: 'rd'
+}
+
+function getDateWithOrdinalSuffix(time) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
+  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 

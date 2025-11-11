@@ -189,10 +189,13 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, c
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
-import { hasError, jsonToCsv, parseCsv, showToast, downloadCsv } from "@/utils";
+import { hasError, showToast } from "@/utils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { useUserProfileNew } from '@/stores/useUserProfile';
+import { saveAs } from 'file-saver';
+import { JsonToCsvOption } from '@/types';
+import Papa from 'papaparse'
 
 const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
 const systemMessages = ref([]);
@@ -399,6 +402,44 @@ function mapFields(m, id) {
   fieldMapping.value = data.value;
   selectedMappingId.value = id;
 }
+const parseCsv = async (file, options) => {
+  return new Promise ((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results) {
+        if (results.errors.length) {
+          reject(results.error)
+        } else {
+          resolve(results.data)
+        }
+      },
+      ...options
+    });
+  })
+}
+
+const jsonToCsv = (file, options) => {
+  const csv = Papa.unparse(file, {
+    ...options.parse
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+  if (options.download) {
+    saveAs(blob, options.name ? options.name : "default.csv");
+  }
+
+  return blob;
+};
+
+const downloadCsv = (csv, fileName) => {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  saveAs(blob, fileName ? fileName : "CycleCountImport.csv");
+
+  return blob;
+};
+
 </script>
 
 <style scoped>

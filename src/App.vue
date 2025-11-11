@@ -61,7 +61,7 @@ import emitter from "@/event-bus";
 import { initialise, resetConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
-import { getProductStoreId } from './utils';
+import { useProductStore } from '@/stores/useProductStore';
 import logger from './logger';
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
@@ -111,9 +111,9 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (userToken.value && getProductStoreId()) {
+  if (userToken.value && useProductStore().getCurrentProductStore.productStoreId) {
     await useProductIdentificationStore()
-      .getDxpIdentificationPref(getProductStoreId())
+      .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));
   }
 });
