@@ -4,7 +4,7 @@ import { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 // Setup Dexie database
 import { db } from '@/services/commonDatabase'
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useUserProfileNew } from '@/stores/useUserProfile';
 import { useProductStoreSettings } from './useProductStoreSettings';
 
@@ -374,7 +374,6 @@ const buildProductQuery = (params: any): Record<string, any> => {
   }
 
   if (params.filter) {
-    console.log("This is params: ", params.filter);
     const filters = params.filter.split(',').map((filter: any) => filter.trim())
     filters.forEach((filter: any) => payload.json.filter.push(filter))
   }

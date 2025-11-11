@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/auth'
+import { hasError } from '@/stores/useAuthStore'
 import logger from '@/logger'
-import { useAuthStore } from './auth';
+import { useAuthStore } from './useAuthStore';
 import { getUserFacilities, getUserPreference, setUserPreference } from '@/adapter';
 import { useUserProfileNew } from './useUserProfile';
 

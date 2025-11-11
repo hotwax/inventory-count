@@ -189,7 +189,7 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, c
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/useAuthStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -424,7 +424,6 @@ const parseCsv = async (file, options) => {
 }
 
 const jsonToCsv = (file, options) => {
-  console.log("file", options);
   const csv = Papa.unparse(file, {
     ...options.parse
   });

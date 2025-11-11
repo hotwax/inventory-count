@@ -17,7 +17,7 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/useAuthStore";
 import Login from "@/views/Login.vue";
 import { useUserProfileNew } from "@/stores/useUserProfile";
 

@@ -51,7 +51,7 @@ export default defineComponent({
           this.checkIfImageExists(this.src).then(() => {
             this.imageUrl = this.src;
           }).catch(() => {
-            console.error("Image doesn't exist");
+            // console.error("Image doesn't exist");
           })
         } else {
           // Image is from resource server, hence append to base resource url, check for existence and assign
@@ -59,7 +59,7 @@ export default defineComponent({
           this.checkIfImageExists(imageUrl).then(() => {
             this.imageUrl = imageUrl;
           }).catch(() => {
-            console.error("Image doesn't exist");
+            // console.error("Image doesn't exist");
           })
         }
       }

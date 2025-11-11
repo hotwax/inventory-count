@@ -47,7 +47,7 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear">
             {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -102,7 +102,7 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSu
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";

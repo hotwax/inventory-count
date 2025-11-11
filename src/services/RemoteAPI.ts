@@ -2,7 +2,7 @@ import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import merge from 'deepmerge';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/useAuthStore';
 import emitter from '@/event-bus';
 
 const requestInterceptor = async (config: any) => {

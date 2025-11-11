@@ -60,7 +60,7 @@ import {
 } from "@ionic/vue";
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { arrowForwardOutline, gridOutline } from "ionicons/icons";
 import { translate } from "@/i18n";
 import { showToast } from "@/services/uiUtils";

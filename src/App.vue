@@ -66,7 +66,7 @@ import logger from './logger';
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
 import { useUserProfileNew } from './stores/useUserProfile';
-import { useAuthStore } from './stores/auth';
+import { useAuthStore } from './stores/useAuthStore';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfileNew().getUserProfile);

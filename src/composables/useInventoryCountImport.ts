@@ -1,9 +1,10 @@
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/useAuthStore';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
+import { useProductStoreSettings } from './useProductStoreSettings';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -87,8 +88,8 @@ function currentMillis(): number {
           const missingIds = productIds.filter((id: string) => !existingIds.has(id))
 
           if (missingIds.length) {
-            const { getFromSolr, upsertFromApi } = useProductMaster() as any
-            const newProducts = await getFromSolr(missingIds)
+            const { getByIds, upsertFromApi } = useProductMaster() as any
+            const newProducts = await getByIds(missingIds)
             if (newProducts?.length) await upsertFromApi(newProducts)
           }
         } catch (err) {
@@ -123,10 +124,18 @@ function currentMillis(): number {
       tableQuery = tableQuery.and(item => !item.productId)
     }
 
-    const resultSet = await tableQuery
+    let resultSet = await tableQuery
       .filter(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
 
+    if (!resultSet.length) {
+      const productId = useProductMaster().findProductByIdentification(useProductStoreSettings().getPrimaryId(), value, {})
+      if (productId) {
+        resultSet = await tableQuery
+          .filter(item => item.productId === productId)
+          .toArray()
+      }
+    }
     // enrich with product info if cached
     for (const item of resultSet) {
       if (item.productId) {

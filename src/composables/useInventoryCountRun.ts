@@ -1,5 +1,5 @@
 import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/useAuthStore';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { useProductStore } from '@/stores/useProductStore';
