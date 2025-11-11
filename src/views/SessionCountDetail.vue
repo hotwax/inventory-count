@@ -46,7 +46,7 @@
             </ion-list>
           </div>
 
-          <ion-card class="add-pre-counted" button
+          <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
             @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
