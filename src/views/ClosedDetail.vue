@@ -171,7 +171,7 @@
                   <ion-item lines="none">
                     <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
                     <ion-label>
-                      {{ session.countImportName || "Test String" }}
+                      {{ session.countImportName || "-" }}
                       <p>
                         {{ session.uploadedByUserLogin }}
                       </p>
