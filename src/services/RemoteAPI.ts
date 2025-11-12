@@ -36,7 +36,7 @@ const responseErrorInterceptor = (error: any) => {
   if (apiConfig.events.responseError) apiConfig.events.responseError(error);
   // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
   // TODO Handle case for failed queue request
-  const { status } = error.response;
+  const { status } = error.response || {};
   if (status == StatusCodes.UNAUTHORIZED) {
     if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
   }
