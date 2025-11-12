@@ -151,6 +151,9 @@
                       <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
                       <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
                       <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
@@ -167,7 +170,12 @@
                 <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
                   <ion-item lines="none">
                     <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                    <ion-label>
+                      {{ session.countImportName || "Test String" }}
+                      <p>
+                        {{ session.uploadedByUserLogin }}
+                      </p>
+                    </ion-label>
                   </ion-item>
                   <ion-label>
                     {{ session.counted }}
