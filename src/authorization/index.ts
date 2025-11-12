@@ -1,5 +1,4 @@
 import { AbilityBuilder, PureAbility } from '@casl/ability';
-import { ɵabilities } from '@casl/ability/dist/types/RuleIndex';
 import { getEvaluator, parse } from 'boon-js';
 import { Tokens } from 'boon-js/lib/types'
 
