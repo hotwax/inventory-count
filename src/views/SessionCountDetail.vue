@@ -10,7 +10,10 @@
     </ion-header>
 
     <ion-content ref="pageRef">
-      <main>
+        <div v-if="isLoadingItems" class="loading-overlay">
+          <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
+        </div>
+      <main v-else>
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
@@ -19,7 +22,7 @@
               :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"></ion-input>
           </ion-item>
 
-          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal" @click="startSession" :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
+          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal" @click="focusScanner" :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ translate("start counting") }}
           </ion-button>
@@ -165,7 +168,7 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -506,6 +509,7 @@ import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useUserProfileNew } from '@/stores/useUserProfile';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
 
 const props = defineProps<{
   workEffortId: string;
@@ -536,6 +540,10 @@ const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
 const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
+//Progress bar
+const totalItems = ref(0)
+const loadedItems = ref(0)
+const isLoadingItems = ref(true)
 
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
@@ -564,10 +572,10 @@ const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT
 const userLogin = computed(() => useUserProfileNew().getUserProfile);
 
 onIonViewDidEnter(async () => {
-  await loader.present("Loading session details...");
   try {
-    await handleSessionLock();
     await startSession();
+    await handleSessionLock();
+    
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
     from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
@@ -633,8 +641,6 @@ onIonViewDidEnter(async () => {
     console.error(error);
     showToast("Failed to load session details");
   }
-  loader.dismiss();
-
 });
 
 onBeforeUnmount(async () => {
@@ -683,18 +689,17 @@ async function startSession() {
       throw resp;
     }
 
-    if (resp?.data?.activeUserLoginId) {
-      sessionLocked.value = true;
-      showToast('This session is already being worked on by another user.');
-      return;
-    }
+    await getTotalItemCount();
 
     // Load InventoryCountImportItem records into IndexedDB
     const localRecords = await useInventoryCountImport().getInventoryCountImportItems(props.inventoryCountImportId);
 
-    if (!localRecords?.length || isNewLockAcquired.value) {
+    if (!localRecords?.length || totalItems.value !== localRecords.length) {
       console.log("[Session] No local records found, fetching from backend...");
-      await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
+      // await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
+      await loadInventoryItemsWithProgress();
+    } else {
+      isLoadingItems.value = false
     }
 
     // Prefetch product details for all related productIds
@@ -707,6 +712,45 @@ async function startSession() {
   }
 
   focusScanner();
+}
+
+async function loadInventoryItemsWithProgress() {
+  loadedItems.value = 0
+  isLoadingItems.value = true
+  const pageSize = 500
+  let pageIndex = 0
+  let totalFetched = 0
+
+  try {
+    let hasMore = true
+    while (hasMore) {
+      const resp = await useInventoryCountImport().getSessionItemsByImportId({
+        inventoryCountImportId: props.inventoryCountImportId,
+        pageIndex,
+        pageSize
+      })
+
+      if (resp?.status !== 200 || !resp.data?.length) break
+
+      const items = resp.data
+      totalFetched += items.length
+      loadedItems.value = totalFetched
+
+      // store in IndexedDB
+      await useInventoryCountImport().storeInventoryCountItems(items)
+
+      if (items.length < pageSize) {
+        hasMore = false
+        break
+      }
+      pageIndex++
+    }
+  } catch (err) {
+    console.error('Error loading items with progress', err)
+    showToast('Failed to load session items')
+  } finally {
+    isLoadingItems.value = false
+  }
 }
 
 function focusScanner() {
@@ -896,6 +940,20 @@ async function releaseSessionLock() {
   } catch (err) {
     console.error('Error releasing session lock:', err);
     showToast('Error while releasing session lock.');
+  }
+}
+
+async function getTotalItemCount() {
+  try {
+    const resp = await useInventoryCountImport().getInventoryCountImportItemCount(props.inventoryCountImportId)
+    if (resp?.status === 200 && resp.data?.count !== undefined) {
+      totalItems.value = resp.data.count
+    } else {
+      totalItems.value = 0
+    }
+  } catch (err) {
+    console.error('Failed to fetch total item count', err)
+    totalItems.value = 0
   }
 }
 
@@ -1270,5 +1328,14 @@ ion-segment-view {
 .virtual-list ion-item {
   --min-height: 64px;
   border-bottom: 1px solid var(--ion-color-light);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0; /* covers entire screen */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all; /* ensure it blocks all clicks */
 }
 </style>

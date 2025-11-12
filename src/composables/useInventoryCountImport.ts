@@ -107,6 +107,40 @@ function currentMillis(): number {
   }
 }
 
+  async function storeInventoryCountItems(items: any[]) {
+    if (!items?.length) return;
+
+    try {
+      // Normalize or enrich data before storing if needed
+      const normalized = items.map((item: any) => ({
+        inventoryCountImportId: item.inventoryCountImportId,
+        productId: item.productId || null,
+        uuid: item.uuid || uuidv4(),
+        isRequested: item.isRequested || 'Y',
+        productIdentifier: item.productIdentifier || '',
+        locationSeqId: item.locationSeqId || null,
+        quantity: item.quantity || 0,
+        status: 'active',
+        facilityId: '',
+        createdAt: item.createdDate || currentMillis(),
+        lastScanAt: item.lastUpdatedStamp || currentMillis(),
+        lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
+        lastSyncedAt: item.lastUpdatedStamp || currentMillis(), //Important: to ignore the items during first aggregation
+        lastSyncedBatchId: null,
+        aggApplied: 0
+      }));
+
+      // Dexie table name for inventory count items
+      const table = db.table('inventoryCountRecords');
+
+      // Insert or update efficiently
+      await table.bulkPut(normalized);
+
+    } catch (err) {
+      console.error('[IndexedDB] Failed to store batch', err);
+    }
+  }
+
   async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
     if (!keyword?.trim()) return []
 
@@ -349,11 +383,11 @@ const cloneSession = async (payload: any): Promise <any> => {
   })
 }
 
-const getSessionItemsByImportId = async (inventoryCountImportId: string): Promise<any> => {
+const getSessionItemsByImportId = async (params: any): Promise<any> => {
   return await api({
-    url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
+    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/items`,
     method: 'GET',
-    params: {pageSize:500}
+    params
   });
 }
 
@@ -389,6 +423,12 @@ const getSessionLock = async (payload: any): Promise<any> => {
     });
   }
 
+  async function getInventoryCountImportItemCount(inventoryCountImportId: string) {
+    return api({
+      url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items/count`,
+      method: 'GET'
+    })
+  }
 /**
  * Composable to manage InventoryCountImport related operations using singleton pattern
  */
@@ -399,6 +439,7 @@ export function useInventoryCountImport() {
     cloneSession,
     discardSession,
     getCountedItems,
+    getInventoryCountImportItemCount,
     getInventoryCountImportItems,
     getInventoryCountImportSession,
     getScanEvents,
@@ -413,6 +454,7 @@ export function useInventoryCountImport() {
     recordScan,
     releaseSession,
     searchInventoryItemsByIdentifier,
+    storeInventoryCountItems,
     submitSession,
     updateSession
   };
