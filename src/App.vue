@@ -65,11 +65,11 @@ import { useProductStore } from '@/stores/useProductStore';
 import logger from './logger';
 import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
-import { useUserProfileNew } from './stores/useUserProfile';
+import { useUserProfile } from './stores/useUserProfileStore';
 import { useAuthStore } from './stores/useAuthStore';
 
 const router = useRouter();
-const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = computed(() => useAuthStore().token.value);
 const instanceUrl = computed(() => useAuthStore().getBaseUrl);
 

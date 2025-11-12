@@ -19,7 +19,7 @@ import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, sh
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import Login from "@/views/Login.vue";
-import { useUserProfileNew } from "@/stores/useUserProfile";
+import { useUserProfile } from "@/stores/useUserProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {

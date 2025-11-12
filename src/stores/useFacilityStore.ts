@@ -4,7 +4,7 @@ import { hasError } from '@/stores/useAuthStore'
 import logger from '@/logger'
 import { useAuthStore } from './useAuthStore';
 import { getUserFacilities, getUserPreference, setUserPreference } from '@/adapter';
-import { useUserProfileNew } from './useUserProfile';
+import { useUserProfile } from './useUserProfileStore';
 
 export const useFacilityStore = defineStore('facilityStore', {
   state: () => ({
@@ -65,7 +65,7 @@ export const useFacilityStore = defineStore('facilityStore', {
     },
     async setFacilityPreference(payload: any) {
     //   const appState = store.config.globalProperties.$store;
-      const userProfile = useUserProfileNew().getUserProfile;
+      const userProfile = useUserProfile().getUserProfile;
 
       try {
         await setUserPreference({

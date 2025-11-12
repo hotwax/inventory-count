@@ -507,7 +507,7 @@ import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/useUserProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 
@@ -569,7 +569,7 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => useUserProfileNew().getUserProfile);
+const userLogin = computed(() => useUserProfile().getUserProfile);
 
 onIonViewDidEnter(async () => {
   try {
@@ -618,7 +618,7 @@ onIonViewDidEnter(async () => {
     };
     // Run every 10 seconds
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+    const productStoreSettings = useUserProfile().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
 
     aggregationWorker.postMessage({
@@ -629,7 +629,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
-          userLoginId: useUserProfileNew().getUserProfile?.username,
+          userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
@@ -778,9 +778,9 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = useUserProfileNew().getUserProfile?.username;
+    const userId = useUserProfile().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = useUserProfileNew().getDeviceId;
+    const currentDeviceId = useUserProfile().getDeviceId;
 
     // Fetch existing lock
     const existingLockResp = await useInventoryCountImport().getSessionLock({
@@ -925,7 +925,7 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: useUserProfileNew().getUserProfile?.username,
+      userId: useUserProfile().getUserProfile?.username,
       thruDate: Date.now(),
       fromDate: currentLock.value.fromDate
     };
@@ -1011,7 +1011,7 @@ async function saveMatchProduct() {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
-    userLoginId: useUserProfileNew().getUserProfile?.username,
+    userLoginId: useUserProfile().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -1040,12 +1040,12 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+    const productStoreSettings = useUserProfile().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
-      userLoginId: useUserProfileNew().getUserProfile?.username,
+      userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
       barcodeIdentification,

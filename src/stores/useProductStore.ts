@@ -4,7 +4,7 @@ import { hasError } from '@/stores/useAuthStore';
 import logger from '@/logger'
 import { useAuthStore } from './useAuthStore';
 import { getEComStores, getEComStoresByFacility, getUserPreference, setUserPreference } from '@/adapter';
-import { useUserProfileNew } from './useUserProfile';
+import { useUserProfile } from './useUserProfileStore';
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -79,7 +79,7 @@ export const useProductStore = defineStore('productStore', {
     },
     async setEComStorePreference(payload: any) {
     //   const appState = appContext.config.globalProperties.$store;
-      const userProfile = useUserProfileNew().getUserProfile;
+      const userProfile = useUserProfile().getUserProfile;
 
       try {
         await setUserPreference({

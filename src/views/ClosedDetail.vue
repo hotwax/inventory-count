@@ -100,7 +100,6 @@
           </ion-list>
           <ion-item-divider color="light">
             <!-- <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/> -->
-            5 results out of 1,200
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
                 <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>

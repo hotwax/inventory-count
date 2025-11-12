@@ -8,7 +8,7 @@ import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime } from 'luxon';
 
-export const useUserProfileNew = defineStore('userProfile', {
+export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     permissions: [] as any,
@@ -53,7 +53,7 @@ export const useUserProfileNew = defineStore('userProfile', {
       // handling if locale is not coming from userProfile
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfileNew().getUserProfile
+        const userProfile = useUserProfile().getUserProfile
         if (locale) {
           matchingLocale = Object.keys(this.localeOptions).find((option: string) => option === locale)
           // If exact locale is not found, try to match the first two characters i.e primary code
@@ -77,7 +77,7 @@ export const useUserProfileNew = defineStore('userProfile', {
 
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfileNew().getUserProfile;
+        const userProfile = useUserProfile().getUserProfile;
 
         await setUserTimeZone({ userId: userProfile.userId, tzId })
         this.currentTimeZoneId = tzId

@@ -51,6 +51,14 @@ const getProductReviewDetail = async (payload: any): Promise<any> => {
   });
 };
 
+const getProductReviewDetailCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews/count`,
+    method: "get",
+    params: payload
+  });
+};
+
 /** Get cycle count review summary */
 const getCycleCount = async (payload: any): Promise<any> => {
   return api({
@@ -276,6 +284,7 @@ export function useInventoryCountRun() {
     getWorkEfforts,
     getWorkEffort,
     getProductReviewDetail,
+    getProductReviewDetailCount,
     getCycleCount,
     getCycleCountStatusDesc,
     getSessions,

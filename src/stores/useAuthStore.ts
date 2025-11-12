@@ -4,7 +4,7 @@ import api, { client, initialise, updateToken } from '@/services/RemoteAPI';
 import { getConfig } from '@/services/RemoteAPI';
 import emitter from '@/event-bus';
 import { loader } from '@/services/uiUtils';
-import { useUserProfileNew } from './useUserProfile';
+import { useUserProfile } from './useUserProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
@@ -120,12 +120,12 @@ export const useAuthStore = defineStore('authStore', {
           throw "Sorry, login failed. Please try again";
         }
 
-        this.current = await useUserProfileNew().fetchUserProfile(resp.data.api_key, this.getBaseUrl);
+        this.current = await useUserProfile().fetchUserProfile(resp.data.api_key, this.getBaseUrl);
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
         if (permissionId) serverPermissionsFromRules.push(permissionId);
 
-        const serverPermissions = await useUserProfileNew().loadUserPermissions(
+        const serverPermissions = await useUserProfile().loadUserPermissions(
           { permissionIds: [...new Set(serverPermissionsFromRules)] },
           this.omsRedirectionUrl || this.oms,
           this.token.value

@@ -5,7 +5,7 @@ import workerApi from "@/services/workerApi";
 // Setup Dexie database
 import { db } from '@/services/commonDatabase'
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/useUserProfileStore';
 import { useProductStoreSettings } from './useProductStoreSettings';
 
 // Product structure
@@ -121,7 +121,7 @@ const findByIdentification = async (idValue: string) => {
 }
 
 const getByIdentificationFromSolr = async (idValue: string) => {
-  const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+  const productStoreSettings = useUserProfile().getProductStoreSettings;
   const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
   const productIdentifications = process.env.VUE_APP_PRDT_IDENT
     ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
