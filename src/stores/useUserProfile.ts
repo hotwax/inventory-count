@@ -325,7 +325,7 @@ export const useUserProfileNew = defineStore('userProfile', {
     /**
      * Get user profile with api_key
      */
-    async fetchUserProfile(api_key: string, omsBaseUrl: string): Promise<any> {
+    async fetchUserProfile(token: string, omsBaseUrl: string): Promise<any> {
       const baseURL = omsBaseUrl.startsWith('http')
         ? omsBaseUrl.includes('/rest/s1')
           ? omsBaseUrl
@@ -338,7 +338,7 @@ export const useUserProfileNew = defineStore('userProfile', {
           method: 'GET',
           baseURL,
           headers: {
-            api_key,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })

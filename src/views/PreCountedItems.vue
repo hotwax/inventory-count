@@ -108,15 +108,14 @@ import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useProductIdentificationStore } from '@/stores/productIdentification'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useFacilityStore } from '@/stores/useFacilityStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStoreSettings } from '@/composables/useProductStoreSettings'
+import { useProductStore } from '@/stores/useProductStore'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
-const productIdentificationStore = useProductIdentificationStore()
 
 const props = defineProps({
   workEffortId: String,
@@ -247,10 +246,9 @@ async function setProductQoh(product: any) {
 }
 
 async function addPreCountedItemInScanEvents(product: any) {
-  const pref = productIdentificationStore.getProductIdentificationPref
   await recordScan({
     inventoryCountImportId: props.inventoryCountImportId!,
-    productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, useProductIdentificationStore().getProductIdentificationPref.primaryId),
+    productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
   product.saved = true

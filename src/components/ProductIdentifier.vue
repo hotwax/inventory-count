@@ -27,21 +27,20 @@
 
 <script setup lang="ts">
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonThumbnail } from '@ionic/vue';
-import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { computed, onMounted } from 'vue';
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/useProductStore';
 
 const currentEComStore = computed(() =>  useProductStore().getCurrentProductStore)
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const productIdentificationOptions = computed(() => useProductIdentificationStore().getProductIdentificationOptions);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 onMounted(() => {
-  useProductIdentificationStore().prepareProductIdentifierOptions();
-  useProductIdentificationStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
+  useProductStore().prepareProductIdentifierOptions();
+  useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 
 function setProductIdentificationPref(value: string | any, id: string) {
-  useProductIdentificationStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
+  useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
 
 </script>

@@ -45,17 +45,15 @@ import {
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed } from "vue";
-import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { useUserProfileNew } from "@/stores/useUserProfile";
 import { useProductStore } from "@/stores/useProductStore";
 
-const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
 
 onIonViewWillEnter(async () => {
   await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
-  productIdentificationStore.prepareProductIdentifierOptions();
+  useProductStore().prepareProductIdentifierOptions();
 })
 
 function updateProductStoreSetting(event: any, key: string) {
