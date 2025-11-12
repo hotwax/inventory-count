@@ -158,8 +158,8 @@
                     {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                     <p>{{ translate("last updated") }}</p>
                   </ion-label>
-                  <ion-button fill="clear" color="medium">
-                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                  <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, cycleCount)">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>
                 </div>
               </div>
@@ -168,6 +168,21 @@
           <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
             <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
           </ion-infinite-scroll>
+          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
+              <ion-content>
+                <ion-list>
+                  <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
+                  <ion-item size="small">{{ translate('Last Counted') }}: {{ selectedSession?.counted }}</ion-item>
+                  <ion-item size="small">{{ translate('Edit Count') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
+                  <ion-item button @click="removeProductFromSession">
+                    <ion-label>
+                      {{ translate('Remove from Count') }}
+                    </ion-label>
+                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                  </ion-item>
+                </ion-list>
+              </ion-content>
+            </ion-popover>
         </div>
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
@@ -182,8 +197,8 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, removeCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";
@@ -220,6 +235,11 @@ const cycleCounts = ref();
 const isScrollable = ref(true);
 const isLoadingMore = ref(false);
 
+const isSessionPopoverOpen = ref(false)
+const sessionPopoverEvent = ref<Event | null>(null)
+const selectedSession = ref<any | null>(null)
+const selectedProductCountReview = ref<any | null>(null)
+
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
@@ -233,6 +253,10 @@ async function getWorkEffortDetails() {
 const isDueDateModalOpen = ref(false)
 const selectedDate = ref('')
 
+const getDateTime = (time: any) => {
+  return time ? DateTime.fromMillis(time).toISO() : ''
+}
+
 watch(
   () => workEffort.value?.dueDate,
   (newVal) => {
@@ -240,6 +264,26 @@ watch(
   },
   { immediate: true }
 )
+
+async function removeProductFromSession() {
+ // API Call for deleting the product lines from inventoryCountImportItem on server.
+}
+
+function openSessionPopover(event: Event, session: any, cycleCount: any) {
+  // Clear already open popover if found.
+  if (isSessionPopoverOpen.value) isSessionPopoverOpen.value = false;
+  sessionPopoverEvent.value = event
+  selectedSession.value = session
+  selectedProductCountReview.value = cycleCount
+  isSessionPopoverOpen.value = true
+}
+
+function closeSessionPopover() {
+  isSessionPopoverOpen.value = false
+  selectedSession.value = null
+  selectedProductCountReview.value = null
+}
+
 
 async function saveDueDate() {
   try {
@@ -445,28 +489,15 @@ function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
 }
 
-const getDateTime = (time: any) => {
-  return time ? DateTime.fromMillis(time).toISO() : ''
-}
-
 function getFacilityName(id: string) {
   const facilities: any[] = useFacilityStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-} as any
+
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+  return dateTime.toFormat("h:mm a dd'th' MMM yyyy");
 }
 
 </script>
