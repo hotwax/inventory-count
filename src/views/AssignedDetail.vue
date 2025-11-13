@@ -86,7 +86,7 @@
 
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
           </ion-list>
           <ion-item-divider color="light">
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
@@ -204,7 +204,6 @@ const loadedItems = ref(0)
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   loadedItems.value = 0
-  console.log("Fetching total items for workEffortId:", props.workEffortId)
   try {
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
     if (resp?.status === 200) {
@@ -237,8 +236,6 @@ const workEffort = ref();
 
 const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
-
-const isScrollable = ref(true);
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
@@ -330,11 +327,6 @@ async function openEditNameAlert() {
   await editCountNameAlert.present();
 }
 
-const pagination = reactive({
-  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
-  pageIndex: 0
-});
-
 function applySearchAndSort() {
   if (!Array.isArray(aggregatedSessionItems.value)) {
     filteredSessionItems.value = [];
@@ -361,32 +353,11 @@ function applySearchAndSort() {
 }
 
 
-watch([searchedProductString, sortBy, aggregatedSessionItems], () => {
+watch([searchedProductString, sortBy], () => {
   applySearchAndSort();
 }, { deep: true });
 
 const sessions = ref();
-
-async function filterProductByInternalName() {
-  try {
-    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
-      workEffortId: props.workEffortId,
-      internalName: searchedProductString.value || null,
-      internalName_op: searchedProductString.value ? "contains" : null,
-    });
-
-    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
-      pagination.pageIndex = 0;
-      aggregatedSessionItems.value = productReviewDetail.data;
-      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
-    } else {
-      throw productReviewDetail.data;
-    }
-  } catch (error) {
-    showToast("Something Went Wrong");
-    console.error("Error Searching Product: ", error);
-  }
-}
 
 async function getCountSessions(productId: any) {
   sessions.value = null;
@@ -421,7 +392,6 @@ async function getInventoryCycleCount() {
         workEffortId: props.workEffortId,
         pageSize,
         pageIndex,
-        internalName: searchedProductString.value || null,
       });
       if (resp && resp.status === 200 && resp.data?.length) {
         aggregatedSessionItems.value.push(...resp.data);
@@ -438,8 +408,6 @@ async function getInventoryCycleCount() {
     }
     const results = aggregatedSessionItems.value;
     results.sort((a, b) => a.lastUpdatedAt - b.lastUpdatedAt);
-
-
     applySearchAndSort();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);

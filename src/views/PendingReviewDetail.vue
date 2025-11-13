@@ -9,7 +9,7 @@
 
     <ion-content>
       <template v-if="isLoading">
-        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+        <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
       </template>
       <template v-else-if="workEffort">
         <div class="header">
@@ -79,7 +79,7 @@
 
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
             <ion-item>
             <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
@@ -107,93 +107,96 @@
           </ion-item-divider>
         </div>
 
-        <div class="results ion-margin-top" v-if="cycleCounts?.length">
-          <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="getCountSessions(cycleCount.productId)">
-              <div class="list-item count-item-rollup" slot="header"> 
-                <div class="item-key">
-                  <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox>
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <dxp-image></dxp-image>
-                    </ion-thumbnail>
-                    <ion-label>{{ cycleCount.internalName }}</ion-label>
-                  </ion-item>
-                </div>
-                <ion-label class="stat">
-                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
-                  <p>{{ translate("counted/systemic") }}</p>
-                </ion-label>
-                <ion-label class="stat">
-                  {{ cycleCount.proposedVarianceQuantity }}
-                  <p>{{ translate("variance") }}</p>
-                </ion-label>
-                <div v-if="!cycleCount.decisionOutcomeEnumId" class="actions">
-                  <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'APPLIED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
-                    {{ translate("Accept") }}
-                  </ion-button>
-                  <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(cycleCount.productId, cycleCount.proposedVarianceQuantity, 'SKIPPED', cycleCount.quantityOnHand, cycleCount.quantity, cycleCount)">
-                    {{ translate("Reject") }}
-                  </ion-button>
-                </div>
-                <ion-badge
-                  v-else
-                  :color="cycleCount.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
-                  style="--color: white;"
-                >
-                  {{ cycleCount.decisionOutcomeEnumId }}
-                </ion-badge>
-              </div>
-              <div slot="content" @click.stop="stopAccordianEventProp">
-                <ion-list v-if="sessions === null">
-                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
-                    <ion-avatar slot="start">
-                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
-                    </ion-avatar>
-                    <ion-label>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                  </ion-item>
-                </ion-list>
-                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                  <ion-item lines="none">
-                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                    <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
-                  </ion-item>
-                  <ion-label>
-                    {{ session.counted }}
-                    <p>{{ translate("counted") }}</p>
-                  </ion-label>
-                  <ion-label>
-                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                    <p>{{ translate("started") }}</p>
-                  </ion-label>
-                  <ion-label>
-                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                    <p>{{ translate("last updated") }}</p>
-                  </ion-label>
-                  <ion-button fill="clear" color="medium">
-                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-            </ion-accordion>
-          </ion-accordion-group>
-          <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
-          </ion-infinite-scroll>
+        <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
+            <template #default="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :index="index" :active="active">
+                <ion-accordion-group>
+                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                    <div class="list-item count-item-rollup" slot="header"> 
+                      <div class="item-key">
+                        <ion-checkbox :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(item)"></ion-checkbox>
+                        <ion-item lines="none">
+                          <ion-thumbnail slot="start">
+                            <Image :src="item.detailImageUrl"/>
+                          </ion-thumbnail>
+                          <ion-label>{{ item.internalName }}</ion-label>
+                        </ion-item>
+                      </div>
+                      <ion-label class="stat">
+                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        <p>{{ translate("counted/systemic") }}</p>
+                      </ion-label>
+                      <ion-label class="stat">
+                        {{ item.proposedVarianceQuantity }}
+                        <p>{{ translate("variance") }}</p>
+                      </ion-label>
+                      <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                        <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(item.productId, item.proposedVarianceQuantity, 'APPLIED', item.quantityOnHand, item.quantity, item)">
+                          {{ translate("Accept") }}
+                        </ion-button>
+                        <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="submitSingleProductReview(item.productId, item.proposedVarianceQuantity, 'SKIPPED', item.quantityOnHand, item.quantity, item)">
+                          {{ translate("Reject") }}
+                        </ion-button>
+                      </div>
+                      <ion-badge
+                        v-else
+                        :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
+                        style="--color: white;"
+                      >
+                        {{ item.decisionOutcomeEnumId }}
+                      </ion-badge>
+                    </div>
+                    <div slot="content" @click.stop="stopAccordianEventProp">
+                      <ion-list v-if="sessions === null">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
+                          <ion-avatar slot="start">
+                            <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                          </ion-avatar>
+                          <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                        </ion-item>
+                      </ion-list>
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                        <ion-item lines="none">
+                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                          <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                        </ion-item>
+                        <ion-label>
+                          {{ session.counted }}
+                          <p>{{ translate("counted") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                          <p>{{ translate("started") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <p>{{ translate("last updated") }}</p>
+                        </ion-label>
+                        <ion-button fill="clear" color="medium">
+                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                        </ion-button>
+                      </div>
+                    </div>
+                </ion-accordion>
+              </ion-accordion-group>
+            </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
         </div>
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
@@ -227,8 +230,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { computed, defineProps, reactive, ref, toRefs, watch, nextTick } from "vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
@@ -236,6 +239,9 @@ import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils"
 import { useFacilityStore } from "@/stores/useFacilityStore";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
+import ProgressBar from '@/components/ProgressBar.vue';
+import Image from "@/components/Image.vue";
 
 const props = defineProps({
   workEffortId: String
@@ -243,9 +249,20 @@ const props = defineProps({
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
-  await getWorkEffortDetails();
-  if (workEffort.value) {
-    await getInventoryCycleCount();
+  loadedItems.value = 0
+  try {
+    const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
+    if (resp?.status === 200) {
+      totalItems.value = resp.data.count || 0
+    } else {
+      console.error("Error fetching total items:", resp)
+    }
+    await getWorkEffortDetails();
+    if (workEffort.value) {
+      await getInventoryCycleCount();
+    }
+  } catch (error) {
+    console.error("Error fetching total items:", error) 
   }
   isLoading.value = false;
 })
@@ -260,14 +277,14 @@ const searchedProductString = ref('');
 
 const isLoading = ref(false);
 const workEffort = ref();
-const cycleCounts = ref();
 
-const isScrollable = ref(true);
-const isLoadingMore = ref(false);
+const aggregatedSessionItems = ref<any[]>([]);
+const filteredSessionItems = ref<any[]>([]);
+const totalItems = ref(0);
+const loadedItems = ref(0);
 
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
-
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
@@ -279,78 +296,41 @@ async function getWorkEffortDetails() {
   }
 }
 
-async function loadMoreCycleCountProductReviews(event: any) {
-  if (isLoadingMore.value || !isScrollable.value) {
-    await event.target.complete();
+function applySearchAndSort() {
+  if (!Array.isArray(aggregatedSessionItems.value)) {
+    filteredSessionItems.value = [];
     return;
   }
 
-  isLoadingMore.value = true;
-  pagination.pageIndex += 1;
+  const keyword = (searchedProductString.value || '').trim().toLowerCase();
 
-  const resp = await useInventoryCountRun().getCycleCount({
-    workEffortId: props.workEffortId,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
-    decisionOutcomeEnumId: getDcsnFilter(),
-    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
+  let results = aggregatedSessionItems.value.filter(item => {
+    if (!keyword) return true;
+    return (
+      (item.internalName?.toLowerCase().includes(keyword)) ||
+      (item.productIdentifier?.toLowerCase().includes(keyword))
+    );
   });
 
-  if (resp && resp.status === 200 && resp.data?.length) {
-    cycleCounts.value = [...(cycleCounts.value || []), ...resp.data];
-
-    if (resp.data.length < pagination.pageSize) {
-      isScrollable.value = false;
-    }
-  } else {
-    isScrollable.value = false;
+  const decisionOutcome = getDcsnFilter();
+  if (decisionOutcome && decisionOutcome !== 'empty') {
+    results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
+  } else if (decisionOutcome === 'empty') {
+    results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
-  isLoadingMore.value = false;
-  await event.target.complete();
-}
-
-
-const pagination = reactive({
-  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
-  pageIndex: 0
-});
-
-watch(() => filterAndSortBy, async () => {
-  await loader.present("Loading...");
-  try {
-    pagination.pageIndex = 0;
-    const count = await useInventoryCountRun().getCycleCount({
-      workEffortId: props.workEffortId,
-      pageSize: pagination.pageSize,
-      pageIndex: pagination.pageIndex,
-      internalName: searchedProductString.value || null,
-      internalName_op: searchedProductString.value ? "contains" : null,
-      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
-      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
-      orderByField: getSortByField() ? `${getSortByField()} asc` : null
-    });
-
-    if (count && count.status === 200 && count.data) {
-      cycleCounts.value = count.data;
-      isScrollable.value = count.data.length >= pagination.pageSize;
-    } else {
-      throw count.data;
-    }
-  } catch (error) {
-    showToast(translate("Something Went Wrong!"));
-    console.error("Error Filters Products: ", error);
+  if (sortBy.value === 'alphabetic') {
+    results.sort((a, b) => (a.internalName || '').localeCompare(b.internalName || ''));
+  } else if (sortBy.value === 'variance') {
+    results.sort((a, b) => (a.proposedVarianceQuantity || 0) - (b.proposedVarianceQuantity || 0));
   }
-  loader.dismiss();
-},{ deep: true });
 
-function getSortByField () {
-  if (!sortBy.value) return null;
-
-  if (sortBy.value === 'alphabetic') return 'internalName';
-  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
+  filteredSessionItems.value = results;
 }
+
+watch([searchedProductString, dcsnRsn, sortBy], () => {
+  applySearchAndSort();
+}, { deep: true });
 
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
@@ -372,7 +352,7 @@ function toggleSelectedForReview(product: any) {
 
 const isAllSelected = computed(() => {
   return (
-    cycleCounts.value?.length > 0 && selectedProductsReview.value?.length === cycleCounts.value.length
+    filteredSessionItems.value?.length > 0 && selectedProductsReview.value?.length === filteredSessionItems.value.length
   );
 });
 
@@ -380,7 +360,7 @@ function toggleSelectAll(event: CustomEvent) {
   const isChecked = event.detail.checked;
 
   if (isChecked) {
-    selectedProductsReview.value = cycleCounts.value.filter(
+    selectedProductsReview.value = filteredSessionItems.value.filter(
       (cycle: any) => !cycle.decisionOutcomeEnumId
     );
   } else {
@@ -424,7 +404,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     if (resp && resp.status === 200) {
       const selectedProductIds = selectedProductsReview.value.map(product => product.productId);
 
-      cycleCounts.value.forEach((cycle: any) => {
+      filteredSessionItems.value.forEach((cycle: any) => {
         if (selectedProductIds.includes(cycle.productId)) {
           cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
         }
@@ -439,30 +419,6 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     console.error("Error while submitting: ", error);
   }
   loader.dismiss();
-}
-
-async function filterProductByInternalName() {
-  try {
-    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
-      workEffortId: props.workEffortId,
-      internalName: searchedProductString.value || null,
-      internalName_op: searchedProductString.value ? "contains" : null,
-      decisionOutcomeEnumId: getDcsnFilter() === 'empty' ? null : getDcsnFilter(),
-      decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null,
-      orderByField: getSortByField() ? `${getSortByField()} asc` : null
-    });
-
-    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
-      pagination.pageIndex = 0;
-      cycleCounts.value = productReviewDetail.data;
-      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
-    } else {
-      throw productReviewDetail.data;
-    }
-  } catch (error) {
-    showToast("Something Went Wrong");
-    console.error("Error Searching Product: ", error);
-  }
 }
 
 function stopAccordianEventProp(event: Event) {
@@ -531,27 +487,39 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
   loader.dismiss();
 }
 
-async function getInventoryCycleCount(reset = false) {
-  if (reset) {
-    pagination.pageIndex = 0;
-    isScrollable.value = true;
+async function getInventoryCycleCount() {
+  let pageIndex = 0;
+  let pageSize = 250;
+  if (totalItems.value > 5000) {
+    pageSize = 500;
   }
+  let hasMore = true;
+  try {
+    while (hasMore) {
+      const resp = await useInventoryCountRun().getCycleCount({
+        workEffortId: props.workEffortId,
+        pageSize,
+        pageIndex,
+        internalName: searchedProductString.value || null,
+      });
+      if (resp && resp.status === 200 && resp.data?.length) {
+        aggregatedSessionItems.value.push(...resp.data);
+        if (resp.data.length < pageSize) {
+          hasMore = false;
+        } else {
+          pageIndex++;
+        }
+      } else {
+        hasMore = false;
+      }
+      loadedItems.value = aggregatedSessionItems.value.length;
 
-  const resp = await useInventoryCountRun().getCycleCount({
-    workEffortId: props.workEffortId,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
-    decisionOutcomeEnumId: getDcsnFilter(),
-    decisionOutcomeEnumId_op: getDcsnFilter() === 'empty' ? 'empty' : null
-  });
-
-  if (resp && resp.status === 200 && resp.data?.length) {
-    cycleCounts.value = resp.data;
-    isScrollable.value = resp.data.length >= pagination.pageSize;
-  } else {
-    cycleCounts.value = [];
-    isScrollable.value = false;
+    }
+    applySearchAndSort();
+  } catch (error) {
+    console.error("Error fetching all cycle count records:", error);
+    showToast(translate("Something Went Wrong"));
+    aggregatedSessionItems.value = [];
   }
 }
 
@@ -636,5 +604,32 @@ ion-item.due-date {
 .list-item .actions {
   display: flex;
   gap: var(--spacer-xs);
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 220px;
+}
+
+.virtual-list {
+  display: block;
+  width: 100%;
+  /* adjust 240–320px until it fits your header + filters height */
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.virtual-list ion-item {
+  --min-height: 64px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: all;
 }
 </style>
