@@ -45,11 +45,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -62,8 +62,9 @@
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
-                  Review progress 60% complete
-                  <p>6 out of 10 items complete</p>
+                  Review progress {{ Math.floor((submittedItemsCount / totalItems) * 100) }}% complete
+                  <p>{{ submittedItemsCount }} out of {{ totalItems }} items complete</p>
+                  <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -71,8 +72,8 @@
               <ion-item lines="full">
                 <ion-label>
                   <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>16 units</h3>
-                  <p>based on 4 results</p>
+                  <h3>{{ overallFilteredVarianceQtyProposed }} units</h3>
+                  <p>based on {{ filteredSessionItems.length }} results</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -101,7 +102,6 @@
           </ion-item>
           </ion-list>
           <ion-item-divider color="light">
-            <!-- <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/> -->
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
                 <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
@@ -213,12 +213,12 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, reactive, ref, toRefs, watch } from "vue";
+import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { loader, showToast } from "@/services/uiUtils"
+import { showToast } from "@/services/uiUtils"
 import { DateTime } from "luxon";
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
@@ -233,6 +233,8 @@ const totalItems = ref(0)
 const loadedItems = ref(0)
 const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
+const submittedItemsCount = ref(0);
+const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -374,6 +376,7 @@ async function getInventoryCycleCount() {
       loadedItems.value = aggregatedSessionItems.value.length;
 
     }
+    submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);

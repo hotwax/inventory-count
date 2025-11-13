@@ -43,11 +43,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -60,8 +60,9 @@
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
-                  Review progress 60% complete
-                  <p>6 out of 10 items complete</p>
+                  Review progress {{ Math.floor((submittedItemsCount / totalItems) * 100) }}% complete
+                  <p>{{ submittedItemsCount }} out of {{ totalItems }} items complete</p>
+                  <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -69,8 +70,8 @@
               <ion-item lines="full">
                 <ion-label>
                   <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>16 units</h3>
-                  <p>based on 4 results</p>
+                  <h3>{{ overallFilteredVarianceQtyProposed }} units</h3>
+                  <p>based on {{ filteredSessionItems.length }} results</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -238,8 +239,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, reactive, ref, toRefs, watch, nextTick } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
+import { IonProgressBar, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
@@ -290,6 +291,8 @@ const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
 const totalItems = ref(0);
 const loadedItems = ref(0);
+const submittedItemsCount = ref (0);
+const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
@@ -417,7 +420,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
           cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
         }
       });
-
+      submittedItemsCount.value += selectedProductsReview.value.length;
       selectedProductsReview.value = [];
     } else {
       throw resp.data;
@@ -465,7 +468,7 @@ async function getCountSessions(productId: any) {
   }
 }
 
-async function submitSingleProductReview(productId: any, proposedVarianceQuantity: any, decisionOutcomeEnumId: string, systemQuantity: any, countedQuantity: any, cycleCount: any) {
+async function submitSingleProductReview(productId: any, proposedVarianceQuantity: any, decisionOutcomeEnumId: string, systemQuantity: any, countedQuantity: any, item: any) {
   await loader.present("Submitting Review...");
   try {
     const inventoryCountProductsList = [];
@@ -484,7 +487,8 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     const resp = await useInventoryCountRun().submitProductReview({ "inventoryCountProductsList": inventoryCountProductsList});
 
     if (resp?.status === 200) {
-      cycleCount.decisionOutcomeEnumId = decisionOutcomeEnumId;
+      item.decisionOutcomeEnumId = decisionOutcomeEnumId;
+      submittedItemsCount.value++;
     } else {
       throw resp.data;
     }
@@ -523,6 +527,7 @@ async function getInventoryCycleCount() {
       loadedItems.value = aggregatedSessionItems.value.length;
 
     }
+    submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);

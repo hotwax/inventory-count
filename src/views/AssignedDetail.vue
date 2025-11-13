@@ -50,11 +50,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -63,7 +63,7 @@
             </ion-item>
           </ion-card>
 
-          <div class="statistics">
+          <!-- <div class="statistics">
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
@@ -81,7 +81,7 @@
                 </ion-label>
               </ion-item>
             </ion-card>
-          </div>
+          </div> -->
         </div>
 
         <div class="controls ion-margin-top">
