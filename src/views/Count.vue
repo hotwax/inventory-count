@@ -77,7 +77,7 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfileNew().getUserProfile.username">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
@@ -89,7 +89,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for this device") }}</p>
@@ -98,7 +98,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
@@ -175,7 +175,7 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/useUserProfileStore';
 import { useFacilityStore } from '@/stores/useFacilityStore';
 
 
@@ -192,7 +192,7 @@ const infiniteScrollRef = ref({});
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const currentDeviceId = useUserProfileNew().getDeviceId;
+const currentDeviceId = useUserProfile().getDeviceId;
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -322,7 +322,7 @@ async function addNewSession() {
       resp = await useInventoryCountRun().createSessionOnServer({
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+        uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -345,7 +345,7 @@ async function addNewSession() {
           resp = await useInventoryCountRun().createSessionOnServer({
             countImportName: countName.value,
             statusId: "SESSION_CREATED",
-            uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+            uploadedByUserLogin: useUserProfile().getUserProfile.username,
             facilityAreaId: selectedArea.value,
             createdDate: Date.now(),
             dueDate: Date.now(),
@@ -357,7 +357,7 @@ async function addNewSession() {
         resp = await useInventoryCountRun().createSessionOnServer({
           countImportName: countName.value,
           statusId: "SESSION_CREATED",
-          uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+          uploadedByUserLogin: useUserProfile().getUserProfile.username,
           facilityAreaId: selectedArea.value,
           createdDate: Date.now(),
           dueDate: Date.now(),
@@ -382,7 +382,7 @@ async function addNewSession() {
         inventoryCountImportId: resp.data.inventoryCountImportId,
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+        uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -428,7 +428,7 @@ async function forceRelease(session) {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
       thruDate: Date.now(),
-      overrideByUserId: useUserProfileNew().getUserProfile.username
+      overrideByUserId: useUserProfile().getUserProfile.username
     }
 
     const resp = await useInventoryCountImport().releaseSession(payload)
@@ -448,8 +448,8 @@ async function forceRelease(session) {
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
   try {
-    const userId = useUserProfileNew().getUserProfile.username;
-    const deviceId = useUserProfileNew().getDeviceId;
+    const userId = useUserProfile().getUserProfile.username;
+    const deviceId = useUserProfile().getDeviceId;
 
     // Fetch the active lock for this session
     const resp = await useInventoryCountImport().getSessionLock({

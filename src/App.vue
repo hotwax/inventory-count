@@ -63,13 +63,12 @@ import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/useProductStore';
 import logger from './logger';
-import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
-import { useUserProfileNew } from './stores/useUserProfile';
+import { useUserProfile } from './stores/useUserProfileStore';
 import { useAuthStore } from './stores/useAuthStore';
 
 const router = useRouter();
-const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = computed(() => useAuthStore().token.value);
 const instanceUrl = computed(() => useAuthStore().getBaseUrl);
 
@@ -107,12 +106,12 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  if (userProfile.value?.timeZone) {
+  if (userProfile?.value?.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (userToken.value && useProductStore().getCurrentProductStore.productStoreId) {
-    await useProductIdentificationStore()
+  if (!!userToken.value && useProductStore()?.getCurrentProductStore?.productStoreId) {
+    await useProductStore()
       .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));
   }

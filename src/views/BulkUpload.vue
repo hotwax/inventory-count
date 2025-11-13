@@ -193,16 +193,16 @@ import { hasError } from '@/stores/useAuthStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/useUserProfileStore';
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
 
-const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
+const fieldMappings = computed(() => useUserProfile().getFieldMappings);
 const systemMessages = ref([]);
 
 onIonViewDidEnter(async () => {
   resetDefaults();
-  await useUserProfileNew().fetchFieldMappings();
+  await useUserProfile().fetchFieldMappings();
   systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
 });
 
@@ -256,7 +256,7 @@ async function saveMapping() {
     return;
   }
   const id = generateUniqueMappingPrefId();
-  await useUserProfileNew().createFieldMapping({
+  await useUserProfile().createFieldMapping({
     id,
     name: mappingName.value,
     value: modalFieldMapping.value,

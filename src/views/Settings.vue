@@ -108,22 +108,21 @@ import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
-import { useUserProfileNew } from "@/stores/useUserProfile";
+import { useUserProfile } from "@/stores/useUserProfileStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
-import { useProductIdentificationStore } from "@/stores/productIdentification";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
-const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
 const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
+  await useUserProfile().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
 })
 
 function logout() {
@@ -156,14 +155,13 @@ const goToOms = (token: string, oms: string) => {
 }
 
 /* Force Scan Card Logic */
-const productIdentificationStore = useProductIdentificationStore();
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
-const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
-const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions) as any
+const productStoreSettings = computed(() => useUserProfile().getProductStoreSettings)
+const productIdentifications = computed(() => useProductStore().getGoodIdentificationOptions) as any
 
 function setBarcodeIdentificationPref(value: any) {
-  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+  useUserProfile().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>
 

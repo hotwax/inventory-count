@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission, setPermissions } from '@/authorization';
+import { hasPermission } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
@@ -19,7 +19,6 @@ import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, sh
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import Login from "@/views/Login.vue";
-import { useUserProfileNew } from "@/stores/useUserProfile";
 
 // Defining types for the meta values
 declare module 'vue-router' {

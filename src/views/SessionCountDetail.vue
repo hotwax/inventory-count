@@ -34,7 +34,7 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="200" class="virtual-list" :min-item-size="80">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
@@ -168,7 +168,7 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -195,7 +195,7 @@
               </template>
 
               <template v-else>
-                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -352,7 +352,7 @@
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -380,7 +380,7 @@
               </template>
               
               <template v-else>
-                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                 <template v-slot="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-item>
@@ -495,7 +495,7 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutl
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { loader, showToast } from '@/services/uiUtils';
+import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -507,7 +507,7 @@ import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/useUserProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 
@@ -569,7 +569,7 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => useUserProfileNew().getUserProfile);
+const userLogin = computed(() => useUserProfile().getUserProfile);
 
 onIonViewDidEnter(async () => {
   try {
@@ -618,7 +618,7 @@ onIonViewDidEnter(async () => {
     };
     // Run every 10 seconds
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+    const productStoreSettings = useUserProfile().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
 
     aggregationWorker.postMessage({
@@ -629,7 +629,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
-          userLoginId: useUserProfileNew().getUserProfile?.username,
+          userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
@@ -696,7 +696,6 @@ async function startSession() {
 
     if (!localRecords?.length || totalItems.value !== localRecords.length) {
       console.log("[Session] No local records found, fetching from backend...");
-      // await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
       await loadInventoryItemsWithProgress();
     } else {
       isLoadingItems.value = false
@@ -778,9 +777,9 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = useUserProfileNew().getUserProfile?.username;
+    const userId = useUserProfile().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = useUserProfileNew().getDeviceId;
+    const currentDeviceId = useUserProfile().getDeviceId;
 
     // Fetch existing lock
     const existingLockResp = await useInventoryCountImport().getSessionLock({
@@ -925,7 +924,7 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: useUserProfileNew().getUserProfile?.username,
+      userId: useUserProfile().getUserProfile?.username,
       thruDate: Date.now(),
       fromDate: currentLock.value.fromDate
     };
@@ -1011,7 +1010,7 @@ async function saveMatchProduct() {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
-    userLoginId: useUserProfileNew().getUserProfile?.username,
+    userLoginId: useUserProfile().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -1040,12 +1039,12 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
+    const productStoreSettings = useUserProfile().getProductStoreSettings;
     const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
-      userLoginId: useUserProfileNew().getUserProfile?.username,
+      userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
       barcodeIdentification,

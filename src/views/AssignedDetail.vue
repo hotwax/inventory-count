@@ -8,9 +8,9 @@
     </ion-header>
 
     <ion-content>
-      <template v-if="isLoading">
-        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
-      </template>
+      <div v-if="isLoading" class="loading-overlay">
+        <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
+      </div>
       <template v-else-if="workEffort">
         <div class="header">
           <ion-card>
@@ -86,10 +86,9 @@
 
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name" @keyup.enter="filterProductByInternalName"></ion-searchbar>
+            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
           </ion-list>
           <ion-item-divider color="light">
-            5 results out of 1,200
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
                 <ion-select-option value="variance">Variance</ion-select-option>
@@ -97,85 +96,88 @@
           </ion-item-divider>
         </div>
 
-        <div class="results ion-margin-top" v-if="cycleCounts?.length">
-          <ion-accordion-group>
-            <ion-accordion v-for="cycleCount in cycleCounts" :key="cycleCount.workEffortId" @click="getCountSessions(cycleCount.productId)">
-              <div class="list-item count-item-rollup" slot="header"> 
-                <div class="item-key">
-                  <ion-item lines="none">
-                    <ion-thumbnail slot="start">
-                      <dxp-image></dxp-image>
-                    </ion-thumbnail>
-                    <ion-label>{{ cycleCount.internalName }}</ion-label>
-                  </ion-item>
-                </div>
-                <ion-label class="stat">
-                  {{ cycleCount.quantity }}/{{ cycleCount.quantityOnHand }}
-                  <p>{{ translate("counted/systemic") }}</p>
-                </ion-label>
-                <ion-label class="stat">
-                  {{ cycleCount.proposedVarianceQuantity }}
-                  <p>{{ translate("variance") }}</p>
-                </ion-label>
-              </div>
-              <div slot="content" @click.stop="stopAccordianEventProp">
-                <ion-list v-if="sessions === null">
-                  <ion-item v-for="number in cycleCount.numberOfSessions" :key="number">
-                    <ion-avatar slot="start">
-                      <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
-                    </ion-avatar>
-                    <ion-label>
+        <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+            <template #default="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :index="index" :active="active">
+                <ion-accordion-group>
+                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                    <div class="list-item count-item-rollup" slot="header"> 
+                      <div class="item-key">
+                        <ion-item lines="none">
+                          <ion-thumbnail slot="start">
+                            <Image :src="item.detailImageUrl"/>
+                          </ion-thumbnail>
+                          <ion-label>{{ item.internalName }}</ion-label>
+                        </ion-item>
+                      </div>
+                      <ion-label class="stat">
+                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        <p>{{ translate("counted/systemic") }}</p>
+                      </ion-label>
+                      <ion-label class="stat">
+                        {{ item.proposedVarianceQuantity }}
+                        <p>{{ translate("variance") }}</p>
+                      </ion-label>
+                    </div>
+                    <div slot="content" @click.stop="stopAccordianEventProp">
+                      <ion-list v-if="sessions === null">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
+                          <ion-avatar slot="start">
+                            <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                          </ion-avatar>
+                          <ion-label>
                       <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                     </ion-label>
                     <ion-label>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                    <ion-label>
-                      <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                    </ion-label>
-                  </ion-item>
-                </ion-list>
-                <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                  <ion-item lines="none">
-                    <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                    <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                        </ion-item>
+                      </ion-list>
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                        <ion-item lines="none">
+                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                          <ion-label>
                       {{ session.countImportName || "-" }}
                       <p>
                         {{ session.uploadedByUserLogin }}
                       </p>
                     </ion-label>
-                  </ion-item>
-                  <ion-label>
-                    {{ session.counted }}
-                    <p>{{ translate("counted") }}</p>
-                  </ion-label>
-                  <ion-label>
-                    {{ getDateWithOrdinalSuffix(session.createdDate) }}
-                    <p>{{ translate("started") }}</p>
-                  </ion-label>
-                  <ion-label>
-                    {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
-                    <p>{{ translate("last updated") }}</p>
-                  </ion-label>
-                  <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, cycleCount)">
-                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>
-                </div>
-              </div>
-            </ion-accordion>
-          </ion-accordion-group>
-          <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCountProductReviews($event)">
-            <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
-          </ion-infinite-scroll>
+                        </ion-item>
+                        <ion-label>
+                          {{ session.counted }}
+                          <p>{{ translate("counted") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                          <p>{{ translate("started") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <p>{{ translate("last updated") }}</p>
+                        </ion-label>
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, cycleCount)">
+                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                        </ion-button>
+                      </div>
+                    </div>
+                  </ion-accordion>
+                </ion-accordion-group>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
           <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
               <ion-content>
                 <ion-list>
@@ -212,16 +214,33 @@ import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";
 import { DateTime } from "luxon";
 import { useFacilityStore } from "@/stores/useFacilityStore";
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
+import ProgressBar from '@/components/ProgressBar.vue'
+import Image from "@/components/Image.vue";
 
 const props = defineProps({
   workEffortId: String
 })
+const totalItems = ref(0)
+const loadedItems = ref(0)
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
+  loadedItems.value = 0
+  try {
+    const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
+    if (resp?.status === 200) {
+      totalItems.value = resp.data.count || 0
+    } else {
+      console.error("Error fetching total items:", resp)
+    }
+  } catch (error) {
+    console.error("Error fetching total items:", error) 
+  }
+
   await getWorkEffortDetails();
   if (workEffort.value) {
-    await getInventoryCycleCount();
+    await getInventoryCycleCount()
   }
   isLoading.value = false;
 })
@@ -238,10 +257,8 @@ const searchedProductString = ref('');
 const isLoading = ref(false);
 const workEffort = ref();
 
-const cycleCounts = ref();
-
-const isScrollable = ref(true);
-const isLoadingMore = ref(false);
+const aggregatedSessionItems = ref<any[]>([]);
+const filteredSessionItems = ref<any[]>([]);
 
 const isSessionPopoverOpen = ref(false)
 const sessionPopoverEvent = ref<Event | null>(null)
@@ -358,98 +375,37 @@ async function openEditNameAlert() {
   await editCountNameAlert.present();
 }
 
-
-async function loadMoreCycleCountProductReviews(event: any) {
-  if (isLoadingMore.value || !isScrollable.value) {
-    await event.target.complete();
+function applySearchAndSort() {
+  if (!Array.isArray(aggregatedSessionItems.value)) {
+    filteredSessionItems.value = [];
     return;
   }
 
-  isLoadingMore.value = true;
-  pagination.pageIndex += 1;
+  const keyword = (searchedProductString.value || '').trim().toLowerCase();
 
-  const resp = await useInventoryCountRun().getCycleCount({
-    workEffortId: props.workEffortId,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
+  let results = aggregatedSessionItems.value.filter(item => {
+    if (!keyword) return true;
+    return (
+      (item.internalName?.toLowerCase().includes(keyword)) ||
+      (item.productIdentifier?.toLowerCase().includes(keyword))
+    );
   });
 
-  if (resp && resp.status === 200 && resp.data?.length) {
-    cycleCounts.value = [...(cycleCounts.value || []), ...resp.data];
-
-    if (resp.data.length < pagination.pageSize) {
-      isScrollable.value = false;
-    }
-  } else {
-    isScrollable.value = false;
+  if (sortBy.value === 'alphabetic') {
+    results.sort((a, b) => (a.internalName || '').localeCompare(b.internalName || ''));
+  } else if (sortBy.value === 'variance') {
+    results.sort((a, b) => (a.proposedVarianceQuantity || 0) - (b.proposedVarianceQuantity || 0));
   }
 
-  isLoadingMore.value = false;
-  await event.target.complete();
+  filteredSessionItems.value = results;
 }
 
 
-const pagination = reactive({
-  pageSize: process.env.VUE_APP_VIEW_SIZE as any || 25,
-  pageIndex: 0
-});
-
-watch(() => searchAndSortBy, async () => {
-  await loader.present("Loading...");
-  try {
-    pagination.pageIndex = 0;
-    const count = await useInventoryCountRun().getCycleCount({
-      workEffortId: props.workEffortId,
-      pageSize: pagination.pageSize,
-      pageIndex: pagination.pageIndex,
-      internalName: searchedProductString.value || null,
-      internalName_op: searchedProductString.value ? "contains" : null,
-      orderByField: getSortByField() ? `${getSortByField()} asc` : null
-    });
-
-    if (count && count.status === 200 && count.data) {
-      cycleCounts.value = count.data;
-      isScrollable.value = count.data.length >= pagination.pageSize;
-    } else {
-      throw count.data;
-    }
-  } catch (error) {
-    showToast(translate("Something Went Wrong!"));
-    console.error("Error Searching Products: ", error);
-  }
-  loader.dismiss();
-},{ deep: true });
+watch([searchedProductString, sortBy], () => {
+  applySearchAndSort();
+}, { deep: true });
 
 const sessions = ref();
-
-function getSortByField () {
-  if (!sortBy.value) return null;
-
-  if (sortBy.value === 'alphabetic') return 'internalName';
-  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
-}
-
-async function filterProductByInternalName() {
-  try {
-    const productReviewDetail = await useInventoryCountRun().getProductReviewDetail({
-      workEffortId: props.workEffortId,
-      internalName: searchedProductString.value || null,
-      internalName_op: searchedProductString.value ? "contains" : null,
-    });
-
-    if (productReviewDetail && productReviewDetail.status === 200 && productReviewDetail.data) {
-      pagination.pageIndex = 0;
-      cycleCounts.value = productReviewDetail.data;
-      isScrollable.value = productReviewDetail.data >= pagination.pageSize;
-    } else {
-      throw productReviewDetail.data;
-    }
-  } catch (error) {
-    showToast("Something Went Wrong");
-    console.error("Error Searching Product: ", error);
-  }
-}
 
 async function getCountSessions(productId: any) {
   sessions.value = null;
@@ -471,25 +427,40 @@ async function getCountSessions(productId: any) {
   }
 }
 
-async function getInventoryCycleCount(reset = false) {
-  if (reset) {
-    pagination.pageIndex = 0;
-    isScrollable.value = true;
+async function getInventoryCycleCount() {
+  let pageIndex = 0;
+  let pageSize = 250;
+  if (totalItems.value > 5000) {
+    pageSize = 500;
   }
+  let hasMore = true;
+  try {
+    while (hasMore) {
+      const resp = await useInventoryCountRun().getCycleCount({
+        workEffortId: props.workEffortId,
+        pageSize,
+        pageIndex,
+      });
+      if (resp && resp.status === 200 && resp.data?.length) {
+        aggregatedSessionItems.value.push(...resp.data);
+        if (resp.data.length < pageSize) {
+          hasMore = false;
+        } else {
+          pageIndex++;
+        }
+      } else {
+        hasMore = false;
+      }
+      loadedItems.value = aggregatedSessionItems.value.length;
 
-  const resp = await useInventoryCountRun().getCycleCount({
-    workEffortId: props.workEffortId,
-    pageSize: pagination.pageSize,
-    pageIndex: pagination.pageIndex,
-    internalName: searchedProductString.value || null,
-  });
-
-  if (resp && resp.status === 200 && resp.data?.length) {
-    cycleCounts.value = resp.data;
-    isScrollable.value = resp.data.length >= pagination.pageSize;
-  } else {
-    cycleCounts.value = [];
-    isScrollable.value = false;
+    }
+    const results = aggregatedSessionItems.value;
+    results.sort((a, b) => a.lastUpdatedAt - b.lastUpdatedAt);
+    applySearchAndSort();
+  } catch (error) {
+    console.error("Error fetching all cycle count records:", error);
+    showToast(translate("Something Went Wrong"));
+    aggregatedSessionItems.value = [];
   }
 }
 
@@ -522,9 +493,11 @@ ion-item.due-date {
 
 .controls {
   position: sticky;
-  top: 0;
+  top: 56px; /* below IonHeader toolbar */
   background-color: var(--ion-background-color);
-  z-index: 999;
+  z-index: 10;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ion-color-light);
 }
 
 .filters {
@@ -565,5 +538,32 @@ ion-item.due-date {
 .list-item .actions {
   display: flex;
   gap: var(--spacer-xs);
+}
+
+.virtual-scroller {
+  --virtual-scroller-offset: 220px;
+}
+
+.virtual-list {
+  display: block;
+  width: 100%;
+  /* adjust 240–320px until it fits your header + filters height */
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.virtual-list ion-item {
+  --min-height: 64px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: all;
 }
 </style>
