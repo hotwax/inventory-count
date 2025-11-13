@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
-import api, { client, initialise, updateToken } from '@/services/RemoteAPI';
-import { getConfig } from '@/services/RemoteAPI';
+import api, { initialise } from '@/services/RemoteAPI';
 import emitter from '@/event-bus';
 import { loader } from '@/services/uiUtils';
 import { useUserProfile } from './useUserProfileStore';
@@ -9,18 +8,15 @@ import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } 
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
-import { useProductIdentificationStore } from './productIdentification';
-import { useProductStoreSettings } from '@/composables/useProductStoreSettings';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './useProductStore';
 import { useFacilityStore } from './useFacilityStore';
 
 export interface LoginPayload {
-  username: string | null;
-  password: string | null;
-  token: string | null;
-  oms: string | null;
-  omsRedirectionUrl: string | null
+  token: any;
+  oms: any;
+  omsRedirectionUrl: any;
+  expirationTime: any;
 }
 
 type TokenState = {
@@ -71,8 +67,6 @@ export const useAuthStore = defineStore('authStore', {
     },
     getBaseUrl: (state) => {
       const baseURL = state.oms
-      const appConfig = getConfig()
-
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
     },
@@ -91,36 +85,14 @@ export const useAuthStore = defineStore('authStore', {
       return true;
     },
     async login(payload: LoginPayload) {
-      this.setOMS(payload.oms as any);
-      const baseURL = this.getBaseUrl;
-
-      const requestBody = {} as any;
-      // const omsRedirectionUrl = payload.omsRedirectionUrl as any;
-
-      if (payload.token && payload.token !== null) requestBody.token = payload.token;
-      else { requestBody.username = payload.username; requestBody.password = payload.password }
-
-      const permissionId = process.env.VUE_APP_PERMISSION_ID;
-
       try {
-        const resp = await client({
-          url: "admin/login",
-          method: "post",
-          baseURL,
-          data: requestBody,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }) as any;
-        if (resp?.status === 200 && resp.data.token) {
-          this.token.value = resp.data.token;
-          this.token.expiration = resp.data.expirationTime;
-          this.omsRedirectionUrl = payload.omsRedirectionUrl as any;
-        } else {
-          throw "Sorry, login failed. Please try again";
-        }
+        this.setOMS(payload.oms);
+        this.token.value = payload.token;
+        this.token.expiration = payload.expirationTime;
+        this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
-        this.current = await useUserProfile().fetchUserProfile(resp.data.api_key, this.getBaseUrl);
+        const permissionId = process.env.VUE_APP_PERMISSION_ID;
+        this.current = await useUserProfile().fetchUserProfile(this.token.value, this.getBaseUrl);
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
         if (permissionId) serverPermissionsFromRules.push(permissionId);
@@ -149,45 +121,44 @@ export const useAuthStore = defineStore('authStore', {
           }
         }
 
-      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-      const facilities = await useFacilityStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
-        parentTypeId: "VIRTUAL_FACILITY",
-        parentTypeId_not: "Y",
-        facilityTypeId: "VIRTUAL_FACILITY",
-        facilityTypeId_not: "Y"
-      });
-      await useFacilityStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
-      if (!facilities.length) throw "Unable to login. User is not associated with any facility"
-      const currentFacility: any = useFacilityStore().getCurrentFacility
-      isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
-      await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
-      const preferredStore: any = useProductStore().getCurrentProductStore
+        const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
+        const facilities = await useFacilityStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
+          parentTypeId: "VIRTUAL_FACILITY",
+          parentTypeId_not: "Y",
+          facilityTypeId: "VIRTUAL_FACILITY",
+          facilityTypeId_not: "Y"
+        });
+        await useFacilityStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
+        if (!facilities.length) throw "Unable to login. User is not associated with any facility"
+        const currentFacility: any = useFacilityStore().getCurrentFacility
+        isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
+        await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
+        const preferredStore: any = useProductStore().getCurrentProductStore
 
-      setPermissions(appPermissions);
+        setPermissions(appPermissions);
 
-      // Get product identification from api using dxp-component
-      await useProductIdentificationStore().getDxpIdentificationPref(preferredStore.productStoreId)
+        await useProductStore().getDxpIdentificationPref(preferredStore.productStoreId)
+
+        initialise({
+          token: this.token.value,
+          instanceUrl: this.getBaseUrl.replace("inventory-cycle-count/", ""),
+          events: {
+            responseError: () => setTimeout(() => function dismissLoader() {
+              if (loader.value) {
+                loader.value.dismiss();
+                loader.value = null as any;
+              }
+            }, 100),
+            queueTask: (payload: any) => emitter.emit("queueTask", payload)
+          },
+          systemType: "MOQUI"
+        });
+        await useProductStore().loadProductIdentifierSettings();
+        await useInventoryCountRun().loadStatusDescription();
 
       } catch (err) {
-        return Promise.reject("Sorry, login failed. Please try again");
+        throw "Login failed. Please try again";
       }
-
-      initialise({
-        token: this.token.value,
-        instanceUrl: this.getBaseUrl.replace("inventory-cycle-count/", ""),
-        events: {
-          responseError: () => setTimeout(() => function dismissLoader() {
-            if (loader.value) {
-              loader.value.dismiss();
-              loader.value = null as any;
-            }
-          }, 100),
-          queueTask: (payload: any) => emitter.emit("queueTask", payload)
-        },
-        systemType: "MOQUI"
-      });
-      await useProductStoreSettings().init();
-      await useInventoryCountRun().loadStatusDescription();
     },
     async logout() {
       try {

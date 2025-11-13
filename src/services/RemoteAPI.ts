@@ -3,7 +3,6 @@ import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import merge from 'deepmerge';
 import { useAuthStore } from '@/stores/useAuthStore';
-import emitter from '@/event-bus';
 
 const requestInterceptor = async (config: any) => {
   if (apiConfig.token) {
@@ -35,27 +34,9 @@ const responseSuccessInterceptor = (response: any) => {
 const responseErrorInterceptor = (error: any) => {
   if (apiConfig.events.responseError) apiConfig.events.responseError(error);
   // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
-  if (error.response && apiConfig.systemType === "OFBIZ") {
-    // TODO Handle case for failed queue request
-    const { status } = error.response;
-    if (status == StatusCodes.UNAUTHORIZED) {
-      if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
-    }
-  }
-  // Any status codes that falls outside the range of 2xx cause this function to trigger
-  // Do something with response error
-  return Promise.reject(error);
-}
-
-const responseClientErrorInterceptor = (error: any) => {
-  if (apiConfig.events.responseError) apiConfig.events.responseError(error);
-  // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
-  if (error.response && apiConfig.systemType === "MOQUI") {
-    // TODO Handle case for failed queue request
-    const { status } = error.response;
-    if (status == StatusCodes.UNAUTHORIZED) {
-      if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
-    }
+  const { status } = error.response || {};
+  if (status == StatusCodes.UNAUTHORIZED) {
+    if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
   }
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error

@@ -710,7 +710,7 @@ async function logout(): Promise<any> {
   }
 }
 
-async function omsGetUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false, payload?: any): Promise<any> {
+async function omsGetUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false): Promise<any> {
   try {
     const params = {
       "inputFields": {} as any,
@@ -1711,7 +1711,7 @@ async function getUserFacilities(token: any, baseURL: string, partyId: string, f
   if(apiConfig.systemType === "MOQUI") {
     return await fetchFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload) // moquiIndex
   } else {
-    return await omsGetUserFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload)
+    return await omsGetUserFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser)
   }
 }
 
