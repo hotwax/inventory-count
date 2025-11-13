@@ -127,6 +127,9 @@
                             <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
                           </ion-avatar>
                           <ion-label>
+                      <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                    </ion-label>
+                    <ion-label>
                             <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                           </ion-label>
                           <ion-label>
@@ -146,7 +149,12 @@
                       <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
                         <ion-item lines="none">
                           <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                          <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                          <ion-label>
+                      {{ session.countImportName || "-" }}
+                      <p>
+                        {{ session.uploadedByUserLogin }}
+                      </p>
+                    </ion-label>
                         </ion-item>
                         <ion-label>
                           {{ session.counted }}
@@ -160,8 +168,8 @@
                           {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
-                        <ion-button fill="clear" color="medium">
-                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, cycleCount)">
+                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                         </ion-button>
                       </div>
                     </div>
@@ -170,6 +178,21 @@
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
+          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
+              <ion-content>
+                <ion-list>
+                  <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
+                  <ion-item size="small">{{ translate('Last Counted') }}: {{ selectedSession?.counted }}</ion-item>
+                  <ion-item size="small">{{ translate('Edit Count') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
+                  <ion-item button @click="removeProductFromSession">
+                    <ion-label>
+                      {{ translate('Remove from Count') }}
+                    </ion-label>
+                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                  </ion-item>
+                </ion-list>
+              </ion-content>
+            </ion-popover>
         </div>
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
@@ -184,8 +207,8 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, removeCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";
@@ -237,6 +260,11 @@ const workEffort = ref();
 const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
 
+const isSessionPopoverOpen = ref(false)
+const sessionPopoverEvent = ref<Event | null>(null)
+const selectedSession = ref<any | null>(null)
+const selectedProductCountReview = ref<any | null>(null)
+
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
@@ -261,6 +289,26 @@ watch(
   },
   { immediate: true }
 )
+
+async function removeProductFromSession() {
+ // API Call for deleting the product lines from inventoryCountImportItem on server.
+}
+
+function openSessionPopover(event: Event, session: any, cycleCount: any) {
+  // Clear already open popover if found.
+  if (isSessionPopoverOpen.value) isSessionPopoverOpen.value = false;
+  sessionPopoverEvent.value = event
+  selectedSession.value = session
+  selectedProductCountReview.value = cycleCount
+  isSessionPopoverOpen.value = true
+}
+
+function closeSessionPopover() {
+  isSessionPopoverOpen.value = false
+  selectedSession.value = null
+  selectedProductCountReview.value = null
+}
+
 
 async function saveDueDate() {
   try {
@@ -424,20 +472,11 @@ function getFacilityName(id: string) {
   const facilities: any[] = useFacilityStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-} as any
+
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+  return dateTime.toFormat("h:mm a dd'th' MMM yyyy");
 }
 
 </script>

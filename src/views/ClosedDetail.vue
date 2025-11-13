@@ -155,6 +155,9 @@
                             <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
                           </ion-label>
                           <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
                             <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
                             <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
                           </ion-label>
@@ -171,7 +174,12 @@
                       <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
                         <ion-item lines="none">
                           <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                          <ion-label>{{ session.uploadedByUserLogin }}</ion-label>
+                          <ion-label>
+                            {{ session.countImportName || "-" }}
+                            <p>
+                              {{ session.uploadedByUserLogin }}
+                            </p>
+                          </ion-label>
                         </ion-item>
                         <ion-label>
                           {{ session.counted }}
@@ -185,9 +193,6 @@
                           {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
-                        <ion-button fill="clear" color="medium">
-                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
-                        </ion-button>
                       </div>
                     </div>
                   </ion-accordion>
@@ -209,8 +214,8 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonInfiniteScroll, IonInfiniteScrollContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils"
@@ -389,20 +394,10 @@ function getFacilityName(id: string) {
   const facilities: any[] = useFacilityStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-} as any
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+  return dateTime.toFormat("h:mm a dd'th' MMM yyyy");
 }
 </script>
 
