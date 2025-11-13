@@ -71,7 +71,7 @@ const getCycleCount = async (payload: any): Promise<any> => {
 /** Get sessions under a work effort */
 const getSessions = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/count`,
     method: "get",
     params: payload
   });
