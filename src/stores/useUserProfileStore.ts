@@ -53,7 +53,6 @@ export const useUserProfile = defineStore('userProfile', {
       // handling if locale is not coming from userProfile
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfile().getUserProfile
         if (locale) {
           matchingLocale = Object.keys(this.localeOptions).find((option: string) => option === locale)
           // If exact locale is not found, try to match the first two characters i.e primary code
@@ -323,9 +322,9 @@ export const useUserProfile = defineStore('userProfile', {
     },
 
     /**
-     * Get user profile with api_key
+     * Get user profile with token as Maarg now supports token based auth
      */
-    async fetchUserProfile(api_key: string, omsBaseUrl: string): Promise<any> {
+    async fetchUserProfile(token: string, omsBaseUrl: string): Promise<any> {
       const baseURL = omsBaseUrl.startsWith('http')
         ? omsBaseUrl.includes('/rest/s1')
           ? omsBaseUrl
@@ -338,7 +337,7 @@ export const useUserProfile = defineStore('userProfile', {
           method: 'GET',
           baseURL,
           headers: {
-            api_key,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })

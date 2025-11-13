@@ -1,3 +1,4 @@
+
 <template>
   <ion-page>
     <ion-header>
@@ -45,17 +46,14 @@ import {
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { computed } from "vue";
-import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { useUserProfile } from "@/stores/useUserProfileStore";
 import { useProductStore } from "@/stores/useProductStore";
 
-const productIdentificationStore = useProductIdentificationStore();
 
 const productStoreSettings = computed(() => useUserProfile().getProductStoreSettings)
-
 onIonViewWillEnter(async () => {
   await useUserProfile().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
-  productIdentificationStore.prepareProductIdentifierOptions();
+  useProductStore().prepareProductIdentifierOptions();
 })
 
 function updateProductStoreSetting(event: any, key: string) {

@@ -108,19 +108,23 @@ import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useProductIdentificationStore } from '@/stores/productIdentification'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useFacilityStore } from '@/stores/useFacilityStore'
 import { useProductMaster } from '@/composables/useProductMaster'
-import { useProductStoreSettings } from '@/composables/useProductStoreSettings'
+import { useProductStore } from '@/stores/useProductStore'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
-const productIdentificationStore = useProductIdentificationStore()
 
 const props = defineProps({
-  workEffortId: String,
-  inventoryCountImportId: String,
+  workEffortId: {
+    type: String,
+    required: true
+  },
+  inventoryCountImportId: {
+    type: String,
+    required: true
+  }
 })
 
 const workEffort = ref()
@@ -157,7 +161,7 @@ function onManualInputChange(event: CustomEvent, product: any) {
 
 async function getInventoryCycleCount() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId! })
+    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
     if (resp?.status !== 200 || !resp.data) throw resp
 
     workEffort.value = resp.data
@@ -247,10 +251,9 @@ async function setProductQoh(product: any) {
 }
 
 async function addPreCountedItemInScanEvents(product: any) {
-  const pref = productIdentificationStore.getProductIdentificationPref
   await recordScan({
-    inventoryCountImportId: props.inventoryCountImportId!,
-    productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, useProductIdentificationStore().getProductIdentificationPref.primaryId),
+    inventoryCountImportId: props.inventoryCountImportId,
+    productIdentifier: await useProductStore().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
   product.saved = true

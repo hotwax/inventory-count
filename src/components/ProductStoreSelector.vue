@@ -22,7 +22,7 @@
 </template>
     
 <script setup lang="ts">
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/vue';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, IonItem, IonSelect, IonSelectOption } from '@ionic/vue';
 import { computed } from 'vue';
 import { translate } from '../i18n'
 import { defineProps } from "vue";

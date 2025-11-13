@@ -34,7 +34,7 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="200" class="virtual-list" :min-item-size="80">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
@@ -168,7 +168,7 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -195,7 +195,7 @@
               </template>
 
               <template v-else>
-                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -352,7 +352,7 @@
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
@@ -380,7 +380,7 @@
               </template>
               
               <template v-else>
-                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80">
+                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
                 <template v-slot="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-item>
@@ -495,7 +495,7 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutl
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { loader, showToast } from '@/services/uiUtils';
+import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -696,7 +696,6 @@ async function startSession() {
 
     if (!localRecords?.length || totalItems.value !== localRecords.length) {
       console.log("[Session] No local records found, fetching from backend...");
-      // await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
       await loadInventoryItemsWithProgress();
     } else {
       isLoadingItems.value = false

@@ -6,7 +6,7 @@ import workerApi from "@/services/workerApi";
 import { db } from '@/services/commonDatabase'
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useUserProfile } from '@/stores/useUserProfileStore';
-import { useProductStoreSettings } from './useProductStoreSettings';
+import { useProductStore } from '@/stores/useProductStore';
 
 // Product structure
 export interface Product {
@@ -387,7 +387,7 @@ const buildProductQuery = (params: any): Record<string, any> => {
 // helper: pick primary/secondary id from enriched product.goodIdentifications
 const primaryId = (product?: any) => {
   if (!product) return ''
-  const pref = useProductStoreSettings().getPrimaryId()
+  const pref = useProductStore().getPrimaryId
 
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
         if (typeof g === 'string' && g.includes('/')) {
@@ -412,7 +412,7 @@ const primaryId = (product?: any) => {
 
 const secondaryId = (product: any) => {
   if (!product) return ''
-  const pref = useProductStoreSettings().getSecondaryId()
+  const pref = useProductStore().getSecondaryId
 
   // Parse any flat "TYPE/VALUE" strings (from Solr)
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {

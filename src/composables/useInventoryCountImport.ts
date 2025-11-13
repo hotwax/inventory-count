@@ -1,10 +1,9 @@
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
-import { hasError } from '@/stores/useAuthStore';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
-import { useProductStoreSettings } from './useProductStoreSettings';
+import { useProductStore } from '@/stores/useProductStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -32,80 +31,6 @@ function currentMillis(): number {
     };
     await db.scanEvents.add(event);
   }
-
-  /** Load inventory items from backend into Dexie */
-  async function loadInventoryItemsFromBackend(inventoryCountImportId: string): Promise<void> {
-  const pageSize = 500
-  let pageIndex = 0
-  let totalFetched = 0
-  let hasMore = true
-
-  try {
-    while (hasMore) {
-      const resp = await api({
-        url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
-        method: 'GET',
-        params: { pageSize, pageIndex }
-      })
-
-      if (hasError(resp) || !resp?.data?.length) {
-        hasMore = false
-        break
-      }
-
-      const items = resp.data
-      totalFetched += items.length
-
-      // --- Store items batch-wise directly into IndexedDB ---
-      await db.transaction('rw', db.inventoryCountRecords, async () => {
-        for (const item of items) {
-          await db.inventoryCountRecords.put({
-            inventoryCountImportId: item.inventoryCountImportId,
-            productId: item.productId || null,
-            uuid: item.uuid || uuidv4(),
-            isRequested: item.isRequested || 'Y',
-            productIdentifier: item.productIdentifier || '',
-            locationSeqId: item.locationSeqId || null,
-            quantity: item.quantity || 0,
-            status: 'active',
-            facilityId: '',
-            createdAt: item.createdDate || currentMillis(),
-            lastScanAt: item.lastUpdatedStamp || currentMillis(),
-            lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
-            lastSyncedAt: null,
-            lastSyncedBatchId: null,
-            aggApplied: 0
-          })
-        }
-      })
-
-      // --- Handle product caching batch-wise ---
-      const productIds = [...new Set(items.map((i: any) => i.productId).filter(Boolean))] as any
-      if (productIds.length) {
-        try {
-          const existingProducts = await db.products.bulkGet(productIds)
-          const existingIds = new Set(existingProducts.filter(Boolean).map((product: any) => product.productId))
-          const missingIds = productIds.filter((id: string) => !existingIds.has(id))
-
-          if (missingIds.length) {
-            const { getByIds, upsertFromApi } = useProductMaster() as any
-            const newProducts = await getByIds(missingIds)
-            if (newProducts?.length) await upsertFromApi(newProducts)
-          }
-        } catch (err) {
-          console.warn("[loadInventoryItemsFromBackend] Failed to fetch missing products:", err)
-        }
-      }
-
-      // --- Stop when fewer than pageSize returned ---
-      if (items.length < pageSize) hasMore = false
-      else pageIndex++
-    }
-
-  } catch (err) {
-    console.error('[loadInventoryItemsFromBackend] Error:', err)
-  }
-}
 
   async function storeInventoryCountItems(items: any[]) {
     if (!items?.length) return;
@@ -163,7 +88,7 @@ function currentMillis(): number {
       .toArray()
 
     if (!resultSet.length) {
-      const productId = useProductMaster().findProductByIdentification(useProductStoreSettings().getPrimaryId(), value, {})
+      const productId = useProductMaster().findProductByIdentification(useProductStore().getPrimaryId, value, {})
       if (productId) {
         resultSet = await tableQuery
           .filter(item => item.productId === productId)
@@ -449,7 +374,6 @@ export function useInventoryCountImport() {
     getUncountedItems,
     getUndirectedItems,
     getUnmatchedItems,
-    loadInventoryItemsFromBackend,
     lockSession,
     recordScan,
     releaseSession,

@@ -97,7 +97,7 @@
         </div>
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
-          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
+          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
             <template #default="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-accordion-group>
@@ -184,7 +184,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -362,19 +362,10 @@ function applySearchAndSort() {
 
 
 watch([searchedProductString, sortBy, aggregatedSessionItems], () => {
-  // loader.present("Applying Search and Sort...");
   applySearchAndSort();
-  // loader.dismiss();
 }, { deep: true });
 
 const sessions = ref();
-
-function getSortByField () {
-  if (!sortBy.value) return null;
-
-  if (sortBy.value === 'alphabetic') return 'internalName';
-  else if (sortBy.value === 'variance') return 'proposedVarianceQuantity'
-}
 
 async function filterProductByInternalName() {
   try {

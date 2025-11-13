@@ -112,7 +112,6 @@ import { useUserProfile } from "@/stores/useUserProfileStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { useFacilityStore } from "@/stores/useFacilityStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
-import { useProductIdentificationStore } from "@/stores/productIdentification";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
@@ -156,11 +155,10 @@ const goToOms = (token: string, oms: string) => {
 }
 
 /* Force Scan Card Logic */
-const productIdentificationStore = useProductIdentificationStore();
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
 const productStoreSettings = computed(() => useUserProfile().getProductStoreSettings)
-const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions) as any
+const productIdentifications = computed(() => useProductStore().getGoodIdentificationOptions) as any
 
 function setBarcodeIdentificationPref(value: any) {
   useUserProfile().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);

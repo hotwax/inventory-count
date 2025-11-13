@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/services/workerApi";
 import { expose } from 'comlink';
 import { db } from '@/services/commonDatabase';
-import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
