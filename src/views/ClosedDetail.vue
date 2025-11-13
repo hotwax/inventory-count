@@ -330,7 +330,7 @@ function getDcsnFilter() {
 async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
-    const resp = await useInventoryCountRun().getSessions({
+    const resp = await useInventoryCountRun().getSessionsCount({
       workEffortId: props.workEffortId,
       productId: productId
     });

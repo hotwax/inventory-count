@@ -264,6 +264,15 @@ async function findProductByIdentification(idType: string, value: string, contex
   }
 }
 
+async function searchProducts(value: string) {
+  const products = await db.table('productIdents')
+    .where('value')
+    .startsWithIgnoreCase(value)
+    .toArray()
+    if (products) return products.map(p => p.productId)
+    return null
+}
+
 const clearCache = async () => {
   await db.transaction('rw', db.products, db.productIdents, async () => {
     await db.products.clear()
@@ -446,6 +455,7 @@ export function useProductMaster() {
     loadProducts,
     findByIdentification,
     findProductByIdentification,
+    searchProducts,
     getByIdentificationFromSolr,
     prefetch,
     upsertFromApi,

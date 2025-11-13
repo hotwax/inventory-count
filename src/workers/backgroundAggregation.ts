@@ -105,7 +105,7 @@ async function getById(productId: string, context: any) {
 }
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
+  const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).and(item => item.identKey === context.barcodeIdentification).first()
   if (ident) return ident.productId
 
   if (!context?.token || !context?.maargUrl) return null
@@ -246,7 +246,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
       let productId: any = null
-      const identification = await db.table('productIdents').where('value').equalsIgnoreCase(scannedValue).first()
+      const identification = await db.table('productIdents').where('value').equalsIgnoreCase(scannedValue).and(item => item.identKey === context.barcodeIdentification).first()
       if (identification) {
         productId = identification.productId
       } else {
@@ -262,7 +262,8 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       // }
 
       const existing = await db.table('inventoryCountRecords')
-        .where({ inventoryCountImportId })
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
         .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
         .first()
 
@@ -272,6 +273,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
+        // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
           productId: existing.productId || productId,
@@ -284,7 +286,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: (productId || context.inventoryCountTypeId !== 'DIRECTED_COUNT' || context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
+          isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt

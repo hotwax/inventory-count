@@ -71,27 +71,32 @@ function currentMillis(): number {
 
     const value = keyword.trim().toLowerCase()
 
-    let tableQuery = db.table('inventoryCountRecords').where({ inventoryCountImportId })
+    let tableQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
+    let searchByProductIdQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
 
     if (segment === 'counted') {
       tableQuery = tableQuery.and(item => item.quantity > 0)
+      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity > 0)
     } else if (segment === 'uncounted') {
       tableQuery = tableQuery.and(item => item.quantity === 0)
+      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity === 0)
     } else if (segment === 'undirected') {
       tableQuery = tableQuery.and(item => item.isRequested === 'N')
+      searchByProductIdQuery = searchByProductIdQuery.and(item => item.isRequested === 'N')
     } else if (segment === 'unmatched') {
       tableQuery = tableQuery.and(item => !item.productId)
+      searchByProductIdQuery = searchByProductIdQuery.and(item => !item.productId)
     }
 
     let resultSet = await tableQuery
-      .filter(item => (item.productIdentifier || '').toLowerCase().includes(value))
+      .and(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
 
     if (!resultSet.length) {
-      const productId = useProductMaster().findProductByIdentification(useProductStore().getPrimaryId, value, {})
-      if (productId) {
-        resultSet = await tableQuery
-          .filter(item => item.productId === productId)
+      const productIds = await useProductMaster().searchProducts(value)
+      if (productIds) {
+        resultSet = await searchByProductIdQuery
+          .and(item => (productIds.includes(item.productId)))
           .toArray()
       }
     }

@@ -34,12 +34,12 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
                   <ion-thumbnail slot="start">
-                    <Image :src="item.product?.mainImageUrl" />
+                    <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                   </ion-thumbnail>
                   <ion-badge class="scan-badge">{{ item.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
                   <ion-label>
@@ -168,12 +168,12 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="64" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl" />
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -195,12 +195,12 @@
               </template>
 
               <template v-else>
-                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
+                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl" />
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           {{ useProductMaster().primaryId(item.product) }}
@@ -218,16 +218,24 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">
+                          {{ item.quantity }} {{ translate('Units') }}
+                        </ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -237,20 +245,22 @@
               </template>
 
               <template v-else>
-                <ion-list>
-                  <ion-item v-for="item in undirectedItems" :key="item.uuid">
-                    <ion-thumbnail slot="start">
-                      <Image :src="item.product?.mainImageUrl" />
-                    </ion-thumbnail>
-                    <ion-label>
-                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                    </ion-label>
-                    <ion-note slot="end">
-                      {{ item.quantity }} {{ translate('Units') }}
-                    </ion-note>
-                  </ion-item>
-                </ion-list>
+                <DynamicScroller :items="undirectedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          {{ useProductMaster().primaryId(item.product) }}
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
             </ion-segment-content>
 
@@ -273,7 +283,7 @@
                   <!-- Previous good scan -->
                   <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
@@ -286,7 +296,7 @@
                   <!-- Next good scan -->
                   <ion-item lines="none" v-if="getScanContext(item).nextGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
@@ -321,7 +331,7 @@
                   <!-- Previous good scan -->
                   <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
@@ -334,7 +344,7 @@
                   <!-- Next good scan -->
                   <ion-item lines="none" v-if="getScanContext(item).nextGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
@@ -352,12 +362,12 @@
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="200" class="virtual-list" :min-item-size="80" :emit-update="true">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl" />
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -380,12 +390,12 @@
               </template>
               
               <template v-else>
-                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="400" class="virtual-list" :min-item-size="80" :emit-update="true">
+                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
                 <template v-slot="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-item>
                       <ion-thumbnail slot="start">
-                        <Image :src="item.product?.mainImageUrl" />
+                        <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                       </ion-thumbnail>
                       <ion-label>
                         {{ useProductMaster().primaryId(item.product) }}
@@ -422,7 +432,7 @@
             <ion-radio-group v-model="selectedProductId">
               <ion-item v-for="product in products" :key="product.productId">
                 <ion-thumbnail slot="start">
-                  <Image :src="product?.mainImageUrl" />
+                  <Image :src="product?.mainImageUrl" :key="product?.mainImageUrl"/>
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
