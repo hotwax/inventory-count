@@ -34,7 +34,7 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
@@ -94,11 +94,11 @@
                 <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                 {{ translate("Edit") }}
               </ion-button>
-              <ion-button color="warning" fill="outline" @click="discard" :disabled="sessionLocked">
+              <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
                 <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                 {{ translate("Discard") }}
               </ion-button>
-              <ion-button color="success" fill="outline" @click="submit" :disabled="sessionLocked">
+              <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                 {{ translate("Submit") }}
               </ion-button>
@@ -286,7 +286,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("items ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -299,7 +299,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -334,7 +334,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("item ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -347,7 +347,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -494,6 +494,19 @@
           </ion-fab>
         </ion-content>
       </ion-modal>
+      <ion-alert :is-open="showSubmitAlert" header="Submit for review" message="Make sure you’ve reviewed the products and their counts before uploading them for review."
+        :buttons="[
+          { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
+          { text: 'Submit', role: 'confirm', handler: confirmSubmit }
+        ]"
+        @didDismiss="showSubmitAlert = false"/>
+
+      <ion-alert :is-open="showDiscardAlert" header="Leave session" message="Leaving this session unlinks it from your device and allows other users to continue this session on their device."
+        :buttons="[
+          { text: 'Cancel', role: 'cancel', handler: () => showDiscardAlert = false },
+          { text: 'Leave', role: 'confirm', handler: confirmDiscard }
+        ]"
+        @didDismiss="showDiscardAlert = false"/>
     </ion-content>
   </ion-page>
 </template>
@@ -520,6 +533,9 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useUserProfile } from '@/stores/useUserProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductStore } from '@/stores/useProductStore';
+import { debounce } from "lodash-es";
+
 
 const props = defineProps<{
   workEffortId: string;
@@ -550,6 +566,9 @@ const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
 const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
+const showSubmitAlert = ref(false)
+const showDiscardAlert = ref(false)
+
 //Progress bar
 const totalItems = ref(0)
 const loadedItems = ref(0)
@@ -628,8 +647,7 @@ onIonViewDidEnter(async () => {
     };
     // Run every 10 seconds
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = useUserProfile().getProductStoreSettings;
-    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({
       type: 'schedule',
@@ -702,9 +720,9 @@ async function startSession() {
     await getTotalItemCount();
 
     // Load InventoryCountImportItem records into IndexedDB
-    const localRecords = await useInventoryCountImport().getInventoryCountImportItems(props.inventoryCountImportId);
+    const sessionItemsCount = await useInventoryCountImport().getInventoryCountImportItemsCount(props.inventoryCountImportId);
 
-    if (!localRecords?.length || totalItems.value !== localRecords.length) {
+    if (!sessionItemsCount || totalItems.value !== sessionItemsCount) {
       console.log("[Session] No local records found, fetching from backend...");
       await loadInventoryItemsWithProgress();
     } else {
@@ -713,8 +731,12 @@ async function startSession() {
 
     // Prefetch product details for all related productIds
     const productIds = await useInventoryCountImport().getSessionProductIds(props.inventoryCountImportId);
-    if (productIds.length) await useProductMaster().prefetch(productIds);
-    showToast('Session ready to start counting');
+    if (productIds.length) {
+      // fire asynchronously, don’t block UI
+      useProductMaster().prefetch(productIds)
+        .then(() => console.info(`Prefetch ${productIds.length} products hydrated`))
+        .catch(err => console.warn('Prefetch Failed:', err))
+    }    showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
     showToast('Failed to initialize session');
@@ -1049,8 +1071,7 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const productStoreSettings = useUserProfile().getProductStoreSettings;
-    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
@@ -1105,35 +1126,44 @@ async function unscheduleWorker() {
   }
 }
 
-async function submit() {
+async function confirmSubmit() {
+  showSubmitAlert.value = false
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast(translate("Unmatched products should be matched before submission"));
-      return;
+      showToast(translate("Unmatched products should be resolved before submission"))
+      return
     }
-    await finalizeAggregationAndSync();
-    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
-    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
-    await releaseSessionLock();
-    if (lockWorker) await lockWorker.stopHeartbeat();
-    showToast('Session submitted successfully');
+    await finalizeAggregationAndSync()
+    await useInventoryCountImport().updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      statusId: 'SESSION_SUBMITTED'
+    })
+    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
+    await releaseSessionLock()
+    if (lockWorker) await lockWorker.stopHeartbeat()
+    showToast('Session submitted successfully')
   } catch (err) {
-    console.error(err);
-    showToast('Failed to submit session');
+    console.error(err)
+    showToast('Failed to submit session')
   }
 }
 
-async function discard() {
+async function confirmDiscard() {
+  showDiscardAlert.value = false
   try {
-    await finalizeAggregationAndSync();
-    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
-    inventoryCountImport.value.statusId = 'SESSION_VOIDED';
-    await releaseSessionLock();
-    if (lockWorker) await lockWorker.stopHeartbeat();
-    showToast('Session discarded');
+    await finalizeAggregationAndSync()
+    await useInventoryCountImport().updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      statusId: 'SESSION_VOIDED',
+      fromDate: currentLock.value.fromDate
+    })
+    inventoryCountImport.value.statusId = 'SESSION_VOIDED'
+    await releaseSessionLock()
+    if (lockWorker) await lockWorker.stopHeartbeat()
+    showToast('Session discarded')
   } catch (err) {
-    console.error(err);
-    showToast('Failed to discard session');
+    console.error(err)
+    showToast('Failed to discard session')
   }
 }
 
@@ -1149,7 +1179,7 @@ async function reopen() {
   }
 }
 
-async function handleIndexedDBSearch() {
+const handleIndexedDBSearch = debounce(async () => {
   if (!searchKeyword.value.trim()) {
     filteredItems.value = [] // show all
     return
@@ -1160,7 +1190,7 @@ async function handleIndexedDBSearch() {
     selectedSegment.value
   )
   filteredItems.value = results
-}
+}, 150)
 
 function clearSearchResults() {
   searchKeyword.value = ''
@@ -1214,6 +1244,8 @@ function getScanContext(item: any) {
     nextGoodIndex,
   }
 }
+
+
 </script>
 
 <style scoped>

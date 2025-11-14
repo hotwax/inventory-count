@@ -87,7 +87,7 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
-            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
               <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -122,7 +122,7 @@ const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await useUserProfile().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
+  await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
 })
 
 function logout() {
@@ -157,11 +157,10 @@ const goToOms = (token: string, oms: string) => {
 /* Force Scan Card Logic */
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
-const productStoreSettings = computed(() => useUserProfile().getProductStoreSettings)
 const productIdentifications = computed(() => useProductStore().getGoodIdentificationOptions) as any
 
 function setBarcodeIdentificationPref(value: any) {
-  useUserProfile().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+  useProductStore().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>
 

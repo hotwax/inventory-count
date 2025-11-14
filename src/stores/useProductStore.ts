@@ -14,6 +14,8 @@ import {
   setUserPreference
 } from '@/adapter'
 import { useUserProfile } from './useUserProfileStore'
+import { showToast } from '@/services/uiUtils';
+import { translate } from '@/i18n'
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -21,21 +23,27 @@ export const useProductStore = defineStore('productStore', {
     current: null as any,
     statusDesc: [] as any[],
     settings: {
+      forceScan: false,
       productIdentifier: {
         productIdentificationPref: {
           primaryId: 'SKU',
           secondaryId: 'productId'
         },
         productIdentificationOptions: [] as any[],
-        goodIdentificationOptions: [] as any[]
+        goodIdentificationOptions: [] as any[],
+        barcodeIdentificationPref: ''
       }
-    }
+    } as any
   }),
 
   getters: {
     getCurrentProductStore: (state) => state.current,
     getProductStores: (state) => state.productStores,
     getStatusDescriptions: (state) => state.statusDesc,
+
+    getProductStoreSettings: (state) => state.settings,
+    getForceScan: (state) => state.settings.forceScan,
+    getBarcodeIdentificationPref: (state) => state.settings.productIdentifier.barcodeIdentificationPref,
 
     // Shortcuts for productIdentifier nested object
     getProductIdentificationPref: (state) => state.settings.productIdentifier.productIdentificationPref,
@@ -177,6 +185,63 @@ export const useProductStore = defineStore('productStore', {
       ) as any
       this.settings.productIdentifier.goodIdentificationOptions = fetchedOptions
     },
+
+    async getSettings(productStoreId: string) {
+      try {
+        const resp = await api({
+          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          method: 'GET'
+        })
+
+        if (!hasError(resp) && resp?.data?.length) {
+          const parsedSettings = resp.data.reduce((acc: any, setting: any) => {
+            const keyMap: Record<string, string> = {
+              INV_FORCE_SCAN: 'forceScan',
+              BARCODE_IDEN_PREF: 'barcodeIdentificationPref'
+            }
+            const key = keyMap[setting.settingTypeEnumId]
+            if (key === 'forceScan') acc.forceScan = JSON.parse(setting.settingValue)
+            if (key === 'barcodeIdentificationPref') acc.productIdentifier.barcodeIdentificationPref = setting.settingValue
+            return acc
+          }, this.settings)
+          this.settings = parsedSettings
+        }
+      } catch (err) {
+        logger.error('Failed to load product store settings', err)
+      }
+    },
+
+    async setProductStoreSetting(key: string, value: any, productStoreId: string) {
+      const keyToEnum: Record<string, string> = {
+        forceScan: 'INV_FORCE_SCAN',
+        barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
+      }
+      const enumId = keyToEnum[key]
+      if (!enumId) return
+
+      try {
+        const resp = await api({
+          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          method: 'POST',
+          data: {
+            productStoreId,
+            settingTypeEnumId: enumId,
+            settingValue: key === 'barcodeIdentificationPref' ? value : JSON.stringify(value)
+          }
+        })
+        if (!hasError(resp)) {
+          if (key === 'forceScan') this.settings.forceScan = value
+          if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
+          showToast(translate('Store preference updated successfully.'))
+        } else {
+          throw resp
+        }
+      } catch (err) {
+        showToast(translate('Failed to update Store preference.'))
+        logger.error(err)
+      }
+    },
+
 
     /** ---------- ProductStoreSettings Functions ---------- */
     async getProductIdentifications(productStoreId: string) {

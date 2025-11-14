@@ -92,7 +92,7 @@ export const useAuthStore = defineStore('authStore', {
         this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
-        this.current = await useUserProfile().fetchUserProfile(this.token.value, this.getBaseUrl);
+        this.current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
         if (permissionId) serverPermissionsFromRules.push(permissionId);

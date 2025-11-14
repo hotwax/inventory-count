@@ -2,10 +2,9 @@ import { ref } from 'vue'
 import { liveQuery } from 'dexie'
 import { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
-// Setup Dexie database
+
 import { db } from '@/services/commonDatabase'
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useUserProfile } from '@/stores/useUserProfileStore';
 import { useProductStore } from '@/stores/useProductStore';
 
 // Product structure
@@ -121,8 +120,7 @@ const findByIdentification = async (idValue: string) => {
 }
 
 const getByIdentificationFromSolr = async (idValue: string) => {
-  const productStoreSettings = useUserProfile().getProductStoreSettings;
-  const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+  const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
   const productIdentifications = process.env.VUE_APP_PRDT_IDENT
     ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
     : [];
@@ -173,50 +171,52 @@ const prefetch = async (productIds: string[]) => {
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
-  const docs = await getByIds(idsToFetch)
-  if (docs.length) {
-    await upsertFromApi(docs)
+  for (let i=0; i<idsToFetch.length; i+=750) {
+    const docs = await getByIds(idsToFetch.slice(i, i+750))
+    if (docs.length) {
+      upsertFromApi(docs).catch(err => console.error("upsert failed", err))
+    }
   }
 }
 
 const upsertFromApi = async (docs: any[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized");
 
-  const now = Date.now();
+  const now = Date.now()
+
+  // Convert API docs → IndexedDB friendly format
   const products = docs.map(doc => ({
     ...mapApiDocToProduct(doc),
     updatedAt: now
-  }));
+  }))
 
-  await db.transaction('rw', db.products, db.productIdents, async () => {
-    for (const product of products) {
-      await db.products.put(product);
+  // Prepare identifications
+  const idents: any[] = []
+  for (const p of products) {
+    if (!p.goodIdentifications?.length) continue
 
-      if (product.goodIdentifications?.length) {
-        for (const ident of product.goodIdentifications) {
-          const identKey = (makeIdentKey(ident.type) || ident.type).trim();
-          const idValue = ident.value?.trim();
+    for (const ident of p.goodIdentifications) {
+      const identKey = (makeIdentKey(ident.type) || ident.type).trim()
+      const identValue = ident.value?.trim()
+      if (!identKey || !identValue) continue
 
-          if (!identKey || !idValue) continue;
-
-          const existingIdent = await db.productIdents
-            .where('[productId+identKey]')
-            .equals([product.productId, identKey])
-            .first();
-
-          if (existingIdent) {
-            await db.productIdents.update(existingIdent, { value: idValue });
-          } else {
-            await db.productIdents.put({
-              productId: product.productId,
-              identKey,
-              value: idValue
-            });
-          }
-        }
-      }
+      idents.push({
+        productId: p.productId,
+        identKey,
+        value: identValue
+      })
     }
-  });
+  }
+
+  await db.transaction("rw", db.products, db.productIdents, async () => {
+    // Write all products in one shot
+    await db.products.bulkPut(products)
+
+    // Bulk put idents (Dexie will update if PK matches)
+    if (idents.length) {
+      await db.productIdents.bulkPut(idents)
+    }
+  })
 };
 
 async function findProductByIdentification(idType: string, value: string, context: any) {

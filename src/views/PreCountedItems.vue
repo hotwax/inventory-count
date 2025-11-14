@@ -178,16 +178,16 @@ async function getInventoryCycleCount() {
 async function handleSearch() {
   const term = searchedProductString.value.trim()
   if (!term) return
-  await fetchProductBySearch(term)
+  await getProductBySearch(term)
 }
 
-async function fetchProductBySearch(term: string) {
+async function getProductBySearch(term: string) {
   const query = useProductMaster().buildProductQuery({
     filter: `isVirtual: false,isVariant: true,(sku: ${term} OR internalName: ${term} OR upc: ${term})` as string,
   })
   await loader.present('Searching Product...')
   try {
-    const resp = await fetchProducts(query);
+    const resp = await getProducts(query);
 
     const product = resp?.data?.response?.docs?.[0]
     searchedProduct.value = product || null
@@ -199,7 +199,7 @@ async function fetchProductBySearch(term: string) {
   loader.dismiss()
 }
 
-async function fetchProducts(query: any) {
+async function getProducts(query: any) {
   const baseURL = useAuthStore().getBaseUrl;
 
   return client({

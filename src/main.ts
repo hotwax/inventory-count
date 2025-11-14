@@ -78,7 +78,7 @@ const app = createApp(App)
 // setUserTimeZone
 // });
 
-setPermissions(useUserProfile().fetchUserPermissions());
+setPermissions(useUserProfile().getPermissions());
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {

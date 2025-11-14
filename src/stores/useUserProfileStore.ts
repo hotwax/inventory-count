@@ -23,11 +23,6 @@ export const useUserProfile = defineStore('userProfile', {
     locale: 'en-US',
     currentTimeZoneId: '',
     timeZones: [],
-    settings: {
-      isFirstScanCountEnabled: false,
-      forceScan: false,
-      showQoh: false,
-    } as any,
     deviceId: '',
   }),
 
@@ -42,7 +37,6 @@ export const useUserProfile = defineStore('userProfile', {
     getUserPermissions: (state) => state.permissions,
     getFieldMappings: (state) => (type?: string) =>
       type ? state.fieldMappings[type] || {} : state.fieldMappings,
-    getProductStoreSettings: (state) => state.settings,
     getDeviceId: (state) => state.deviceId,
   },
 
@@ -105,7 +99,7 @@ export const useUserProfile = defineStore('userProfile', {
     updateTimeZone(tzId: string) {
       this.currentTimeZoneId = tzId
     },
-    fetchUserPermissions() {
+    getPermissions() {
       return this.permissions;
     },
     /** Initialize after login */
@@ -116,70 +110,8 @@ export const useUserProfile = defineStore('userProfile', {
     setDeviceId(deviceId: string) {
       this.deviceId = deviceId
     },
-    async fetchProductStoreSettings(productStoreId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'GET'
-        })
-        if (!hasError(resp) && resp?.data.length) {
-          const settings = resp.data.reduce((acc: any, setting: any) => {
-            const keyMap: Record<string, string> = {
-              INV_CNT_VIEW_QOH: 'showQoh',
-              INV_FORCE_SCAN: 'forceScan',
-              INV_COUNT_FIRST_SCAN: 'isFirstScanCountEnabled',
-              BARCODE_IDEN_PREF: 'barcodeIdentificationPref'
-            }
-            const key = keyMap[setting.settingTypeEnumId]
-            if (key) {
-              acc[key] = setting.settingTypeEnumId === 'BARCODE_IDEN_PREF'
-                ? setting.settingValue
-                : JSON.parse(setting.settingValue)
-            }
-            return acc
-          }, this.settings)
-          this.settings = settings
-        }
-      } catch (err) {
-        logger.error('Failed to load product store settings', err)
-      }
-    },
 
-    async setProductStoreSetting(key: string, value: any, productStoreId: string) {
-      const keyToEnum: Record<string, string> = {
-        showQoh: 'INV_CNT_VIEW_QOH',
-        forceScan: 'INV_FORCE_SCAN',
-        isFirstScanCountEnabled: 'INV_COUNT_FIRST_SCAN',
-        barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
-      }
-      const enumId = keyToEnum[key]
-      if (!enumId) return
-
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'POST',
-          data: {
-            productStoreId,
-            settingTypeEnumId: enumId,
-            settingValue: key === 'barcodeIdentificationPref'
-              ? value
-              : JSON.stringify(value)
-          }
-        })
-        if (!hasError(resp)) {
-          this.settings[key] = value
-          showToast(translate('Store preference updated successfully.'))
-        } else {
-          throw resp
-        }
-      } catch (err) {
-        showToast(translate('Failed to update Store preference.'))
-        logger.error(err)
-      }
-    },
-
-    async fetchFieldMappings() {
+    async getFieldMappings() {
       let fieldMappings: Record<string, any> = {}
       try {
         const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
@@ -324,7 +256,7 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user profile with token as Maarg now supports token based auth
      */
-    async fetchUserProfile(token: string, omsBaseUrl: string): Promise<any> {
+    async getProfile(token: string, omsBaseUrl: string): Promise<any> {
       const baseURL = omsBaseUrl.startsWith('http')
         ? omsBaseUrl.includes('/rest/s1')
           ? omsBaseUrl

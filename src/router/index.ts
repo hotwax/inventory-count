@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission } from '@/authorization';
+import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
@@ -19,6 +19,7 @@ import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, sh
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import Login from "@/views/Login.vue";
+import { useUserProfile } from "@/stores/useUserProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -56,6 +57,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
+      setPermissions(useUserProfile().getPermissions());
       if(hasPermission("APP_ASSIGNED_VIEW")) {
         return "/assigned"
       }
@@ -270,9 +272,11 @@ const router = createRouter({
 router.beforeEach((to, from) => {
 
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+    console.log("User does not have permission to access the page:", to.meta.permissionId);
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
+      console.log("No permission to access the page:", to.meta.permissionId);
       if(hasPermission("APP_DRAFT_VIEW"))
         redirectToPath = "/settings";
       else

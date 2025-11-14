@@ -3,7 +3,6 @@ import { useProductMaster } from './useProductMaster';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
-import { useProductStore } from '@/stores/useProductStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -124,25 +123,53 @@ function currentMillis(): number {
     }
   }
 
+  async function getInventoryCountImportItemsCount(inventoryCountImportId: string): Promise<number> {
+    try {
+      const count = await db.inventoryCountRecords
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
+        .count();
+
+      return count;
+    } catch (err) {
+      console.error('Error counting inventory records from IndexedDB:', err);
+      return 0;
+    }
+  }
+
   async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
     try {
-      // Reuse the same Dexie DB as in useInventoryCountImport
-      const records = await db.table('inventoryCountRecords')
+      const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
         .toArray();
 
-      const ids = records
-        .map((item: any) => item.productId)
-        .filter((id: string | null) => !!id && id !== '')
-        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+      if (!items.length) return [];
 
-      return ids;
+      const counted = [];
+      const uncounted = [];
+
+      for (const item of items) {
+        if (!item.productId) continue;
+        if (item.quantity >= 0) counted.push(item.productId);
+        else uncounted.push(item.productId);
+      }
+
+      // --- Deduplicate while preserving category order ---
+      const distinctProducts = new Set<string>();
+
+      const ordered = [
+        ...counted.filter(id => !distinctProducts.has(id) && distinctProducts.add(id)),
+        ...uncounted.filter(id => !distinctProducts.has(id) && distinctProducts.add(id)),
+      ];
+
+      return ordered;
     } catch (err) {
-      console.error('Error fetching productIds from IndexedDB:', err);
+      console.error("Error fetching ordered productIds:", err);
       return [];
     }
   }
+
 
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
@@ -371,6 +398,7 @@ export function useInventoryCountImport() {
     getCountedItems,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
+    getInventoryCountImportItemsCount,
     getInventoryCountImportSession,
     getScanEvents,
     getSessionItemsByImportId,
