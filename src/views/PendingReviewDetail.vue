@@ -196,7 +196,7 @@
                           {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
-                        <ion-button fill="clear" color="medium">
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
                           <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
                         </ion-button>
                       </div>
@@ -206,6 +206,21 @@
             </template>
           </DynamicScroller>
           </ion-accordion-group>
+          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
+            <ion-content>
+              <ion-list>
+                <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
+                <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
+                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                <ion-item button @click="removeProductFromSession()">
+                  <ion-label>
+                    {{ translate('Remove from Count') }}
+                  </ion-label>
+                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-item>
+              </ion-list>
+            </ion-content>
+          </ion-popover>
         </div>
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
@@ -220,6 +235,34 @@
       <template v-else>
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
+      <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal">
+          <ion-header>
+            <ion-toolbar>                
+              <ion-buttons slot="start">
+                <ion-button @click="closeEditImportItemModal">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("Edit Item Count") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-list>
+              <ion-list-header>{{ selectedSession?.countImportName }}</ion-list-header>
+              <ion-item v-for="item in selectedSession?.importItems" :key="item.importItemSeqId">
+                <ion-label>
+                  {{ item.importItemSeqId }}
+                </ion-label>
+                <ion-input @ion-input="item.changed = true" slot="end" type="number" inputmode="numeric" min="0" v-model.number="item.quantity"></ion-input>
+              </ion-item>
+            </ion-list>
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="saveEditImportItems">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
     </ion-content>
     
     <ion-footer>
@@ -240,8 +283,8 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonProgressBar, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline, colorFill, colorFillOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -251,6 +294,7 @@ import { useFacilityStore } from "@/stores/useFacilityStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
+import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 
 const props = defineProps({
   workEffortId: String
@@ -294,8 +338,155 @@ const loadedItems = ref(0);
 const submittedItemsCount = ref (0);
 const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
+const isEditImportItemModalOpen = ref(false);
+
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
+const isSessionPopoverOpen = ref(false);
+const selectedSession = ref<any | null>(null);
+const sessionPopoverEvent = ref<Event | null>(null);
+const selectedProductCountReview = ref<any | null>(null);
+
+async function removeProductFromSession() {
+  await loader.present("Removing...");
+
+  try {
+    const getResp = await useInventoryCountImport().getSessionItemsByImportId({
+      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+      productId: selectedSession.value.productId
+    });
+
+    if (getResp?.status !== 200 || !getResp.data?.length) {
+      throw getResp;
+    }
+
+    const importItemsToDelete = getResp.data;
+
+    const resp = await useInventoryCountImport().deleteSessionItem({
+      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+      data: importItemsToDelete
+    });
+
+    if (resp?.status !== 200) {
+      throw resp;
+    }
+    try {
+      const sessionIndex = sessions.value.findIndex(
+        (session: any) =>
+          session.inventoryCountImportId === selectedSession.value.inventoryCountImportId
+      );
+
+      if (sessionIndex !== -1) {
+        sessions.value.splice(sessionIndex, 1);
+      }
+
+      if (sessions.value.length === 0) {
+        const filterredProdIndex = filteredSessionItems.value.findIndex(
+          (product: any) => product.productId === selectedSession.value.productId
+        );
+
+        if (filterredProdIndex !== -1) {
+          filteredSessionItems.value.splice(filterredProdIndex, 1);
+        }
+
+        const prodIndex = aggregatedSessionItems.value.findIndex(
+          (product: any) => product.productId === selectedSession.value.productId
+        );
+
+        if (prodIndex !== -1) {
+          aggregatedSessionItems.value.splice(prodIndex, 1);
+        }
+      } else {
+        selectedProductCountReview.value.quantity -= selectedSession.value.quantity;
+        selectedProductCountReview.value.proposedVarianceQuantity -= selectedSession.value.quantity;
+      }
+
+      closeSessionPopover();
+    } catch (error) {
+      console.error("Error Updating UI");
+    }
+
+  } catch (error) {
+    console.error("Failed to delete item from the count", error);
+    showToast("Failed to remove item from count");
+  }
+
+  loader.dismiss();
+}
+
+function closeEditImportItemModal () {
+  isEditImportItemModalOpen.value = false;
+  closeSessionPopover()
+}
+
+async function showEditImportItemsModal () {
+  try {
+    const resp = await useInventoryCountImport().getSessionItemsByImportId({ inventoryCountImportId: selectedSession.value.inventoryCountImportId, productId: selectedSession.value.productId } );
+    if (resp?.status === 200 && resp.data?.length) {
+      selectedSession.value.importItems = resp.data;
+    } else {
+      throw resp;
+    }
+    isEditImportItemModalOpen.value = true;
+  } catch (error) {
+    console.error("Failed to get Import Items: ", error);
+    showToast("Failed to Item Details");
+  }
+}
+
+async function saveEditImportItems () {
+  await loader.present("Saving...");
+  try {
+    const items = selectedSession.value.importItems.filter((item: any) => item.changed);
+    const resp = await useInventoryCountImport().updateSessionItem({
+      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+      items
+    });
+    
+    if (resp?.status === 200) {
+      try {
+        const updatedSessionTotal = selectedSession.value.importItems.reduce(
+          (sum: any, item: any) => sum + (Number(item.quantity) || 0),
+          0
+        );
+        selectedSession.value.counted = updatedSessionTotal;
+
+        if (sessions.value.length) {
+          const productTotal = sessions.value.reduce(
+            (total: any, session: any) => total + (Number(session.counted) || 0),
+            0
+          );
+          selectedProductCountReview.value.quantity = productTotal;
+          selectedProductCountReview.value.proposedVarianceQuantity = productTotal - selectedProductCountReview.value.quantityOnHand;
+        }
+      } catch (error) {
+        console.error("Error Updating UI", error);
+      }
+      closeEditImportItemModal();
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Failed to udpate Item: ", error);
+    showToast("Failed to Update Item Count");
+  }
+  loader.dismiss();
+}
+
+function openSessionPopover(event: Event, session: any, cycleCount: any) {
+  // Clear already open popover if found.
+  if (isSessionPopoverOpen.value) isSessionPopoverOpen.value = false;
+  sessionPopoverEvent.value = event
+  selectedSession.value = session
+  selectedProductCountReview.value = cycleCount
+  isSessionPopoverOpen.value = true
+}
+
+function closeSessionPopover() {
+  isSessionPopoverOpen.value = false
+  selectedSession.value = null
+  selectedProductCountReview.value = null
+}
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
@@ -550,10 +741,18 @@ function getDateWithOrdinalSuffix(time: any) {
   const dateTime = DateTime.fromMillis(time);
   const day = dateTime.day;
 
-  const suffix =
-    day >= 11 && day <= 13
-      ? "th"
-      : ["st", "nd", "rd"][((day + 90) % 100 - 10) % 10 - 1] || "th";
+
+  let suffix;
+  if (day >= 11 && day <= 13) {
+    suffix = 'th';
+  } else {
+    switch (day % 10) {
+      case 1:  suffix = 'st'; break;
+      case 2:  suffix = 'nd'; break;
+      case 3:  suffix = 'rd'; break;
+      default: suffix = 'th'; break;
+    }
+  }
 
   return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }

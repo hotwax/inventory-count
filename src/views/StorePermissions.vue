@@ -8,7 +8,15 @@
     </ion-header>
 
     <ion-content>
-      <div class="permission-cards">
+      <div class="permission-cards"> 
+        <ion-card>
+          <ion-item button detail lines="full" :router-link="'/tabs/count'">
+            <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end"></ion-icon>
+            <ion-label>
+              Store View
+            </ion-label>
+          </ion-item>
+        </ion-card>
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -40,11 +48,13 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
+  IonLabel,
+  IonIcon,
   onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useProductStore } from "@/stores/useProductStore";
-
+import { storefrontOutline } from "ionicons/icons";
 
 onIonViewWillEnter(async () => {
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
