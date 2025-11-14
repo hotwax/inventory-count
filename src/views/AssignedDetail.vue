@@ -50,11 +50,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -63,7 +63,7 @@
             </ion-item>
           </ion-card>
 
-          <div class="statistics">
+          <!-- <div class="statistics">
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
@@ -81,7 +81,7 @@
                 </ion-label>
               </ion-item>
             </ion-card>
-          </div>
+          </div> -->
         </div>
 
         <div class="controls ion-margin-top">
@@ -168,7 +168,7 @@
                           {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
-                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, cycleCount)">
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
                           <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                         </ion-button>
                       </div>
@@ -207,7 +207,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, removeCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
