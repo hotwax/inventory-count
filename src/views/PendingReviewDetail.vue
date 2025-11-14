@@ -43,11 +43,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -60,8 +60,8 @@
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
-                  Review progress {{ Math.floor((submittedItemsCount / totalItems) * 100) }}% complete
-                  <p>{{ submittedItemsCount }} out of {{ totalItems }} items complete</p>
+                  {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
+                  <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
                   <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
@@ -70,8 +70,8 @@
               <ion-item lines="full">
                 <ion-label>
                   <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>{{ overallFilteredVarianceQtyProposed }} units</h3>
-                  <p>based on {{ filteredSessionItems.length }} results</p>
+                  <h3>{{ translate("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
+                  <p>{{ translate("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
