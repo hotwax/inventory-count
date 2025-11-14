@@ -183,13 +183,6 @@
                 <ion-list>
                   <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                   <ion-item size="small">{{ translate('Last Counted') }}: {{ selectedSession?.counted }}</ion-item>
-                  <ion-item size="small">{{ translate('Edit Count') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                  <ion-item button @click="removeProductFromSession">
-                    <ion-label>
-                      {{ translate('Remove from Count') }}
-                    </ion-label>
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-item>
                 </ion-list>
               </ion-content>
             </ion-popover>
@@ -208,7 +201,7 @@
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, removeCircleOutline } from "ionicons/icons";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";

@@ -34,7 +34,7 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">

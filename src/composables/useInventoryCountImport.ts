@@ -321,6 +321,22 @@ const getSessionItemsByImportId = async (params: any): Promise<any> => {
   });
 }
 
+const updateSessionItem = async (params: any): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/items`,
+    method: 'PUT',
+    data: params
+  });
+}
+
+const deleteSessionItem = async (params: any): Promise<any> => {
+  return await api({
+    url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/items`,
+    method: 'DELETE',
+    data: params.data
+  });
+}
+
 const getSessionLock = async (payload: any): Promise<any> => {
   return await api({
     url: `oms/dataDocumentView`,
@@ -385,6 +401,8 @@ export function useInventoryCountImport() {
     searchInventoryItemsByIdentifier,
     storeInventoryCountItems,
     submitSession,
-    updateSession
+    updateSession,
+    updateSessionItem,
+    deleteSessionItem
   };
 }
