@@ -196,7 +196,7 @@
                           {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
-                        <ion-button fill="clear" color="medium"@click="openSessionPopover($event, session, item)">
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
                           <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
                         </ion-button>
                       </div>
@@ -249,7 +249,7 @@
           <ion-content>
             <ion-list>
               <ion-list-header>{{ selectedSession?.countImportName }}</ion-list-header>
-              <ion-item v-for="item in selectedSession?.importItems">
+              <ion-item v-for="item in selectedSession?.importItems" :key="item.importItemSeqId">
                 <ion-label>
                   {{ item.importItemSeqId }}
                 </ion-label>
