@@ -97,10 +97,10 @@
         </div>
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+          <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
             <template #default="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-accordion-group>
                   <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
                     <div class="list-item count-item-rollup" slot="header"> 
                       <div class="item-key">
@@ -174,10 +174,10 @@
                       </div>
                     </div>
                   </ion-accordion>
-                </ion-accordion-group>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
+          </ion-accordion-group>
           <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
               <ion-content>
                 <ion-list>
@@ -476,7 +476,14 @@ function getFacilityName(id: string) {
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
-  return dateTime.toFormat("h:mm a dd'th' MMM yyyy");
+  const day = dateTime.day;
+
+  const suffix =
+    day >= 11 && day <= 13
+      ? "th"
+      : ["st", "nd", "rd"][((day + 90) % 100 - 10) % 10 - 1] || "th";
+
+  return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
 </script>
