@@ -283,10 +283,6 @@ watch(
   { immediate: true }
 )
 
-async function removeProductFromSession() {
- // API Call for deleting the product lines from inventoryCountImportItem on server.
-}
-
 function openSessionPopover(event: Event, session: any, cycleCount: any) {
   // Clear already open popover if found.
   if (isSessionPopoverOpen.value) isSessionPopoverOpen.value = false;
@@ -471,10 +467,17 @@ function getDateWithOrdinalSuffix(time: any) {
   const dateTime = DateTime.fromMillis(time);
   const day = dateTime.day;
 
-  const suffix =
-    day >= 11 && day <= 13
-      ? "th"
-      : ["st", "nd", "rd"][((day + 90) % 100 - 10) % 10 - 1] || "th";
+  let suffix;
+  if (day >= 11 && day <= 13) {
+    suffix = 'th';
+  } else {
+    switch (day % 10) {
+      case 1:  suffix = 'st'; break;
+      case 2:  suffix = 'nd'; break;
+      case 3:  suffix = 'rd'; break;
+      default: suffix = 'th'; break;
+    }
+  }
 
   return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
