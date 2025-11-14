@@ -45,11 +45,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">8:05 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="">9:15 PM 3rd March 2024</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -62,8 +62,9 @@
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
-                  Review progress 60% complete
-                  <p>6 out of 10 items complete</p>
+                  {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
+                  <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
+                  <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -71,8 +72,8 @@
               <ion-item lines="full">
                 <ion-label>
                   <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>16 units</h3>
-                  <p>based on 4 results</p>
+                  <h3>{{ translate("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
+                  <p>{{ translate("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -101,23 +102,20 @@
           </ion-item>
           </ion-list>
           <ion-item-divider color="light">
-            <!-- <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/> -->
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
                 <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
             </ion-select>
           </ion-item-divider>
         </div>
-
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+          <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
             <template #default="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-accordion-group>
                   <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
                     <div class="list-item count-item-rollup" slot="header"> 
                       <div class="item-key">
-                        <!-- <ion-checkbox :color="cycleCount.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="cycleCount.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(cycleCount) || cycleCount.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(cycleCount)"></ion-checkbox> -->
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
                             <Image :src="item.detailImageUrl"/>
@@ -196,10 +194,10 @@
                       </div>
                     </div>
                   </ion-accordion>
-                </ion-accordion-group>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
+          </ion-accordion-group>
         </div>
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
@@ -213,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, reactive, ref, toRefs, watch } from "vue";
+import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -233,6 +231,8 @@ const totalItems = ref(0)
 const loadedItems = ref(0)
 const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
+const submittedItemsCount = ref(0);
+const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -374,6 +374,7 @@ async function getInventoryCycleCount() {
       loadedItems.value = aggregatedSessionItems.value.length;
 
     }
+    submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
@@ -394,10 +395,18 @@ function getFacilityName(id: string) {
   const facilities: any[] = useFacilityStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
+
 function getDateWithOrdinalSuffix(time: any) {
   if (!time) return "-";
   const dateTime = DateTime.fromMillis(time);
-  return dateTime.toFormat("h:mm a dd'th' MMM yyyy");
+  const day = dateTime.day;
+
+  const suffix =
+    day >= 11 && day <= 13
+      ? "th"
+      : ["st", "nd", "rd"][((day + 90) % 100 - 10) % 10 - 1] || "th";
+
+  return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 
