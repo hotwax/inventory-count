@@ -179,7 +179,7 @@ function currentMillis(): number {
         .filter(item => !item.productId)
         .toArray()
 
-      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
@@ -197,7 +197,7 @@ function currentMillis(): number {
         .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
         .toArray()
 
-      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
       return items.map((item) => {
@@ -229,7 +229,7 @@ function currentMillis(): number {
         .filter(item => (Number(item.quantity) || 0) === 0)
         .toArray()
 
-      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
@@ -247,7 +247,7 @@ function currentMillis(): number {
         .filter(item => item.isRequested === 'N' && Boolean(item.productId))
         .toArray();
 
-      const productIds = [...new Set(items.map(i => i.productId).filter(Boolean))] as any;
+      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
@@ -266,12 +266,12 @@ function currentMillis(): number {
         .sortBy('createdAt');
 
       const enriched = await Promise.all(
-        events.map(async e => {
-          if (e.productId) {
-            const product = await db.products.get(e.productId);
-            return { ...e, product };
+        events.map(async event => {
+          if (event.productId) {
+            const product = await db.products.get(event.productId);
+            return { ...event, product };
           }
-          return e;
+          return event;
         })
       );
 

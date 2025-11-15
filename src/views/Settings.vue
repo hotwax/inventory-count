@@ -52,7 +52,7 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility"/>
+        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
         <ProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore"/>
       </section>
       <hr />
@@ -102,14 +102,14 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSu
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthStore } from "@/stores/AuthStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
-import { useUserProfile } from "@/stores/useUserProfileStore";
-import { useProductStore } from "@/stores/useProductStore";
+import { useUserProfile } from "@/stores/UserProfileStore";
+import { useProductStore } from "@/stores/ProductStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
 
 const appVersion = ref("")
@@ -133,10 +133,6 @@ function logout() {
 
 function goToLaunchpad() {
   window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-}
-
-async function setFacility(facility: any) {
-  await useProductStore().setFacilityPreference(facility);
 }
 
 async function setProductStore(selectedProductStore: any) {

@@ -108,9 +108,9 @@ import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore } from '@/stores/AuthStore'
 import { useProductMaster } from '@/composables/useProductMaster'
-import { useProductStore } from '@/stores/useProductStore'
+import { useProductStore } from '@/stores/ProductStore'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
@@ -133,7 +133,7 @@ const searchedProduct = ref()
 const products = ref<any[]>([])
 
 const hasUnsavedProducts = computed(() =>
-  products.value.some(p => !p.saved && p.countedQuantity > 0)
+  products.value.some(product => !product.saved && product.countedQuantity > 0)
 )
 
 onMounted(async () => {
@@ -219,7 +219,7 @@ async function addProductInPreCountedItems(product: any) {
     searchedProductString.value = ''
     searchedProduct.value = null
 
-    const existing = products.value.find(p => p.productId === product.productId)
+    const existing = products.value.find(existingProduct => existingProduct.productId === product.productId)
     if (existing) {
       showToast(translate('Product already exists in Counted Items'))
       return
@@ -260,7 +260,7 @@ async function addPreCountedItemInScanEvents(product: any) {
 
 async function addAllProductsToScanEvents() {
   try {
-    const unsaved = products.value.filter(p => p.countedQuantity > 0 && !p.saved)
+    const unsaved = products.value.filter(product => product.countedQuantity > 0 && !product.saved)
     for (const product of unsaved) {
       await addPreCountedItemInScanEvents(product)
     }

@@ -290,7 +290,7 @@ import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils"
-import { useProductStore } from "@/stores/useProductStore";
+import { useProductStore } from "@/stores/ProductStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
@@ -522,9 +522,9 @@ function applySearchAndSort() {
   }
 
   if (sortBy.value === 'alphabetic') {
-    results.sort((a, b) => (a.internalName || '').localeCompare(b.internalName || ''));
+    results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
   } else if (sortBy.value === 'variance') {
-    results.sort((a, b) => (a.proposedVarianceQuantity || 0) - (b.proposedVarianceQuantity || 0));
+    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;

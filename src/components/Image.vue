@@ -36,7 +36,7 @@ export default defineComponent({
           resolve(true);
         }
         img.onerror = function () {
-          reject(false);
+          resolve(false);
         }
         img.src = src;
       })
@@ -48,18 +48,18 @@ export default defineComponent({
           this.imageUrl = this.src;
         } else if (this.src.startsWith('http')) {
           // If starts with http, it is web url check for existence and assign
-          this.checkIfImageExists(this.src).then(() => {
-            this.imageUrl = this.src;
-          }).catch(() => {
-            // console.error("Image doesn't exist");
+          this.checkIfImageExists(this.src).then((exists) => {
+            if (exists) {
+              this.imageUrl = this.src;
+            } else {
+              this.imageUrl = require("@/assets/images/defaultImage.png");
+            }
           })
         } else {
           // Image is from resource server, hence append to base resource url, check for existence and assign
           const imageUrl = this.resourceUrl.concat(this.src)
           this.checkIfImageExists(imageUrl).then(() => {
             this.imageUrl = imageUrl;
-          }).catch(() => {
-            // console.error("Image doesn't exist");
           })
         }
       }

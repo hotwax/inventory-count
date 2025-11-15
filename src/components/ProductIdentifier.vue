@@ -29,7 +29,7 @@
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonSelect, IonSelectOption } from '@ionic/vue';
 import { computed, onMounted } from 'vue';
 import { Actions, hasPermission } from '@/authorization';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 
 const currentEComStore = computed(() =>  useProductStore().getCurrentProductStore)
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);

@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonRadio, IonRadioGroup, IonSearchbar, IonSpinner, IonTitle, IonToolbar } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 import { computed, ref } from 'vue';
 import { translate } from '@/i18n';
 import { defineProps } from "vue";

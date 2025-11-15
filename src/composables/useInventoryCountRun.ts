@@ -1,8 +1,8 @@
 import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/useAuthStore';
+import { hasError } from '@/stores/AuthStore';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 
 async function loadStatusDescription() {
     // Skip reload if already present

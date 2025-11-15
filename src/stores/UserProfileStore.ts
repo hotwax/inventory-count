@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api, { client } from '@/services/RemoteAPI';
-import { hasError } from '@/stores/useAuthStore'
+import { hasError } from '@/stores/AuthStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
 import i18n, { translate } from '@/i18n'
@@ -111,7 +111,7 @@ export const useUserProfile = defineStore('userProfile', {
       this.deviceId = deviceId
     },
 
-    async getFieldMappings() {
+    async loadFieldMappings() {
       let fieldMappings: Record<string, any> = {}
       try {
         const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
@@ -316,7 +316,7 @@ export const useUserProfile = defineStore('userProfile', {
         })
 
         if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
-          serverPermissions = resp.data.docs.map((p: any) => p.permissionId)
+          serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId)
 
           const total = resp.data.count
           const remaining = total - serverPermissions.length
@@ -325,13 +325,13 @@ export const useUserProfile = defineStore('userProfile', {
             const apiCallsNeeded =
               Math.floor(remaining / viewSize) + (remaining % viewSize !== 0 ? 1 : 0)
             const responses = await Promise.all(
-              [...Array(apiCallsNeeded).keys()].map(async (i) =>
+              [...Array(apiCallsNeeded).keys()].map(async (viewIndex) =>
                 client({
                   url: 'getPermissions',
                   method: 'POST',
                   baseURL,
                   data: {
-                    viewIndex: i + 1,
+                    viewIndex: viewIndex + 1,
                     viewSize,
                     permissionIds: payload.permissionIds
                   },
@@ -345,7 +345,7 @@ export const useUserProfile = defineStore('userProfile', {
             for (const response of responses) {
               if (!hasError(response) && response.data.docs) {
                 serverPermissions.push(
-                  ...response.data.docs.map((p: any) => p.permissionId)
+                  ...response.data.docs.map((permission: any) => permission.permissionId)
                 )
               }
             }

@@ -38,13 +38,13 @@
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
-                  <ion-thumbnail slot="start">
+                  <ion-thumbnail slot="start" class="clickable-image" @click="openImagePreview(item.product?.mainImageUrl)">
                     <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
                   </ion-thumbnail>
                   <ion-badge class="scan-badge">{{ item.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
                   <ion-label>
                     {{ item.scannedValue }}
-                    <p>{{ timeAgo(item.createdAt) }}</p>
+                    <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
                   <ion-note slot="end">{{ item.quantity }}</ion-note>
                 </ion-item>
@@ -116,7 +116,7 @@
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>{{ translate("Pending match scans") }}</ion-label>
-                  <p slot="end">{{events.filter((e: any) => e.aggApplied === 0).length}}</p>
+                  <p slot="end">{{events.filter((event: any) => event.aggApplied === 0).length}}</p>
                 </ion-item>
                 <ion-item>
                   <ion-label>{{ translate("Unmatched scans") }}</ion-label>
@@ -494,6 +494,11 @@
           </ion-fab>
         </ion-content>
       </ion-modal>
+      <ion-modal :is-open="isImageModalOpen" @didDismiss="closeImagePreview">
+        <ion-content class="ion-padding image-preview-modal">
+          <ion-img :src="largeImage" />
+        </ion-content>
+      </ion-modal>
       <ion-alert :is-open="showSubmitAlert" header="Submit for review" message="Make sure you’ve reviewed the products and their counts before uploading them for review."
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
@@ -513,7 +518,7 @@
 
 
 <script setup lang="ts">
-import { IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -529,11 +534,11 @@ import router from '@/router';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useUserProfile } from '@/stores/useUserProfileStore';
+import { useAuthStore } from '@/stores/AuthStore';
+import { useUserProfile } from '@/stores/UserProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 import { debounce } from "lodash-es";
 
 
@@ -633,8 +638,8 @@ onIonViewDidEnter(async () => {
       new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
     )
 
-    aggregationWorker.onmessage = (e) => {
-      const { type, count } = e.data
+    aggregationWorker.onmessage = (event) => {
+      const { type, count } = event.data
       if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
       }
@@ -860,8 +865,8 @@ async function handleSessionLock() {
 
       // Message listener
       if (worker) {
-        worker.onmessage = async (e: any) => {
-          const { type, thruDate } = e.data;
+        worker.onmessage = async (event: any) => {
+          const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
@@ -917,8 +922,8 @@ async function handleSessionLock() {
 
       // Listen for messages
       if (worker) {
-        worker.onmessage = async (e: any) => {
-          const { type, thruDate } = e.data;
+        worker.onmessage = async (event: any) => {
+          const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
@@ -1095,8 +1100,8 @@ async function finalizeAggregationAndSync() {
     const result = await new Promise<number>((resolve) => {
       const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
       if (aggregationWorker) {
-        aggregationWorker.onmessage = (e) => {
-          const { type, count } = e.data;
+        aggregationWorker.onmessage = (event) => {
+          const { type, count } = event.data;
           if (type === 'aggregationComplete') {
             console.log(`Aggregated ${count} products from scans`)
             clearTimeout(timeout);
@@ -1202,12 +1207,12 @@ function getScanContext(item: any) {
 
   // newest → oldest
   const sortedScans = [...events.value].sort(
-    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
+    (predecessor, successor) => (successor.createdAt ?? 0) - (predecessor.createdAt ?? 0)
   )
 
   // find the actual unmatched scan (by scannedValue, not id)
   const index = sortedScans.findIndex(
-    (e) => e.scannedValue === item.productIdentifier
+    (event) => event.scannedValue === item.productIdentifier
   )
   if (index === -1) return {}
 
@@ -1245,6 +1250,23 @@ function getScanContext(item: any) {
   }
 }
 
+function showTime(ts: number) {
+  const exact = dayjs(ts).format('DD MMM YYYY, hh:mm:ss A');
+  showToast(`Scanned at: ${exact}`);
+}
+
+const isImageModalOpen = ref(false)
+const largeImage = ref("")
+
+function openImagePreview(src: string) {
+  if (!src) return
+  largeImage.value = src
+  isImageModalOpen.value = true
+}
+
+function closeImagePreview() {
+  isImageModalOpen.value = false
+}
 
 </script>
 
@@ -1378,5 +1400,20 @@ ion-segment-view {
   align-items: center;
   justify-content: center;
   pointer-events: all; /* ensure it blocks all clicks */
+}
+
+.clickable-time {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.clickable-image {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.image-preview-modal ion-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 </style>

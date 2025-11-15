@@ -2,7 +2,7 @@ import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import merge from 'deepmerge';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useAuthStore } from '@/stores/AuthStore';
 
 const requestInterceptor = async (config: any) => {
   if (apiConfig.token) {
@@ -70,7 +70,7 @@ let apiConfig = { ...defaultConfig }
 //     return Qs.stringify(params, {arrayFormat: 'brackets'})
 //   },
 // This implemmentation is done to ensure array and object is passed correctly in OMS 1.0
-const paramsSerializer = (p: any) => {
+const paramsSerializer = (parameters: any) => {
   // When objects are stringified, by default they use bracket notation:
   // qs.stringify({ a: { b: { c: 'd', e: 'f' } } });
   // 'a[b][c]=d&a[b][e]=f'
@@ -78,8 +78,8 @@ const paramsSerializer = (p: any) => {
   // qs.stringify({ a: { b: { c: 'd', e: 'f' } } }, { allowDots: true });
   // 'a.b.c=d&a.b.e=f'
   // OMS 1.0 supports objects passed as strings
-  const params = Object.keys(p).reduce((params: any, key: string) => {
-    let value = p[key];
+  const params = Object.keys(parameters).reduce((params: any, key: string) => {
+    let value = parameters[key];
     if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
       value = JSON.stringify(value)
     }

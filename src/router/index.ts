@@ -17,9 +17,9 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/useAuthStore";
+import { useAuthStore } from "@/stores/AuthStore";
 import Login from "@/views/Login.vue";
-import { useUserProfile } from "@/stores/useUserProfileStore";
+import { useUserProfile } from "@/stores/UserProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {

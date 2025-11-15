@@ -53,7 +53,7 @@ import {
   onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { useProductStore } from "@/stores/useProductStore";
+import { useProductStore } from "@/stores/ProductStore";
 import { storefrontOutline } from "ionicons/icons";
 
 onIonViewWillEnter(async () => {

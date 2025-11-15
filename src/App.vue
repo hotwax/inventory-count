@@ -61,11 +61,11 @@ import emitter from "@/event-bus";
 import { initialise, resetConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 import logger from './logger';
 import { Settings } from 'luxon';
-import { useUserProfile } from './stores/useUserProfileStore';
-import { useAuthStore } from './stores/useAuthStore';
+import { useUserProfile } from './stores/UserProfileStore';
+import { useAuthStore } from './stores/AuthStore';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
@@ -146,9 +146,9 @@ const visibleMenuItems = computed(() => {
   const allVisible = router
     .getRoutes()
     .filter(
-      (r) =>
-        r.meta?.showInMenu &&
-        (!r.meta.permissionId || hasPermission(r.meta.permissionId))
+      (route) =>
+        route.meta?.showInMenu &&
+        (!route.meta.permissionId || hasPermission(route.meta.permissionId))
     );
 
   return allVisible.sort((a, b) => {
@@ -162,7 +162,7 @@ const visibleMenuItems = computed(() => {
 
 const selectedIndex = computed(() => {
   const path = router.currentRoute.value.path;
-  return visibleMenuItems.value.findIndex((r) => path.startsWith(r.path));
+  return visibleMenuItems.value.findIndex((route) => path.startsWith(route.path));
 });
 </script>
 

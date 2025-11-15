@@ -3,13 +3,13 @@ import { DateTime } from 'luxon';
 import api, { initialise } from '@/services/RemoteAPI';
 import emitter from '@/event-bus';
 import { loader } from '@/services/uiUtils';
-import { useUserProfile } from './useUserProfileStore';
+import { useUserProfile } from './UserProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { useProductStore } from './useProductStore';
+import { useProductStore } from './ProductStore';
 
 export interface LoginPayload {
   token: any;
@@ -127,6 +127,7 @@ export const useAuthStore = defineStore('authStore', {
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y"
         });
+        console.log("facilities", facilities)
         await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
         const currentFacility: any = useProductStore().getCurrentFacility

@@ -4,8 +4,8 @@ import { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/commonDatabase'
-import { useAuthStore } from '@/stores/useAuthStore';
-import { useProductStore } from '@/stores/useProductStore';
+import { useAuthStore } from '@/stores/AuthStore';
+import { useProductStore } from '@/stores/ProductStore';
 
 // Product structure
 export interface Product {
@@ -110,8 +110,8 @@ const findByIdentification = async (idValue: string) => {
 
   // Since Dexie cannot query inside arrays directly, we need to scan manually:
   const allProducts = await db.products.toArray()
-  const matchedProduct = allProducts.find(p =>
-    p.goodIdentifications?.some(ident => ident.value === idValue)
+  const matchedProduct = allProducts.find(product =>
+    product.goodIdentifications?.some(identification => identification.value === idValue)
   )
 
   if (!matchedProduct) return { product: undefined, identificationValue: undefined }
@@ -167,7 +167,7 @@ const prefetch = async (productIds: string[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const existing = await db.products.toArray()
-  const existingIds = new Set(existing.map(p => p.productId))
+  const existingIds = new Set(existing.map(product => product.productId))
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
@@ -192,35 +192,35 @@ const upsertFromApi = async (docs: any[]) => {
 
   // Prepare identifications
   const idents: any[] = []
-  for (const p of products) {
-    if (!p.goodIdentifications?.length) continue
+  for (const product of products) {
+    if (!product.goodIdentifications?.length) continue
 
-    for (const ident of p.goodIdentifications) {
+    for (const ident of product.goodIdentifications) {
       const identKey = (makeIdentKey(ident.type) || ident.type).trim()
       const identValue = ident.value?.trim()
       if (!identKey || !identValue) continue
 
       idents.push({
-        productId: p.productId,
+        productId: product.productId,
         identKey,
         value: identValue
       })
     }
   }
 
-  await db.transaction("rw", db.products, db.productIdents, async () => {
+  await db.transaction("rw", db.products, db.productIdentification, async () => {
     // Write all products in one shot
     await db.products.bulkPut(products)
 
     // Bulk put idents (Dexie will update if PK matches)
     if (idents.length) {
-      await db.productIdents.bulkPut(idents)
+      await db.productIdentification.bulkPut(idents)
     }
   })
 };
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdents')
+  const ident = await db.table('productIdentification')
     .where('value')
     .equalsIgnoreCase(value)
     .first()
@@ -249,7 +249,7 @@ async function findProductByIdentification(idType: string, value: string, contex
     const productId = resp?.response?.docs?.[0]?.productId
 
     if (productId) {
-      await db.table('productIdents').put({
+      await db.table('productIdentification').put({
         productId,
         identKey: idType,
         value
@@ -265,18 +265,18 @@ async function findProductByIdentification(idType: string, value: string, contex
 }
 
 async function searchProducts(value: string) {
-  const products = await db.table('productIdents')
+  const products = await db.table('productIdentification')
     .where('value')
     .startsWithIgnoreCase(value)
     .toArray()
-    if (products) return products.map(p => p.productId)
+    if (products) return products.map(product => product.productId)
     return null
 }
 
 const clearCache = async () => {
-  await db.transaction('rw', db.products, db.productIdents, async () => {
+  await db.transaction('rw', db.products, db.productIdentification, async () => {
     await db.products.clear()
-    await db.productIdents.clear()
+    await db.productIdentification.clear()
   })
 }
 
@@ -398,21 +398,21 @@ const primaryId = (product?: any) => {
   if (!product) return ''
   const pref = useProductStore().getPrimaryId
 
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
+        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+          const [type, value] = goodIdentification.split('/', 2)
           return { type: type?.trim(), value: value?.trim() }
         }
-        return g
+        return goodIdentification
       }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+      return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+    return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
   // Try preference, then fallback to SKU or productId
@@ -424,21 +424,21 @@ const secondaryId = (product: any) => {
   const pref = useProductStore().getSecondaryId
 
   // Parse any flat "TYPE/VALUE" strings (from Solr)
-  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((g: any) => {
-        if (typeof g === 'string' && g.includes('/')) {
-          const [type, value] = g.split('/', 2)
+  const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
+        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+          const [type, value] = goodIdentification.split('/', 2)
           return { type: type?.trim(), value: value?.trim() }
         }
-        return g
+        return goodIdentification
       }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
     if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
-      return parsedGoodIds.find((i: any) => i.type === 'SKU')?.value || ''
+      return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
-    return parsedGoodIds.find((i: any) => i.type === type)?.value || ''
+    return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
   // Try preference, then fallback to productId

@@ -110,7 +110,7 @@
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId === 'SESSION_CREATED' || s.statusId === 'SESSION_ASSIGNED')">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
               <ion-button
@@ -175,8 +175,8 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
-import { useUserProfile } from '@/stores/useUserProfileStore';
-import { useProductStore } from '@/stores/useProductStore';
+import { useUserProfile } from '@/stores/UserProfileStore';
+import { useProductStore } from '@/stores/ProductStore';
 
 
 const cycleCounts = ref([]);
@@ -307,7 +307,7 @@ const countName = ref('');
 
 async function addNewSession() {
   try {
-    const selectedCount = cycleCounts.value.find(c => c.workEffortId === selectedWorkEffortId.value)
+    const selectedCount = cycleCounts.value.find(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (!selectedCount) {
       showToast("Unable to find selected count.")
       return
@@ -333,7 +333,7 @@ async function addNewSession() {
       const sessions = selectedCount.sessions || []
       if (sessions.length > 0) {
         // Sort by createdDate ascending
-        const oldest = [...sessions].sort((a, b) => a.createdDate - b.createdDate)[0]
+        const oldest = [...sessions].sort((predecessor, successor) => predecessor.createdDate - successor.createdDate)[0]
         if (oldest?.inventoryCountImportId) {
           resp = await useInventoryCountImport().cloneSession({
             inventoryCountImportId: oldest.inventoryCountImportId,
@@ -374,7 +374,7 @@ async function addNewSession() {
 
     // --- Update UI ---
     showToast("Session added Successfully")
-    const index = cycleCounts.value.findIndex(w => w.workEffortId === selectedWorkEffortId.value)
+    const index = cycleCounts.value.findIndex(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (index !== -1) {
       if (!cycleCounts.value[index].sessions) cycleCounts.value[index].sessions = []
 

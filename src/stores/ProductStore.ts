@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import api from '@/services/RemoteAPI'
-import { hasError } from '@/stores/useAuthStore'
+import { hasError } from '@/stores/AuthStore'
 import logger from '@/logger'
-import { useAuthStore } from './useAuthStore'
+import { useAuthStore } from './AuthStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import {
   fetchGoodIdentificationTypes,
@@ -14,7 +14,7 @@ import {
   setUserPreference,
   getUserFacilities
 } from '@/adapter'
-import { useUserProfile } from './useUserProfileStore'
+import { useUserProfile } from './UserProfileStore'
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n'
 
@@ -136,7 +136,7 @@ export const useProductStore = defineStore('productStore', {
     },
 
     getStatusDescription(statusId: string): string {
-      const found = this.statusDesc.find((s: any) => s.statusId === statusId)
+      const found = this.statusDesc.find((status: any) => status.statusId === statusId)
       return found?.description || statusId
     },
 
@@ -338,7 +338,7 @@ export const useProductStore = defineStore('productStore', {
       try {
         const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
         if (preferredFacilityId) {
-          const facility = this.facilities.find((f: any) => f.facilityId === preferredFacilityId)
+          const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility
         }
       } catch (error) {

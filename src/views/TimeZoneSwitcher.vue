@@ -119,7 +119,7 @@ import { closeOutline, saveOutline } from "ionicons/icons";
 import { computed, onBeforeMount, ref } from "vue";
 import { translate} from '../i18n'
 import { DateTime } from 'luxon' 
-import { useUserProfile } from '@/stores/useUserProfileStore';
+import { useUserProfile } from '@/stores/UserProfileStore';
 
 const userProfile: any = computed(() => useUserProfile().getUserProfile);
 const timeZones = computed(() => useUserProfile().getTimeZones)
