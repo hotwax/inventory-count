@@ -183,13 +183,6 @@
                 <ion-list>
                   <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                   <ion-item size="small">{{ translate('Last Counted') }}: {{ selectedSession?.counted }}</ion-item>
-                  <ion-item size="small">{{ translate('Edit Count') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                  <ion-item button @click="removeProductFromSession">
-                    <ion-label>
-                      {{ translate('Remove from Count') }}
-                    </ion-label>
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-item>
                 </ion-list>
               </ion-content>
             </ion-popover>
@@ -208,7 +201,7 @@
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
-import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline, removeCircleOutline } from "ionicons/icons";
+import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";
@@ -289,10 +282,6 @@ watch(
   },
   { immediate: true }
 )
-
-async function removeProductFromSession() {
- // API Call for deleting the product lines from inventoryCountImportItem on server.
-}
 
 function openSessionPopover(event: Event, session: any, cycleCount: any) {
   // Clear already open popover if found.
@@ -478,10 +467,17 @@ function getDateWithOrdinalSuffix(time: any) {
   const dateTime = DateTime.fromMillis(time);
   const day = dateTime.day;
 
-  const suffix =
-    day >= 11 && day <= 13
-      ? "th"
-      : ["st", "nd", "rd"][((day + 90) % 100 - 10) % 10 - 1] || "th";
+  let suffix;
+  if (day >= 11 && day <= 13) {
+    suffix = 'th';
+  } else {
+    switch (day % 10) {
+      case 1:  suffix = 'st'; break;
+      case 2:  suffix = 'nd'; break;
+      case 3:  suffix = 'rd'; break;
+      default: suffix = 'th'; break;
+    }
+  }
 
   return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
