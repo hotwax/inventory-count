@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/services/commonDatabase'
-import { useUserProfile } from '@/stores/useUserProfileStore';
+import { useUserProfile } from '@/stores/UserProfileStore';
 
 async function initDeviceId() {
   const pref = await db.appPreferences.get("deviceId");
