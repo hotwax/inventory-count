@@ -176,7 +176,7 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
 import { useUserProfile } from '@/stores/useUserProfileStore';
-import { useFacilityStore } from '@/stores/useFacilityStore';
+import { useProductStore } from '@/stores/useProductStore';
 
 
 const cycleCounts = ref([]);
@@ -185,7 +185,7 @@ let isLoading = ref(false);
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
-const currentFacility = computed(() => useFacilityStore().getCurrentFacility);
+const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});

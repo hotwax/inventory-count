@@ -688,28 +688,6 @@ async function omsGetProductIdentificationPref(eComStoreId: string): Promise<any
   return productIdentifications
 }
 
-
-async function logout(): Promise<any> {
-  try {
-    const resp: any = await api({
-      url: "logout",
-      method: "get"
-    });
-
-    if(resp.status != 200) {
-      throw resp.data;
-    }
-
-    return Promise.resolve(resp.data)
-  } catch(err) {
-    return Promise.reject({
-      code: 'error',
-      message: 'Something went wrong',
-      serverResponse: err
-    })
-  }
-}
-
 async function omsGetUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false): Promise<any> {
   try {
     const params = {
@@ -1717,7 +1695,6 @@ async function getUserFacilities(token: any, baseURL: string, partyId: string, f
 
 export {
   getProfile,
-  logout,
   omsGetAvailableTimeZones,
   omsGetUserFacilities,
   omsGetEComStoresByFacility,

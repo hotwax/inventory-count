@@ -72,15 +72,15 @@
 <script setup lang="ts">
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonRadio, IonRadioGroup, IonSearchbar, IonSpinner, IonTitle, IonToolbar } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { useFacilityStore } from '@/stores/useFacilityStore';
+import { useProductStore } from '@/stores/useProductStore';
 import { computed, ref } from 'vue';
 import { translate } from '@/i18n';
 import { defineProps } from "vue";
 
-const facilityStore = useFacilityStore();
+const productStore = useProductStore();
 
-const facilities = computed(() => facilityStore.getFacilities)
-const currentFacility = computed(() => facilityStore.getCurrentFacility)
+const facilities = computed(() => productStore.getFacilities)
+const currentFacility = computed(() => productStore.getCurrentFacility)
 
 const facilityModal = ref()
 const queryString = ref('')
@@ -128,7 +128,7 @@ function preventSpecialCharacters($event: any) {
 
 async function updateFacility() {
   const selectedFacility = facilities.value.find((facility: any) => facility.facilityId === selectedFacilityId.value)
-  await facilityStore.setFacilityPreference(selectedFacility)
+  await productStore.setFacilityPreference(selectedFacility)
   props.onUpdateFacility?.(selectedFacility)
   closeModal();
 }

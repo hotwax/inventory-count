@@ -109,7 +109,6 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useFacilityStore } from '@/stores/useFacilityStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/useProductStore'
 
@@ -238,7 +237,7 @@ async function addProductInPreCountedItems(product: any) {
 
 async function setProductQoh(product: any) {
   try {
-    const facility: any = useFacilityStore().getCurrentFacility
+    const facility: any = useProductStore().getCurrentFacility
     const resp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: facility.facilityId,

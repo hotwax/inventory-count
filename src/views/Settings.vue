@@ -110,7 +110,6 @@ import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 import { useUserProfile } from "@/stores/useUserProfileStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { useFacilityStore } from "@/stores/useFacilityStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
 
 const appVersion = ref("")
@@ -137,7 +136,7 @@ function goToLaunchpad() {
 }
 
 async function setFacility(facility: any) {
-  await useFacilityStore().setFacilityPreference(facility);
+  await useProductStore().setFacilityPreference(facility);
 }
 
 async function setProductStore(selectedProductStore: any) {

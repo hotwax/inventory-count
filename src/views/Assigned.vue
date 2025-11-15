@@ -57,7 +57,6 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { useFacilityStore } from "@/stores/useFacilityStore";
 import { loader } from "@/services/uiUtils";
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/useProductStore";
@@ -131,7 +130,7 @@ async function getAssignedCycleCounts() {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useFacilityStore().getFacilities || [];
+  const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 

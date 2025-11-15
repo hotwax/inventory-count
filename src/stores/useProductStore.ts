@@ -11,7 +11,8 @@ import {
   getProductIdentificationPref,
   getUserPreference,
   setProductIdentificationPref,
-  setUserPreference
+  setUserPreference,
+  getUserFacilities
 } from '@/adapter'
 import { useUserProfile } from './useUserProfileStore'
 import { showToast } from '@/services/uiUtils';
@@ -22,6 +23,8 @@ export const useProductStore = defineStore('productStore', {
     productStores: [] as any[],
     current: null as any,
     statusDesc: [] as any[],
+    facilities: [] as any[],
+    currentFacility: null as any,
     settings: {
       forceScan: false,
       productIdentifier: {
@@ -40,6 +43,9 @@ export const useProductStore = defineStore('productStore', {
     getCurrentProductStore: (state) => state.current,
     getProductStores: (state) => state.productStores,
     getStatusDescriptions: (state) => state.statusDesc,
+
+    getFacilities: (state) => state.facilities,
+    getCurrentFacility: (state) => state.currentFacility,
 
     getProductStoreSettings: (state) => state.settings,
     getForceScan: (state) => state.settings.forceScan,
@@ -294,7 +300,66 @@ export const useProductStore = defineStore('productStore', {
       } catch (err) {
         console.error(`[useProductStore] Failed to get identification for ${productId}/${type}`, err)
       }
-    }
+    },
+
+    /** Facility specific functions */
+    async loadUserFacilities(partyId: string) {
+      try {
+        const resp = await api({
+          url: `inventory-cycle-count/users/${partyId}/facilities`,
+          method: 'GET'
+        })
+        if (!hasError(resp)) this.facilities = resp?.data
+      } catch (err) {
+        logger.error('Failed to load facilities', err)
+      }
+    },
+
+    async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
+      const authStore = useAuthStore()
+      try {
+        const response = await getUserFacilities(authStore.token.value, authStore.getBaseUrl, partyId, facilityGroupId, isAdminUser, payload)
+        this.facilities = response
+      } catch (error) {
+        console.error('Failed to fetch user facilities:', error)
+      }
+      return this.facilities
+    },
+
+    setCurrentFacility(facility: any) {
+      this.currentFacility = facility
+    },
+
+    async getFacilityPreference(userPrefTypeId: string, userId = '') {
+      const authStore = useAuthStore()
+      if (!this.facilities.length) return
+
+      let preferredFacility = this.facilities[0]
+      try {
+        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        if (preferredFacilityId) {
+          const facility = this.facilities.find((f: any) => f.facilityId === preferredFacilityId)
+          if (facility) preferredFacility = facility
+        }
+      } catch (error) {
+        console.error('Failed to fetch facility preference', error)
+      }
+      this.currentFacility = preferredFacility
+    },
+
+    async setFacilityPreference(payload: any) {
+      const userProfile = useUserProfile().getUserProfile
+      try {
+        await setUserPreference({
+          userPrefTypeId: 'SELECTED_FACILITY',
+          userPrefValue: payload.facilityId,
+          userId: userProfile.userId
+        })
+        this.currentFacility = payload
+      } catch (error) {
+        console.error('Failed to set facility preference', error)
+      }
+    },
   },
 
   persist: true

@@ -10,7 +10,6 @@ import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './useProductStore';
-import { useFacilityStore } from './useFacilityStore';
 
 export interface LoginPayload {
   token: any;
@@ -122,15 +121,15 @@ export const useAuthStore = defineStore('authStore', {
         }
 
         const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-        const facilities = await useFacilityStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
+        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
           parentTypeId: "VIRTUAL_FACILITY",
           parentTypeId_not: "Y",
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y"
         });
-        await useFacilityStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
+        await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
-        const currentFacility: any = useFacilityStore().getCurrentFacility
+        const currentFacility: any = useProductStore().getCurrentFacility
         isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
         await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
         const preferredStore: any = useProductStore().getCurrentProductStore
@@ -162,10 +161,9 @@ export const useAuthStore = defineStore('authStore', {
     },
     async logout() {
       try {
-        await api({
-          url: 'logout',
-          method: 'post',
-        });
+        useProductStore().$reset();
+        useUserProfile().$reset();
+        useAuthStore().$reset();
       } catch (error) {
         console.warn('Logout request failed', error);
       } finally {

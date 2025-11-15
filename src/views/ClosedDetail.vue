@@ -218,7 +218,7 @@ import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { showToast } from "@/services/uiUtils"
 import { DateTime } from "luxon";
-import { useFacilityStore } from "@/stores/useFacilityStore";
+import { useProductStore } from "@/stores/useProductStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
@@ -392,7 +392,7 @@ const getDateTime = (time: any) => {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useFacilityStore().getFacilities || [];
+  const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 

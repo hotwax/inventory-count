@@ -58,7 +58,6 @@ import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
 import { loader } from '@/services/uiUtils';
-import { useFacilityStore } from "@/stores/useFacilityStore";
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/useProductStore";
 // import Filters from "@/components/Filters.vue"
@@ -129,7 +128,7 @@ async function getPendingCycleCounts() {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useFacilityStore().getFacilities || [];
+  const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 const dateOrdinalSuffix = {

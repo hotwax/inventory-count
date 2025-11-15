@@ -213,7 +213,7 @@ import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils";
 import { DateTime } from "luxon";
-import { useFacilityStore } from "@/stores/useFacilityStore";
+import { useProductStore } from "@/stores/useProductStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
@@ -469,7 +469,7 @@ function stopAccordianEventProp(event: Event) {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useFacilityStore().getFacilities || [];
+  const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
