@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/services/workerApi";
 import { expose } from 'comlink';
 import { db } from '@/services/commonDatabase';
-import { useProductMaster } from '@/composables/useProductMaster';
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -106,7 +105,7 @@ async function getById(productId: string, context: any) {
 }
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdents').where('value').equalsIgnoreCase(value).first()
+  const ident = await db.table('productIdentification').where('value').equalsIgnoreCase(value).and(item => item.identKey === context.barcodeIdentification).first()
   if (ident) return ident.productId
 
   if (!context?.token || !context?.maargUrl) return null
@@ -131,7 +130,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
     const productId = resp?.response?.docs?.[0]?.productId
     if (productId) {
-      await db.table('productIdents').put({ productId, identKey: idType, value })
+      await db.table('productIdentification').put({ productId, identKey: idType, value })
       // Optionally cache full product for faster future access
       const doc = resp.response.docs[0]
       await db.table('products').put({ ...doc, updatedAt: Date.now() })
@@ -212,7 +211,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 
     await db.table('scanEvents')
       .where({ inventoryCountImportId })
-      .and(s => s.scannedValue === identifier)
+      .and(scanEvent => scanEvent.scannedValue === identifier)
       .modify({
         productId,
         lastUpdatedAt: now
@@ -228,7 +227,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
   try {
     const scans = await db.table('scanEvents')
       .where({ inventoryCountImportId })
-      .and(s => s.aggApplied === 0)
+      .and(scanEvent => scanEvent.aggApplied === 0)
       .toArray()
 
     if (!scans.length) {
@@ -236,10 +235,10 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     }
 
     const grouped: Record<string, number> = {}
-    for (const s of scans) {
-      const key = s.scannedValue?.trim()
+    for (const scan of scans) {
+      const key = scan.scannedValue?.trim()
       if (!key) continue
-      grouped[key] = (grouped[key] || 0) + (s.quantity || 1)
+      grouped[key] = (grouped[key] || 0) + (scan.quantity || 1)
     }
 
     let processed = 0
@@ -247,7 +246,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
       let productId: any = null
-      const identification = await db.table('productIdents').where('value').equalsIgnoreCase(scannedValue).first()
+      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and(item => item.identKey === context.barcodeIdentification).first()
       if (identification) {
         productId = identification.productId
       } else {
@@ -263,7 +262,8 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       // }
 
       const existing = await db.table('inventoryCountRecords')
-        .where({ inventoryCountImportId })
+        .where('inventoryCountImportId')
+        .equals(inventoryCountImportId)
         .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
         .first()
 
@@ -273,6 +273,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
+        // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
           productId: existing.productId || productId,
@@ -285,7 +286,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
-          isRequested: (productId || context.inventoryCountTypeId !== 'DIRECTED_COUNT' || context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
+          isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
           lastUpdatedAt: now // new record, so same as createdAt
@@ -294,7 +295,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       if (productId) {
         await db.table('scanEvents')
           .where({ inventoryCountImportId })
-          .and(s => s.scannedValue === scannedValue)
+          .and(scanEvent => scanEvent.scannedValue === scannedValue)
           .modify({
             productId,
             lastUpdatedAt: now
@@ -305,7 +306,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     await db.table('scanEvents')
       .where('id')
-      .anyOf(scans.map(s => s.id))
+      .anyOf(scans.map(scanEvent => scanEvent.id))
       .modify({ aggApplied: 1 })
 
     return processed
@@ -382,23 +383,23 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     const pending = await db.table('inventoryCountRecords')
       .where({ inventoryCountImportId })
-      .and(i =>
-        !i.lastSyncedAt ||  // never synced
-        (i.lastUpdatedAt && i.lastSyncedAt && i.lastUpdatedAt > i.lastSyncedAt) // modified after last sync
+      .and(item =>
+        !item.lastSyncedAt ||  // never synced
+        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt) // modified after last sync
       )
       .toArray()
 
     if (!pending.length) return 0
 
-    const items = pending.map(i => ({
-      uuid: i.uuid,
-      productId: i.productId,
-      productIdentifier: i.productIdentifier,
-      quantity: Number(i.quantity || 0),
-      lastScanAt: i.lastScanAt,
-      lastUpdatedAt: i.lastUpdatedAt || Date.now(),
-      isRequested: i.isRequested,
-      createdDate: i.createdAt || Date.now(),
+    const items = pending.map(item => ({
+      uuid: item.uuid,
+      productId: item.productId,
+      productIdentifier: item.productIdentifier,
+      quantity: Number(item.quantity || 0),
+      lastScanAt: item.lastScanAt,
+      lastUpdatedAt: item.lastUpdatedAt || Date.now(),
+      isRequested: item.isRequested,
+      createdDate: item.createdAt || Date.now(),
       countedByUserLoginId: context.userLoginId
     }))
 
@@ -440,8 +441,8 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 }
 
 // Worker Listener
-self.onmessage = async (e: MessageEvent) => {
-  const { type, payload } = e.data
+self.onmessage = async (messageEvent: MessageEvent) => {
+  const { type, payload } = messageEvent.data
 
   if (type === 'aggregate') {
     const { inventoryCountImportId, context } = payload

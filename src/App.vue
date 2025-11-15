@@ -61,15 +61,14 @@ import emitter from "@/event-bus";
 import { initialise, resetConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/ProductStore';
 import logger from './logger';
-import { useProductIdentificationStore } from '@/stores/productIdentification';
 import { Settings } from 'luxon';
-import { useUserProfileNew } from './stores/useUserProfile';
-import { useAuthStore } from './stores/auth';
+import { useUserProfile } from './stores/UserProfileStore';
+import { useAuthStore } from './stores/AuthStore';
 
 const router = useRouter();
-const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = computed(() => useAuthStore().token.value);
 const instanceUrl = computed(() => useAuthStore().getBaseUrl);
 
@@ -107,12 +106,12 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  if (userProfile.value?.timeZone) {
+  if (userProfile?.value?.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (userToken.value && useProductStore().getCurrentProductStore.productStoreId) {
-    await useProductIdentificationStore()
+  if (!!userToken.value && useProductStore()?.getCurrentProductStore?.productStoreId) {
+    await useProductStore()
       .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));
   }
@@ -147,9 +146,9 @@ const visibleMenuItems = computed(() => {
   const allVisible = router
     .getRoutes()
     .filter(
-      (r) =>
-        r.meta?.showInMenu &&
-        (!r.meta.permissionId || hasPermission(r.meta.permissionId))
+      (route) =>
+        route.meta?.showInMenu &&
+        (!route.meta.permissionId || hasPermission(route.meta.permissionId))
     );
 
   return allVisible.sort((a, b) => {
@@ -163,7 +162,7 @@ const visibleMenuItems = computed(() => {
 
 const selectedIndex = computed(() => {
   const path = router.currentRoute.value.path;
-  return visibleMenuItems.value.findIndex((r) => path.startsWith(r.path));
+  return visibleMenuItems.value.findIndex((route) => path.startsWith(route.path));
 });
 </script>
 

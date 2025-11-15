@@ -1,5 +1,5 @@
 import api, { client, getConfig } from '@/services/RemoteAPI';
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/AuthStore';
 import { transform } from 'node-json-transform';
 
 const stockTransformRule = {
@@ -688,29 +688,7 @@ async function omsGetProductIdentificationPref(eComStoreId: string): Promise<any
   return productIdentifications
 }
 
-
-async function logout(): Promise<any> {
-  try {
-    const resp: any = await api({
-      url: "logout",
-      method: "get"
-    });
-
-    if(resp.status != 200) {
-      throw resp.data;
-    }
-
-    return Promise.resolve(resp.data)
-  } catch(err) {
-    return Promise.reject({
-      code: 'error',
-      message: 'Something went wrong',
-      serverResponse: err
-    })
-  }
-}
-
-async function omsGetUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false, payload?: any): Promise<any> {
+async function omsGetUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false): Promise<any> {
   try {
     const params = {
       "inputFields": {} as any,
@@ -1036,7 +1014,7 @@ export interface Stock {
   acquireCostUomId?: string;
 }
 
-async function fetchProductsStockAtFacility(productIds: Array<string>, facilityId?: string): Promise<Array<Stock> | Response> {
+async function getProductsStockAtFacility(productIds: Array<string>, facilityId?: string): Promise<Array<Stock> | Response> {
   // There is a limitation at API level to handle only 100 records
   // but as we will always fetch data for the fetched records which will be as per the viewSize
   // assuming that the value will never be 100 to show
@@ -1087,7 +1065,7 @@ async function fetchProductsStockAtFacility(productIds: Array<string>, facilityI
 /*
 Fetches sum of stock for products on all the facilities
 */
-async function fetchProductsStock(productIds: Array<string>): Promise<Array<Stock> | Response> {
+async function getProductsStock(productIds: Array<string>): Promise<Array<Stock> | Response> {
   // There is a limitation at API level to handle only 100 records
   // but as we will always fetch data for the fetched records which will be as per the viewSize
   // assuming that the value will never be 100 to show
@@ -1128,7 +1106,7 @@ async function fetchProductsStock(productIds: Array<string>): Promise<Array<Stoc
   }
 }
 
-async function fetchProducts(params: any): Promise<any | Response> {
+async function getProducts(params: any): Promise<any | Response> {
 
   const payload = {
     "json": {
@@ -1488,7 +1466,7 @@ export interface Product {
   brandName?: string;
 }
 
-async function fetchProductsGroupedBy(params: any): Promise<any | Response> {
+async function getProductsGroupedBy(params: any): Promise<any | Response> {
 
   const payload = {
     "json": {
@@ -1569,7 +1547,7 @@ async function fetchProductsGroupedBy(params: any): Promise<any | Response> {
   }
 }
 
-async function fetchProductsGroupedByParent(params: any): Promise<Product[] | Response> {
+async function getProductsGroupedByParent(params: any): Promise<Product[] | Response> {
 
   const payload = {
     ...params,
@@ -1578,7 +1556,7 @@ async function fetchProductsGroupedByParent(params: any): Promise<Product[] | Re
     "ngroups": true
   }
 
-  return await fetchProductsGroupedBy(payload);
+  return await getProductsGroupedBy(payload);
 }
 
 async function omsFetchGoodIdentificationTypes(parentTypeId = "HC_GOOD_ID_TYPE"): Promise<any> {
@@ -1711,13 +1689,12 @@ async function getUserFacilities(token: any, baseURL: string, partyId: string, f
   if(apiConfig.systemType === "MOQUI") {
     return await fetchFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload) // moquiIndex
   } else {
-    return await omsGetUserFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload)
+    return await omsGetUserFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser)
   }
 }
 
 export {
   getProfile,
-  logout,
   omsGetAvailableTimeZones,
   omsGetUserFacilities,
   omsGetEComStoresByFacility,
@@ -1729,8 +1706,8 @@ export {
   setUserLocale,
   setUserTimeZone,
   client,
-  fetchProductsStock,
-  fetchProductsStockAtFacility,
+  getProductsStock,
+  getProductsStockAtFacility,
   fetchGoodIdentificationTypes,
   getAvailableTimeZones,
   getEComStores,
@@ -1744,8 +1721,8 @@ export {
   fetchFacilitiesByParty,
   fetchFacilitiesByGroup,
   updateUserPreference,
-  fetchProducts, 
-  fetchProductsGroupedBy, 
-  fetchProductsGroupedByParent, 
+  getProducts, 
+  getProductsGroupedBy, 
+  getProductsGroupedByParent, 
   omsFetchGoodIdentificationTypes
 }
