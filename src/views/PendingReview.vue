@@ -32,6 +32,12 @@
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
 
+
+          <ion-label>
+            {{ getDateWithOrdinalSuffix(count.createdDate) }}
+            <p>{{ translate("Created Date") }}</p>
+          </ion-label>
+
           <ion-label>
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>

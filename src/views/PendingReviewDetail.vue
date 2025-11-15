@@ -601,23 +601,37 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
-    const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList });
+    const batchSize = 250;
+    const batches = [];
 
-    if (resp && resp.status === 200) {
-      const selectedProductIds = selectedProductsReview.value.map(product => product.productId);
+    for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
+      batches.push(inventoryCountProductsList.slice(i, i + batchSize));
+    }
+
+    for (const batch of batches) {
+      const resp = await useInventoryCountRun().submitProductReview({
+        inventoryCountProductsList: batch
+      });
+
+      if (!(resp && resp.status === 200)) {
+        throw resp?.data ?? "Unknown error";
+      }
+
+      const processedIds = batch.map(p => p.productId);
 
       filteredSessionItems.value.forEach((cycle: any) => {
-        if (selectedProductIds.includes(cycle.productId)) {
+        if (processedIds.includes(cycle.productId)) {
           cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
         }
       });
-      submittedItemsCount.value += selectedProductsReview.value.length;
-      selectedProductsReview.value = [];
-    } else {
-      throw resp.data;
+
+      submittedItemsCount.value += batch.length;
     }
+
+    selectedProductsReview.value = [];
+
   } catch (error) {
-      showToast("Something Went Wrong");
+    showToast("Something Went Wrong");
     console.error("Error while submitting: ", error);
   }
   loader.dismiss();
