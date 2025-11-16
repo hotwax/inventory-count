@@ -124,7 +124,6 @@ export const useAuthStore = defineStore('authStore', {
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y"
         });
-        console.log("facilities", facilities)
         await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
         const currentFacility: any = useProductStore().getCurrentFacility
