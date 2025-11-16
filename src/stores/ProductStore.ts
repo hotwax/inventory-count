@@ -196,7 +196,8 @@ export const useProductStore = defineStore('productStore', {
       try {
         const resp = await api({
           url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'GET'
+          method: 'GET',
+          pageSize: 100
         })
 
         if (!hasError(resp) && resp?.data?.length) {
