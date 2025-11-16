@@ -1,8 +1,5 @@
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
-import api, { initialise } from '@/services/RemoteAPI';
-import emitter from '@/event-bus';
-import { loader } from '@/services/uiUtils';
 import { useUserProfile } from './UserProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
@@ -138,21 +135,6 @@ export const useAuthStore = defineStore('authStore', {
         setPermissions(appPermissions);
 
         await useProductStore().getDxpIdentificationPref(preferredStore.productStoreId)
-
-        initialise({
-          token: this.token.value,
-          instanceUrl: this.getBaseUrl.replace("inventory-cycle-count/", ""),
-          events: {
-            responseError: () => setTimeout(() => function dismissLoader() {
-              if (loader.value) {
-                loader.value.dismiss();
-                loader.value = null as any;
-              }
-            }, 100),
-            queueTask: (payload: any) => emitter.emit("queueTask", payload)
-          },
-          systemType: "MOQUI"
-        });
         await useProductStore().loadProductIdentifierSettings();
         await useInventoryCountRun().loadStatusDescription();
 

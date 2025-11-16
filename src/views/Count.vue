@@ -170,7 +170,7 @@ import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/i
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import router from '@/router';
-import { showToast } from "@/services/uiUtils";
+import { loader, showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
@@ -424,6 +424,7 @@ async function markInProgress(workEffortId) {
 
 async function forceRelease(session) {
   try {
+    loader.present();
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
@@ -444,6 +445,7 @@ async function forceRelease(session) {
     console.error('Error releasing session lock:', err)
     showToast('Something went wrong while releasing session.')
   }
+  loader.dismiss();
 }
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {

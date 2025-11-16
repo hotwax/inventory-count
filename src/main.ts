@@ -55,28 +55,6 @@ const app = createApp(App)
     rules: permissionRules,
     actions: permissionActions
   })
-// .use(dxpComponents, {
-// Actions,
-// defaultImgUrl: require("@/assets/images/defaultImage.png"),
-// login,
-// logout,
-// loader,
-// appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-// fetchGoodIdentificationTypes,
-// getAvailableTimeZones,
-// getConfig,
-// getEComStores,
-// getEComStoresByFacility,
-// getProductIdentificationPref,
-// getUserFacilities,
-// getUserPreference,
-// hasPermission,
-// initialise,
-// localeMessages,
-// setProductIdentificationPref,
-// setUserPreference,
-// setUserTimeZone
-// });
 
 setPermissions(useUserProfile().getPermissions());
 

@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
-import merge from 'deepmerge';
 import { useAuthStore } from '@/stores/AuthStore';
+import emitter from '@/event-bus';
+import { loader } from './uiUtils';
 
 const requestInterceptor = async (config: any) => {
   if (apiConfig.token) {
@@ -14,6 +15,53 @@ const requestInterceptor = async (config: any) => {
 
 // configuration passed from the app
 let appConfig = {} as any;
+
+let apiConfig = {} as any;
+
+
+function createAppConfig() {
+  appConfig = {
+    token: useAuthStore().token.value,
+    instanceUrl: useAuthStore().getBaseUrl.replace("inventory-cycle-count/", ""),
+    events: {
+      responseError: () => setTimeout(() => function dismissLoader() {
+        if (loader.value) {
+          loader.value.dismiss();
+          loader.value = null as any;
+        }
+      }, 100),
+      queueTask: (payload: any) => emitter.emit("queueTask", payload)
+    },
+    systemType: "MOQUI"
+  };
+
+  apiConfig = {
+    token: useAuthStore().token.value,
+    instanceUrl: useAuthStore().getBaseUrl.replace("inventory-cycle-count/", ""),
+    cacheMaxAge: 0,
+    events: {
+      unauthorised: undefined,
+      responseSuccess: undefined,
+      responseError: () => setTimeout(() => function dismissLoader() {
+        if (loader.value) {
+          loader.value.dismiss();
+          loader.value = null as any;
+        }
+      }, 100),
+      queueTask: (payload: any) => emitter.emit("queueTask", payload)
+    } as any,
+    interceptor: {
+      request: requestInterceptor,
+      response: {
+        success: responseSuccessInterceptor,
+        error: responseErrorInterceptor
+      }
+    },
+    systemType: "MOQUI"
+  };
+  axios.interceptors.request.use(apiConfig.interceptor.request);
+  axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
+}
 
 const responseSuccessInterceptor = (response: any) => {
   // Any status code that lie within the range of 2xx cause this function to trigger
@@ -42,27 +90,6 @@ const responseErrorInterceptor = (error: any) => {
   // Do something with response error
   return Promise.reject(error);
 }
-
-const defaultConfig = {
-  token: '',
-  instanceUrl: '',
-  cacheMaxAge: 0,
-  events: {
-    unauthorised: undefined,
-    responseSuccess: undefined,
-    responseError: undefined,
-    queueTask: undefined
-  } as any,
-  interceptor: {
-    request: requestInterceptor,
-    response: {
-      success: responseSuccessInterceptor,
-      error: responseErrorInterceptor
-    }
-  },
-  systemType: "MOQUI"
-}
-let apiConfig = { ...defaultConfig }
 
 // `paramsSerializer` is an optional function in charge of serializing `params`
 // (e.g. https://www.npmjs.com/package/qs, http://api.jquery.com/jquery.param/)
@@ -107,30 +134,15 @@ function updateInstanceUrl(url: string) {
   apiConfig.instanceUrl = url
 }
 
-function resetConfig() {
-  apiConfig = { ...defaultConfig }
-}
-
 function init(key: string, url: string, cacheAge: number) {
   apiConfig.token = key
   apiConfig.instanceUrl = url
   apiConfig.cacheMaxAge = cacheAge
 }
 
-function initialise(customConfig: any) {
-  appConfig = customConfig;
-  apiConfig = merge(apiConfig, customConfig)
-  axios.interceptors.request.use(apiConfig.interceptor.request);
-  axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
-}
-
 function getConfig() {
   return appConfig;
 }
-
-axios.interceptors.request.use(apiConfig.interceptor.request);
-
-axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
 
 /**
  * Generic method to call APIs
@@ -185,4 +197,4 @@ const client = (config: any) => {
 }
 
 
-export { api as default, initialise, axios, getConfig, init, updateToken, updateInstanceUrl, resetConfig, client };
+export { api as default, createAppConfig, axios, getConfig, init, updateToken, updateInstanceUrl, client };
