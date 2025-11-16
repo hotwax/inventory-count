@@ -21,7 +21,7 @@ import { translate } from '@/i18n'
 export const useProductStore = defineStore('productStore', {
   state: () => ({
     productStores: [] as any[],
-    current: null as any,
+    currentProductStore: null as any,
     statusDesc: [] as any[],
     facilities: [] as any[],
     currentFacility: null as any,
@@ -40,7 +40,7 @@ export const useProductStore = defineStore('productStore', {
   }),
 
   getters: {
-    getCurrentProductStore: (state) => state.current,
+    getCurrentProductStore: (state) => state.currentProductStore,
     getProductStores: (state) => state.productStores,
     getStatusDescriptions: (state) => state.statusDesc,
 
@@ -74,7 +74,7 @@ export const useProductStore = defineStore('productStore', {
     },
 
     setCurrent(productStore: any) {
-      this.current = productStore
+      this.currentProductStore = productStore
     },
 
     async getDxpEComStoresByFacility(facilityId?: any) {
@@ -113,7 +113,7 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         console.error(error)
       }
-      this.current = preferredStore
+      this.currentProductStore = preferredStore
     },
 
     async setEComStorePreference(payload: any) {
@@ -127,7 +127,7 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         console.error('error', error)
       }
-      this.current = payload
+      this.currentProductStore = payload
     },
 
     /** ---------- Status Descriptions ---------- */
@@ -196,7 +196,11 @@ export const useProductStore = defineStore('productStore', {
       try {
         const resp = await api({
           url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'GET'
+          method: 'GET',
+          params: {
+            settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
+            settingTypeEnumId_op: 'in',
+          }
         })
 
         if (!hasError(resp) && resp?.data?.length) {
@@ -273,9 +277,9 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async loadProductIdentifierSettings() {
+    async getProductIdentifierSettings() {
       try {
-        const productStoreId = this.current?.productStoreId
+        const productStoreId = this.currentProductStore?.productStoreId
         if (!productStoreId) throw new Error('No current product store selected')
 
         const { primaryId, secondaryId } = await this.getProductIdentifications(productStoreId)

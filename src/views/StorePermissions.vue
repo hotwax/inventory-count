@@ -18,14 +18,14 @@
           </ion-item>
         </ion-card>
         <ion-card>
-          <ion-card-header>
+          <!-- <ion-card-header>
             <ion-card-title>
               {{ translate('Quantity on hand') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
             <p>{{ translate("Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.") }}</p>
-          </ion-card-content>
+          </ion-card-content> -->
           <!-- <ion-item lines="none">
             <ion-toggle :checked="productStoreSettings['showQoh']" @click.prevent="updateProductStoreSetting($event, 'showQoh')">
               {{ translate("Show systemic inventory") }}
@@ -40,9 +40,9 @@
 <script setup lang="ts">
 import {
   IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
+  // IonCardContent,
+  // IonCardHeader,
+  // IonCardTitle,
   IonContent,
   IonHeader,
   IonItem,
@@ -51,16 +51,16 @@ import {
   IonToolbar,
   IonLabel,
   IonIcon,
-  onIonViewWillEnter
+  // onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useProductStore } from "@/stores/ProductStore";
 import { storefrontOutline } from "ionicons/icons";
 
-onIonViewWillEnter(async () => {
+/* onIonViewWillEnter(async () => {
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
   useProductStore().prepareProductIdentifierOptions();
-})
+}) */
 
 </script>
 
