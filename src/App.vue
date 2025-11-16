@@ -58,7 +58,7 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { initialise, resetConfig } from '@/services/RemoteAPI';
+import { createAppConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/ProductStore';
@@ -70,7 +70,6 @@ import { useAuthStore } from './stores/AuthStore';
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = computed(() => useAuthStore().token.value);
-const instanceUrl = computed(() => useAuthStore().getBaseUrl);
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-pre-counted'];
 const showMenu = computed(() => {
@@ -120,18 +119,10 @@ onMounted(async () => {
 onUnmounted(() => {
   emitter.off("presentLoader", presentLoader);
   emitter.off("dismissLoader", dismissLoader);
-  resetConfig();
+  // resetConfig();
 });
 
-initialise({
-  token: userToken.value,
-  instanceUrl: instanceUrl.value.replace("inventory-cycle-count/", ""),
-  events: {
-    responseError: () => setTimeout(() => dismissLoader(), 100),
-    queueTask: (payload: any) => emitter.emit("queueTask", payload)
-  },
-  systemType: "MOQUI"
-});
+createAppConfig();
 
 const menuOrder = [
   "/bulkUpload",
