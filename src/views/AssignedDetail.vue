@@ -50,11 +50,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -161,11 +161,11 @@
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
                         <ion-label>
-                          {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
                           <p>{{ translate("started") }}</p>
                         </ion-label>
                         <ion-label>
-                          {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
                         <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
@@ -210,6 +210,7 @@ import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
+import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 
 const props = defineProps({
   workEffortId: String
@@ -460,26 +461,6 @@ function stopAccordianEventProp(event: Event) {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return "-";
-  const dateTime = DateTime.fromMillis(time);
-  const day = dateTime.day;
-
-  let suffix;
-  if (day >= 11 && day <= 13) {
-    suffix = 'th';
-  } else {
-    switch (day % 10) {
-      case 1:  suffix = 'st'; break;
-      case 2:  suffix = 'nd'; break;
-      case 3:  suffix = 'rd'; break;
-      default: suffix = 'th'; break;
-    }
-  }
-
-  return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
 </script>

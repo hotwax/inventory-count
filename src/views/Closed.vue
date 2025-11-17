@@ -57,12 +57,8 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from '@/services/uiUtils';
-<<<<<<< HEAD
-import { useProductStore } from '@/stores/ProductStore';
-import { DateTime } from 'luxon';
-=======
 import { useProductStore } from '@/stores/productStore';
->>>>>>> ce19b02896edf23c42e6c83b75b2e1767a219032
+import { getDateWithOrdinalSuffix } from '@/services/utils';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -133,23 +129,6 @@ async function loadMoreCycleCounts(event: any) {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-} as any;
-
-function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return "-";
-  const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 

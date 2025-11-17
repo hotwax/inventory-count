@@ -64,8 +64,8 @@ import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
 import { loader } from '@/services/uiUtils';
-import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
+import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
 
 const cycleCounts = ref<any[]>([]);
@@ -136,21 +136,6 @@ async function getPendingCycleCounts() {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-} as any
-function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return "-";
-  const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 

@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/services/commonDatabase'
-import { useUserProfile } from '@/stores/UserProfileStore';
+import { useUserProfile } from '@/stores/userProfileStore';
 
 async function initDeviceId() {
   const pref = await db.appPreferences.get("deviceId");
@@ -15,7 +15,7 @@ async function initDeviceId() {
     console.info("[DeviceID] Found existing:", pref?.value);
   }
 
-  // Store it in Vuex state
+  // Store it in Pinia state
   useUserProfile().setDeviceId(pref?.value as string);
 
   return deviceId;
@@ -38,7 +38,28 @@ function getDateWithOrdinalSuffix(time: any) {
   return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
+function getDateTimeWithOrdinalSuffix(time: any) {
+  if (!time) return "-";
+  const dateTime = DateTime.fromMillis(time);
+  const day = dateTime.day;
+
+  let suffix;
+  if (day >= 11 && day <= 13) {
+    suffix = 'th';
+  } else {
+    switch (day % 10) {
+      case 1:  suffix = 'st'; break;
+      case 2:  suffix = 'nd'; break;
+      case 3:  suffix = 'rd'; break;
+      default: suffix = 'th'; break;
+    }
+  }
+
+  return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
+}
+
 export {
   getDateWithOrdinalSuffix,
+  getDateTimeWithOrdinalSuffix,
   initDeviceId
 }
