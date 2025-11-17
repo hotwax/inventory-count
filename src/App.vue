@@ -105,8 +105,6 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  createAppConfig();
-
   if (userProfile?.value?.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
   }
@@ -123,6 +121,8 @@ onUnmounted(() => {
   emitter.off("dismissLoader", dismissLoader);
   // resetConfig();
 });
+
+createAppConfig();
 
 
 const menuOrder = [
