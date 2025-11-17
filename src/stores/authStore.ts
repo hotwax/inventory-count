@@ -123,17 +123,17 @@ export const useAuthStore = defineStore('authStore', {
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y"
         });
-        await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
+
+        await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         const currentFacility: any = useProductStore().getCurrentFacility
         isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
         await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
-        const preferredStore: any = useProductStore().getCurrentProductStore
 
         setPermissions(appPermissions);
-
-        await useProductStore().getDxpIdentificationPref(preferredStore.productStoreId)
-        await useProductStore().loadProductIdentifierSettings();
+        // Fetch and set product identifier settings based on current product store
+        await useProductStore().getProductIdentifierSettings();
+        await useProductStore().getSettings(useProductStore().getCurrentProductStore?.productStoreId);
         await useInventoryCountRun().loadStatusDescription();
 
       } catch (err) {

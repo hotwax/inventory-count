@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonContent, loadingController } from "@ionic/vue";
+import { IonButton, IonContent, IonIcon, IonItem, loadingController } from "@ionic/vue";
 import { arrowBackOutline, warningOutline } from 'ionicons/icons'
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
