@@ -38,9 +38,9 @@
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item>
-                  <div class="img-preview" @click="openImagePreview(item.product?.mainImageUrl)">
-                    <ion-thumbnail class="thumb">
-                      <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                  <div class="img-preview">
+                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                     </ion-thumbnail>
                       <ion-badge class="qty-badge" color="medium">
                         {{ item.quantity }}
@@ -50,23 +50,21 @@
                     {{ item.scannedValue }}
                     <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <p>
                   <ion-badge v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
                   <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>
-                  </p>
+                  </ion-button>  
                 </ion-item>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
-          <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false" translucent="true">
+          <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
             <ion-content>
-                <ion-item lines="none" button @click="removeScan(selectedScan)">
-                  <ion-label color="danger">{{ translate("Remove") }}</ion-label>
-                </ion-item>
+              <ion-item lines="none" button @click="removeScan(selectedScan)">
+                <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+              </ion-item>
             </ion-content>
           </ion-popover>
           </div>
@@ -191,7 +189,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -218,7 +216,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           {{ useProductMaster().primaryId(item.product) }}
@@ -241,7 +239,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -268,7 +266,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           {{ useProductMaster().primaryId(item.product) }}
@@ -385,7 +383,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -413,7 +411,7 @@
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-item>
                       <ion-thumbnail slot="start">
-                        <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                       </ion-thumbnail>
                       <ion-label>
                         {{ useProductMaster().primaryId(item.product) }}
@@ -558,6 +556,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
+import defaultImage from "@/assets/images/defaultImage.png";
 
 
 const props = defineProps<{
@@ -1296,22 +1295,6 @@ function openScanActionMenu(item: any) {
   selectedScan.value = item
   popoverTrigger.value = item.createdAt
   showScanAction.value = true
-}
-
-function getScanActionButtons() {
-  // disable if removed or inverted entry exists
-  const alreadyRemoved = selectedScan.value?.isRemoved === true ||
-    selectedScan.value?.quantity < 0
-
-  return [
-    {
-      text: 'Remove',
-      role: '',
-      handler: () => removeScan(selectedScan.value),
-      disabled: alreadyRemoved
-    },
-    { text: 'Cancel', role: 'cancel' }
-  ]
 }
 
 async function removeScan(item: any) {
