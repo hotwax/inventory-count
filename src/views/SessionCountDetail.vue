@@ -37,20 +37,36 @@
           <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
-                  <ion-thumbnail slot="start" class="clickable-image" @click="openImagePreview(item.product?.mainImageUrl)">
-                    <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
-                  </ion-thumbnail>
-                  <ion-badge class="scan-badge">{{ item.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
+                <ion-item>
+                  <div class="img-preview">
+                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                    </ion-thumbnail>
+                      <ion-badge class="qty-badge" color="medium">
+                        {{ item.quantity }}
+                      </ion-badge>
+                  </div>
                   <ion-label>
                     {{ item.scannedValue }}
                     <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <ion-note slot="end">{{ item.quantity }}</ion-note>
+                  <ion-badge v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                    {{ translate('unaggregated') }}
+                  </ion-badge>
+                  <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                  </ion-button>  
                 </ion-item>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
+          <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
+            <ion-content>
+              <ion-item lines="none" button @click="removeScan(selectedScan)">
+                <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+              </ion-item>
+            </ion-content>
+          </ion-popover>
           </div>
 
           <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
@@ -173,7 +189,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -200,7 +216,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           {{ useProductMaster().primaryId(item.product) }}
@@ -223,7 +239,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -250,7 +266,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           {{ useProductMaster().primaryId(item.product) }}
@@ -367,7 +383,7 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-item>
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -395,7 +411,7 @@
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-item>
                       <ion-thumbnail slot="start">
-                        <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                       </ion-thumbnail>
                       <ion-label>
                         {{ useProductMaster().primaryId(item.product) }}
@@ -467,7 +483,7 @@
                 <ion-icon :icon="closeOutline" slot="icon-only" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("New session") }}</ion-title>
+            <ion-title>{{ translate("Edit session") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content>
@@ -518,8 +534,8 @@
 
 
 <script setup lang="ts">
-import { IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -540,6 +556,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
+import defaultImage from "@/assets/images/defaultImage.png";
 
 
 const props = defineProps<{
@@ -578,6 +595,11 @@ const showDiscardAlert = ref(false)
 const totalItems = ref(0)
 const loadedItems = ref(0)
 const isLoadingItems = ref(true)
+
+// Remove ScanEvent Record
+const showScanAction = ref(false)
+const selectedScan = ref<any>(null)
+const popoverTrigger = ref('')
 
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
@@ -1268,6 +1290,29 @@ function closeImagePreview() {
   isImageModalOpen.value = false
 }
 
+// Negate ScanEvent record
+function openScanActionMenu(item: any) {
+  selectedScan.value = item
+  popoverTrigger.value = item.createdAt
+  showScanAction.value = true
+}
+
+async function removeScan(item: any) {
+  try {
+    await useInventoryCountImport().recordScan({
+      inventoryCountImportId: props.inventoryCountImportId,
+      productIdentifier: item.scannedValue,
+      quantity: -Math.abs(item.quantity || 1)
+    })
+    showToast(`Scan ${item.scannedValue} removed`)
+  } catch (error) {
+    console.error(error)
+    showToast("Failed to remove scan")
+  } finally {
+    showScanAction.value = false
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1415,5 +1460,27 @@ ion-segment-view {
   width: 100%;
   height: auto;
   object-fit: contain;
+}
+
+.img-preview {
+  cursor: pointer;
+  position: relative;
+}
+
+.qty-badge {
+  border-radius: 100%;
+  top: -5px;
+  right: -1px;
+  position: absolute;
+  font-size: 10px;
+}
+
+.unagg-badge {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 12px;
+  padding: 2px 4px;
+  z-index: 5;
 }
 </style>
