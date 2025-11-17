@@ -37,7 +37,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { db } from '@/services/commonDatabase'
 import { initDeviceId } from '@/services/device'
-import { useUserProfile } from './stores/UserProfileStore';
+import { useUserProfile } from './stores/userProfileStore';
 import { useProductMaster } from './composables/useProductMaster';
 import { setPermissions } from '@/authorization';
 

@@ -59,7 +59,7 @@ import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from "@/services/uiUtils";
 import { DateTime } from "luxon";
-import { useProductStore } from "@/stores/ProductStore";
+import { useProductStore } from "@/stores/productStore";
 // import Filters from "@/components/Filters.vue"
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";

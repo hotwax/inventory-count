@@ -102,14 +102,14 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSu
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/AuthStore";
+import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
-import { useUserProfile } from "@/stores/UserProfileStore";
-import { useProductStore } from "@/stores/ProductStore";
+import { useUserProfile } from "@/stores/userProfileStore";
+import { useProductStore } from "@/stores/productStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
 
 const appVersion = ref("")

@@ -218,7 +218,7 @@ import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { showToast } from "@/services/uiUtils"
 import { DateTime } from "luxon";
-import { useProductStore } from "@/stores/ProductStore";
+import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";

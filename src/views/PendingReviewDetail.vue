@@ -290,7 +290,7 @@ import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { loader, showToast } from "@/services/uiUtils"
-import { useProductStore } from "@/stores/ProductStore";
+import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";

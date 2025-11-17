@@ -552,11 +552,11 @@ import router from '@/router';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/AuthStore';
-import { useUserProfile } from '@/stores/UserProfileStore';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
-import { useProductStore } from '@/stores/ProductStore';
+import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 
 
