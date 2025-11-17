@@ -7,12 +7,12 @@ import emitter from '@/event-bus';
 import { loader } from './uiUtils';
 
 function unauthorised() {
-const authStore = useAuthStore();
-const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
-// Mark the user as unauthorised, this will help in not making the logout api call in actions
-authStore.logout();
-const redirectUrl = window.location.origin + '/login';
-window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`;
+  const authStore = useAuthStore();
+  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+  // Mark the user as unauthorised, this will help in not making the logout api call in actions
+  authStore.logout();
+  const redirectUrl = window.location.origin + '/login';
+  window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`;
 }
 
 axios.interceptors.request.use(async (config: any) => {
