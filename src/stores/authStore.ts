@@ -1,15 +1,12 @@
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
-import api, { initialise } from '@/services/RemoteAPI';
-import emitter from '@/event-bus';
-import { loader } from '@/services/uiUtils';
-import { useUserProfile } from './UserProfileStore';
+import { useUserProfile } from './userProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { useProductStore } from './ProductStore';
+import { useProductStore } from './productStore';
 
 export interface LoginPayload {
   token: any;
@@ -47,7 +44,6 @@ export const useAuthStore = defineStore('authStore', {
       value: '',
       expiration: undefined,
     } as TokenState,
-    systemType: 'MOQUI' as string,
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -127,7 +123,6 @@ export const useAuthStore = defineStore('authStore', {
           facilityTypeId: "VIRTUAL_FACILITY",
           facilityTypeId_not: "Y"
         });
-        console.log("facilities", facilities)
         await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
         const currentFacility: any = useProductStore().getCurrentFacility
@@ -138,21 +133,6 @@ export const useAuthStore = defineStore('authStore', {
         setPermissions(appPermissions);
 
         await useProductStore().getDxpIdentificationPref(preferredStore.productStoreId)
-
-        initialise({
-          token: this.token.value,
-          instanceUrl: this.getBaseUrl.replace("inventory-cycle-count/", ""),
-          events: {
-            responseError: () => setTimeout(() => function dismissLoader() {
-              if (loader.value) {
-                loader.value.dismiss();
-                loader.value = null as any;
-              }
-            }, 100),
-            queueTask: (payload: any) => emitter.emit("queueTask", payload)
-          },
-          systemType: "MOQUI"
-        });
         await useProductStore().loadProductIdentifierSettings();
         await useInventoryCountRun().loadStatusDescription();
 

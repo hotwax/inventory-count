@@ -13,7 +13,7 @@
           <ion-item button detail lines="full" :router-link="'/tabs/count'">
             <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end"></ion-icon>
             <ion-label>
-              Store View
+              {{ translate("Store View") }}
             </ion-label>
           </ion-item>
         </ion-card>
@@ -45,6 +45,7 @@ import {
   IonCardTitle,
   IonContent,
   IonHeader,
+  IonItem,
   IonPage,
   IonTitle,
   IonToolbar,
@@ -53,7 +54,7 @@ import {
   onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
-import { useProductStore } from "@/stores/ProductStore";
+import { useProductStore } from "@/stores/productStore";
 import { storefrontOutline } from "ionicons/icons";
 
 onIonViewWillEnter(async () => {

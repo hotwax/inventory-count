@@ -24,7 +24,7 @@ import { IonContent, loadingController } from "@ionic/vue";
 import { arrowBackOutline, warningOutline } from 'ionicons/icons'
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/AuthStore";
+import { useAuthStore } from "@/stores/authStore";
 import { translate } from "@/i18n";
 
 const router = useRouter();

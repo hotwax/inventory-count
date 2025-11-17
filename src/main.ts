@@ -37,7 +37,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { db } from '@/services/commonDatabase'
 import { initDeviceId } from '@/services/utils'
-import { useUserProfile } from './stores/UserProfileStore';
+import { useUserProfile } from './stores/userProfileStore';
 import { useProductMaster } from './composables/useProductMaster';
 import { setPermissions } from '@/authorization';
 
@@ -55,28 +55,6 @@ const app = createApp(App)
     rules: permissionRules,
     actions: permissionActions
   })
-// .use(dxpComponents, {
-// Actions,
-// defaultImgUrl: require("@/assets/images/defaultImage.png"),
-// login,
-// logout,
-// loader,
-// appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-// fetchGoodIdentificationTypes,
-// getAvailableTimeZones,
-// getConfig,
-// getEComStores,
-// getEComStoresByFacility,
-// getProductIdentificationPref,
-// getUserFacilities,
-// getUserPreference,
-// hasPermission,
-// initialise,
-// localeMessages,
-// setProductIdentificationPref,
-// setUserPreference,
-// setUserTimeZone
-// });
 
 setPermissions(useUserProfile().getPermissions());
 

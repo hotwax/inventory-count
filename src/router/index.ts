@@ -17,9 +17,9 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/AuthStore";
+import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
-import { useUserProfile } from "@/stores/UserProfileStore";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -272,11 +272,9 @@ const router = createRouter({
 router.beforeEach((to, from) => {
 
   if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
-    console.log("User does not have permission to access the page:", to.meta.permissionId);
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
-      console.log("No permission to access the page:", to.meta.permissionId);
       if(hasPermission("APP_DRAFT_VIEW"))
         redirectToPath = "/settings";
       else

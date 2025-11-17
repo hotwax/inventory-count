@@ -57,8 +57,12 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from '@/services/uiUtils';
+<<<<<<< HEAD
 import { useProductStore } from '@/stores/ProductStore';
 import { DateTime } from 'luxon';
+=======
+import { useProductStore } from '@/stores/productStore';
+>>>>>>> ce19b02896edf23c42e6c83b75b2e1767a219032
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any

@@ -65,7 +65,7 @@ import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
 import { loader } from '@/services/uiUtils';
 import { DateTime } from "luxon";
-import { useProductStore } from "@/stores/ProductStore";
+import { useProductStore } from "@/stores/productStore";
 // import Filters from "@/components/Filters.vue"
 
 const cycleCounts = ref<any[]>([]);
