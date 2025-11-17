@@ -108,9 +108,9 @@ import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuthStore } from '@/stores/AuthStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
-import { useProductStore } from '@/stores/ProductStore'
+import { useProductStore } from '@/stores/productStore'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();

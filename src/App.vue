@@ -58,14 +58,13 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { createAppConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
-import { useProductStore } from '@/stores/ProductStore';
+import { useProductStore } from '@/stores/productStore';
 import logger from './logger';
 import { Settings } from 'luxon';
-import { useUserProfile } from './stores/UserProfileStore';
-import { useAuthStore } from './stores/AuthStore';
+import { useUserProfile } from './stores/userProfileStore';
+import { useAuthStore } from './stores/authStore';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);

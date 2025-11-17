@@ -175,8 +175,8 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
-import { useUserProfile } from '@/stores/UserProfileStore';
-import { useProductStore } from '@/stores/ProductStore';
+import { useUserProfile } from '@/stores/userProfileStore';
+import { useProductStore } from '@/stores/productStore';
 
 
 const cycleCounts = ref([]);

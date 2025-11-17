@@ -26,7 +26,7 @@ import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle, 
 import { computed } from 'vue';
 import { translate } from '../i18n'
 import { defineProps } from "vue";
-import { useProductStore } from '@/stores/ProductStore';
+import { useProductStore } from '@/stores/productStore';
 
 const props = defineProps<{
   onUpdateEComStore?: (store: any) => void

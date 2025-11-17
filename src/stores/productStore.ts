@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import api from '@/services/RemoteAPI'
-import { hasError } from '@/stores/AuthStore'
+import { hasError } from '@/stores/authStore'
 import logger from '@/logger'
-import { useAuthStore } from './AuthStore'
+import { useAuthStore } from './authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import {
   fetchGoodIdentificationTypes,
@@ -14,7 +14,7 @@ import {
   setUserPreference,
   getUserFacilities
 } from '@/adapter'
-import { useUserProfile } from './UserProfileStore'
+import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n'
 
@@ -43,6 +43,10 @@ export const useProductStore = defineStore('productStore', {
     getCurrentProductStore: (state) => state.currentProductStore,
     getProductStores: (state) => state.productStores,
     getStatusDescriptions: (state) => state.statusDesc,
+    getStatusDescription: (state) => (statusId: string) => {
+      const found = state.statusDesc.find((status: any) => status.statusId === statusId)
+      return found?.description || statusId
+    },
 
     getFacilities: (state) => state.facilities,
     getCurrentFacility: (state) => state.currentFacility,
@@ -133,11 +137,6 @@ export const useProductStore = defineStore('productStore', {
     /** ---------- Status Descriptions ---------- */
     setStatusDescriptions(statuses: any[]) {
       this.statusDesc = statuses || []
-    },
-
-    getStatusDescription(statusId: string): string {
-      const found = this.statusDesc.find((status: any) => status.statusId === statusId)
-      return found?.description || statusId
     },
 
     /** ---------- Product Identification Pref ---------- */

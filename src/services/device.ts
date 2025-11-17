@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/services/commonDatabase'
-import { useUserProfile } from '@/stores/UserProfileStore';
+import { useUserProfile } from '@/stores/userProfileStore';
 
 export async function initDeviceId() {
   const pref = await db.appPreferences.get("deviceId");

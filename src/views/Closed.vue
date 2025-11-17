@@ -46,7 +46,7 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from '@/services/uiUtils';
-import { useProductStore } from '@/stores/ProductStore';
+import { useProductStore } from '@/stores/productStore';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
