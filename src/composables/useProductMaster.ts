@@ -4,8 +4,8 @@ import { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/commonDatabase'
-import { useAuthStore } from '@/stores/AuthStore';
-import { useProductStore } from '@/stores/ProductStore';
+import { useAuthStore } from '@/stores/authStore';
+import { useProductStore } from '@/stores/productStore';
 
 // Product structure
 export interface Product {

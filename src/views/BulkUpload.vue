@@ -189,11 +189,11 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, c
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@/stores/AuthStore';
+import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { useUserProfile } from '@/stores/UserProfileStore';
+import { useUserProfile } from '@/stores/userProfileStore';
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
 

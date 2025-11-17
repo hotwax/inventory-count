@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
-import { useUserProfile } from './UserProfileStore';
+import { useUserProfile } from './userProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { useProductStore } from './ProductStore';
+import { useProductStore } from './productStore';
 
 export interface LoginPayload {
   token: any;

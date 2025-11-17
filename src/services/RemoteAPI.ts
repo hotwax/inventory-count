@@ -2,7 +2,7 @@ import axios from 'axios';
 import { setupCache } from "axios-cache-adapter"
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
-import { useAuthStore } from '@/stores/AuthStore';
+import { useAuthStore } from '@/stores/authStore';
 import emitter from '@/event-bus';
 import { loader } from './uiUtils';
 

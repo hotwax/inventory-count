@@ -1,5 +1,5 @@
 import api, { client } from '@/services/RemoteAPI';
-import { hasError } from '@/stores/AuthStore';
+import { hasError } from '@/stores/authStore';
 import { transform } from 'node-json-transform';
 
 interface Response {
