@@ -58,7 +58,6 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { createAppConfig } from '@/services/RemoteAPI';
 import { translate } from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/ProductStore';
@@ -121,9 +120,6 @@ onUnmounted(() => {
   emitter.off("dismissLoader", dismissLoader);
   // resetConfig();
 });
-
-createAppConfig();
-
 
 const menuOrder = [
   "/bulkUpload",

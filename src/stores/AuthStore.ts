@@ -44,7 +44,6 @@ export const useAuthStore = defineStore('authStore', {
       value: '',
       expiration: undefined,
     } as TokenState,
-    systemType: 'MOQUI' as string,
   }),
   getters: {
     isAuthenticated: (state) => {

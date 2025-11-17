@@ -1,95 +1,52 @@
 import axios from 'axios';
+import { setupCache } from "axios-cache-adapter"
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import { useAuthStore } from '@/stores/AuthStore';
 import emitter from '@/event-bus';
 import { loader } from './uiUtils';
 
-const requestInterceptor = async (config: any) => {
-  if (apiConfig.token) {
-    config.headers["Authorization"] = "Bearer " + apiConfig.token;
-    config.headers['Content-Type'] = 'application/json';
-  }
+function unauthorised() {
+const authStore = useAuthStore();
+const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+// Mark the user as unauthorised, this will help in not making the logout api call in actions
+authStore.logout();
+const redirectUrl = window.location.origin + '/login';
+window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`;
+}
+
+axios.interceptors.request.use(async (config: any) => {
+  config.headers["Authorization"] = "Bearer " + useAuthStore().token.value;
+  config.headers['Content-Type'] = 'application/json';
   return config;
-}
+});
 
-// configuration passed from the app
-let appConfig = {} as any;
-
-let apiConfig = {} as any;
-
-
-function createAppConfig() {
-  appConfig = {
-    token: useAuthStore().token.value,
-    instanceUrl: useAuthStore().getBaseUrl.replace("inventory-cycle-count/", ""),
-    events: {
-      responseError: () => setTimeout(() => function dismissLoader() {
-        if (loader.value) {
-          loader.value.dismiss();
-          loader.value = null as any;
-        }
-      }, 100),
-      queueTask: (payload: any) => emitter.emit("queueTask", payload)
-    },
-    systemType: "MOQUI"
-  };
-
-  apiConfig = {
-    token: useAuthStore().token.value,
-    instanceUrl: useAuthStore().getBaseUrl.replace("inventory-cycle-count/", ""),
-    cacheMaxAge: 0,
-    events: {
-      unauthorised: undefined,
-      responseSuccess: undefined,
-      responseError: () => setTimeout(() => function dismissLoader() {
-        if (loader.value) {
-          loader.value.dismiss();
-          loader.value = null as any;
-        }
-      }, 100),
-      queueTask: (payload: any) => emitter.emit("queueTask", payload)
-    } as any,
-    interceptor: {
-      request: requestInterceptor,
-      response: {
-        success: responseSuccessInterceptor,
-        error: responseErrorInterceptor
-      }
-    },
-    systemType: "MOQUI"
-  };
-  axios.interceptors.request.use(apiConfig.interceptor.request);
-  axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
-}
-
-const responseSuccessInterceptor = (response: any) => {
+axios.interceptors.response.use(function (response) {
   // Any status code that lie within the range of 2xx cause this function to trigger
   // Do something with response data
-  if (apiConfig.events.responseSuccess) apiConfig.events.responseSuccess(response);
-
-  if (apiConfig.systemType === "MOQUI") {
-    const csrfToken = response.headers["x-csrf-token"]
-    const meta = document.createElement("meta")
-    meta.name = "csrf"
-    meta.content = csrfToken
-    document.getElementsByTagName("head")[0].appendChild(meta)
-    document.cookie = `x-csrf-token=${csrfToken}`
-  }
+  const csrfToken = response.headers["x-csrf-token"]
+  const meta = document.createElement("meta")
+  meta.name = "csrf"
+  meta.content = csrfToken
+  document.getElementsByTagName("head")[0].appendChild(meta)
+  document.cookie = `x-csrf-token=${csrfToken}`
   return response;
-}
-
-const responseErrorInterceptor = (error: any) => {
-  if (apiConfig.events.responseError) apiConfig.events.responseError(error);
+}, function (error: any) {
+  setTimeout(() => function dismissLoader() {
+    if (loader.value) {
+      loader.value.dismiss();
+      loader.value = null as any;
+    }
+  }, 100)
   // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
   const { status } = error.response || {};
   if (status == StatusCodes.UNAUTHORIZED) {
-    if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
+    unauthorised();
   }
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
   return Promise.reject(error);
-}
+});
 
 // `paramsSerializer` is an optional function in charge of serializing `params`
 // (e.g. https://www.npmjs.com/package/qs, http://api.jquery.com/jquery.param/)
@@ -126,23 +83,10 @@ const paramsSerializer = (parameters: any) => {
   return qs.stringify(params, { arrayFormat: 'repeat' });
 }
 
-function updateToken(key: string) {
-  apiConfig.token = key
-}
-
-function updateInstanceUrl(url: string) {
-  apiConfig.instanceUrl = url
-}
-
-function init(key: string, url: string, cacheAge: number) {
-  apiConfig.token = key
-  apiConfig.instanceUrl = url
-  apiConfig.cacheMaxAge = cacheAge
-}
-
-function getConfig() {
-  return appConfig;
-}
+const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+const axiosCache = setupCache({
+  maxAge: maxAge * 1000
+})
 
 /**
  * Generic method to call APIs
@@ -177,11 +121,13 @@ const api = async (customConfig: any) => {
     console.warn('Caching is not enabled in this build. Ignoring cache flag for request:', customConfig.url);
   }
 
+  if(customConfig.cache) config.adapter = axiosCache.adapter;
+  
   if (customConfig.queue) {
     if (!config.headers) config.headers = { ...axios.defaults.headers.common, ...config.headers, "Authorization": `Bearer ${useAuthStore().token.value}` };
 
     if (config.events.queueTask) {
-      config.events.queueTask({
+      emitter.emit("queueTask", {
         callbackEvent: customConfig.callbackEvent,
         payload: config
       })
@@ -197,4 +143,4 @@ const client = (config: any) => {
 }
 
 
-export { api as default, createAppConfig, axios, getConfig, init, updateToken, updateInstanceUrl, client };
+export { api as default, axios, client };
