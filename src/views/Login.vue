@@ -1,75 +1,39 @@
 <template>
-  <ion-page>
-    <ion-content>
-      <div class="flex">
-        <form class="login-container" @submit.prevent="handleSubmit">
-          <section>
-            <ion-item lines="full">
-              <ion-input
-                :label="$t('Username')"
-                label-placement="fixed"
-                v-model="username"
-                id="username"
-                type="text"
-                required
-              />
-            </ion-item>
-
-            <ion-item lines="none">
-              <ion-input
-                :label="$t('Password')"
-                label-placement="fixed"
-                v-model="password"
-                id="password"
-                type="password"
-                required
-              />
-            </ion-item>
-
-            <div class="ion-padding">
-              <ion-button
-                color="primary"
-                expand="block"
-                :disabled="isLoggingIn"
-                @click="login"
-              >
-                {{ $t('Login') }}
-                <ion-spinner v-if="isLoggingIn" slot="end" name="crescent" />
-                <ion-icon v-else slot="end" :icon="arrowForwardOutline" />
-              </ion-button>
-            </div>
-          </section>
-        </form>
-      </div>
-    </ion-content>
-  </ion-page>
+  <ion-content>
+    <div class="center-div">
+      <ion-item lines="none" v-if='error.message.length'>
+        <ion-icon slot="start" color="warning" :icon="warningOutline" />
+        <h4>{{ $t('Login failed') }}</h4>
+      </ion-item>
+      <p v-if='error.responseMessage.length'>
+        {{ $t('Reason:') }} {{ $t(error.responseMessage) }}
+      </p>
+      <p v-if='error.message.length'>
+        {{ $t(error.message) }}
+      </p>
+      <ion-button v-if='error.message.length' class="ion-margin-top" @click="goToLaunchpad()">
+        <ion-icon slot="start" :icon="arrowBackOutline" />
+        {{ $t("Back to Launchpad") }}
+      </ion-button>
+    </div>
+  </ion-content>
 </template>
 
 <script setup lang="ts">
-import {
-  IonButton,
-  IonContent,
-  IonFab,
-  IonFabButton,
-  IonIcon,
-  IonInput,
-  IonItem,
-  IonPage,
-  IonSpinner,
-  loadingController,
-} from "@ionic/vue";
+import { IonContent, loadingController } from "@ionic/vue";
+import { arrowBackOutline, warningOutline } from 'ionicons/icons'
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { arrowForwardOutline, gridOutline } from "ionicons/icons";
+import { useAuthStore } from "@/stores/authStore";
 import { translate } from "@/i18n";
-import { showToast } from "@/services/uiUtils";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const error = ref({
+  message: '',
+  responseMessage: ''
+})
 
-const username = ref("");
-const password = ref("");
 const isLoggingIn = ref(false);
 let loader: any = null;
 
@@ -95,56 +59,45 @@ const dismissLoader = async () => {
   }
 };
 
-const handleSubmit = async () => {
-  if (!username.value || !password.value) {
-    showToast(translate("Please fill in the user details"));
-    return;
-  }
-  await login();
-};
-
 const login = async () => {
   const route = router.currentRoute.value;
-  const { oms, omsRedirectionUrl, token } = route.query;
+  const { oms, omsRedirectionUrl, token, expirationTime } = route.query;
 
   try {
     isLoggingIn.value = true;
     await presentLoader("Logging in...");
 
     await authStore.login({
-      username: username.value.trim() || null,
-      password: password.value || null,
-      token: token as string | null,
-      oms: (oms as string) || "",
-      omsRedirectionUrl:
-        (omsRedirectionUrl as string) || "",
+      token: token,
+      oms: oms,
+      omsRedirectionUrl: omsRedirectionUrl,
+      expirationTime: expirationTime
     });
 
     router.replace("/");
-  } catch (error) {
-    console.error("[Login Error]", error);
-    showToast(translate("Login failed. Please try again."));
-    window.location.href = process.env.VUE_APP_LOGIN_URL || "";
+  } catch (err) {
+    console.error("[Login Error]", err);
+    error.value.message = 'Please contact the administrator.'
+    error.value.responseMessage = `${err}` || '';
   } finally {
     isLoggingIn.value = false;
     await dismissLoader();
   }
 };
 
+function goToLaunchpad() {
+  window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
+}
+
 onUnmounted(() => {
   dismissLoader();
 });
 </script>
-
-<style scoped>
-.login-container {
-  width: 375px;
-}
-
-.flex {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+<style>
+.center-div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

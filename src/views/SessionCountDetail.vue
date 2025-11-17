@@ -10,7 +10,10 @@
     </ion-header>
 
     <ion-content ref="pageRef">
-      <main>
+        <div v-if="isLoadingItems" class="loading-overlay">
+          <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
+        </div>
+      <main v-else>
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
@@ -19,7 +22,7 @@
               :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"></ion-input>
           </ion-item>
 
-          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal" @click="startSession" :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
+          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal" @click="focusScanner" :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ translate("start counting") }}
           </ion-button>
@@ -31,19 +34,23 @@
           </ion-item>
 
           <div class="events">
-            <ion-list>
-              <ion-item v-for="event in events" :key="event.id" :class="{ unaggregated: event.aggApplied === 0 }">
-                <ion-thumbnail slot="start">
-                  <Image :src="event.product?.mainImageUrl" />
-                </ion-thumbnail>
-                <ion-badge class="scan-badge">{{ event.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
-                <ion-label>
-                  {{ event.scannedValue }}
-                  <p>{{ timeAgo(event.createdAt) }}</p>
-                </ion-label>
-                <ion-note slot="end">{{ event.quantity }}</ion-note>
-              </ion-item>
-            </ion-list>
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :index="index" :active="active">
+                <ion-item :class="{ unaggregated: item.aggApplied === 0 }">
+                  <ion-thumbnail slot="start" class="clickable-image" @click="openImagePreview(item.product?.mainImageUrl)">
+                    <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                  </ion-thumbnail>
+                  <ion-badge class="scan-badge">{{ item.aggApplied === 0 ? translate('unaggregated') : '' }}</ion-badge>
+                  <ion-label>
+                    {{ item.scannedValue }}
+                    <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
+                  </ion-label>
+                  <ion-note slot="end">{{ item.quantity }}</ion-note>
+                </ion-item>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
           </div>
 
           <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
@@ -87,11 +94,11 @@
                 <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                 {{ translate("Edit") }}
               </ion-button>
-              <ion-button color="warning" fill="outline" @click="discard" :disabled="sessionLocked">
+              <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
                 <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                 {{ translate("Discard") }}
               </ion-button>
-              <ion-button color="success" fill="outline" @click="submit" :disabled="sessionLocked">
+              <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                 {{ translate("Submit") }}
               </ion-button>
@@ -109,7 +116,7 @@
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>{{ translate("Pending match scans") }}</ion-label>
-                  <p slot="end">{{events.filter((e: any) => e.aggApplied === 0).length}}</p>
+                  <p slot="end">{{events.filter((event: any) => event.aggApplied === 0).length}}</p>
                 </ion-item>
                 <ion-item>
                   <ion-label>{{ translate("Unmatched scans") }}</ion-label>
@@ -161,16 +168,24 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">
+                          {{ item.quantity }} {{ translate('Units') }}
+                        </ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -180,16 +195,22 @@
               </template>
 
               <template v-else>
-                <ion-card v-for="item in uncountedItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          {{ useProductMaster().primaryId(item.product) }}
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
             </ion-segment-content>
 
@@ -197,16 +218,24 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">
+                          {{ item.quantity }} {{ translate('Units') }}
+                        </ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -216,16 +245,22 @@
               </template>
 
               <template v-else>
-                <ion-card v-for="item in undirectedItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} units</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="undirectedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          {{ useProductMaster().primaryId(item.product) }}
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
             </ion-segment-content>
 
@@ -248,10 +283,10 @@
                   <!-- Previous good scan -->
                   <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("items ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -261,10 +296,10 @@
                   <!-- Next good scan -->
                   <ion-item lines="none" v-if="getScanContext(item).nextGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -296,10 +331,10 @@
                   <!-- Previous good scan -->
                   <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("item ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -309,10 +344,10 @@
                   <!-- Next good scan -->
                   <ion-item lines="none" v-if="getScanContext(item).nextGood">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" />
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -327,16 +362,25 @@
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} {{ translate("units") }}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                  <template v-slot="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-item>
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <p v-if="item.wasUnmatched">{{ item.scannedValue }}</p>
+                        </ion-label>
+                        <ion-note slot="end">
+                          {{ item.quantity }} {{ translate('Units') }}
+                        </ion-note>
+                      </ion-item>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -344,19 +388,25 @@
                   <ion-label>{{ translate("No products found") }}</ion-label>
                 </div>
               </template>
-
+              
               <template v-else>
-                <ion-card v-for="item in countedItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl" />
-                  <ion-item>
-                    <ion-label>
-                      {{ useProductMaster().primaryId(item.product) }}
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} {{ translate("units") }}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
-              </template>
+                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <template v-slot="{ item, index, active }">
+                  <DynamicScrollerItem :item="item" :index="index" :active="active">
+                    <ion-item>
+                      <ion-thumbnail slot="start">
+                        <Image :src="item.product?.mainImageUrl || require('@/assets/images/defaultImage.png')" :key="item.product?.mainImageUrl"/>
+                      </ion-thumbnail>
+                      <ion-label>
+                        {{ useProductMaster().primaryId(item.product) }}
+                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      </ion-label>
+                      <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                    </ion-item>
+                  </DynamicScrollerItem>
+                </template>
+              </DynamicScroller>
+            </template>
             </ion-segment-content>
           </ion-segment-view>
         </div>
@@ -382,7 +432,7 @@
             <ion-radio-group v-model="selectedProductId">
               <ion-item v-for="product in products" :key="product.productId">
                 <ion-thumbnail slot="start">
-                  <Image :src="product?.mainImageUrl" />
+                  <Image :src="product?.mainImageUrl" :key="product?.mainImageUrl"/>
                 </ion-thumbnail>
                 <ion-radio :value="product.productId">
                   <ion-label>
@@ -444,18 +494,36 @@
           </ion-fab>
         </ion-content>
       </ion-modal>
+      <ion-modal :is-open="isImageModalOpen" @didDismiss="closeImagePreview">
+        <ion-content class="ion-padding image-preview-modal">
+          <ion-img :src="largeImage" />
+        </ion-content>
+      </ion-modal>
+      <ion-alert :is-open="showSubmitAlert" header="Submit for review" message="Make sure you’ve reviewed the products and their counts before uploading them for review."
+        :buttons="[
+          { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
+          { text: 'Submit', role: 'confirm', handler: confirmSubmit }
+        ]"
+        @didDismiss="showSubmitAlert = false"/>
+
+      <ion-alert :is-open="showDiscardAlert" header="Leave session" message="Leaving this session unlinks it from your device and allows other users to continue this session on their device."
+        :buttons="[
+          { text: 'Cancel', role: 'cancel', handler: () => showDiscardAlert = false },
+          { text: 'Leave', role: 'confirm', handler: confirmDiscard }
+        ]"
+        @didDismiss="showDiscardAlert = false"/>
     </ion-content>
   </ion-page>
 </template>
 
 
 <script setup lang="ts">
-import { IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { loader, showToast } from '@/services/uiUtils';
+import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -466,8 +534,13 @@ import router from '@/router';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/auth';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserProfile } from '@/stores/userProfileStore';
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import ProgressBar from '@/components/ProgressBar.vue';
+import { useProductStore } from '@/stores/productStore';
+import { debounce } from "lodash-es";
+
 
 const props = defineProps<{
   workEffortId: string;
@@ -498,6 +571,13 @@ const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
 const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
+const showSubmitAlert = ref(false)
+const showDiscardAlert = ref(false)
+
+//Progress bar
+const totalItems = ref(0)
+const loadedItems = ref(0)
+const isLoadingItems = ref(true)
 
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
@@ -523,13 +603,13 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => useUserProfileNew().getUserProfile);
+const userLogin = computed(() => useUserProfile().getUserProfile);
 
 onIonViewDidEnter(async () => {
-  await loader.present("Loading session details...");
   try {
-    await handleSessionLock();
     await startSession();
+    await handleSessionLock();
+    
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
     from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
@@ -558,8 +638,8 @@ onIonViewDidEnter(async () => {
       new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
     )
 
-    aggregationWorker.onmessage = (e) => {
-      const { type, count } = e.data
+    aggregationWorker.onmessage = (event) => {
+      const { type, count } = event.data
       if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
       }
@@ -572,8 +652,7 @@ onIonViewDidEnter(async () => {
     };
     // Run every 10 seconds
     // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
-    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"]
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({
       type: 'schedule',
@@ -583,7 +662,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
-          userLoginId: useUserProfileNew().getUserProfile?.username,
+          userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
@@ -595,8 +674,6 @@ onIonViewDidEnter(async () => {
     console.error(error);
     showToast("Failed to load session details");
   }
-  loader.dismiss();
-
 });
 
 onBeforeUnmount(async () => {
@@ -645,30 +722,71 @@ async function startSession() {
       throw resp;
     }
 
-    if (resp?.data?.activeUserLoginId) {
-      sessionLocked.value = true;
-      showToast('This session is already being worked on by another user.');
-      return;
-    }
+    await getTotalItemCount();
 
     // Load InventoryCountImportItem records into IndexedDB
-    const localRecords = await useInventoryCountImport().getInventoryCountImportItems(props.inventoryCountImportId);
+    const sessionItemsCount = await useInventoryCountImport().getInventoryCountImportItemsCount(props.inventoryCountImportId);
 
-    if (!localRecords?.length || isNewLockAcquired.value) {
+    if (!sessionItemsCount || totalItems.value !== sessionItemsCount) {
       console.log("[Session] No local records found, fetching from backend...");
-      await useInventoryCountImport().loadInventoryItemsFromBackend(props.inventoryCountImportId);
+      await loadInventoryItemsWithProgress();
+    } else {
+      isLoadingItems.value = false
     }
 
     // Prefetch product details for all related productIds
     const productIds = await useInventoryCountImport().getSessionProductIds(props.inventoryCountImportId);
-    if (productIds.length) await useProductMaster().prefetch(productIds);
-    showToast('Session ready to start counting');
+    if (productIds.length) {
+      // fire asynchronously, don’t block UI
+      useProductMaster().prefetch(productIds)
+        .then(() => console.info(`Prefetch ${productIds.length} products hydrated`))
+        .catch(err => console.warn('Prefetch Failed:', err))
+    }    showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
     showToast('Failed to initialize session');
   }
 
   focusScanner();
+}
+
+async function loadInventoryItemsWithProgress() {
+  loadedItems.value = 0
+  isLoadingItems.value = true
+  const pageSize = 500
+  let pageIndex = 0
+  let totalFetched = 0
+
+  try {
+    let hasMore = true
+    while (hasMore) {
+      const resp = await useInventoryCountImport().getSessionItemsByImportId({
+        inventoryCountImportId: props.inventoryCountImportId,
+        pageIndex,
+        pageSize
+      })
+
+      if (resp?.status !== 200 || !resp.data?.length) break
+
+      const items = resp.data
+      totalFetched += items.length
+      loadedItems.value = totalFetched
+
+      // store in IndexedDB
+      await useInventoryCountImport().storeInventoryCountItems(items)
+
+      if (items.length < pageSize) {
+        hasMore = false
+        break
+      }
+      pageIndex++
+    }
+  } catch (err) {
+    console.error('Error loading items with progress', err)
+    showToast('Failed to load session items')
+  } finally {
+    isLoadingItems.value = false
+  }
 }
 
 function focusScanner() {
@@ -696,9 +814,9 @@ function handleScan() {
 
 async function handleSessionLock() {
   try {
-    const userId = useUserProfileNew().getUserProfile?.username;
+    const userId = useUserProfile().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
-    const currentDeviceId = useUserProfileNew().getDeviceId;
+    const currentDeviceId = useUserProfile().getDeviceId;
 
     // Fetch existing lock
     const existingLockResp = await useInventoryCountImport().getSessionLock({
@@ -747,8 +865,8 @@ async function handleSessionLock() {
 
       // Message listener
       if (worker) {
-        worker.onmessage = async (e: any) => {
-          const { type, thruDate } = e.data;
+        worker.onmessage = async (event: any) => {
+          const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
@@ -804,8 +922,8 @@ async function handleSessionLock() {
 
       // Listen for messages
       if (worker) {
-        worker.onmessage = async (e: any) => {
-          const { type, thruDate } = e.data;
+        worker.onmessage = async (event: any) => {
+          const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
             console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
@@ -843,7 +961,7 @@ async function releaseSessionLock() {
   try {
     const payload = {
       inventoryCountImportId: props.inventoryCountImportId,
-      userId: useUserProfileNew().getUserProfile?.username,
+      userId: useUserProfile().getUserProfile?.username,
       thruDate: Date.now(),
       fromDate: currentLock.value.fromDate
     };
@@ -858,6 +976,20 @@ async function releaseSessionLock() {
   } catch (err) {
     console.error('Error releasing session lock:', err);
     showToast('Error while releasing session lock.');
+  }
+}
+
+async function getTotalItemCount() {
+  try {
+    const resp = await useInventoryCountImport().getInventoryCountImportItemCount(props.inventoryCountImportId)
+    if (resp?.status === 200 && resp.data?.count !== undefined) {
+      totalItems.value = resp.data.count
+    } else {
+      totalItems.value = 0
+    }
+  } catch (err) {
+    console.error('Failed to fetch total item count', err)
+    totalItems.value = 0
   }
 }
 
@@ -915,7 +1047,7 @@ async function saveMatchProduct() {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
-    userLoginId: useUserProfileNew().getUserProfile?.username,
+    userLoginId: useUserProfile().getUserProfile?.username,
     isRequested: 'Y',
   };
 
@@ -944,12 +1076,11 @@ async function finalizeAggregationAndSync() {
   try {
     if (!aggregationWorker) return;
 
-    const productStoreSettings = useUserProfileNew().getProductStoreSettings;
-    const barcodeIdentification = productStoreSettings["barcodeIdentificationPref"];
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
-      userLoginId: useUserProfileNew().getUserProfile?.username,
+      userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
       barcodeIdentification,
@@ -969,8 +1100,8 @@ async function finalizeAggregationAndSync() {
     const result = await new Promise<number>((resolve) => {
       const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
       if (aggregationWorker) {
-        aggregationWorker.onmessage = (e) => {
-          const { type, count } = e.data;
+        aggregationWorker.onmessage = (event) => {
+          const { type, count } = event.data;
           if (type === 'aggregationComplete') {
             console.log(`Aggregated ${count} products from scans`)
             clearTimeout(timeout);
@@ -1000,35 +1131,44 @@ async function unscheduleWorker() {
   }
 }
 
-async function submit() {
+async function confirmSubmit() {
+  showSubmitAlert.value = false
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast(translate("Unmatched products should be matched before submission"));
-      return;
+      showToast(translate("Unmatched products should be resolved before submission"))
+      return
     }
-    await finalizeAggregationAndSync();
-    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_SUBMITTED' });
-    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED';
-    await releaseSessionLock();
-    if (lockWorker) await lockWorker.stopHeartbeat();
-    showToast('Session submitted successfully');
+    await finalizeAggregationAndSync()
+    await useInventoryCountImport().updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      statusId: 'SESSION_SUBMITTED'
+    })
+    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
+    await releaseSessionLock()
+    if (lockWorker) await lockWorker.stopHeartbeat()
+    showToast('Session submitted successfully')
   } catch (err) {
-    console.error(err);
-    showToast('Failed to submit session');
+    console.error(err)
+    showToast('Failed to submit session')
   }
 }
 
-async function discard() {
+async function confirmDiscard() {
+  showDiscardAlert.value = false
   try {
-    await finalizeAggregationAndSync();
-    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_VOIDED', fromDate: currentLock.value.fromDate });
-    inventoryCountImport.value.statusId = 'SESSION_VOIDED';
-    await releaseSessionLock();
-    if (lockWorker) await lockWorker.stopHeartbeat();
-    showToast('Session discarded');
+    await finalizeAggregationAndSync()
+    await useInventoryCountImport().updateSession({
+      inventoryCountImportId: props.inventoryCountImportId,
+      statusId: 'SESSION_VOIDED',
+      fromDate: currentLock.value.fromDate
+    })
+    inventoryCountImport.value.statusId = 'SESSION_VOIDED'
+    await releaseSessionLock()
+    if (lockWorker) await lockWorker.stopHeartbeat()
+    showToast('Session discarded')
   } catch (err) {
-    console.error(err);
-    showToast('Failed to discard session');
+    console.error(err)
+    showToast('Failed to discard session')
   }
 }
 
@@ -1044,7 +1184,7 @@ async function reopen() {
   }
 }
 
-async function handleIndexedDBSearch() {
+const handleIndexedDBSearch = debounce(async () => {
   if (!searchKeyword.value.trim()) {
     filteredItems.value = [] // show all
     return
@@ -1055,7 +1195,7 @@ async function handleIndexedDBSearch() {
     selectedSegment.value
   )
   filteredItems.value = results
-}
+}, 150)
 
 function clearSearchResults() {
   searchKeyword.value = ''
@@ -1067,12 +1207,12 @@ function getScanContext(item: any) {
 
   // newest → oldest
   const sortedScans = [...events.value].sort(
-    (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)
+    (predecessor, successor) => (successor.createdAt ?? 0) - (predecessor.createdAt ?? 0)
   )
 
   // find the actual unmatched scan (by scannedValue, not id)
   const index = sortedScans.findIndex(
-    (e) => e.scannedValue === item.productIdentifier
+    (event) => event.scannedValue === item.productIdentifier
   )
   if (index === -1) return {}
 
@@ -1109,6 +1249,25 @@ function getScanContext(item: any) {
     nextGoodIndex,
   }
 }
+
+function showTime(ts: number) {
+  const exact = dayjs(ts).format('DD MMM YYYY, hh:mm:ss A');
+  showToast(`Scanned at: ${exact}`);
+}
+
+const isImageModalOpen = ref(false)
+const largeImage = ref("")
+
+function openImagePreview(src: string) {
+  if (!src) return
+  largeImage.value = src
+  isImageModalOpen.value = true
+}
+
+function closeImagePreview() {
+  isImageModalOpen.value = false
+}
+
 </script>
 
 <style scoped>
@@ -1219,5 +1378,42 @@ ion-segment-view {
   top: 6px;
   right: 10px;
   z-index: 1;
+}
+
+.virtual-list {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 200px); /* Adjust for toolbar and stats height */
+  overflow-y: auto;
+}
+
+.virtual-list ion-item {
+  --min-height: 64px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0; /* covers entire screen */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all; /* ensure it blocks all clicks */
+}
+
+.clickable-time {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.clickable-image {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.image-preview-modal ion-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 </style>

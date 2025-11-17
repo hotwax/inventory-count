@@ -46,8 +46,7 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from '@/services/uiUtils';
-import { useFacilityStore } from '@/stores/useFacilityStore';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/productStore';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -116,7 +115,7 @@ async function loadMoreCycleCounts(event: any) {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useFacilityStore().getFacilities || [];
+  const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 </script>

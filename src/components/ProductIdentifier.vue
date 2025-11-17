@@ -13,35 +13,34 @@
 
     <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
       <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
-        <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+        <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
       </ion-select>
     </ion-item>
     <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
       <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
         <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
-        <ion-select-option value="">{{ "None" }}</ion-select-option>
+        <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
       </ion-select>
     </ion-item>
   </ion-card>
 </template>
 
 <script setup lang="ts">
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonThumbnail } from '@ionic/vue';
-import { useProductIdentificationStore } from '@/stores/productIdentification';
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonSelect, IonSelectOption } from '@ionic/vue';
 import { computed, onMounted } from 'vue';
 import { Actions, hasPermission } from '@/authorization';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/productStore';
 
 const currentEComStore = computed(() =>  useProductStore().getCurrentProductStore)
-const productIdentificationPref = computed(() => useProductIdentificationStore().getProductIdentificationPref);
-const productIdentificationOptions = computed(() => useProductIdentificationStore().getProductIdentificationOptions);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 onMounted(() => {
-  useProductIdentificationStore().prepareProductIdentifierOptions();
-  useProductIdentificationStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
+  useProductStore().prepareProductIdentifierOptions();
+  useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 
 function setProductIdentificationPref(value: string | any, id: string) {
-  useProductIdentificationStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
+  useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
 
 </script>

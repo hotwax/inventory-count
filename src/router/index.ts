@@ -17,9 +17,9 @@ import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
-import { useUserProfileNew } from "@/stores/useUserProfile";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -57,6 +57,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
+      setPermissions(useUserProfile().getPermissions());
       if(hasPermission("APP_ASSIGNED_VIEW")) {
         return "/assigned"
       }

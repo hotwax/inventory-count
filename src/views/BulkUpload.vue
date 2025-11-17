@@ -189,20 +189,20 @@ import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, c
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { useUserProfileNew } from '@/stores/useUserProfile';
+import { useUserProfile } from '@/stores/userProfileStore';
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
 
-const fieldMappings = computed(() => useUserProfileNew().getFieldMappings);
+const fieldMappings = computed(() => useUserProfile().loadFieldMappings);
 const systemMessages = ref([]);
 
 onIonViewDidEnter(async () => {
   resetDefaults();
-  await useUserProfileNew().fetchFieldMappings();
+  await useUserProfile().loadFieldMappings();
   systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
 });
 
@@ -256,7 +256,7 @@ async function saveMapping() {
     return;
   }
   const id = generateUniqueMappingPrefId();
-  await useUserProfileNew().createFieldMapping({
+  await useUserProfile().createFieldMapping({
     id,
     name: mappingName.value,
     value: modalFieldMapping.value,
@@ -332,14 +332,14 @@ function extractFilename(path) {
   const fn = path.substring(path.lastIndexOf("/") + 1);
   return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
-function getFileProcessingStatus(s) {
-  if (s.statusId === "SmsgConsumed") return "processed";
-  if (s.statusId === "SmsgConsuming") return "processing";
-  if (s.statusId === "SmsgCancelled") return "cancelled";
-  if (s.statusId === "SmsgError") return "error";
+function getFileProcessingStatus(systemMessage) {
+  if (systemMessage.statusId === "SmsgConsumed") return "processed";
+  if (systemMessage.statusId === "SmsgConsuming") return "processing";
+  if (systemMessage.statusId === "SmsgCancelled") return "cancelled";
+  if (systemMessage.statusId === "SmsgError") return "error";
   return "pending";
 }
-function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((m, k) => (m[k] = "", m), {}); }
+function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((mapping, key) => (mapping[key] = "", mapping), {}); }
 function resetDefaults() {
   resetFieldMapping();
   uploadedFile.value = {};
@@ -349,13 +349,13 @@ function resetDefaults() {
   selectedMappingId.value = null;
 }
 
-async function parse(e) {
-  const f = e.target.files[0];
+async function parse(event) {
+  const file = event.target.files[0];
   try {
-    if (f) {
-      uploadedFile.value = f;
-      fileName.value = f.name;
-      content.value = await parseCsv(f);
+    if (file) {
+      uploadedFile.value = file;
+      fileName.value = file.name;
+      content.value = await parseCsv(file);
       fileColumns.value = Object.keys(content.value[0]);
       showToast(translate("File uploaded successfully"));
       resetFieldMapping();
@@ -367,17 +367,17 @@ async function parse(e) {
 }
 async function save() {
   const required = Object.keys(getFilteredFields(fields, true));
-  const selected = Object.keys(fieldMapping.value).filter(k => fieldMapping.value[k]);
-  if (!required.every(f => selected.includes(f))) return showToast(translate("Select all required fields to continue"));
-  const uploadedData = content.value.map(i => ({
-    countImportName: i[fieldMapping.value.countImportName],
-    purposeType: i[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
-    statusId: i[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
-    idValue: i[fieldMapping.value.productSku],
+  const selected = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key]);
+  if (!required.every(field => selected.includes(field))) return showToast(translate("Select all required fields to continue"));
+  const uploadedData = content.value.map(row => ({
+    countImportName: row[fieldMapping.value.countImportName],
+    purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
+    statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
+    idValue: row[fieldMapping.value.productSku],
     idType: "SKU",
-    dueDate: i[fieldMapping.value.dueDate],
-    estimatedStartDate: i[fieldMapping.value.estimatedStartDate],
-    externalFacilityId: i[fieldMapping.value.facility],
+    dueDate: row[fieldMapping.value.dueDate],
+    estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
+    externalFacilityId: row[fieldMapping.value.facility],
   }));
   const data = jsonToCsv(uploadedData, {
     parse: {},
@@ -399,12 +399,12 @@ async function save() {
     showToast(translate("Failed to upload the file, please try again"));
   }
 }
-function mapFields(m, id) {
-  const data = JSON.parse(JSON.stringify(m));
+function mapFields(mapping, index) {
+  const data = JSON.parse(JSON.stringify(mapping));
   const csvFields = Object.keys(content.value[0]);
-  Object.keys(data.value).forEach(k => { if (!csvFields.includes(data.value[k])) data.value[k] = ""; });
+  Object.keys(data.value).forEach(key => { if (!csvFields.includes(data.value[key])) data.value[key] = ""; });
   fieldMapping.value = data.value;
-  selectedMappingId.value = id;
+  selectedMappingId.value = index;
 }
 const parseCsv = async (file, options) => {
   return new Promise ((resolve, reject) => {
@@ -424,7 +424,6 @@ const parseCsv = async (file, options) => {
 }
 
 const jsonToCsv = (file, options) => {
-  console.log("file", options);
   const csv = Papa.unparse(file, {
     ...options.parse
   });

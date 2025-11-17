@@ -46,7 +46,7 @@ export interface AppPreferences {
 
 class CommonDB extends Dexie {
   products!: Table<Product, string>
-  productIdents!: Table<{ productId: string; identKey: string; value: string }, [string, string]>
+  productIdentification!: Table<{ productId: string; identKey: string; value: string }, [string, string]>
   inventoryCountRecords!: Table<InventoryCountImportItem, [string, string]>
   scanEvents!: Table<ScanEvent, number>
   appPreferences!: Table<AppPreferences, string>
@@ -55,7 +55,7 @@ class CommonDB extends Dexie {
     super('CommonDB')
     this.version(1).stores({
       products: 'productId, updatedAt',
-      productIdents: '[productId+identKey], identKey, value',
+      productIdentification: '[productId+identKey], identKey, value',
       inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested',
       scanEvents: '++id, inventoryCountImportId, scannedValue, productId, aggApplied',
       appPreferences: 'key'

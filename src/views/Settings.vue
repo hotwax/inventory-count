@@ -47,12 +47,12 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button v-if="!authStore.isEmbedded" :disabled="!omsRedirectionInfo.token || !omsRedirectionInfo.url || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(omsRedirectionInfo.token, omsRedirectionInfo.url)" fill="clear">
+          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear">
             {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')" @updateFacility="setFacility"/>
+        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
         <ProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore"/>
       </section>
       <hr />
@@ -87,7 +87,7 @@
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
           <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
-            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="productStoreSettings['barcodeIdentificationPref']" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
               <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -102,28 +102,26 @@ import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSu
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { openOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
-import { useUserProfileNew } from "@/stores/useUserProfile";
-import { useProductStore } from "@/stores/useProductStore";
-import { useFacilityStore } from "@/stores/useFacilityStore";
+import { useUserProfile } from "@/stores/userProfileStore";
+import { useProductStore } from "@/stores/productStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
-import { useProductIdentificationStore } from "@/stores/productIdentification";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
-const userProfile = computed(() => useUserProfileNew().getUserProfile);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
 const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
-  await useUserProfileNew().fetchProductStoreSettings(useProductStore().getCurrentProductStore.productStoreId)
+  await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
 })
 
 function logout() {
@@ -135,10 +133,6 @@ function logout() {
 
 function goToLaunchpad() {
   window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-}
-
-async function setFacility(facility: any) {
-  await useFacilityStore().setFacilityPreference(facility);
 }
 
 async function setProductStore(selectedProductStore: any) {
@@ -156,14 +150,12 @@ const goToOms = (token: string, oms: string) => {
 }
 
 /* Force Scan Card Logic */
-const productIdentificationStore = useProductIdentificationStore();
 
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
-const productStoreSettings = computed(() => useUserProfileNew().getProductStoreSettings)
-const productIdentifications = computed(() => productIdentificationStore.getGoodIdentificationOptions) as any
+const productIdentifications = computed(() => useProductStore().getGoodIdentificationOptions) as any
 
 function setBarcodeIdentificationPref(value: any) {
-  useUserProfileNew().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+  useProductStore().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
 }
 </script>
 

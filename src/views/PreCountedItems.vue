@@ -108,19 +108,22 @@ import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useProductIdentificationStore } from '@/stores/productIdentification'
-import { useAuthStore } from '@/stores/auth'
-import { useFacilityStore } from '@/stores/useFacilityStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
-import { useProductStoreSettings } from '@/composables/useProductStoreSettings'
+import { useProductStore } from '@/stores/productStore'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
-const productIdentificationStore = useProductIdentificationStore()
 
 const props = defineProps({
-  workEffortId: String,
-  inventoryCountImportId: String,
+  workEffortId: {
+    type: String,
+    required: true
+  },
+  inventoryCountImportId: {
+    type: String,
+    required: true
+  }
 })
 
 const workEffort = ref()
@@ -130,7 +133,7 @@ const searchedProduct = ref()
 const products = ref<any[]>([])
 
 const hasUnsavedProducts = computed(() =>
-  products.value.some(p => !p.saved && p.countedQuantity > 0)
+  products.value.some(product => !product.saved && product.countedQuantity > 0)
 )
 
 onMounted(async () => {
@@ -157,7 +160,7 @@ function onManualInputChange(event: CustomEvent, product: any) {
 
 async function getInventoryCycleCount() {
   try {
-    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId! })
+    const resp = await getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
     if (resp?.status !== 200 || !resp.data) throw resp
 
     workEffort.value = resp.data
@@ -174,16 +177,16 @@ async function getInventoryCycleCount() {
 async function handleSearch() {
   const term = searchedProductString.value.trim()
   if (!term) return
-  await fetchProductBySearch(term)
+  await getProductBySearch(term)
 }
 
-async function fetchProductBySearch(term: string) {
+async function getProductBySearch(term: string) {
   const query = useProductMaster().buildProductQuery({
     filter: `isVirtual: false,isVariant: true,(sku: ${term} OR internalName: ${term} OR upc: ${term})` as string,
   })
   await loader.present('Searching Product...')
   try {
-    const resp = await fetchProducts(query);
+    const resp = await getProducts(query);
 
     const product = resp?.data?.response?.docs?.[0]
     searchedProduct.value = product || null
@@ -195,7 +198,7 @@ async function fetchProductBySearch(term: string) {
   loader.dismiss()
 }
 
-async function fetchProducts(query: any) {
+async function getProducts(query: any) {
   const baseURL = useAuthStore().getBaseUrl;
 
   return client({
@@ -216,7 +219,7 @@ async function addProductInPreCountedItems(product: any) {
     searchedProductString.value = ''
     searchedProduct.value = null
 
-    const existing = products.value.find(p => p.productId === product.productId)
+    const existing = products.value.find(existingProduct => existingProduct.productId === product.productId)
     if (existing) {
       showToast(translate('Product already exists in Counted Items'))
       return
@@ -234,7 +237,7 @@ async function addProductInPreCountedItems(product: any) {
 
 async function setProductQoh(product: any) {
   try {
-    const facility: any = useFacilityStore().getCurrentFacility
+    const facility: any = useProductStore().getCurrentFacility
     const resp = await useProductMaster().getProductStock({
       productId: product.productId,
       facilityId: facility.facilityId,
@@ -247,10 +250,9 @@ async function setProductQoh(product: any) {
 }
 
 async function addPreCountedItemInScanEvents(product: any) {
-  const pref = productIdentificationStore.getProductIdentificationPref
   await recordScan({
-    inventoryCountImportId: props.inventoryCountImportId!,
-    productIdentifier: await useProductStoreSettings().getProductIdentificationValue(product.productId, useProductIdentificationStore().getProductIdentificationPref.primaryId),
+    inventoryCountImportId: props.inventoryCountImportId,
+    productIdentifier: await useProductStore().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
   product.saved = true
@@ -258,7 +260,7 @@ async function addPreCountedItemInScanEvents(product: any) {
 
 async function addAllProductsToScanEvents() {
   try {
-    const unsaved = products.value.filter(p => p.countedQuantity > 0 && !p.saved)
+    const unsaved = products.value.filter(product => product.countedQuantity > 0 && !product.saved)
     for (const product of unsaved) {
       await addPreCountedItemInScanEvents(product)
     }

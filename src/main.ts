@@ -37,7 +37,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { db } from '@/services/commonDatabase'
 import { initDeviceId } from '@/services/device'
-import { useUserProfileNew } from './stores/useUserProfile';
+import { useUserProfile } from './stores/userProfileStore';
 import { useProductMaster } from './composables/useProductMaster';
 import { setPermissions } from '@/authorization';
 
@@ -55,30 +55,8 @@ const app = createApp(App)
     rules: permissionRules,
     actions: permissionActions
   })
-// .use(dxpComponents, {
-// Actions,
-// defaultImgUrl: require("@/assets/images/defaultImage.png"),
-// login,
-// logout,
-// loader,
-// appLoginUrl: process.env.VUE_APP_LOGIN_URL as string,
-// fetchGoodIdentificationTypes,
-// getAvailableTimeZones,
-// getConfig,
-// getEComStores,
-// getEComStoresByFacility,
-// getProductIdentificationPref,
-// getUserFacilities,
-// getUserPreference,
-// hasPermission,
-// initialise,
-// localeMessages,
-// setProductIdentificationPref,
-// setUserPreference,
-// setUserTimeZone
-// });
 
-setPermissions(useUserProfileNew().fetchUserPermissions());
+setPermissions(useUserProfile().getPermissions());
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
@@ -90,7 +68,7 @@ app.config.globalProperties.$filters = {
   },
   formatUtcDate(value: any, inFormat?: any, outFormat?: string) {
     // TODO Make default format configurable and from environment variables
-    const userProfile = useUserProfileNew().getUserProfile;
+    const userProfile = useUserProfile().getUserProfile;
     // TODO Fix this setDefault should set the default timezone instead of getting it everytiem and setting the tz
     return DateTime.fromISO(value, { zone: 'utc' }).setZone(userProfile.userTimeZone).toFormat(outFormat ? outFormat : 'MM-dd-yyyy')
   },

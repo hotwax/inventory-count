@@ -1,87 +1,52 @@
 import axios from 'axios';
+import { setupCache } from "axios-cache-adapter"
 import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
-import merge from 'deepmerge';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/authStore';
 import emitter from '@/event-bus';
+import { loader } from './uiUtils';
 
-const requestInterceptor = async (config: any) => {
-  if (apiConfig.token) {
-    config.headers["Authorization"] = "Bearer " + apiConfig.token;
-    config.headers['Content-Type'] = 'application/json';
-  }
-  return config;
+function unauthorised() {
+  const authStore = useAuthStore();
+  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+  // Mark the user as unauthorised, this will help in not making the logout api call in actions
+  authStore.logout();
+  const redirectUrl = window.location.origin + '/login';
+  window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`;
 }
 
-// configuration passed from the app
-let appConfig = {} as any;
+axios.interceptors.request.use(async (config: any) => {
+  config.headers["Authorization"] = "Bearer " + useAuthStore().token.value;
+  config.headers['Content-Type'] = 'application/json';
+  return config;
+});
 
-const responseSuccessInterceptor = (response: any) => {
+axios.interceptors.response.use(function (response) {
   // Any status code that lie within the range of 2xx cause this function to trigger
   // Do something with response data
-  if (apiConfig.events.responseSuccess) apiConfig.events.responseSuccess(response);
-
-  if (apiConfig.systemType === "MOQUI") {
-    const csrfToken = response.headers["x-csrf-token"]
-    const meta = document.createElement("meta")
-    meta.name = "csrf"
-    meta.content = csrfToken
-    document.getElementsByTagName("head")[0].appendChild(meta)
-    document.cookie = `x-csrf-token=${csrfToken}`
-  }
+  const csrfToken = response.headers["x-csrf-token"]
+  const meta = document.createElement("meta")
+  meta.name = "csrf"
+  meta.content = csrfToken
+  document.getElementsByTagName("head")[0].appendChild(meta)
+  document.cookie = `x-csrf-token=${csrfToken}`
   return response;
-}
-
-const responseErrorInterceptor = (error: any) => {
-  if (apiConfig.events.responseError) apiConfig.events.responseError(error);
-  // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
-  if (error.response && apiConfig.systemType === "OFBIZ") {
-    // TODO Handle case for failed queue request
-    const { status } = error.response;
-    if (status == StatusCodes.UNAUTHORIZED) {
-      if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
+}, function (error: any) {
+  setTimeout(() => function dismissLoader() {
+    if (loader.value) {
+      loader.value.dismiss();
+      loader.value = null as any;
     }
+  }, 100)
+  // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
+  const { status } = error.response || {};
+  if (status == StatusCodes.UNAUTHORIZED) {
+    unauthorised();
   }
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
   return Promise.reject(error);
-}
-
-const responseClientErrorInterceptor = (error: any) => {
-  if (apiConfig.events.responseError) apiConfig.events.responseError(error);
-  // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
-  if (error.response && apiConfig.systemType === "MOQUI") {
-    // TODO Handle case for failed queue request
-    const { status } = error.response;
-    if (status == StatusCodes.UNAUTHORIZED) {
-      if (apiConfig.events.unauthorised) apiConfig.events.unauthorised(error);
-    }
-  }
-  // Any status codes that falls outside the range of 2xx cause this function to trigger
-  // Do something with response error
-  return Promise.reject(error);
-}
-
-const defaultConfig = {
-  token: '',
-  instanceUrl: '',
-  cacheMaxAge: 0,
-  events: {
-    unauthorised: undefined,
-    responseSuccess: undefined,
-    responseError: undefined,
-    queueTask: undefined
-  } as any,
-  interceptor: {
-    request: requestInterceptor,
-    response: {
-      success: responseSuccessInterceptor,
-      error: responseErrorInterceptor
-    }
-  },
-  systemType: "MOQUI"
-}
-let apiConfig = { ...defaultConfig }
+});
 
 // `paramsSerializer` is an optional function in charge of serializing `params`
 // (e.g. https://www.npmjs.com/package/qs, http://api.jquery.com/jquery.param/)
@@ -89,7 +54,7 @@ let apiConfig = { ...defaultConfig }
 //     return Qs.stringify(params, {arrayFormat: 'brackets'})
 //   },
 // This implemmentation is done to ensure array and object is passed correctly in OMS 1.0
-const paramsSerializer = (p: any) => {
+const paramsSerializer = (parameters: any) => {
   // When objects are stringified, by default they use bracket notation:
   // qs.stringify({ a: { b: { c: 'd', e: 'f' } } });
   // 'a[b][c]=d&a[b][e]=f'
@@ -97,8 +62,8 @@ const paramsSerializer = (p: any) => {
   // qs.stringify({ a: { b: { c: 'd', e: 'f' } } }, { allowDots: true });
   // 'a.b.c=d&a.b.e=f'
   // OMS 1.0 supports objects passed as strings
-  const params = Object.keys(p).reduce((params: any, key: string) => {
-    let value = p[key];
+  const params = Object.keys(parameters).reduce((params: any, key: string) => {
+    let value = parameters[key];
     if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
       value = JSON.stringify(value)
     }
@@ -118,38 +83,10 @@ const paramsSerializer = (p: any) => {
   return qs.stringify(params, { arrayFormat: 'repeat' });
 }
 
-function updateToken(key: string) {
-  apiConfig.token = key
-}
-
-function updateInstanceUrl(url: string) {
-  apiConfig.instanceUrl = url
-}
-
-function resetConfig() {
-  apiConfig = { ...defaultConfig }
-}
-
-function init(key: string, url: string, cacheAge: number) {
-  apiConfig.token = key
-  apiConfig.instanceUrl = url
-  apiConfig.cacheMaxAge = cacheAge
-}
-
-function initialise(customConfig: any) {
-  appConfig = customConfig;
-  apiConfig = merge(apiConfig, customConfig)
-  axios.interceptors.request.use(apiConfig.interceptor.request);
-  axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
-}
-
-function getConfig() {
-  return appConfig;
-}
-
-axios.interceptors.request.use(apiConfig.interceptor.request);
-
-axios.interceptors.response.use(apiConfig.interceptor.response.success, apiConfig.interceptor.response.error);
+const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+const axiosCache = setupCache({
+  maxAge: maxAge * 1000
+})
 
 /**
  * Generic method to call APIs
@@ -184,11 +121,13 @@ const api = async (customConfig: any) => {
     console.warn('Caching is not enabled in this build. Ignoring cache flag for request:', customConfig.url);
   }
 
+  if(customConfig.cache) config.adapter = axiosCache.adapter;
+  
   if (customConfig.queue) {
     if (!config.headers) config.headers = { ...axios.defaults.headers.common, ...config.headers, "Authorization": `Bearer ${useAuthStore().token.value}` };
 
     if (config.events.queueTask) {
-      config.events.queueTask({
+      emitter.emit("queueTask", {
         callbackEvent: customConfig.callbackEvent,
         payload: config
       })
@@ -204,4 +143,4 @@ const client = (config: any) => {
 }
 
 
-export { api as default, initialise, axios, getConfig, init, updateToken, updateInstanceUrl, resetConfig, client };
+export { api as default, axios, client };

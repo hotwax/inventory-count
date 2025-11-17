@@ -77,7 +77,7 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfileNew().getUserProfile.username">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
@@ -89,7 +89,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for this device") }}</p>
@@ -98,7 +98,7 @@
                 </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfileNew().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
@@ -110,7 +110,7 @@
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(s => s.statusId === 'SESSION_CREATED' || s.statusId === 'SESSION_ASSIGNED')">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
               <ion-button
@@ -170,13 +170,13 @@ import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/i
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import router from '@/router';
-import { showToast } from "@/services/uiUtils";
+import { loader, showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
-import { useUserProfileNew } from '@/stores/useUserProfile';
-import { useFacilityStore } from '@/stores/useFacilityStore';
+import { useUserProfile } from '@/stores/userProfileStore';
+import { useProductStore } from '@/stores/productStore';
 
 
 const cycleCounts = ref([]);
@@ -185,14 +185,14 @@ let isLoading = ref(false);
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
-const currentFacility = computed(() => useFacilityStore().getCurrentFacility);
+const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
 const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
-const currentDeviceId = useUserProfileNew().getDeviceId;
+const currentDeviceId = useUserProfile().getDeviceId;
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -307,7 +307,7 @@ const countName = ref('');
 
 async function addNewSession() {
   try {
-    const selectedCount = cycleCounts.value.find(c => c.workEffortId === selectedWorkEffortId.value)
+    const selectedCount = cycleCounts.value.find(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (!selectedCount) {
       showToast("Unable to find selected count.")
       return
@@ -322,7 +322,7 @@ async function addNewSession() {
       resp = await useInventoryCountRun().createSessionOnServer({
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+        uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -333,7 +333,7 @@ async function addNewSession() {
       const sessions = selectedCount.sessions || []
       if (sessions.length > 0) {
         // Sort by createdDate ascending
-        const oldest = [...sessions].sort((a, b) => a.createdDate - b.createdDate)[0]
+        const oldest = [...sessions].sort((predecessor, successor) => predecessor.createdDate - successor.createdDate)[0]
         if (oldest?.inventoryCountImportId) {
           resp = await useInventoryCountImport().cloneSession({
             inventoryCountImportId: oldest.inventoryCountImportId,
@@ -345,7 +345,7 @@ async function addNewSession() {
           resp = await useInventoryCountRun().createSessionOnServer({
             countImportName: countName.value,
             statusId: "SESSION_CREATED",
-            uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+            uploadedByUserLogin: useUserProfile().getUserProfile.username,
             facilityAreaId: selectedArea.value,
             createdDate: Date.now(),
             dueDate: Date.now(),
@@ -357,7 +357,7 @@ async function addNewSession() {
         resp = await useInventoryCountRun().createSessionOnServer({
           countImportName: countName.value,
           statusId: "SESSION_CREATED",
-          uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+          uploadedByUserLogin: useUserProfile().getUserProfile.username,
           facilityAreaId: selectedArea.value,
           createdDate: Date.now(),
           dueDate: Date.now(),
@@ -374,7 +374,7 @@ async function addNewSession() {
 
     // --- Update UI ---
     showToast("Session added Successfully")
-    const index = cycleCounts.value.findIndex(w => w.workEffortId === selectedWorkEffortId.value)
+    const index = cycleCounts.value.findIndex(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (index !== -1) {
       if (!cycleCounts.value[index].sessions) cycleCounts.value[index].sessions = []
 
@@ -382,7 +382,7 @@ async function addNewSession() {
         inventoryCountImportId: resp.data.inventoryCountImportId,
         countImportName: countName.value,
         statusId: "SESSION_CREATED",
-        uploadedByUserLogin: useUserProfileNew().getUserProfile.username,
+        uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
         dueDate: Date.now(),
@@ -424,11 +424,12 @@ async function markInProgress(workEffortId) {
 
 async function forceRelease(session) {
   try {
+    loader.present();
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
       thruDate: Date.now(),
-      overrideByUserId: useUserProfileNew().getUserProfile.username
+      overrideByUserId: useUserProfile().getUserProfile.username
     }
 
     const resp = await useInventoryCountImport().releaseSession(payload)
@@ -444,12 +445,13 @@ async function forceRelease(session) {
     console.error('Error releasing session lock:', err)
     showToast('Something went wrong while releasing session.')
   }
+  loader.dismiss();
 }
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
   try {
-    const userId = useUserProfileNew().getUserProfile.username;
-    const deviceId = useUserProfileNew().getDeviceId;
+    const userId = useUserProfile().getUserProfile.username;
+    const deviceId = useUserProfile().getDeviceId;
 
     // Fetch the active lock for this session
     const resp = await useInventoryCountImport().getSessionLock({

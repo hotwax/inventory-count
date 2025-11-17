@@ -1,8 +1,8 @@
 import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/auth';
+import { hasError } from '@/stores/authStore';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
-import { useProductStore } from '@/stores/useProductStore';
+import { useProductStore } from '@/stores/productStore';
 
 async function loadStatusDescription() {
     // Skip reload if already present
@@ -51,6 +51,14 @@ const getProductReviewDetail = async (payload: any): Promise<any> => {
   });
 };
 
+const getProductReviewDetailCount = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/reviews/count`,
+    method: "get",
+    params: payload
+  });
+};
+
 /** Get cycle count review summary */
 const getCycleCount = async (payload: any): Promise<any> => {
   return api({
@@ -61,9 +69,9 @@ const getCycleCount = async (payload: any): Promise<any> => {
 };
 
 /** Get sessions under a work effort */
-const getSessions = async (payload: any): Promise<any> => {
+const getSessionsCount = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/counts`,
+    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}/count`,
     method: "get",
     params: payload
   });
@@ -276,9 +284,10 @@ export function useInventoryCountRun() {
     getWorkEfforts,
     getWorkEffort,
     getProductReviewDetail,
+    getProductReviewDetailCount,
     getCycleCount,
     getCycleCountStatusDesc,
-    getSessions,
+    getSessionsCount,
     updateWorkEffort,
     createSessionOnServer,
     getCycleCountImportSystemMessages,

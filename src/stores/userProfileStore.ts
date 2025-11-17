@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api, { client } from '@/services/RemoteAPI';
-import { hasError } from '@/stores/auth'
+import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
 import i18n, { translate } from '@/i18n'
@@ -8,7 +8,7 @@ import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime } from 'luxon';
 
-export const useUserProfileNew = defineStore('userProfile', {
+export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     permissions: [] as any,
@@ -23,11 +23,6 @@ export const useUserProfileNew = defineStore('userProfile', {
     locale: 'en-US',
     currentTimeZoneId: '',
     timeZones: [],
-    settings: {
-      isFirstScanCountEnabled: false,
-      forceScan: false,
-      showQoh: false,
-    } as any,
     deviceId: '',
   }),
 
@@ -42,7 +37,6 @@ export const useUserProfileNew = defineStore('userProfile', {
     getUserPermissions: (state) => state.permissions,
     getFieldMappings: (state) => (type?: string) =>
       type ? state.fieldMappings[type] || {} : state.fieldMappings,
-    getProductStoreSettings: (state) => state.settings,
     getDeviceId: (state) => state.deviceId,
   },
 
@@ -53,7 +47,6 @@ export const useUserProfileNew = defineStore('userProfile', {
       // handling if locale is not coming from userProfile
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfileNew().getUserProfile
         if (locale) {
           matchingLocale = Object.keys(this.localeOptions).find((option: string) => option === locale)
           // If exact locale is not found, try to match the first two characters i.e primary code
@@ -77,7 +70,7 @@ export const useUserProfileNew = defineStore('userProfile', {
 
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfileNew().getUserProfile;
+        const userProfile = useUserProfile().getUserProfile;
 
         await setUserTimeZone({ userId: userProfile.userId, tzId })
         this.currentTimeZoneId = tzId
@@ -106,7 +99,7 @@ export const useUserProfileNew = defineStore('userProfile', {
     updateTimeZone(tzId: string) {
       this.currentTimeZoneId = tzId
     },
-    fetchUserPermissions() {
+    getPermissions() {
       return this.permissions;
     },
     /** Initialize after login */
@@ -117,70 +110,8 @@ export const useUserProfileNew = defineStore('userProfile', {
     setDeviceId(deviceId: string) {
       this.deviceId = deviceId
     },
-    async fetchProductStoreSettings(productStoreId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'GET'
-        })
-        if (!hasError(resp) && resp?.data.length) {
-          const settings = resp.data.reduce((acc: any, setting: any) => {
-            const keyMap: Record<string, string> = {
-              INV_CNT_VIEW_QOH: 'showQoh',
-              INV_FORCE_SCAN: 'forceScan',
-              INV_COUNT_FIRST_SCAN: 'isFirstScanCountEnabled',
-              BARCODE_IDEN_PREF: 'barcodeIdentificationPref'
-            }
-            const key = keyMap[setting.settingTypeEnumId]
-            if (key) {
-              acc[key] = setting.settingTypeEnumId === 'BARCODE_IDEN_PREF'
-                ? setting.settingValue
-                : JSON.parse(setting.settingValue)
-            }
-            return acc
-          }, this.settings)
-          this.settings = settings
-        }
-      } catch (err) {
-        logger.error('Failed to load product store settings', err)
-      }
-    },
 
-    async setProductStoreSetting(key: string, value: any, productStoreId: string) {
-      const keyToEnum: Record<string, string> = {
-        showQoh: 'INV_CNT_VIEW_QOH',
-        forceScan: 'INV_FORCE_SCAN',
-        isFirstScanCountEnabled: 'INV_COUNT_FIRST_SCAN',
-        barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
-      }
-      const enumId = keyToEnum[key]
-      if (!enumId) return
-
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'POST',
-          data: {
-            productStoreId,
-            settingTypeEnumId: enumId,
-            settingValue: key === 'barcodeIdentificationPref'
-              ? value
-              : JSON.stringify(value)
-          }
-        })
-        if (!hasError(resp)) {
-          this.settings[key] = value
-          showToast(translate('Store preference updated successfully.'))
-        } else {
-          throw resp
-        }
-      } catch (err) {
-        showToast(translate('Failed to update Store preference.'))
-        logger.error(err)
-      }
-    },
-
-    async fetchFieldMappings() {
+    async loadFieldMappings() {
       let fieldMappings: Record<string, any> = {}
       try {
         const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
@@ -323,9 +254,9 @@ export const useUserProfileNew = defineStore('userProfile', {
     },
 
     /**
-     * Get user profile with api_key
+     * Get user profile with token as Maarg now supports token based auth
      */
-    async fetchUserProfile(api_key: string, omsBaseUrl: string): Promise<any> {
+    async getProfile(token: string, omsBaseUrl: string): Promise<any> {
       const baseURL = omsBaseUrl.startsWith('http')
         ? omsBaseUrl.includes('/rest/s1')
           ? omsBaseUrl
@@ -338,7 +269,7 @@ export const useUserProfileNew = defineStore('userProfile', {
           method: 'GET',
           baseURL,
           headers: {
-            api_key,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
@@ -385,7 +316,7 @@ export const useUserProfileNew = defineStore('userProfile', {
         })
 
         if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
-          serverPermissions = resp.data.docs.map((p: any) => p.permissionId)
+          serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId)
 
           const total = resp.data.count
           const remaining = total - serverPermissions.length
@@ -394,13 +325,13 @@ export const useUserProfileNew = defineStore('userProfile', {
             const apiCallsNeeded =
               Math.floor(remaining / viewSize) + (remaining % viewSize !== 0 ? 1 : 0)
             const responses = await Promise.all(
-              [...Array(apiCallsNeeded).keys()].map(async (i) =>
+              [...Array(apiCallsNeeded).keys()].map(async (viewIndex) =>
                 client({
                   url: 'getPermissions',
                   method: 'POST',
                   baseURL,
                   data: {
-                    viewIndex: i + 1,
+                    viewIndex: viewIndex + 1,
                     viewSize,
                     permissionIds: payload.permissionIds
                   },
@@ -414,7 +345,7 @@ export const useUserProfileNew = defineStore('userProfile', {
             for (const response of responses) {
               if (!hasError(response) && response.data.docs) {
                 serverPermissions.push(
-                  ...response.data.docs.map((p: any) => p.permissionId)
+                  ...response.data.docs.map((permission: any) => permission.permissionId)
                 )
               }
             }
