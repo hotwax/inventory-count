@@ -104,7 +104,6 @@ onBeforeMount(() => {
 });
 
 onMounted(async () => {
-  createAppConfig();
   if (userProfile?.value?.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
   }
