@@ -485,7 +485,7 @@
                 <ion-icon :icon="closeOutline" slot="icon-only" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("New session") }}</ion-title>
+            <ion-title>{{ translate("Edit session") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content>
