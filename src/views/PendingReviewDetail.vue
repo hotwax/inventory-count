@@ -609,22 +609,22 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
     }
 
-    const promises = batches.map(batch =>
-      useInventoryCountRun().submitProductReview({
-        inventoryCountProductsList: batch
-      }).then(resp => ({ resp, batch }))
+    const results = await Promise.allSettled(
+      batches.map(batch =>
+        useInventoryCountRun().submitProductReview({
+          inventoryCountProductsList: batch
+        }).then(resp => ({ resp, batch }))
+      )
     );
-
-    const results = await Promise.allSettled(promises);
 
     for (const result of results) {
       if (result.status === "fulfilled" && result.value.resp?.status === 200) {
         const batch = result.value.batch;
 
         const processedIds = batch.map(p => p.productId);
-        filteredSessionItems.value.forEach(cycle => {
-          if (processedIds.includes(cycle.productId)) {
-            cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
+        filteredSessionItems.value.forEach(productReview => {
+          if (processedIds.includes(productReview.productId)) {
+            productReview.decisionOutcomeEnumId = decisionOutcomeEnumId;
           }
         });
 
