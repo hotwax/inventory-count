@@ -598,7 +598,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       varianceQuantity: product.proposedVarianceQuantity,
       systemQuantity: product.quantityOnHand,
       countedQuantity: product.quantity,
-      decisionOutcomeEnumId: decisionOutcomeEnumId,
+      decisionOutcomeEnumId,
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
@@ -609,31 +609,37 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
     }
 
-    for (const batch of batches) {
-      const resp = await useInventoryCountRun().submitProductReview({
+    const promises = batches.map(batch =>
+      useInventoryCountRun().submitProductReview({
         inventoryCountProductsList: batch
-      });
+      }).then(resp => ({ resp, batch }))
+    );
 
-      if (!(resp && resp.status === 200)) {
-        throw resp?.data ?? "Unknown error";
+    const results = await Promise.allSettled(promises);
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.resp?.status === 200) {
+        const batch = result.value.batch;
+
+        const processedIds = batch.map(p => p.productId);
+        filteredSessionItems.value.forEach(cycle => {
+          if (processedIds.includes(cycle.productId)) {
+            cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+
+        submittedItemsCount.value += batch.length;
+
+      } else {
+        console.error("Batch failed:", result);
       }
-
-      const processedIds = batch.map(p => p.productId);
-
-      filteredSessionItems.value.forEach((cycle: any) => {
-        if (processedIds.includes(cycle.productId)) {
-          cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
-        }
-      });
-
-      submittedItemsCount.value += batch.length;
     }
 
     selectedProductsReview.value = [];
 
-  } catch (error) {
+  } catch (err) {
+    console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
-    console.error("Error while submitting: ", error);
   }
   loader.dismiss();
 }
