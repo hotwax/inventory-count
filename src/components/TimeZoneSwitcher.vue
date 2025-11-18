@@ -82,7 +82,7 @@
       </div>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="!currentTimeZoneId" @click="setUserTimeZone">
+        <ion-fab-button :disabled="!timeZoneId || timeZoneId === currentTimeZoneId" @click="setUserTimeZone">
           <ion-icon :icon="saveOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -116,27 +116,25 @@ import {
   IonToolbar
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { computed, onBeforeMount, ref } from "vue";
+import { computed, onBeforeMount, ref, defineProps } from "vue";
 import { translate} from '../i18n'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';
 
 const userProfile: any = computed(() => useUserProfile().getUserProfile);
 const timeZones = computed(() => useUserProfile().getTimeZones)
-const currentTimeZoneId = computed(() => useUserProfile().getCurrentTimeZone)
+const currentTimeZoneId = computed(() => userProfile.value?.timeZone)
 
 const isLoading = ref(true);
 const timeZoneModal = ref();
 const queryString = ref('');
 const filteredTimeZones = ref([]) as any
-const timeZoneId = ref('')
+const timeZoneId = ref(currentTimeZoneId.value)
 // Fetching timeZone of the browser
 const browserTimeZone = ref({
   label: '',
   id: Intl.DateTimeFormat().resolvedOptions().timeZone
 })
-
-const emit = defineEmits(["timeZoneUpdated"])
 
 const props = defineProps({
   showBrowserTimeZone: {
@@ -154,18 +152,14 @@ const props = defineProps({
 })
 
 const closeModal = () => {
+  timeZoneId.value = currentTimeZoneId.value;
   timeZoneModal.value.$el.dismiss(null, 'cancel');
 }
 
 onBeforeMount(async () => {
   isLoading.value = true;
   await useUserProfile().getDxpAvailableTimeZones();
-
-  if(userProfile.value && userProfile.value.userTimeZone) {
-    useUserProfile().currentTimeZoneId = userProfile.value.userTimeZone
-    timeZoneId.value = userProfile.value.userTimeZone
-  }
-
+    timeZoneId.value = userProfile.value.timeZone
   if(props.showBrowserTimeZone) {
     browserTimeZone.value.label = ((timeZones.value as any[])?.find((timeZone: any) => (timeZone?.id || '').toLowerCase().includes(browserTimeZone.value.id.toLowerCase()))?.label) || ''
   }
@@ -175,9 +169,11 @@ onBeforeMount(async () => {
 })
 
 async function setUserTimeZone() {
-  await useUserProfile().setDxpUserTimeZone(timeZoneId.value).then((tzId) => {
-    emit('timeZoneUpdated', tzId);
-  }).catch(err => err)
+  try {
+    await useUserProfile().setDxpUserTimeZone(timeZoneId.value);
+  } catch (error) {
+    console.error("Error Updating Time Zone: ", error);
+  }
   closeModal();
 }
 

@@ -61,6 +61,7 @@
   "Error: Network Error": "Error: Network Error",
   "Facility": "Facility",
   "Failed to cancel uploaded cycle count.": "Failed to cancel uploaded cycle count.",
+  "Failed to update time zone": "Failed to update time zone",
   "Failed to upload the file, please try again": "Failed to upload the file, please try again",
   "Fetching cycle counts...": "Fetching cycle counts...",
   "Fetching facilities": "Fetching facilities",
