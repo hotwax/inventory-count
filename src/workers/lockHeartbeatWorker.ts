@@ -41,15 +41,14 @@ async function startHeartbeat(payload: HeartbeatPayload) {
       dataDocumentId: 'InventoryCountImportLock',
       filterByDate: true,
       pageIndex: 0,
-      pageSize: 100,
+      pageSize: 1,
       customParametersMap: {
         inventoryCountImportId: inventoryCountImportId,
         fromDate: lock.fromDate
       }
     }
   })
-
-  const activeLock = resp?.data?.entityValueList?.[0] || null
+  const activeLock = resp?.entityValueList?.[0] || null
   if (!activeLock) {
     if (heartbeatTimer) clearInterval(heartbeatTimer)
     postMessage({ type: 'lockForceReleased' })
