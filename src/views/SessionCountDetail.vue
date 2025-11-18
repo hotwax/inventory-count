@@ -913,7 +913,7 @@ async function handleSessionLock() {
       userId,
       deviceId: currentDeviceId,
       fromDate,
-      thruDate: fromDate + lockLeaseSeconds * 1000
+      thruDate: fromDate + (lockLeaseSeconds * 1000)
     });
 
     if (newLockResp?.status === 200) {

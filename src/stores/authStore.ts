@@ -37,7 +37,6 @@ export const hasError = (response: any): boolean => {
 
 export const useAuthStore = defineStore('authStore', {
   state: () => ({
-    current: null as any,
     oms: '',
     omsRedirectionUrl: '',
     token: {
@@ -87,7 +86,7 @@ export const useAuthStore = defineStore('authStore', {
         this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
-        this.current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
+        const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
         if (permissionId) serverPermissionsFromRules.push(permissionId);
@@ -117,7 +116,7 @@ export const useAuthStore = defineStore('authStore', {
         }
 
         const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : this.current.partyId, "", isAdminUser, {
+        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
           parentTypeId: "VIRTUAL_FACILITY",
           parentTypeId_not: "Y",
           facilityTypeId: "VIRTUAL_FACILITY",
@@ -125,10 +124,10 @@ export const useAuthStore = defineStore('authStore', {
         });
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
 
-        await useProductStore().getFacilityPreference("SELECTED_FACILITY", this.current?.userId)
+        await useProductStore().getFacilityPreference("SELECTED_FACILITY", current?.userId)
         const currentFacility: any = useProductStore().getCurrentFacility
         isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
-        await useProductStore().getEComStorePreference("SELECTED_BRAND", this.current?.userId)
+        await useProductStore().getEComStorePreference("SELECTED_BRAND", current?.userId)
 
         setPermissions(appPermissions);
         // Fetch and set product identifier settings based on current product store
@@ -148,7 +147,6 @@ export const useAuthStore = defineStore('authStore', {
       } catch (error) {
         console.warn('Logout request failed', error);
       } finally {
-        this.current = null;
         this.token = {
           value: '',
           expiration: undefined,
@@ -160,10 +158,7 @@ export const useAuthStore = defineStore('authStore', {
         value: token,
         expiration: expirationTime,
       };
-    },
-    setCurrent(current: any) {
-      this.current = current;
-    },
+    }
   },
   persist: true,
 });
