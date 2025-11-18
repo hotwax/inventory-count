@@ -137,7 +137,8 @@ export const useAuthStore = defineStore('authStore', {
         await useInventoryCountRun().loadStatusDescription();
 
       } catch (err) {
-        throw "Login failed. Please try again";
+        console.error("Error in Login: ", err);
+        throw `Login failed. Please try again`;
       }
     },
     async logout() {

@@ -26,6 +26,17 @@
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
 
+
+          <ion-label>
+            {{ getDateWithOrdinalSuffix(count.createdDate) }}
+            <p>{{ translate("Created Date") }}</p>
+          </ion-label>
+     
+          <ion-label>
+            {{ getDateWithOrdinalSuffix(count.actualCompletionDate) }}
+            <p>{{ translate("Closed Date") }}</p>
+          </ion-label>
+
           <ion-item lines="none">
             <ion-badge slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
@@ -47,6 +58,7 @@ import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
+import { getDateWithOrdinalSuffix } from '@/services/utils';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any

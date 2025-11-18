@@ -43,11 +43,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>
@@ -189,11 +189,11 @@
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
                         <ion-label>
-                          {{ getDateWithOrdinalSuffix(session.createdDate) }}
+                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
                           <p>{{ translate("started") }}</p>
                         </ion-label>
                         <ion-label>
-                          {{ getDateWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
                         <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
@@ -210,7 +210,7 @@
             <ion-content>
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
-                <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
+                <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
                 <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
                 <ion-item button @click="removeProductFromSession()">
                   <ion-label>
@@ -295,6 +295,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 
 const props = defineProps({
   workEffortId: String
@@ -597,28 +598,48 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
       varianceQuantity: product.proposedVarianceQuantity,
       systemQuantity: product.quantityOnHand,
       countedQuantity: product.quantity,
-      decisionOutcomeEnumId: decisionOutcomeEnumId,
+      decisionOutcomeEnumId,
       decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
     }));
 
-    const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList });
+    const batchSize = 250;
+    const batches = [];
 
-    if (resp && resp.status === 200) {
-      const selectedProductIds = selectedProductsReview.value.map(product => product.productId);
-
-      filteredSessionItems.value.forEach((cycle: any) => {
-        if (selectedProductIds.includes(cycle.productId)) {
-          cycle.decisionOutcomeEnumId = decisionOutcomeEnumId;
-        }
-      });
-      submittedItemsCount.value += selectedProductsReview.value.length;
-      selectedProductsReview.value = [];
-    } else {
-      throw resp.data;
+    for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
+      batches.push(inventoryCountProductsList.slice(i, i + batchSize));
     }
-  } catch (error) {
-      showToast("Something Went Wrong");
-    console.error("Error while submitting: ", error);
+
+    const results = await Promise.allSettled(
+      batches.map(batch =>
+        useInventoryCountRun().submitProductReview({
+          inventoryCountProductsList: batch
+        }).then(resp => ({ resp, batch }))
+      )
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.resp?.status === 200) {
+        const batch = result.value.batch;
+
+        const processedIds = batch.map(p => p.productId);
+        filteredSessionItems.value.forEach(productReview => {
+          if (processedIds.includes(productReview.productId)) {
+            productReview.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+
+        submittedItemsCount.value += batch.length;
+
+      } else {
+        console.error("Batch failed:", result);
+      }
+    }
+
+    selectedProductsReview.value = [];
+
+  } catch (err) {
+    console.error("Error while submitting:", err);
+    showToast("Something Went Wrong");
   }
   loader.dismiss();
 }
@@ -734,27 +755,6 @@ const getDateTime = (time: any) => {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function getDateWithOrdinalSuffix(time: any) {
-  if (!time) return "-";
-  const dateTime = DateTime.fromMillis(time);
-  const day = dateTime.day;
-
-
-  let suffix;
-  if (day >= 11 && day <= 13) {
-    suffix = 'th';
-  } else {
-    switch (day % 10) {
-      case 1:  suffix = 'st'; break;
-      case 2:  suffix = 'nd'; break;
-      case 3:  suffix = 'rd'; break;
-      default: suffix = 'th'; break;
-    }
-  }
-
-  return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
 </script>
