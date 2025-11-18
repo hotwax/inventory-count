@@ -116,7 +116,7 @@ import {
   IonToolbar
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { computed, onBeforeMount, ref, defineProps, defineEmits } from "vue";
+import { computed, onBeforeMount, ref, defineProps } from "vue";
 import { translate} from '../i18n'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';
