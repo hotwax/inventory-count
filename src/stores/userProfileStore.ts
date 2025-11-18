@@ -72,9 +72,14 @@ export const useUserProfile = defineStore('userProfile', {
         // const appState = appContext.config.globalProperties.$store;
         const userProfile = useUserProfile().getUserProfile;
 
-        await setUserTimeZone({ userId: userProfile.userId, tzId })
-        this.currentTimeZoneId = tzId
+        const resp = await setUserTimeZone({ userId: userProfile.userId, timeZone: tzId })
 
+        if (resp?.status === 200) {
+          this.current.timeZone = tzId;
+          this.currentTimeZoneId = tzId
+        } else {
+          throw resp;
+        }
         showToast(translate("Time zone updated successfully"));
         return Promise.resolve(tzId)
       } catch(err) {

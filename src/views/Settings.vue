@@ -64,20 +64,7 @@
         <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
       </div>
       <section>
-        <!-- <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate("Timezone") }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            {{ translate("The timezone you select is used to ensure automations you schedule are always accurate to the time you select.") }}
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-label>{{ userProfile && userProfile.timeZone ? userProfile.timeZone : "-" }}</ion-label>
-            <ion-button @click="changeTimeZone()" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
-          </ion-item>
-        </ion-card> -->
+        <TimeZoneSwitcher/>
         <ProductIdentifier v-if="!router.currentRoute.value.fullPath.includes('/tabs/')"/>
         <ion-card>
           <ion-card-header>
@@ -111,7 +98,7 @@ import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
 import ProductIdentifier from "@/components/ProductIdentifier.vue"
-
+import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 

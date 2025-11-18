@@ -532,25 +532,20 @@ const setUserLocale = async (payload: any): Promise<any> => {
   }
 }
 
-const setUserTimeZone = async (payload: any): Promise<any> => {
+async function setUserTimeZone(payload: any): Promise<any> {
   try {
-    const resp: any = await api({
-      url: "setUserTimeZone",
-      method: "post",
-      data: payload
-    });
-
-    if (!hasError(resp)) {
-      return Promise.resolve(resp.data)
-    } else {
-      throw resp.data
-    }
-  } catch (error) {
+    const resp = await api({
+      url: "admin/user/profile",
+      method: "POST",
+      data: payload,
+    }) as any;
+    return Promise.resolve(resp);
+  } catch (error: any) {
     return Promise.reject({
-      code: 'error',
-      message: 'Something went wrong',
+      code: "error",
+      message: "Failed to set user time zone",
       serverResponse: error
-    })
+    });
   }
 }
 
