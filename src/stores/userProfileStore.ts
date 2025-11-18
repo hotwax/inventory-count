@@ -84,6 +84,7 @@ export const useUserProfile = defineStore('userProfile', {
         return Promise.resolve(tzId)
       } catch(err) {
         console.error('Error', err)
+        showToast(translate("Failed to update time zone"));
         return Promise.reject('')
       }
     },
