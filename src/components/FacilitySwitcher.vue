@@ -32,7 +32,7 @@
     </ion-header>
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
-        v-model="queryString" @keyup.enter="queryString = $event.target.value; findFacility()"
+        v-model="queryString" @ionInput="findFacility($event)"
         @keydown="preventSpecialCharacters($event)" />
       <ion-radio-group v-model="selectedFacilityId">
         <ion-list>
@@ -102,9 +102,10 @@ function loadFacilities() {
   isLoading.value = false;
 }
 
-const findFacility = () => {
+const findFacility = (event?: any) => {
   isLoading.value = true
-  const searchedString = queryString.value.trim().toLowerCase();
+  const query = event ? event.target.value : queryString.value;
+  const searchedString = (query || '').trim().toLowerCase();
   if (searchedString) {
     filteredFacilities.value = facilities.value.filter((facility: any) =>
       facility.facilityName?.toLowerCase().includes(searchedString) ||
