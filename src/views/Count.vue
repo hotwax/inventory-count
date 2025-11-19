@@ -54,19 +54,19 @@
                 {{ translate("Sessions") }}
               </ion-label>
 
-              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                 {{ translate("New") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS'" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -114,7 +114,7 @@
                 {{ translate("Ready for review") }}
               </ion-button>
               <ion-button
-                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="count.estimatedStartDate && DateTime.fromMillis(count.estimatedStartDate) >= DateTime.now()">
+                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
                 {{ translate("Move to In Progress") }}
               </ion-button>
             </ion-item>
@@ -213,6 +213,10 @@ function showAddNewSessionModal(workEffortId) {
   isAddSessionModalOpen.value = true;
   selectedWorkEffortId.value = workEffortId;
 }
+
+const isPlannedForFuture = (count) => {
+  return count.estimatedStartDate && DateTime.fromMillis(count.estimatedStartDate) >= DateTime.now();
+};
 
 function enableScrolling() {
   const parentElement = pageRef.value?.$el;
