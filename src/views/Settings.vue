@@ -29,6 +29,11 @@
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
+          <!-- TODO: Replace route-based checks with a store/admin view flag when present in Pinia Stores -->
+          <ion-button fill="outline" v-if="hasPermission(Actions.APP_ASSIGNED_VIEW) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'">
+            <ion-icon size="medium" :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
+            {{ translate("Admin View") }}
+          </ion-button>
         </ion-card>
       </div>
       <div class="section-header">
@@ -88,7 +93,7 @@
 import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { openOutline } from "ionicons/icons"
+import { openOutline, shieldCheckmarkOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
