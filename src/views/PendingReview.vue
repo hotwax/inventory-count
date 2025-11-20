@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="getPendingCycleCounts"></ion-searchbar>
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts"></ion-searchbar>
       <!-- <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p> -->
@@ -107,6 +107,14 @@ async function loadMoreCycleCounts(event: any) {
   pageIndex.value++;
   await getPendingCycleCounts();
   await event.target.complete();
+}
+
+async function searchCycleCounts() {
+  await loader.present("Searching...")
+  pageIndex.value = 0;
+  pageIndex.value = 0;
+  await getPendingCycleCounts();
+  loader.dismiss();
 }
 
 async function getPendingCycleCounts() {

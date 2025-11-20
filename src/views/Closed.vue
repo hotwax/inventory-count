@@ -11,7 +11,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="getClosedCycleCounts"></ion-searchbar>
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts"></ion-searchbar>
       <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
@@ -89,6 +89,14 @@ function enableScrolling() {
   } else {
     isScrollingEnabled.value = true;
   }
+}
+
+async function searchCycleCounts() {
+  await loader.present("Searching...")
+  pageIndex.value = 0;
+  cycleCounts.value = [];
+  await getClosedCycleCounts();
+  loader.dismiss();
 }
 
 async function getClosedCycleCounts() {
