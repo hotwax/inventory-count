@@ -77,7 +77,7 @@
             <ion-label>
               {{ product.quantityOnHand }}
             </ion-label>
-            <ion-button fill="clear" color="danger" aria-label="remove-item" @click="!product.saved && (products = products.filter(p => p.productId !== product.productId))">
+            <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)">
               <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
             </ion-button>
           </div>
@@ -157,6 +157,10 @@ function onManualInputChange(event: CustomEvent, product: any) {
   const value = Number(event.detail.value)
   product.countedQuantity = isNaN(value) ? 0 : value
   product.saved = value === 0
+}
+
+function removeProduct(productToRemove: any) {
+  products.value = products.value.filter(existingProduct => existingProduct.productId !== productToRemove.productId)
 }
 
 async function getInventoryCycleCount() {
