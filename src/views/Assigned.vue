@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts"></ion-searchbar>
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -62,7 +62,7 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader } from "@/services/uiUtils";
+import { loader, showToast } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
@@ -90,7 +90,6 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  countQueryString.value = '';
 })
 
 function enableScrolling() {
@@ -124,26 +123,36 @@ async function searchCycleCounts() {
   loader.dismiss();
 }
 
+async function clearSearchedResults() {
+  countQueryString.value = '';
+  searchCycleCounts();
+}
+
 async function getAssignedCycleCounts() {
-  const params = {
-    pageSize: pageSize.value,
-    pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
-    currentStatusId_op: "in"
-  } as any;
-  if (countQueryString.value) {
-    params.workEffortName = countQueryString.value
-  }
-  const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
-  if (data.length) {
-    if (pageIndex.value > 0) {
-      cycleCounts.value = cycleCounts.value.concat(data);
-    } else {
-      cycleCounts.value = data;
+  try {
+    const params = {
+      pageSize: pageSize.value,
+      pageIndex: pageIndex.value,
+      currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+      currentStatusId_op: "in"
+    } as any;
+    if (countQueryString.value) {
+      params.workEffortName = countQueryString.value
     }
-    isScrollable.value = cycleCounts.value.length < total;
-  } else {
-    isScrollable.value = false;
+    const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
+    if (data.length) {
+      if (pageIndex.value > 0) {
+        cycleCounts.value = cycleCounts.value.concat(data);
+      } else {
+        cycleCounts.value = data;
+      }
+      isScrollable.value = cycleCounts.value.length < total;
+    } else {
+      isScrollable.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to fetch Cycle Counts: ", error);
+    showToast("Failed to fetch Cycle Counts");
   }
 }
 

@@ -11,7 +11,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts"></ion-searchbar>
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
       <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
@@ -53,7 +53,7 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix } from '@/services/utils';
 
@@ -99,28 +99,38 @@ async function searchCycleCounts() {
   loader.dismiss();
 }
 
+async function clearSearchedResults() {
+  countQueryString.value = '';
+  searchCycleCounts();
+}
+
 async function getClosedCycleCounts() {
-  const params = {
-    pageSize: pageSize.value,
-    pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
-    currentStatusId_op: "in"
-  } as any;
-  if (countQueryString.value) {
-    params.workEffortName = countQueryString.value
-  }
-
-  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
-
-  if (data.length) {
-    if (pageIndex.value > 0) {
-      cycleCounts.value = cycleCounts.value.concat(data);
-    } else {
-      cycleCounts.value = data;
+  try {
+    const params = {
+      pageSize: pageSize.value,
+      pageIndex: pageIndex.value,
+      currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
+      currentStatusId_op: "in"
+    } as any;
+    if (countQueryString.value) {
+      params.workEffortName = countQueryString.value
     }
-    isScrollable.value = scrollable;
-  } else {
-    isScrollable.value = false;
+
+    const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
+
+    if (data.length) {
+      if (pageIndex.value > 0) {
+        cycleCounts.value = cycleCounts.value.concat(data);
+      } else {
+        cycleCounts.value = data;
+      }
+      isScrollable.value = scrollable;
+    } else {
+      isScrollable.value = false;
+    }
+  } catch (error) {
+    console.error("Failed to fetch Cycle Counts: ", error);
+    showToast("Failed to fetch Cycle Counts");
   }
 }
 
