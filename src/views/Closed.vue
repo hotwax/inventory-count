@@ -36,10 +36,6 @@
             {{ getDateWithOrdinalSuffix(count.actualCompletionDate) }}
             <p>{{ translate("Closed Date") }}</p>
           </ion-label>
-
-          <ion-item lines="none">
-            <ion-badge slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
-          </ion-item>
         </div>
       </ion-list>
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
