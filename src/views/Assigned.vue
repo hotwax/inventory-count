@@ -43,7 +43,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge :color="count.currentStatusId === 'CYCLE_CNT_CREATED' ? 'medium' : 'primary'" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
