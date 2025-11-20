@@ -11,6 +11,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <ion-searchbar v-model="countQueryString" @keyup.enter="getClosedCycleCounts"></ion-searchbar>
       <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
@@ -47,7 +48,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
@@ -62,6 +63,7 @@ const infiniteScrollRef = ref({}) as any
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
+const countQueryString = ref('');
 
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
@@ -95,7 +97,10 @@ async function getClosedCycleCounts() {
     pageIndex: pageIndex.value,
     currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
     currentStatusId_op: "in"
-  };
+  } as any;
+  if (countQueryString.value) {
+    params.workEffortName = countQueryString.value
+  }
 
   const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
 

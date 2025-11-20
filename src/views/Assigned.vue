@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <!-- <SearchBarAndSortBy /> -->
+      <ion-searchbar v-model="countQueryString" @keyup.enter="getAssignedCycleCounts"></ion-searchbar>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonBadge, IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
@@ -79,6 +79,8 @@ const infiniteScrollRef = ref({}) as any
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
+const countQueryString = ref('');
+
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
   pageIndex.value = 0;
@@ -88,6 +90,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
+  countQueryString.value = '';
 })
 
 function enableScrolling() {
@@ -119,8 +122,10 @@ async function getAssignedCycleCounts() {
     pageIndex: pageIndex.value,
     currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
     currentStatusId_op: "in"
-  };
-
+  } as any;
+  if (countQueryString.value) {
+    params.workEffortName = countQueryString.value
+  }
   const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
   if (data.length) {
     if (pageIndex.value > 0) {

@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <!-- <SearchBarAndSortBy /> -->
+      <ion-searchbar v-model="countQueryString" @keyup.enter="getPendingCycleCounts"></ion-searchbar>
       <!-- <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p> -->
@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue"
-import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
+import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -66,6 +66,7 @@ import { getDateWithOrdinalSuffix } from "@/services/utils";
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
+const countQueryString = ref('');
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -113,6 +114,9 @@ async function getPendingCycleCounts() {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
     currentStatusId: "CYCLE_CNT_CMPLTD"
+  } as any;
+  if (countQueryString.value) {
+    params.workEffortName = countQueryString.value
   }
 
   const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
