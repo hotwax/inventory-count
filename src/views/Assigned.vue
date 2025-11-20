@@ -31,7 +31,7 @@
           <ion-chip v-if="count?.facilityId" outline>
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
-          <ion-button fill="outline" size="small" v-else @click="openFacilityModal(count)" @click.stop="stopOpenDetailEventProp">
+          <ion-button fill="outline" size="small" v-else @click="openFacilityModal(count, $event)">
             <ion-icon :icon="addOutline" slot="start"></ion-icon>
             {{ translate("Assign Facility") }}
           </ion-button>
@@ -153,7 +153,8 @@ const filteredFacilities = ref([]) as any
 const selectedFacilityId = ref('')
 const selectedCount = ref() as any;
 
-async function openFacilityModal(count: any) {
+async function openFacilityModal(count: any, event: Event) {
+  event.stopPropagation();
   if (!facilityModal.value) return;
   selectedCount.value = count;
   await facilityModal.value.present?.();
@@ -164,10 +165,6 @@ function loadFacilities() {
   selectedFacilityId.value = '';
   filteredFacilities.value = facilities.value;
   isLoading.value = false;
-}
-
-function stopOpenDetailEventProp(event: Event) {
-  event.stopPropagation();
 }
 
 const closeModal = async () => {
