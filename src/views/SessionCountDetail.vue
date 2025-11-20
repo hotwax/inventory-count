@@ -166,16 +166,16 @@
 
           <ion-segment v-model="selectedSegment">
             <ion-segment-button v-if="isDirected" value="uncounted">
-              <ion-label>{{ translate("Uncounted") }}</ion-label>
+              <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected">
-              <ion-label>{{ translate("Undirected") }}</ion-label>
+              <ion-label>{{ translate("Undirected", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched">
-              <ion-label>{{ translate("Unmatched") }}</ion-label>
+              <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="counted">
-              <ion-label>{{ translate("Counted") }}</ion-label>
+              <ion-label>{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
             </ion-segment-button>
           </ion-segment>
 

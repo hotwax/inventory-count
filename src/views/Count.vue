@@ -32,20 +32,20 @@
                 {{ count.workEffortName }}
               </ion-card-title>
               <ion-card-subtitle>
-                {{ getDateWithOrdinalSuffix(count.createdDate) }}
+                {{ getDateTimeWithOrdinalSuffix(count.createdDate) }}
               </ion-card-subtitle>
             </div>
           </ion-card-header>
           <ion-item lines="none">
             {{ translate("Due date") }}
             <ion-label slot="end">
-              <p>{{ getDateWithOrdinalSuffix(count.dueDate) }}</p>
+              <p>{{ getDateTimeWithOrdinalSuffix(count.dueDate) }}</p>
             </ion-label>
           </ion-item>
           <ion-item v-if="count.estimatedStartDate" lines="none">
             {{ translate("Start date") }}
             <ion-label slot="end">
-              <p>{{ getDateWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+              <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
             </ion-label>
           </ion-item>
           <ion-list>
@@ -177,6 +177,7 @@ import { hasPermission } from '@/authorization';
 import { DateTime } from 'luxon';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { useProductStore } from '@/stores/productStore';
+import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 
 
 const cycleCounts = ref([]);
@@ -481,22 +482,6 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     console.error('Error checking session lock before navigation:', err);
     showToast("Failed to check session lock. Please try again.");
   }
-}
-const dateOrdinalSuffix = {
-  1: 'st',
-  21: 'st',
-  31: 'st',
-  2: 'nd',
-  22: 'nd',
-  3: 'rd',
-  23: 'rd'
-}
-
-function getDateWithOrdinalSuffix(time) {
-  if (!time) return "-";
-  const dateTime = DateTime.fromMillis(time);
-  const suffix = dateOrdinalSuffix[dateTime.day] || "th"
-  return `${dateTime.day}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 </script>
 
