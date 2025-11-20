@@ -1025,13 +1025,14 @@ function openMatchModal(item: any) {
 }
 
 function closeMatchModal() {
+  selectedProductId.value = '';
   isMatchModalOpen.value = false;
   products.value = [];
   queryString.value = "";
 }
 
 async function handleSearch() {
-  if (selectedProductId.value) selectedProductId.value = '';
+  selectedProductId.value = '';
   if (!queryString.value.trim()) {
     isSearching.value = false;
     return;
