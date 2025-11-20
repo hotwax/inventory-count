@@ -258,7 +258,7 @@ export function useInventoryCountRun() {
           pageIndex: params.pageIndex || 0,
           currentStatusId: params.currentStatusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
           currentStatusId_op: params.currentStatusId_op || 'in',
-          ...(params.workEffortName ? { workEffortName: params.workEffortName} : {}),
+          ...(params.keyword ? { keyword: params.keyword} : {}),
         }
       })
 

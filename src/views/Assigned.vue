@@ -273,7 +273,7 @@ async function getAssignedCycleCounts() {
       currentStatusId_op: "in"
     } as any;
     if (countQueryString.value) {
-      params.workEffortName = countQueryString.value
+      params.keyword = countQueryString.value
     }
     const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
     if (data.length) {
@@ -285,6 +285,7 @@ async function getAssignedCycleCounts() {
       isScrollable.value = cycleCounts.value.length < total;
     } else {
       isScrollable.value = false;
+      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);

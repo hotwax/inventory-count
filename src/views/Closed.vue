@@ -94,7 +94,6 @@ function enableScrolling() {
 async function searchCycleCounts() {
   await loader.present("Searching...")
   pageIndex.value = 0;
-  cycleCounts.value = [];
   await getClosedCycleCounts();
   loader.dismiss();
 }
@@ -113,7 +112,7 @@ async function getClosedCycleCounts() {
       currentStatusId_op: "in"
     } as any;
     if (countQueryString.value) {
-      params.workEffortName = countQueryString.value
+      params.keyword = countQueryString.value
     }
 
     const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
@@ -127,6 +126,7 @@ async function getClosedCycleCounts() {
       isScrollable.value = scrollable;
     } else {
       isScrollable.value = false;
+      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);
