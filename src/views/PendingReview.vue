@@ -42,10 +42,6 @@
             {{ getDateWithOrdinalSuffix(count.dueDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
-          
-          <ion-item lines="none">
-            <ion-badge slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
-          </ion-item>
         </div>
       </ion-list>
 
