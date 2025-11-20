@@ -460,7 +460,7 @@
             </ion-radio-group>
           </template>
           <div v-else-if="queryString && isSearching && !products.length" class="empty-state ion-padding">
-            <p>{{ translate("No results found for") }} "{{ queryString }}"</p>
+            <p>{{ translate("No results found") }}</p>
           </div>
           <div v-else class="empty-state ion-padding">
             <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
@@ -1025,12 +1025,14 @@ function openMatchModal(item: any) {
 }
 
 function closeMatchModal() {
+  selectedProductId.value = '';
   isMatchModalOpen.value = false;
   products.value = [];
   queryString.value = "";
 }
 
 async function handleSearch() {
+  selectedProductId.value = '';
   if (!queryString.value.trim()) {
     isSearching.value = false;
     return;
