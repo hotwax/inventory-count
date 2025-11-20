@@ -156,10 +156,14 @@ const selectedCount = ref() as any;
 async function openFacilityModal(count: any) {
   if (!facilityModal.value) return;
   selectedCount.value = count;
-  facilityQueryString.value = '';
-  filteredFacilities.value = facilities.value || [];
-  isLoading.value = false;
   await facilityModal.value.present?.();
+}
+
+function loadFacilities() {
+  facilityQueryString.value = '';
+  selectedFacilityId.value = '';
+  filteredFacilities.value = facilities.value;
+  isLoading.value = false;
 }
 
 function stopOpenDetailEventProp(event: Event) {
@@ -170,11 +174,6 @@ const closeModal = async () => {
   if (!facilityModal.value) return;
   await facilityModal.value.dismiss?.();
   clearSearch();
-}
-
-function loadFacilities() {
-  filteredFacilities.value = facilities.value;
-  isLoading.value = false;
 }
 
 const findFacility = (event?: any) => {
