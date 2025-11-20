@@ -7,12 +7,6 @@
           <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
             <ion-label>{{ translate("Assigned") }}</ion-label>
           </ion-segment-button>
-          <ion-segment-button value="pendingReview" @click="selectedSegment = 'pendingReview'">
-            <ion-label>{{ translate("Pending review") }}</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="closed" @click="selectedSegment = 'closed'">
-            <ion-label>{{ translate("Closed") }}</ion-label>
-          </ion-segment-button>
         </ion-segment>
       </ion-toolbar>
     </ion-header>
@@ -294,8 +288,6 @@ async function segmentChanged(value) {
 
 function getStatusIdForCountsToBeFetched() {
   if (selectedSegment.value === "assigned") return "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS";
-  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_CMPLTD";
-  return "CYCLE_CNT_CLOSED";
 }
 
 const areas = [
