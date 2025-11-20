@@ -25,7 +25,7 @@
         </ion-item>
         <ion-item v-if="searchedProduct" lines="none">
           <ion-thumbnail slot="start">  
-            <img :src="searchedProduct.mainImageUrl"/>
+            <Image :src="searchedProduct.mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
             {{ searchedProduct.sku }}
@@ -77,7 +77,7 @@
             <ion-label>
               {{ product.quantityOnHand }}
             </ion-label>
-            <ion-button fill="clear" color="danger" aria-label="remove-item">
+            <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)">
               <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
             </ion-button>
           </div>
@@ -87,7 +87,7 @@
     <ion-footer>
       <ion-toolbar>
         <ion-button slot="end" :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="success" size="small" @click="addAllProductsToScanEvents">
-          Save
+          {{ translate("Save") }}
         </ion-button>
       </ion-toolbar>
     </ion-footer>
@@ -111,6 +111,7 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
 import { useAuthStore } from '@/stores/authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
+import Image from '@/components/Image.vue'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
@@ -156,6 +157,10 @@ function onManualInputChange(event: CustomEvent, product: any) {
   const value = Number(event.detail.value)
   product.countedQuantity = isNaN(value) ? 0 : value
   product.saved = value === 0
+}
+
+function removeProduct(productToRemove: any) {
+  products.value = products.value.filter(existingProduct => existingProduct.productId !== productToRemove.productId)
 }
 
 async function getInventoryCycleCount() {
@@ -222,6 +227,7 @@ async function addProductInPreCountedItems(product: any) {
     const existing = products.value.find(existingProduct => existingProduct.productId === product.productId)
     if (existing) {
       showToast(translate('Product already exists in Counted Items'))
+      loader.dismiss()
       return
     }
 

@@ -197,6 +197,12 @@ function currentMillis(): number {
         .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
         .toArray()
 
+      items.sort((predecessor, successor) => {
+        const predecessorTime = predecessor.lastUpdatedAt ? Number(predecessor.lastUpdatedAt) : 0;
+        const successorTime = successor.lastUpdatedAt ? Number(successor.lastUpdatedAt) : 0;
+        return successorTime - predecessorTime;
+      });
+
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
