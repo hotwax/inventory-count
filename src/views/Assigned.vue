@@ -144,6 +144,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
+  countQueryString.value = '';
 })
 
 const facilities = computed(() => productStore.getFacilities)
