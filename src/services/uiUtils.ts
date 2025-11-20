@@ -41,7 +41,17 @@ const showToast = async (message: string, configButtons?: any) => {
   return toast.present();
 }
 
+const getStatusColor = (statusId: string): string => {
+  if (statusId === 'CYCLE_CNT_CREATED') {
+    return 'medium';
+  } else if (statusId === 'CYCLE_CNT_IN_PRGS') {
+    return 'primary';
+  }
+  return '';
+};
+
 export {
   loader,
-  showToast
+  showToast,
+  getStatusColor
 }

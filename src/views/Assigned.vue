@@ -43,7 +43,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="count.currentStatusId === 'CYCLE_CNT_CREATED' ? 'medium' : 'primary'" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge :color="getStatusColor(count.currentStatusId)" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -62,7 +62,7 @@ import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader } from "@/services/uiUtils";
+import { getStatusColor, loader } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
