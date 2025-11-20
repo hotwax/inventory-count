@@ -178,7 +178,6 @@ function loadFacilities() {
 }
 
 const findFacility = (event?: any) => {
-  isLoading.value = true
   const query = event ? event.target.value : facilityQueryString.value;
   const searchedString = (query || '').trim().toLowerCase();
   if (searchedString) {
@@ -189,7 +188,6 @@ const findFacility = (event?: any) => {
   } else {
     filteredFacilities.value = facilities.value;
   }
-  isLoading.value = false
 }
 
 async function selectSearchBarText(event: any) {
@@ -212,7 +210,7 @@ async function updateFacilityOnCycleCount() {
 
     if (resp?.status === 200) {
       selectedCount.value.facilityId = selectedFacilityId.value;
-      showToast("Updated Cycle Count Sucessfully");
+      showToast("Updated Cycle Count Successfully");
     } else {
       throw resp;
     }
