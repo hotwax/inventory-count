@@ -32,7 +32,7 @@
             <p> {{ translate("User Login") }} </p>
           </ion-label>
 
-          <ion-button fill="clear" color="medium">
+          <ion-button fill="clear" color="tertiary">
             <ion-icon slot="icon-only" :icon="downloadOutline"></ion-icon>
           </ion-button>
         </div>
