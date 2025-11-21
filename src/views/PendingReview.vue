@@ -137,7 +137,7 @@ function getFacilityName(id: string) {
 
 <style scoped>
 .list-item {
-  --columns-desktop: 6;
+  --columns-desktop: 4;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 

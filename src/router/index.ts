@@ -15,7 +15,8 @@ import BulkUpload from "@/views/BulkUpload.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
-import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline , settingsOutline} from "ionicons/icons";
+import ExportHistory from "@/views/ExportHistory.vue";
+import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
@@ -58,7 +59,7 @@ const routes: Array<RouteRecordRaw> = [
     path: "/",
     redirect: () => {
       setPermissions(useUserProfile().getPermissions());
-      if(hasPermission("APP_ASSIGNED_VIEW")) {
+      if (hasPermission("APP_ASSIGNED_VIEW")) {
         return "/assigned"
       }
       return "/tabs/count"
@@ -204,7 +205,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/closed',
     name: 'Closed',
-    component: Closed,  
+    component: Closed,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_CLOSED_VIEW",
@@ -220,6 +221,15 @@ const routes: Array<RouteRecordRaw> = [
     component: ClosedDetail,
     beforeEnter: authGuard,
     props: true,
+    meta: {
+      permissionId: "APP_CLOSED_VIEW"
+    }
+  },
+  {
+    path: '/export-history',
+    name: 'ExportHistory',
+    component: ExportHistory,
+    beforeEnter: authGuard,
     meta: {
       permissionId: "APP_CLOSED_VIEW"
     }
@@ -275,7 +285,7 @@ router.beforeEach((to, from) => {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
-      if(hasPermission("APP_DRAFT_VIEW"))
+      if (hasPermission("APP_DRAFT_VIEW"))
         redirectToPath = "/settings";
       else
         redirectToPath = "/tabs/settings";

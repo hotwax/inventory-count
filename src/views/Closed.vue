@@ -4,14 +4,37 @@
       <ion-toolbar>
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="assigned-filter">
-            <ion-icon :icon="filterOutline" />
-          </ion-menu-button>
+          <ion-button @click="router.push('/export-history')">
+            <ion-icon slot="icon-only" :icon="downloadOutline" />
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <ion-list>
+        <div class="filters">
+          <ion-searchbar :placeholder="translate('Search')" />
+
+          <ion-item>
+            <ion-select :label="translate('Facility')" :placeholder="translate('Select Facility')">
+              <ion-select-option value="facility1">Facility 1</ion-select-option>
+              <ion-select-option value="facility2">Facility 2</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-select :label="translate('Type')" :placeholder="translate('Select Type')">
+              <ion-select-option value="type1">Type 1</ion-select-option>
+              <ion-select-option value="type2">Type 2</ion-select-option>
+            </ion-select>
+          </ion-item>
+          
+          <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
+            {{ translate("More filters") }}
+            <ion-icon slot="end" :icon="filterOutline" />
+          </ion-button>
+          
+        </div>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
@@ -41,14 +64,44 @@
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
+
+      <ion-modal :is-open="isFilterModalOpen" @didDismiss="isFilterModalOpen = false">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>{{ translate("Filters") }}</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="isFilterModalOpen = false">{{ translate("Close") }}</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <ion-item>
+            <ion-label position="stacked">{{ translate("Created before") }}</ion-label>
+            <ion-input type="date" v-model="createdBefore" />
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">{{ translate("Created after") }}</ion-label>
+            <ion-input type="date" v-model="createdAfter" />
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">{{ translate("Closed before") }}</ion-label>
+            <ion-input type="date" v-model="closedBefore" />
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">{{ translate("Closed after") }}</ion-label>
+            <ion-input type="date" v-model="closedAfter" />
+          </ion-item>
+          <ion-button expand="block" class="ion-margin-top" @click="applyFilters">{{ translate("Apply") }}</ion-button>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
-import { filterOutline, storefrontOutline } from "ionicons/icons";
+import { IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
@@ -65,6 +118,12 @@ const isScrollable = ref(true)
 
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+
+const isFilterModalOpen = ref(false);
+const createdBefore = ref('');
+const createdAfter = ref('');
+const closedBefore = ref('');
+const closedAfter = ref('');
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -126,6 +185,17 @@ function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
+
+function applyFilters() {
+  isFilterModalOpen.value = false;
+  // Logic to apply filters can be added here
+  console.log('Filters applied:', {
+    createdBefore: createdBefore.value,
+    createdAfter: createdAfter.value,
+    closedBefore: closedBefore.value,
+    closedAfter: closedAfter.value
+  });
+}
 </script>
 
 <style scoped>
@@ -134,11 +204,24 @@ ion-content {
 }
 
 .list-item {
-  --columns-desktop: 7;
+  --columns-desktop: 4;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {
   width: 100%;
+}
+
+.filters {
+  display: flex;
+}
+
+.filters * {
+  flex: 1;
+}
+
+.filters ion-button {
+  flex: unset;
+  margin-inline-start: var(--spacer-sm);
 }
 </style>
