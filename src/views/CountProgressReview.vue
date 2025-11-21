@@ -25,10 +25,7 @@
                 <ion-label color="warning" class="overline">
                   {{ translate("HARD COUNT") }}
                 </ion-label>
-                <ion-item lines="none" class="ion-no-padding">
-                  <h1>Count name</h1>
-                  <ion-badge color="primary" slot="end">{{ translate("In progress") }}</ion-badge>
-                </ion-item>
+                <h1>Count name</h1>
                 <ion-card-subtitle>created date</ion-card-subtitle>
               </div>
             </ion-card-header>
