@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <!-- <SearchBarAndSortBy /> -->
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
       <!-- <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p> -->
@@ -54,18 +54,19 @@
 
 <script setup lang="ts">
 import { ref } from "vue"
-import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
+import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
-import { loader } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
+const countQueryString = ref('');
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -83,6 +84,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
+  countQueryString.value = '';
 })
 
 function enableScrolling() {
@@ -108,24 +110,46 @@ async function loadMoreCycleCounts(event: any) {
   await event.target.complete();
 }
 
+async function searchCycleCounts() {
+  await loader.present("Searching...")
+  pageIndex.value = 0;
+  pageIndex.value = 0;
+  await getPendingCycleCounts();
+  loader.dismiss();
+}
+
+async function clearSearchedResults() {
+  countQueryString.value = '';
+  searchCycleCounts();
+}
+
 async function getPendingCycleCounts() {
-  const params = {
-    pageSize: pageSize.value,
-    pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CMPLTD"
-  }
-
-  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
-
-  if (data.length) {
-    if (pageIndex.value > 0) {
-      cycleCounts.value = cycleCounts.value.concat(data)
-    } else {
-      cycleCounts.value = data
+  try {
+    const params = {
+      pageSize: pageSize.value,
+      pageIndex: pageIndex.value,
+      currentStatusId: "CYCLE_CNT_CMPLTD"
+    } as any;
+    if (countQueryString.value) {
+      params.keyword = countQueryString.value
     }
-    isScrollable.value = scrollable
-  } else {
-    isScrollable.value = false
+
+    const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
+
+    if (data.length) {
+      if (pageIndex.value > 0) {
+        cycleCounts.value = cycleCounts.value.concat(data)
+      } else {
+        cycleCounts.value = data
+      }
+      isScrollable.value = scrollable
+    } else {
+      isScrollable.value = false
+      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
+    }
+  } catch (error) {
+    console.error("Failed to fetch Cycle Counts: ", error);
+    showToast("Failed to fetch Cycle Counts");
   }
 }
 

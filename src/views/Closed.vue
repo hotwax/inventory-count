@@ -11,6 +11,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
       <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
@@ -47,12 +48,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonBadge, IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { IonChip, IonIcon, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix } from '@/services/utils';
 
@@ -62,6 +63,7 @@ const infiniteScrollRef = ref({}) as any
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
+const countQueryString = ref('');
 
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
@@ -75,6 +77,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
+  countQueryString.value = '';
 })
 
 function enableScrolling() {
@@ -89,25 +92,46 @@ function enableScrolling() {
   }
 }
 
+async function searchCycleCounts() {
+  await loader.present("Searching...")
+  pageIndex.value = 0;
+  await getClosedCycleCounts();
+  loader.dismiss();
+}
+
+async function clearSearchedResults() {
+  countQueryString.value = '';
+  searchCycleCounts();
+}
+
 async function getClosedCycleCounts() {
-  const params = {
-    pageSize: pageSize.value,
-    pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
-    currentStatusId_op: "in"
-  };
-
-  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
-
-  if (data.length) {
-    if (pageIndex.value > 0) {
-      cycleCounts.value = cycleCounts.value.concat(data);
-    } else {
-      cycleCounts.value = data;
+  try {
+    const params = {
+      pageSize: pageSize.value,
+      pageIndex: pageIndex.value,
+      currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
+      currentStatusId_op: "in"
+    } as any;
+    if (countQueryString.value) {
+      params.keyword = countQueryString.value
     }
-    isScrollable.value = scrollable;
-  } else {
-    isScrollable.value = false;
+
+    const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
+
+    if (data.length) {
+      if (pageIndex.value > 0) {
+        cycleCounts.value = cycleCounts.value.concat(data);
+      } else {
+        cycleCounts.value = data;
+      }
+      isScrollable.value = scrollable;
+    } else {
+      isScrollable.value = false;
+      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
+    }
+  } catch (error) {
+    console.error("Failed to fetch Cycle Counts: ", error);
+    showToast("Failed to fetch Cycle Counts");
   }
 }
 
