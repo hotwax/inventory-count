@@ -33,7 +33,7 @@
                   <h1>{{ workEffort?.workEffortName }}</h1>
                   <ion-badge color="primary" slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
                 </ion-item>
-                <ion-card-subtitle>{{ workEffort?.estimatedStartDate }}</ion-card-subtitle>
+                <ion-card-subtitle>{{ workEffort?.createdDate }}</ion-card-subtitle>
               </div>
             </ion-card-header>
 
