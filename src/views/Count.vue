@@ -110,6 +110,9 @@
               </ion-item-group>
 
             <ion-item v-if="selectedSegment === 'assigned'" lines="none">
+              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="start" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+                {{ translate("See Progress") }}
+              </ion-button>
               <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
@@ -403,6 +406,11 @@ async function addNewSession() {
     console.error("Error creating session:", err)
     showToast("Something Went Wrong!")
   }
+}
+
+async function goToCountProgressReview(workEffortId, event) {
+  event.stopPropagation();
+  router.push(`/count-progress-review/${workEffortId}`);
 }
 
 async function markAsCompleted(workEffortId) {
