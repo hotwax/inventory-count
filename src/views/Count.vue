@@ -3,17 +3,6 @@
     <ion-header>
       <ion-toolbar>
         <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
-        <ion-segment :value="selectedSegment" @ionChange="segmentChanged($event.detail.value)">
-          <ion-segment-button value="assigned" @click="selectedSegment = 'assigned'">
-            <ion-label>{{ translate("Assigned") }}</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="pendingReview" @click="selectedSegment = 'pendingReview'">
-            <ion-label>{{ translate("Pending review") }}</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="closed" @click="selectedSegment = 'closed'">
-            <ion-label>{{ translate("Closed") }}</ion-label>
-          </ion-segment-button>
-        </ion-segment>
       </ion-toolbar>
     </ion-header>
 
@@ -54,19 +43,19 @@
                 {{ translate("Sessions") }}
               </ion-label>
 
-              <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-button v-if="count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                 {{ translate("New") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="selectedSegment === 'assigned' && count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -82,7 +71,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned' && hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button v-if="hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                   <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
@@ -103,13 +92,13 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
               </ion-item-group>
 
-            <ion-item v-if="selectedSegment === 'assigned'" lines="none">
+            <ion-item lines="none">
               <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
@@ -165,7 +154,7 @@
 </template>
 
 <script setup>
-import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonSegment, IonSegmentButton, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -187,7 +176,6 @@ const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
-const selectedSegment = ref("assigned");
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
 const isAddSessionModalOpen = ref(false);
@@ -261,7 +249,7 @@ async function getCycleCounts(reset = false) {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
-    currentStatusId: getStatusIdForCountsToBeFetched(),
+    currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
     currentStatusId_op: 'in',
     thruDate_op: 'empty'
   };
@@ -282,21 +270,6 @@ async function getCycleCounts(reset = false) {
   } finally {
     isLoading.value = false;
   }
-}
-
-
-async function segmentChanged(value) {
-  isLoading.value = true;
-  selectedSegment.value = value;
-  pageIndex.value = 0;
-  await getCycleCounts(true);
-  isLoading.value = false;
-}
-
-function getStatusIdForCountsToBeFetched() {
-  if (selectedSegment.value === "assigned") return "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS";
-  if (selectedSegment.value === "pendingReview") return "CYCLE_CNT_CMPLTD";
-  return "CYCLE_CNT_CLOSED";
 }
 
 const areas = [
