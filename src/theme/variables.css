@@ -300,7 +300,7 @@ section {
   padding-inline: 12px;
   padding-top: 6px;
   padding-bottom: 6px;
-  background: var(--ion-color-step-300, #edeef0);
+  background: var(--ion-color-step-300, #b7bdc3);
   color: var(--ion-text-color, #000);
   font-family: inherit;
 }
