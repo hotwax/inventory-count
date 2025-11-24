@@ -14,9 +14,9 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
       <ion-list>
         <div class="filters">
-          <ion-searchbar :placeholder="translate('Search')" @keyup.enter="onSearchEnter"/>
+          <ion-searchbar :placeholder="translate('Search')" @keyup.enter="updateFilters('keyword', $event.target.value?.trim() || '')"/>
           <ion-item>
-            <ion-select :label="translate('Facility')" :placeholder="translate('Select Facility')" multiple :value="filters.facilityIds" @ionChange="onFacilityChange($event.detail.value)">
+            <ion-select :label="translate('Facility')" :placeholder="translate('Select Facility')" multiple :value="filters.facilityIds" @ionChange="updateFilters('facilityIds', $event.detail.value as string[])">
               <ion-select-option v-for="facility in facilities" :key="facility.facilityId" :value="facility.facilityId">
                 {{ facility.facilityName }}
               </ion-select-option>
@@ -24,17 +24,9 @@
           </ion-item>
 
           <ion-item>
-            <ion-select :label="translate('Type')" :placeholder="translate('Select Type')" :value="filters.countType" @ionChange="onCountTypeChange($event.detail.value)" interface="popover">
-              <ion-select-option value="">
-                {{ translate("All") }}
-              </ion-select-option>
-              <ion-select-option value="HARD_COUNT">
-                {{ translate("Hard count") }}
-              </ion-select-option>
-              <ion-select-option value="DIRECTED_COUNT">
-                {{ translate("Directed count") }}
-              </ion-select-option>
-            </ion-select>
+            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.detail.value)" interface="popover">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+          </ion-select>
           </ion-item>
           
           <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
@@ -124,9 +116,8 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast } from '@/services/uiUtils';
-import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
-import { getDateWithOrdinalSuffix } from '@/services/utils';
+import { getDateWithOrdinalSuffix, toIsoDate } from '@/services/utils';
 import { DateTime } from 'luxon';
 import { hasError } from '@/stores/authStore';
 import logger from '@/logger';
@@ -153,6 +144,14 @@ const filters = reactive({
   closedDateTo: '',
   keyword: ''
 });
+
+const filterOptions = {
+  typeOptions : [
+    { label: "All Types",  value: "" },
+    { label: "Hard Count", value: "HARD_COUNT" },
+    { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ]
+}
 
 const productStore = useProductStore();
 const facilities = computed(() => productStore.getFacilities || []);
@@ -185,30 +184,6 @@ async function refreshList() {
   await loader.present("Loading...");
   await getClosedCycleCounts();
   loader.dismiss();
-}
-
-async function onSearchEnter(event: any) {
-  const value = event.target.value?.trim() || '';
-  filters.keyword = value;
-
-  await refreshList();
-}
-
-async function onFacilityChange(selected: string[]) {
-  filters.facilityIds = selected || [];
-  await refreshList();
-}
-
-async function onCountTypeChange(selected: string | undefined) {
-  filters.countType = selected || '';
-  await refreshList();
-}
-
-// Helper to convert date string (YYYY-MM-DD) to ISO start/end of day
-function toIsoDate(dateStr: string, endOfDay = false) {
-  if (!dateStr) return '';
-  const dt = DateTime.fromISO(dateStr);
-  return (endOfDay ? dt.endOf('day') : dt.startOf('day')).toISO();
 }
 
 function buildFilterParams() {
@@ -331,6 +306,11 @@ async function applyFilters() {
 function buildExportPayload() {
   // Same keys as list filters, but without paging/status fields
   return buildFilterParams();
+}
+
+async function updateFilters(key: keyof typeof filters, value: any) {
+  filters[key] = value;
+  await refreshList();
 }
 
 async function exportCycleCounts() {
