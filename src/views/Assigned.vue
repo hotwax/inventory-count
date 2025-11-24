@@ -13,7 +13,19 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <!-- <SearchBarAndSortBy /> -->
+      <div class="header searchbar">
+        <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
+        <ion-item lines="none">
+          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+          </ion-select> 
+        </ion-item>
+        <ion-item lines="none">
+          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -22,7 +34,7 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
               {{ count.workEffortName }}
               <p>{{ count.workEffortId }}</p>
             </ion-label>
@@ -110,7 +122,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
+import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
@@ -131,7 +143,35 @@ const infiniteScrollRef = ref({}) as any
 
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+
 const productStore = useProductStore();
+
+const filterOptions = {
+  typeOptions : [
+    { label: "All Types",  value: "" },
+    { label: "Hard Count", value: "HARD_COUNT" },
+    { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ],
+  statusOptions: [
+    { label: "All", value: "" },
+    { label: "Created", value: "CYCLE_CNT_CREATED" },
+    { label: "In Progress", value: "CYCLE_CNT_IN_PRGS" }
+  ]
+}
+
+async function updateQuery(key: any, value: any) {
+  await loader.present("Loading...");
+  filters.value[key] = value;
+  pageIndex.value = 0;
+  await getAssignedCycleCounts();
+  loader.dismiss();
+}
+
+const filters: any = ref({
+  countQueryString: '',
+  status: '',
+  countType: ''
+});
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -142,6 +182,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
+  filters.value.countQueryString = '';
 })
 
 const facilities = computed(() => productStore.getFacilities)
@@ -250,23 +291,30 @@ async function loadMoreCycleCounts(event: any) {
 }
 
 async function getAssignedCycleCounts() {
-  const params = {
-    pageSize: pageSize.value,
-    pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
-    currentStatusId_op: "in"
-  };
-
-  const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
-  if (data.length) {
-    if (pageIndex.value > 0) {
-      cycleCounts.value = cycleCounts.value.concat(data);
+  try {
+    const params = {
+      pageSize: pageSize.value,
+      pageIndex: pageIndex.value,
+      currentStatusId: filters.value.status ||  "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+      currentStatusId_op: "in"
+    } as any;
+    if (filters.value.countType) params.countType = filters.value.countType;
+    if (filters.value.countQueryString) params.keyword = filters.value.countQueryString;
+    const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
+    if (data.length) {
+      if (pageIndex.value > 0) {
+        cycleCounts.value = cycleCounts.value.concat(data);
+      } else {
+        cycleCounts.value = data;
+      }
+      isScrollable.value = cycleCounts.value.length < total;
     } else {
-      cycleCounts.value = data;
+      isScrollable.value = false;
+      if (pageIndex.value === 0) cycleCounts.value = [];
     }
-    isScrollable.value = cycleCounts.value.length < total;
-  } else {
-    isScrollable.value = false;
+  } catch (error) {
+    console.error("Failed to fetch Cycle Counts: ", error);
+    showToast("Failed to fetch Cycle Counts");
   }
 }
 

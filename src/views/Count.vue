@@ -124,7 +124,7 @@
           </ion-list>
         </ion-card>
       </template>
-      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false">
           <ion-header>
             <ion-toolbar>
               <ion-buttons slot="start">
