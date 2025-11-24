@@ -284,6 +284,16 @@ function currentMillis(): number {
       return enriched || [];
     });
 
+  const getTotalCountedUnits = (inventoryCountImportId: string) =>
+  liveQuery(async () => {
+    const items = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .toArray()
+
+    return items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+  })
+
    /* API call functions moved from CountService.ts */   
 const getInventoryCountImportSession = async (params: { inventoryCountImportId: string; }): Promise<any> => {
   return await api({
@@ -426,6 +436,7 @@ export function useInventoryCountImport() {
     getSessionItemsByImportId,
     getSessionProductIds,
     getSessionLock,
+    getTotalCountedUnits,
     getUncountedItems,
     getUndirectedItems,
     getUnmatchedItems,
