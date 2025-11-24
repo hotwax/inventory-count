@@ -226,13 +226,13 @@ function buildFilterParams() {
     params.createdDateFrom = toIsoDate(filters.createdDateFrom, false);
   }
   if (filters.createdDateTo) {
-    params.createdDateTo = toIsoDate(filters.createdDateTo, false);
+    params.createdDateTo = toIsoDate(filters.createdDateTo, true);
   }
   if (filters.closedDate) {
     params.closedDate = toIsoDate(filters.closedDate, false);
   }
   if (filters.closedDateTo) {
-    params.closedDateTo = toIsoDate(filters.closedDateTo, false);
+    params.closedDateTo = toIsoDate(filters.closedDateTo, true);
   }
   if (filters.keyword) {
     params.keyword = filters.keyword;
