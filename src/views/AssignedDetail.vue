@@ -49,8 +49,8 @@
               </div>
             </ion-item>
 
-            <ion-modal :is-open="isModalOpen" @didDismiss="closeModal">
-              <ion-content force-overscroll="false">
+            <ion-modal class="date-time-modal" :is-open="isModalOpen" @didDismiss="closeModal">
+              <ion-content :force-overscroll="false">
                 <ion-datetime
                   v-model="pickedDate"
                   :value="initialValue"
@@ -196,7 +196,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -286,26 +286,29 @@ function openModal(field: string) {
   isModalOpen.value = true
 }
 
-// Done button (ionChange fires when user clicks "Done")
 async function handleChange(ev: any) {
-  const iso = ev.detail.value
-  if (!iso) return
+  const iso = ev.detail.value;
+  if (!iso) return;
 
-  const millis = DateTime.fromISO(iso).toMillis()
+  try {
+    const millis = DateTime.fromISO(iso).toMillis();
 
-  const resp = await useInventoryCountRun().updateWorkEffort({
-    workEffortId: workEffort.value.workEffortId,
-    [currentField.value]: millis
-  })
+    const resp = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      [currentField.value]: millis
+    })
 
-  if (resp?.status === 200) {
-    workEffort.value[currentField.value] = millis
-    showToast(translate("Updated Successfully"))
-  } else {
-    showToast("Something Went Wrong")
+    if (resp?.status === 200) {
+      workEffort.value[currentField.value] = millis;
+      showToast(translate("Updated Successfully"))
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error Udpating Cycle Count: ", error);
+    showToast(`Failed to Update: ${currentField.value} on Cycle Count`);
   }
-
-  closeModal()
+  closeModal();
 }
 
 function closeModal() {
