@@ -14,7 +14,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="clearSearchedResults"></ion-searchbar>
+        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
         <ion-item lines="none">
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue"
+import { ref } from "vue"
 import { IonButtons, IonBadge, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -69,7 +69,6 @@ import router from "@/router"
 import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
-// import Filters from "@/components/Filters.vue"
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
@@ -135,11 +134,6 @@ async function loadMoreCycleCounts(event: any) {
   pageIndex.value++;
   await getPendingCycleCounts();
   await event.target.complete();
-}
-
-async function clearSearchedResults() {
-  pageIndex.value = 0;
-  updateQuery('countQueryString', '');
 }
 
 async function getPendingCycleCounts() {
