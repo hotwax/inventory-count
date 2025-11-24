@@ -631,6 +631,8 @@ onIonViewDidEnter(async () => {
   try {
     await startSession();
     await handleSessionLock();
+
+    if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
