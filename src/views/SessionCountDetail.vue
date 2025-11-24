@@ -427,7 +427,7 @@
           </ion-segment-view>
         </div>
       </main>
-      <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal">
+      <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal" @didPresent="focusMatchSearch">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
@@ -439,7 +439,7 @@
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-searchbar v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
+          <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
           <div v-if="isLoading" class="empty-state ion-padding">
             <ion-spinner name="crescent" />
             <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
@@ -579,6 +579,7 @@ const isMatchModalOpen = ref(false);
 const isLoading = ref(false);
 const isSearching = ref(false);
 const queryString = ref('');
+const matchSearchbar = ref();
 const selectedProductId = ref('');
 const matchedItem = ref<any>(null);
 const products = ref<any[]>([]);
@@ -1021,6 +1022,7 @@ function timeAgo(ts: number) {
 
 function openMatchModal(item: any) {
   matchedItem.value = item;
+  queryString.value = item.productIdentifier;
   isMatchModalOpen.value = true;
 }
 
@@ -1029,6 +1031,10 @@ function closeMatchModal() {
   isMatchModalOpen.value = false;
   products.value = [];
   queryString.value = "";
+}
+
+function focusMatchSearch() {
+  matchSearchbar.value?.$el?.setFocus();
 }
 
 async function handleSearch() {
