@@ -573,6 +573,7 @@ const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
+const allCountedItems = ref<any[]>([]);
 const uncountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 const isMatchModalOpen = ref(false);
@@ -635,6 +636,7 @@ onIonViewDidEnter(async () => {
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
     from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+    from(useInventoryCountImport().getAllCountedItems(props.inventoryCountImportId)).subscribe(items => (allCountedItems.value = items))
     from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
     from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
@@ -642,7 +644,7 @@ onIonViewDidEnter(async () => {
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      const totalUnits = allCountedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
       const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
