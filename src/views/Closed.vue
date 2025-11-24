@@ -124,6 +124,7 @@ import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix } from '@/services/utils';
 import { DateTime } from 'luxon';
@@ -254,7 +255,7 @@ async function getClosedCycleCounts() {
     ...buildFilterParams()
   };
 
-  const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
+    const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
 
   if (data.length) {
     if (pageIndex.value > 0) {
