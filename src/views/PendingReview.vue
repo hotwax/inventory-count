@@ -14,7 +14,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
+        <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
         <ion-item lines="none">
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
@@ -85,13 +85,13 @@ const filters: any = ref({
   countType: ''
 });
 
-const filterOptions = ref({
+const filterOptions = {
   typeOptions : [
     { label: "All Types",  value: "" },
     { label: "Hard Count", value: "HARD_COUNT" },
     { label: "Directed Count", value: "DIRECTED_COUNT" }
   ]
-})
+}
 
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");

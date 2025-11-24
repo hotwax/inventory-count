@@ -14,7 +14,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
+        <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
         <ion-item lines="none">
           <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -146,7 +146,7 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 const productStore = useProductStore();
 
-const filterOptions = ref({
+const filterOptions = {
   typeOptions : [
     { label: "All Types",  value: "" },
     { label: "Hard Count", value: "HARD_COUNT" },
@@ -157,7 +157,7 @@ const filterOptions = ref({
     { label: "Created", value: "CYCLE_CNT_CREATED" },
     { label: "In Progress", value: "CYCLE_CNT_IN_PRGS" }
   ]
-})
+}
 
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
