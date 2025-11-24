@@ -23,7 +23,6 @@ expose({
 
 let isAggregating = false
 let isSyncing = false
-let isResolvingUnmatched = false
 // const store = useStore();
 
 // Product Lookup Helper
