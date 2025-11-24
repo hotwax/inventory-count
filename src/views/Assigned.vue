@@ -14,19 +14,15 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
+        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="clearSearchedResults"></ion-searchbar>
         <ion-item lines="none">
           <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
-            <ion-select-option value="">{{ translate("All") }}</ion-select-option>
-            <ion-select-option value="CYCLE_CNT_CREATED">{{ translate("Created") }}</ion-select-option>
-            <ion-select-option value="CYCLE_CNT_IN_PRGS">{{ translate("Assigned") }}</ion-select-option>
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select> 
         </ion-item>
         <ion-item lines="none">
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
-            <ion-select-option value="">{{ translate("All Types") }}</ion-select-option>
-            <ion-select-option value="HARD_COUNT">{{ translate("Hard Count") }}</ion-select-option>
-            <ion-select-option value="DIRECTED_COUNT">{{ translate("Directed Count") }}</ion-select-option>
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
       </div>
@@ -148,20 +144,34 @@ const infiniteScrollRef = ref({}) as any
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
-const countQueryString = ref('');
 const productStore = useProductStore();
 
-const filters: any = ref({
-  status: '',
-  countType: ''
-});
+const filterOptions = ref({
+  typeOptions : [
+    { label: "All Types",  value: "" },
+    { label: "Hard Count", value: "HARD_COUNT" },
+    { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ],
+  statusOptions: [
+    { label: "All", value: "" },
+    { label: "Created", value: "CYCLE_CNT_CREATED" },
+    { label: "In Progress", value: "CYCLE_CNT_IN_PRGS" }
+  ]
+})
 
-watch(filters, async () => {
+async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
+  filters.value[key] = value;
   pageIndex.value = 0;
   await getAssignedCycleCounts();
   loader.dismiss();
-}, { deep: true });
+}
+
+const filters: any = ref({
+  countQueryString: '',
+  status: '',
+  countType: ''
+});
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -172,7 +182,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  countQueryString.value = '';
+  filters.value.countQueryString = '';
 })
 
 const facilities = computed(() => productStore.getFacilities)
@@ -280,16 +290,9 @@ async function loadMoreCycleCounts(event: any) {
   await event.target.complete();
 }
 
-async function searchCycleCounts() {
-  await loader.present("Searching...")
-  pageIndex.value = 0;
-  await getAssignedCycleCounts();
-  loader.dismiss();
-}
-
 async function clearSearchedResults() {
-  countQueryString.value = '';
-  searchCycleCounts();
+  pageIndex.value = 0;
+  updateQuery('countQueryString', '');
 }
 
 async function getAssignedCycleCounts() {
@@ -301,7 +304,7 @@ async function getAssignedCycleCounts() {
       currentStatusId_op: "in"
     } as any;
     if (filters.value.countType) params.countType = filters.value.countType;
-    if (countQueryString.value) params.keyword = countQueryString.value;
+    if (filters.value.countQueryString) params.keyword = filters.value.countQueryString;
     const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
     if (data.length) {
       if (pageIndex.value > 0) {
@@ -323,12 +326,6 @@ async function getAssignedCycleCounts() {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
-}
-
-function updateQuery(key: any, value: any) {
-  console.log("Updated: ", key, " and ", value);
-  filters.value[key] = value;
-  console.log("updayted: ", filters.value);
 }
 
 </script>

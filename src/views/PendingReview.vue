@@ -14,12 +14,10 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
+        <ion-searchbar v-model="filters.countQueryString" @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="clearSearchedResults"></ion-searchbar>
         <ion-item lines="none">
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
-            <ion-select-option value="">{{ translate("All Types") }}</ion-select-option>
-            <ion-select-option value="HARD_COUNT">{{ translate("Hard Count") }}</ion-select-option>
-            <ion-select-option value="DIRECTED_COUNT">{{ translate("Directed Count") }}</ion-select-option>
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
       </div>
@@ -75,7 +73,6 @@ import { getDateWithOrdinalSuffix } from "@/services/utils";
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
-const countQueryString = ref('');
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -85,15 +82,25 @@ const pageIndex = ref(0)
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
 
 const filters: any = ref({
-  countType: '',
+  countQueryString: '',
+  countType: ''
 });
 
-watch(filters, async () => {
+const filterOptions = ref({
+  typeOptions : [
+    { label: "All Types",  value: "" },
+    { label: "Hard Count", value: "HARD_COUNT" },
+    { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ]
+})
+
+async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
+  filters.value[key] = value;
   pageIndex.value = 0;
   await getPendingCycleCounts();
   loader.dismiss();
-}, { deep: true });
+}
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -104,7 +111,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  countQueryString.value = '';
+  filters.value.countQueryString = '';
 })
 
 function enableScrolling() {
@@ -130,16 +137,9 @@ async function loadMoreCycleCounts(event: any) {
   await event.target.complete();
 }
 
-async function searchCycleCounts() {
-  await loader.present("Searching...")
-  pageIndex.value = 0;
-  await getPendingCycleCounts();
-  loader.dismiss();
-}
-
 async function clearSearchedResults() {
-  countQueryString.value = '';
-  searchCycleCounts();
+  pageIndex.value = 0;
+  updateQuery('countQueryString', '');
 }
 
 async function getPendingCycleCounts() {
@@ -149,8 +149,8 @@ async function getPendingCycleCounts() {
       pageIndex: pageIndex.value,
       currentStatusId: "CYCLE_CNT_CMPLTD"
     } as any;
-    if (countQueryString.value) {
-      params.keyword = countQueryString.value
+    if (filters.value?.countQueryString) {
+      params.keyword = filters.value.countQueryString
     }
     if (filters.value.countType) params.countType = filters.value.countType;
 
@@ -178,9 +178,6 @@ function getFacilityName(id: string) {
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
-function updateQuery(key: any, value: any) {
-  filters.value[key] = value;
-}
 </script>
 
 <style scoped>
