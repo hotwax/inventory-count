@@ -351,7 +351,7 @@ ion-content {
   display: flex;
 }
 
-.filters * {
+.filters > * {
   flex: 1;
 }
 
