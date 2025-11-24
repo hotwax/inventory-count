@@ -13,7 +13,23 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
+      <div class="header searchbar">
+        <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
+        <ion-item lines="none">
+          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
+            <ion-select-option value="">{{ translate("All") }}</ion-select-option>
+            <ion-select-option value="CYCLE_CNT_CREATED">{{ translate("Created") }}</ion-select-option>
+            <ion-select-option value="CYCLE_CNT_IN_PRGS">{{ translate("Assigned") }}</ion-select-option>
+          </ion-select> 
+        </ion-item>
+        <ion-item lines="none">
+          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
+            <ion-select-option value="">{{ translate("All Types") }}</ion-select-option>
+            <ion-select-option value="HARD_COUNT">{{ translate("Hard Count") }}</ion-select-option>
+            <ion-select-option value="DIRECTED_COUNT">{{ translate("Directed Count") }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -22,7 +38,7 @@
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label>
-              <p class="overline" v-if="count.countTypeEnumId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
               {{ count.workEffortName }}
               <p>{{ count.workEffortId }}</p>
             </ion-label>
@@ -109,8 +125,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
+import { computed, ref, watch } from "vue";
+import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router"
@@ -134,6 +150,18 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 const countQueryString = ref('');
 const productStore = useProductStore();
+
+const filters: any = ref({
+  status: '',
+  countType: ''
+});
+
+watch(filters, async () => {
+  await loader.present("Loading...");
+  pageIndex.value = 0;
+  await getAssignedCycleCounts();
+  loader.dismiss();
+}, { deep: true });
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -255,7 +283,6 @@ async function loadMoreCycleCounts(event: any) {
 async function searchCycleCounts() {
   await loader.present("Searching...")
   pageIndex.value = 0;
-  pageIndex.value = 0;
   await getAssignedCycleCounts();
   loader.dismiss();
 }
@@ -270,12 +297,11 @@ async function getAssignedCycleCounts() {
     const params = {
       pageSize: pageSize.value,
       pageIndex: pageIndex.value,
-      currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+      currentStatusId: filters.value.status ||  "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
       currentStatusId_op: "in"
     } as any;
-    if (countQueryString.value) {
-      params.keyword = countQueryString.value
-    }
+    if (filters.value.countType) params.countType = filters.value.countType;
+    if (countQueryString.value) params.keyword = countQueryString.value;
     const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
     if (data.length) {
       if (pageIndex.value > 0) {
@@ -286,7 +312,7 @@ async function getAssignedCycleCounts() {
       isScrollable.value = cycleCounts.value.length < total;
     } else {
       isScrollable.value = false;
-      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
+      if (pageIndex.value === 0) cycleCounts.value = [];
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);
@@ -297,6 +323,12 @@ async function getAssignedCycleCounts() {
 function getFacilityName(id: string) {
   const facilities: any[] = useProductStore().getFacilities || [];
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+
+function updateQuery(key: any, value: any) {
+  console.log("Updated: ", key, " and ", value);
+  filters.value[key] = value;
+  console.log("updayted: ", filters.value);
 }
 
 </script>
