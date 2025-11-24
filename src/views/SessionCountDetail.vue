@@ -539,7 +539,7 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutl
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -1121,6 +1121,7 @@ async function finalizeAggregationAndSync() {
     });
 
     // Wait until the worker confirms completion
+    loader.present('Finalising aggregation...');
     const result = await new Promise<number>((resolve) => {
       const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
       if (aggregationWorker) {
@@ -1134,6 +1135,7 @@ async function finalizeAggregationAndSync() {
         };
       }
     });
+    loader.dismiss();
 
     return result;
   } catch (err) {

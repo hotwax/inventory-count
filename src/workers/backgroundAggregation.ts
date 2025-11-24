@@ -6,6 +6,7 @@ import { db } from '@/services/commonDatabase';
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
   syncToServer: (inventoryCountImportId: string, context: any) => Promise<number>;
+  resolveUnmatched: (inventoryCountImportId: string, context: any) => Promise<number>;
   matchProductLocallyAndSync: (
     inventoryCountImportId: string,
     item: any,
@@ -17,11 +18,12 @@ export interface InventorySyncWorker {
 expose({
   aggregate,
   syncToServer,
-  matchProductLocallyAndSync
+  matchProductLocallyAndSync,
 });
 
 let isAggregating = false
 let isSyncing = false
+let isResolvingUnmatched = false
 // const store = useStore();
 
 // Product Lookup Helper
@@ -447,10 +449,8 @@ self.onmessage = async (messageEvent: MessageEvent) => {
   if (type === 'aggregate') {
     const { inventoryCountImportId, context } = payload
     const count = await aggregate(inventoryCountImportId, context)
-    if (count > 0) {
-      await resolveMissingProducts(inventoryCountImportId, context)
-      await syncToServer(inventoryCountImportId, context)
-    }
+    await resolveMissingProducts(inventoryCountImportId, context)
+    await syncToServer(inventoryCountImportId, context)
 
     self.postMessage({ type: 'aggregationComplete', count })
   }
@@ -459,10 +459,8 @@ self.onmessage = async (messageEvent: MessageEvent) => {
     const { inventoryCountImportId, context, intervalMs = 10000 } = payload
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
-      if (count > 0) {
-        await resolveMissingProducts(inventoryCountImportId, context)
-        await syncToServer(inventoryCountImportId, context)
-      }
+      await resolveMissingProducts(inventoryCountImportId, context)
+      await syncToServer(inventoryCountImportId, context)
 
       self.postMessage({ type: 'aggregationComplete', count })
     }, intervalMs)
