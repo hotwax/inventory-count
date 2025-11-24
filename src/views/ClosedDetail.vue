@@ -86,7 +86,7 @@
             <ion-item>
             <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="open">{{ translate("Open") }}</ion-select-option>
+
               <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
               <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
             </ion-select>
@@ -295,10 +295,8 @@ function applySearchAndSort() {
   });
 
   const decisionOutcome = getDcsnFilter();
-  if (decisionOutcome && decisionOutcome !== 'empty') {
+  if (decisionOutcome) {
     results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
-  } else if (decisionOutcome === 'empty') {
-    results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
   if (sortBy.value === 'alphabetic') {
@@ -319,8 +317,7 @@ const sessions = ref();
 function getDcsnFilter() {
   if (dcsnRsn.value === 'all') {
     return null;
-  } else if (dcsnRsn.value === 'open') {
-    return 'empty';
+
   } else if (dcsnRsn.value === 'accepted') {
     return 'APPLIED';
   } else if (dcsnRsn.value === 'rejected') {
