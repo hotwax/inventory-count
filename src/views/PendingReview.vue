@@ -23,9 +23,9 @@
           </ion-select>
         </ion-item>
       </div>
-      <!-- <p v-if="!cycleCounts.length" class="empty-state">
+      <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
-      </p> -->
+      </p>
       <ion-list>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/pending-review/${count.workEffortId}`)">
           <ion-item lines="none">
@@ -165,7 +165,7 @@ async function getPendingCycleCounts() {
       isScrollable.value = scrollable
     } else {
       isScrollable.value = false
-      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
+      if (pageIndex.value === 0) cycleCounts.value = [];
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);

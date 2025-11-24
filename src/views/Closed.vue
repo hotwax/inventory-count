@@ -12,7 +12,10 @@
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
       <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
-      <ion-list>
+      <p v-if="!cycleCounts?.length" class="empty-state">
+        {{ translate("No cycle counts found") }}
+      </p>
+      <ion-list v-else>
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
@@ -127,7 +130,7 @@ async function getClosedCycleCounts() {
       isScrollable.value = scrollable;
     } else {
       isScrollable.value = false;
-      if (countQueryString.value) showToast(translate("No Cycle Counts found by ", { searchedString: countQueryString.value }));
+      if (pageIndex.value === 0) cycleCounts.value = [];
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);
