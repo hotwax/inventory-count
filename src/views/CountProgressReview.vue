@@ -580,11 +580,6 @@ ion-segment-view {
   overflow-y: auto;
 }
 
-.virtual-list ion-item {
-  --min-height: 64px;
-  border-bottom: 1px solid var(--ion-color-light);
-}
-
 .loading-overlay {
   position: fixed;
   inset: 0;
