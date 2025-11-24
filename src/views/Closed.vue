@@ -11,7 +11,6 @@
       </ion-toolbar>
     </ion-header>
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <ion-searchbar v-model="countQueryString" @keyup.enter="searchCycleCounts" @ion-clear="clearSearchedResults"></ion-searchbar>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
@@ -66,7 +65,6 @@ const infiniteScrollRef = ref({}) as any
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
-const countQueryString = ref('');
 
 const pageIndex = ref(0);
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
@@ -80,7 +78,6 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  countQueryString.value = '';
 })
 
 function enableScrolling() {
@@ -95,18 +92,6 @@ function enableScrolling() {
   }
 }
 
-async function searchCycleCounts() {
-  await loader.present("Searching...")
-  pageIndex.value = 0;
-  await getClosedCycleCounts();
-  loader.dismiss();
-}
-
-async function clearSearchedResults() {
-  countQueryString.value = '';
-  searchCycleCounts();
-}
-
 async function getClosedCycleCounts() {
   try {
     const params = {
@@ -115,9 +100,6 @@ async function getClosedCycleCounts() {
       currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
       currentStatusId_op: "in"
     } as any;
-    if (countQueryString.value) {
-      params.keyword = countQueryString.value
-    }
 
     const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params);
 
