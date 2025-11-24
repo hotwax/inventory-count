@@ -302,7 +302,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("items ago") }}</p>
+                      <p class="overline">{{ (getScanContext(item).previousGoodIndex || -1) + 1}} {{ translate("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -315,7 +315,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
+                      <p class="overline">{{ (getScanContext(item).nextGoodIndex || -1) + 1}} {{ translate("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -350,7 +350,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("item ago") }}</p>
+                      <p class="overline">{{ (getScanContext(item).previousGoodIndex || -1) + 1}} {{ translate("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -363,7 +363,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
+                      <p class="overline">{{ (getScanContext(item).nextGoodIndex || -1) + 1 }} {{ translate("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -645,7 +645,7 @@ onIonViewDidEnter(async () => {
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0) + unmatchedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0) + undirectedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
       const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
