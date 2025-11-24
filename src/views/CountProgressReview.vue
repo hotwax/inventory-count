@@ -46,7 +46,7 @@
               <div v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId">
                 <ion-item>
                   <ion-label>
-                    {{ `${session.countImportName} ${session.facilityAreaId}` }}
+                    {{ `${session.countImportName || ""} ${session.facilityAreaId || ""}` }}
                     <p>{{ session.uploadedByUserLogin }}</p>
                   </ion-label>
                   <ion-note>{{ getSessionStatusDescription(session.statusId) }}</ion-note>
@@ -91,9 +91,9 @@
           <ion-card>
             <ion-card-header>
               <p class="overline">
-                {{ translate("PRODUCTS COUNTED") }}
+                {{ translate("Products counted") }}
               </p>
-              <ion-label class="big-number">{{ countedItems.length }}</ion-label>
+              <ion-label class="big-number">{{ countedItemsCount }}</ion-label>
               <p v-if="uncountedItemsCount">{{ uncountedItemsCount }} products remaining</p>
             </ion-card-header>
           </ion-card>
@@ -106,43 +106,54 @@
         </div>
       </div>
       <!-- Segments -->
-      <ion-segment value="counted">
-        <ion-segment-button value="uncounted" content-id="uncounted">
-          <ion-label>{{ uncountedItemsCount }} UNCOUNTED</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="counted" content-id="counted">
-          <ion-label>{{ countedItems.length }} COUNTED</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="undirected" content-id="undirected">
-          <ion-label>45 UNDIRECTED</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="unmatched" content-id="unmatched">
-          <ion-label>4 UNMATCHED</ion-label>
-        </ion-segment-button>
-      </ion-segment>
+
+      <div class="segments-container">
+        <ion-segment value="counted">
+          <ion-segment-button value="uncounted" content-id="uncounted">
+            <ion-label>{{ uncountedItemsCount }} UNCOUNTED</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="counted" content-id="counted">
+            <ion-label>{{ countedItemsCount }} COUNTED</ion-label>
+          </ion-segment-button>
+          <!-- <ion-segment-button value="undirected" content-id="undirected">
+            <ion-label>45 UNDIRECTED</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="unmatched" content-id="unmatched">
+            <ion-label>4 UNMATCHED</ion-label>
+          </ion-segment-button> -->
+        </ion-segment>
+      </div>
 
       <!-- List -->
       <ion-segment-view>
         <ion-segment-content id="uncounted">
-          <ion-item-group>
+          <div v-if="uncountedItems.length === 0 && isLoadingUncounted" class="empty-state">
+            <p>{{ translate("Loading...") }}</p>
+          </div>
+          <div v-else-if="uncountedItems.length === 0 && !isLoadingUncounted" class="empty-state">
+            <p>{{ translate("No results found") }}</p>
+          </div>
+          <ion-item-group v-else>
             <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
               <template #default="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :index="index" :active="active">
                   <ion-item lines="full">
                     <div class="list-item count-item-rollup">
                       <div class="item-key">
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
+                        <ion-item lines="none">
+                          <ion-thumbnail slot="start">
+                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          </ion-thumbnail>
+                          <ion-label>
+                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          </ion-label>
+                        </ion-item>
                       </div>
                     </div>
                     <ion-label slot="end">
-                      {{ item.quantityOnHandTotal }}
-                      <p>{{ translate("QOH") }}</p>
+                      {{ item.quantityOnHand }}
+                      <p>{{ translate("QoH") }}</p>
                     </ion-label>
                   </ion-item>
                 </DynamicScrollerItem>
@@ -156,7 +167,7 @@
             <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
               <template #default="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :index="index" :active="active">
-                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                  <ion-accordion v-if="item.quantity && item.quantity > 0" :key="item.productId" @click="getCountSessions(item.productId)">
                     <div class="list-item count-item-rollup" slot="header"> 
                       <ion-item lines="none">
                         <ion-thumbnail slot="start">
@@ -243,7 +254,7 @@
             </ion-item> -->
         </ion-segment-content>
 
-        <ion-segment-content id="undirected">
+        <!-- <ion-segment-content id="undirected">
           <ion-list>
             <ion-item v-for="item in undirectedItems" :key="item.id" lines="full">
               <ion-thumbnail slot="start">
@@ -271,7 +282,7 @@
               <ion-note slot="end">{{ item.units }}</ion-note>
             </ion-item>
           </ion-list>
-        </ion-segment-content>
+        </ion-segment-content> -->
       </ion-segment-view>
       </div>
     </ion-content>
@@ -303,7 +314,6 @@ import {
   IonListHeader,
   IonItem,
   IonItemGroup,
-  IonItemDivider,
   IonThumbnail,
   IonSegmentContent,
   IonSegmentView,
@@ -324,37 +334,15 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 
 const uncountedItemsCount = ref(0);
+const isLoadingUncounted = ref(false);
+const countedItemsCount = computed(() => countedItems.value.reduce((acc, item) => acc + (item.quantity && item.quantity > 0 ? 1 : 0), 0));
 const totalItems = ref(0);
 const loadedItems = ref(0);
 const workEffort = ref() as any;
 const isLoading = ref(false);
 
-const mockData = {
-  uncounted: [
-    { id: 1, primaryId: 'Product A', secondaryId: 'SKU-001', units: '10 Units' },
-    { id: 2, primaryId: 'Product B', secondaryId: 'SKU-002', units: '5 Units' },
-  ],
-  undirected: [
-    { id: 3, primaryId: 'Product C', secondaryId: 'SKU-003', units: '12 Units' },
-  ],
-  unmatched: [
-    { id: 4, primaryId: 'Product D', secondaryId: 'SKU-004', units: 'Mismatch' },
-  ],
-  counted: [
-    { id: 5, primaryId: 'Product E', secondaryId: 'SKU-005', units: '20 Units' },
-    { id: 6, primaryId: 'Product F', secondaryId: 'SKU-006', units: '8 Units' },
-  ],
-};
-
 const uncountedItems = ref<any[]>([]);
-const undirectedItems = computed(() => mockData.undirected);
-const unmatchedItems = computed(() => mockData.unmatched);
 const countedItems = ref<any[]>([]);
-const countedItemUnits = computed(() => {
-  return countedItems.value.reduce((sum, item) => {
-    return sum + (Number(item.quantity) || 0);
-  }, 0);
-});
 
 const props = defineProps<{
   workEffortId: string;
@@ -375,30 +363,6 @@ async function getWorkEffortDetails() {
     const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
     if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
       workEffort.value.sessions = sessionsResp.data;
-      useInventoryCountRun().getSessionsCount({ workEffortId: props.workEffortId, pageNoLimit: true }).then(resp => {
-        if (resp?.status === 200 && resp.data?.length) {
-        const grouped = resp.data.reduce((acc: any, item: any) => {
-          const id = item.inventoryCountImportId;
-          const qty = Number(item.counted) || 0;
-
-          if (!acc[id]) {
-            acc[id] = { unitsCounted: 0, productsCounted: 0 };
-          }
-
-          acc[id].unitsCounted += qty;
-          acc[id].productsCounted += 1;   // each row = 1 product
-          return acc;
-        }, {} as Record<string, { unitsCounted: number; productsCounted: number }>);
-
-        workEffort.value.sessions.forEach((session: any) => {
-          const id = session.inventoryCountImportId;
-          session.unitsCounted = grouped[id]?.unitsCounted || 0;
-          session.productsCounted = grouped[id]?.productsCounted || 0;
-        });
-        }
-      }).catch(
-        err => console.warn('Prefetch Failed:', err)
-      );
     }
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
     if (resp?.status === 200) {
@@ -467,14 +431,19 @@ async function getInventoryCycleCount() {
 }
 
 async function getUncountedItems() {
-  let pageIndex = 0;
-  let pageSize = 250;
-  let hasMore = true;
-
+  isLoadingUncounted.value = true;
   try {
-    const countResp = await useInventoryCountRun().getUncountedHardCountItemCount({
-      workEffortId: props.workEffortId
-    });
+    if (workEffort.value.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
+      uncountedItems.value = countedItems.value.filter(
+        (item: any) => !item.quantity || item.quantity === 0
+      );
+      uncountedItemsCount.value = uncountedItems.value.length;
+      return;
+    }
+    let pageIndex = 0;
+    let pageSize = 250;
+    let hasMore = true;
+    const countResp = await useInventoryCountRun().getUncountedHardCountItemCount({ workEffortId: props.workEffortId });
 
     if (countResp?.status === 200 && countResp.data?.count >= 0) {
       uncountedItemsCount.value = countResp.data.count;
@@ -488,19 +457,13 @@ async function getUncountedItems() {
     }
 
     while (hasMore) {
-      const resp = await useInventoryCountRun().getUncountedHardCountItems({
-        workEffortId: props.workEffortId,
-        pageSize,
-        pageIndex
-      });
+      const resp = await useInventoryCountRun().getUncountedHardCountItems({ workEffortId: props.workEffortId, pageSize, pageIndex });
 
       if (resp?.status === 200 && resp.data?.length) {
         uncountedItems.value.push(...resp.data);
-        console.log("Resp: ", resp.data.length, " and ", pageSize);
         const productIds = [...new Set(resp.data
           .filter((item: any) => item?.productId)
           .map((item: any) => item.productId))];
-        console.log("these are products ids: ", productIds);
         if (productIds.length) {
           useProductMaster().prefetch(productIds as any)
             .then(() => { 
@@ -516,16 +479,13 @@ async function getUncountedItems() {
             .catch(err => console.warn('Prefetch Failed:', err))
         }
         if (resp.data.length < pageSize) {
-          console.log("Here: 1")
           hasMore = false;
         } else {
           pageIndex++;
         }
       } else {
-        console.log("Here 2");
         hasMore = false;
       }
-      console.log("This is hasMore flag: ", hasMore);
     }
 
     const results = uncountedItems.value;
@@ -533,8 +493,8 @@ async function getUncountedItems() {
   } catch (error) {
     console.error("Error fetching uncounted items:", error);
     showToast(translate("Something Went Wrong"));
-    uncountedItems.value = [];
   }
+  isLoadingUncounted.value = false;
 }
 
 function stopAccordianEventProp(event: Event) {

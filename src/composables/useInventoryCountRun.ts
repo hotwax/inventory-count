@@ -293,7 +293,23 @@ export function useInventoryCountRun() {
 
   async function getUncountedHardCountItemCount(params: any): Promise<any> {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/productsCount`,
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/count`,
+      method: 'get'
+    });
+    return resp;
+  }
+
+  async function getUncountedDirectedCountItemCount(params: any): Promise<any> {
+    const resp = await api({
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/directed/count`,
+      method: 'get'
+    });
+    return resp;
+  }
+
+  async function getUncountedDirectedCountItems(params: any): Promise<any> {
+    const resp = await api({
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/directed`,
       method: 'get'
     });
     return resp;
@@ -327,6 +343,8 @@ export function useInventoryCountRun() {
     loadStatusDescription,
     getUncountedHardCountItemCount,
     getUncountedHardCountItems,
-    getCycleCountSessions
+    getCycleCountSessions,
+    getUncountedDirectedCountItems,
+    getUncountedDirectedCountItemCount
   };
 }
