@@ -29,7 +29,7 @@
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
-            <ion-item class="date-button">
+            <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
@@ -39,7 +39,7 @@
               </div>
             </ion-item>
 
-            <ion-item class="date-button">
+            <ion-item lines="none">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Start Date") }}</p>
@@ -52,7 +52,6 @@
             <ion-modal class="date-time-modal" :is-open="isModalOpen" @didDismiss="closeModal">
               <ion-content :force-overscroll="false">
                 <ion-datetime
-                  v-model="pickedDate"
                   :value="initialValue"
                   :min="DateTime.now().toISODate()"
                   presentation="date"
@@ -267,7 +266,6 @@ async function getWorkEffortDetails() {
 
 const isModalOpen = ref(false)
 const currentField = ref("")
-const pickedDate = ref("")
 const initialValue: any = ref("")
 
 function formatDateTime(date: number | string) {
@@ -282,7 +280,6 @@ function openModal(field: string) {
     ? DateTime.fromMillis(value).toISO()
     : DateTime.now().toISO()
 
-  pickedDate.value = initialValue.value
   isModalOpen.value = true
 }
 
@@ -312,7 +309,6 @@ async function handleChange(ev: any) {
 }
 
 function closeModal() {
-  pickedDate.value = ""
   isModalOpen.value = false
 }
 
