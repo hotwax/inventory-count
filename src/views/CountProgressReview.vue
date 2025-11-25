@@ -31,7 +31,7 @@
                 </ion-label>
                 <ion-item lines="none" class="ion-no-padding">
                   <h1>{{ workEffort?.workEffortName }}</h1>
-                  <ion-badge color="primary" slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
+                  <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
                 </ion-item>
                 <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
               </div>
@@ -73,8 +73,15 @@
             </ion-card-header>
           </ion-card>
         </div>
+        <div class="actions">
+          <ion-button fill="outline" color="success">
+            <ion-icon slot="start" :icon="checkmarkDoneOutline" />
+            {{ translate("SUBMIT FOR REVIEW") }}
+          </ion-button>
+        </div>
       </div>
       <!-- Segments -->
+
       <div class="segments-container">
         <ion-segment value="counted">
           <ion-segment-button value="uncounted" content-id="uncounted">
@@ -134,22 +141,20 @@
                 <DynamicScrollerItem :item="item" :index="index" :active="active">
                   <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
                     <div class="list-item count-item-rollup" slot="header"> 
-                      <div class="item-key">
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                          </ion-label>
-                        </ion-item>
-                      </div>
-                      <ion-label class="stat">
+                      <ion-item lines="none">
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                      </ion-item>
+                      <ion-label>
                         {{ item.quantity }}/{{ item.quantityOnHand }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
-                      <ion-label class="stat">
+                      <ion-label>
                         {{ item.proposedVarianceQuantity }}
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
@@ -655,13 +660,15 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 </script>
 
 <style scoped>
-.header-actions {
+
+.header {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--spacer-base);
+  justify-content: space-between;
+  align-items: start;
 }
 
 .progress-summary {
+  flex: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: start;
@@ -678,9 +685,14 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
   color: rgba(var(--ion-text-color));
 }
 
-.segments-container {
-  border-bottom: 1px solid var(--ion-color-light);
+ion-segment {
+  justify-content: start;
+  border-bottom: 1px solid var(--ion-color-medium);
   margin-top: var(--spacer-lg);
+}
+
+ion-segment-view {
+  height: unset;
 }
 
 .virtual-scroller {
@@ -693,11 +705,6 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
   /* adjust 240–320px until it fits your header + filters height */
   max-height: calc(100vh - 260px);
   overflow-y: auto;
-}
-
-.virtual-list ion-item {
-  --min-height: 64px;
-  border-bottom: 1px solid var(--ion-color-light);
 }
 
 .loading-overlay {
@@ -723,11 +730,4 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
   --columns-desktop: 5
 }
 
-.list-item .item-key {
-  padding-inline-start: var(--spacer-sm);
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-self: stretch;
-}
 </style>

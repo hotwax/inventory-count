@@ -48,6 +48,19 @@
               <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
             </ion-label>
           </ion-item>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
+            {{ translate("Start counting") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Preview count") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Review progress") }}
+          </ion-button>
+          <!-- <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
+            {{ translate("Ready for review") }}
+          </ion-button> -->
+
           <ion-list>
             <ion-list-header>
               <ion-label>
@@ -65,62 +78,49 @@
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
-              <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
-                  </ion-label>
-                  <ion-note slot="end">
-                    {{ getSessionStatusDescription(session.statusId) }}
-                  </ion-note>
-                </ion-item>
+            <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
+              <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="selectedSegment === 'assigned'" :button="selectedSegment === 'assigned'" :disabled="selectedSegment !== 'assigned' || count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="selectedSegment === 'assigned' && checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
+                </ion-label>
+                <ion-note slot="end">
+                  {{ getSessionStatusDescription(session.statusId) }}
+                </ion-note>
+              </ion-item>
 
-                <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
-                  </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned' && hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
-                    {{ translate("Force Release") }}
-                  </ion-button>
-                  <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
-                </ion-item>
+              <!-- Locked by another user -->
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
+                </ion-label>
+                <ion-button v-if="selectedSegment === 'assigned' && hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  {{ translate("Force Release") }}
+                </ion-button>
+                <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
+              </ion-item>
 
-                <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for this device") }}</p>
-                  </ion-label>
-                  <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
-                </ion-item>
+              <!-- Locked by same user, same device -->
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("Session already active for this device") }}</p>
+                </ion-label>
+                <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+              </ion-item>
 
-                <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active on another device") }}</p>
-                  </ion-label>
-                  <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
-                    {{ translate("Force Release") }}
-                  </ion-button>
-                </ion-item>
-              </ion-item-group>
-
-            <ion-item v-if="selectedSegment === 'assigned'" lines="none">
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="start" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
-                {{ translate("See Progress") }}
-              </ion-button>
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
-                {{ translate("Ready for review") }}
-              </ion-button>
-              <ion-button
-                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
-                {{ translate("Move to In Progress") }}
-              </ion-button>
-            </ion-item>
+              <!-- Locked by same user, different device -->
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("Session already active on another device") }}</p>
+                </ion-label>
+                <ion-button v-if="selectedSegment === 'assigned'" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  {{ translate("Force Release") }}
+                </ion-button>
+              </ion-item>
+            </ion-item-group>
           </ion-list>
         </ion-card>
       </template>
