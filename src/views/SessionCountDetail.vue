@@ -641,15 +641,17 @@ onIonViewDidEnter(async () => {
     from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
     from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
+    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
+      stats.value.totalUnits = total;
+    });
 
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
       const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
-        totalUnits,
+        totalUnits: stats.value.totalUnits,
         unmatched: unmatchedItems.value.length
       }
     })
