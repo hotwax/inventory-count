@@ -896,7 +896,11 @@ async function handleSessionLock() {
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
-            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockForceReleased') {
+            showToast('Session lock was force-released by another user.');
+            await releaseSessionLock();
+            if (lockWorker) await lockWorker.stopHeartbeat();
+            router.push('/tabs/count');
           } else if (type === 'lockExpired') {
             showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
@@ -953,7 +957,6 @@ async function handleSessionLock() {
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
-            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
           } else if (type === 'lockForceReleased') {
             showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
