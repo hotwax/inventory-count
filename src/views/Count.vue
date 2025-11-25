@@ -413,17 +413,6 @@ async function goToCountProgressReview(workEffortId, event) {
   router.push(`/count-progress-review/${workEffortId}`);
 }
 
-async function markAsCompleted(workEffortId) {
-  const response = await useInventoryCountRun().updateWorkEffort({
-    workEffortId,
-    currentStatusId: 'CYCLE_CNT_CMPLTD'
-  });
-  if (response?.status === 200) {
-    showToast(translate('Session sent for review successfully'));
-    await getCycleCounts(true);
-  } else showToast(translate('Failed to send session for review'));
-}
-
 async function markInProgress(workEffortId) {
   const response = await useInventoryCountRun().updateWorkEffort({
     workEffortId,

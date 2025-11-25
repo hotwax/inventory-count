@@ -13,9 +13,9 @@
       </div>
       <!-- Top Summary Section -->
       <div v-else>
-      <div class="header ion-padding">
-        <div class="header-actions">
-          <ion-button :disabled="isLoading && isLoadingUncounted" fill="outline" color="success">
+      <div class="ion-padding">
+        <div v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" class="header">
+          <ion-button :disabled="isLoading && isLoadingUncounted && !workEffort?.sessions?.length || workEffort?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')" fill="outline" color="success" @click="markAsCompleted">
             <ion-icon slot="start" :icon="checkmarkDoneOutline" />
             {{ translate("SUBMIT FOR REVIEW") }}
           </ion-button>
@@ -73,12 +73,6 @@
             </ion-card-header>
           </ion-card>
         </div>
-        <!-- <div class="actions">
-          <ion-button fill="outline" color="success">
-            <ion-icon slot="start" :icon="checkmarkDoneOutline" />
-            {{ translate("SUBMIT FOR REVIEW") }}
-          </ion-button>
-        </div> -->
       </div>
       <!-- Segments -->
 
@@ -257,7 +251,7 @@ import {
 import Image from '@/components/Image.vue'; 
 import { checkmarkDoneOutline, imageOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
-import { showToast } from '@/services/uiUtils';
+import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import defaultImage from "@/assets/images/defaultImage.png";
@@ -660,13 +654,32 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
   }
 }
 
+async function markAsCompleted() {
+  await loader.present("Submitting...");
+  try {
+    const response = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      currentStatusId: 'CYCLE_CNT_CMPLTD'
+    });
+    if (response?.status === 200) {
+      showToast(translate('Session sent for review successfully'));
+    } else {
+      throw response;
+    }
+  } catch (error) {
+    console.error("Error Updating Cycle Count: ", error);
+      showToast(translate('Failed to send session for review'));
+  }
+  loader.dismiss();
+}
+
 </script>
 
 <style scoped>
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: start;
 }
 
