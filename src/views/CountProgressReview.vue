@@ -13,7 +13,7 @@
       </div>
       <!-- Top Summary Section -->
       <div v-else>
-      <div class="summary-section ion-padding">
+      <div class="header ion-padding">
         <div class="header-actions">
           <ion-button :disabled="isLoading && isLoadingUncounted" fill="outline" color="success">
             <ion-icon slot="start" :icon="checkmarkDoneOutline" />
@@ -73,12 +73,12 @@
             </ion-card-header>
           </ion-card>
         </div>
-        <div class="actions">
+        <!-- <div class="actions">
           <ion-button fill="outline" color="success">
             <ion-icon slot="start" :icon="checkmarkDoneOutline" />
             {{ translate("SUBMIT FOR REVIEW") }}
           </ion-button>
-        </div>
+        </div> -->
       </div>
       <!-- Segments -->
 
@@ -99,10 +99,10 @@
           <ion-item-divider v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'">
             <ion-button :disabled="!(uncountedItems.length > 0)" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
           </ion-item-divider>
-          <div v-if="uncountedItems.length === 0 && isLoadingUncounted" class="empty-state">
+          <div v-if="isLoadingUncounted" class="empty-state">
             <p>{{ translate("Loading...") }}</p>
           </div>
-          <div v-else-if="uncountedItems.length === 0 && !isLoadingUncounted" class="empty-state">
+          <div v-else-if="!isLoadingUncounted && uncountedItems.length === 0" class="empty-state">
             <p>{{ translate("No results found") }}</p>
           </div>
           <ion-item-group v-else>
@@ -383,7 +383,7 @@ async function loadDirectedCount() {
         })
         .catch(err => {
           console.warn("Prefetch Failed for counted items:", err);
-        });
+        })
     }
     const uncountedProductIds = [...new Set(uncountedItems.value
       .filter(i => i?.productId)
@@ -405,6 +405,9 @@ async function loadDirectedCount() {
       })
       .catch(err => {
         console.warn("Prefetch Failed for uncounted items:", err);
+      })
+      .finally(() => {
+        isLoadingUncounted.value = false;
       });
     }
   } catch (error) {
@@ -413,7 +416,6 @@ async function loadDirectedCount() {
     countedItems.value = [];
     uncountedItems.value =[];
   }
-  isLoadingUncounted.value = false;
 }
 
 async function loadHardCount() {
@@ -467,7 +469,7 @@ async function loadHardCount() {
       })
       .catch(err => {
         console.warn('Prefetch Failed for hard count:', err);
-      });
+      })
     }
     console.log("Pre-fetched items: ", productIds.length);
   } catch (error) {
@@ -542,13 +544,14 @@ async function getUncountedItems() {
       console.warn('Prefetch Failed for uncounted items:', err);
       uncountedItems.value = rawUncounted;
     })
-
+    .finally(() => {
+      isLoadingUncounted.value = false;
+    });
   } catch (error) {
     console.error("Error fetching uncounted:", error);
     showToast(translate("Something Went Wrong"));
     uncountedItems.value = [];
   }
-  isLoadingUncounted.value = false;
 }
 
 function stopAccordianEventProp(event: Event) {
@@ -593,7 +596,7 @@ async function createSessionForUncountedItems() {
   try {
     const resp = await useInventoryCountRun().createSessionOnServer({
       countImportName: workEffort.value?.workEffortName,
-      statusId: "SESSION_CREATED",
+      statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
       dueDate: workEffort.value?.dueDate,
