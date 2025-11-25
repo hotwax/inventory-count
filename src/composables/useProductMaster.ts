@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import { client } from '@/services/RemoteAPI';
+import api, { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/commonDatabase'
@@ -445,6 +445,22 @@ const secondaryId = (product: any) => {
   return resolve(pref) || product.productId || ''
 }
 
+async function getInventoryOnFacility (payload: any): Promise<any> {
+  const resp = await api({
+    url: `oms/dataDocumentView`,
+    method: "post",
+    data: {
+      dataDocumentId: 'ProductFacilityAndInventoryItem',
+      pageSize: payload.pageSize,
+      pageIndex: payload.pageIndex,
+      customParametersMap: {
+        facilityId: payload.facilityId
+      }
+    }
+  })
+  return resp;
+}
+
 export function useProductMaster() {
 
   return {
@@ -465,6 +481,7 @@ export function useProductMaster() {
     cacheReady,
     buildProductQuery,
     primaryId,
-    secondaryId
+    secondaryId,
+    getInventoryOnFacility
   }
 }
