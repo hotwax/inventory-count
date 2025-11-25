@@ -31,7 +31,7 @@ export interface InventoryCountImportItem {
 export interface ScanEvent {
   id?: number
   scannedValue?: string
-  productId?: string
+  productId?: string | null
   inventoryCountImportId: string
   locationSeqId?: string | null
   quantity: number
