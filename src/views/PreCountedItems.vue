@@ -258,7 +258,6 @@ async function setProductQoh(product: any) {
 async function addPreCountedItemInScanEvents(product: any) {
   await recordScan({
     inventoryCountImportId: props.inventoryCountImportId,
-    productId: product.productId,
     productIdentifier: await useProductStore().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
