@@ -62,7 +62,8 @@ function getDateTimeWithOrdinalSuffix(time: any) {
 function toIsoDate(dateStr: string, endOfDay = false) {
   if (!dateStr) return '';
   const dt = DateTime.fromISO(dateStr);
-  return (endOfDay ? dt.endOf('day') : dt.startOf('day')).toISO();
+  const final = endOfDay ? dt.endOf('day') : dt.startOf('day');
+  return final.toFormat("yyyy-MM-dd HH:mm:ss.SSS");
 }
 
 export {
@@ -70,4 +71,4 @@ export {
   getDateTimeWithOrdinalSuffix,
   initDeviceId,
   toIsoDate
-}
+} 
