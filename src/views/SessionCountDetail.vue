@@ -544,7 +544,7 @@ import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { from } from 'rxjs';
+import { Subscription, from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
@@ -570,6 +570,7 @@ const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
+const subscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
@@ -629,6 +630,15 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
 
+watchEffect(() => {
+  const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
+  stats.value = {
+    productsCounted: distinctProducts,
+    totalUnits: totalUnitsCount.value,
+    unmatched: unmatchedItems.value.length
+  }
+})
+
 onIonViewDidEnter(async () => {
   try {
     await startSession();
@@ -637,25 +647,28 @@ onIonViewDidEnter(async () => {
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
-      totalUnitsCount.value = total;
-    });
+    subscriptions.push(
+      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; })
+    );
+    subscriptions.push(
+      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
+        totalUnitsCount.value = total;
+      })
+    );
 
     dayjs.extend(relativeTime);
-    // Display the unmatched and unaggregated products count stats
-    watchEffect(() => {
-      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
-      stats.value = {
-        productsCounted: distinctProducts,
-        totalUnits: totalUnitsCount.value,
-        unmatched: unmatchedItems.value.length
-      }
-    })
 
     watch(selectedSegment, () => {
       searchKeyword.value = ""
@@ -705,6 +718,9 @@ onIonViewDidEnter(async () => {
 });
 
 onBeforeUnmount(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
