@@ -117,7 +117,7 @@ import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
-import { getDateWithOrdinalSuffix, toIsoDate } from '@/services/utils';
+import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
 import { hasError } from '@/stores/authStore';
 import logger from '@/logger';
@@ -199,16 +199,16 @@ function buildFilterParams() {
   }
 
   if (filters.createdDateFrom) {
-    params.createdDateFrom = toIsoDate(filters.createdDateFrom, false);
+    params.createdDateFrom = formatDateTime(filters.createdDateFrom, false);
   }
   if (filters.createdDateTo) {
-    params.createdDateTo = toIsoDate(filters.createdDateTo, true);
+    params.createdDateTo = formatDateTime(filters.createdDateTo, true);
   }
   if (filters.closedDate) {
-    params.closedDate = toIsoDate(filters.closedDate, false);
+    params.closedDate = formatDateTime(filters.closedDate, false);
   }
   if (filters.closedDateTo) {
-    params.closedDateTo = toIsoDate(filters.closedDateTo, true);
+    params.closedDateTo = formatDateTime(filters.closedDateTo, true);
   }
   if (filters.keyword) {
     params.keyword = filters.keyword;
