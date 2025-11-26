@@ -409,7 +409,7 @@ async function markInProgress(workEffortId) {
 
 async function forceRelease(session) {
   try {
-    loader.present();
+    await loader.present();
     const payload = {
       inventoryCountImportId: session.inventoryCountImportId,
       fromDate: session.lock?.fromDate,
