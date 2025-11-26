@@ -56,7 +56,7 @@
                     {{ `${session.countImportName || ""} ${session.facilityAreaId || ""}` }}
                     <p>{{ session.uploadedByUserLogin }}</p>
                   </ion-label>
-                  <ion-note>{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+                  <ion-note>{{ useProductStore().getStatusDescription(session.statusId) }}</ion-note>
                 </ion-item>
               </div>
             </ion-list>
@@ -245,6 +245,8 @@ const allProducts = ref<any[]>([]);
 const uncountedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
 
+const sessions = ref();
+
 const props = defineProps<{
   workEffortId: string;
 }>();
@@ -258,7 +260,7 @@ onIonViewDidEnter (async () => {
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-  if (workEffortResp && workEffortResp.status === 200 && workEffortResp.data) {
+  if (workEffortResp?.status === 200 && workEffortResp.data) {
     workEffort.value = workEffortResp.data;
     const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
     if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
@@ -286,13 +288,6 @@ async function getInventoryCycleCount() {
   } catch (error) {
     console.error("Error fetching inventory cycle count:", error);
   }
-}
-
-function safeTimeVal(v: any) {
-  if (!v) return 0;
-  if (typeof v === 'number') return v;
-  const t = new Date(v).getTime();
-  return Number.isFinite(t) ? t : 0;
 }
 
 async function loadDirectedCount() {
@@ -324,12 +319,12 @@ async function loadDirectedCount() {
       loadedItems.value = countedItems.value.length + uncountedItems.value.length;
     }
 
-    uncountedItems.value.sort((a, b) => safeTimeVal(a.maxLastUpdatedAt) - safeTimeVal(b.maxLastUpdatedAt));
-    countedItems.value.sort((a, b) => safeTimeVal(a.maxLastUpdatedAt) - safeTimeVal(b.maxLastUpdatedAt));
+    uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
     const countedProductIds = [...new Set(countedItems.value
-      .filter(i => i?.productId)
-      .map(i => i.productId)
+      .filter(item => item?.productId)
+      .map(item => item.productId)
     )];
 
     if (countedProductIds.length) {
@@ -350,8 +345,8 @@ async function loadDirectedCount() {
         })
     }
     const uncountedProductIds = [...new Set(uncountedItems.value
-      .filter(i => i?.productId)
-      .map(i => i.productId)
+      .filter(item => item?.productId)
+      .map(item => item.productId)
     )];
 
     if (uncountedProductIds.length) {
@@ -373,6 +368,8 @@ async function loadDirectedCount() {
       .finally(() => {
         isLoadingUncounted.value = false;
       });
+    } else {
+      isLoadingUncounted.value = false;
     }
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
@@ -408,7 +405,7 @@ async function loadHardCount() {
       }
       loadedItems.value = countedItems.value.length;
     }
-    countedItems.value.sort((a, b) => safeTimeVal(a.maxLastUpdatedAt) - safeTimeVal(b.maxLastUpdatedAt));
+    countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     getUncountedItems();
     const productIds = [...new Set(
       countedItems.value
@@ -480,20 +477,19 @@ async function getUncountedItems() {
   try {
     await getAllProductsOnFacility();
 
-    const countedSet = new Set(countedItems.value.map(i => i.productId));
-    const rawUncounted = allProducts.value.filter((p: any) => !countedSet.has(p.productId));
+    const countedSet = new Set(countedItems.value.map(item => item.productId));
+    const rawUncounted = allProducts.value.filter((product: any) => !countedSet.has(product.productId));
     const productIds = [...new Set(
-      rawUncounted.map(p => p.productId).filter(Boolean)
+      rawUncounted.map(product => product.productId).filter(Boolean)
     )];
 
-  if (!productIds.length) {
-    uncountedItems.value = [];
-    isLoadingUncounted.value = false;
-    return;
-  }
+    if (!productIds.length) {
+      uncountedItems.value = [];
+      isLoadingUncounted.value = false;
+      return;
+    }
 
-  useProductMaster().prefetch(productIds)
-    .then(async () => {
+    useProductMaster().prefetch(productIds).then(async () => {
       const items: any[] = [];
 
       for (const item of rawUncounted) {
@@ -521,8 +517,6 @@ function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
 }
 
-const sessions = ref();
-
 async function getCountSessions(productId: any) {
   sessions.value = null;
   try {
@@ -542,15 +536,6 @@ async function getCountSessions(productId: any) {
     console.error("Error getting sessions for this product: ", error);
     showToast(translate("Something Went Wrong"));
   }
-}
-
-function getSessionStatusDescription(statusId: string) {
-  if (!statusId) return "";
-  if (statusId === "SESSION_CREATED") return "Created";
-  if (statusId === "SESSION_ASSIGNED") return "In Progress";
-  if (statusId === "SESSION_SUBMITTED") return "Submitted";
-  if (statusId === "SESSION_VOIDED") return "Voided";
-  return statusId;
 }
 
 async function createSessionForUncountedItems() {
