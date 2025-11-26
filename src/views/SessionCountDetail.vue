@@ -569,6 +569,7 @@ const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+const totalUnitsCount = ref(0);
 const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
@@ -642,7 +643,7 @@ onIonViewDidEnter(async () => {
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
     from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
     from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
-      stats.value.totalUnits = total;
+      totalUnitsCount.value = total;
     });
 
     dayjs.extend(relativeTime);
@@ -651,7 +652,7 @@ onIonViewDidEnter(async () => {
       const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
-        totalUnits: stats.value.totalUnits,
+        totalUnits: totalUnitsCount.value,
         unmatched: unmatchedItems.value.length
       }
     })
