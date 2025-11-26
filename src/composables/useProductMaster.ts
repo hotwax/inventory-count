@@ -445,7 +445,7 @@ const secondaryId = (product: any) => {
   return resolve(pref) || product.productId || ''
 }
 
-async function getInventoryOnFacility (payload: any): Promise<any> {
+async function getProductsOnFacility (payload: any): Promise<any> {
   const resp = await api({
     url: `oms/dataDocumentView`,
     method: "post",
@@ -482,6 +482,6 @@ export function useProductMaster() {
     buildProductQuery,
     primaryId,
     secondaryId,
-    getInventoryOnFacility
+    getProductsOnFacility
   }
 }

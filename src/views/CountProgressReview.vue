@@ -97,7 +97,7 @@
             <p>{{ translate("Loading...") }}</p>
           </div>
           <div v-else-if="!isLoadingUncounted && uncountedItems.length === 0" class="empty-state">
-            <p>{{ translate("No results found") }}</p>
+            <p>{{ translate("No Results") }}</p>
           </div>
           <ion-item-group v-else>
             <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
@@ -217,37 +217,7 @@
 
 <script setup lang="ts">
 import { ref, defineProps } from 'vue';
-import {
-  IonAccordion,
-  IonAccordionGroup,
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonBackButton,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonIcon,
-  IonItemDivider,
-  IonCard,
-  IonCardHeader,
-  IonCardSubtitle,
-  IonBadge,
-  IonNote,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonList,
-  IonListHeader,
-  IonItem,
-  IonItemGroup,
-  IonThumbnail,
-  IonSegmentContent,
-  IonSegmentView,
-  IonAvatar,
-  IonSkeletonText,
-  onIonViewDidEnter
-} from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
@@ -439,7 +409,6 @@ async function loadHardCount() {
       loadedItems.value = countedItems.value.length;
     }
     countedItems.value.sort((a, b) => safeTimeVal(a.maxLastUpdatedAt) - safeTimeVal(b.maxLastUpdatedAt));
-    console.log("These are items: ", countedItems.value);
     getUncountedItems();
     const productIds = [...new Set(
       countedItems.value
@@ -482,7 +451,7 @@ async function getAllProductsOnFacility() {
     allProducts.value = [];
 
     while (hasMore) {
-      const resp = await useProductMaster().getInventoryOnFacility({
+      const resp = await useProductMaster().getProductsOnFacility({
         facilityId: workEffort.value?.facilityId,
         pageSize,
         pageIndex
