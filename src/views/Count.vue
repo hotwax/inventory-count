@@ -466,6 +466,11 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
 </script>
 
 <style scoped>
+
+ion-content {
+ --padding-bottom: var(--spacer-2xl) 
+}
+
 section {
   padding-bottom: 100px;
 }
