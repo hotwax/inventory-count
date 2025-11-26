@@ -391,7 +391,7 @@ async function addNewSession() {
   }
 }
 
-async function goToCountProgressReview(workEffortId, event) {
+function goToCountProgressReview(workEffortId, event) {
   event.stopPropagation();
   router.push(`/count-progress-review/${workEffortId}`);
 }
