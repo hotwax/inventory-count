@@ -58,7 +58,7 @@
       </h2>
 
       <ion-list v-if="products.length > 0" class="pre-counted-items">
-        <ion-card v-for="product in products" :key="product.productId">
+        <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
           <div class="item ion-padding-end">
             <ion-item class="product" lines="none">
               <ion-thumbnail slot="start">
@@ -333,13 +333,6 @@ async function addProductInPreCountedItems(product: any) {
     searchedProductString.value = ''
     searchedProducts.value = []
     isSearchResultsModalOpen.value = false
-
-    const existing = products.value.find(existingProduct => existingProduct.productId === product.productId)
-    if (existing) {
-      showToast(translate('Product already exists in Counted Items'))
-      loader.dismiss()
-      return
-    }
 
     product.countedQuantity = 0
     product.saved = false
