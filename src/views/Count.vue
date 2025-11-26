@@ -115,10 +115,10 @@
               <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
-              <ion-button
+              <!-- <ion-button
                 v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
                 {{ translate("Move to In Progress") }}
-              </ion-button>
+              </ion-button> -->
             </ion-item>
           </ion-list>
         </ion-card>
