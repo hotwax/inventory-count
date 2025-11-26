@@ -15,7 +15,7 @@
       <div v-else>
       <div class="ion-padding">
         <div v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" class="header">
-          <ion-button :disabled="isLoading && isLoadingUncounted && !workEffort?.sessions?.length || workEffort?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')" fill="outline" color="success" @click="markAsCompleted">
+          <ion-button :disabled="areAllSessionCompleted() || isLoading || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
             <ion-icon slot="start" :icon="checkmarkDoneOutline" />
             {{ translate("SUBMIT FOR REVIEW") }}
           </ion-button>
@@ -91,7 +91,7 @@
       <ion-segment-view>
         <ion-segment-content id="uncounted">
           <ion-item-divider v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'">
-            <ion-button :disabled="!(uncountedItems.length > 0)" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
+            <ion-button :disabled="areAllSessionCompleted() && uncountedItems.length === 0" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
           </ion-item-divider>
           <div v-if="isLoadingUncounted" class="empty-state">
             <p>{{ translate("Loading...") }}</p>
@@ -625,6 +625,10 @@ async function markAsCompleted() {
       showToast(translate('Failed to send session for review'));
   }
   loader.dismiss();
+}
+
+function areAllSessionCompleted() {
+  return !workEffort?.sessions?.length || workEffort?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
 }
 
 </script>
