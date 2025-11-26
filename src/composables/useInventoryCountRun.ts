@@ -128,6 +128,30 @@ const getCycleCountImportErrors = async (payload: any): Promise<any> => {
   });
 };
 
+const queueCycleCountsFileExport = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/export`,
+    method: "post",
+    data: payload
+  });
+}
+
+const getExportedCycleCountsSystemMessages = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages`,
+    method: "get",
+    params: payload
+  });
+};
+
+const getExportedCycleCountsFileData = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/export/${payload.systemMessageId}`,
+    method: "get",
+    params: payload
+  });
+};
+
 const submitProductReview = async (payload: any): Promise<any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/submit`,
@@ -336,6 +360,8 @@ export function useInventoryCountRun() {
     cancelCycleCountFileProcessing,
     getCycleCountUploadedFileData,
     getCycleCountImportErrors,
+    getExportedCycleCountsFileData,
+    getExportedCycleCountsSystemMessages,
     submitProductReview,
     getCreatedAndAssignedWorkEfforts,
     getCycleCntImportSystemMessages,
@@ -343,6 +369,7 @@ export function useInventoryCountRun() {
     getCycleCounts,
     clearCycleCountList,
     loadStatusDescription,
+    queueCycleCountsFileExport,
     getUncountedHardCountItemCount,
     getUncountedHardCountItems,
     getCycleCountSessions,

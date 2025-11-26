@@ -58,8 +58,16 @@ function getDateTimeWithOrdinalSuffix(time: any) {
   return `${dateTime.toFormat("h:mm a d")}${suffix} ${dateTime.toFormat("MMM yyyy")}`;
 }
 
+// Helper to convert date string (YYYY-MM-DD) to ISO start/end of day
+function toIsoDate(dateStr: string, endOfDay = false) {
+  if (!dateStr) return '';
+  const dt = DateTime.fromISO(dateStr);
+  return (endOfDay ? dt.endOf('day') : dt.startOf('day')).toISO();
+}
+
 export {
   getDateWithOrdinalSuffix,
   getDateTimeWithOrdinalSuffix,
-  initDeviceId
+  initDeviceId,
+  toIsoDate
 }

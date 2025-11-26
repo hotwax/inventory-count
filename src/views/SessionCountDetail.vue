@@ -302,7 +302,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("items ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -315,7 +315,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -350,7 +350,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousGoodIndex }} {{ translate("item ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -363,7 +363,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextGoodIndex }} {{ translate("items later") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -641,15 +641,17 @@ onIonViewDidEnter(async () => {
     from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
     from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
+    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
+      stats.value.totalUnits = total;
+    });
 
     dayjs.extend(relativeTime);
     // Display the unmatched and unaggregated products count stats
     watchEffect(() => {
-      const totalUnits = countedItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
       const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
       stats.value = {
         productsCounted: distinctProducts,
-        totalUnits,
+        totalUnits: stats.value.totalUnits,
         unmatched: unmatchedItems.value.length
       }
     })
@@ -1239,24 +1241,24 @@ function clearSearchResults() {
 function getScanContext(item: any) {
   if (!item || !item.productIdentifier || !events.value?.length) return {}
 
-  // newest → oldest
+  //newest to oldest
   const sortedScans = [...events.value].sort(
     (predecessor, successor) => (successor.createdAt ?? 0) - (predecessor.createdAt ?? 0)
   )
 
-  // find the actual unmatched scan (by scannedValue, not id)
-  const index = sortedScans.findIndex(
-    (event) => event.scannedValue === item.productIdentifier
+  const unmatchedIndex = sortedScans.findIndex(
+    (scan) => scan.scannedValue === item.productIdentifier
   )
-  if (index === -1) return {}
+  if (unmatchedIndex === -1) return {}
 
-  //since list is newest → oldest, index itself is "X scans ago"
-  const scansAgo = index
+  //How many scans ago = index itself since list is newest→oldest
+  const scansAgo = unmatchedIndex + 1
 
-  //previous good scan = closest NEWER good scan (i.e. walk backwards: index-1 → 0)
-  let previousGood: any = null
+  // Find previous good scan (relative newer scan)
+  let previousGood = null
   let previousGoodIndex = -1
-  for (let i = index - 1; i >= 0; i--) {
+
+  for (let i = unmatchedIndex - 1; i >= 0; i--) {
     if (sortedScans[i]?.productId) {
       previousGood = sortedScans[i]
       previousGoodIndex = i
@@ -1264,10 +1266,11 @@ function getScanContext(item: any) {
     }
   }
 
-  //next good scan = closest OLDER good scan (i.e. walk forwards: index+1 → end)
-  let nextGood: any = null
+  // Find next good scan (relative older scan)
+  let nextGood = null
   let nextGoodIndex = -1
-  for (let i = index + 1; i < sortedScans.length; i++) {
+
+  for (let i = unmatchedIndex + 1; i < sortedScans.length; i++) {
     if (sortedScans[i]?.productId) {
       nextGood = sortedScans[i]
       nextGoodIndex = i
@@ -1275,12 +1278,22 @@ function getScanContext(item: any) {
     }
   }
 
+  //Compute scan-distance relative to the unmatched item
+  const previousDistance =
+    previousGoodIndex !== -1 ? previousGoodIndex - unmatchedIndex : -1
+
+  const nextDistance =
+    nextGoodIndex !== -1 ? unmatchedIndex - nextGoodIndex : -1
+
   return {
+    // how many scans ago this mismatched item occurred
     scansAgo,
     previousGood,
     previousGoodIndex,
+    previousDistance: Math.abs(previousDistance),
     nextGood,
     nextGoodIndex,
+    nextDistance: Math.abs(nextDistance)
   }
 }
 

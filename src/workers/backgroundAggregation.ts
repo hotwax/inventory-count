@@ -237,7 +237,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     const grouped: Record<string, number> = {}
     for (const scan of scans) {
-      const key = scan.scannedValue?.trim()
+      const key = scan.productId || scan.scannedValue?.trim()
       if (!key) continue
       grouped[key] = (grouped[key] || 0) + (scan.quantity || 1)
     }
