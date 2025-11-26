@@ -54,7 +54,7 @@
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   :value="initialValue"
-                  :min="DateTime.now().toISODate()"
+                  :min="DateTime.now().toISO()"
                   presentation="date-time"
                   show-default-buttons
                   @ionChange="handleChange"
