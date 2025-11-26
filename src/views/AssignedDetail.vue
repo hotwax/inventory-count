@@ -29,23 +29,38 @@
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
-            <ion-item class="due-date">
+            <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <div v-if="workEffort.dueDate">
-                  <ion-datetime-button datetime="datetime" @click="isDueDateModalOpen = true"></ion-datetime-button>
-                </div>
-                <div v-else>
-                  <ion-button datetime="datetime" @click="isDueDateModalOpen = true">{{ translate("Add Due Date") }}</ion-button>
-                </div>
-                <ion-modal :is-open="isDueDateModalOpen" :keep-contents-mounted="true" @didDismiss="saveDueDate">
-                  <ion-datetime id="datetime" v-model="selectedDate" :value="getDateTime(workEffort?.dueDate)"></ion-datetime>
-                  <ion-item lines="none" class="ion-text-end">
-                  </ion-item>
-                </ion-modal>
+                <ion-button @click="openModal('dueDate')" class="date-time-button">
+                  {{ workEffort.dueDate ? formatDateTime(workEffort.dueDate) : translate("Add Due Date") }}
+                </ion-button>
               </div>
             </ion-item>
+
+            <ion-item lines="none">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <div>
+                <p class="overline">{{ translate("Start Date") }}</p>
+                <ion-button @click="openModal('estimatedStartDate')" class="date-time-button">
+                  {{ workEffort.estimatedStartDate ? formatDateTime(workEffort.estimatedStartDate) : translate("Add Start Date") }}
+                </ion-button>
+              </div>
+            </ion-item>
+
+            <ion-modal class="date-time-modal" :is-open="isModalOpen" @didDismiss="closeModal">
+              <ion-content :force-overscroll="false">
+                <ion-datetime
+                  :value="initialValue"
+                  :min="DateTime.now().toISODate()"
+                  presentation="date"
+                  show-default-buttons
+                  @ionChange="handleChange"
+                  @ionCancel="closeModal"
+                />
+              </ion-content>
+            </ion-modal>
           </ion-card>
           <ion-card>
             <ion-item>
@@ -62,26 +77,6 @@
               </ion-label>
             </ion-item>
           </ion-card>
-
-          <!-- <div class="statistics">
-            <ion-card>
-              <ion-item lines="none">
-                <ion-label>
-                  Review progress 60% complete
-                  <p>6 out of 10 items complete</p>
-                </ion-label>
-              </ion-item>
-            </ion-card>
-            <ion-card>
-              <ion-item lines="full">
-                <ion-label>
-                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>16 units</h3>
-                  <p>based on 4 results</p>
-                </ion-label>
-              </ion-item>
-            </ion-card>
-          </div> -->
         </div>
 
         <div class="controls ion-margin-top">
@@ -200,7 +195,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime,IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -269,20 +264,53 @@ async function getWorkEffortDetails() {
   }
 }
 
-const isDueDateModalOpen = ref(false)
-const selectedDate = ref('')
+const isModalOpen = ref(false)
+const currentField = ref("")
+const initialValue: any = ref("")
 
-const getDateTime = (time: any) => {
-  return time ? DateTime.fromMillis(time).toISO() : ''
+function formatDateTime(date: number | string) {
+  return DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy")
 }
 
-watch(
-  () => workEffort.value?.dueDate,
-  (newVal) => {
-    selectedDate.value = getDateTime(newVal) || "";
-  },
-  { immediate: true }
-)
+function openModal(field: string) {
+  currentField.value = field
+  const value = workEffort.value[field]
+
+  initialValue.value = value
+    ? DateTime.fromMillis(value).toISO()
+    : DateTime.now().toISO()
+
+  isModalOpen.value = true
+}
+
+async function handleChange(ev: any) {
+  const iso = ev.detail.value;
+  if (!iso) return;
+
+  try {
+    const millis = DateTime.fromISO(iso).toMillis();
+
+    const resp = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      [currentField.value]: millis
+    })
+
+    if (resp?.status === 200) {
+      workEffort.value[currentField.value] = millis;
+      showToast(translate("Updated Successfully"))
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error Udpating Cycle Count: ", error);
+    showToast(`Failed to Update: ${currentField.value} on Cycle Count`);
+  }
+  closeModal();
+}
+
+function closeModal() {
+  isModalOpen.value = false
+}
 
 function openSessionPopover(event: Event, session: any, cycleCount: any) {
   // Clear already open popover if found.
@@ -297,28 +325,6 @@ function closeSessionPopover() {
   isSessionPopoverOpen.value = false
   selectedSession.value = null
   selectedProductCountReview.value = null
-}
-
-
-async function saveDueDate() {
-  try {
-    const dueDate = DateTime.fromISO(selectedDate.value).toMillis()
-    const resp = await useInventoryCountRun().updateWorkEffort({
-      workEffortId: workEffort.value.workEffortId,
-      dueDate
-    })
-
-    if (resp?.status === 200) {
-      showToast(translate('Updated Due Date Successfully'))
-      workEffort.value.dueDate = dueDate
-    } else {
-      throw resp?.data
-    }
-  } catch (error) {
-    showToast('Something Went Wrong')
-    console.error('Error updating due date on Cycle Count', error)
-  }
-  isDueDateModalOpen.value = false
 }
 
 async function openEditNameAlert() {
@@ -471,7 +477,7 @@ function getFacilityName(id: string) {
   display: grid;
 }
 
-ion-item.due-date {
+ion-item.date-button {
   --padding-bottom: var(--spacer-sm)
 }
 
