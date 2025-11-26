@@ -147,20 +147,7 @@
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number">{{ stats.totalUnits }}</p>
-                <ion-button color="primary" fill="clear">
-                  <ion-icon slot="icon-only" :icon="timerOutline"></ion-icon>
-                </ion-button>
               </ion-card-content>
-              <ion-list lines="none">
-                <ion-item>
-                  <ion-label>{{ translate("Lap 2") }}</ion-label>
-                  <p slot="end">—</p>
-                </ion-item>
-                <ion-item>
-                  <ion-label>{{ translate("Lap 1") }}</ion-label>
-                  <p slot="end">—</p>
-                </ion-item>
-              </ion-list>
             </ion-card>
           </div>
 
