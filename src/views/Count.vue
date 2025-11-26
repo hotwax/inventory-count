@@ -167,7 +167,7 @@
 </template>
 
 <script setup>
-import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -408,29 +408,46 @@ async function markInProgress(workEffortId) {
 }
 
 async function forceRelease(session) {
-  try {
-    loader.present();
-    const payload = {
-      inventoryCountImportId: session.inventoryCountImportId,
-      fromDate: session.lock?.fromDate,
-      thruDate: Date.now(),
-      overrideByUserId: useUserProfile().getUserProfile.username
-    }
+  const alert = await alertController.create({
+    header: translate("Force release session"),
+    message: translate("Make sure that this session is closed on all other devices before force releasing to avoid discrepancies in counts."),
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Force release"),
+        handler: async () => {
+          try {
+            await loader.present();
+            const payload = {
+              inventoryCountImportId: session.inventoryCountImportId,
+              fromDate: session.lock?.fromDate,
+              thruDate: Date.now(),
+              overrideByUserId: useUserProfile().getUserProfile.username
+            }
 
-    const resp = await useInventoryCountImport().releaseSession(payload)
-    if (resp?.status === 200) {
-      showToast('Session lock released successfully.')
+            const resp = await useInventoryCountImport().releaseSession(payload)
+            if (resp?.status === 200) {
+              showToast(translate('Session lock released successfully.'))
 
-      // Remove lock locally so UI refreshes
-      session.lock = {}
-    } else {
-      showToast('Failed to release session lock.')
-    }
-  } catch (err) {
-    console.error('Error releasing session lock:', err)
-    showToast('Something went wrong while releasing session.')
-  }
-  loader.dismiss();
+              // Remove lock locally so UI refreshes
+              session.lock = {}
+            } else {
+              showToast(translate('Failed to release session lock.'))
+            }
+          } catch (err) {
+            console.error('Error releasing session lock:', err)
+            showToast(translate('Something went wrong while releasing session.'))
+          } finally {
+            loader.dismiss();
+          }
+        }
+      }
+    ]
+  });
+  await alert.present();
 }
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
