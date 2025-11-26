@@ -395,7 +395,6 @@ async function parse(event) {
 
     // Skip only allowed for only-HARD files
     isSkuSkippable.value = hasHard || (!hasHard && !hasDirected);
-    console.log("Detected Only Hard Counts:", isSkuSkippable.value);
     showToast(translate("File uploaded successfully"));
     resetFieldMapping();
     event.target.value = null;
