@@ -37,6 +37,19 @@
               <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
             </ion-label>
           </ion-item>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
+            {{ translate("Start counting") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Preview count") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Review progress") }}
+          </ion-button>
+          <!-- <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
+            {{ translate("Ready for review") }}
+          </ion-button> -->
+
           <ion-list>
             <ion-list-header>
               <ion-label>
@@ -77,14 +90,14 @@
                   <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
-                <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for this device") }}</p>
-                  </ion-label>
-                  <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
-                </ion-item>
+              <!-- Locked by same user, same device -->
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("Session already active for this device") }}</p>
+                </ion-label>
+                <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+              </ion-item>
 
                 <!-- Locked by same user, different device -->
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
@@ -102,10 +115,10 @@
               <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
                 {{ translate("Ready for review") }}
               </ion-button>
-              <ion-button
+              <!-- <ion-button
                 v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
                 {{ translate("Move to In Progress") }}
-              </ion-button>
+              </ion-button> -->
             </ion-item>
           </ion-list>
         </ion-card>
@@ -378,15 +391,9 @@ async function addNewSession() {
   }
 }
 
-async function markAsCompleted(workEffortId) {
-  const response = await useInventoryCountRun().updateWorkEffort({
-    workEffortId,
-    currentStatusId: 'CYCLE_CNT_CMPLTD'
-  });
-  if (response?.status === 200) {
-    showToast(translate('Session sent for review successfully'));
-    await getCycleCounts(true);
-  } else showToast(translate('Failed to send session for review'));
+function goToCountProgressReview(workEffortId, event) {
+  event.stopPropagation();
+  router.push(`/count-progress-review/${workEffortId}`);
 }
 
 async function markInProgress(workEffortId) {
