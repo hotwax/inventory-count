@@ -55,7 +55,7 @@
                 <ion-datetime
                   :value="initialValue"
                   :min="DateTime.now().toISODate()"
-                  presentation="date"
+                  presentation="date-time"
                   show-default-buttons
                   @ionChange="handleChange"
                   @ionCancel="closeModal"
@@ -270,7 +270,7 @@ const currentField = ref("")
 const initialValue: any = ref("")
 
 function formatDateTime(date: number | string) {
-  return DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy")
+  return DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy t")
 }
 
 function openModal(field: string) {
