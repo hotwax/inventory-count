@@ -308,39 +308,6 @@ export function useInventoryCountRun() {
     return resp;
   }
 
-  async function getUncountedHardCountItems(params: any): Promise<any> {
-    const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted`,
-      method: 'get',
-      params
-    });
-    return resp;
-  }
-
-  async function getUncountedHardCountItemCount(params: any): Promise<any> {
-    const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/count`,
-      method: 'get'
-    });
-    return resp;
-  }
-
-  async function getUncountedDirectedCountItemCount(params: any): Promise<any> {
-    const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/directed/count`,
-      method: 'get'
-    });
-    return resp;
-  }
-
-  async function getUncountedDirectedCountItems(params: any): Promise<any> {
-    const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/uncounted/directed`,
-      method: 'get'
-    });
-    return resp;
-  }
-
   /** Clear list utility */
   function clearCycleCountList() {
     return { cycleCounts: [], total: 0, isScrollable: false };
@@ -370,10 +337,6 @@ export function useInventoryCountRun() {
     clearCycleCountList,
     loadStatusDescription,
     queueCycleCountsFileExport,
-    getUncountedHardCountItemCount,
-    getUncountedHardCountItems,
     getCycleCountSessions,
-    getUncountedDirectedCountItems,
-    getUncountedDirectedCountItemCount
   };
 }

@@ -216,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps } from 'vue';
+import { ref, defineProps } from 'vue';
 import {
   IonAccordion,
   IonAccordionGroup,
@@ -249,7 +249,7 @@ import {
   onIonViewDidEnter
 } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { checkmarkDoneOutline, imageOutline, personCircleOutline } from 'ionicons/icons';
+import { checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
