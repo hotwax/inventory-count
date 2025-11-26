@@ -163,7 +163,7 @@ import {
   IonButtons, IonRadioGroup, IonRadio, IonSkeletonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
-import { ref, defineProps, computed, onMounted } from 'vue'
+import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
 import router from '@/router'
 import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
@@ -232,14 +232,13 @@ function setQuantityInputRef(productId: string, el: any) {
   }
 }
 
-function focusQuantityInput(productId: string) {
+async function focusQuantityInput(productId: string) {
   // Use nextTick to ensure DOM is updated
-  setTimeout(() => {
-    const inputRef = quantityInputRefs.value[productId]
-    if (inputRef?.$el) {
-      inputRef.$el.setFocus()
-    }
-  }, 100)
+  await nextTick()
+  const inputRef = quantityInputRefs.value[productId]
+  if (inputRef?.$el) {
+    inputRef.$el.setFocus()
+  }
 }
 
 function focusSearchBar() {
@@ -278,16 +277,13 @@ async function handleSearch() {
 async function handleEnterKey() {
   const term = searchedProductString.value.trim()
   if (!term) return
+
+  if (searchedProducts.value.length === 0) {
+    await getProductBySearch(term)
+  }
   
-  // If we already have results, add the first one
   if (searchedProducts.value.length > 0) {
     await addProductInPreCountedItems(searchedProducts.value[0])
-  } else {
-    // Otherwise, search first then add
-    await getProductBySearch(term)
-    if (searchedProducts.value.length > 0) {
-      await addProductInPreCountedItems(searchedProducts.value[0])
-    }
   }
 }
 
