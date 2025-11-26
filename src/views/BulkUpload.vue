@@ -40,7 +40,7 @@
                 {{ translate(fieldValues.label) }}
                 <p>{{ fieldValues.description }}</p>
               </ion-label>
-              <ion-select-option v-if="field === 'productSku' && detectedOnlyHardCounts" value="__SKIP__">{{ translate("Skip") }}</ion-select-option>
+              <ion-select-option v-if="field === 'productSku' && isSkuSkippable" value="__SKIP__">{{ translate("Skip") }}</ion-select-option>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -273,7 +273,7 @@ const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
-const detectedOnlyHardCounts = ref(false);
+const isSkuSkippable = ref(false);
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -349,7 +349,7 @@ function resetDefaults() {
   fileName.value = null;
   file.value.value = "";
   selectedMappingId.value = null;
-  detectedOnlyHardCounts.value = false;
+  isSkuSkippable.value = false;
 }
 
 async function parse(event) {
@@ -363,7 +363,7 @@ async function parse(event) {
     content.value = await parseCsv(fileObj);
     fileColumns.value = Object.keys(content.value[0] || {});
 
-    detectedOnlyHardCounts.value = false; // reset
+    isSkuSkippable.value = false; // reset
 
     // Detect count type column purely through row values
     let countTypeColumn = null;
@@ -379,7 +379,7 @@ async function parse(event) {
     }
 
     if (!countTypeColumn) {
-      detectedOnlyHardCounts.value = false;
+      isSkuSkippable.value = false;
       showToast("Count type column not found");
       resetFieldMapping();
       return;
@@ -394,8 +394,8 @@ async function parse(event) {
     const hasDirected = types.every(countType => countType === "DIRECTED_COUNT");
 
     // Skip only allowed for only-HARD files
-    detectedOnlyHardCounts.value = hasHard || (!hasHard && !hasDirected);
-    console.log("Detected Only Hard Counts:", detectedOnlyHardCounts.value);
+    isSkuSkippable.value = hasHard || (!hasHard && !hasDirected);
+    console.log("Detected Only Hard Counts:", isSkuSkippable.value);
     showToast(translate("File uploaded successfully"));
     resetFieldMapping();
     event.target.value = null;
