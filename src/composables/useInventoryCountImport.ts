@@ -6,7 +6,6 @@ import { db, ScanEvent } from '@/services/commonDatabase'
 
 interface RecordScanParams {
   inventoryCountImportId: string;
-  productId?: string;
   productIdentifier: string;
   quantity: number;
   locationSeqId?: string | null;
@@ -24,7 +23,6 @@ function currentMillis(): number {
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
       locationSeqId: params.locationSeqId || null,
-      productId: params.productId || null,
       scannedValue: params.productIdentifier,
       quantity: params.quantity,
       createdAt: currentMillis(),
