@@ -90,7 +90,7 @@
       <!-- List -->
       <ion-segment-view>
         <ion-segment-content id="uncounted">
-          <ion-item-divider v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'">
+          <ion-item-divider>
             <ion-button :disabled="areAllSessionCompleted() && uncountedItems.length === 0" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
           </ion-item-divider>
           <div v-if="isLoadingUncounted" class="empty-state">
@@ -539,7 +539,6 @@ async function getCountSessions(productId: any) {
 }
 
 async function createSessionForUncountedItems() {
-  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') return;
 
   try {
     const resp = await useInventoryCountRun().createSessionOnServer({
