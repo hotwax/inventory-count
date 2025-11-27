@@ -717,18 +717,16 @@ onIonViewDidEnter(async () => {
   }
 });
 
-onBeforeUnmount(async () => {
+onIonViewDidLeave(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
-});
-
-onIonViewDidLeave(async () => {
-  subscriptions.forEach(subscription => subscription.unsubscribe());
-  subscriptions.length = 0;
 })
 
 function openEditSessionModal() {
