@@ -135,6 +135,9 @@
           <div v-if="!canPreviewItems" class="empty-state">
             <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
           </div>
+          <div v-else-if="!countedItems.length" class="empty-state">
+            <p>{{ translate("No items have been counted yet") }}</p>
+          </div>
           <ion-accordion-group v-else>
             <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
               <template #default="{ item, index, active }">
@@ -258,19 +261,23 @@ const isCountStarted = computed(() => {
   const startDateTime = workEffort.value?.estimatedStartDate;
   if (!startDateTime) return false;
 
-  return DateTime.fromISO(startDateTime) <= DateTime.now();
+  const parsedStart = typeof startDateTime === 'number'
+    ? DateTime.fromMillis(startDateTime)
+    : DateTime.fromISO(startDateTime);
+
+  if (!parsedStart.isValid) return false;
+
+  return parsedStart <= DateTime.now();
 });
 
-const isCountStatusBeyondCreated = computed(() => !!(
-  workEffort.value?.currentStatusId && workEffort.value.currentStatusId !== 'CYCLE_CNT_CREATED'
+const isCountStatusBeyondCreated = computed(() => {
+  const statusId = workEffort.value?.currentStatusId;
+  return !!statusId && statusId !== 'CYCLE_CNT_CREATED';
+});
+
+const canPreviewItems = computed(() => (
+  isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
 ));
-
-const canPreviewItems = computed(() => {
-  if (isCountStarted.value) return true;
-  if (isCountStatusBeyondCreated.value) return true;
-
-  return hasPermission(Actions.APP_PREVIEW_COUNT_ITEM);
-});
 
 const props = defineProps<{
   workEffortId: string;
