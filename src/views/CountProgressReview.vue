@@ -81,6 +81,9 @@
           <ion-segment-button value="uncounted" content-id="uncounted">
             <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
           </ion-segment-button>
+          <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
+          </ion-segment-button>
           <ion-segment-button value="counted" content-id="counted">
             <ion-label>{{ countedItems.length }} COUNTED</ion-label>
           </ion-segment-button>
@@ -126,6 +129,111 @@
               </template>
             </DynamicScroller>
           </ion-item-group>
+        </ion-segment-content>
+
+        <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
+          <ion-item-divider>
+            <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
+              {{ translate("Skip All Undirected Items") }}
+            </ion-button>
+          </ion-item-divider>
+          <div v-if="isLoadingUndirected" class="empty-state">
+            <p>{{ translate("Loading...") }}</p>
+          </div>
+          <div v-else-if="!isLoadingUndirected && undirectedItems.length === 0" class="empty-state">
+            <p>{{ translate("No undirected items") }}</p>
+          </div>
+          <ion-accordion-group v-else>
+            <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+              <template #default="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :index="index" :active="active">
+                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                    <div class="list-item count-item-rollup" slot="header"> 
+                      <ion-item lines="none">
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                      </ion-item>
+                      <ion-label>
+                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        <p>{{ translate("counted/systemic") }}</p>
+                      </ion-label>
+                      <ion-label>
+                        {{ item.proposedVarianceQuantity }}
+                        <p>{{ translate("variance") }}</p>
+                      </ion-label>
+                      <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                        <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item)">
+                          {{ translate("Skip") }}
+                        </ion-button>
+                      </div>
+                      <ion-badge
+                        v-else
+                        color="danger"
+                        style="--color: white;"
+                      >
+                        {{ item.decisionOutcomeEnumId }}
+                      </ion-badge>
+                    </div>
+                    <div slot="content" @click.stop="stopAccordianEventProp">
+                      <ion-list v-if="sessions === null">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
+                          <ion-avatar slot="start">
+                            <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                          </ion-avatar>
+                          <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                        </ion-item>
+                      </ion-list>
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                        <ion-item lines="none">
+                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                          <ion-label>
+                            {{ session.countImportName || "-" }}
+                            <p>
+                              {{ session.uploadedByUserLogin }}
+                            </p>
+                          </ion-label>
+                        </ion-item>
+                        <ion-label>
+                          {{ session.counted }}
+                          <p>{{ translate("counted") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                          <p>{{ translate("started") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <p>{{ translate("last updated") }}</p>
+                        </ion-label>
+                      </div>
+                    </div>
+                  </ion-accordion>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
+          </ion-accordion-group>
         </ion-segment-content>
 
         <ion-segment-content id="counted">
@@ -235,6 +343,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const isLoadingUncounted = ref(false);
+const isLoadingUndirected = ref(false);
 const totalItems = ref(0);
 const loadedItems = ref(0);
 const workEffort = ref() as any;
@@ -244,6 +353,7 @@ const allProducts = ref<any[]>([]);
 
 const uncountedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
+const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
 
@@ -306,8 +416,11 @@ async function loadDirectedCount() {
         pageIndex,
       });
       if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data.filter((item: any) => item.quantity && item.quantity > 0));
-        uncountedItems.value.push(...resp.data.filter((item: any) => !item.quantity || item.quantity === 0));
+        // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
+        // Only include directed items (isRequested === 'Y' or null/undefined)
+        const directedItems = resp.data.filter((item: any) => item.isRequested !== 'N');
+        countedItems.value.push(...directedItems.filter((item: any) => item.quantity && item.quantity > 0));
+        uncountedItems.value.push(...directedItems.filter((item: any) => !item.quantity || item.quantity === 0));
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {
@@ -371,12 +484,77 @@ async function loadDirectedCount() {
     } else {
       isLoadingUncounted.value = false;
     }
+    
+    // Load undirected items for directed counts
+    await loadUndirectedItems();
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
     showToast(translate("Something Went Wrong"));
     countedItems.value = [];
     uncountedItems.value =[];
   }
+}
+
+async function loadUndirectedItems() {
+  if (workEffort.value?.workEffortPurposeTypeId !== 'DIRECTED_COUNT') return;
+  
+  isLoadingUndirected.value = true;
+  
+  try {
+    // TODO: Implement logic to fetch undirected items
+    // 1. Use getCycleCount API with isRequested: 'N' parameter
+    // 2. Filter for items with quantity > 0
+    // 3. Aggregate by productId
+    // 4. Prefetch product details
+    // 5. Sort by maxLastUpdatedAt
+    
+    undirectedItems.value = []; // Replace with actual fetched data
+  } catch (error) {
+    console.error("Error fetching undirected items:", error);
+    showToast(translate("Failed to load undirected items"));
+    undirectedItems.value = [];
+  } finally {
+    isLoadingUndirected.value = false;
+  }
+}
+
+async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any) {
+  await loader.present("Skipping...");
+  try {
+    // TODO: Implement logic to skip a single product
+    // 1. Call submitProductReview API with decisionOutcomeEnumId: 'SKIPPED'
+    // 2. Update item.decisionOutcomeEnumId on success
+    // 3. Show success toast
+    
+  } catch (error) {
+    showToast(translate("Failed to skip product"));
+    console.error("Error Skipping Product: ", error);
+  }
+  loader.dismiss();
+}
+
+async function skipAllUndirectedItems() {
+  const unskippedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
+  
+  if (unskippedItems.length === 0) {
+    showToast(translate("No undirected items to skip"));
+    return;
+  }
+  
+  await loader.present("Skipping all undirected items...");
+  try {
+    // TODO: Implement logic to skip all undirected items
+    // 1. Create inventoryCountProductsList from unskippedItems
+    // 2. Batch requests (250 items per batch)
+    // 3. Call submitProductReview API for each batch
+    // 4. Update item.decisionOutcomeEnumId for successful items
+    // 5. Show success toast
+    
+  } catch (err) {
+    console.error("Error while skipping all undirected items:", err);
+    showToast(translate("Failed to skip all undirected items"));
+  }
+  loader.dismiss();
 }
 
 async function loadHardCount() {
@@ -609,6 +787,15 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 }
 
 async function markAsCompleted() {
+  // Check if there are any unskipped undirected items for directed counts
+  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
+    const unskippedUndirectedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
+    if (unskippedUndirectedItems.length > 0) {
+      showToast(translate('Please skip all undirected items before submitting for review'));
+      return;
+    }
+  }
+  
   await loader.present("Submitting...");
   try {
     const response = await useInventoryCountRun().updateWorkEffort({
