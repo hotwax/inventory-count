@@ -167,7 +167,7 @@
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
                       <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                        <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item)">
+                        <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
                           {{ translate("Skip") }}
                         </ion-button>
                       </div>
@@ -402,6 +402,7 @@ async function getInventoryCycleCount() {
 
 async function loadDirectedCount() {
   isLoadingUncounted.value = true;
+  isLoadingUndirected.value = true;
   let pageIndex = 0;
   let pageSize = 250;
   if (totalItems.value > 5000) {
@@ -418,7 +419,9 @@ async function loadDirectedCount() {
       if (resp?.status === 200 && resp.data?.length) {
         // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
         // Only include directed items (isRequested === 'Y' or null/undefined)
-        const directedItems = resp.data.filter((item: any) => item.isRequested !== 'N');
+        const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
+        const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
+        undirectedItems.value.push(...undirected);
         countedItems.value.push(...directedItems.filter((item: any) => item.quantity && item.quantity > 0));
         uncountedItems.value.push(...directedItems.filter((item: any) => !item.quantity || item.quantity === 0));
         if (resp.data.length < pageSize) {
@@ -434,6 +437,7 @@ async function loadDirectedCount() {
 
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
     const countedProductIds = [...new Set(countedItems.value
       .filter(item => item?.productId)
@@ -457,6 +461,35 @@ async function loadDirectedCount() {
           console.warn("Prefetch Failed for counted items:", err);
         })
     }
+
+    const unDirectedProductIds = [...new Set(undirectedItems.value
+      .filter(item => item?.productId)
+      .map(item => item.productId)
+    )];
+
+    if (unDirectedProductIds.length) {
+      useProductMaster().prefetch(unDirectedProductIds)
+        .then(async () => {
+          for (const productId of unDirectedProductIds) {
+            const { product } = await useProductMaster().getById(productId);
+            if (!product) continue;
+            undirectedItems.value
+            .filter(item => item.productId === productId)
+            .forEach(item => {
+              item.product = product;
+            });
+          }
+        })
+        .catch(err => {
+          console.warn("Prefetch Failed for counted items:", err);
+        })
+        .finally (() => {
+          isLoadingUndirected.value = false;
+        })
+    } else {
+      isLoadingUndirected.value = false;
+    }
+
     const uncountedProductIds = [...new Set(uncountedItems.value
       .filter(item => item?.productId)
       .map(item => item.productId)
@@ -484,48 +517,39 @@ async function loadDirectedCount() {
     } else {
       isLoadingUncounted.value = false;
     }
-    
-    // Load undirected items for directed counts
-    await loadUndirectedItems();
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
     showToast(translate("Something Went Wrong"));
     countedItems.value = [];
     uncountedItems.value =[];
-  }
-}
-
-async function loadUndirectedItems() {
-  if (workEffort.value?.workEffortPurposeTypeId !== 'DIRECTED_COUNT') return;
-  
-  isLoadingUndirected.value = true;
-  
-  try {
-    // TODO: Implement logic to fetch undirected items
-    // 1. Use getCycleCount API with isRequested: 'N' parameter
-    // 2. Filter for items with quantity > 0
-    // 3. Aggregate by productId
-    // 4. Prefetch product details
-    // 5. Sort by maxLastUpdatedAt
-    
-    undirectedItems.value = []; // Replace with actual fetched data
-  } catch (error) {
-    console.error("Error fetching undirected items:", error);
-    showToast(translate("Failed to load undirected items"));
     undirectedItems.value = [];
-  } finally {
-    isLoadingUndirected.value = false;
   }
 }
 
-async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any) {
+async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any, event:  Event) {
+  stopAccordianEventProp(event);
   await loader.present("Skipping...");
   try {
-    // TODO: Implement logic to skip a single product
-    // 1. Call submitProductReview API with decisionOutcomeEnumId: 'SKIPPED'
-    // 2. Update item.decisionOutcomeEnumId on success
-    // 3. Show success toast
-    
+
+    const inventoryCountProductsList = [{
+      workEffortId: props.workEffortId,
+      productId: productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: proposedVarianceQuantity,
+      systemQuantity,
+      countedQuantity,
+      decisionOutcomeEnumId: 'SKIPPED',
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }];
+
+    const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList} );
+
+    if (resp?.status === 200) {
+      item.decisionOutcomeEnumId = 'SKIPPED';
+      showToast(translate("Successfully skipped product count"))
+    } else {
+      throw resp.data;
+    }
   } catch (error) {
     showToast(translate("Failed to skip product"));
     console.error("Error Skipping Product: ", error);
@@ -543,13 +567,49 @@ async function skipAllUndirectedItems() {
   
   await loader.present("Skipping all undirected items...");
   try {
-    // TODO: Implement logic to skip all undirected items
-    // 1. Create inventoryCountProductsList from unskippedItems
-    // 2. Batch requests (250 items per batch)
-    // 3. Call submitProductReview API for each batch
-    // 4. Update item.decisionOutcomeEnumId for successful items
-    // 5. Show success toast
-    
+
+    const inventoryCountProductsList = unskippedItems.map(product => ({
+      workEffortId: props.workEffortId,
+      productId: product.productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: product.proposedVarianceQuantity,
+      systemQuantity: product.quantityOnHand,
+      countedQuantity: product.quantity,
+      decisionOutcomeEnumId: 'SKIPPED',
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }));
+
+    const batchSize = 250;
+    const batches = [];
+
+    for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
+      batches.push(inventoryCountProductsList.slice(i, i + batchSize));
+    }
+
+    const results = await Promise.allSettled(
+      batches.map(batch =>
+        useInventoryCountRun().submitProductReview({
+          inventoryCountProductsList: batch
+        }).then(resp => ({ resp, batch }))
+      )
+    );
+    let isAnyFailed = false;
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.resp?.status === 200) {
+        const batch = result.value.batch;
+
+        const processedIds = batch.map(p => p.productId);
+        undirectedItems.value.forEach(productReview => {
+          if (processedIds.includes(productReview.productId)) {
+            productReview.decisionOutcomeEnumId = 'SKIPPED';
+          }
+        });
+      } else {
+        isAnyFailed = true;
+        console.error("Batch failed:", result);
+      }
+      isAnyFailed ? showToast(translate("Something Went Wrong")) : showToast("Successfully skipped all products");
+    }
   } catch (err) {
     console.error("Error while skipping all undirected items:", err);
     showToast(translate("Failed to skip all undirected items"));
