@@ -122,6 +122,39 @@
           </div>
 
           <div class="statistics ion-padding">
+            <!-- Last Scanned Product Card -->
+            <ion-card v-if="lastScannedEvent">
+              <ion-item lines="none">
+                <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <template v-if="lastScannedEvent.product">
+                    <h2>{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
+                    <p>{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
+                  </template>
+                  <template v-else>
+                    <h2>{{ lastScannedEvent.scannedValue }}</h2>
+                    <p>{{ translate("Identifying product...") }}</p>
+                  </template>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item lines="none">
+                <ion-label>
+                  <p>{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                </ion-label>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-label>{{ translate("Units") }}</ion-label>
+                <ion-label slot="end">{{ lastScannedProductTotal }}</ion-label>
+              </ion-item>
+            </ion-card>
+
             <ion-card>
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
@@ -614,6 +647,53 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
+
+const lastScannedEvent = computed(() => events.value[0]);
+
+const lastScannedProductTotal = computed(() => {
+  if (!lastScannedEvent.value) return 0;
+  
+  // If we have a product ID (aggregated), sum up from counted items AND undirected items
+  if (lastScannedEvent.value.productId) {
+    const productId = lastScannedEvent.value.productId;
+    
+    // Sum from counted items (directed)
+    const countedSum = countedItems.value
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+      
+    // Sum from undirected items
+    const undirectedSum = undirectedItems.value
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+    const total = countedSum + undirectedSum;
+    
+    // If we have a total (meaning we found records), return it.
+    // Note: If total is 0 but we found records, it returns 0.
+    // If we found NO records (e.g. just scanned, not yet aggregated), we might want to fall back to scan qty.
+    // However, if aggregation is pending, the product might not be in counted/undirected yet.
+    // The requirement is "until its aggregated it shows the scanned value".
+    // If it IS aggregated (has productId), it should be in one of the lists IF the worker has finished.
+    // But the worker might have finished aggregation (creating the record) but the liveQuery might update slightly later?
+    // Actually, if `lastScannedEvent.value.productId` is present, it means the *event* has been enriched.
+    // The event enrichment happens in `getScanEvents` which does `db.products.get(event.productId)`.
+    // The `productId` on the event comes from the `scanEvents` table itself (if it was stored with one) OR it's just the product details fetched.
+    // Wait, `recordScan` stores `scannedValue`. It doesn't look up product ID immediately.
+    // The background worker does the lookup and updates `inventoryCountRecords`.
+    // Does it update `scanEvents` with `productId`?
+    // Let's check `backgroundAggregation.ts` (not visible, but I can infer).
+    // Actually `getScanEvents` in `useInventoryCountImport.ts` enriches the event:
+    // `if (event.productId) { ... }`
+    // So `scanEvents` table MUST have `productId`.
+    // If `scanEvents` has `productId`, it means aggregation (or some process) has linked it.
+    
+    if (total > 0) return total;
+  }
+  
+  // Fallback to the event quantity if not yet aggregated or total is 0
+  return lastScannedEvent.value.quantity;
+});
 
 onIonViewDidEnter(async () => {
   try {
