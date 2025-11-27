@@ -534,7 +534,7 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -718,9 +718,6 @@ onIonViewDidEnter(async () => {
 });
 
 onBeforeUnmount(async () => {
-  subscriptions.forEach(subscription => subscription.unsubscribe());
-  subscriptions.length = 0;
-
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
@@ -728,6 +725,11 @@ onBeforeUnmount(async () => {
     lockWorker = null
   }
 });
+
+onIonViewDidLeave(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+})
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
