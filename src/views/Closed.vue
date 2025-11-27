@@ -339,7 +339,7 @@ ion-content {
 }
 
 .list-item {
-  --columns-desktop: 4;
+  --columns-desktop: 5;
   border-bottom : 1px solid var(--ion-color-medium);
 }
 
