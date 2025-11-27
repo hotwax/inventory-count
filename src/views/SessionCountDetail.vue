@@ -657,15 +657,11 @@ const lastScannedProductTotal = computed(() => {
   if (lastScannedEvent.value.productId) {
     const productId = lastScannedEvent.value.productId;
 
-    const countedSum = countedItems.value
+    const total = [...countedItems.value, ...undirectedItems.value]
       .filter(item => item.productId === productId)
       .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
-    const undirectedSum = undirectedItems.value
-      .filter(item => item.productId === productId)
-      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-
-    return countedSum + undirectedSum;
+    return total;
   }
 
   // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
