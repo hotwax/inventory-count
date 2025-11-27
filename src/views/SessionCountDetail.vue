@@ -794,6 +794,8 @@ async function loadInventoryItemsWithProgress() {
       const resp = await useInventoryCountImport().getSessionItemsByImportId({
         inventoryCountImportId: props.inventoryCountImportId,
         facilityId: useProductStore().getCurrentFacility.facilityId,
+        quantity: 0,
+        quantity_op: 'greater',
         pageIndex,
         pageSize
       })
