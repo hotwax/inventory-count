@@ -94,13 +94,13 @@
               {{ translate("Save uncounted items as out of stock") }}
               <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
             </ion-label>
-            <ion-button slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+            <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
           </ion-item>
           <div v-if="isLoadingUncounted" class="empty-state">
             <p>{{ translate("Loading...") }}</p>
           </div>
           <div v-else-if="!isLoadingUncounted && uncountedItems.length === 0" class="empty-state">
-            <p>{{ translate("No Results") }}</p>
+            <p>{{ translate("All items have been counted. Submit all sessions and submit for review.") }}</p>
           </div>
           <ion-item-group v-else>
             <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
@@ -537,7 +537,6 @@ async function getCountSessions(productId: any) {
 }
 
 async function createSessionForUncountedItems() {
-  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') return;
 
   try {
     const resp = await useInventoryCountRun().createSessionOnServer({
