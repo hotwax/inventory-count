@@ -13,86 +13,89 @@
       </div>
       <!-- Top Summary Section -->
       <div v-else>
-      <div class="ion-padding">
-        <div v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" class="header">
-          <ion-button :disabled="areAllSessionCompleted() || isLoading || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
-            <ion-icon slot="start" :icon="checkmarkDoneOutline" />
-            {{ translate("SUBMIT FOR REVIEW") }}
-          </ion-button>
-        </div>
-
-        <div class="progress-summary">
-          <!-- Card 1: Count Info -->
-          <ion-card>
-            <ion-card-header>
-              <div>
-                <ion-label v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
-                  {{ translate("HARD COUNT") }}
-                </ion-label>
-                <ion-item lines="none" class="ion-no-padding">
-                  <h1>{{ workEffort?.workEffortName }}</h1>
-                  <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
-                </ion-item>
-                <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
-              </div>
-            </ion-card-header>
-
-            <ion-item lines="none">
-              <ion-label>{{ translate("Due date") }}</ion-label>
-              <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.dueDate) || '-' }}</ion-note>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label>{{ translate("Start date") }}</ion-label>
-              <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
-            </ion-item>
-
-            <ion-list>
-              <ion-list-header>
-                <ion-label>{{ translate("Sessions") }}</ion-label>
-              </ion-list-header>
-              <div v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId">
-                <ion-item>
-                  <ion-label>
-                    {{ `${session.countImportName || ""} ${session.facilityAreaId || ""}` }}
-                    <p>{{ session.uploadedByUserLogin }}</p>
+        <div class="header ion-padding">
+            <!-- Card 1: Count Info -->
+            <ion-card>
+              <ion-card-header>
+                <div>
+                  <ion-label v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
+                    {{ translate("HARD COUNT") }}
                   </ion-label>
-                  <ion-note>{{ useProductStore().getStatusDescription(session.statusId) }}</ion-note>
-                </ion-item>
-              </div>
-            </ion-list>
-          </ion-card>
+                  <ion-item lines="none" class="ion-no-padding">
+                    <h1>{{ workEffort?.workEffortName }}</h1>
+                    <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
+                  </ion-item>
+                  <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
+                </div>
+              </ion-card-header>
 
-          <!-- Card 2: Products Counted -->
-          <ion-card>
-            <ion-card-header>
-              <p class="overline">
-                {{ translate("Products counted") }}
-              </p>
-              <ion-label class="big-number">{{ countedItems.length }}</ion-label>
-              <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
-            </ion-card-header>
-          </ion-card>
+              <ion-item lines="none">
+                <ion-label>{{ translate("Due date") }}</ion-label>
+                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.dueDate) || '-' }}</ion-note>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-label>{{ translate("Start date") }}</ion-label>
+                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
+              </ion-item>
+
+              <ion-list>
+                <ion-list-header>
+                  <ion-label>{{ translate("Sessions") }}</ion-label>
+                </ion-list-header>
+                <div v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId">
+                  <ion-item>
+                    <ion-label>
+                      {{ `${session.countImportName || ""} ${session.facilityAreaId || ""}` }}
+                      <p>{{ session.uploadedByUserLogin }}</p>
+                    </ion-label>
+                    <ion-note slot="end">{{ useProductStore().getStatusDescription(session.statusId) }}</ion-note>
+                  </ion-item>
+                </div>
+              </ion-list>
+            </ion-card>
+
+            <!-- Card 2: Products Counted -->
+            <ion-card>
+              <ion-card-header>
+                <p class="overline">
+                  {{ translate("Products counted") }}
+                </p>
+                <ion-label class="big-number">{{ countedItems.length }}</ion-label>
+                <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
+              </ion-card-header>
+            </ion-card>
+            <div class="actions">
+              <ion-button v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" :disabled="areAllSessionCompleted() || isLoading || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
+                <ion-icon slot="start" :icon="checkmarkDoneOutline" />
+                {{ translate("SUBMIT FOR REVIEW") }}
+              </ion-button>
+            </div>
         </div>
       </div>
       <!-- Segments -->
 
-      <div class="segments-container">
-        <ion-segment value="counted">
-          <ion-segment-button value="uncounted" content-id="uncounted">
-            <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="counted" content-id="counted">
-            <ion-label>{{ countedItems.length }} COUNTED</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-      </div>
+      <ion-segment value="uncounted">
+        <ion-segment-button value="uncounted" content-id="uncounted">
+          <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="counted" content-id="counted">
+          <ion-label>{{ countedItems.length }} COUNTED</ion-label>
+        </ion-segment-button>
+      </ion-segment>
 
       <!-- List -->
       <ion-segment-view>
         <ion-segment-content id="uncounted">
-          <ion-item-divider v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'">
-            <ion-button :disabled="areAllSessionCompleted() && uncountedItems.length === 0" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
-          </ion-item-divider>
+          <ion-item :disabled="areAllSessionCompleted() && uncountedItems.length === 0" lines="full">
+            <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
+              <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
+            </ion-label>
+            <ion-label v-else>
+              {{ translate("Save uncounted items as out of stock") }}
+              <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
+            </ion-label>
+            <ion-button slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+          </ion-item>
           <div v-if="isLoadingUncounted" class="empty-state">
             <p>{{ translate("Loading...") }}</p>
           </div>
@@ -103,25 +106,21 @@
             <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
               <template #default="{ item, index, active }">
                 <DynamicScrollerItem :item="item" :index="index" :active="active">
-                  <ion-item lines="full">
                     <div class="list-item count-item-rollup">
-                      <div class="item-key">
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                          </ion-label>
-                        </ion-item>
-                      </div>
+                      <ion-item lines="none">
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                      </ion-item>
+                      <ion-label slot="end">
+                        {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
+                        {{ translate("QoH") }}
+                      </ion-label>
                     </div>
-                    <ion-label slot="end">
-                      {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
-                      <p>{{ translate("QoH") }}</p>
-                    </ion-label>
-                  </ion-item>
                 </DynamicScrollerItem>
               </template>
             </DynamicScroller>
@@ -210,7 +209,6 @@
           </ion-accordion-group>
         </ion-segment-content>
       </ion-segment-view>
-      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -637,19 +635,16 @@ function areAllSessionCompleted() {
 
 .header {
   display: flex;
-  justify-content: flex-end;
   align-items: start;
-}
-
-.progress-summary {
-  flex: 1;
-  display: flex;
   flex-wrap: wrap;
-  align-items: start;
 }
 
-.progress-summary ion-card {
-  flex: 0 1 305px;
+.header ion-card {
+  flex: 0 1 350px;
+}
+
+.actions {
+  margin-inline-start: auto;
 }
 
 .big-number {
@@ -676,7 +671,6 @@ ion-segment-view {
 .virtual-list {
   display: block;
   width: 100%;
-  /* adjust 240–320px until it fits your header + filters height */
   max-height: calc(100vh - 260px);
   overflow-y: auto;
 }
@@ -692,7 +686,7 @@ ion-segment-view {
 }
 
 .list-item.count-item-rollup {
-  --columns-desktop: 5;
+  --columns-desktop: 4;
   border-top : 1px solid var(--ion-color-medium);
 }
 
@@ -701,7 +695,7 @@ ion-segment-view {
 }
 
 .list-item.count-item {
-  --columns-desktop: 5
+  --columns-desktop: 5;
 }
 
 </style>
