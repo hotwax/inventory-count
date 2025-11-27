@@ -238,11 +238,8 @@ async function addProductInPreCountedItems(product: any) {
       props.inventoryCountImportId,
       product.productId
     );
-    console.log("InventoryCountImportItem: ", inventoryCountImportItem);
     product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
-    console.log("isRequested: ", product.isRequested, product.productId);
     products.value.push(product)
-    console.log("Products: ", products.value);
   } catch (err) {
     console.error('Error adding product:', err)
   }
