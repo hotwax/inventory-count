@@ -140,19 +140,16 @@ function currentMillis(): number {
   async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
   if (!inventoryCountImportId || !productId) return '';
   try {
-    console.log("Fetching inventory count import by productId:", inventoryCountImportId, productId);
     const record = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
       .and(item => item.productId === productId)
       .first();
 
-    if (!record) return '';
-    console.log("Found inventory count import record:", record);
-    return record;
+    return record || null;
   } catch (err) {
     console.error('Failed to check direction status', err);
-    return '';
+    return null;
   }
 }
 
