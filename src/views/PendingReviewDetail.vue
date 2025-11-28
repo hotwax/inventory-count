@@ -402,8 +402,8 @@ function loadThresholdConfig() {
     const stored = localStorage.getItem(THRESHOLD_STORAGE_KEY);
     if (stored) {
       const config = JSON.parse(stored);
-      thresholdConfig.unit = config.unit || 'units';
-      thresholdConfig.value = config.value || 2;
+      thresholdConfig.unit = config.unit ?? 'units';
+      thresholdConfig.value = config.value ?? 2;
     }
   } catch (error) {
     console.error('Error loading threshold config:', error);
@@ -445,7 +445,7 @@ function isItemCompliant(item: any): boolean {
   if (thresholdConfig.unit === 'units') {
     return variance <= thresholdConfig.value;
   } else if (thresholdConfig.unit === 'percent') {
-    if (item.quantityOnHand === 0) return true;
+    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
     const percentVariance = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
     return percentVariance <= thresholdConfig.value;
   } else if (thresholdConfig.unit === 'cost') {
@@ -456,8 +456,8 @@ function isItemCompliant(item: any): boolean {
 }
 
 const complianceLabel = computed(() => {
-  const unitText = thresholdConfig.unit === 'percent' ? '%' : thresholdConfig.unit;
-  return `${translate('Compliance')} (${thresholdConfig.value} ${unitText})`;
+  const unitText = thresholdConfig.unit === 'percent' ? '%' : ` ${thresholdConfig.unit}`;
+  return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
 });
 
 async function removeProductFromSession() {
