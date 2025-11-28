@@ -91,7 +91,7 @@
           </ion-item>
 
           <ion-item>
-            <ion-select label="Compliance" placeholder="All" interface="popover">
+            <ion-select v-model="complianceFilter" :label="complianceLabel" placeholder="All" interface="popover" @ionChange="handleComplianceChange">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
               <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
               <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
@@ -263,6 +263,45 @@
             </ion-fab>
           </ion-content>
         </ion-modal>
+
+        <ion-modal :is-open="isConfigureThresholdModalOpen" @did-dismiss="closeConfigureThresholdModal" :backdrop-dismiss="false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="closeConfigureThresholdModal">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("Configure Threshold") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-list>
+              <ion-item>
+                <ion-select v-model="thresholdConfig.unit" label="Unit of Measurement" interface="popover">
+                  <ion-select-option value="units">{{ translate("Units") }}</ion-select-option>
+                  <ion-select-option value="percent">{{ translate("Percent") }}</ion-select-option>
+                  <ion-select-option value="cost">{{ translate("Cost") }}</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <ion-item>
+                <ion-input 
+                  v-model.number="thresholdConfig.value" 
+                  type="number" 
+                  inputmode="decimal"
+                  min="0"
+                  :label="translate('Threshold Value')"
+                  label-placement="floating"
+                ></ion-input>
+              </ion-item>
+            </ion-list>
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="saveThresholdConfig">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
     </ion-content>
     
     <ion-footer>
@@ -283,7 +322,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, IonPopover } from "@ionic/vue";
 import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
@@ -301,9 +340,12 @@ const props = defineProps({
   workEffortId: String
 })
 
+const THRESHOLD_STORAGE_KEY = 'cyclecount_compliance_threshold';
+
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   loadedItems.value = 0
+  loadThresholdConfig();
   try {
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
     if (resp?.status === 200) {
@@ -322,10 +364,11 @@ onIonViewDidEnter(async () => {
 })
 const filterAndSortBy = reactive({
   dcsnRsn: 'all',
-  sortBy: 'alphabetic'
+  sortBy: 'alphabetic',
+  complianceFilter: 'all'
 });
 
-const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+const  { dcsnRsn, sortBy, complianceFilter } = toRefs(filterAndSortBy);
 
 const searchedProductString = ref(''); 
 
@@ -340,6 +383,12 @@ const submittedItemsCount = ref (0);
 const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 const isEditImportItemModalOpen = ref(false);
+const isConfigureThresholdModalOpen = ref(false);
+
+const thresholdConfig = reactive({
+  unit: 'units',
+  value: 2
+});
 
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
@@ -347,6 +396,69 @@ const isSessionPopoverOpen = ref(false);
 const selectedSession = ref<any | null>(null);
 const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
+
+function loadThresholdConfig() {
+  try {
+    const stored = localStorage.getItem(THRESHOLD_STORAGE_KEY);
+    if (stored) {
+      const config = JSON.parse(stored);
+      thresholdConfig.unit = config.unit || 'units';
+      thresholdConfig.value = config.value || 2;
+    }
+  } catch (error) {
+    console.error('Error loading threshold config:', error);
+  }
+}
+
+function saveThresholdConfig() {
+  try {
+    localStorage.setItem(THRESHOLD_STORAGE_KEY, JSON.stringify({
+      unit: thresholdConfig.unit,
+      value: thresholdConfig.value
+    }));
+    showToast(translate('Threshold saved successfully'));
+    closeConfigureThresholdModal();
+  } catch (error) {
+    console.error('Error saving threshold config:', error);
+    showToast(translate('Failed to save threshold'));
+  }
+}
+
+function handleComplianceChange(event: CustomEvent) {
+  if (event.detail.value === 'configure') {
+    openConfigureThresholdModal();
+  }
+}
+
+function openConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = true;
+  complianceFilter.value = 'all';
+}
+
+function closeConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = false;
+}
+
+function isItemCompliant(item: any): boolean {
+  const variance = Math.abs(item.proposedVarianceQuantity);
+  
+  if (thresholdConfig.unit === 'units') {
+    return variance <= thresholdConfig.value;
+  } else if (thresholdConfig.unit === 'percent') {
+    if (item.quantityOnHand === 0) return true;
+    const percentVariance = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
+    return percentVariance <= thresholdConfig.value;
+  } else if (thresholdConfig.unit === 'cost') {
+    // Cost filtering not implemented yet, show all items
+    return true;
+  }
+  return true;
+}
+
+const complianceLabel = computed(() => {
+  const unitText = thresholdConfig.unit === 'percent' ? '%' : thresholdConfig.unit;
+  return `${translate('Compliance')} (${thresholdConfig.value} ${unitText})`;
+});
 
 async function removeProductFromSession() {
   await loader.present("Removing...");
@@ -523,6 +635,13 @@ function applySearchAndSort() {
     results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
+  // Apply compliance filtering
+  if (complianceFilter.value === 'acceptable') {
+    results = results.filter(item => isItemCompliant(item));
+  } else if (complianceFilter.value === 'rejectable') {
+    results = results.filter(item => !isItemCompliant(item));
+  }
+
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
   } else if (sortBy.value === 'variance') {
@@ -532,7 +651,7 @@ function applySearchAndSort() {
   filteredSessionItems.value = results;
 }
 
-watch([searchedProductString, dcsnRsn, sortBy], () => {
+watch([searchedProductString, dcsnRsn, sortBy, complianceFilter], () => {
   applySearchAndSort();
 }, { deep: true });
 
