@@ -431,7 +431,6 @@ async function loadHardCount() {
         console.warn('Prefetch Failed for hard count:', err);
       })
     }
-    console.log("Pre-fetched items: ", productIds.length);
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
     showToast(translate("Something Went Wrong"));
