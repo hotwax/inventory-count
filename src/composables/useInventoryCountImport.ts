@@ -87,9 +87,12 @@ function currentMillis(): number {
       searchByProductIdQuery = searchByProductIdQuery.and(item => !item.productId)
     }
 
-    let resultSet = await tableQuery
+    let resultSet = [];
+    if (segment !== 'uncounted') {
+      resultSet = await tableQuery
       .and(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
+    }
 
     if (!resultSet.length) {
       const productIds = await useProductMaster().searchProducts(value)
@@ -136,6 +139,22 @@ function currentMillis(): number {
       return 0;
     }
   }
+
+  async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
+  if (!inventoryCountImportId || !productId) return '';
+  try {
+    const record = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .and(item => item.productId === productId)
+      .first();
+
+    return record || null;
+  } catch (err) {
+    console.error('Failed to check direction status', err);
+    return null;
+  }
+}
 
   async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
     try {
@@ -428,6 +447,7 @@ export function useInventoryCountImport() {
     cloneSession,
     discardSession,
     getCountedItems,
+    getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
     getInventoryCountImportItemsCount,
