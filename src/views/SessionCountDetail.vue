@@ -156,7 +156,7 @@
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected">
-              <ion-label>{{ translate("Undirected", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched">
               <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
