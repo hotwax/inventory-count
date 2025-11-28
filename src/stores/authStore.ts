@@ -7,6 +7,7 @@ import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './productStore';
+import { Settings } from 'luxon';
 
 export interface LoginPayload {
   token: any;
@@ -87,6 +88,7 @@ export const useAuthStore = defineStore('authStore', {
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
         const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
+        Settings.defaultZone = current.timeZone;
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
         if (permissionId) serverPermissionsFromRules.push(permissionId);
