@@ -87,9 +87,12 @@ function currentMillis(): number {
       searchByProductIdQuery = searchByProductIdQuery.and(item => !item.productId)
     }
 
-    let resultSet = await tableQuery
+    let resultSet = [];
+    if (segment !== 'uncounted') {
+      resultSet = await tableQuery
       .and(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
+    }
 
     if (!resultSet.length) {
       const productIds = await useProductMaster().searchProducts(value)

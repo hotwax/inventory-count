@@ -268,6 +268,7 @@ async function searchProducts(value: string) {
   const products = await db.table('productIdentification')
     .where('value')
     .startsWithIgnoreCase(value)
+    .limit(250)
     .toArray()
     if (products) return products.map(product => product.productId)
     return null
