@@ -122,6 +122,39 @@
           </div>
 
           <div class="statistics ion-padding">
+            <!-- Last Scanned Product Card -->
+            <ion-card v-if="lastScannedEvent">
+              <ion-item lines="none">
+                <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <template v-if="lastScannedEvent.product">
+                    <h2>{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
+                    <p>{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
+                  </template>
+                  <template v-else>
+                    <h2>{{ lastScannedEvent.scannedValue }}</h2>
+                    <p>{{ translate("Identifying product...") }}</p>
+                  </template>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item lines="none">
+                <ion-label>
+                  <p>{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                </ion-label>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-label>{{ translate("Units") }}</ion-label>
+                <ion-label slot="end">{{ lastScannedProductTotal }}</ion-label>
+              </ion-item>
+            </ion-card>
+
             <ion-card>
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
@@ -617,6 +650,26 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
 
+const lastScannedEvent = computed(() => events.value[0]);
+
+const lastScannedProductTotal = computed(() => {
+  if (!lastScannedEvent.value) return 0;
+
+  // If the last scanned event has an associated product, calculate the total aggregated quantity.
+  if (lastScannedEvent.value.productId) {
+    const productId = lastScannedEvent.value.productId;
+
+    const total = [...countedItems.value, ...undirectedItems.value]
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+    return total;
+  }
+
+  // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
+  return lastScannedEvent.value.quantity;
+});
+  
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
   stats.value = {
