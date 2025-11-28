@@ -15,7 +15,7 @@
       <div v-else>
       <div class="ion-padding">
         <div v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" class="header">
-          <ion-button :disabled="areAllSessionCompleted() || isLoading || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
+          <ion-button :disabled="!areAllSessionCompleted() || isLoading || isLoadingUncounted || isLoadingUndirected || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
             <ion-icon slot="start" :icon="checkmarkDoneOutline" />
             {{ translate("SUBMIT FOR REVIEW") }}
           </ion-button>
@@ -93,8 +93,8 @@
       <!-- List -->
       <ion-segment-view>
         <ion-segment-content id="uncounted">
-          <ion-item-divider v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'">
-            <ion-button :disabled="areAllSessionCompleted() && uncountedItems.length === 0" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
+          <ion-item-divider>
+            <ion-button :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0" slot="end" fill="outline" @click="createSessionForUncountedItems">Create Session</ion-button>
           </ion-item-divider>
           <div v-if="isLoadingUncounted" class="empty-state">
             <p>{{ translate("Loading...") }}</p>
@@ -422,8 +422,10 @@ async function loadDirectedCount() {
         const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
         const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
         undirectedItems.value.push(...undirected);
-        countedItems.value.push(...directedItems.filter((item: any) => item.quantity && item.quantity > 0));
-        uncountedItems.value.push(...directedItems.filter((item: any) => !item.quantity || item.quantity === 0));
+        directedItems.forEach((item: any) => {
+          if (item.quantity >= 0) countedItems.value.push(item);
+          else uncountedItems.value.push(item);
+        })
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {
@@ -432,7 +434,7 @@ async function loadDirectedCount() {
       } else {
         hasMore = false;
       }
-      loadedItems.value = countedItems.value.length + uncountedItems.value.length;
+      loadedItems.value = countedItems.value.length + uncountedItems.value.length + undirectedItems.value.length;
     }
 
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
@@ -777,17 +779,17 @@ async function getCountSessions(productId: any) {
 }
 
 async function createSessionForUncountedItems() {
-  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') return;
-
+  await loader.present("Creating Session...");
   try {
-    const resp = await useInventoryCountRun().createSessionOnServer({
+    const newSession = {
       countImportName: workEffort.value?.workEffortName,
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
       dueDate: workEffort.value?.dueDate,
       workEffortId: workEffort.value?.workEffortId
-    });
+    }
+    const resp = await useInventoryCountRun().createSessionOnServer(newSession);
 
     if (resp?.status === 200 && resp.data) {
       const inventoryCountImportId = resp.data.inventoryCountImportId;
@@ -800,6 +802,7 @@ async function createSessionForUncountedItems() {
     console.error("Error Creating Session for Uncounted Items", error);
     showToast(translate("Failed to Update Cycle Count"));
   }
+  loader.dismiss();
 }
 
 async function createUncountedImportItems(inventoryCountImportId: any) {
@@ -832,6 +835,7 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 
         if (resp?.status === 200) {
           const successfulProductIds = new Set(batch.map((item: any) => item.productId));
+          countedItems.value.push(...uncountedItems.value.filter((item: any) => successfulProductIds.has(item.productId)));
           uncountedItems.value = uncountedItems.value.filter((item: any) => !successfulProductIds.has(item.productId));
         } else {
           console.error("Batch failed:", resp);
@@ -875,7 +879,7 @@ async function markAsCompleted() {
 }
 
 function areAllSessionCompleted() {
-  return !workEffort?.sessions?.length || workEffort?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
+  return !workEffort.value?.sessions?.length || !workEffort.value?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
 }
 
 </script>
