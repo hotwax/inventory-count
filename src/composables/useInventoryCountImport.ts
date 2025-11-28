@@ -137,6 +137,22 @@ function currentMillis(): number {
     }
   }
 
+  async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
+  if (!inventoryCountImportId || !productId) return '';
+  try {
+    const record = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .and(item => item.productId === productId)
+      .first();
+
+    return record || null;
+  } catch (err) {
+    console.error('Failed to check direction status', err);
+    return null;
+  }
+}
+
   async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
     try {
       const items = await db.inventoryCountRecords
@@ -428,6 +444,7 @@ export function useInventoryCountImport() {
     cloneSession,
     discardSession,
     getCountedItems,
+    getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
     getInventoryCountImportItemsCount,
