@@ -354,7 +354,8 @@ async function removeProductFromSession() {
   try {
     const getResp = await useInventoryCountImport().getSessionItemsByImportId({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
-      productId: selectedSession.value.productId
+      productId: selectedSession.value.productId,
+      facilityId: workEffort.value.facilityId
     });
 
     if (getResp?.status !== 200 || !getResp.data?.length) {
@@ -422,7 +423,7 @@ function closeEditImportItemModal () {
 
 async function showEditImportItemsModal () {
   try {
-    const resp = await useInventoryCountImport().getSessionItemsByImportId({ inventoryCountImportId: selectedSession.value.inventoryCountImportId, productId: selectedSession.value.productId } );
+    const resp = await useInventoryCountImport().getSessionItemsByImportId({ inventoryCountImportId: selectedSession.value.inventoryCountImportId, productId: selectedSession.value.productId, facilityId: workEffort.value.facilityId } );
     if (resp?.status === 200 && resp.data?.length) {
       selectedSession.value.importItems = resp.data;
     } else {

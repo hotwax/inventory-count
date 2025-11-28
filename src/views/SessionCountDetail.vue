@@ -554,7 +554,7 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -564,7 +564,7 @@ import { translate } from '@/i18n';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { from } from 'rxjs';
+import { Subscription, from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
@@ -589,6 +589,8 @@ const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+const totalUnitsCount = ref(0);
+const subscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
@@ -667,6 +669,15 @@ const lastScannedProductTotal = computed(() => {
   // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
   return lastScannedEvent.value.quantity;
 });
+  
+watchEffect(() => {
+  const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
+  stats.value = {
+    productsCounted: distinctProducts,
+    totalUnits: totalUnitsCount.value,
+    unmatched: unmatchedItems.value.length
+  }
+})
 
 onIonViewDidEnter(async () => {
   try {
@@ -676,25 +687,28 @@ onIonViewDidEnter(async () => {
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
-      stats.value.totalUnits = total;
-    });
+    subscriptions.push(
+      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; })
+    );
+    subscriptions.push(
+      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
+        totalUnitsCount.value = total;
+      })
+    );
 
     dayjs.extend(relativeTime);
-    // Display the unmatched and unaggregated products count stats
-    watchEffect(() => {
-      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
-      stats.value = {
-        productsCounted: distinctProducts,
-        totalUnits: stats.value.totalUnits,
-        unmatched: unmatchedItems.value.length
-      }
-    })
 
     watch(selectedSegment, () => {
       searchKeyword.value = ""
@@ -743,14 +757,17 @@ onIonViewDidEnter(async () => {
   }
 });
 
-onBeforeUnmount(async () => {
+onIonViewDidLeave(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
-});
+})
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
@@ -829,6 +846,7 @@ async function loadInventoryItemsWithProgress() {
     while (hasMore) {
       const resp = await useInventoryCountImport().getSessionItemsByImportId({
         inventoryCountImportId: props.inventoryCountImportId,
+        facilityId: useProductStore().getCurrentFacility.facilityId,
         pageIndex,
         pageSize
       })
