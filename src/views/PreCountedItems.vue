@@ -56,7 +56,7 @@
                 {{ useProductMaster().primaryId(product) }}
                 <p>{{ useProductMaster().secondaryId(product) }}</p>
                 <ion-text v-if="!product.isRequested" color="danger">
-                  {{ translate("undirected") }}
+                  {{ translate("Undirected") }}
                 </ion-text>
               </ion-label>
             </ion-item>
