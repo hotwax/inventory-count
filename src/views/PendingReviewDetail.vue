@@ -20,38 +20,43 @@
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
             </ion-item>
+
             <ion-item>
               <ion-icon :icon="businessOutline" slot="start"></ion-icon>
               <ion-label>
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
-            <ion-item class="due-date">
+            
+            <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div>
+              <ion-label>
+                <p class="overline">{{ translate("Start Date") }}</p>
+                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}
+              </ion-label>
+            </ion-item>
+
+            <ion-item lines="none" class="due-date">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <ion-label>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <div v-if="workEffort.dueDate">
-                  <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
-                  <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
-                    </ion-datetime>
-                  </ion-modal>
-                </div>
-              </div>
+                {{ getDateTimeWithOrdinalSuffix(workEffort.dueDate) }}
+              </ion-label>
             </ion-item>
           </ion-card>
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
+              <ion-label slot="end" class="ion-text-end">
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].minLastUpdatedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(aggregatedSessionItems[0].minLastUpdatedAt, workEffort.estimatedStartDate) }}</p>
+              </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
-            </ion-item>
-            <ion-item>
-              <ion-label>
-                40% Coverage
+              <ion-label slot="end" class="ion-text-end">
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].maxLastUpdatedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.dueDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.dueDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -62,9 +67,11 @@
                 <ion-label>
                   {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
                   <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
-                  <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
+              <ion-card-content>
+                <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
+              </ion-card-content>
             </ion-card>
             <ion-card>
               <ion-item lines="full">
@@ -322,7 +329,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCheckbox, IonContent, IonDatetime,IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, IonPopover } from "@ionic/vue";
+import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
@@ -877,6 +884,24 @@ function getFacilityName(id: string) {
   return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
+function getTimeDifference(actual: any, expected: any) {
+  if (!actual || !expected) return '';
+  const dtActual = DateTime.fromMillis(actual);
+  const dtExpected = DateTime.fromMillis(expected);
+  const diff = dtActual.diff(dtExpected, ['days', 'hours', 'minutes']);
+
+  const isLate = diff.toMillis() > 0;
+  const absDiff = diff.mapUnits(x => Math.abs(x));
+
+  const duration = absDiff.toFormat("d'd' h'h' m'm'")
+    .replace(/\b0[dhm]\s*/g, '')
+    .trim();
+
+  if (!duration) return translate('On time');
+
+  return `${duration} ${isLate ? translate('late') : translate('early')}`;
+}
+
 </script>
 
 <style scoped>
@@ -885,8 +910,8 @@ function getFacilityName(id: string) {
   display: grid;
 }
 
-ion-item.due-date {
-  --padding-bottom: var(--spacer-sm)
+.statistics ion-item h3 {
+  font-size: 1.2rem;
 }
 
 .controls {
