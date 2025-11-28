@@ -528,10 +528,7 @@ import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { Subscription, from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
@@ -544,7 +541,8 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
-
+import { DateTime } from 'luxon';
+import { from, Subscription } from 'rxjs';
 
 const props = defineProps<{
   workEffortId: string;
@@ -635,27 +633,25 @@ onIonViewDidEnter(async () => {
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
     subscriptions.push(
-      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
+      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe((items: any) => (unmatchedItems.value = items))
     )
     subscriptions.push(
-      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
+      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe((items: any) => (countedItems.value = items))
     )
     subscriptions.push(
-      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
+      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe((items: any) => (uncountedItems.value = items))
     )
     subscriptions.push(
-      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
+      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe((items: any) => (undirectedItems.value = items))
     )
     subscriptions.push(
-      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; })
+      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe((scans: any) => { events.value = scans; })
     );
     subscriptions.push(
-      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
+      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe((total: any) => {
         totalUnitsCount.value = total;
       })
     );
-
-    dayjs.extend(relativeTime);
 
     watch(selectedSegment, () => {
       searchKeyword.value = ""
@@ -1028,8 +1024,9 @@ async function getTotalItemCount() {
   }
 }
 
-function timeAgo(ts: number) {
-  return dayjs(ts).fromNow();
+function timeAgo (time: any) {
+  const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
+  return DateTime.local().plus(timeDiff).toRelative();
 }
 
 function openMatchModal(item: any) {
@@ -1305,9 +1302,8 @@ function getScanContext(item: any) {
   }
 }
 
-function showTime(ts: number) {
-  const exact = dayjs(ts).format('DD MMM YYYY, hh:mm:ss A');
-  showToast(`Scanned at: ${exact}`);
+function showTime(date: any) {
+  showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
 const isImageModalOpen = ref(false)
