@@ -471,12 +471,12 @@ const upsertInventoryBatch = async (records: any[]) => {
   if (!records?.length) return
 
   const now = Date.now()
-  const normalized = records.map(r => ({
-    productId: r.productId,
-    facilityId: r.facilityId,
-    availableToPromiseTotal: Number(r.availableToPromiseTotal || 0),
-    quantityOnHandTotal: Number(r.quantityOnHandTotal || 0),
-    updatedAt: r.updatedAt ?? now
+  const normalized = records.map(record => ({
+    productId: record.productId,
+    facilityId: record.facilityId,
+    availableToPromiseTotal: Number(record.availableToPromiseTotal || 0),
+    quantityOnHandTotal: Number(record.quantityOnHandTotal || 0),
+    updatedAt: record.updatedAt ?? now
   }))
 
   await db.productInventory.bulkPut(normalized)
@@ -504,7 +504,7 @@ const upsertInventoryFromSessionItems = async (items: any[]) => {
 }
 
 /** Low-level: fetch inventory snapshot from OMS and store it */
-const fetchInventoryFromOms = async (
+const getInventory = async (
   productId: string,
   facilityId: string
 ): Promise<any | null> => {
@@ -535,7 +535,8 @@ const fetchInventoryFromOms = async (
     productId,
     facilityId,
     availableToPromiseTotal: row.availableToPromiseTotal ?? 0,
-    quantityOnHandTotal: row.quantityOnHandTotal ?? 0
+    quantityOnHandTotal: row.quantityOnHandTotal ?? 0,
+    updatedAt: Date.now()
   }
 
   await upsertInventoryBatch([record])
@@ -568,7 +569,7 @@ const getProductInventory = async (
 
   if (!isStale && cached) return cached
 
-  const fresh = await fetchInventoryFromOms(productId, facilityId)
+  const fresh = await getInventory(productId, facilityId)
   return fresh || cached || null
 }
 

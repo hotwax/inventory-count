@@ -38,6 +38,7 @@ function currentMillis(): number {
     await useProductMaster().upsertInventoryFromSessionItems(items);
     try {
       // Normalize or enrich data before storing if needed
+      const facilityId = useProductStore().getCurrentFacility.facilityId || '';
       const normalized = items.map((item: any) => ({
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
@@ -47,7 +48,7 @@ function currentMillis(): number {
         locationSeqId: item.locationSeqId || null,
         quantity: item.quantity || 0,
         status: 'active',
-        facilityId: useProductStore().getCurrentFacility.facilityId || '',
+        facilityId,
         createdAt: item.createdDate || currentMillis(),
         lastScanAt: item.lastUpdatedStamp || currentMillis(),
         lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
