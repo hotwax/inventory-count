@@ -1024,9 +1024,8 @@ async function getTotalItemCount() {
   }
 }
 
-function timeAgo (time: any) {
-  const timeDiff = DateTime.fromMillis(time).diff(DateTime.local());
-  return DateTime.local().plus(timeDiff).toRelative();
+function timeAgo (time: number) {
+  return DateTime.fromMillis(time).toRelative();
 }
 
 function openMatchModal(item: any) {
@@ -1302,7 +1301,7 @@ function getScanContext(item: any) {
   }
 }
 
-function showTime(date: any) {
+function showTime(date: number) {
   showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
