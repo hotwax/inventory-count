@@ -114,15 +114,9 @@
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility($event)" @keydown="preventSpecialCharacters($event)" />
+          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()" />
           <ion-list>
-            <div class="empty-state" v-if="isLoadingFacilities">
-              <ion-item lines="none">
-                <ion-spinner color="secondary" name="crescent" slot="start" />
-                {{ translate("Fetching facilities") }}
-              </ion-item>
-            </div>
-            <div class="empty-state" v-else-if="!filteredFacilities.length">
+            <div class="empty-state" v-if="!filteredFacilities.length">
               <p>{{ translate("No facilities found") }}</p>
             </div>
             <div v-else>
@@ -155,7 +149,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
-import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonModal, IonInput, IonCheckbox, IonSpinner, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, IonCheckbox, IonSpinner, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline, closeOutline, checkmarkOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
@@ -180,7 +174,6 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);
 const queryString = ref('');
-const isLoadingFacilities = ref(true);
 const filteredFacilities = ref([]) as any;
 const selectedFacilityIds = ref<string[]>([]);
 
@@ -396,13 +389,10 @@ async function exportCycleCounts() {
 function loadFacilitiesInModal() {
   filteredFacilities.value = facilities.value;
   selectedFacilityIds.value = [...filters.facilityIds];
-  isLoadingFacilities.value = false;
 }
 
-function findFacility(event?: any) {
-  isLoadingFacilities.value = true;
-  const query = event ? event.target.value : queryString.value;
-  const searchedString = (query || '').trim().toLowerCase();
+function findFacility() {
+  const searchedString = (queryString.value || '').trim().toLowerCase();
   if (searchedString) {
     filteredFacilities.value = facilities.value.filter((facility: any) =>
       facility.facilityName?.toLowerCase().includes(searchedString) ||
@@ -411,17 +401,11 @@ function findFacility(event?: any) {
   } else {
     filteredFacilities.value = facilities.value;
   }
-  isLoadingFacilities.value = false;
 }
 
 async function selectSearchBarText(event: any) {
   const element = await event.target.getInputElement();
   element.select();
-}
-
-function preventSpecialCharacters($event: any) {
-  // Searching special characters fails the API, hence, they must be omitted
-  if (/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
 }
 
 function toggleFacilitySelection(facilityId: string, checked: boolean) {
@@ -445,7 +429,6 @@ function closeFacilityModal() {
   queryString.value = '';
   filteredFacilities.value = [];
   selectedFacilityIds.value = [];
-  isLoadingFacilities.value = true;
 }
 
 function clearAllFacilities() {
