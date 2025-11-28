@@ -237,7 +237,8 @@
   "Type": "Type",
   "Unaggregated": "Unaggregated",
   "Uncounted": "Uncounted ({uncountedItemsLength})",
-  "Undirected": "Undirected ({undirectedItemsLength})",
+  "Undirected": "Undirected",
+  "UndirectedWithCount": "Undirected ({undirectedItemsLength})",
   "Units": "Units",
   "Units counted": "Units counted",
   "Unmatched": "Unmatched ({unmatchedItemsLength})",
@@ -291,7 +292,6 @@
   "submitted counts": "{submittedItemsCount} out of {totalItems} items complete",
   "systemic": "systemic",
   "unaggregated": "unaggregated",
-  "undirected": "Undirected",
   "units": "{count} units",
   "variance": "variance"
 }
