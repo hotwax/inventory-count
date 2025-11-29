@@ -65,7 +65,7 @@
               </ion-card-header>
             </ion-card>
             <div class="actions">
-              <ion-button v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" :disabled="areAllSessionCompleted() || isLoading || isLoadingUncounted" fill="outline" color="success" @click="markAsCompleted">
+              <ion-button v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
