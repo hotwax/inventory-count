@@ -254,49 +254,35 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
-                        </ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in filteredItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
-                <div class="empty-state ion-padding">
-                  <ion-label>{{ translate("No products found") }}</ion-label>
+                <div class="empty-state ion-padding ion-text-center">
+                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
-                <DynamicScroller :items="undirectedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          {{ useProductMaster().primaryId(item.product) }}
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in undirectedItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
             </ion-segment-content>
 
