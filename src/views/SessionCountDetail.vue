@@ -122,6 +122,39 @@
           </div>
 
           <div class="statistics ion-padding">
+            <!-- Last Scanned Product Card -->
+            <ion-card v-if="lastScannedEvent">
+              <ion-item lines="none">
+                <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <template v-if="lastScannedEvent.product">
+                    <h2>{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
+                    <p>{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
+                  </template>
+                  <template v-else>
+                    <h2>{{ lastScannedEvent.scannedValue }}</h2>
+                    <p>{{ translate("Identifying product...") }}</p>
+                  </template>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item lines="none">
+                <ion-label>
+                  <p>{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                </ion-label>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-label>{{ translate("Units") }}</ion-label>
+                <ion-label slot="end">{{ lastScannedProductTotal }}</ion-label>
+              </ion-item>
+            </ion-card>
+
             <ion-card>
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
@@ -156,7 +189,7 @@
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected">
-              <ion-label>{{ translate("Undirected", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched">
               <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
@@ -521,17 +554,14 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
@@ -544,7 +574,8 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
-
+import { DateTime } from 'luxon';
+import { from, Subscription } from 'rxjs';
 
 const props = defineProps<{
   workEffortId: string;
@@ -556,6 +587,8 @@ const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+const totalUnitsCount = ref(0);
+const subscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
@@ -615,6 +648,35 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
 
+const lastScannedEvent = computed(() => events.value[0]);
+
+const lastScannedProductTotal = computed(() => {
+  if (!lastScannedEvent.value) return 0;
+
+  // If the last scanned event has an associated product, calculate the total aggregated quantity.
+  if (lastScannedEvent.value.productId) {
+    const productId = lastScannedEvent.value.productId;
+
+    const total = [...countedItems.value, ...undirectedItems.value]
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+    return total;
+  }
+
+  // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
+  return lastScannedEvent.value.quantity;
+});
+  
+watchEffect(() => {
+  const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
+  stats.value = {
+    productsCounted: distinctProducts,
+    totalUnits: totalUnitsCount.value,
+    unmatched: unmatchedItems.value.length
+  }
+})
+
 onIonViewDidEnter(async () => {
   try {
     await startSession();
@@ -623,25 +685,26 @@ onIonViewDidEnter(async () => {
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
-      stats.value.totalUnits = total;
-    });
-
-    dayjs.extend(relativeTime);
-    // Display the unmatched and unaggregated products count stats
-    watchEffect(() => {
-      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
-      stats.value = {
-        productsCounted: distinctProducts,
-        totalUnits: stats.value.totalUnits,
-        unmatched: unmatchedItems.value.length
-      }
-    })
+    subscriptions.push(
+      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe((items: any) => (unmatchedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe((items: any) => (countedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe((items: any) => (uncountedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe((items: any) => (undirectedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe((scans: any) => { events.value = scans; })
+    );
+    subscriptions.push(
+      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe((total: any) => {
+        totalUnitsCount.value = total;
+      })
+    );
 
     watch(selectedSegment, () => {
       searchKeyword.value = ""
@@ -690,14 +753,17 @@ onIonViewDidEnter(async () => {
   }
 });
 
-onBeforeUnmount(async () => {
+onIonViewDidLeave(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
-});
+})
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
@@ -776,6 +842,7 @@ async function loadInventoryItemsWithProgress() {
     while (hasMore) {
       const resp = await useInventoryCountImport().getSessionItemsByImportId({
         inventoryCountImportId: props.inventoryCountImportId,
+        facilityId: useProductStore().getCurrentFacility.facilityId,
         pageIndex,
         pageSize
       })
@@ -1010,8 +1077,8 @@ async function getTotalItemCount() {
   }
 }
 
-function timeAgo(ts: number) {
-  return dayjs(ts).fromNow();
+function timeAgo (time: number) {
+  return DateTime.fromMillis(time).toRelative();
 }
 
 function openMatchModal(item: any) {
@@ -1287,9 +1354,8 @@ function getScanContext(item: any) {
   }
 }
 
-function showTime(ts: number) {
-  const exact = dayjs(ts).format('DD MMM YYYY, hh:mm:ss A');
-  showToast(`Scanned at: ${exact}`);
+function showTime(date: number) {
+  showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
 const isImageModalOpen = ref(false)
