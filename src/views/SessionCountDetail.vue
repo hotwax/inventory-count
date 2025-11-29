@@ -216,7 +216,7 @@
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
                         <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
+                          {{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -242,7 +242,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end">{{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -625,6 +625,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
+const showQoh = useProductStore().getShowQoh;
 
 const pageRef = ref(null);
 
@@ -1190,13 +1191,13 @@ async function finalizeAggregationAndSync() {
     // Wait until the worker confirms completion
     loader.present('Finalising aggregation...');
     const result = await new Promise<number>((resolve) => {
-      const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
+      // const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
       if (aggregationWorker) {
         aggregationWorker.onmessage = (event) => {
           const { type, count } = event.data;
           if (type === 'aggregationComplete') {
             console.log(`Aggregated ${count} products from scans`)
-            clearTimeout(timeout);
+            // clearTimeout(timeout);
             resolve(count);
           }
         };
