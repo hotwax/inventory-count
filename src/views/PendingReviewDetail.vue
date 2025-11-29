@@ -853,7 +853,6 @@ async function performBulkCloseAction() {
     }))
 
     const batchSize = 250
-    let processed = 0
 
     for (let i = 0; i < itemsToProcess.length; i += batchSize) {
       const batch = itemsToProcess.slice(i, i + batchSize)
@@ -862,7 +861,6 @@ async function performBulkCloseAction() {
       })
 
       if (resp?.status === 200) {
-        processed += batch.length
 
         const processedIds = batch.map(p => p.productId);
 
@@ -871,7 +869,7 @@ async function performBulkCloseAction() {
             item.decisionOutcomeEnumId = decisionOutcomeEnumId;
           }
         });
-        submittedItemsCount.value = processed
+        submittedItemsCount.value += batch.length;
       } else {
         console.error("Batch failed", resp)
       }
