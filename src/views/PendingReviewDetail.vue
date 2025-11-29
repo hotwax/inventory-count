@@ -863,20 +863,19 @@ async function performBulkCloseAction() {
 
       if (resp?.status === 200) {
         processed += batch.length
-        loadedItems.value = processed
+
+        const processedIds = batch.map(p => p.productId);
+
+        aggregatedSessionItems.value.forEach(item => {
+          if (processedIds.includes(item.productId)) {
+            item.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+        submittedItemsCount.value = processed
       } else {
         console.error("Batch failed", resp)
       }
     }
-
-    // update UI locally
-    aggregatedSessionItems.value.forEach(item => {
-      if (!item.decisionOutcomeEnumId) {
-        item.decisionOutcomeEnumId = decisionOutcomeEnumId
-      }
-    })
-    submittedItemsCount.value = aggregatedSessionItems.value.length
-
     await closeCycleCount()
   } catch (err) {
     console.error(err)
