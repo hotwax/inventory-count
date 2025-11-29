@@ -853,7 +853,6 @@ async function performBulkCloseAction() {
     }))
 
     const batchSize = 250
-    let processed = 0
 
     for (let i = 0; i < itemsToProcess.length; i += batchSize) {
       const batch = itemsToProcess.slice(i, i + batchSize)
@@ -862,21 +861,19 @@ async function performBulkCloseAction() {
       })
 
       if (resp?.status === 200) {
-        processed += batch.length
-        loadedItems.value = processed
+
+        const processedIds = batch.map(p => p.productId);
+
+        aggregatedSessionItems.value.forEach(item => {
+          if (processedIds.includes(item.productId)) {
+            item.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+        submittedItemsCount.value += batch.length;
       } else {
         console.error("Batch failed", resp)
       }
     }
-
-    // update UI locally
-    aggregatedSessionItems.value.forEach(item => {
-      if (!item.decisionOutcomeEnumId) {
-        item.decisionOutcomeEnumId = decisionOutcomeEnumId
-      }
-    })
-    submittedItemsCount.value = aggregatedSessionItems.value.length
-
     await closeCycleCount()
   } catch (err) {
     console.error(err)
