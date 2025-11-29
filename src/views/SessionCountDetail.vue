@@ -1129,7 +1129,7 @@ async function saveMatchProduct() {
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: existingUndirected ? existingUndirected.isRequested : 'N',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
