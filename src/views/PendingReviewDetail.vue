@@ -232,12 +232,6 @@
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
         </div>
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
-          <ion-fab-button @click="closeCycleCount">
-            <ion-icon :icon="receiptOutline" />
-          </ion-fab-button>
-        </ion-fab>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
@@ -274,13 +268,18 @@
     
     <ion-footer>
       <ion-toolbar>
-        <ion-buttons slot="end">
+        <ion-buttons slot="start">
           <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
             {{ translate("Accept") }}
           </ion-button>
           <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
-          <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
             {{ translate("Reject") }}
+          </ion-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="closeCycleCount">
+            {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
