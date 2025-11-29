@@ -55,8 +55,8 @@
               <ion-label>
                 {{ useProductMaster().primaryId(product) }}
                 <p>{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text color="danger">
-                  Undirected
+                <ion-text v-if="!product.isRequested" color="danger">
+                  {{ translate("Undirected") }}
                 </ion-text>
               </ion-label>
             </ion-item>
@@ -97,9 +97,9 @@
 <script setup lang="ts">
 import { translate } from '@/i18n'
 import {
-  IonPage, IonToolbar, IonContent, IonSearchbar, IonList, IonItem,
-  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController
+  IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
+  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonFooter, 
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons'
 import { ref, defineProps, computed, onMounted } from 'vue'
@@ -234,6 +234,11 @@ async function addProductInPreCountedItems(product: any) {
     product.countedQuantity = 0
     product.saved = false
     await setProductQoh(product)
+    const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
+      props.inventoryCountImportId,
+      product.productId
+    );
+    product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
     products.value.push(product)
   } catch (err) {
     console.error('Error adding product:', err)

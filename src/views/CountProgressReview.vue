@@ -74,19 +74,24 @@
       </div>
       <!-- Segments -->
 
-      <ion-segment value="uncounted">
-        <ion-segment-button value="uncounted" content-id="uncounted">
-          <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
-        </ion-segment-button>
-        <ion-segment-button value="counted" content-id="counted">
-          <ion-label>{{ countedItems.length }} COUNTED</ion-label>
-        </ion-segment-button>
-      </ion-segment>
+      <div class="segments-container">
+        <ion-segment value="counted">
+          <ion-segment-button value="uncounted" content-id="uncounted">
+            <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
+          </ion-segment-button>
+          <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="counted" content-id="counted">
+            <ion-label>{{ countedItems.length }} COUNTED</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
 
       <!-- List -->
       <ion-segment-view>
         <ion-segment-content id="uncounted">
-          <ion-item :disabled="areAllSessionCompleted() && uncountedItems.length === 0" lines="full">
+          <ion-item :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0" lines="full">
             <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
               <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
             </ion-label>
@@ -125,6 +130,111 @@
               </template>
             </DynamicScroller>
           </ion-item-group>
+        </ion-segment-content>
+
+        <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
+          <ion-item-divider>
+            <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
+              {{ translate("Skip All Undirected Items") }}
+            </ion-button>
+          </ion-item-divider>
+          <div v-if="isLoadingUndirected" class="empty-state">
+            <p>{{ translate("Loading...") }}</p>
+          </div>
+          <div v-else-if="!isLoadingUndirected && undirectedItems.length === 0" class="empty-state">
+            <p>{{ translate("No undirected items") }}</p>
+          </div>
+          <ion-accordion-group v-else>
+            <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+              <template #default="{ item, index, active }">
+                <DynamicScrollerItem :item="item" :index="index" :active="active">
+                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                    <div class="list-item count-item-rollup" slot="header"> 
+                      <ion-item lines="none">
+                        <ion-thumbnail slot="start">
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        </ion-label>
+                      </ion-item>
+                      <ion-label>
+                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        <p>{{ translate("counted/systemic") }}</p>
+                      </ion-label>
+                      <ion-label>
+                        {{ item.proposedVarianceQuantity }}
+                        <p>{{ translate("variance") }}</p>
+                      </ion-label>
+                      <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                        <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                          {{ translate("Skip") }}
+                        </ion-button>
+                      </div>
+                      <ion-badge
+                        v-else
+                        color="danger"
+                        style="--color: white;"
+                      >
+                        {{ item.decisionOutcomeEnumId }}
+                      </ion-badge>
+                    </div>
+                    <div slot="content" @click.stop="stopAccordianEventProp">
+                      <ion-list v-if="sessions === null">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
+                          <ion-avatar slot="start">
+                            <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
+                          </ion-avatar>
+                          <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                          <ion-label>
+                            <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+                            <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
+                          </ion-label>
+                        </ion-item>
+                      </ion-list>
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+                        <ion-item lines="none">
+                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
+                          <ion-label>
+                            {{ session.countImportName || "-" }}
+                            <p>
+                              {{ session.uploadedByUserLogin }}
+                            </p>
+                          </ion-label>
+                        </ion-item>
+                        <ion-label>
+                          {{ session.counted }}
+                          <p>{{ translate("counted") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                          <p>{{ translate("started") }}</p>
+                        </ion-label>
+                        <ion-label>
+                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <p>{{ translate("last updated") }}</p>
+                        </ion-label>
+                      </div>
+                    </div>
+                  </ion-accordion>
+                </DynamicScrollerItem>
+              </template>
+            </DynamicScroller>
+          </ion-accordion-group>
         </ion-segment-content>
 
         <ion-segment-content id="counted">
@@ -233,6 +343,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 const isLoadingUncounted = ref(false);
+const isLoadingUndirected = ref(false);
 const totalItems = ref(0);
 const loadedItems = ref(0);
 const workEffort = ref() as any;
@@ -242,6 +353,7 @@ const allProducts = ref<any[]>([]);
 
 const uncountedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
+const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
 
@@ -290,6 +402,7 @@ async function getInventoryCycleCount() {
 
 async function loadDirectedCount() {
   isLoadingUncounted.value = true;
+  isLoadingUndirected.value = true;
   let pageIndex = 0;
   let pageSize = 250;
   if (totalItems.value > 5000) {
@@ -304,8 +417,15 @@ async function loadDirectedCount() {
         pageIndex,
       });
       if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data.filter((item: any) => item.quantity && item.quantity > 0));
-        uncountedItems.value.push(...resp.data.filter((item: any) => !item.quantity || item.quantity === 0));
+        // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
+        // Only include directed items (isRequested === 'Y' or null/undefined)
+        const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
+        const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
+        undirectedItems.value.push(...undirected);
+        directedItems.forEach((item: any) => {
+          if (item.quantity >= 0) countedItems.value.push(item);
+          else uncountedItems.value.push(item);
+        })
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {
@@ -314,11 +434,12 @@ async function loadDirectedCount() {
       } else {
         hasMore = false;
       }
-      loadedItems.value = countedItems.value.length + uncountedItems.value.length;
+      loadedItems.value = countedItems.value.length + uncountedItems.value.length + undirectedItems.value.length;
     }
 
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
     const countedProductIds = [...new Set(countedItems.value
       .filter(item => item?.productId)
@@ -342,6 +463,35 @@ async function loadDirectedCount() {
           console.warn("Prefetch Failed for counted items:", err);
         })
     }
+
+    const unDirectedProductIds = [...new Set(undirectedItems.value
+      .filter(item => item?.productId)
+      .map(item => item.productId)
+    )];
+
+    if (unDirectedProductIds.length) {
+      useProductMaster().prefetch(unDirectedProductIds)
+        .then(async () => {
+          for (const productId of unDirectedProductIds) {
+            const { product } = await useProductMaster().getById(productId);
+            if (!product) continue;
+            undirectedItems.value
+            .filter(item => item.productId === productId)
+            .forEach(item => {
+              item.product = product;
+            });
+          }
+        })
+        .catch(err => {
+          console.warn("Prefetch Failed for counted items:", err);
+        })
+        .finally (() => {
+          isLoadingUndirected.value = false;
+        })
+    } else {
+      isLoadingUndirected.value = false;
+    }
+
     const uncountedProductIds = [...new Set(uncountedItems.value
       .filter(item => item?.productId)
       .map(item => item.productId)
@@ -374,7 +524,99 @@ async function loadDirectedCount() {
     showToast(translate("Something Went Wrong"));
     countedItems.value = [];
     uncountedItems.value =[];
+    undirectedItems.value = [];
   }
+}
+
+async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any, event:  Event) {
+  stopAccordianEventProp(event);
+  await loader.present("Skipping...");
+  try {
+
+    const inventoryCountProductsList = [{
+      workEffortId: props.workEffortId,
+      productId: productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: proposedVarianceQuantity,
+      systemQuantity,
+      countedQuantity,
+      decisionOutcomeEnumId: 'SKIPPED',
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }];
+
+    const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList} );
+
+    if (resp?.status === 200) {
+      item.decisionOutcomeEnumId = 'SKIPPED';
+      showToast(translate("Successfully skipped product count"))
+    } else {
+      throw resp.data;
+    }
+  } catch (error) {
+    showToast(translate("Failed to skip product"));
+    console.error("Error Skipping Product: ", error);
+  }
+  loader.dismiss();
+}
+
+async function skipAllUndirectedItems() {
+  const unskippedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
+  
+  if (unskippedItems.length === 0) {
+    showToast(translate("No undirected items to skip"));
+    return;
+  }
+  
+  await loader.present("Skipping all undirected items...");
+  try {
+
+    const inventoryCountProductsList = unskippedItems.map(product => ({
+      workEffortId: props.workEffortId,
+      productId: product.productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: product.proposedVarianceQuantity,
+      systemQuantity: product.quantityOnHand,
+      countedQuantity: product.quantity,
+      decisionOutcomeEnumId: 'SKIPPED',
+      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+    }));
+
+    const batchSize = 250;
+    const batches = [];
+
+    for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
+      batches.push(inventoryCountProductsList.slice(i, i + batchSize));
+    }
+
+    const results = await Promise.allSettled(
+      batches.map(batch =>
+        useInventoryCountRun().submitProductReview({
+          inventoryCountProductsList: batch
+        }).then(resp => ({ resp, batch }))
+      )
+    );
+    let isAnyFailed = false;
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value.resp?.status === 200) {
+        const batch = result.value.batch;
+
+        const processedIds = batch.map(p => p.productId);
+        undirectedItems.value.forEach(productReview => {
+          if (processedIds.includes(productReview.productId)) {
+            productReview.decisionOutcomeEnumId = 'SKIPPED';
+          }
+        });
+      } else {
+        isAnyFailed = true;
+        console.error("Batch failed:", result);
+      }
+      isAnyFailed ? showToast(translate("Something Went Wrong")) : showToast("Successfully skipped all products");
+    }
+  } catch (err) {
+    console.error("Error while skipping all undirected items:", err);
+    showToast(translate("Failed to skip all undirected items"));
+  }
+  loader.dismiss();
 }
 
 async function loadHardCount() {
@@ -537,16 +779,17 @@ async function getCountSessions(productId: any) {
 }
 
 async function createSessionForUncountedItems() {
-
+  await loader.present("Creating Session...");
   try {
-    const resp = await useInventoryCountRun().createSessionOnServer({
+    const newSession = {
       countImportName: workEffort.value?.workEffortName,
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
       dueDate: workEffort.value?.dueDate,
       workEffortId: workEffort.value?.workEffortId
-    });
+    }
+    const resp = await useInventoryCountRun().createSessionOnServer(newSession);
 
     if (resp?.status === 200 && resp.data) {
       const inventoryCountImportId = resp.data.inventoryCountImportId;
@@ -559,6 +802,7 @@ async function createSessionForUncountedItems() {
     console.error("Error Creating Session for Uncounted Items", error);
     showToast(translate("Failed to Update Cycle Count"));
   }
+  loader.dismiss();
 }
 
 async function createUncountedImportItems(inventoryCountImportId: any) {
@@ -591,6 +835,7 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 
         if (resp?.status === 200) {
           const successfulProductIds = new Set(batch.map((item: any) => item.productId));
+          countedItems.value.push(...uncountedItems.value.filter((item: any) => successfulProductIds.has(item.productId)));
           uncountedItems.value = uncountedItems.value.filter((item: any) => !successfulProductIds.has(item.productId));
         } else {
           console.error("Batch failed:", resp);
@@ -606,6 +851,15 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 }
 
 async function markAsCompleted() {
+  // Check if there are any unskipped undirected items for directed counts
+  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
+    const unskippedUndirectedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
+    if (unskippedUndirectedItems.length > 0) {
+      showToast(translate('Please skip all undirected items before submitting for review'));
+      return;
+    }
+  }
+  
   await loader.present("Submitting...");
   try {
     const response = await useInventoryCountRun().updateWorkEffort({
@@ -625,7 +879,7 @@ async function markAsCompleted() {
 }
 
 function areAllSessionCompleted() {
-  return !workEffort?.sessions?.length || workEffort?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
+  return !workEffort.value?.sessions?.length || !workEffort.value?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
 }
 
 </script>
