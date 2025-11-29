@@ -232,12 +232,6 @@
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
         </div>
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
-          <ion-fab-button @click="closeCycleCount">
-            <ion-icon :icon="receiptOutline" />
-          </ion-fab-button>
-        </ion-fab>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
@@ -274,24 +268,78 @@
     
     <ion-footer>
       <ion-toolbar>
-        <ion-buttons slot="end">
+        <ion-buttons slot="start">
           <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
             {{ translate("Accept") }}
           </ion-button>
           <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
-          <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
             {{ translate("Reject") }}
+          </ion-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick">
+            {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
+    <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ translate("Close Count") }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="closeBulkCloseModal">
+              <ion-icon :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <template v-if="openItems.length">
+          <ion-list>
+            <ion-radio-group v-model="bulkAction">
+              <ion-item>
+                <ion-radio value="APPLIED" slot="start"></ion-radio>
+                <ion-label>{{ translate("Accept all outstanding variances and close") }}</ion-label>
+              </ion-item>
+
+              <ion-item>
+                <ion-radio value="SKIPPED" slot="start"></ion-radio>
+                <ion-label>{{ translate("Reject all outstanding variances and close") }}</ion-label>
+              </ion-item>
+            </ion-radio-group>
+          </ion-list>
+
+          <ion-button expand="block" color="primary" class="ion-margin-top"
+            @click="performBulkCloseAction">
+            {{ translate("Confirm") }}
+          </ion-button>
+        </template>
+
+        <template v-else>
+          <p>{{ translate("All items are already reviewed. Do you want to close the cycle count?") }}</p>
+
+          <ion-button expand="block" color="primary" class="ion-margin-top"
+            @click="forceCloseWithoutAction">
+            {{ translate("Close Cycle Count") }}
+          </ion-button>
+        </template>
+      </ion-content>
+    </ion-modal>
+    <ion-alert :is-open="isCloseAlertOpen" header="Close Cycle Count" message="All items are already reviewed. Do you want to close the cycle count?" @didDismiss="isCloseAlertOpen = false" :buttons="[
+      { text: 'Cancel', role: 'cancel' },
+      { text: 'Confirm', handler: forceCloseWithoutAction }
+    ]">
+    </ion-alert>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
-import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAlert, IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -307,6 +355,14 @@ import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 const props = defineProps({
   workEffortId: String
 })
+
+const isBulkCloseModalOpen = ref(false)
+const bulkAction = ref<any>(null)
+const isCloseAlertOpen = ref(false)
+
+const openItems = computed(() =>
+  aggregatedSessionItems.value.filter(item => !item.decisionOutcomeEnumId)
+)
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -755,9 +811,81 @@ async function getInventoryCycleCount() {
     aggregatedSessionItems.value = [];
   }
 }
+// Bulk Close Modal Functions
+function openBulkCloseModal() {
+  isBulkCloseModalOpen.value = true
+  bulkAction.value = null
+}
 
-const getDateTime = (time: any) => {
-  return time ? DateTime.fromMillis(time).toISO() : ''
+function closeBulkCloseModal() {
+  isBulkCloseModalOpen.value = false
+}
+
+function handleCloseClick() {
+  if (openItems.value.length === 0) {
+    // All reviewed → Show alert instead of modal
+    isCloseAlertOpen.value = true
+  } else {
+    // Still open items → show bulk modal
+    openBulkCloseModal()
+  }
+}
+
+async function performBulkCloseAction() {
+  if (!bulkAction.value) {
+    showToast("Please select an action")
+    return
+  }
+  const decisionOutcomeEnumId = bulkAction.value
+  closeBulkCloseModal()
+  await loader.present("Closing cycle count...")
+
+  try {
+    const itemsToProcess = openItems.value.map(item => ({
+      workEffortId: props.workEffortId,
+      productId: item.productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: item.proposedVarianceQuantity,
+      systemQuantity: item.quantityOnHand,
+      countedQuantity: item.quantity,
+      decisionOutcomeEnumId,
+      decisionReasonEnumId: "PARTIAL_SCOPE_POST"
+    }))
+
+    const batchSize = 250
+
+    for (let i = 0; i < itemsToProcess.length; i += batchSize) {
+      const batch = itemsToProcess.slice(i, i + batchSize)
+      const resp = await useInventoryCountRun().submitProductReview({
+        inventoryCountProductsList: batch
+      })
+
+      if (resp?.status === 200) {
+
+        const processedIds = batch.map(p => p.productId);
+
+        aggregatedSessionItems.value.forEach(item => {
+          if (processedIds.includes(item.productId)) {
+            item.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+        submittedItemsCount.value += batch.length;
+      } else {
+        console.error("Batch failed", resp)
+      }
+    }
+    await closeCycleCount()
+  } catch (err) {
+    console.error(err)
+    showToast("Bulk Action Failed")
+  }
+
+  loader.dismiss()
+}
+
+async function forceCloseWithoutAction() {
+  closeBulkCloseModal()
+  await closeCycleCount()
 }
 
 function getFacilityName(id: string) {
