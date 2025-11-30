@@ -1174,7 +1174,7 @@ async function finalizeAggregationAndSync() {
       }
     });
 
-    return result;
+    return;
   } catch (err) {
     console.error('[Session] Error during final aggregation:', err);
     return 0;
