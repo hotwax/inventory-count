@@ -6,7 +6,7 @@ import logger from '@/logger'
 import i18n, { translate } from '@/i18n'
 import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
-import { DateTime } from 'luxon';
+import { DateTime, Settings } from 'luxon';
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -77,6 +77,7 @@ export const useUserProfile = defineStore('userProfile', {
         if (resp?.status === 200) {
           this.current.timeZone = tzId;
           this.currentTimeZoneId = tzId
+          Settings.defaultZone = tzId;
         } else {
           throw resp;
         }
