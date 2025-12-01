@@ -34,8 +34,8 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <ion-button @click="openModal('dueDate')" class="date-time-button">
-                  {{ workEffort.dueDate ? formatDateTime(workEffort.dueDate) : translate("Add Due Date") }}
+                <ion-button @click="openModal('estimatedCompletionDate')" class="date-time-button">
+                  {{ workEffort.estimatedCompletionDate ? formatDateTime(workEffort.estimatedCompletionDate) : translate("Add Due Date") }}
                 </ion-button>
               </div>
             </ion-item>
@@ -196,7 +196,7 @@
 
 <script setup lang="ts">
 import { defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";

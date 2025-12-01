@@ -58,7 +58,26 @@
           </ion-button>
         </ion-card>
         <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
-        <ProductStoreSelector v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')" @updateEComStore="setProductStore"/>
+        <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
+          <ion-card-header>
+            <ion-card-subtitle>
+              {{ translate("Product Store") }}
+            </ion-card-subtitle>
+            <ion-card-title>
+              {{ translate("Store") }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ translate('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
+          </ion-card-content>
+
+          <ion-item lines="none">
+            <ion-select :label="translate('Select store')" interface="popover" :placeholder="translate('store name')" :value="currentEComStore?.productStoreId" @ionChange="updateEComStore($event.target.value)">
+              <ion-select-option v-for="store in (eComStores ? eComStores : [])" :key="store.productStoreId" :value="store.productStoreId">{{ store.storeName }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </ion-card>
       </section>
       <hr />
       <div class="section-header">
@@ -70,7 +89,29 @@
       </div>
       <section>
         <TimeZoneSwitcher/>
-        <ProductIdentifier v-if="!router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <ion-card v-if="!router.currentRoute.value.fullPath.includes('/tabs/')">
+          <ion-card-header>
+            <ion-card-title>
+              {{ 'Product Identifier' }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
+          </ion-card-content>
+
+          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
+            <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
+            <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+              <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
+              <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
+            </ion-select>
+          </ion-item>
+        </ion-card>
         <ion-card>
           <ion-card-header>
             <ion-card-title>
@@ -99,10 +140,8 @@ import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
-import ProductStoreSelector from "@/components/ProductStoreSelector.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
-import ProductIdentifier from "@/components/ProductIdentifier.vue"
 import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
@@ -110,10 +149,16 @@ const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_A
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
 const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
+const eComStores = computed(() => useProductStore().getProductStores) as any;
+const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
+const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
+const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
+  await useProductStore().prepareProductIdentifierOptions();
+  await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 
 function logout() {
@@ -125,10 +170,6 @@ function logout() {
 
 function goToLaunchpad() {
   window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-}
-
-async function setProductStore(selectedProductStore: any) {
-  await useProductStore().setEComStorePreference(selectedProductStore)
 }
 
 function getDateTime(time: any) {
@@ -148,6 +189,15 @@ const productIdentifications = computed(() => useProductStore().getGoodIdentific
 
 function setBarcodeIdentificationPref(value: any) {
   useProductStore().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+}
+
+async function updateEComStore(eComStoreId: any) {
+  const selectedProductStore = eComStores.value.find((store: any) => store.productStoreId == eComStoreId)
+  await useProductStore().setEComStorePreference(selectedProductStore)
+}
+
+function setProductIdentificationPref(value: string | any, id: string) {
+  useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
 </script>
 

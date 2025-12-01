@@ -17,20 +17,22 @@
             </ion-label>
           </ion-item>
         </ion-card>
+      </div>
+      <div class="permission-cards">
         <ion-card>
-          <!-- <ion-card-header>
+          <ion-card-header>
             <ion-card-title>
               {{ translate('Quantity on hand') }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
             <p>{{ translate("Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.") }}</p>
-          </ion-card-content> -->
-          <!-- <ion-item lines="none">
-            <ion-toggle :checked="productStoreSettings['showQoh']" @click.prevent="updateProductStoreSetting($event, 'showQoh')">
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-toggle :checked="useProductStore().getShowQoh" @click.prevent="updateProductStoreSetting($event, 'showQoh')">
               {{ translate("Show systemic inventory") }}
             </ion-toggle>
-          </ion-item> -->
+          </ion-item>
         </ion-card>
       </div>
     </ion-content> 
@@ -40,9 +42,9 @@
 <script setup lang="ts">
 import {
   IonCard,
-  // IonCardContent,
-  // IonCardHeader,
-  // IonCardTitle,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
   IonContent,
   IonHeader,
   IonItem,
@@ -51,16 +53,19 @@ import {
   IonToolbar,
   IonLabel,
   IonIcon,
-  // onIonViewWillEnter
+  onIonViewWillEnter
 } from "@ionic/vue";
 import { translate } from '@/i18n'
 import { useProductStore } from "@/stores/productStore";
 import { storefrontOutline } from "ionicons/icons";
 
-/* onIonViewWillEnter(async () => {
+onIonViewWillEnter(async () => {
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
-  useProductStore().prepareProductIdentifierOptions();
-}) */
+})
+
+function updateProductStoreSetting(event: any, key: string) {
+  useProductStore().setProductStoreSetting(key, !useProductStore().getShowQoh, useProductStore().getCurrentProductStore.productStoreId);
+}
 
 </script>
 

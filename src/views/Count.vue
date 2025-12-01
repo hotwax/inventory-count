@@ -28,7 +28,7 @@
           <ion-item lines="none">
             {{ translate("Due date") }}
             <ion-label slot="end">
-              <p>{{ getDateTimeWithOrdinalSuffix(count.dueDate) }}</p>
+              <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
             </ion-label>
           </ion-item>
           <ion-item v-if="count.estimatedStartDate" lines="none">
@@ -308,7 +308,7 @@ async function addNewSession() {
         uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
-        dueDate: Date.now(),
+        estimatedCompletionDate: Date.now(),
         workEffortId: selectedWorkEffortId.value
       })
     } else {
@@ -391,7 +391,8 @@ function goToCountProgressReview(workEffortId, event) {
 async function markInProgress(workEffortId) {
   const response = await useInventoryCountRun().updateWorkEffort({
     workEffortId,
-    currentStatusId: 'CYCLE_CNT_IN_PRGS'
+    currentStatusId: 'CYCLE_CNT_IN_PRGS',
+    actualStartDate: DateTime.now().toMillis()
   });
   if (response?.status === 200) {
     showToast(translate('Cycle Count is Active'));

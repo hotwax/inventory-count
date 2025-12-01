@@ -41,12 +41,12 @@ async function startHeartbeat(payload: HeartbeatPayload) {
   }
 
   // Run first heartbeat immediately
-  await performHeartbeat(true)
+  await performHeartbeat()
 
   // Then schedule periodic heartbeats
   heartbeatTimer = setInterval(() => {
     // fire-and-forget, errors handled inside performHeartbeat
-    performHeartbeat(false)
+    performHeartbeat()
   }, 30000) // every 60 seconds
 }
 
@@ -64,7 +64,7 @@ function stopHeartbeat() {
  * 2. Call oms/dataDocumentView to ensure lock still exists & is active
  * 3. If active → extend lease via PUT /lock
  */
-async function performHeartbeat(isInitial: boolean) {
+async function performHeartbeat() {
   if (!currentState) return
 
   const {

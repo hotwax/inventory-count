@@ -216,7 +216,7 @@
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
                         <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
+                          {{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -242,7 +242,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end">{{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -254,49 +254,35 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
-                        </ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in filteredItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
-                <div class="empty-state ion-padding">
-                  <ion-label>{{ translate("No products found") }}</ion-label>
+                <div class="empty-state ion-padding ion-text-center">
+                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
-                <DynamicScroller :items="undirectedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          {{ useProductMaster().primaryId(item.product) }}
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in undirectedItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
             </ion-segment-content>
 
@@ -555,8 +541,8 @@
 
 <script setup lang="ts">
 import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { loader, showToast } from '@/services/uiUtils';
@@ -625,6 +611,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
+const showQoh = useProductStore().getShowQoh;
 
 const pageRef = ref(null);
 
@@ -1134,12 +1121,15 @@ async function saveMatchProduct() {
     showToast("Please select a product to match");
     return;
   }
+
+  const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
+
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: 'Y',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
@@ -1187,24 +1177,7 @@ async function finalizeAggregationAndSync() {
       }
     });
 
-    // Wait until the worker confirms completion
-    loader.present('Finalising aggregation...');
-    const result = await new Promise<number>((resolve) => {
-      const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
-      if (aggregationWorker) {
-        aggregationWorker.onmessage = (event) => {
-          const { type, count } = event.data;
-          if (type === 'aggregationComplete') {
-            console.log(`Aggregated ${count} products from scans`)
-            clearTimeout(timeout);
-            resolve(count);
-          }
-        };
-      }
-    });
-    loader.dismiss();
-
-    return result;
+    return;
   } catch (err) {
     console.error('[Session] Error during final aggregation:', err);
     return 0;

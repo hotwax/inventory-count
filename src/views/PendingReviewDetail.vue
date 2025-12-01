@@ -40,7 +40,7 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <ion-label>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                {{ getDateTimeWithOrdinalSuffix(workEffort.dueDate) }}
+                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) }}
               </ion-label>
             </ion-item>
           </ion-card>
@@ -56,7 +56,7 @@
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].maxLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.dueDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.dueDate) }}</p>
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -98,7 +98,7 @@
           </ion-item>
 
           <ion-item>
-            <ion-select label="Compliance" placeholder="All" interface="popover">
+            <ion-select v-model="complianceFilter" :label="complianceLabel" placeholder="All" interface="popover" @ionChange="handleComplianceChange">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
               <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
               <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
@@ -232,12 +232,6 @@
         <div v-else class="empty-state">
           <p>{{ translate("No Results") }}</p>
         </div>
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed" :edge="true">
-          <!-- TODO: :disabled="isLoadingItems || !isAllItemsMarkedAsCompletedOrRejected" @click="completeCount" -->
-          <ion-fab-button @click="closeCycleCount">
-            <ion-icon :icon="receiptOutline" />
-          </ion-fab-button>
-        </ion-fab>
       </template>
       <template v-else>
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
@@ -270,28 +264,121 @@
             </ion-fab>
           </ion-content>
         </ion-modal>
+
+        <ion-modal :is-open="isConfigureThresholdModalOpen" @did-dismiss="closeConfigureThresholdModal" :backdrop-dismiss="false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="closeConfigureThresholdModal">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("Configure Threshold") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-list>
+              <ion-item>
+                <ion-select v-model="thresholdConfig.unit" label="Unit of Measurement" interface="popover">
+                  <ion-select-option value="units">{{ translate("Units") }}</ion-select-option>
+                  <ion-select-option value="percent">{{ translate("Percent") }}</ion-select-option>
+                  <ion-select-option value="cost">{{ translate("Cost") }}</ion-select-option>
+                </ion-select>
+              </ion-item>
+              <ion-item>
+                <ion-input 
+                  v-model.number="thresholdConfig.value" 
+                  type="number" 
+                  inputmode="decimal"
+                  min="0"
+                  :label="translate('Threshold Value')"
+                  label-placement="floating"
+                ></ion-input>
+              </ion-item>
+            </ion-list>
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="saveThresholdConfig">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
     </ion-content>
     
     <ion-footer>
       <ion-toolbar>
-        <ion-buttons slot="end">
+        <ion-buttons slot="start">
           <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="success" size="small" @click="submitSelectedProductReviews('APPLIED')">
             {{ translate("Accept") }}
           </ion-button>
           <!-- TODO: Add the action later :disabled="" @click="recountItem() -->
-          <ion-button :disabled="selectedProductsReview?.length === 0" fill="clear" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
+          <ion-button :disabled="selectedProductsReview?.length === 0" fill="outline" color="danger" size="small" class="ion-margin-horizontal" @click="submitSelectedProductReviews('SKIPPED')">
             {{ translate("Reject") }}
+          </ion-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick">
+            {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>
+    <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ translate("Close Count") }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="closeBulkCloseModal">
+              <ion-icon :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="ion-padding">
+        <template v-if="openItems.length">
+          <ion-list>
+            <ion-radio-group v-model="bulkAction">
+              <ion-item>
+                <ion-radio value="APPLIED" slot="start"></ion-radio>
+                <ion-label>{{ translate("Accept all outstanding variances and close") }}</ion-label>
+              </ion-item>
+
+              <ion-item>
+                <ion-radio value="SKIPPED" slot="start"></ion-radio>
+                <ion-label>{{ translate("Reject all outstanding variances and close") }}</ion-label>
+              </ion-item>
+            </ion-radio-group>
+          </ion-list>
+
+          <ion-button expand="block" color="primary" class="ion-margin-top"
+            @click="performBulkCloseAction">
+            {{ translate("Confirm") }}
+          </ion-button>
+        </template>
+
+        <template v-else>
+          <p>{{ translate("All items are already reviewed. Do you want to close the cycle count?") }}</p>
+
+          <ion-button expand="block" color="primary" class="ion-margin-top"
+            @click="forceCloseWithoutAction">
+            {{ translate("Close Cycle Count") }}
+          </ion-button>
+        </template>
+      </ion-content>
+    </ion-modal>
+    <ion-alert :is-open="isCloseAlertOpen" header="Close Cycle Count" message="All items are already reviewed. Do you want to close the cycle count?" @didDismiss="isCloseAlertOpen = false" :buttons="[
+      { text: 'Cancel', role: 'cancel' },
+      { text: 'Confirm', handler: forceCloseWithoutAction }
+    ]">
+    </ion-alert>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonModal, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
-import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, receiptOutline, ellipsisVerticalOutline } from "ionicons/icons";
+import { IonAlert, IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -308,9 +395,19 @@ const props = defineProps({
   workEffortId: String
 })
 
+const THRESHOLD_STORAGE_KEY = 'cyclecount_compliance_threshold';
+const isBulkCloseModalOpen = ref(false)
+const bulkAction = ref<any>(null)
+const isCloseAlertOpen = ref(false)
+
+const openItems = computed(() =>
+  aggregatedSessionItems.value.filter(item => !item.decisionOutcomeEnumId)
+)
+
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   loadedItems.value = 0
+  loadThresholdConfig();
   try {
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
     if (resp?.status === 200) {
@@ -329,10 +426,11 @@ onIonViewDidEnter(async () => {
 })
 const filterAndSortBy = reactive({
   dcsnRsn: 'all',
-  sortBy: 'alphabetic'
+  sortBy: 'alphabetic',
+  complianceFilter: 'all'
 });
 
-const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+const  { dcsnRsn, sortBy, complianceFilter } = toRefs(filterAndSortBy);
 
 const searchedProductString = ref(''); 
 
@@ -347,6 +445,12 @@ const submittedItemsCount = ref (0);
 const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 const isEditImportItemModalOpen = ref(false);
+const isConfigureThresholdModalOpen = ref(false);
+
+const thresholdConfig = reactive({
+  unit: 'units',
+  value: 2
+});
 
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
@@ -354,6 +458,69 @@ const isSessionPopoverOpen = ref(false);
 const selectedSession = ref<any | null>(null);
 const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
+
+function loadThresholdConfig() {
+  try {
+    const stored = localStorage.getItem(THRESHOLD_STORAGE_KEY);
+    if (stored) {
+      const config = JSON.parse(stored);
+      thresholdConfig.unit = config.unit ?? 'units';
+      thresholdConfig.value = config.value ?? 2;
+    }
+  } catch (error) {
+    console.error('Error loading threshold config:', error);
+  }
+}
+
+function saveThresholdConfig() {
+  try {
+    localStorage.setItem(THRESHOLD_STORAGE_KEY, JSON.stringify({
+      unit: thresholdConfig.unit,
+      value: thresholdConfig.value
+    }));
+    showToast(translate('Threshold saved successfully'));
+    closeConfigureThresholdModal();
+  } catch (error) {
+    console.error('Error saving threshold config:', error);
+    showToast(translate('Failed to save threshold'));
+  }
+}
+
+function handleComplianceChange(event: CustomEvent) {
+  if (event.detail.value === 'configure') {
+    openConfigureThresholdModal();
+  }
+}
+
+function openConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = true;
+  complianceFilter.value = 'all';
+}
+
+function closeConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = false;
+}
+
+function isItemCompliant(item: any): boolean {
+  const variance = Math.abs(item.proposedVarianceQuantity);
+  
+  if (thresholdConfig.unit === 'units') {
+    return variance <= thresholdConfig.value;
+  } else if (thresholdConfig.unit === 'percent') {
+    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
+    const percentVariance = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
+    return percentVariance <= thresholdConfig.value;
+  } else if (thresholdConfig.unit === 'cost') {
+    // Cost filtering not implemented yet, show all items
+    return true;
+  }
+  return true;
+}
+
+const complianceLabel = computed(() => {
+  const unitText = thresholdConfig.unit === 'percent' ? '%' : ` ${thresholdConfig.unit}`;
+  return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
+});
 
 async function removeProductFromSession() {
   await loader.present("Removing...");
@@ -530,6 +697,13 @@ function applySearchAndSort() {
     results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
+  // Apply compliance filtering
+  if (complianceFilter.value === 'acceptable') {
+    results = results.filter(item => isItemCompliant(item));
+  } else if (complianceFilter.value === 'rejectable') {
+    results = results.filter(item => !isItemCompliant(item));
+  }
+
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
   } else if (sortBy.value === 'variance') {
@@ -539,7 +713,7 @@ function applySearchAndSort() {
   filteredSessionItems.value = results;
 }
 
-watch([searchedProductString, dcsnRsn, sortBy], () => {
+watch([searchedProductString, dcsnRsn, sortBy, complianceFilter], () => {
   applySearchAndSort();
 }, { deep: true });
 
@@ -755,9 +929,81 @@ async function getInventoryCycleCount() {
     aggregatedSessionItems.value = [];
   }
 }
+// Bulk Close Modal Functions
+function openBulkCloseModal() {
+  isBulkCloseModalOpen.value = true
+  bulkAction.value = null
+}
 
-const getDateTime = (time: any) => {
-  return time ? DateTime.fromMillis(time).toISO() : ''
+function closeBulkCloseModal() {
+  isBulkCloseModalOpen.value = false
+}
+
+function handleCloseClick() {
+  if (openItems.value.length === 0) {
+    // All reviewed → Show alert instead of modal
+    isCloseAlertOpen.value = true
+  } else {
+    // Still open items → show bulk modal
+    openBulkCloseModal()
+  }
+}
+
+async function performBulkCloseAction() {
+  if (!bulkAction.value) {
+    showToast("Please select an action")
+    return
+  }
+  const decisionOutcomeEnumId = bulkAction.value
+  closeBulkCloseModal()
+  await loader.present("Closing cycle count...")
+
+  try {
+    const itemsToProcess = openItems.value.map(item => ({
+      workEffortId: props.workEffortId,
+      productId: item.productId,
+      facilityId: workEffort.value.facilityId,
+      varianceQuantity: item.proposedVarianceQuantity,
+      systemQuantity: item.quantityOnHand,
+      countedQuantity: item.quantity,
+      decisionOutcomeEnumId,
+      decisionReasonEnumId: "PARTIAL_SCOPE_POST"
+    }))
+
+    const batchSize = 250
+
+    for (let i = 0; i < itemsToProcess.length; i += batchSize) {
+      const batch = itemsToProcess.slice(i, i + batchSize)
+      const resp = await useInventoryCountRun().submitProductReview({
+        inventoryCountProductsList: batch
+      })
+
+      if (resp?.status === 200) {
+
+        const processedIds = batch.map(p => p.productId);
+
+        aggregatedSessionItems.value.forEach(item => {
+          if (processedIds.includes(item.productId)) {
+            item.decisionOutcomeEnumId = decisionOutcomeEnumId;
+          }
+        });
+        submittedItemsCount.value += batch.length;
+      } else {
+        console.error("Batch failed", resp)
+      }
+    }
+    await closeCycleCount()
+  } catch (err) {
+    console.error(err)
+    showToast("Bulk Action Failed")
+  }
+
+  loader.dismiss()
+}
+
+async function forceCloseWithoutAction() {
+  closeBulkCloseModal()
+  await closeCycleCount()
 }
 
 function getFacilityName(id: string) {

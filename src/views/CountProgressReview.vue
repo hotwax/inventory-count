@@ -31,7 +31,7 @@
 
               <ion-item lines="none">
                 <ion-label>{{ translate("Due date") }}</ion-label>
-                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.dueDate) || '-' }}</ion-note>
+                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
               </ion-item>
               <ion-item lines="none">
                 <ion-label>{{ translate("Start date") }}</ion-label>
@@ -90,45 +90,50 @@
         <!-- List -->
         <ion-segment-view>
           <ion-segment-content id="uncounted">
-            <ion-item :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0" lines="full">
-              <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
-                <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
-              </ion-label>
-              <ion-label v-else>
-                {{ translate("Save uncounted items as out of stock") }}
-                <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
-              </ion-label>
-              <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
-            </ion-item>
-            <div v-if="isLoadingUncounted" class="empty-state">
-              <p>{{ translate("Loading...") }}</p>
+            <div v-if="!canPreviewItems" class="empty-state">
+              <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
-            <div v-else-if="!isLoadingUncounted && uncountedItems.length === 0" class="empty-state">
-              <p>{{ translate("All items have been counted. Submit all sessions and submit for review.") }}</p>
-            </div>
-            <ion-item-group v-else>
-              <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
-                <template #default="{ item, index, active }">
-                  <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <div class="list-item count-item-rollup">
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+            <template v-else>
+              <ion-item :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0" lines="full">
+                <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
+                  <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
+                </ion-label>
+                <ion-label v-else>
+                  {{ translate("Save uncounted items as out of stock") }}
+                  <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
+                </ion-label>
+                <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+              </ion-item>
+              <div v-if="isLoadingUncounted" class="empty-state">
+                <p>{{ translate("Loading...") }}</p>
+              </div>
+              <div v-else-if="!isLoadingUncounted && uncountedItems.length === 0" class="empty-state">
+                <p>{{ translate("All items have been counted. Submit all sessions and submit for review.") }}</p>
+              </div>
+              <ion-item-group v-else>
+                <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+                  <template #default="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                        <div class="list-item count-item-rollup">
+                          <ion-item lines="none">
+                            <ion-thumbnail slot="start">
+                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                            </ion-thumbnail>
+                            <ion-label>
+                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                              <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            </ion-label>
+                          </ion-item>
+                          <ion-label slot="end">
+                            {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
+                            {{ translate("QoH") }}
                           </ion-label>
-                        </ion-item>
-                        <ion-label slot="end">
-                          {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
-                          {{ translate("QoH") }}
-                        </ion-label>
-                      </div>
-                  </DynamicScrollerItem>
-                </template>
-              </DynamicScroller>
-            </ion-item-group>
+                        </div>
+                    </DynamicScrollerItem>
+                  </template>
+                </DynamicScroller>
+              </ion-item-group>
+            </template>
           </ion-segment-content>
 
           <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
@@ -237,7 +242,13 @@
           </ion-segment-content>
 
           <ion-segment-content id="counted">
-            <ion-accordion-group>
+            <div v-if="!canPreviewItems" class="empty-state">
+              <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
+            </div>
+            <div v-else-if="!countedItems.length" class="empty-state">
+              <p>{{ translate("No items have been counted yet") }}</p>
+            </div>
+            <ion-accordion-group v-else>
               <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
@@ -324,7 +335,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps } from 'vue';
+import { computed, ref, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
@@ -341,6 +352,7 @@ import { useUserProfile } from '@/stores/userProfileStore';
 import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { Actions, hasPermission } from '@/authorization';
 
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
@@ -356,6 +368,28 @@ const countedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
+
+const isCountStarted = computed(() => {
+  const startDateTime = workEffort.value?.estimatedStartDate;
+  if (!startDateTime) return false;
+
+  const parsedStart = typeof startDateTime === 'number'
+    ? DateTime.fromMillis(startDateTime)
+    : DateTime.fromISO(startDateTime);
+
+  if (!parsedStart.isValid) return false;
+
+  return parsedStart <= DateTime.now();
+});
+
+const isCountStatusBeyondCreated = computed(() => {
+  const statusId = workEffort.value?.currentStatusId;
+  return !!statusId && statusId !== 'CYCLE_CNT_CREATED';
+});
+
+const canPreviewItems = computed(() => (
+  isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
+));
 
 const props = defineProps<{
   workEffortId: string;
@@ -671,7 +705,6 @@ async function loadHardCount() {
         console.warn('Prefetch Failed for hard count:', err);
       })
     }
-    console.log("Pre-fetched items: ", productIds.length);
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
     showToast(translate("Something Went Wrong"));
@@ -786,7 +819,7 @@ async function createSessionForUncountedItems() {
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
-      dueDate: workEffort.value?.dueDate,
+      dueDate: workEffort.value?.estimatedCompletionDate,
       workEffortId: workEffort.value?.workEffortId
     }
     const resp = await useInventoryCountRun().createSessionOnServer(newSession);
