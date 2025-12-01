@@ -756,7 +756,7 @@ function toggleSelectAll(event: CustomEvent) {
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
-    const resp = await useInventoryCountRun().updateWorkEffort({ workEffortId: props.workEffortId, currentStatusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
+    const resp = await useInventoryCountRun().updateWorkEffort({ workEffortId: props.workEffortId, statusId: "CYCLE_CNT_CLOSED", actualCompletionDate: DateTime.now().toMillis() });
     if (resp?.status === 200 && resp.data) {
       showToast(translate("Updated Cycle Count"));
       router.replace(`/closed/${props.workEffortId}`);

@@ -59,7 +59,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getStatusColor(count.currentStatusId)" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
+            <ion-badge :color="getStatusColor(count.statusId)" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -295,8 +295,8 @@ async function getAssignedCycleCounts() {
     const params = {
       pageSize: pageSize.value,
       pageIndex: pageIndex.value,
-      currentStatusId: filters.value.status ||  "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
-      currentStatusId_op: "in"
+      statusId: filters.value.status ||  "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+      statusId_op: "in"
     } as any;
     if (filters.value.countType) params.countType = filters.value.countType;
     if (filters.value.countQueryString) params.keyword = filters.value.countQueryString;

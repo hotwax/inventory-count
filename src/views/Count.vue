@@ -37,16 +37,16 @@
               <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
             {{ translate("Start counting") }}
           </ion-button>
-          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
             {{ translate("Preview count") }}
           </ion-button>
-          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
             {{ translate("Review progress") }}
           </ion-button>
-          <!-- <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
+          <!-- <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
             {{ translate("Ready for review") }}
           </ion-button> -->
 
@@ -56,19 +56,19 @@
                 {{ translate("Sessions") }}
               </ion-label>
 
-              <ion-button v-if="count.sessions?.length" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-button v-if="count.sessions?.length" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                 {{ translate("New") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="count.sessions?.length === 0" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="count.sessions?.length === 0" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
               <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.currentStatusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
                   <ion-label>
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
@@ -254,8 +254,8 @@ async function getCycleCounts(reset = false) {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
-    currentStatusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
-    currentStatusId_op: 'in',
+    statusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+    statusId_op: 'in',
     thruDate_op: 'empty'
   };
 
@@ -391,7 +391,7 @@ function goToCountProgressReview(workEffortId, event) {
 async function markInProgress(workEffortId) {
   const response = await useInventoryCountRun().updateWorkEffort({
     workEffortId,
-    currentStatusId: 'CYCLE_CNT_IN_PRGS',
+    statusId: 'CYCLE_CNT_IN_PRGS',
     actualStartDate: DateTime.now().toMillis()
   });
   if (response?.status === 200) {
