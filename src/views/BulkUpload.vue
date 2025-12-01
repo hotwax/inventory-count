@@ -443,7 +443,7 @@ async function save() {
 
     // Handle SKU skip logic
     if (skuMapped === "__SKIP__") {
-      idValue = "Skip"; // HARD_COUNT only and HARD_COUNT + DIRECTED_COUNT allowed to have blank SKU
+      idValue = ""; // HARD_COUNT only and HARD_COUNT + DIRECTED_COUNT allowed to have blank SKU
     } else {
       idValue = row[skuMapped]; // normal SKU mapping
     }
