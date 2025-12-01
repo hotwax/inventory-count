@@ -190,8 +190,8 @@ export function useInventoryCountRun() {
           pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
           pageIndex: params.pageIndex || 0,
           facilityId: params.facilityId,
-          currentStatusId: params.currentStatusId,
-          currentStatusId_op: params.currentStatusId_op
+          statusId: params.statusId,
+          statusId_op: params.statusId_op
         }
       });
 
@@ -280,8 +280,8 @@ export function useInventoryCountRun() {
         params: {
           pageSize: params.pageSize || Number(process.env.VUE_APP_VIEW_SIZE) || 20,
           pageIndex: params.pageIndex || 0,
-          currentStatusId: params.currentStatusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
-          currentStatusId_op: params.currentStatusId_op || 'in',
+          statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
+          statusId_op: params.statusId_op || 'in',
           ...(params.keyword ? { keyword: params.keyword} : {}),
           ...(params.countType ? { countType: params.countType }: {})
         }

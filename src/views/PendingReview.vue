@@ -141,7 +141,7 @@ async function getPendingCycleCounts() {
     const params = {
       pageSize: pageSize.value,
       pageIndex: pageIndex.value,
-      currentStatusId: "CYCLE_CNT_CMPLTD"
+      statusId: "CYCLE_CNT_CMPLTD"
     } as any;
     if (filters.value?.countQueryString) {
       params.keyword = filters.value.countQueryString

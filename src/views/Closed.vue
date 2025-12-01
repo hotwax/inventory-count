@@ -275,8 +275,8 @@ async function getClosedCycleCounts() {
   const baseParams = {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
-    currentStatusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
-    currentStatusId_op: "in"
+    statusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
+    statusId_op: "in"
   };
 
   const params = {

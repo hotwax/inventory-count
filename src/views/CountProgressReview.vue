@@ -23,7 +23,7 @@
                   </ion-label>
                   <ion-item lines="none" class="ion-no-padding">
                     <h1>{{ workEffort?.workEffortName }}</h1>
-                    <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.currentStatusId) }}</ion-badge>
+                    <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.statusId) }}</ion-badge>
                   </ion-item>
                   <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
                 </div>
@@ -65,7 +65,7 @@
               </ion-card-header>
             </ion-card>
             <div class="actions">
-              <ion-button v-if="workEffort?.currentStatusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
+              <ion-button v-if="workEffort?.statusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
@@ -383,7 +383,7 @@ const isCountStarted = computed(() => {
 });
 
 const isCountStatusBeyondCreated = computed(() => {
-  const statusId = workEffort.value?.currentStatusId;
+  const statusId = workEffort.value?.statusId;
   return !!statusId && statusId !== 'CYCLE_CNT_CREATED';
 });
 
@@ -897,7 +897,7 @@ async function markAsCompleted() {
   try {
     const response = await useInventoryCountRun().updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
-      currentStatusId: 'CYCLE_CNT_CMPLTD'
+      statusId: 'CYCLE_CNT_CMPLTD'
     });
     if (response?.status === 200) {
       showToast(translate('Session sent for review successfully'));
