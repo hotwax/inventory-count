@@ -38,6 +38,7 @@
                 {{ translate(fieldValues.label) }}
                 <p>{{ fieldValues.description }}</p>
               </ion-label>
+              <ion-select-option v-if="field === 'productSku'" value="skip">{{ translate("Skip") }}</ion-select-option>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -371,7 +372,7 @@ async function save() {
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
     statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
-    idValue: row[fieldMapping.value.productSku],
+    idValue: fieldMapping.value.productSku === "skip" ? "" : row[fieldMapping.value.productSku],
     idType: "SKU",
     estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
     estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
