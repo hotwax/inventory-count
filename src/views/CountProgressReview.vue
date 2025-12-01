@@ -39,7 +39,7 @@
 
             <ion-item lines="none">
               <ion-label>{{ translate("Due date") }}</ion-label>
-              <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.dueDate) || '-' }}</ion-note>
+              <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
             </ion-item>
             <ion-item lines="none">
               <ion-label>{{ translate("Start date") }}</ion-label>
@@ -546,7 +546,7 @@ async function createSessionForUncountedItems() {
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
-      dueDate: workEffort.value?.dueDate,
+      dueDate: workEffort.value?.estimatedCompletionDate,
       workEffortId: workEffort.value?.workEffortId
     });
 

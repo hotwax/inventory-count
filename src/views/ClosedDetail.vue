@@ -32,10 +32,10 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <div v-if="workEffort.dueDate">
+                <div v-if="workEffort.estimatedCompletionDate">
                   <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
                   <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true">
                     </ion-datetime>
                   </ion-modal>
                 </div>
