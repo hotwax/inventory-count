@@ -341,7 +341,7 @@ async function addProductInPreCountedItems(product: any) {
       product.productId
     );
     product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
-    products.value.push(product)
+    products.value.unshift(product)
     
     // Focus the quantity input for the newly added product
     focusQuantityInput(product.productId)
