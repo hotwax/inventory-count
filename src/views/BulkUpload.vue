@@ -38,7 +38,7 @@
                 {{ translate(fieldValues.label) }}
                 <p>{{ fieldValues.description }}</p>
               </ion-label>
-              <ion-select-option v-if="field === 'productSku' && isSkuSkippable" value="__SKIP__">{{ translate("Skip") }}</ion-select-option>
+              <ion-select-option v-if="field === 'productSku'" value="skip">{{ translate("Skip") }}</ion-select-option>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
@@ -271,7 +271,6 @@ const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
-const isSkuSkippable = ref(false);
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -347,120 +346,38 @@ function resetDefaults() {
   fileName.value = null;
   file.value.value = "";
   selectedMappingId.value = null;
-  isSkuSkippable.value = false;
 }
 
 async function parse(event) {
-  const fileObj = event.target.files[0];
+  const file = event.target.files[0];
   try {
-    if (!fileObj) return;
-
-    uploadedFile.value = fileObj;
-    fileName.value = fileObj.name;
-
-    content.value = await parseCsv(fileObj);
-    fileColumns.value = Object.keys(content.value[0] || {});
-
-    isSkuSkippable.value = false; // reset
-
-    // Detect count type column purely through row values
-    let countTypeColumn = null;
-
-    if (content.value.length) {
-      const firstRow = content.value[0];
-
-      // Pick column whose value ends with _COUNT
-      countTypeColumn = Object.keys(firstRow).find(col => {
-        const val = String(firstRow[col] || "").trim().toUpperCase();
-        return val.endsWith("_COUNT");
-      });
-    }
-
-    if (!countTypeColumn) {
-      isSkuSkippable.value = false;
-      showToast("Count type column not found");
+    if (file) {
+      uploadedFile.value = file;
+      fileName.value = file.name;
+      content.value = await parseCsv(file);
+      fileColumns.value = Object.keys(content.value[0]);
+      showToast(translate("File uploaded successfully"));
       resetFieldMapping();
-      return;
     }
-
-    // Normalize entire column's values
-    const types = content.value.map(r =>
-      String(r[countTypeColumn] || "").trim().toUpperCase()
-    );
-
-    const hasHard = types.every(countType => countType === "HARD_COUNT");
-    const hasDirected = types.every(countType => countType === "DIRECTED_COUNT");
-
-    // Skip only allowed for only-HARD files
-    isSkuSkippable.value = hasHard || (!hasHard && !hasDirected);
-    showToast(translate("File uploaded successfully"));
-    resetFieldMapping();
-    event.target.value = null;
-  } catch (error) {
-    logger.error(error);
+  } catch {
     content.value = [];
     showToast(translate("Please upload a valid csv to continue"));
   }
 }
 async function save() {
   const required = Object.keys(getFilteredFields(fields, true));
-
-  // VALIDATION FOR REQUIRED FIELDS
-  for (const field of required) {
-
-    // Special case for productSku
-    if (field === "productSku") {
-
-      const skuValue = fieldMapping.value.productSku;
-
-      // If user selected SKIP
-      if (skuValue === "__SKIP__") {
-        // Allowed: skip for HARD_COUNT-only file
-        continue;
-      }
-
-      // If user did NOT select skip, SKU must be selected
-      if (!skuValue) {
-        return showToast(translate("Please select Product SKU column"));
-      }
-
-      continue;
-    }
-
-    // All other required fields must be selected
-    if (!fieldMapping.value[field]) {
-      return showToast(translate("Select all required fields to continue"));
-    }
-  }
-
-  // BUILD FINAL DATA
-  const uploadedData = content.value.map(row => {
-    const purposeCol = fieldMapping.value.purposeType;
-    const purpose = purposeCol ? row[purposeCol] : "DIRECTED_COUNT";
-    const skuMapped = fieldMapping.value.productSku;
-
-    let idValue = "";
-
-    // Handle SKU skip logic
-    if (skuMapped === "__SKIP__") {
-      idValue = ""; // HARD_COUNT only and HARD_COUNT + DIRECTED_COUNT allowed to have blank SKU
-    } else {
-      idValue = row[skuMapped]; // normal SKU mapping
-    }
-
-    return {
-      countImportName: row[fieldMapping.value.countImportName],
-      purposeType: purpose,
-      statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
-      idValue,
-      idType: "SKU",
-      estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
-      estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
-      externalFacilityId: row[fieldMapping.value.facility]
-    };
-  });
-
-  // CONVERT → UPLOAD
+  const selected = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key]);
+  if (!required.every(field => selected.includes(field))) return showToast(translate("Select all required fields to continue"));
+  const uploadedData = content.value.map(row => ({
+    countImportName: row[fieldMapping.value.countImportName],
+    purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
+    statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
+    idValue: fieldMapping.value.productSku === "skip" ? "" : row[fieldMapping.value.productSku],
+    idType: "SKU",
+    estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
+    estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
+    externalFacilityId: row[fieldMapping.value.facility],
+  }));
   const data = jsonToCsv(uploadedData, {
     parse: {},
     download: false,
