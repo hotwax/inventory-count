@@ -40,7 +40,7 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <ion-label>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                {{ getDateTimeWithOrdinalSuffix(workEffort.dueDate) }}
+                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) }}
               </ion-label>
             </ion-item>
           </ion-card>
@@ -56,7 +56,7 @@
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].maxLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.dueDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.dueDate) }}</p>
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>

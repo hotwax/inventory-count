@@ -34,8 +34,8 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <ion-button @click="openModal('dueDate')" class="date-time-button">
-                  {{ workEffort.dueDate ? formatDateTime(workEffort.dueDate) : translate("Add Due Date") }}
+                <ion-button @click="openModal('estimatedCompletionDate')" class="date-time-button">
+                  {{ workEffort.estimatedCompletionDate ? formatDateTime(workEffort.estimatedCompletionDate) : translate("Add Due Date") }}
                 </ion-button>
               </div>
             </ion-item>

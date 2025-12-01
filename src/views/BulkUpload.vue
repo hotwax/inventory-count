@@ -373,7 +373,7 @@ async function save() {
     statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
     idValue: row[fieldMapping.value.productSku],
     idType: "SKU",
-    dueDate: row[fieldMapping.value.dueDate],
+    estimatedCompletionDate: row[fieldMapping.value.dueDate],
     estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
     externalFacilityId: row[fieldMapping.value.facility],
   }));
