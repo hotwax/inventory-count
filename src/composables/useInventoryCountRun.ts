@@ -301,6 +301,13 @@ export function useInventoryCountRun() {
     }
   }
 
+  async function getCycleCountSessions (params: any): Promise<any> {
+    const resp = await api({
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`
+    });
+    return resp;
+  }
+
   /** Clear list utility */
   function clearCycleCountList() {
     return { cycleCounts: [], total: 0, isScrollable: false };
@@ -329,6 +336,7 @@ export function useInventoryCountRun() {
     getCycleCounts,
     clearCycleCountList,
     loadStatusDescription,
-    queueCycleCountsFileExport
+    queueCycleCountsFileExport,
+    getCycleCountSessions,
   };
 }

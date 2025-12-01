@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import { client } from '@/services/RemoteAPI';
+import api, { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/commonDatabase'
@@ -268,6 +268,7 @@ async function searchProducts(value: string) {
   const products = await db.table('productIdentification')
     .where('value')
     .startsWithIgnoreCase(value)
+    .limit(250)
     .toArray()
     if (products) return products.map(product => product.productId)
     return null
@@ -445,6 +446,142 @@ const secondaryId = (product: any) => {
   return resolve(pref) || product.productId || ''
 }
 
+async function getProductsOnFacility (payload: any): Promise<any> {
+  const resp = await api({
+    url: `oms/dataDocumentView`,
+    method: "post",
+    data: {
+      dataDocumentId: 'ProductFacilityAndInventoryItem',
+      pageSize: payload.pageSize,
+      pageIndex: payload.pageIndex,
+      customParametersMap: {
+        facilityId: payload.facilityId
+      }
+    }
+  })
+  return resp;
+}
+
+// Product Inventory functions
+const inventoryStaleMs = ref(60 * 60 * 1000)
+const setInventoryStaleMs = (ms: number) => { inventoryStaleMs.value = ms }
+
+/** Upsert a batch of product+facility inventory records into IndexedDB */
+const upsertInventoryBatch = async (records: any[]) => {
+  if (!records?.length) return
+
+  const now = Date.now()
+  const normalized = records.map(record => ({
+    productId: record.productId,
+    facilityId: record.facilityId,
+    availableToPromiseTotal: Number(record.availableToPromiseTotal || 0),
+    quantityOnHandTotal: Number(record.quantityOnHandTotal || 0),
+    updatedAt: record.updatedAt ?? now
+  }))
+
+  await db.productInventory.bulkPut(normalized)
+}
+
+/**
+ * Helper for session /items response:
+ * take the /items payload and store ATP/QOH into productInventory.
+ */
+const upsertInventoryFromSessionItems = async (items: any[]) => {
+  if (!items?.length) return
+
+  const records: any[] = items
+    .filter(item => item.productId && item.facilityId)
+    .map(item => ({
+      productId: item.productId,
+      facilityId: item.facilityId,
+      availableToPromiseTotal: item.availableToPromiseTotal ?? 0,
+      quantityOnHandTotal: item.quantityOnHandTotal ?? 0
+    }))
+
+  if (records.length) {
+    await upsertInventoryBatch(records)
+  }
+}
+
+/** Low-level: fetch inventory snapshot from OMS and store it */
+const getInventory = async (
+  productId: string,
+  facilityId: string
+): Promise<any | null> => {
+  if (!productId || !facilityId) return null
+
+  const baseURL = useAuthStore().getBaseUrl
+  const token = useAuthStore().token.value
+
+  const resp = await client({
+    url: 'oms/dataDocumentView',
+    method: 'POST',
+    baseURL,
+    data: {
+      dataDocumentId: 'ProductFacilityAndInventoryItem',
+      pageSize: 1,
+      customParametersMap: { productId, facilityId }
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+
+  const row = resp.data?.entityList?.[0] || null
+  if (!row) return null
+
+  const record = {
+    productId,
+    facilityId,
+    availableToPromiseTotal: row.availableToPromiseTotal ?? 0,
+    quantityOnHandTotal: row.quantityOnHandTotal ?? 0,
+    updatedAt: Date.now()
+  }
+
+  await upsertInventoryBatch([record])
+  return record
+}
+
+/**
+ * Main: get product inventory snapshot (ATP/QOH) for product+facility
+ * - reads from IndexedDB
+ * - if missing or older than inventoryStaleMs, hits OMS and refreshes
+ */
+const getProductInventory = async (
+  productId: string,
+  facilityId: string,
+  opts: { forceRefresh?: boolean } = {}
+) => {
+  if (!productId || !facilityId) return null
+
+  const key = [productId, facilityId] as [string, string]
+  const cached = await db.productInventory
+    .where('[productId+facilityId]')
+    .equals(key)
+    .first()
+
+  const now = Date.now()
+  const isStale =
+    !cached ||
+    opts.forceRefresh ||
+    now - (cached?.updatedAt || 0) > inventoryStaleMs.value
+
+  if (!isStale && cached) return cached
+
+  const fresh = await getInventory(productId, facilityId)
+  return fresh || cached || null
+}
+
+/** Convenience: just QOH value */
+const getProductQoh = async (
+  productId: string,
+  facilityId: string
+): Promise<number | null> => {
+  const rec = await getProductInventory(productId, facilityId)
+  return rec ? rec.quantityOnHandTotal : null
+}
+
 export function useProductMaster() {
 
   return {
@@ -465,6 +602,11 @@ export function useProductMaster() {
     cacheReady,
     buildProductQuery,
     primaryId,
-    secondaryId
+    secondaryId,
+    getProductsOnFacility,
+    upsertInventoryFromSessionItems,
+    getProductInventory,
+    getProductQoh,
+    setInventoryStaleMs
   }
 }

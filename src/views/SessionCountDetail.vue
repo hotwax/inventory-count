@@ -122,6 +122,39 @@
           </div>
 
           <div class="statistics ion-padding">
+            <!-- Last Scanned Product Card -->
+            <ion-card v-if="lastScannedEvent">
+              <ion-item lines="none">
+                <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-thumbnail slot="start">
+                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  <template v-if="lastScannedEvent.product">
+                    <h2>{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
+                    <p>{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
+                  </template>
+                  <template v-else>
+                    <h2>{{ lastScannedEvent.scannedValue }}</h2>
+                    <p>{{ translate("Identifying product...") }}</p>
+                  </template>
+                </ion-label>
+              </ion-item>
+              
+              <ion-item lines="none">
+                <ion-label>
+                  <p>{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                </ion-label>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-label>{{ translate("Units") }}</ion-label>
+                <ion-label slot="end">{{ lastScannedProductTotal }}</ion-label>
+              </ion-item>
+            </ion-card>
+
             <ion-card>
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
@@ -147,20 +180,7 @@
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number">{{ stats.totalUnits }}</p>
-                <ion-button color="primary" fill="clear">
-                  <ion-icon slot="icon-only" :icon="timerOutline"></ion-icon>
-                </ion-button>
               </ion-card-content>
-              <ion-list lines="none">
-                <ion-item>
-                  <ion-label>{{ translate("Lap 2") }}</ion-label>
-                  <p slot="end">—</p>
-                </ion-item>
-                <ion-item>
-                  <ion-label>{{ translate("Lap 1") }}</ion-label>
-                  <p slot="end">—</p>
-                </ion-item>
-              </ion-list>
             </ion-card>
           </div>
 
@@ -169,7 +189,7 @@
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected">
-              <ion-label>{{ translate("Undirected", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched">
               <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
@@ -196,7 +216,7 @@
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
                         <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
+                          {{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -222,7 +242,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end">{{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -234,49 +254,35 @@
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">
-                          {{ item.quantity }} {{ translate('Units') }}
-                        </ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in filteredItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
-                <div class="empty-state ion-padding">
-                  <ion-label>{{ translate("No products found") }}</ion-label>
+                <div class="empty-state ion-padding ion-text-center">
+                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
               <template v-else>
-                <DynamicScroller :items="undirectedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-                  <template v-slot="{ item, index, active }">
-                    <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
-                        <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                        </ion-thumbnail>
-                        <ion-label>
-                          {{ useProductMaster().primaryId(item.product) }}
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        </ion-label>
-                        <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
-                      </ion-item>
-                    </DynamicScrollerItem>
-                  </template>
-                </DynamicScroller>
+                <ion-card v-for="item in undirectedItems" :key="item.uuid">
+                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-item>
+                    <ion-label>
+                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                    </ion-label>
+                  </ion-item>
+                </ion-card>
               </template>
             </ion-segment-content>
 
@@ -534,17 +540,14 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, timerOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watch, watchEffect, toRaw, onBeforeUnmount } from 'vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { loader, showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import Image from "@/components/Image.vue";
-import { from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
@@ -557,7 +560,8 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
-
+import { DateTime } from 'luxon';
+import { from, Subscription } from 'rxjs';
 
 const props = defineProps<{
   workEffortId: string;
@@ -569,6 +573,8 @@ const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
+const totalUnitsCount = ref(0);
+const subscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
@@ -605,6 +611,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
+const showQoh = useProductStore().getShowQoh;
 
 const pageRef = ref(null);
 
@@ -628,6 +635,35 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
 
+const lastScannedEvent = computed(() => events.value[0]);
+
+const lastScannedProductTotal = computed(() => {
+  if (!lastScannedEvent.value) return 0;
+
+  // If the last scanned event has an associated product, calculate the total aggregated quantity.
+  if (lastScannedEvent.value.productId) {
+    const productId = lastScannedEvent.value.productId;
+
+    const total = [...countedItems.value, ...undirectedItems.value]
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+
+    return total;
+  }
+
+  // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
+  return lastScannedEvent.value.quantity;
+});
+  
+watchEffect(() => {
+  const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
+  stats.value = {
+    productsCounted: distinctProducts,
+    totalUnits: totalUnitsCount.value,
+    unmatched: unmatchedItems.value.length
+  }
+})
+
 onIonViewDidEnter(async () => {
   try {
     await startSession();
@@ -636,25 +672,26 @@ onIonViewDidEnter(async () => {
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
     // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe(items => (unmatchedItems.value = items))
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe(items => (countedItems.value = items))
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe(items => (uncountedItems.value = items))
-    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe(items => (undirectedItems.value = items))
-    from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe(scans => { events.value = scans; });
-    from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe(total => {
-      stats.value.totalUnits = total;
-    });
-
-    dayjs.extend(relativeTime);
-    // Display the unmatched and unaggregated products count stats
-    watchEffect(() => {
-      const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
-      stats.value = {
-        productsCounted: distinctProducts,
-        totalUnits: stats.value.totalUnits,
-        unmatched: unmatchedItems.value.length
-      }
-    })
+    subscriptions.push(
+      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe((items: any) => (unmatchedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe((items: any) => (countedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe((items: any) => (uncountedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe((items: any) => (undirectedItems.value = items))
+    )
+    subscriptions.push(
+      from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe((scans: any) => { events.value = scans; })
+    );
+    subscriptions.push(
+      from(useInventoryCountImport().getTotalCountedUnits(props.inventoryCountImportId)).subscribe((total: any) => {
+        totalUnitsCount.value = total;
+      })
+    );
 
     watch(selectedSegment, () => {
       searchKeyword.value = ""
@@ -703,14 +740,17 @@ onIonViewDidEnter(async () => {
   }
 });
 
-onBeforeUnmount(async () => {
+onIonViewDidLeave(async () => {
+  subscriptions.forEach(subscription => subscription.unsubscribe());
+  subscriptions.length = 0;
+
   await finalizeAggregationAndSync();
   await unscheduleWorker();
   if (lockWorker) {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
-});
+})
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
@@ -789,6 +829,7 @@ async function loadInventoryItemsWithProgress() {
     while (hasMore) {
       const resp = await useInventoryCountImport().getSessionItemsByImportId({
         inventoryCountImportId: props.inventoryCountImportId,
+        facilityId: useProductStore().getCurrentFacility.facilityId,
         pageIndex,
         pageSize
       })
@@ -896,7 +937,11 @@ async function handleSessionLock() {
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
-            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
+          } else if (type === 'lockForceReleased') {
+            showToast('Session lock was force-released by another user.');
+            await releaseSessionLock();
+            if (lockWorker) await lockWorker.stopHeartbeat();
+            router.push('/tabs/count');
           } else if (type === 'lockExpired') {
             showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
@@ -953,7 +998,6 @@ async function handleSessionLock() {
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
-            console.log('Lock heartbeat successful. Lock extended to', new Date(thruDate).toLocaleString());
           } else if (type === 'lockForceReleased') {
             showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
@@ -1020,8 +1064,8 @@ async function getTotalItemCount() {
   }
 }
 
-function timeAgo(ts: number) {
-  return dayjs(ts).fromNow();
+function timeAgo (time: number) {
+  return DateTime.fromMillis(time).toRelative();
 }
 
 function openMatchModal(item: any) {
@@ -1077,12 +1121,15 @@ async function saveMatchProduct() {
     showToast("Please select a product to match");
     return;
   }
+
+  const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
+
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: 'Y',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
@@ -1130,24 +1177,7 @@ async function finalizeAggregationAndSync() {
       }
     });
 
-    // Wait until the worker confirms completion
-    loader.present('Finalising aggregation...');
-    const result = await new Promise<number>((resolve) => {
-      const timeout = setTimeout(() => resolve(0), 15000); // safety timeout
-      if (aggregationWorker) {
-        aggregationWorker.onmessage = (event) => {
-          const { type, count } = event.data;
-          if (type === 'aggregationComplete') {
-            console.log(`Aggregated ${count} products from scans`)
-            clearTimeout(timeout);
-            resolve(count);
-          }
-        };
-      }
-    });
-    loader.dismiss();
-
-    return result;
+    return;
   } catch (err) {
     console.error('[Session] Error during final aggregation:', err);
     return 0;
@@ -1297,9 +1327,8 @@ function getScanContext(item: any) {
   }
 }
 
-function showTime(ts: number) {
-  const exact = dayjs(ts).format('DD MMM YYYY, hh:mm:ss A');
-  showToast(`Scanned at: ${exact}`);
+function showTime(date: number) {
+  showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
 const isImageModalOpen = ref(false)

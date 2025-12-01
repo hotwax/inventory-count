@@ -54,7 +54,7 @@
           </ion-label>
       
           <ion-label>
-            {{ getDateWithOrdinalSuffix(count.dueDate) }}
+            {{ getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           

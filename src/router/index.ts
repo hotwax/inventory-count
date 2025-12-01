@@ -21,6 +21,7 @@ import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
+import CountProgressReview from "@/views/CountProgressReview.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -150,6 +151,14 @@ const routes: Array<RouteRecordRaw> = [
     path: '/add-pre-counted/:workEffortId/:inventoryCountImportId',
     name: 'PreCountedItems',
     component: PreCountedItems,
+    props: true,
+    meta: {
+      permissionId: "APP_COUNT_VIEW"
+    }
+  },
+  {
+    path: '/count-progress-review/:workEffortId',
+    component: CountProgressReview,
     props: true,
     meta: {
       permissionId: "APP_COUNT_VIEW"

@@ -28,7 +28,7 @@
           <ion-item lines="none">
             {{ translate("Due date") }}
             <ion-label slot="end">
-              <p>{{ getDateTimeWithOrdinalSuffix(count.dueDate) }}</p>
+              <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
             </ion-label>
           </ion-item>
           <ion-item v-if="count.estimatedStartDate" lines="none">
@@ -37,6 +37,19 @@
               <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
             </ion-label>
           </ion-item>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
+            {{ translate("Start counting") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Preview count") }}
+          </ion-button>
+          <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+            {{ translate("Review progress") }}
+          </ion-button>
+          <!-- <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
+            {{ translate("Ready for review") }}
+          </ion-button> -->
+
           <ion-list>
             <ion-list-header>
               <ion-label>
@@ -77,14 +90,14 @@
                   <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
-                <!-- Locked by same user, same device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for this device") }}</p>
-                  </ion-label>
-                  <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
-                </ion-item>
+              <!-- Locked by same user, same device -->
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
+                <ion-label>
+                  {{ session.countImportName }} {{ session.facilityAreaId }}
+                  <p>{{ translate("Session already active for this device") }}</p>
+                </ion-label>
+                <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+              </ion-item>
 
                 <!-- Locked by same user, different device -->
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
@@ -98,15 +111,7 @@
                 </ion-item>
               </ion-item-group>
 
-            <ion-item lines="none">
-              <ion-button v-if="count.currentStatusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" slot="end" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
-                {{ translate("Ready for review") }}
-              </ion-button>
-              <ion-button
-                v-if="count.currentStatusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="clear" slot="end" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
-                {{ translate("Move to In Progress") }}
-              </ion-button>
-            </ion-item>
+
           </ion-list>
         </ion-card>
       </template>
@@ -154,7 +159,7 @@
 </template>
 
 <script setup>
-import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput } from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -303,7 +308,7 @@ async function addNewSession() {
         uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
-        dueDate: Date.now(),
+        estimatedCompletionDate: Date.now(),
         workEffortId: selectedWorkEffortId.value
       })
     } else {
@@ -378,21 +383,16 @@ async function addNewSession() {
   }
 }
 
-async function markAsCompleted(workEffortId) {
-  const response = await useInventoryCountRun().updateWorkEffort({
-    workEffortId,
-    currentStatusId: 'CYCLE_CNT_CMPLTD'
-  });
-  if (response?.status === 200) {
-    showToast(translate('Session sent for review successfully'));
-    await getCycleCounts(true);
-  } else showToast(translate('Failed to send session for review'));
+function goToCountProgressReview(workEffortId, event) {
+  event.stopPropagation();
+  router.push(`/count-progress-review/${workEffortId}`);
 }
 
 async function markInProgress(workEffortId) {
   const response = await useInventoryCountRun().updateWorkEffort({
     workEffortId,
-    currentStatusId: 'CYCLE_CNT_IN_PRGS'
+    currentStatusId: 'CYCLE_CNT_IN_PRGS',
+    actualStartDate: DateTime.now().toMillis()
   });
   if (response?.status === 200) {
     showToast(translate('Cycle Count is Active'));
@@ -401,29 +401,46 @@ async function markInProgress(workEffortId) {
 }
 
 async function forceRelease(session) {
-  try {
-    loader.present();
-    const payload = {
-      inventoryCountImportId: session.inventoryCountImportId,
-      fromDate: session.lock?.fromDate,
-      thruDate: Date.now(),
-      overrideByUserId: useUserProfile().getUserProfile.username
-    }
+  const alert = await alertController.create({
+    header: translate("Force release session"),
+    message: translate("Make sure that this session is closed on all other devices before force releasing to avoid discrepancies in counts."),
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Force release"),
+        handler: async () => {
+          try {
+            await loader.present();
+            const payload = {
+              inventoryCountImportId: session.inventoryCountImportId,
+              fromDate: session.lock?.fromDate,
+              thruDate: Date.now(),
+              overrideByUserId: useUserProfile().getUserProfile.username
+            }
 
-    const resp = await useInventoryCountImport().releaseSession(payload)
-    if (resp?.status === 200) {
-      showToast('Session lock released successfully.')
+            const resp = await useInventoryCountImport().releaseSession(payload)
+            if (resp?.status === 200) {
+              showToast(translate('Session lock released successfully.'))
 
-      // Remove lock locally so UI refreshes
-      session.lock = {}
-    } else {
-      showToast('Failed to release session lock.')
-    }
-  } catch (err) {
-    console.error('Error releasing session lock:', err)
-    showToast('Something went wrong while releasing session.')
-  }
-  loader.dismiss();
+              // Remove lock locally so UI refreshes
+              session.lock = {}
+            } else {
+              showToast(translate('Failed to release session lock.'))
+            }
+          } catch (err) {
+            console.error('Error releasing session lock:', err)
+            showToast(translate('Something went wrong while releasing session.'))
+          } finally {
+            loader.dismiss();
+          }
+        }
+      }
+    ]
+  });
+  await alert.present();
 }
 
 async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
@@ -459,6 +476,11 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
 </script>
 
 <style scoped>
+
+ion-content {
+ --padding-bottom: var(--spacer-2xl) 
+}
+
 section {
   padding-bottom: 100px;
 }

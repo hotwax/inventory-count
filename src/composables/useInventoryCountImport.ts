@@ -3,10 +3,10 @@ import { useProductMaster } from './useProductMaster';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
+import { useProductStore } from '@/stores/productStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
-  productId?: string;
   productIdentifier: string;
   quantity: number;
   locationSeqId?: string | null;
@@ -24,7 +24,6 @@ function currentMillis(): number {
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
       locationSeqId: params.locationSeqId || null,
-      productId: params.productId || null,
       scannedValue: params.productIdentifier,
       quantity: params.quantity,
       createdAt: currentMillis(),
@@ -36,8 +35,10 @@ function currentMillis(): number {
   async function storeInventoryCountItems(items: any[]) {
     if (!items?.length) return;
 
+    await useProductMaster().upsertInventoryFromSessionItems(items);
     try {
       // Normalize or enrich data before storing if needed
+      const facilityId = useProductStore().getCurrentFacility.facilityId || '';
       const normalized = items.map((item: any) => ({
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
@@ -47,7 +48,7 @@ function currentMillis(): number {
         locationSeqId: item.locationSeqId || null,
         quantity: item.quantity || 0,
         status: 'active',
-        facilityId: '',
+        facilityId,
         createdAt: item.createdDate || currentMillis(),
         lastScanAt: item.lastUpdatedStamp || currentMillis(),
         lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
@@ -89,9 +90,12 @@ function currentMillis(): number {
       searchByProductIdQuery = searchByProductIdQuery.and(item => !item.productId)
     }
 
-    let resultSet = await tableQuery
+    let resultSet = [];
+    if (segment !== 'uncounted') {
+      resultSet = await tableQuery
       .and(item => (item.productIdentifier || '').toLowerCase().includes(value))
       .toArray()
+    }
 
     if (!resultSet.length) {
       const productIds = await useProductMaster().searchProducts(value)
@@ -107,6 +111,23 @@ function currentMillis(): number {
         const product = await db.table('products').get(item.productId)
         if (product) item.product = product
       }
+    }
+
+    const productIds = [...new Set(resultSet.map(item => item.productId).filter(Boolean))] as string[]
+    if (productIds.length) {
+      const inventoryRecords = await db.productInventory
+        .where('productId')
+        .anyOf(productIds)
+        .toArray()
+
+      const inventoryMap = new Map(
+        inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
+      )
+
+      resultSet = resultSet.map(item => ({
+        ...item,
+        inventory: item.productId ? inventoryMap.get(`${item.productId}::${item.facilityId}`) : undefined
+      }))
     }
     return resultSet
   }
@@ -138,6 +159,22 @@ function currentMillis(): number {
       return 0;
     }
   }
+
+  async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
+  if (!inventoryCountImportId || !productId) return '';
+  try {
+    const record = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .and(item => item.productId === productId)
+      .first();
+
+    return record || null;
+  } catch (err) {
+    console.error('Failed to check direction status', err);
+    return null;
+  }
+}
 
   async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
     try {
@@ -241,9 +278,19 @@ function currentMillis(): number {
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
+
+      const inventoryRecords = await db.productInventory
+      .where('productId')
+      .anyOf(productIds)
+      .toArray()
+
+      const inventoryMap = new Map(
+        inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
+      )
       return items.map(item => ({
         ...item,
-        product: productMap.get(item.productId || '')
+        product: productMap.get(item.productId || ''),
+        inventory: inventoryMap.get(`${item.productId}::${item.facilityId}`)
       }))
     });
 
@@ -430,6 +477,7 @@ export function useInventoryCountImport() {
     cloneSession,
     discardSession,
     getCountedItems,
+    getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
     getInventoryCountImportItemsCount,
