@@ -819,7 +819,6 @@ async function createSessionForUncountedItems() {
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
-      dueDate: workEffort.value?.estimatedCompletionDate,
       workEffortId: workEffort.value?.workEffortId
     }
     const resp = await useInventoryCountRun().createSessionOnServer(newSession);
