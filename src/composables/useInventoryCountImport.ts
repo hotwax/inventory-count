@@ -3,6 +3,7 @@ import { useProductMaster } from './useProductMaster';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
+import { useProductStore } from '@/stores/productStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -34,8 +35,10 @@ function currentMillis(): number {
   async function storeInventoryCountItems(items: any[]) {
     if (!items?.length) return;
 
+    await useProductMaster().upsertInventoryFromSessionItems(items);
     try {
       // Normalize or enrich data before storing if needed
+      const facilityId = useProductStore().getCurrentFacility.facilityId || '';
       const normalized = items.map((item: any) => ({
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
@@ -45,7 +48,7 @@ function currentMillis(): number {
         locationSeqId: item.locationSeqId || null,
         quantity: item.quantity || 0,
         status: 'active',
-        facilityId: '',
+        facilityId,
         createdAt: item.createdDate || currentMillis(),
         lastScanAt: item.lastUpdatedStamp || currentMillis(),
         lastUpdatedAt: item.lastUpdatedStamp || currentMillis(),
@@ -108,6 +111,23 @@ function currentMillis(): number {
         const product = await db.table('products').get(item.productId)
         if (product) item.product = product
       }
+    }
+
+    const productIds = [...new Set(resultSet.map(item => item.productId).filter(Boolean))] as string[]
+    if (productIds.length) {
+      const inventoryRecords = await db.productInventory
+        .where('productId')
+        .anyOf(productIds)
+        .toArray()
+
+      const inventoryMap = new Map(
+        inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
+      )
+
+      resultSet = resultSet.map(item => ({
+        ...item,
+        inventory: item.productId ? inventoryMap.get(`${item.productId}::${item.facilityId}`) : undefined
+      }))
     }
     return resultSet
   }
@@ -258,9 +278,19 @@ function currentMillis(): number {
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
+
+      const inventoryRecords = await db.productInventory
+      .where('productId')
+      .anyOf(productIds)
+      .toArray()
+
+      const inventoryMap = new Map(
+        inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
+      )
       return items.map(item => ({
         ...item,
-        product: productMap.get(item.productId || '')
+        product: productMap.get(item.productId || ''),
+        inventory: inventoryMap.get(`${item.productId}::${item.facilityId}`)
       }))
     });
 
