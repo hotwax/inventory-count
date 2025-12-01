@@ -28,10 +28,8 @@
           </div>
         </ion-list>   
 
-        <ion-list>
-          <ion-list-header>{{ translate("Select the following columns from the uploaded CSV") }}</ion-list-header>
-
-          <ion-item-divider>
+        <ion-list class="field-mappings">
+          <ion-item-divider color="light">
             <ion-label>{{ translate("Required") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)">
@@ -45,7 +43,7 @@
             </ion-select>
           </ion-item>
 
-          <ion-item-divider>
+          <ion-item-divider color="light">
             <ion-label>{{ translate("Optional") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)">
@@ -60,7 +58,7 @@
         </ion-list>
 
         <ion-button :disabled="!content.length" color="medium" @click="save" expand="block">
-          {{ translate("Upload") }}
+          {{ translate("Submit") }}
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
 
@@ -71,9 +69,9 @@
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
               {{ extractFilename(systemMessage.messageText) }}
             </ion-label>
-            <div class="system-message-action">
-              <ion-note slot="end">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button size="default" slot="end" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+            <div slot="end" class="system-message-action">
+              <ion-note>{{ getFileProcessingStatus(systemMessage) }}</ion-note>
+              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -457,7 +455,7 @@ async function save() {
       statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
       idValue,
       idType: "SKU",
-      dueDate: row[fieldMapping.value.dueDate],
+      estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
       estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
       externalFacilityId: row[fieldMapping.value.facility]
     };
@@ -533,14 +531,28 @@ const downloadCsv = (csv, fileName) => {
 
 <style scoped>
 .main {
-  max-width: 732px;
+  max-width: 560px;
   margin: var(--spacer-sm) auto 0;
 }
+.field-mappings {
+  border: 1px solid var(--ion-color-medium);
+  border-radius: 8px;
+  margin-block: var(--spacer-lg);
+}
+
+.field-mappings ion-select::part(label) {
+  max-width: 80%;
+}
+
+.field-mappings ion-select ion-label {
+  padding-block: var(--spacer-xs)
+}
+
 .system-message-section {
-  margin-bottom: 16px;
+  margin-bottom: var(--spacer-sm);
 }
-.system-message-action {
-  display: flex;
-  align-items: center;
+.system-message-action>ion-button {
+  vertical-align: middle;
 }
+
 </style>

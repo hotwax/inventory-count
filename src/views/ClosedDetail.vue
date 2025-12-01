@@ -32,10 +32,10 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <div>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <div v-if="workEffort.dueDate">
+                <div v-if="workEffort.estimatedCompletionDate">
                   <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
                   <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getDateTime(workEffort.dueDate)" :disabled="true">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true">
                     </ion-datetime>
                   </ion-modal>
                 </div>
@@ -86,7 +86,7 @@
             <ion-item>
             <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="open">{{ translate("Open") }}</ion-select-option>
+
               <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
               <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
             </ion-select>
@@ -212,7 +212,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -295,10 +295,8 @@ function applySearchAndSort() {
   });
 
   const decisionOutcome = getDcsnFilter();
-  if (decisionOutcome && decisionOutcome !== 'empty') {
+  if (decisionOutcome) {
     results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
-  } else if (decisionOutcome === 'empty') {
-    results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
   if (sortBy.value === 'alphabetic') {
@@ -319,8 +317,7 @@ const sessions = ref();
 function getDcsnFilter() {
   if (dcsnRsn.value === 'all') {
     return null;
-  } else if (dcsnRsn.value === 'open') {
-    return 'empty';
+
   } else if (dcsnRsn.value === 'accepted') {
     return 'APPLIED';
   } else if (dcsnRsn.value === 'rejected') {

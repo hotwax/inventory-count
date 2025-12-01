@@ -51,7 +51,7 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { hasError } from '@/stores/authStore';
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger';
-import { getDateWithOrdinalSuffix } from '@/services/utils';
+import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 import { saveAs } from 'file-saver';
 
 const systemMessages = ref<any[]>([]);
@@ -62,7 +62,7 @@ onIonViewDidEnter(async () => {
 
 async function fetchExportHistory() {
   try {
-    const resp = await useInventoryCountRun().getExportedCycleCountsSystemMessages({systemMessageTypeId: 'ExportInventoryCounts', orderByField: 'initDate'});
+    const resp = await useInventoryCountRun().getExportedCycleCountsSystemMessages({systemMessageTypeId: 'ExportInventoryCounts', orderByField: 'initDate DESC'});
 
     if (!hasError(resp)) {
       const data = resp?.data || {};
@@ -79,7 +79,7 @@ async function fetchExportHistory() {
 }
 
 function formatDate(value: any) {
-  return value ? getDateWithOrdinalSuffix(value) : '-';
+  return value ? getDateTimeWithOrdinalSuffix(value) : '-';
 }
 
 function getUserLogin(message: any) {

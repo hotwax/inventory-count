@@ -4,7 +4,7 @@
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button @click="confirmGoBack">
-            <ion-icon :icon="arrowBackOutline" />
+            <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
         <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
@@ -17,27 +17,39 @@
             {{ translate("Add Items") }}
           </ion-card-title>
         </ion-card-header>
-        <ion-searchbar v-model="searchedProductString" @keyup.enter="handleSearch"></ion-searchbar>
+        <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
         <ion-item lines="none">
           <ion-label>
             {{ translate("Search for products by parent name, SKU or UPC") }}
           </ion-label>
         </ion-item>
-        <ion-item v-if="searchedProduct" lines="none">
-          <ion-thumbnail slot="start">  
-            <Image :src="searchedProduct.mainImageUrl"/>
+        <!-- Skeleton loader during search -->
+        <ion-item v-if="isSearching" lines="none">
+          <ion-thumbnail slot="start">
+            <ion-skeleton-text :animated="true"></ion-skeleton-text>
           </ion-thumbnail>
           <ion-label>
-            {{ searchedProduct.sku }}
+            <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
+            <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
           </ion-label>
-          <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProduct)">
+        </ion-item>
+        <!-- Search result -->
+        <ion-item v-else-if="searchedProducts.length > 0" lines="none">
+          <ion-thumbnail slot="start">  
+            <Image :src="searchedProducts[0].mainImageUrl"/>
+          </ion-thumbnail>
+          <ion-label>
+            {{ useProductMaster().primaryId(searchedProducts[0]) }}
+            <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+          </ion-label>
+          <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
             Add to count
           </ion-button>
         </ion-item>
-        <ion-item lines="none" button detail>
+        <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
           <ion-label>
-            {{ translate("View more results") }}
+            {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
           </ion-label>
         </ion-item>
       </ion-card>
@@ -46,7 +58,7 @@
       </h2>
 
       <ion-list v-if="products.length > 0" class="pre-counted-items">
-        <ion-card v-for="product in products" :key="product.productId">
+        <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
           <div class="item ion-padding-end">
             <ion-item class="product" lines="none">
               <ion-thumbnail slot="start">
@@ -55,8 +67,8 @@
               <ion-label>
                 {{ useProductMaster().primaryId(product) }}
                 <p>{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text color="danger">
-                  Undirected
+                <ion-text v-if="!product.isRequested" color="danger">
+                  {{ translate("Undirected") }}
                 </ion-text>
               </ion-label>
             </ion-item>
@@ -65,7 +77,18 @@
                 <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
               <ion-item lines="full">
-                <ion-input @ionInput="onManualInputChange($event, product)" label="Qty" label-placement="stacked" type="number" min="0" inputmode="numeric" placeholder="0" v-model.number="product.countedQuantity"></ion-input>
+                <ion-input 
+                  :ref="el => setQuantityInputRef(product.productId, el)"
+                  @ionInput="onManualInputChange($event, product)" 
+                  @keyup.enter="focusSearchBar"
+                  label="Qty" 
+                  label-placement="stacked" 
+                  type="number" 
+                  min="0" 
+                  inputmode="numeric" 
+                  placeholder="0" 
+                  v-model.number="product.countedQuantity"
+                ></ion-input>
               </ion-item>
               <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
                 <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
@@ -91,18 +114,55 @@
         </ion-button>
       </ion-toolbar>
     </ion-footer>
+
+    <!-- Search Results Modal -->
+    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeSearchResultsModal">
+              <ion-icon slot="icon-only" :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("Search Results") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-radio-group v-model="selectedProductFromModal">
+          <ion-item v-for="product in searchedProducts" :key="product.productId">
+            <ion-thumbnail slot="start">
+              <Image :src="product.mainImageUrl" />
+            </ion-thumbnail>
+            <ion-radio :value="product.productId">
+              <ion-label>
+                {{ useProductMaster().primaryId(product) }}
+                <p>{{ useProductMaster().secondaryId(product) }}</p>
+              </ion-label>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-content>
+      <ion-footer>
+        <ion-toolbar>
+          <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal">
+            <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
+            {{ translate("Add to count") }}
+          </ion-button>
+        </ion-toolbar>
+      </ion-footer>
+    </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { translate } from '@/i18n'
 import {
-  IonPage, IonToolbar, IonContent, IonSearchbar, IonList, IonItem,
-  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, alertController
+  IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
+  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonFooter, 
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonText, alertController
 } from '@ionic/vue'
-import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline } from 'ionicons/icons'
-import { ref, defineProps, computed, onMounted } from 'vue'
+import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
+import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
 import router from '@/router'
 import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
@@ -112,6 +172,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
 import Image from '@/components/Image.vue'
+import { debounce } from 'lodash-es'
 
 const { getInventoryCountImportSession, recordScan } = useInventoryCountImport()
 const { getWorkEffort } = useInventoryCountRun();
@@ -130,8 +191,13 @@ const props = defineProps({
 const workEffort = ref()
 const inventoryCountImport = ref()
 const searchedProductString = ref('')
-const searchedProduct = ref()
+const searchedProducts = ref<any[]>([])
 const products = ref<any[]>([])
+const isSearchResultsModalOpen = ref(false)
+const selectedProductFromModal = ref('')
+const isSearching = ref(false)
+const searchBar = ref()
+const quantityInputRefs = ref<Record<string, any>>({})
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -159,6 +225,25 @@ function onManualInputChange(event: CustomEvent, product: any) {
   product.saved = value === 0
 }
 
+function setQuantityInputRef(productId: string, el: any) {
+  if (el) {
+    quantityInputRefs.value[productId] = el
+  }
+}
+
+async function focusQuantityInput(productId: string) {
+  // Use nextTick to ensure DOM is updated
+  await nextTick()
+  const inputRef = quantityInputRefs.value[productId]
+  if (inputRef?.$el) {
+    inputRef.$el.setFocus()
+  }
+}
+
+function focusSearchBar() {
+  searchBar.value?.$el?.setFocus()
+}
+
 function removeProduct(productToRemove: any) {
   products.value = products.value.filter(existingProduct => existingProduct.productId !== productToRemove.productId)
 }
@@ -181,26 +266,49 @@ async function getInventoryCycleCount() {
 
 async function handleSearch() {
   const term = searchedProductString.value.trim()
-  if (!term) return
+  if (!term) {
+    searchedProducts.value = []
+    return
+  }
   await getProductBySearch(term)
 }
 
+async function handleEnterKey() {
+  const term = searchedProductString.value.trim()
+  if (!term) return
+
+  if (searchedProducts.value.length === 0) {
+    await getProductBySearch(term)
+  }
+  
+  if (searchedProducts.value.length > 0) {
+    await addProductInPreCountedItems(searchedProducts.value[0])
+  }
+}
+
+const handleLiveSearch = debounce(async () => {
+  await handleSearch()
+}, 300)
+
 async function getProductBySearch(term: string) {
   const query = useProductMaster().buildProductQuery({
-    filter: `isVirtual: false,isVariant: true,(sku: ${term} OR internalName: ${term} OR upc: ${term})` as string,
+    keyword: term,
+    viewSize: 20,
+    filter: 'isVirtual:false,isVariant:true'
   })
-  await loader.present('Searching Product...')
+  isSearching.value = true
   try {
     const resp = await getProducts(query);
 
-    const product = resp?.data?.response?.docs?.[0]
-    searchedProduct.value = product || null
-    if (!product) showToast(`Product not found by ${term}`)
+    const products = resp?.data?.response?.docs || []
+    searchedProducts.value = products
+    if (products.length === 0) showToast(`No products found for "${term}"`)
   } catch (err) {
     console.error('Failed to fetch products', err)
     showToast('Something went wrong')
+  } finally {
+    isSearching.value = false
   }
-  loader.dismiss()
 }
 
 async function getProducts(query: any) {
@@ -222,23 +330,42 @@ async function addProductInPreCountedItems(product: any) {
   await loader.present('Loading...')
   try {
     searchedProductString.value = ''
-    searchedProduct.value = null
-
-    const existing = products.value.find(existingProduct => existingProduct.productId === product.productId)
-    if (existing) {
-      showToast(translate('Product already exists in Counted Items'))
-      loader.dismiss()
-      return
-    }
+    searchedProducts.value = []
+    isSearchResultsModalOpen.value = false
 
     product.countedQuantity = 0
     product.saved = false
     await setProductQoh(product)
-    products.value.push(product)
+    const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
+      props.inventoryCountImportId,
+      product.productId
+    );
+    product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
+    products.value.unshift(product)
+    
+    // Focus the quantity input for the newly added product
+    focusQuantityInput(product.productId)
   } catch (err) {
     console.error('Error adding product:', err)
   }
   loader.dismiss()
+}
+
+function openSearchResultsModal() {
+  isSearchResultsModalOpen.value = true
+  selectedProductFromModal.value = ''
+}
+
+function closeSearchResultsModal() {
+  isSearchResultsModalOpen.value = false
+  selectedProductFromModal.value = ''
+}
+
+async function addSelectedProductFromModal() {
+  const product = searchedProducts.value.find(p => p.productId === selectedProductFromModal.value)
+  if (product) {
+    await addProductInPreCountedItems(product)
+  }
 }
 
 async function setProductQoh(product: any) {
