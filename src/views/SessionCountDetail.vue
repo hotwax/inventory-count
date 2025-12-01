@@ -1121,12 +1121,15 @@ async function saveMatchProduct() {
     showToast("Please select a product to match");
     return;
   }
+
+  const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
+
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: 'Y',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
