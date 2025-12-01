@@ -391,7 +391,8 @@ function goToCountProgressReview(workEffortId, event) {
 async function markInProgress(workEffortId) {
   const response = await useInventoryCountRun().updateWorkEffort({
     workEffortId,
-    currentStatusId: 'CYCLE_CNT_IN_PRGS'
+    currentStatusId: 'CYCLE_CNT_IN_PRGS',
+    actualStartDate: DateTime.now().toMillis()
   });
   if (response?.status === 200) {
     showToast(translate('Cycle Count is Active'));
