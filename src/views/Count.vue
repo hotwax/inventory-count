@@ -28,28 +28,32 @@
           <ion-item lines="none">
             {{ translate("Due date") }}
             <ion-label slot="end">
-              <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
+              <p v-if="count.estimatedCompletionDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
+              <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-item v-if="count.estimatedStartDate" lines="none">
+          <ion-item lines="none">
             {{ translate("Start date") }}
             <ion-label slot="end">
-              <p>{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+              <p v-if="count.estimatedStartDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+              <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count)">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT')">
             {{ translate("Start counting") }}
           </ion-button>
+          <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)">
+            <ion-note color="warning">
+              {{ translate("This count is scheduled to start") }} {{ getTimeUntil(count.estimatedStartDate) }}
+            </ion-note>
+          </div>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
             {{ translate("Preview count") }}
           </ion-button>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
             {{ translate("Review progress") }}
           </ion-button>
-          <!-- <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="clear" @click.stop="markAsCompleted(count.workEffortId)" :disabled="!count.sessions?.length || count.sessions.some(session => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED')">
-            {{ translate("Ready for review") }}
-          </ion-button> -->
-
+          
           <ion-list>
             <ion-list-header>
               <ion-label>
@@ -58,7 +62,7 @@
 
               <ion-button v-if="count.sessions?.length" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                {{ translate("New") }}
+                {{ translate("New session") }}
               </ion-button>
             </ion-list-header>
             <ion-button v-if="count.sessions?.length === 0" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS' || isPlannedForFuture(count)" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
@@ -211,6 +215,10 @@ function showAddNewSessionModal(workEffortId) {
 const isPlannedForFuture = (count) => {
   return count.estimatedStartDate && DateTime.fromMillis(count.estimatedStartDate) >= DateTime.now();
 };
+
+function getTimeUntil(time) {
+  return DateTime.fromMillis(time).toRelative();
+}
 
 function enableScrolling() {
   const parentElement = pageRef.value?.$el;
