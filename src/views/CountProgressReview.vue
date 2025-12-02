@@ -829,7 +829,7 @@ async function getCountSessions(productId: any) {
 
 async function createSessionForUncountedItems() {
   if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to access this page'));
+    showToast(translate('You do not have permission to perform this action'));
     return;
   }
   await loader.present("Creating Session...");
@@ -904,7 +904,7 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 
 async function markAsCompleted() {
   if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to access this page'));
+    showToast(translate('You do not have permission to perform this action'));
     return;
   }
 
