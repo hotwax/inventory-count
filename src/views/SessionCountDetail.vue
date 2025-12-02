@@ -528,7 +528,7 @@
         ]"
         @didDismiss="showSubmitAlert = false"/>
 
-      <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate(\"This session will be discarded and it won't be included for review when analyzing variances.\")"
+      <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate('This session will be discarded and it won\'t be included for review when analyzing variances.')"
         :buttons="[
           { text: translate('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
           { text: translate('Discard'), role: 'confirm', handler: confirmDiscard }
@@ -545,7 +545,7 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOut
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { loader, showToast } from '@/services/uiUtils';
+import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
