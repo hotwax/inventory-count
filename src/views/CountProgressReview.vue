@@ -65,11 +65,26 @@
               </ion-card-header>
             </ion-card>
             <div class="actions">
-              <ion-button v-if="workEffort?.statusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
+              <ion-button v-if="isWorkEffortInProgress" :disabled="isSubmitDisabled" fill="outline" color="success" @click="markAsCompleted">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
             </div>
+            <ion-card v-if="!canSubmitForReview && !isLoading" class="submission-guidance" color="light">
+              <ion-card-header>
+                <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
+                <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
+              </ion-card-header>
+              <ion-list>
+                <ion-item v-for="requirement in submissionRequirements" :key="requirement.id" lines="none" :detail="false">
+                  <ion-icon slot="start" :color="requirement.met ? 'success' : 'warning'" :icon="requirement.met ? checkmarkCircleOutline : alertCircleOutline" />
+                  <ion-label>
+                    <h3>{{ requirement.title }}</h3>
+                    <p>{{ requirement.helpText }}</p>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+            </ion-card>
         </div>
         <!-- Segments -->
 
@@ -344,7 +359,7 @@
 import { computed, ref, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
+import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -395,6 +410,53 @@ const isCountStatusBeyondCreated = computed(() => {
 
 const canPreviewItems = computed(() => (
   isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
+));
+
+const isWorkEffortInProgress = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_IN_PRGS');
+
+const areSessionsSubmitted = computed(() => {
+  const sessions = workEffort.value?.sessions ?? [];
+  return sessions.length > 0 && sessions.every((session: any) => session.statusId === 'SESSION_SUBMITTED');
+});
+
+const areRequestedItemsCounted = computed(() => uncountedItems.value.length === 0);
+
+const canSubmitForReview = computed(() => (
+  isWorkEffortInProgress.value && areSessionsSubmitted.value && areRequestedItemsCounted.value
+));
+
+const submissionRequirements = computed(() => [
+  {
+    id: 'in-progress',
+    met: isWorkEffortInProgress.value,
+    title: translate('Count is in progress'),
+    helpText: isWorkEffortInProgress.value
+      ? translate('You have moved this count to the in progress state.')
+      : translate('Move the count to In progress to enable submission.')
+  },
+  {
+    id: 'sessions-submitted',
+    met: areSessionsSubmitted.value,
+    title: translate('All sessions submitted'),
+    helpText: areSessionsSubmitted.value
+      ? translate('Every session has been submitted.')
+      : translate('Submit each session so they show as Submitted in this list.')
+  },
+  {
+    id: 'items-counted',
+    met: areRequestedItemsCounted.value,
+    title: translate('All requested items counted'),
+    helpText: areRequestedItemsCounted.value
+      ? translate('Requested items have been counted or marked out of stock.')
+      : translate('Count the remaining requested items to finish this count.')
+  },
+]);
+
+const isSubmitDisabled = computed(() => (
+  isLoading.value
+  || isLoadingUncounted.value
+  || isLoadingUndirected.value
+  || !canSubmitForReview.value
 ));
 
 const props = defineProps<{
@@ -936,6 +998,18 @@ function areAllSessionCompleted() {
 
 .actions {
   margin-inline-start: auto;
+}
+
+.submission-guidance {
+  margin-top: 12px;
+}
+
+.submission-guidance h3 {
+  margin: 6px 0 0;
+}
+
+.submission-guidance ion-item {
+  --background: transparent;
 }
 
 .big-number {
