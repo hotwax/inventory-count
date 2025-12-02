@@ -38,7 +38,7 @@
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item>
-                  <div class="img-preview">
+                  <div slot="start" class="img-preview">
                     <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
                       <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                     </ion-thumbnail>
