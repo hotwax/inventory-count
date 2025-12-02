@@ -528,10 +528,10 @@
         ]"
         @didDismiss="showSubmitAlert = false"/>
 
-      <ion-alert :is-open="showDiscardAlert" header="Leave session" message="Leaving this session unlinks it from your device and allows other users to continue this session on their device."
+      <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate(\"This session will be discarded and it won't be included for review when analyzing variances.\")"
         :buttons="[
-          { text: 'Cancel', role: 'cancel', handler: () => showDiscardAlert = false },
-          { text: 'Leave', role: 'confirm', handler: confirmDiscard }
+          { text: translate('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
+          { text: translate('Discard'), role: 'confirm', handler: confirmDiscard }
         ]"
         @didDismiss="showDiscardAlert = false"/>
     </ion-content>
@@ -1232,6 +1232,7 @@ async function confirmDiscard() {
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
     showToast('Session discarded')
+    await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
     showToast('Failed to discard session')
