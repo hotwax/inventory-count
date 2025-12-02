@@ -39,7 +39,7 @@
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :disabled="isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT')">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT'))">
             {{ translate("Start counting") }}
           </ion-button>
           <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)">
@@ -191,6 +191,7 @@ const isAddSessionModalOpen = ref(false);
 const selectedWorkEffortId = ref(null);
 const pageRef = ref(null);
 const currentDeviceId = useUserProfile().getDeviceId;
+const loadingWorkEffortId = ref(null);
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -397,15 +398,32 @@ function goToCountProgressReview(workEffortId, event) {
 }
 
 async function markInProgress(workEffortId) {
-  const response = await useInventoryCountRun().updateWorkEffort({
-    workEffortId,
-    statusId: 'CYCLE_CNT_IN_PRGS',
-    actualStartDate: DateTime.now().toMillis()
-  });
-  if (response?.status === 200) {
-    showToast(translate('Cycle Count is Active'));
-    await getCycleCounts(true);
-  } else showToast(translate('Failed to activate cycle count'));
+  // Show loading spinner on the specific button
+  loadingWorkEffortId.value = workEffortId;
+  try {
+    const response = await useInventoryCountRun().updateWorkEffort({
+      workEffortId,
+      statusId: 'CYCLE_CNT_IN_PRGS',
+      actualStartDate: DateTime.now().toMillis()
+    });
+    if (response?.status === 200) {
+      showToast(translate('Cycle Count is Active'));
+      // Find the updated count and navigate to its first session if available
+      const updatedCount = cycleCounts.value.find(c => c.workEffortId === workEffortId);
+      if (updatedCount && updatedCount.sessions && updatedCount.sessions.length > 0) {
+        const firstSession = updatedCount.sessions[0];
+        router.push(`/session-count-detail/${workEffortId}/${updatedCount.workEffortPurposeTypeId}/${firstSession.inventoryCountImportId}`);
+      }
+    } else {
+      showToast(translate('Failed to activate cycle count'));
+    }
+  } catch (err) {
+    console.error('Error starting count:', err);
+    showToast(translate('Failed to activate cycle count'));
+  } finally {
+    // Reset loading state
+    loadingWorkEffortId.value = null;
+  }
 }
 
 async function forceRelease(session) {
