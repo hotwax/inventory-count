@@ -297,6 +297,8 @@
   "sku": "sku",
   "started": "started",
   "start counting": "start counting",
+  "Scanner focused": "Scanner focused",
+  "Focus scanner": "Focus scanner",
   "store name": "store name",
   "submitted counts": "{submittedItemsCount} out of {totalItems} items complete",
   "systemic": "systemic",
