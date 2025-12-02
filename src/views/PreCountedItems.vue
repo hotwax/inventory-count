@@ -410,12 +410,12 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: 'Leave this page?',
-    message: 'Any unsaved changes will be lost.',
+    header: translate('Save pre-counted items'),
+    message: translate('Pre-counted items will be added to the scan events log.'),
     buttons: [
-      { text: 'Cancel', role: 'cancel' },
+      { text: translate('Cancel'), role: 'cancel' },
       {
-        text: 'Save and Go back',
+        text: translate('Save'),
         handler: async () => {
           await addAllProductsToScanEvents()
           router.back()
