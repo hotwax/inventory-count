@@ -633,7 +633,7 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
-const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
+const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
