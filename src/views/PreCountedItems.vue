@@ -35,7 +35,7 @@
         </ion-item>
         <!-- Search result -->
         <ion-item v-else-if="searchedProducts.length > 0" lines="none">
-          <ion-thumbnail slot="start">  
+          <ion-thumbnail slot="start">
             <Image :src="searchedProducts[0].mainImageUrl"/>
           </ion-thumbnail>
           <ion-label>
@@ -47,11 +47,34 @@
             Add to count
           </ion-button>
         </ion-item>
+        <ion-item v-if="searchedProducts.length > 0" lines="none" class="search-helper">
+          <ion-text color="medium">
+            {{ translate('Press enter to add helper') }}
+          </ion-text>
+        </ion-item>
         <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
           <ion-label>
             {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
           </ion-label>
         </ion-item>
+      </ion-card>
+      <ion-card v-if="products.length === 0" class="pre-counted-empty-state">
+        <ion-card-header>
+          <ion-card-title>{{ translate('What are pre-counted items?') }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-text color="medium">
+            <p>{{ translate('Pre-counted items description') }}</p>
+            <p>{{ translate('Pre-counted items stability note') }}</p>
+            <p>{{ translate('Pre-counted items movement note') }}</p>
+            <p>{{ translate('Pre-counted items benefit note') }}</p>
+          </ion-text>
+          <ion-text color="medium">
+            <p class="ion-padding-top">
+              {{ translate('Begin typing pre-counted product prompt') }}
+            </p>
+          </ion-text>
+        </ion-card-content>
       </ion-card>
       <h2>
         {{ translate("Counted Items") }}
@@ -158,7 +181,7 @@
 import { translate } from '@/i18n'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
-  IonInput, IonLabel, IonButton, IonCard, IonCardHeader, IonCardTitle, IonFooter, 
+  IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
   IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
@@ -429,7 +452,7 @@ async function confirmGoBack() {
 
 <style>
 
-.pre-counted-items { 
+.pre-counted-items {
   .item {
     display: flex;
     justify-content: space-between;
@@ -450,6 +473,22 @@ async function confirmGoBack() {
       flex: 1 0 max-content;
     }
   }
+}
+
+.pre-counted-empty-state {
+  ion-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-sm);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.search-helper {
+  --padding-start: 0;
 }
 
 </style>
