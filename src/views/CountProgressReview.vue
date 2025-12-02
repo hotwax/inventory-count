@@ -65,7 +65,7 @@
               </ion-card-header>
             </ion-card>
             <div class="actions">
-              <ion-button v-if="workEffort?.statusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
+              <ion-button v-if="canManageCountProgress && workEffort?.statusId === 'CYCLE_CNT_IN_PRGS'" :disabled="isLoading || isLoadingUncounted || isLoadingUndirected || !areAllSessionCompleted()" fill="outline" color="success" @click="markAsCompleted">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
@@ -903,6 +903,11 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 }
 
 async function markAsCompleted() {
+  if (!canManageCountProgress.value) {
+    showToast(translate('You do not have permission to access this page'));
+    return;
+  }
+
   // Check if there are any unskipped undirected items for directed counts
   if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
     const unskippedUndirectedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
