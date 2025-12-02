@@ -119,6 +119,13 @@
                 {{ translate("Submit") }}
               </ion-button>
             </template>
+
+            <ion-item v-if="countdownText" lines="none" class="due-timer">
+              <ion-label class="time-remaining">
+                {{ translate("Time left to submit") }}
+              </ion-label>
+              <ion-badge :color="countdownColor">{{ countdownText }}</ion-badge>
+            </ion-item>
           </div>
 
           <div class="statistics ion-padding">
@@ -544,6 +551,7 @@ import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, I
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
@@ -590,6 +598,7 @@ const selectedProductId = ref('');
 const matchedItem = ref<any>(null);
 const products = ref<any[]>([]);
 const inventoryCountImport = ref();
+const workEffort = ref<any>(null);
 const newCountName = ref();
 const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
@@ -597,6 +606,13 @@ const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
 const showSubmitAlert = ref(false)
 const showDiscardAlert = ref(false)
+const countdownText = ref('');
+const countdownVariant = ref<'normal' | 'warning' | 'danger'>('normal');
+const countdownColor = computed(() => {
+  if (countdownVariant.value === 'danger') return 'danger';
+  if (countdownVariant.value === 'warning') return 'warning';
+  return 'medium';
+});
 
 //Progress bar
 const totalItems = ref(0)
@@ -628,12 +644,14 @@ const areas = [
 const selectedArea = ref(areas[0].value);
 
 let aggregationWorker: Worker | null = null
+let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
+const dueDate = computed(() => workEffort.value?.estimatedCompletionDate);
 
 const lastScannedEvent = computed(() => events.value[0]);
 
@@ -664,8 +682,82 @@ watchEffect(() => {
   }
 })
 
+watch(dueDate, (value) => {
+  startCountdown(value);
+}, { immediate: true });
+
+function startCountdown(due: string | number | undefined) {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+
+  const parsedDueDate = parseDueDate(due);
+  if (!parsedDueDate) {
+    countdownText.value = '';
+    countdownVariant.value = 'normal';
+    return;
+  }
+
+  updateCountdown(parsedDueDate);
+  countdownInterval = setInterval(() => updateCountdown(parsedDueDate), 1000);
+}
+
+function parseDueDate(due: string | number | undefined) {
+  if (!due) return null;
+  const parsed = typeof due === 'number' ? DateTime.fromMillis(due) : DateTime.fromISO(due);
+  return parsed?.isValid ? parsed : null;
+}
+
+function updateCountdown(dueDateTime: DateTime) {
+  if (!dueDateTime.isValid) {
+    countdownText.value = '';
+    countdownVariant.value = 'normal';
+    return;
+  }
+
+  const diff = dueDateTime.diffNow(['days', 'hours', 'minutes', 'seconds']).shiftTo('days', 'hours', 'minutes', 'seconds');
+  if (diff.as('milliseconds') <= 0) {
+    countdownText.value = translate('Session due');
+    countdownVariant.value = 'danger';
+    return;
+  }
+
+  const rounded = diff.mapUnits((value) => Math.max(0, Math.floor(value)));
+  const parts = rounded.toObject();
+  const timerSegments = [
+    parts.days ? `${parts.days}d` : '',
+    parts.days || parts.hours ? `${parts.hours}h` : '',
+    `${parts.minutes}m`,
+    parts.days ? '' : `${parts.seconds}s`,
+  ].filter(Boolean);
+
+  countdownText.value = timerSegments.slice(0, 3).join(' ');
+
+  const hoursLeft = diff.as('hours');
+  if (hoursLeft <= 1) {
+    countdownVariant.value = 'danger';
+  } else if (hoursLeft <= 6) {
+    countdownVariant.value = 'warning';
+  } else {
+    countdownVariant.value = 'normal';
+  }
+}
+
+async function loadWorkEffortDetails() {
+  try {
+    const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (workEffortResp?.status === 200 && workEffortResp.data) {
+      workEffort.value = workEffortResp.data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch work effort', error);
+  }
+}
+
 onIonViewDidEnter(async () => {
   try {
+    await loadWorkEffortDetails();
     await startSession();
     await handleSessionLock();
 
@@ -749,6 +841,10 @@ onIonViewDidLeave(async () => {
   if (lockWorker) {
     await lockWorker.stopHeartbeat()
     lockWorker = null
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
   }
 })
 
@@ -1445,6 +1541,18 @@ ion-card ion-item {
 
 .header ion-button {
   flex: 0 1 max-content;
+}
+
+.due-timer {
+  width: 100%;
+  margin-top: 8px;
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.time-remaining {
+  font-weight: 600;
 }
 
 .statistics {
