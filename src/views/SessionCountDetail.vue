@@ -98,10 +98,9 @@
 
             <!-- When session is VOIDED: all buttons disabled -->
             <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
-              <ion-button color="warning" fill="outline" disabled>
-                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+              <ion-badge color="warning">
                 {{ translate("Session discarded") }}
-              </ion-button>
+              </ion-badge>
             </template>
 
             <!-- Default: show Edit / Discard / Submit -->
