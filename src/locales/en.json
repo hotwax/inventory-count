@@ -40,6 +40,8 @@
   "Closed Date": "Closed Date",
   "Created Date": "Created Date",
   "Complete": "Complete",
+  "Complete session": "Complete session",
+  "You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.": "You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.",
   "Configure threshold": "Configure threshold",
   "Confirm": "Confirm",
   "Count": "Count",

@@ -537,7 +537,7 @@
           <ion-img :src="largeImage" />
         </ion-content>
       </ion-modal>
-      <ion-alert :is-open="showSubmitAlert" header="Submit for review" message="Make sure you’ve reviewed the products and their counts before uploading them for review."
+      <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
           { text: 'Submit', role: 'confirm', handler: confirmSubmit }
