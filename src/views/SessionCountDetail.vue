@@ -19,12 +19,13 @@
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
+              @ionBlur="handleScannerBlur" @ionFocus="handleScannerFocus"
               :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"></ion-input>
           </ion-item>
 
-          <ion-button expand="block" color="success" class="focus ion-margin-top ion-margin-horizontal" @click="focusScanner" :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
+          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-            {{ translate("start counting") }}
+            {{ scannerButtonLabel }}
           </ion-button>
 
           <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top">
@@ -528,10 +529,10 @@
         ]"
         @didDismiss="showSubmitAlert = false"/>
 
-      <ion-alert :is-open="showDiscardAlert" header="Leave session" message="Leaving this session unlinks it from your device and allows other users to continue this session on their device."
+      <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate('This session will be discarded and it won\'t be included for review when analyzing variances.')"
         :buttons="[
-          { text: 'Cancel', role: 'cancel', handler: () => showDiscardAlert = false },
-          { text: 'Leave', role: 'confirm', handler: confirmDiscard }
+          { text: translate('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
+          { text: translate('Discard'), role: 'confirm', handler: confirmDiscard }
         ]"
         @didDismiss="showDiscardAlert = false"/>
     </ion-content>
@@ -545,7 +546,7 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOut
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { loader, showToast } from '@/services/uiUtils';
+import { showToast } from '@/services/uiUtils';
 import { translate } from '@/i18n';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
@@ -576,6 +577,7 @@ const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
 const subscriptions: Subscription[] = [];
 const barcodeInput = ref();
+const isScannerFocused = ref(false);
 const sessionLocked = ref(false);
 const unmatchedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
@@ -654,6 +656,29 @@ const lastScannedProductTotal = computed(() => {
   // If the event is not yet aggregated, fall back to showing the quantity of the single scan event.
   return lastScannedEvent.value.quantity;
 });
+
+const hasSessionStarted = computed(() =>
+  inventoryCountImport.value?.statusId && inventoryCountImport.value.statusId !== 'SESSION_CREATED'
+);
+
+const scannerButtonColor = computed(() => {
+  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return 'success';
+  if (hasSessionStarted.value && !isScannerFocused.value) return 'danger';
+  return 'medium';
+});
+
+const scannerButtonLabel = computed(() => {
+  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return translate('start counting');
+  if (isScannerFocused.value) return translate('Scanner focused');
+  return translate('Focus scanner');
+});
+
+const scannerButtonDisabled = computed(() =>
+  sessionLocked.value
+  || inventoryCountImport.value?.statusId === 'SESSION_VOIDED'
+  || inventoryCountImport.value?.statusId === 'SESSION_SUBMITTED'
+  || (hasSessionStarted.value && isScannerFocused.value)
+);
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -859,6 +884,7 @@ async function loadInventoryItemsWithProgress() {
 
 function focusScanner() {
   barcodeInput.value?.$el?.setFocus();
+  isScannerFocused.value = true;
   filteredItems.value = [];
   searchKeyword.value = '';
 }
@@ -878,6 +904,32 @@ function handleScan() {
   } finally {
     scannedValue.value = '';
   }
+}
+
+async function handleStartOrFocus() {
+  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') {
+    try {
+      await useInventoryCountImport().updateSession({
+        inventoryCountImportId: props.inventoryCountImportId,
+        statusId: 'SESSION_ASSIGNED'
+      });
+      inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to start session');
+      return;
+    }
+  }
+
+  focusScanner();
+}
+
+function handleScannerFocus() {
+  isScannerFocused.value = true;
+}
+
+function handleScannerBlur() {
+  isScannerFocused.value = false;
 }
 
 async function handleSessionLock() {
@@ -1232,6 +1284,7 @@ async function confirmDiscard() {
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
     showToast('Session discarded')
+    await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
     showToast('Failed to discard session')
