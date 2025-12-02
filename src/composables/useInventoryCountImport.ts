@@ -7,6 +7,7 @@ import { useProductStore } from '@/stores/productStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
+  productId?: string;
   productIdentifier: string;
   quantity: number;
   locationSeqId?: string | null;
@@ -23,6 +24,7 @@ function currentMillis(): number {
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
+      productId: params.productId || null,
       locationSeqId: params.locationSeqId || null,
       scannedValue: params.productIdentifier,
       quantity: params.quantity,
