@@ -32,35 +32,46 @@
             <!-- TODO: Need to Revisit the date-time-button css -->
             <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div>
+              <div class="date-time">
                 <p class="overline">{{ translate("Due Date") }}</p>
-                <ion-button @click="openModal('estimatedCompletionDate')" class="date-time-button">
-                  {{ workEffort.estimatedCompletionDate ? formatDateTime(workEffort.estimatedCompletionDate) : translate("Add Due Date") }}
-                </ion-button>
+                <ion-datetime-button
+                  datetime="estimatedCompletionDate"
+                  class="date-time-button"
+                />
               </div>
             </ion-item>
+
+            <ion-modal class="date-time-modal" keep-contents-mounted>
+              <ion-datetime
+                id="estimatedCompletionDate"
+                :value="getInitialValue('estimatedCompletionDate')"
+                :min="getMinDateTime()"
+                presentation="date-time"
+                show-default-buttons
+                @ionChange="(ev) => handleChange(ev, 'estimatedCompletionDate')"
+              />
+            </ion-modal>
 
             <ion-item lines="none">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div>
+              <div class="date-time">
                 <p class="overline">{{ translate("Start Date") }}</p>
-                <ion-button @click="openModal('estimatedStartDate')" class="date-time-button">
-                  {{ workEffort.estimatedStartDate ? formatDateTime(workEffort.estimatedStartDate) : translate("Add Start Date") }}
-                </ion-button>
+                <ion-datetime-button
+                  datetime="estimatedStartDate"
+                  class="date-time-button"
+                />
               </div>
             </ion-item>
 
-            <ion-modal class="date-time-modal" :is-open="isModalOpen" @didDismiss="closeModal">
-              <ion-content :force-overscroll="false">
-                <ion-datetime
-                  :value="initialValue"
-                  :min="minDateTime"
-                  presentation="date-time"
-                  show-default-buttons
-                  @ionChange="handleChange"
-                  @ionCancel="closeModal"
-                />
-              </ion-content>
+            <ion-modal class="date-time-modal" keep-contents-mounted>
+              <ion-datetime
+                id="estimatedStartDate"
+                :value="getInitialValue('estimatedStartDate')"
+                :min="getMinDateTime()"
+                presentation="date-time"
+                show-default-buttons
+                @ionChange="(ev) => handleChange(ev, 'estimatedStartDate')"
+              />
             </ion-modal>
           </ion-card>
           <ion-card>
@@ -196,7 +207,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -269,31 +280,24 @@ async function getWorkEffortDetails() {
   }
 }
 
-const isModalOpen = ref(false)
-const currentField = ref("")
-const initialValue: any = ref("")
-const minDateTime: any = ref("")
 const facilityTimeZone: any = ref(null)
 
-function formatDateTime(date: number | string) {
+function getInitialValue(field: string) {
+  const value = workEffort.value?.[field];
+  const date = value
+    ? DateTime.fromMillis(Number(value))
+    : DateTime.now();
+
+  return facilityTimeZone.value ? date.setZone(facilityTimeZone.value).toISO() : date.toISO();
+}
+
+function getMinDateTime() {
   return facilityTimeZone.value
-    ? DateTime.fromMillis(Number(date)).setZone(facilityTimeZone.value).toFormat("dd LLL yyyy t")
-    : DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy t")
+    ? DateTime.now().setZone(facilityTimeZone.value).toISO()
+    : DateTime.now().toISO();
 }
 
-function openModal(field: string) {
-  currentField.value = field
-  const value = workEffort.value[field]
-
-  initialValue.value = value
-    ? (facilityTimeZone.value ? DateTime.fromMillis(value).setZone(facilityTimeZone.value).toISO() : DateTime.fromMillis(value).toISO())
-    : (facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO())
-
-  minDateTime.value = facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO()
-  isModalOpen.value = true
-}
-
-async function handleChange(ev: any) {
+async function handleChange(ev: any, currentField: string) {
   const iso = ev.detail.value;
   if (!iso) return;
 
@@ -304,24 +308,19 @@ async function handleChange(ev: any) {
 
     const resp = await useInventoryCountRun().updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
-      [currentField.value]: millis
+      [currentField]: millis
     })
 
     if (resp?.status === 200) {
-      workEffort.value[currentField.value] = millis;
+      workEffort.value[currentField] = millis;
       showToast(translate("Updated Successfully"))
     } else {
       throw resp;
     }
   } catch (error) {
     console.error("Error Udpating Cycle Count: ", error);
-    showToast(`Failed to Update: ${currentField.value} on Cycle Count`);
+    showToast(`Failed to Update: ${currentField} on Cycle Count`);
   }
-  closeModal();
-}
-
-function closeModal() {
-  isModalOpen.value = false
 }
 
 function openSessionPopover(event: Event, session: any, cycleCount: any) {
@@ -502,6 +501,21 @@ ion-item.date-button {
   z-index: 10;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--ion-color-light);
+}
+
+.date-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-time-button {
+  --background: transparent;
+  --background-activated: transparent;
+  --box-shadow: none;
+  --padding-start: 0;
+  --padding-end: 0;
+  font-weight: 600;
 }
 
 .filters {
