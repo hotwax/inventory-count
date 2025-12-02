@@ -147,12 +147,12 @@
             </div>
             <div v-else-if="!isLoadingUndirected && undirectedItems.length === 0" class="empty-state">
               <h2>{{ translate("No undirected items") }}</h2>
-              <p>{{ translate("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
+              <p>{{ translate("Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.") }}</p>
             </div>
             <template v-else>
               <ion-card class="info-card ion-margin">
                 <ion-card-content>
-                  <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
+                  <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}</p>
                 </ion-card-content>
               </ion-card>
               <ion-accordion-group>
