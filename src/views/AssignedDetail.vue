@@ -54,7 +54,7 @@
               <ion-content :force-overscroll="false">
                 <ion-datetime
                   :value="initialValue"
-                  :min="DateTime.now().toISO()"
+                  :min="minDateTime"
                   presentation="date-time"
                   show-default-buttons
                   @ionChange="handleChange"
@@ -195,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, reactive, ref, toRefs, watch } from "vue";
+import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
 import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -207,6 +207,9 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+
+
+const facilities = computed(() => useProductStore().getFacilities);
 
 const props = defineProps({
   workEffortId: String
@@ -230,6 +233,7 @@ onIonViewDidEnter(async () => {
 
   await getWorkEffortDetails();
   if (workEffort.value) {
+    facilityTimeZone.value = getFacilityTimezone(workEffort.value.facilityId)
     await getInventoryCycleCount()
   }
   isLoading.value = false;
@@ -268,9 +272,13 @@ async function getWorkEffortDetails() {
 const isModalOpen = ref(false)
 const currentField = ref("")
 const initialValue: any = ref("")
+const minDateTime: any = ref("")
+const facilityTimeZone: any = ref(null)
 
 function formatDateTime(date: number | string) {
-  return DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy t")
+  return facilityTimeZone.value
+    ? DateTime.fromMillis(Number(date)).setZone(facilityTimeZone.value).toFormat("dd LLL yyyy t")
+    : DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy t")
 }
 
 function openModal(field: string) {
@@ -278,9 +286,10 @@ function openModal(field: string) {
   const value = workEffort.value[field]
 
   initialValue.value = value
-    ? DateTime.fromMillis(value).toISO()
-    : DateTime.now().toISO()
+    ? (facilityTimeZone.value ? DateTime.fromMillis(value).setZone(facilityTimeZone.value).toISO() : DateTime.fromMillis(value).toISO())
+    : (facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO())
 
+  minDateTime.value = facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO()
   isModalOpen.value = true
 }
 
@@ -289,7 +298,9 @@ async function handleChange(ev: any) {
   if (!iso) return;
 
   try {
-    const millis = DateTime.fromISO(iso).toMillis();
+    const millis = facilityTimeZone.value
+      ? DateTime.fromISO(iso, { zone: facilityTimeZone.value }).toMillis()
+      : DateTime.fromISO(iso).toMillis();
 
     const resp = await useInventoryCountRun().updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
@@ -466,8 +477,10 @@ function stopAccordianEventProp(event: Event) {
 }
 
 function getFacilityName(id: string) {
-  const facilities: any[] = useProductStore().getFacilities || [];
-  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityName || id
+}
+function getFacilityTimezone(id: string) {
+  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityTimeZone
 }
 
 </script>
