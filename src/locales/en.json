@@ -246,6 +246,8 @@
   "Uncounted": "Uncounted ({uncountedItemsLength})",
   "Undirected": "Undirected",
   "UndirectedWithCount": "Undirected ({undirectedItemsLength})",
+  "Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.": "Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.",
+  "If these items were not intended to be counted in this session, you can discard them on the review and complete page.": "If these items were not intended to be counted in this session, you can discard them on the review and complete page.",
   "Units": "Units",
   "Units counted": "Units counted",
   "Unmatched": "Unmatched ({unmatchedItemsLength})",

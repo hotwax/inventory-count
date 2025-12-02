@@ -146,45 +146,52 @@
               <p>{{ translate("Loading...") }}</p>
             </div>
             <div v-else-if="!isLoadingUndirected && undirectedItems.length === 0" class="empty-state">
-              <p>{{ translate("No undirected items") }}</p>
+              <h2>{{ translate("No undirected items") }}</h2>
+              <p>{{ translate("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
             </div>
-            <ion-accordion-group v-else>
-              <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
-                <template #default="{ item, index, active }">
-                  <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                      <div class="list-item count-item-rollup" slot="header"> 
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
+            <template v-else>
+              <ion-card class="info-card ion-margin">
+                <ion-card-content>
+                  <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
+                </ion-card-content>
+              </ion-card>
+              <ion-accordion-group>
+                <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+                  <template #default="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                        <div class="list-item count-item-rollup" slot="header"> 
+                          <ion-item lines="none">
+                            <ion-thumbnail slot="start">
+                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                            </ion-thumbnail>
+                            <ion-label>
+                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                              <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            </ion-label>
+                          </ion-item>
                           <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            {{ item.quantity }}/{{ item.quantityOnHand }}
+                            <p>{{ translate("counted/systemic") }}</p>
                           </ion-label>
-                        </ion-item>
-                        <ion-label>
-                          {{ item.quantity }}/{{ item.quantityOnHand }}
-                          <p>{{ translate("counted/systemic") }}</p>
-                        </ion-label>
-                        <ion-label>
-                          {{ item.proposedVarianceQuantity }}
-                          <p>{{ translate("variance") }}</p>
-                        </ion-label>
-                        <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                          <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
-                            {{ translate("Skip") }}
-                          </ion-button>
+                          <ion-label>
+                            {{ item.proposedVarianceQuantity }}
+                            <p>{{ translate("variance") }}</p>
+                          </ion-label>
+                          <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                            <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                              {{ translate("Skip") }}
+                            </ion-button>
+                          </div>
+                          <ion-badge
+                            v-else
+                            color="danger"
+                            style="--color: white;"
+                          >
+                            {{ item.decisionOutcomeEnumId }}
+                          </ion-badge>
                         </div>
-                        <ion-badge
-                          v-else
-                          color="danger"
-                          style="--color: white;"
-                        >
-                          {{ item.decisionOutcomeEnumId }}
-                        </ion-badge>
-                      </div>
-                      <div slot="content" @click.stop="stopAccordianEventProp">
+                        <div slot="content" @click.stop="stopAccordianEventProp">
                         <ion-list v-if="sessions === null">
                           <ion-item v-for="number in item.numberOfSessions" :key="number">
                             <ion-avatar slot="start">
@@ -238,7 +245,8 @@
                   </DynamicScrollerItem>
                 </template>
               </DynamicScroller>
-            </ion-accordion-group>
+              </ion-accordion-group>
+            </template>
           </ion-segment-content>
 
           <ion-segment-content id="counted">
