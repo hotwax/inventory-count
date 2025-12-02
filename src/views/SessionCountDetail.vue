@@ -253,37 +253,52 @@
 
             <!-- Undirected -->
             <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
-              <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                  <ion-item>
-                    <ion-label>
-                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
-                    </ion-label>
-                  </ion-item>
-                </ion-card>
-              </template>
-
-              <template v-else-if="searchKeyword && !filteredItems.length">
+              <template v-if="undirectedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center">
-                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
+                  <ion-label>
+                    <h2 class="ion-margin-bottom">{{ translate("No undirected items") }}</h2>
+                    <p>{{ translate("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
+                  </ion-label>
                 </div>
               </template>
-
               <template v-else>
-                <ion-card v-for="item in undirectedItems" :key="item.uuid">
-                  <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                  <ion-item>
-                    <ion-label>
-                      <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                      <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                      <p>{{ item.quantity }} {{ translate('Units') }}</p>
-                    </ion-label>
-                  </ion-item>
+                <ion-card class="info-card ion-margin-bottom">
+                  <ion-card-content>
+                    <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
+                  </ion-card-content>
                 </ion-card>
+                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+                <template v-if="filteredItems.length">
+                  <ion-card v-for="item in filteredItems" :key="item.uuid">
+                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                    <ion-item>
+                      <ion-label>
+                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                      </ion-label>
+                    </ion-item>
+                  </ion-card>
+                </template>
+
+                <template v-else-if="searchKeyword && !filteredItems.length">
+                  <div class="empty-state ion-padding ion-text-center">
+                    <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <ion-card v-for="item in undirectedItems" :key="item.uuid">
+                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                    <ion-item>
+                      <ion-label>
+                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                      </ion-label>
+                    </ion-item>
+                  </ion-card>
+                </template>
               </template>
             </ion-segment-content>
 
