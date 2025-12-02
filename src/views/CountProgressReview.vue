@@ -137,54 +137,59 @@
           </ion-segment-content>
 
           <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
-            <ion-item-divider>
-              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
-                {{ translate("Skip All Undirected Items") }}
-              </ion-button>
-            </ion-item-divider>
             <div v-if="isLoadingUndirected" class="empty-state">
               <p>{{ translate("Loading...") }}</p>
             </div>
             <div v-else-if="!isLoadingUndirected && undirectedItems.length === 0" class="empty-state">
-              <p>{{ translate("No undirected items") }}</p>
+              <h2>{{ translate("No undirected items") }}</h2>
+              <p>{{ translate("Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.") }}</p>
             </div>
-            <ion-accordion-group v-else>
-              <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
-                <template #default="{ item, index, active }">
-                  <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                      <div class="list-item count-item-rollup" slot="header"> 
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
+            <template v-else>
+            <ion-item>
+              <ion-label>
+                {{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}
+              </ion-label>
+              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
+                {{ translate("Discard all undirected items") }}
+            </ion-button>
+            </ion-item>
+              <ion-accordion-group>
+                <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+                  <template #default="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                        <div class="list-item count-item-rollup" slot="header"> 
+                          <ion-item lines="none">
+                            <ion-thumbnail slot="start">
+                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                            </ion-thumbnail>
+                            <ion-label>
+                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                              <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            </ion-label>
+                          </ion-item>
                           <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            {{ item.quantity }}/{{ item.quantityOnHand }}
+                            <p>{{ translate("counted/systemic") }}</p>
                           </ion-label>
-                        </ion-item>
-                        <ion-label>
-                          {{ item.quantity }}/{{ item.quantityOnHand }}
-                          <p>{{ translate("counted/systemic") }}</p>
-                        </ion-label>
-                        <ion-label>
-                          {{ item.proposedVarianceQuantity }}
-                          <p>{{ translate("variance") }}</p>
-                        </ion-label>
-                        <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                          <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
-                            {{ translate("Skip") }}
-                          </ion-button>
+                          <ion-label>
+                            {{ item.proposedVarianceQuantity }}
+                            <p>{{ translate("variance") }}</p>
+                          </ion-label>
+                          <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                            <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                              {{ translate("Discard") }}
+                            </ion-button>
+                          </div>
+                          <ion-badge
+                            v-else
+                            color="danger"
+                            style="--color: white;"
+                          >
+                            {{ item.decisionOutcomeEnumId }}
+                          </ion-badge>
                         </div>
-                        <ion-badge
-                          v-else
-                          color="danger"
-                          style="--color: white;"
-                        >
-                          {{ item.decisionOutcomeEnumId }}
-                        </ion-badge>
-                      </div>
-                      <div slot="content" @click.stop="stopAccordianEventProp">
+                        <div slot="content" @click.stop="stopAccordianEventProp">
                         <ion-list v-if="sessions === null">
                           <ion-item v-for="number in item.numberOfSessions" :key="number">
                             <ion-avatar slot="start">
@@ -238,7 +243,8 @@
                   </DynamicScrollerItem>
                 </template>
               </DynamicScroller>
-            </ion-accordion-group>
+              </ion-accordion-group>
+            </template>
           </ion-segment-content>
 
           <ion-segment-content id="counted">
@@ -819,7 +825,6 @@ async function createSessionForUncountedItems() {
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
-      dueDate: workEffort.value?.estimatedCompletionDate,
       workEffortId: workEffort.value?.workEffortId
     }
     const resp = await useInventoryCountRun().createSessionOnServer(newSession);
