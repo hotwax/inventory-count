@@ -19,11 +19,10 @@
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
-              @ionBlur="handleScannerBlur" @ionFocus="handleScannerFocus"
-              :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"></ion-input>
+              :disabled="!isSessionMutable"></ion-input>
           </ion-item>
+          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="!isSessionMutable">
 
-          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ scannerButtonLabel }}
           </ion-button>
@@ -70,7 +69,7 @@
           </ion-popover>
           </div>
 
-          <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
+          <ion-card class="add-pre-counted" :disabled="!isSessionMutable" button
             @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
@@ -99,10 +98,9 @@
 
             <!-- When session is VOIDED: all buttons disabled -->
             <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
-              <ion-button color="warning" fill="outline" disabled>
-                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+              <ion-badge color="warning">
                 {{ translate("Session discarded") }}
-              </ion-button>
+              </ion-badge>
             </template>
 
             <!-- Default: show Edit / Discard / Submit -->
@@ -313,7 +311,7 @@
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
@@ -361,7 +359,7 @@
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
@@ -651,6 +649,8 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
+const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
+const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
 
