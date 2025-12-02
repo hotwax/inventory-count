@@ -88,6 +88,7 @@
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
+
             <!-- When session is SUBMITTED: show only Re-open button -->
             <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
               <ion-button color="warning" fill="outline" @click="reopen">
@@ -105,18 +106,25 @@
 
             <!-- Default: show Edit / Discard / Submit -->
             <template v-else>
-              <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
-                {{ translate("Edit") }}
-              </ion-button>
-              <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
-                {{ translate("Discard") }}
-              </ion-button>
-              <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
-                {{ translate("Submit") }}
-              </ion-button>
+              <div class="actions">
+                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
+                  {{ translate("Edit") }}
+                </ion-button>
+                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+                  {{ translate("Discard") }}
+                </ion-button>
+                <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
+                  {{ translate("Submit") }}
+                </ion-button>
+                <ion-item lines="none" v-if="timeLeft">
+                  <ion-label slot="end" :color="timerColor">
+                    {{ timeLeft }}
+                  </ion-label>
+                </ion-item>
+              </div>
             </template>
           </div>
 
@@ -571,6 +579,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
@@ -612,6 +621,10 @@ const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
 const showSubmitAlert = ref(false)
 const showDiscardAlert = ref(false)
+const workEffort = ref<any>(null);
+const timeLeft = ref('');
+const timerColor = ref('medium');
+let timerInterval: any = null;
 
 //Progress bar
 const totalItems = ref(0)
@@ -707,6 +720,7 @@ watchEffect(() => {
 onIonViewDidEnter(async () => {
   try {
     await startSession();
+    await fetchWorkEffort();
     await handleSessionLock();
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
@@ -790,7 +804,51 @@ onIonViewDidLeave(async () => {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
+  if (timerInterval) clearInterval(timerInterval);
 })
+
+async function fetchWorkEffort() {
+  try {
+    const resp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (resp?.status === 200) {
+      workEffort.value = resp.data;
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+  } catch (err) {
+    console.error('Failed to fetch work effort', err);
+  }
+}
+
+function updateTimer() {
+  if (!workEffort.value?.estimatedCompletionDate) return;
+  
+  const now = DateTime.now();
+  const due = DateTime.fromMillis(workEffort.value.estimatedCompletionDate);
+  const diff = due.diff(now, ['days', 'hours', 'minutes', 'seconds']);
+  
+  if (diff.as('milliseconds') < 0) {
+    timeLeft.value = translate("Overdue") + " " + due.toRelative();
+    timerColor.value = "danger";
+    return;
+  }
+
+  const days = Math.floor(diff.days);
+  const hours = Math.floor(diff.hours);
+  const minutes = Math.floor(diff.minutes);
+  const seconds = Math.floor(diff.seconds);
+
+  if (days > 0) {
+    timeLeft.value = translate("Due in") + ` ${days}d ${hours}h`;
+    timerColor.value = "medium";
+  } else if (hours > 0) {
+    timeLeft.value = translate("Due in") + ` ${hours}h ${minutes}m ${seconds}s`;
+    timerColor.value = hours < 4 ? "warning" : "medium";
+  } else {
+    timeLeft.value = translate("Due in") + ` ${minutes}m ${seconds}s`;
+    timerColor.value = "danger";
+  }
+}
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
