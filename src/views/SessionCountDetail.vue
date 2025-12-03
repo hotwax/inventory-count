@@ -50,7 +50,7 @@
                     {{ item.scannedValue }}
                     <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <ion-badge v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
                   <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
@@ -1593,13 +1593,6 @@ ion-segment-view {
   color: rgba(var(--ion-text-color));
 }
 
-.scan-badge {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 1;
-}
-
 .virtual-list {
   display: block;
   width: 100%;
@@ -1650,12 +1643,4 @@ ion-segment-view {
   font-size: 10px;
 }
 
-.unagg-badge {
-  position: absolute;
-  top: 1px;
-  right: 2px;
-  font-size: 12px;
-  padding: 2px 4px;
-  z-index: 5;
-}
 </style>
