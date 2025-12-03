@@ -148,7 +148,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/add-pre-counted/:workEffortId/:inventoryCountImportId',
+    path: '/add-hand-counted/:workEffortId/:inventoryCountImportId',
     name: 'PreCountedItems',
     component: PreCountedItems,
     props: true,
