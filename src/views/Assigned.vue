@@ -15,15 +15,21 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
         <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
-        <ion-item lines="none">
+        <ion-item>
           <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select> 
         </ion-item>
-        <ion-item lines="none">
+        <ion-item>
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-label>{{ translate('Facility') }}</ion-label>
+          <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true">
+            <ion-label>{{ facilityChipLabel }}</ion-label>
+          </ion-chip>
         </ion-item>
       </div>
       <p v-if="!cycleCounts?.length" class="empty-state">
@@ -67,6 +73,13 @@
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
+      <FacilityFilterModal
+        :is-open="isFacilityFilterModalOpen"
+        :selected-facility-ids="filters.facilityIds"
+        :facilities="facilities"
+        @update:is-open="isFacilityFilterModalOpen = $event"
+        @apply="applyFacilitySelection"
+      />
       <ion-modal ref="facilityModal" @didPresent="loadFacilities()"
         @didDismiss="closeModal">
         <ion-header>
@@ -127,12 +140,13 @@ import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getStatusColor, loader, showToast } from "@/services/uiUtils";
+import { getStatusColor, loader, showToast, getFacilityChipLabel } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
+import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 
 const cycleCounts = ref<any[]>([])
 const isScrollable = ref(true);
@@ -170,8 +184,11 @@ async function updateQuery(key: any, value: any) {
 const filters: any = ref({
   countQueryString: '',
   status: '',
-  countType: ''
+  countType: '',
+  facilityIds: [] as string[],
 });
+
+const isFacilityFilterModalOpen = ref(false);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -185,7 +202,9 @@ onIonViewWillLeave(async () => {
   filters.value.countQueryString = '';
 })
 
-const facilities = computed(() => productStore.getFacilities)
+const facilities = computed(() => productStore.getFacilities || [])
+
+const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
 const facilityModal = ref()
 const facilityQueryString = ref('')
@@ -300,6 +319,10 @@ async function getAssignedCycleCounts() {
     } as any;
     if (filters.value.countType) params.countType = filters.value.countType;
     if (filters.value.countQueryString) params.keyword = filters.value.countQueryString;
+    if (filters.value.facilityIds?.length) {
+      params.facilityId = filters.value.facilityIds.join(',');
+      params.facilityId_op = 'in';
+    }
     const { data, total } = await useInventoryCountRun().getAssignedCycleCounts(params);
     if (data.length) {
       if (pageIndex.value > 0) {
@@ -318,9 +341,17 @@ async function getAssignedCycleCounts() {
   }
 }
 
+async function applyFacilitySelection(selectedFacilityIds: string[]) {
+  filters.value.facilityIds = [...selectedFacilityIds];
+  pageIndex.value = 0;
+  await loader.present("Loading...");
+  await getAssignedCycleCounts();
+  loader.dismiss();
+}
+
 function getFacilityName(id: string) {
-  const facilities: any[] = useProductStore().getFacilities || [];
-  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+  const facilitiesList: any[] = productStore.getFacilities || [];
+  return facilitiesList.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 </script>

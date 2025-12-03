@@ -283,7 +283,9 @@ export function useInventoryCountRun() {
           statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
           statusId_op: params.statusId_op || 'in',
           ...(params.keyword ? { keyword: params.keyword} : {}),
-          ...(params.countType ? { countType: params.countType }: {})
+          ...(params.countType ? { countType: params.countType }: {}),
+          ...(params.facilityId ? { facilityId: params.facilityId } : {}),
+          ...(params.facilityId_op ? { facilityId_op: params.facilityId_op } : {})
         }
       })
 
