@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, defineProps, defineEmits } from 'vue';
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonSearchbar, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkOutline, closeOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
@@ -66,7 +66,11 @@ const props = defineProps<{
   title?: string;
 }>();
 
-const emit = defineEmits(['update:isOpen', 'update:selectedFacilityIds', 'apply']);
+const emit = defineEmits<{
+  'update:isOpen': [value: boolean];
+  'update:selectedFacilityIds': [value: string[]];
+  'apply': [value: string[]];
+}>();
 
 const queryString = ref('');
 const filteredFacilities = ref<Facility[]>([]);
