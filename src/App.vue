@@ -70,7 +70,7 @@ const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = computed(() => useAuthStore().token.value);
 
-const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-pre-counted', '/count-progress-review/'];
+const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
