@@ -229,6 +229,8 @@ function onManualInputChange(event: CustomEvent, product: any) {
 function setQuantityInputRef(sequenceId: string, el: any) {
   if (el) {
     quantityInputRefs.value[sequenceId] = el
+  } else {
+    delete quantityInputRefs.value[sequenceId]
   }
 }
 
