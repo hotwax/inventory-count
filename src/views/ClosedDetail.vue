@@ -51,11 +51,6 @@
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
             </ion-item>
-            <ion-item>
-              <ion-label>
-                40% Coverage
-              </ion-label>
-            </ion-item>
           </ion-card>
 
           <div class="statistics">
