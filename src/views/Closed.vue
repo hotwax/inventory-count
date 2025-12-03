@@ -99,45 +99,13 @@
         </ion-content>
       </ion-modal>
 
-      <ion-modal :is-open="isFacilityModalOpen" @didDismiss="closeFacilityModal" @didPresent="loadFacilitiesInModal">
-        <ion-header>
-          <ion-toolbar>
-            <ion-buttons slot="start">
-              <ion-button @click="closeFacilityModal">
-                <ion-icon slot="icon-only" :icon="closeOutline" />
-              </ion-button>
-            </ion-buttons>
-            <ion-title>{{ translate("Select Facilities") }}</ion-title>
-            <ion-buttons slot="end">
-              <ion-button @click="clearAllFacilities" :disabled="selectedFacilityIds.length === 0">{{ translate("Clear all") }}</ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content>
-          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()" />
-          <ion-list>
-            <div class="empty-state" v-if="!filteredFacilities.length">
-              <p>{{ translate("No facilities found") }}</p>
-            </div>
-            <div v-else>
-              <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
-                <ion-checkbox :checked="selectedFacilityIds.includes(facility.facilityId)" @ionChange="toggleFacilitySelection(facility.facilityId, $event.detail.checked)">
-                  <ion-label>
-                    {{ facility.facilityName }}
-                    <p>{{ facility.facilityId }}</p>
-                  </ion-label>
-                </ion-checkbox>
-              </ion-item>
-            </div>
-          </ion-list>
-
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button @click="applyFacilitySelection">
-              <ion-icon :icon="checkmarkOutline" />
-            </ion-fab-button>
-          </ion-fab>
-        </ion-content>
-      </ion-modal>
+      <FacilityFilterModal
+        :is-open="isFacilityModalOpen"
+        :selected-facility-ids="filters.facilityIds"
+        :facilities="facilities"
+        @update:is-open="isFacilityModalOpen = $event"
+        @apply="applyFacilitySelection"
+      />
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
           <ion-fab-button @click="exportCycleCounts">
             <ion-icon :icon="downloadOutline" />
@@ -149,8 +117,8 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
-import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, IonCheckbox, IonSpinner, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
-import { filterOutline, storefrontOutline, downloadOutline, closeOutline, checkmarkOutline } from "ionicons/icons";
+import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
+import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
@@ -160,6 +128,7 @@ import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
 import { hasError } from '@/stores/authStore';
 import logger from '@/logger';
+import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -173,9 +142,6 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 
 const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);
-const queryString = ref('');
-const filteredFacilities = ref([]) as any;
-const selectedFacilityIds = ref<string[]>([]);
 
 // Filters state
 const filters = reactive({
@@ -386,53 +352,9 @@ async function exportCycleCounts() {
   }
 }
 
-function loadFacilitiesInModal() {
-  filteredFacilities.value = facilities.value;
-  selectedFacilityIds.value = [...filters.facilityIds];
-}
-
-function findFacility() {
-  const searchedString = (queryString.value || '').trim().toLowerCase();
-  if (searchedString) {
-    filteredFacilities.value = facilities.value.filter((facility: any) =>
-      facility.facilityName?.toLowerCase().includes(searchedString) ||
-      facility.facilityId?.toLowerCase().includes(searchedString)
-    );
-  } else {
-    filteredFacilities.value = facilities.value;
-  }
-}
-
-async function selectSearchBarText(event: any) {
-  const element = await event.target.getInputElement();
-  element.select();
-}
-
-function toggleFacilitySelection(facilityId: string, checked: boolean) {
-  if (checked) {
-    if (!selectedFacilityIds.value.includes(facilityId)) {
-      selectedFacilityIds.value.push(facilityId);
-    }
-  } else {
-    selectedFacilityIds.value = selectedFacilityIds.value.filter(id => id !== facilityId);
-  }
-}
-
-async function applyFacilitySelection() {
-  filters.facilityIds = [...selectedFacilityIds.value];
-  isFacilityModalOpen.value = false;
+async function applyFacilitySelection(selectedFacilityIds: string[]) {
+  filters.facilityIds = [...selectedFacilityIds];
   await refreshList();
-}
-
-function closeFacilityModal() {
-  isFacilityModalOpen.value = false;
-  queryString.value = '';
-  filteredFacilities.value = [];
-  selectedFacilityIds.value = [];
-}
-
-function clearAllFacilities() {
-  selectedFacilityIds.value = [];
 }
 </script>
 

@@ -20,6 +20,12 @@
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
+        <ion-item lines="none">
+          <ion-label>{{ translate('Facility') }}</ion-label>
+          <ion-chip slot="end" outline @click="isFacilityModalOpen = true">
+            <ion-label>{{ facilityChipLabel }}</ion-label>
+          </ion-chip>
+        </ion-item>
       </div>
       <p v-if="!cycleCounts.length" class="empty-state">
         {{ translate("No cycle counts found") }}
@@ -55,12 +61,19 @@
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
+      <FacilityFilterModal
+        :is-open="isFacilityModalOpen"
+        :selected-facility-ids="filters.facilityIds"
+        :facilities="facilities"
+        @update:is-open="isFacilityModalOpen = $event"
+        @apply="applyFacilitySelection"
+      />
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import { IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -69,6 +82,7 @@ import router from "@/router"
 import { loader, showToast } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
+import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
@@ -82,7 +96,24 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
 
 const filters: any = ref({
   countQueryString: '',
-  countType: ''
+  countType: '',
+  facilityIds: [] as string[],
+});
+
+const isFacilityModalOpen = ref(false);
+
+const productStore = useProductStore();
+const facilities = computed(() => productStore.getFacilities || []);
+
+const facilityChipLabel = computed(() => {
+  if (filters.value.facilityIds.length === 0) {
+    return translate('All');
+  } else if (filters.value.facilityIds.length === 1) {
+    const facility = facilities.value.find((f: any) => f.facilityId === filters.value.facilityIds[0]);
+    return facility?.facilityName || filters.value.facilityIds[0];
+  } else {
+    return `${filters.value.facilityIds.length} ${translate('facilities')}`;
+  }
 });
 
 const filterOptions = {
@@ -147,6 +178,10 @@ async function getPendingCycleCounts() {
       params.keyword = filters.value.countQueryString
     }
     if (filters.value.countType) params.countType = filters.value.countType;
+    if (filters.value.facilityIds?.length) {
+      params.facilityId = filters.value.facilityIds.join(',');
+      params.facilityId_op = 'in';
+    }
 
     const { cycleCounts: data, isScrollable: scrollable } = await useInventoryCountRun().getCycleCounts(params)
 
@@ -167,9 +202,17 @@ async function getPendingCycleCounts() {
   }
 }
 
+async function applyFacilitySelection(selectedFacilityIds: string[]) {
+  filters.value.facilityIds = [...selectedFacilityIds];
+  pageIndex.value = 0;
+  await loader.present("Loading...");
+  await getPendingCycleCounts();
+  loader.dismiss();
+}
+
 function getFacilityName(id: string) {
-  const facilities: any[] = useProductStore().getFacilities || [];
-  return facilities.find((facility: any) => facility.facilityId === id)?.facilityName || id
+  const facilitiesList: any[] = productStore.getFacilities || [];
+  return facilitiesList.find((facility: any) => facility.facilityId === id)?.facilityName || id
 }
 
 </script>
