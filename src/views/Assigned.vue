@@ -15,17 +15,17 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
         <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
-        <ion-item lines="none">
+        <ion-item>
           <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select> 
         </ion-item>
-        <ion-item lines="none">
+        <ion-item>
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
-        <ion-item lines="none">
+        <ion-item>
           <ion-label>{{ translate('Facility') }}</ion-label>
           <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true">
             <ion-label>{{ facilityChipLabel }}</ion-label>
