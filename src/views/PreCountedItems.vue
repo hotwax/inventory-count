@@ -47,10 +47,12 @@
             Add to count
           </ion-button>
         </ion-item>
-        <ion-item v-if="searchedProducts.length > 0" lines="none" class="search-helper">
-          <ion-text color="medium">
-            {{ translate('Press enter to add helper') }}
-          </ion-text>
+        <ion-item v-if="searchedProducts.length > 0" lines="none">
+          <ion-label>
+            <p>
+              {{ translate('Press enter to add helper') }}
+            </p>
+          </ion-label>
         </ion-item>
         <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
           <ion-label>
@@ -63,12 +65,10 @@
           <ion-card-title>{{ translate('What are pre-counted items?') }}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <ion-text color="medium">
-            <p>{{ translate('Pre-counted items description') }}</p>
-            <p>{{ translate('Pre-counted items stability note') }}</p>
-            <p>{{ translate('Pre-counted items movement note') }}</p>
-            <p>{{ translate('Pre-counted items benefit note') }}</p>
-          </ion-text>
+          <p>{{ translate('Pre-counted items description') }}</p>
+          <p>{{ translate('Pre-counted items stability note') }}</p>
+          <p>{{ translate('Pre-counted items movement note') }}</p>
+          <p>{{ translate('Pre-counted items benefit note') }}</p>
           <ion-text color="medium">
             <p class="ion-padding-top">
               {{ translate('Begin typing pre-counted product prompt') }}
@@ -76,7 +76,7 @@
           </ion-text>
         </ion-card-content>
       </ion-card>
-      <h2>
+      <h2 v-if="products.length > 0">
         {{ translate("Counted Items") }}
       </h2>
 
@@ -414,6 +414,7 @@ async function setProductQoh(product: any) {
 async function addPreCountedItemInScanEvents(product: any) {
   await recordScan({
     inventoryCountImportId: props.inventoryCountImportId,
+    productId: product.productId,
     productIdentifier: await useProductStore().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
   })
@@ -439,12 +440,12 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: 'Leave this page?',
-    message: 'Any unsaved changes will be lost.',
+    header: translate('Save pre-counted items'),
+    message: translate('Pre-counted items will be added to the scan events log.'),
     buttons: [
-      { text: 'Cancel', role: 'cancel' },
+      { text: translate('Cancel'), role: 'cancel' },
       {
-        text: 'Save and Go back',
+        text: translate('Save'),
         handler: async () => {
           await addAllProductsToScanEvents()
           router.back()
@@ -491,10 +492,6 @@ async function confirmGoBack() {
   p {
     margin: 0;
   }
-}
-
-.search-helper {
-  --padding-start: 0;
 }
 
 </style>

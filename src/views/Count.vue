@@ -317,7 +317,6 @@ async function addNewSession() {
         uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
-        estimatedCompletionDate: Date.now(),
         workEffortId: selectedWorkEffortId.value
       })
     } else {
@@ -340,7 +339,6 @@ async function addNewSession() {
             uploadedByUserLogin: useUserProfile().getUserProfile.username,
             facilityAreaId: selectedArea.value,
             createdDate: Date.now(),
-            dueDate: Date.now(),
             workEffortId: selectedWorkEffortId.value
           })
         }
@@ -352,7 +350,6 @@ async function addNewSession() {
           uploadedByUserLogin: useUserProfile().getUserProfile.username,
           facilityAreaId: selectedArea.value,
           createdDate: Date.now(),
-          dueDate: Date.now(),
           workEffortId: selectedWorkEffortId.value
         })
       }
@@ -377,7 +374,6 @@ async function addNewSession() {
         uploadedByUserLogin: useUserProfile().getUserProfile.username,
         facilityAreaId: selectedArea.value,
         createdDate: Date.now(),
-        dueDate: Date.now(),
         workEffortId: selectedWorkEffortId.value
       }
       cycleCounts.value[index].sessions.push(newSession)

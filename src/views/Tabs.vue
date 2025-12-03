@@ -4,7 +4,7 @@
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="orders" @click="$router.push('/tabs/count')" href="/tabs/count">
-          <ion-icon :icon="infiniteOutline" />
+          <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="more" href="/tabs/settings">
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouterOutlet } from "@ionic/vue";
 import {
-  infiniteOutline,
+  fileTrayFullOutline,
   settingsOutline,
 } from "ionicons/icons";
 import { translate } from '@/i18n'
