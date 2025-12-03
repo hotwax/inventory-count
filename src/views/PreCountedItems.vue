@@ -7,7 +7,7 @@
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
+        <ion-title>{{ translate("Add Hand Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
@@ -57,7 +57,7 @@
         {{ translate("Counted Items") }}
       </h2>
 
-      <ion-list v-if="products.length > 0" class="pre-counted-items">
+      <ion-list v-if="products.length > 0" class="hand-counted-items">
         <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
           <div class="item ion-padding-end">
             <ion-item class="product" lines="none">
@@ -411,8 +411,8 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: translate('Save pre-counted items'),
-    message: translate('Pre-counted items will be added to the scan events log.'),
+    header: translate('Save hand-counted items'),
+    message: translate('Hand-counted items will be added to the scan events log.'),
     buttons: [
       { text: translate('Cancel'), role: 'cancel' },
       {
@@ -430,7 +430,7 @@ async function confirmGoBack() {
 
 <style>
 
-.pre-counted-items { 
+.hand-counted-items {
   .item {
     display: flex;
     justify-content: space-between;

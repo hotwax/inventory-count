@@ -69,10 +69,10 @@
           </ion-popover>
           </div>
 
-          <ion-card class="add-pre-counted" :disabled="!isSessionMutable" button
-            @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
+          <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
+            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
-              <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
+              <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
             </ion-item>
           </ion-card>
@@ -1536,7 +1536,7 @@ main {
   inset-inline: 0;
 }
 
-.add-pre-counted {
+.add-hand-counted {
   position: absolute;
   bottom: var(--spacer-base);
   inset-inline: var(--spacer-sm);
