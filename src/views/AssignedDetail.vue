@@ -33,10 +33,11 @@
             <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <ion-label>{{ translate("Start Date") }}</ion-label>
-              <ion-datetime-button slot="end" datetime="estimatedStartDate"/>
+              <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate"/>
+              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
             </ion-item>
 
-            <ion-modal class="date-time-modal" keep-contents-mounted>
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted>
               <ion-datetime
                 id="estimatedStartDate"
                 :value="getInitialValue('estimatedStartDate')"
@@ -52,10 +53,11 @@
             <ion-item lines="none">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <ion-label>{{ translate("Due Date") }}</ion-label>
-              <ion-datetime-button slot="end" datetime="estimatedCompletionDate"/>
+              <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate"/>
+              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
             </ion-item>
 
-            <ion-modal class="date-time-modal" keep-contents-mounted>
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted>
               <ion-datetime
                 id="estimatedCompletionDate"
                 :value="getInitialValue('estimatedCompletionDate')"
