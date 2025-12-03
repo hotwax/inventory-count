@@ -40,7 +40,7 @@
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
               <ion-label>
                 <p class="overline">{{ translate("Due Date") }}</p>
-                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) }}
+                {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
               </ion-label>
             </ion-item>
           </ion-card>

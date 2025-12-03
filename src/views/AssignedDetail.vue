@@ -32,35 +32,8 @@
             <!-- TODO: Need to Revisit the date-time-button css -->
             <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div class="date-time">
-                <p class="overline">{{ translate("Due Date") }}</p>
-                <ion-datetime-button
-                  datetime="estimatedCompletionDate"
-                  class="date-time-button"
-                />
-              </div>
-            </ion-item>
-
-            <ion-modal class="date-time-modal" keep-contents-mounted>
-              <ion-datetime
-                id="estimatedCompletionDate"
-                :value="getInitialValue('estimatedCompletionDate')"
-                :min="getMinDateTime()"
-                presentation="date-time"
-                show-default-buttons
-                @ionChange="(ev) => handleChange(ev, 'estimatedCompletionDate')"
-              />
-            </ion-modal>
-
-            <ion-item lines="none">
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div class="date-time">
-                <p class="overline">{{ translate("Start Date") }}</p>
-                <ion-datetime-button
-                  datetime="estimatedStartDate"
-                  class="date-time-button"
-                />
-              </div>
+              <ion-label>{{ translate("Start Date") }}</ion-label>
+              <ion-datetime-button slot="end" datetime="estimatedStartDate"/>
             </ion-item>
 
             <ion-modal class="date-time-modal" keep-contents-mounted>
@@ -71,7 +44,28 @@
                 presentation="date-time"
                 show-default-buttons
                 @ionChange="(ev) => handleChange(ev, 'estimatedStartDate')"
-              />
+              >
+                <span slot="title">Cycle count start date</span>
+              </ion-datetime>
+            </ion-modal>
+
+            <ion-item lines="none">
+              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+              <ion-label>{{ translate("Due Date") }}</ion-label>
+              <ion-datetime-button slot="end" datetime="estimatedCompletionDate"/>
+            </ion-item>
+
+            <ion-modal class="date-time-modal" keep-contents-mounted>
+              <ion-datetime
+                id="estimatedCompletionDate"
+                :value="getInitialValue('estimatedCompletionDate')"
+                :min="getMinDateTime()"
+                presentation="date-time"
+                show-default-buttons
+                @ionChange="(ev) => handleChange(ev, 'estimatedCompletionDate')"
+              >
+                <span slot="title">Cycle count due date</span>
+              </ion-datetime>
             </ion-modal>
           </ion-card>
           <ion-card>
@@ -82,11 +76,6 @@
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>
-                40% Coverage
-              </ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -501,21 +490,6 @@ ion-item.date-button {
   z-index: 10;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--ion-color-light);
-}
-
-.date-time {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.date-time-button {
-  --background: transparent;
-  --background-activated: transparent;
-  --box-shadow: none;
-  --padding-start: 0;
-  --padding-end: 0;
-  font-weight: 600;
 }
 
 .filters {
