@@ -4,6 +4,7 @@ import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { db, ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
+import { useAuthStore } from '@/stores/authStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -24,6 +25,7 @@ function currentMillis(): number {
   async function recordScan(params: RecordScanParams): Promise<void> {
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
+      omsInstanceId: useAuthStore().getOMS,
       productId: params.productId || null,
       locationSeqId: params.locationSeqId || null,
       scannedValue: params.productIdentifier,
@@ -36,6 +38,7 @@ function currentMillis(): number {
 
   async function storeInventoryCountItems(items: any[]) {
     if (!items?.length) return;
+    const omsInstanceId = useAuthStore().getOMS;
 
     await useProductMaster().upsertInventoryFromSessionItems(items);
     try {
@@ -44,6 +47,7 @@ function currentMillis(): number {
       const normalized = items.map((item: any) => ({
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
+        omsInstanceId,
         uuid: item.uuid || uuidv4(),
         isRequested: item.isRequested || 'Y',
         productIdentifier: item.productIdentifier || '',
@@ -74,9 +78,10 @@ function currentMillis(): number {
     if (!keyword?.trim()) return []
 
     const value = keyword.trim().toLowerCase()
+    const oms = useAuthStore().getOMS;
 
-    let tableQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
-    let searchByProductIdQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
+    let tableQuery = db.table('inventoryCountRecords').where('[inventoryCountImportId+omsInstanceId]').equals([inventoryCountImportId, oms])
+    let searchByProductIdQuery = db.table('inventoryCountRecords').where('[inventoryCountImportId+omsInstanceId]').equals([inventoryCountImportId, oms])
 
     if (segment === 'counted') {
       tableQuery = tableQuery.and(item => item.quantity > 0)
@@ -110,7 +115,7 @@ function currentMillis(): number {
     // enrich with product info if cached
     for (const item of resultSet) {
       if (item.productId) {
-        const product = await db.table('products').get(item.productId)
+        const product = await db.table('products').where('[productId+omsInstanceId]').equals([item.productId, oms]).first();
         if (product) item.product = product
       }
     }
@@ -118,9 +123,9 @@ function currentMillis(): number {
     const productIds = [...new Set(resultSet.map(item => item.productId).filter(Boolean))] as string[]
     if (productIds.length) {
       const inventoryRecords = await db.productInventory
-        .where('productId')
-        .anyOf(productIds)
-        .toArray()
+        .where('[productId+omsInstanceId]')
+        .anyOf(productIds.map(productId => [productId, oms]))
+        .toArray();
 
       const inventoryMap = new Map(
         inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
@@ -135,10 +140,11 @@ function currentMillis(): number {
   }
 
   async function getInventoryCountImportItems(inventoryCountImportId: string) {
+    const oms = useAuthStore().getOMS;
     try {
       const records = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId')
+        .equals([inventoryCountImportId, oms])
         .toArray();
 
       return records || [];
@@ -150,9 +156,10 @@ function currentMillis(): number {
 
   async function getInventoryCountImportItemsCount(inventoryCountImportId: string): Promise<number> {
     try {
+      const oms = useAuthStore().getOMS;
       const count = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, oms])
         .count();
 
       return count;
@@ -165,9 +172,10 @@ function currentMillis(): number {
   async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
   if (!inventoryCountImportId || !productId) return '';
   try {
+    const oms = useAuthStore().getOMS;
     const record = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
+      .where('[inventoryCountImportId+omsInstanceId]')
+      .equals([inventoryCountImportId, oms])
       .and(item => item.productId === productId)
       .first();
 
@@ -180,9 +188,10 @@ function currentMillis(): number {
 
   async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
     try {
+      const oms = useAuthStore().getOMS;
       const items = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, oms])
         .toArray();
 
       if (!items.length) return [];
@@ -215,13 +224,14 @@ function currentMillis(): number {
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const items = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, useAuthStore().getOMS])
         .filter(item => !item.productId)
         .toArray()
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
-      const products = await db.products.bulkGet(productIds)
+      const oms = useAuthStore().getOMS;
+      const products = await db.products.bulkGet(productIds.map((productId: any) => [productId, oms]));
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
@@ -233,8 +243,8 @@ function currentMillis(): number {
   const getCountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const items = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, useAuthStore().getOMS])
         .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
         .toArray()
 
@@ -245,7 +255,8 @@ function currentMillis(): number {
       });
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
-      const products = await db.products.bulkGet(productIds)
+      const oms = useAuthStore().getOMS;
+      const products = await db.products.bulkGet(productIds.map((productId: any) => [productId, oms]));
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
       return items.map((item) => {
         const product = productMap.get(item.productId || "");
@@ -271,13 +282,14 @@ function currentMillis(): number {
   const getUncountedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const items = await db.inventoryCountRecords
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, useAuthStore().getOMS])
         .filter(item => (Number(item.quantity) || 0) === 0)
         .toArray()
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
-      const products = await db.products.bulkGet(productIds)
+      const oms = useAuthStore().getOMS;
+      const products = await db.products.bulkGet(productIds.map((productId: any) => [productId, oms]));
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
 
@@ -299,13 +311,14 @@ function currentMillis(): number {
   const getUndirectedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const items = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, useAuthStore().getOMS])
         .filter(item => item.isRequested === 'N' && Boolean(item.productId))
         .toArray();
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
-      const products = await db.products.bulkGet(productIds)
+      const oms = useAuthStore().getOMS;
+      const products = await db.products.bulkGet(productIds.map((productId: any) => [productId, oms]));
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
       return items.map(item => ({
@@ -317,8 +330,8 @@ function currentMillis(): number {
   const getScanEvents = (inventoryCountImportId: string) =>
     liveQuery(async () => {
       const events = await db.scanEvents
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, useAuthStore().getOMS])
         .reverse()
         .sortBy('createdAt');
 
@@ -338,8 +351,8 @@ function currentMillis(): number {
   const getTotalCountedUnits = (inventoryCountImportId: string) =>
   liveQuery(async () => {
     const items = await db.inventoryCountRecords
-      .where('inventoryCountImportId')
-      .equals(inventoryCountImportId)
+      .where('[inventoryCountImportId+omsInstanceId]')
+      .equals([inventoryCountImportId, useAuthStore().getOMS])
       .toArray()
 
     return items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)

@@ -774,6 +774,7 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
+          omsInstanceId: useAuthStore().getOMS,
           omsUrl: useAuthStore().getOmsRedirectionUrl,
           userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
@@ -1246,6 +1247,7 @@ async function saveMatchProduct() {
 
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
+    omsInstanceId: useAuthStore().getOMS,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
@@ -1280,6 +1282,7 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
+      omsInstanceId: useAuthStore().getOMS,
       omsUrl: useAuthStore().getOmsRedirectionUrl,
       userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,

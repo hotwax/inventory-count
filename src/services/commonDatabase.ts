@@ -2,6 +2,7 @@ import Dexie, { Table } from 'dexie'
 
 export interface Product {
   productId: string
+  omsInstanceId: string
   productName?: string
   parentProductName?: string
   internalName?: string
@@ -13,6 +14,7 @@ export interface Product {
 export interface ProductInventory {
   productId: string
   facilityId: string
+  omsInstanceId: string
   availableToPromiseTotal: number
   quantityOnHandTotal: number
   updatedAt: number
@@ -21,6 +23,7 @@ export interface ProductInventory {
 export interface InventoryCountImportItem {
   inventoryCountImportId: string
   productId: string | null
+  omsInstanceId: string
   uuid: string
   productIdentifier: string
   locationSeqId?: string | null
@@ -38,6 +41,7 @@ export interface InventoryCountImportItem {
 
 export interface ScanEvent {
   id?: number
+  omsInstanceId: string
   scannedValue?: string
   productId?: string | null
   inventoryCountImportId: string
@@ -54,20 +58,20 @@ export interface AppPreferences {
 
 class CommonDB extends Dexie {
   products!: Table<Product, string>
-  productIdentification!: Table<{ productId: string; identKey: string; value: string }, [string, string]>
-  productInventory!: Table<ProductInventory, [string, string]>
-  inventoryCountRecords!: Table<InventoryCountImportItem, [string, string]>
+  productIdentification!: Table<{ productId: string; identKey: string; value: string, omsInstanceId: string }, [string, string]>
+  productInventory!: Table<ProductInventory, [string, string, string]>
+  inventoryCountRecords!: Table<InventoryCountImportItem, [string, string, string]>
   scanEvents!: Table<ScanEvent, number>
   appPreferences!: Table<AppPreferences, string>
 
   constructor() {
     super('CommonDB')
     this.version(1).stores({
-      products: 'productId, updatedAt',
-      productIdentification: '[productId+identKey], identKey, value',
-      productInventory: '[productId+facilityId], productId, facilityId',
-      inventoryCountRecords: '[inventoryCountImportId+uuid], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested',
-      scanEvents: '++id, inventoryCountImportId, scannedValue, productId, aggApplied',
+      products: '[productId+omsInstanceId], updatedAt, omsInstanceId',
+      productIdentification: '[productId+identKey+omsInstanceId], identKey, value, omsInstanceId, [identKey+value+omsInstanceId], [omsInstanceId+value]',
+      productInventory: '[productId+facilityId+omsInstanceId], productId, [productId+omsInstanceId], facilityId, omsInstanceId',
+      inventoryCountRecords: '[inventoryCountImportId+uuid+omsInstanceId], [inventoryCountImportId+omsInstanceId], inventoryCountImportId, uuid, productIdentifier, productId, quantity, isRequested, omsInstanceId',
+      scanEvents: '++id, inventoryCountImportId, scannedValue, productId, aggApplied, omsInstanceId, [inventoryCountImportId+omsInstanceId]',
       appPreferences: 'key'
     })
   }

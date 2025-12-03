@@ -23,9 +23,6 @@ expose({
 
 let isAggregating = false
 let isSyncing = false
-// const store = useStore();
-
-// Product Lookup Helper
 
 const buildProductQuery = (params: any): Record<string, any> => {
   const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
@@ -64,8 +61,14 @@ const buildProductQuery = (params: any): Record<string, any> => {
 
 
 async function getById(productId: string, context: any) {
+  const oms = context.omsInstanceId
   const now = Date.now()
-  const cached = await db.table('products').get(productId)
+
+  const cached = await db.products
+    .where('[productId+omsInstanceId]')
+    .equals([productId, oms])
+    .first()
+
   const ttlMs = 60 * 60 * 1000
   if (cached && now - cached.updatedAt < ttlMs) {
     return cached
@@ -90,13 +93,16 @@ async function getById(productId: string, context: any) {
 
     const doc = resp?.response?.docs?.[0]
     if (doc) {
-      const normalized = {
+      await db.products.put({
         ...doc,
+        omsInstanceId: oms,
         updatedAt: now
-      }
-      await db.table('products').put(normalized)
-      // Return the normalized version from Dexie
-      return await db.table('products').get(productId)
+      });
+
+      return await db.products
+        .where('[productId+omsInstanceId]')
+        .equals([productId, oms])
+        .first()
     }
   } catch (err) {
     console.error(`Error fetching product ${productId} via workerApi:`, err)
@@ -105,8 +111,15 @@ async function getById(productId: string, context: any) {
   return cached || undefined
 }
 
+
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdentification').where('value').equalsIgnoreCase(value).and(item => item.identKey === context.barcodeIdentification).first()
+  const oms = context.omsInstanceId // ★
+
+  const ident = await db.productIdentification
+    .where('[identKey+value+omsInstanceId]')
+    .equals([context.barcodeIdentification, value, oms])
+    .first()
+
   if (ident) return ident.productId
 
   if (!context?.token || !context?.maargUrl) return null
@@ -131,10 +144,18 @@ async function findProductByIdentification(idType: string, value: string, contex
 
     const productId = resp?.response?.docs?.[0]?.productId
     if (productId) {
-      await db.table('productIdentification').put({ productId, identKey: idType, value })
-      // Optionally cache full product for faster future access
-      const doc = resp.response.docs[0]
-      await db.table('products').put({ ...doc, updatedAt: Date.now() })
+      await db.productIdentification.put({
+        productId,
+        identKey: idType,
+        value,
+        omsInstanceId: oms
+      });
+
+      await db.products.put({
+        ...resp.response.docs[0],
+        omsInstanceId: oms,
+        updatedAt: Date.now()
+      });
     }
 
     return productId || null
@@ -145,12 +166,17 @@ async function findProductByIdentification(idType: string, value: string, contex
 }
 
 function ensureProductStored(productId: string | null, context: any) {
-  if (!productId) return;
-
-  (async () => {
+  if (!productId) return
+  const oms = context.omsInstanceId
+  ;(async () => {
     try {
-      const existing = await db.table('products').get(productId);
-      if (existing) return;
+      const exists = await db.products
+        .where('[productId+omsInstanceId]')
+        .equals([productId, oms])
+        .first()
+
+      if (exists) return
+
       const query = buildProductQuery({
         filter: `productId: ${productId}`,
         viewSize: 1,
@@ -169,65 +195,66 @@ function ensureProductStored(productId: string | null, context: any) {
 
       const doc = resp?.response?.docs?.[0];
       if (doc) {
-        await db.table('products').put({ ...doc, updatedAt: Date.now() });
+        await db.products.put({
+          ...doc,
+          omsInstanceId: oms,
+          updatedAt: Date.now()
+        });
       }
     } catch (err) {
       console.warn(`[Worker] Failed to cache product ${productId}:`, err);
     }
   })();
 }
+
 async function resolveMissingProducts(inventoryCountImportId: string, context: any) {
-  // get all records in this session where productId is null / empty
-  const unresolved = await db.table('inventoryCountRecords')
-    .where({ inventoryCountImportId })
-    .and(item => !item.productId) // null, undefined, empty
+  const oms = context.omsInstanceId
+
+  const unresolved = await db.inventoryCountRecords
+    .where('[inventoryCountImportId+omsInstanceId]')
+    .equals([inventoryCountImportId, oms])
+    .and(item => !item.productId)
     .toArray()
 
   if (!unresolved.length) return 0
 
   const now = Date.now()
 
-  // we’ll do them one by one — these are usually few
   for (const rec of unresolved) {
     const identifier = rec.productIdentifier
     if (!identifier) continue
-    let productId = null
-    productId = await findProductByIdentification(context.barcodeIdentification, identifier, context)
+
+    let productId = await findProductByIdentification(context.barcodeIdentification, identifier, context)
     if (!productId) {
       const product = await getById(identifier, context)
       productId = product?.productId || null
     }
 
-    if (!productId) {
-      continue
-    }
+    if (!productId) continue
 
-    await db.table('inventoryCountRecords')
-      .where('[inventoryCountImportId+uuid]')
-      .equals([inventoryCountImportId, rec.uuid])
-      .modify({
-        productId,
-        lastUpdatedAt: now
-      })
+    await db.inventoryCountRecords
+      .where('[inventoryCountImportId+uuid+omsInstanceId]')
+      .equals([inventoryCountImportId, rec.uuid, oms])
+      .modify({ productId, lastUpdatedAt: now })
 
-    await db.table('scanEvents')
-      .where({ inventoryCountImportId })
+    await db.scanEvents
+      .where('[inventoryCountImportId+omsInstanceId]')
+      .equals([inventoryCountImportId, oms])
       .and(scanEvent => scanEvent.scannedValue === identifier)
-      .modify({
-        productId,
-        lastUpdatedAt: now
-      });
+      .modify({ productId })
   }
-  return;
+  return 0
 }
 
-// Aggregation Logic
 async function aggregate(inventoryCountImportId: string, context: any) {
+  const oms = context.omsInstanceId
+
   if (isAggregating) return 0
   isAggregating = true
   try {
-    const scans = await db.table('scanEvents')
-      .where({ inventoryCountImportId })
+    const scans = await db.scanEvents
+      .where('[inventoryCountImportId+omsInstanceId]')
+      .equals([inventoryCountImportId, oms])
       .and(scanEvent => scanEvent.aggApplied === 0)
       .toArray()
 
@@ -247,41 +274,38 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
       let productId: any = null
-      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and(item => item.identKey === context.barcodeIdentification).first()
-      if (identification) {
-        productId = identification.productId
-      } else {
-        const product = await db.table('products').get(scannedValue)
-        if (product) {
-          productId = product.productId
-        }
-      }
-      // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
-      // if (!productId) {
-      //   const product = await getById(scannedValue, context)
-      //   productId = product?.productId || null
-      // }
-
-      const existing = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
+      const ident = await db.productIdentification
+        .where('[identKey+value+omsInstanceId]')
+        .equals([context.barcodeIdentification, scannedValue, oms])
         .first()
 
-      // if (productId) ensureProductStored(productId, context);
+      if (ident) productId = ident.productId
+      else {
+        const prod = await db.products
+          .where('[productId+omsInstanceId]')
+          .equals([scannedValue, oms])
+          .first()
+        if (prod) productId = prod.productId
+      }
+
+      const existing = await db.inventoryCountRecords
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, oms])
+        .and(itm => (productId && itm.productId === productId) || itm.productIdentifier === scannedValue)
+        .first()
 
       if (existing) {
-        await db.table('inventoryCountRecords').put({
+        await db.inventoryCountRecords.put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
-        // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
-          lastUpdatedAt: now, // mark updated
+          lastUpdatedAt: now,
           productId: existing.productId || productId,
-          isRequested: existing.isRequested ?? 'Y'
+          isRequested: existing.isRequested ?? 'Y',
+          omsInstanceId: oms
         })
       } else {
-        await db.table('inventoryCountRecords').add({
+        await db.inventoryCountRecords.add({
           inventoryCountImportId,
           uuid: uuidv4(),
           productIdentifier: scannedValue,
@@ -290,24 +314,26 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
-          lastUpdatedAt: now // new record, so same as createdAt
+          lastUpdatedAt: now,
+          status: 'active',
+          facilityId: context.facilityId,
+          omsInstanceId: oms
         })
       }
+
       if (productId) {
-        await db.table('scanEvents')
-          .where({ inventoryCountImportId })
+        await db.scanEvents
+          .where('[inventoryCountImportId+omsInstanceId]')
+          .equals([inventoryCountImportId, oms])
           .and(scanEvent => scanEvent.scannedValue === scannedValue)
-          .modify({
-            productId,
-            lastUpdatedAt: now
-          });
+          .modify({ productId })
       }
       processed++
     }
 
-    await db.table('scanEvents')
+    await db.scanEvents
       .where('id')
-      .anyOf(scans.map(scanEvent => scanEvent.id))
+      .anyOf(scans.map(se => se.id).filter((id): id is number => id !== undefined))
       .modify({ aggApplied: 1 })
 
     return processed
@@ -320,25 +346,25 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 }
 
 async function matchProductLocallyAndSync(inventoryCountImportId: string, item: any, productId: string, context: any) {
-  if (!productId) throw new Error("Product ID is required");
-
-  const now = Date.now();
+  const oms = context.omsInstanceId
+  const now = Date.now()
 
   try {
-    ensureProductStored(productId, context);
-    await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
-      const table = db.table('inventoryCountRecords');
+    ensureProductStored(productId, context)
+
+    await db.transaction('rw', db.inventoryCountRecords, async () => {
+      const table = db.inventoryCountRecords
 
       const existing = await table
-        .where({ inventoryCountImportId })
-        .and((itm: any) => itm.uuid === item?.uuid)
-        .first();
+        .where('[inventoryCountImportId+omsInstanceId]')
+        .equals([inventoryCountImportId, oms])
+        .and(itm => itm.uuid === item?.uuid)
+        .first()
 
       if (existing) {
-        // Use compound key + modify for a safe partial update
         await table
-          .where('[inventoryCountImportId+uuid]')
-          .equals([inventoryCountImportId, existing.uuid])
+          .where('[inventoryCountImportId+uuid+omsInstanceId]')
+          .equals([inventoryCountImportId, existing.uuid, oms])
           .modify({
             productId,
             lastUpdatedAt: now,
@@ -360,34 +386,40 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
           lastSyncedAt: null,
           lastSyncedBatchId: null,
           aggApplied: 1,
-          isRequested: context.isRequested
+          isRequested: context.isRequested,
+          omsInstanceId: oms
         });
       }
     });
 
-    console.log(`[Worker] Triggering syncToServer for ${inventoryCountImportId}`);
-    await syncToServer(inventoryCountImportId, context);
+    await syncToServer(inventoryCountImportId, context)
+    return { success: true }
 
-    return { success: true };
   } catch (err) {
-    console.error('[Worker] Error in matchProductLocallyAndSync', err);
-    return { success: false, error: err };
+    console.error('[Worker] Error in matchProductLocallyAndSync', err)
+    return { success: false, error: err }
   }
 }
 
 async function syncToServer(inventoryCountImportId: string, context: any) {
+  const oms = context.omsInstanceId // ★
+
   if (isSyncing) return 0
   isSyncing = true
-  try {
-    const baseUrl = context.maargUrl
-    const token = context.token
 
-    const pending = await db.table('inventoryCountRecords')
-      .where({ inventoryCountImportId })
-      .and(item =>
-        !item.lastSyncedAt ||  // never synced
-        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt) // modified after last sync
-      )
+  try {
+    const pending = await db.inventoryCountRecords
+      .where('[inventoryCountImportId+omsInstanceId]')
+      .equals([inventoryCountImportId, oms])
+      .and((item: any) => {
+        const neverSynced = !item.lastSyncedAt
+        const updated =
+          item.lastUpdatedAt !== undefined &&
+          item.lastSyncedAt !== undefined &&
+          item.lastSyncedAt &&
+          item.lastUpdatedAt > item.lastSyncedAt
+        return neverSynced || updated
+      })
       .toArray()
 
     if (!pending.length) return 0
@@ -404,25 +436,22 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       countedByUserLoginId: context.userLoginId
     }))
 
-    const payload = { items }
-
     const resp = await workerApi({
-      baseURL: baseUrl,
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      baseURL: context.maargUrl,
+      headers: { 'Authorization': `Bearer ${context.token}` },
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/items`,
       method: 'PUT',
-      data: payload
+      data: { items }
     })
 
     if (resp) {
       const now = Date.now()
-      await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
+
+      await db.transaction('rw', db.inventoryCountRecords, async () => {
         for (const item of pending) {
-          await db.table('inventoryCountRecords')
-            .where('[inventoryCountImportId+uuid]')
-            .equals([inventoryCountImportId, item.uuid])
+          await db.inventoryCountRecords
+            .where('[inventoryCountImportId+uuid+omsInstanceId]')
+            .equals([inventoryCountImportId, item.uuid, oms])
             .modify({
               lastSyncedAt: now,
               lastSyncedBatchId: `batch-${now}`

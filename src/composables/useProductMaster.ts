@@ -79,7 +79,11 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const now = Date.now()
-  const product = await db.products.get(productId)
+  const oms = useAuthStore().getOMS;
+  const product = await db.products
+    .where('[productId+omsInstanceId]')
+    .equals([productId, oms])
+    .first();
 
   if (product && (!opts?.refresh || now - product.updatedAt < staleMs.value)) {
     return { product, status: 'hit' as const }
@@ -92,7 +96,10 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
       await upsertFromApi(docs)
 
       // read back the normalized product from IndexedDB
-      const updatedProduct = await db.products.get(productId)
+      const updatedProduct = await db.products
+        .where('[productId+omsInstanceId]')
+        .equals([productId, oms])
+        .first();
 
       if (updatedProduct) {
         return { product: updatedProduct, status: product ? 'stale-refreshed' as const : 'miss-refreshed' as const }
@@ -105,19 +112,27 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
 }
 
 const findByIdentification = async (idValue: string) => {
-  if (!cacheReady.value) throw new Error("ProductMaster not initialized")
-  if (!idValue) return { product: undefined, identificationValue: undefined }
+  if (!cacheReady.value) throw new Error("ProductMaster not initialized");
+  if (!idValue) return { product: undefined, identificationValue: undefined };
 
-  // Since Dexie cannot query inside arrays directly, we need to scan manually:
-  const allProducts = await db.products.toArray()
-  const matchedProduct = allProducts.find(product =>
-    product.goodIdentifications?.some(identification => identification.value === idValue)
-  )
+  const oms = useAuthStore().getOMS;
 
-  if (!matchedProduct) return { product: undefined, identificationValue: undefined }
+  const productIdents = await db.productIdentification
+    .where('[value+omsInstanceId]')
+    .equals([idValue, oms])
+    .toArray();
 
-  return { product: matchedProduct, identificationValue: idValue }
-}
+  if (!productIdents.length) return { product: undefined, identificationValue: undefined };
+
+  const productId = productIdents[0].productId;
+
+  const product = await db.products
+    .where('[productId+omsInstanceId]')
+    .equals([productId, oms])
+    .first();
+
+  return { product, identificationValue: idValue };
+};
 
 const getByIdentificationFromSolr = async (idValue: string) => {
   const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
@@ -182,96 +197,94 @@ const prefetch = async (productIds: string[]) => {
 const upsertFromApi = async (docs: any[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized");
 
-  const now = Date.now()
+  const oms = useAuthStore().getOMS;
+  const now = Date.now();
 
-  // Convert API docs → IndexedDB friendly format
   const products = docs.map(doc => ({
     ...mapApiDocToProduct(doc),
+    omsInstanceId: oms,
     updatedAt: now
-  }))
+  }));
 
-  // Prepare identifications
-  const idents: any[] = []
+  const idents: any[] = [];
   for (const product of products) {
-    if (!product.goodIdentifications?.length) continue
+    if (!product.goodIdentifications?.length) continue;
 
     for (const ident of product.goodIdentifications) {
-      const identKey = (makeIdentKey(ident.type) || ident.type).trim()
-      const identValue = ident.value?.trim()
-      if (!identKey || !identValue) continue
-
       idents.push({
         productId: product.productId,
-        identKey,
-        value: identValue
-      })
+        identKey: ident.type,
+        value: ident.value,
+        omsInstanceId: oms
+      });
     }
   }
 
   await db.transaction("rw", db.products, db.productIdentification, async () => {
-    // Write all products in one shot
-    await db.products.bulkPut(products)
-
-    // Bulk put idents (Dexie will update if PK matches)
-    if (idents.length) {
-      await db.productIdentification.bulkPut(idents)
-    }
-  })
+    await db.products.bulkPut(products);
+    if (idents.length) await db.productIdentification.bulkPut(idents);
+  });
 };
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdentification')
-    .where('value')
-    .equalsIgnoreCase(value)
-    .first()
-  if (ident) return ident.productId
+  const oms = useAuthStore().getOMS;
 
-  if (!context?.token || !context?.omsUrl) return null
-  if (!idType) idType = context.barcodeIdentification
+  const ident = await db.productIdentification
+    .where('[value+omsInstanceId]')
+    .equals([value, oms])
+    .first();
+
+  if (ident) return ident.productId;
+
+  if (!context?.token || !oms) return null;
 
   const query = useProductMaster().buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      });
+    filter: `goodIdentifications:${idType}/${value}`,
+    viewSize: 1,
+    fieldsToSelect:
+      `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+  });
+
   try {
     const resp = await workerApi({
-      baseURL: context.omsUrl,
+      baseURL: oms,
       headers: {
-        'Authorization': `Bearer ${context.token}`,
+        Authorization: `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
       url: 'inventory-cycle-count/runSolrQuery',
       method: 'POST',
       data: query
-    })
+    });
 
-    const productId = resp?.response?.docs?.[0]?.productId
-
+    const productId = resp?.response?.docs?.[0]?.productId;
     if (productId) {
-      await db.table('productIdentification').put({
+      await db.productIdentification.put({
         productId,
         identKey: idType,
-        value
-      })
-      return productId
+        value,
+        omsInstanceId: oms
+      });
+      return productId;
     }
 
-    return null
+    return null;
   } catch (err) {
-    console.warn('Solr lookup failed for', value, err)
-    return null
+    console.warn('Solr lookup failed for', value, err);
+    return null;
   }
 }
 
 async function searchProducts(value: string) {
-  const products = await db.table('productIdentification')
-    .where('value')
-    .startsWithIgnoreCase(value)
+  const oms = useAuthStore().getOMS;
+
+  const matches = await db.productIdentification
+    .where('[omsInstanceId+value]')
+    .between([oms, value], [oms, value + '\uffff'])
     .limit(250)
-    .toArray()
-    if (products) return products.map(product => product.productId)
-    return null
+    .toArray();
+
+  return matches?.map(item => item.productId) || [];
 }
 
 const clearCache = async () => {
@@ -286,10 +299,16 @@ const setStaleMs = (ms: number) => {
 }
 
 const liveProduct = (productId: string) => {
+  const oms = useAuthStore().getOMS;
+
   return liveQuery(() =>
-    db.products.get(productId)
-  )
-}
+    db.products
+      .where('[productId+omsInstanceId]')
+      .equals([productId, oms])
+      .first()
+  );
+};
+
 
 const mapApiDocToProduct = (doc: any): Product => {
   // Normalize goodIdentifications (convert "SKU/123" → { type: "SKU", value: "123" })
@@ -468,19 +487,23 @@ const setInventoryStaleMs = (ms: number) => { inventoryStaleMs.value = ms }
 
 /** Upsert a batch of product+facility inventory records into IndexedDB */
 const upsertInventoryBatch = async (records: any[]) => {
-  if (!records?.length) return
+  if (!records?.length) return;
 
-  const now = Date.now()
-  const normalized = records.map(record => ({
-    productId: record.productId,
-    facilityId: record.facilityId,
-    availableToPromiseTotal: Number(record.availableToPromiseTotal || 0),
-    quantityOnHandTotal: Number(record.quantityOnHandTotal || 0),
-    updatedAt: record.updatedAt ?? now
-  }))
+  const oms = useAuthStore().getOMS;
+  const now = Date.now();
 
-  await db.productInventory.bulkPut(normalized)
-}
+  const normalized = records.map(r => ({
+    productId: r.productId,
+    facilityId: r.facilityId,
+    availableToPromiseTotal: Number(r.availableToPromiseTotal || 0),
+    quantityOnHandTotal: Number(r.quantityOnHandTotal || 0),
+    updatedAt: r.updatedAt ?? now,
+    omsInstanceId: oms
+  }));
+
+  await db.productInventory.bulkPut(normalized);
+};
+
 
 /**
  * Helper for session /items response:
@@ -504,14 +527,12 @@ const upsertInventoryFromSessionItems = async (items: any[]) => {
 }
 
 /** Low-level: fetch inventory snapshot from OMS and store it */
-const getInventory = async (
-  productId: string,
-  facilityId: string
-): Promise<any | null> => {
-  if (!productId || !facilityId) return null
+const getInventory = async (productId: string, facilityId: string) => {
+  const oms = useAuthStore().getOMS;
+  if (!productId || !facilityId) return null;
 
-  const baseURL = useAuthStore().getBaseUrl
-  const token = useAuthStore().token.value
+  const baseURL = useAuthStore().getBaseUrl;
+  const token = useAuthStore().token.value;
 
   const resp = await client({
     url: 'oms/dataDocumentView',
@@ -526,22 +547,23 @@ const getInventory = async (
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
     }
-  })
+  });
 
-  const row = resp.data?.entityList?.[0] || null
-  if (!row) return null
+  const row = resp.data?.entityList?.[0] || null;
+  if (!row) return null;
 
   const record = {
     productId,
     facilityId,
     availableToPromiseTotal: row.availableToPromiseTotal ?? 0,
     quantityOnHandTotal: row.quantityOnHandTotal ?? 0,
-    updatedAt: Date.now()
-  }
+    updatedAt: Date.now(),
+    omsInstanceId: oms
+  };
 
-  await upsertInventoryBatch([record])
-  return record
-}
+  await db.productInventory.bulkPut([record]);
+  return record;
+};
 
 /**
  * Main: get product inventory snapshot (ATP/QOH) for product+facility
@@ -553,25 +575,26 @@ const getProductInventory = async (
   facilityId: string,
   opts: { forceRefresh?: boolean } = {}
 ) => {
-  if (!productId || !facilityId) return null
+  const oms = useAuthStore().getOMS;
 
-  const key = [productId, facilityId] as [string, string]
+  if (!productId || !facilityId) return null;
+
   const cached = await db.productInventory
-    .where('[productId+facilityId]')
-    .equals(key)
-    .first()
+    .where('[productId+facilityId+omsInstanceId]')
+    .equals([productId, facilityId, oms])
+    .first();
 
-  const now = Date.now()
+  const now = Date.now();
   const isStale =
     !cached ||
     opts.forceRefresh ||
-    now - (cached?.updatedAt || 0) > inventoryStaleMs.value
+    now - (cached?.updatedAt || 0) > inventoryStaleMs.value;
 
-  if (!isStale && cached) return cached
+  if (!isStale && cached) return cached;
 
-  const fresh = await getInventory(productId, facilityId)
-  return fresh || cached || null
-}
+  const fresh = await getInventory(productId, facilityId);
+  return fresh || cached || null;
+};
 
 /** Convenience: just QOH value */
 const getProductQoh = async (
