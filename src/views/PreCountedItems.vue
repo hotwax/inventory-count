@@ -355,29 +355,26 @@ async function getProducts(query: any) {
 }
 
 async function addProductInPreCountedItems(product: any) {
-  await loader.present('Loading...')
-  try {
-    searchedProductString.value = ''
-    searchedProducts.value = []
-    isSearchResultsModalOpen.value = false
+  searchedProductString.value = ''
+  searchedProducts.value = []
+  isSearchResultsModalOpen.value = false
 
-    product.countedQuantity = 0
-    product.saved = false
-    await setProductQoh(product)
+  const productEntry = { ...product, countedQuantity: 0, saved: false }
+  products.value.unshift(productEntry)
+
+  // Focus the quantity input for the newly added product as soon as it renders
+  await focusQuantityInput(productEntry.productId)
+
+  try {
+    await setProductQoh(productEntry)
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
       props.inventoryCountImportId,
-      product.productId
+      productEntry.productId
     );
-    product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
-    products.value.unshift(product)
+    productEntry.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
   } catch (err) {
     console.error('Error adding product:', err)
   }
-
-  await loader.dismiss()
-
-  // Focus the quantity input for the newly added product
-  await focusQuantityInput(product.productId)
 }
 
 function openSearchResultsModal() {
