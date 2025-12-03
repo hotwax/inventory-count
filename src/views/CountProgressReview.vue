@@ -64,26 +64,26 @@
                 <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
               </ion-card-header>
             </ion-card>
-            <div class="actions">
-              <ion-button v-if="isWorkEffortInProgress" :disabled="isSubmitDisabled" fill="outline" color="success" @click="markAsCompleted">
-                <ion-icon slot="start" :icon="checkmarkDoneOutline" />
-                {{ translate("SUBMIT FOR REVIEW") }}
-              </ion-button>
-            </div>
-            <ion-card v-if="!canSubmitForReview && !isLoading" class="submission-guidance" color="light">
-              <ion-card-header>
+
+            <!-- Card 3: Submit for Review -->
+            <ion-card v-if="isWorkEffortInProgress && !isLoading" class="submission-card">
+              <ion-card-header v-if="!canSubmitForReview">
                 <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
                 <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
               </ion-card-header>
-              <ion-list>
+              <ion-list v-if="!canSubmitForReview">
                 <ion-item v-for="requirement in submissionRequirements" :key="requirement.id" lines="none" :detail="false">
                   <ion-icon slot="start" :color="requirement.met ? 'success' : 'warning'" :icon="requirement.met ? checkmarkCircleOutline : alertCircleOutline" />
                   <ion-label>
-                    <h3>{{ requirement.title }}</h3>
+                    {{ requirement.title }}
                     <p>{{ requirement.helpText }}</p>
                   </ion-label>
                 </ion-item>
               </ion-list>
+              <ion-button class="ion-margin" expand="block" :disabled="isSubmitDisabled" color="success" @click="markAsCompleted">
+                <ion-icon slot="start" :icon="checkmarkDoneOutline" />
+                {{ translate("SUBMIT FOR REVIEW") }}
+              </ion-button>
             </ion-card>
         </div>
         <!-- Segments -->
@@ -996,20 +996,8 @@ function areAllSessionCompleted() {
   flex: 0 1 350px;
 }
 
-.actions {
+.submission-card {
   margin-inline-start: auto;
-}
-
-.submission-guidance {
-  margin-top: 12px;
-}
-
-.submission-guidance h3 {
-  margin: 6px 0 0;
-}
-
-.submission-guidance ion-item {
-  --background: transparent;
 }
 
 .big-number {
