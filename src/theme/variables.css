@@ -292,12 +292,6 @@ section {
   display: grid;
 }
 
-.date-time-modal {
-  --width: 320px;
-  --height: 440px;
-  --border-radius: 8px;
-}
-
 ion-input.name {
   --background: var(--ion-color-light);
 }

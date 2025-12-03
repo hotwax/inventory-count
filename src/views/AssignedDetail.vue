@@ -32,35 +32,42 @@
             <!-- TODO: Need to Revisit the date-time-button css -->
             <ion-item>
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div>
-                <p class="overline">{{ translate("Due Date") }}</p>
-                <ion-button @click="openModal('estimatedCompletionDate')" class="date-time-button">
-                  {{ workEffort.estimatedCompletionDate ? formatDateTime(workEffort.estimatedCompletionDate) : translate("Add Due Date") }}
-                </ion-button>
-              </div>
+              <ion-label>{{ translate("Start Date") }}</ion-label>
+              <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate"/>
+              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
             </ion-item>
+
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted>
+              <ion-datetime
+                id="estimatedStartDate"
+                :value="getInitialValue('estimatedStartDate')"
+                :min="getMinDateTime()"
+                presentation="date-time"
+                show-default-buttons
+                @ionChange="(ev) => handleChange(ev, 'estimatedStartDate')"
+              >
+                <span slot="title">Cycle count start date</span>
+              </ion-datetime>
+            </ion-modal>
 
             <ion-item lines="none">
               <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <div>
-                <p class="overline">{{ translate("Start Date") }}</p>
-                <ion-button @click="openModal('estimatedStartDate')" class="date-time-button">
-                  {{ workEffort.estimatedStartDate ? formatDateTime(workEffort.estimatedStartDate) : translate("Add Start Date") }}
-                </ion-button>
-              </div>
+              <ion-label>{{ translate("Due Date") }}</ion-label>
+              <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate"/>
+              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
             </ion-item>
 
-            <ion-modal class="date-time-modal" :is-open="isModalOpen" @didDismiss="closeModal">
-              <ion-content :force-overscroll="false">
-                <ion-datetime
-                  :value="initialValue"
-                  :min="minDateTime"
-                  presentation="date-time"
-                  show-default-buttons
-                  @ionChange="handleChange"
-                  @ionCancel="closeModal"
-                />
-              </ion-content>
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted>
+              <ion-datetime
+                id="estimatedCompletionDate"
+                :value="getInitialValue('estimatedCompletionDate')"
+                :min="getMinDateTime()"
+                presentation="date-time"
+                show-default-buttons
+                @ionChange="(ev) => handleChange(ev, 'estimatedCompletionDate')"
+              >
+                <span slot="title">Cycle count due date</span>
+              </ion-datetime>
             </ion-modal>
           </ion-card>
           <ion-card>
@@ -71,11 +78,6 @@
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>
-                40% Coverage
-              </ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -196,7 +198,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -269,31 +271,24 @@ async function getWorkEffortDetails() {
   }
 }
 
-const isModalOpen = ref(false)
-const currentField = ref("")
-const initialValue: any = ref("")
-const minDateTime: any = ref("")
 const facilityTimeZone: any = ref(null)
 
-function formatDateTime(date: number | string) {
+function getInitialValue(field: string) {
+  const value = workEffort.value?.[field];
+  const date = value
+    ? DateTime.fromMillis(Number(value))
+    : DateTime.now();
+
+  return facilityTimeZone.value ? date.setZone(facilityTimeZone.value).toISO() : date.toISO();
+}
+
+function getMinDateTime() {
   return facilityTimeZone.value
-    ? DateTime.fromMillis(Number(date)).setZone(facilityTimeZone.value).toFormat("dd LLL yyyy t")
-    : DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy t")
+    ? DateTime.now().setZone(facilityTimeZone.value).toISO()
+    : DateTime.now().toISO();
 }
 
-function openModal(field: string) {
-  currentField.value = field
-  const value = workEffort.value[field]
-
-  initialValue.value = value
-    ? (facilityTimeZone.value ? DateTime.fromMillis(value).setZone(facilityTimeZone.value).toISO() : DateTime.fromMillis(value).toISO())
-    : (facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO())
-
-  minDateTime.value = facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO()
-  isModalOpen.value = true
-}
-
-async function handleChange(ev: any) {
+async function handleChange(ev: any, currentField: string) {
   const iso = ev.detail.value;
   if (!iso) return;
 
@@ -304,24 +299,19 @@ async function handleChange(ev: any) {
 
     const resp = await useInventoryCountRun().updateWorkEffort({
       workEffortId: workEffort.value.workEffortId,
-      [currentField.value]: millis
+      [currentField]: millis
     })
 
     if (resp?.status === 200) {
-      workEffort.value[currentField.value] = millis;
+      workEffort.value[currentField] = millis;
       showToast(translate("Updated Successfully"))
     } else {
       throw resp;
     }
   } catch (error) {
     console.error("Error Udpating Cycle Count: ", error);
-    showToast(`Failed to Update: ${currentField.value} on Cycle Count`);
+    showToast(`Failed to Update: ${currentField} on Cycle Count`);
   }
-  closeModal();
-}
-
-function closeModal() {
-  isModalOpen.value = false
 }
 
 function openSessionPopover(event: Event, session: any, cycleCount: any) {
