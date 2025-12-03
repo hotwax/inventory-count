@@ -66,7 +66,7 @@
             </ion-card>
 
             <!-- Card 3: Submit for Review -->
-            <ion-card v-if="isWorkEffortInProgress && !isLoading" class="submission-card">
+            <ion-card v-if="canManageCountProgress && isWorkEffortInProgress && !isLoading" class="submission-card">
               <ion-card-header v-if="!canSubmitForReview">
                 <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
                 <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
@@ -109,7 +109,11 @@
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
             <template v-else>
-              <ion-item :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0" lines="full">
+              <ion-item
+                v-if="canManageCountProgress"
+                :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0"
+                lines="full"
+              >
                 <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
                   <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
                 </ion-label>
@@ -160,7 +164,7 @@
               <p>{{ translate("Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.") }}</p>
             </div>
             <template v-else>
-            <ion-item>
+            <ion-item v-if="canManageCountProgress">
               <ion-label>
                 {{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}
               </ion-label>
@@ -412,6 +416,8 @@ const canPreviewItems = computed(() => (
   isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
 ));
 
+const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
+
 const isWorkEffortInProgress = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_IN_PRGS');
 
 const areSessionsSubmitted = computed(() => {
@@ -422,10 +428,18 @@ const areSessionsSubmitted = computed(() => {
 const areRequestedItemsCounted = computed(() => uncountedItems.value.length === 0);
 
 const canSubmitForReview = computed(() => (
-  isWorkEffortInProgress.value && areSessionsSubmitted.value && areRequestedItemsCounted.value
+  canManageCountProgress.value && isWorkEffortInProgress.value && areSessionsSubmitted.value && areRequestedItemsCounted.value
 ));
 
 const submissionRequirements = computed(() => [
+  {
+    id: 'permission',
+    met: canManageCountProgress.value,
+    title: translate('Permission granted'),
+    helpText: canManageCountProgress.value
+      ? translate('You have the required permission to submit counts for review.')
+      : translate('You need the MANAGE_COUNT_PROGRESS permission to submit this count.')
+  },
   {
     id: 'in-progress',
     met: isWorkEffortInProgress.value,
@@ -662,6 +676,10 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
 }
 
 async function skipAllUndirectedItems() {
+  if (!canManageCountProgress.value) {
+    showToast(translate('You do not have permission to access this page'));
+    return;
+  }
   const unskippedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
   
   if (unskippedItems.length === 0) {
@@ -880,6 +898,10 @@ async function getCountSessions(productId: any) {
 }
 
 async function createSessionForUncountedItems() {
+  if (!canManageCountProgress.value) {
+    showToast(translate('You do not have permission to perform this action'));
+    return;
+  }
   await loader.present("Creating Session...");
   try {
     const newSession = {
@@ -951,6 +973,11 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
 }
 
 async function markAsCompleted() {
+  if (!canManageCountProgress.value) {
+    showToast(translate('You do not have permission to perform this action'));
+    return;
+  }
+
   // Check if there are any unskipped undirected items for directed counts
   if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
     const unskippedUndirectedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);

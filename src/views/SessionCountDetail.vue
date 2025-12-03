@@ -19,11 +19,10 @@
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
-              @ionBlur="handleScannerBlur" @ionFocus="handleScannerFocus"
-              :disabled="sessionLocked || inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'"></ion-input>
+              :disabled="!isSessionMutable"></ion-input>
           </ion-item>
+          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="!isSessionMutable">
 
-          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled">
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ scannerButtonLabel }}
           </ion-button>
@@ -70,7 +69,7 @@
           </ion-popover>
           </div>
 
-          <ion-card class="add-pre-counted" :disabled="inventoryCountImport?.statusId === 'SESSION_VOIDED' || inventoryCountImport?.statusId === 'SESSION_SUBMITTED'" button
+          <ion-card class="add-pre-counted" :disabled="!isSessionMutable" button
             @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
@@ -89,6 +88,7 @@
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
+
             <!-- When session is SUBMITTED: show only Re-open button -->
             <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
               <ion-button color="warning" fill="outline" @click="reopen">
@@ -99,26 +99,32 @@
 
             <!-- When session is VOIDED: all buttons disabled -->
             <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
-              <ion-button color="warning" fill="outline" disabled>
-                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+              <ion-badge color="warning">
                 {{ translate("Session discarded") }}
-              </ion-button>
+              </ion-badge>
             </template>
 
             <!-- Default: show Edit / Discard / Submit -->
             <template v-else>
-              <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
-                {{ translate("Edit") }}
-              </ion-button>
-              <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="exitOutline"></ion-icon>
-                {{ translate("Discard") }}
-              </ion-button>
-              <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
-                <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
-                {{ translate("Submit") }}
-              </ion-button>
+              <div class="actions">
+                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
+                  {{ translate("Edit") }}
+                </ion-button>
+                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="exitOutline"></ion-icon>
+                  {{ translate("Discard") }}
+                </ion-button>
+                <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
+                  <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
+                  {{ translate("Submit") }}
+                </ion-button>
+                <ion-item lines="none" v-if="timeLeft">
+                  <ion-label slot="end" :color="timerColor">
+                    {{ timeLeft }}
+                  </ion-label>
+                </ion-item>
+              </div>
             </template>
           </div>
 
@@ -313,7 +319,7 @@
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
@@ -361,7 +367,7 @@
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
@@ -537,7 +543,7 @@
           <ion-img :src="largeImage" />
         </ion-content>
       </ion-modal>
-      <ion-alert :is-open="showSubmitAlert" header="Submit for review" message="Make sure you’ve reviewed the products and their counts before uploading them for review."
+      <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
           { text: 'Submit', role: 'confirm', handler: confirmSubmit }
@@ -573,6 +579,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
@@ -614,6 +621,10 @@ const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
 const showSubmitAlert = ref(false)
 const showDiscardAlert = ref(false)
+const workEffort = ref<any>(null);
+const timeLeft = ref('');
+const timerColor = ref('medium');
+let timerInterval: any = null;
 
 //Progress bar
 const totalItems = ref(0)
@@ -651,6 +662,8 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
+const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
+const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
 
@@ -707,6 +720,7 @@ watchEffect(() => {
 onIonViewDidEnter(async () => {
   try {
     await startSession();
+    await fetchWorkEffort();
     await handleSessionLock();
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
@@ -790,7 +804,51 @@ onIonViewDidLeave(async () => {
     await lockWorker.stopHeartbeat()
     lockWorker = null
   }
+  if (timerInterval) clearInterval(timerInterval);
 })
+
+async function fetchWorkEffort() {
+  try {
+    const resp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (resp?.status === 200) {
+      workEffort.value = resp.data;
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+  } catch (err) {
+    console.error('Failed to fetch work effort', err);
+  }
+}
+
+function updateTimer() {
+  if (!workEffort.value?.estimatedCompletionDate) return;
+  
+  const now = DateTime.now();
+  const due = DateTime.fromMillis(workEffort.value.estimatedCompletionDate);
+  const diff = due.diff(now, ['days', 'hours', 'minutes', 'seconds']);
+  
+  if (diff.as('milliseconds') < 0) {
+    timeLeft.value = translate("Overdue") + " " + due.toRelative();
+    timerColor.value = "danger";
+    return;
+  }
+
+  const days = Math.floor(diff.days);
+  const hours = Math.floor(diff.hours);
+  const minutes = Math.floor(diff.minutes);
+  const seconds = Math.floor(diff.seconds);
+
+  if (days > 0) {
+    timeLeft.value = translate("Due in") + ` ${days}d ${hours}h`;
+    timerColor.value = "medium";
+  } else if (hours > 0) {
+    timeLeft.value = translate("Due in") + ` ${hours}h ${minutes}m ${seconds}s`;
+    timerColor.value = hours < 4 ? "warning" : "medium";
+  } else {
+    timeLeft.value = translate("Due in") + ` ${minutes}m ${seconds}s`;
+    timerColor.value = "danger";
+  }
+}
 
 function openEditSessionModal() {
   isEditNewSessionModalOpen.value = true;
