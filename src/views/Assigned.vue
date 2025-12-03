@@ -140,7 +140,7 @@ import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline
 import { translate } from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getStatusColor, loader, showToast } from "@/services/uiUtils";
+import { getStatusColor, loader, showToast, getFacilityChipLabel } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
@@ -204,16 +204,7 @@ onIonViewWillLeave(async () => {
 
 const facilities = computed(() => productStore.getFacilities || [])
 
-const facilityChipLabel = computed(() => {
-  if (filters.value.facilityIds.length === 0) {
-    return translate('All');
-  } else if (filters.value.facilityIds.length === 1) {
-    const facility = facilities.value.find((f: any) => f.facilityId === filters.value.facilityIds[0]);
-    return facility?.facilityName || filters.value.facilityIds[0];
-  } else {
-    return `${filters.value.facilityIds.length} ${translate('facilities')}`;
-  }
-});
+const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
 const facilityModal = ref()
 const facilityQueryString = ref('')

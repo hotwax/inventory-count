@@ -122,7 +122,7 @@ import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icon
 import { translate } from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader, showToast } from '@/services/uiUtils';
+import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
@@ -165,16 +165,7 @@ const filterOptions = {
 const productStore = useProductStore();
 const facilities = computed(() => productStore.getFacilities || []);
 
-const facilityChipLabel = computed(() => {
-  if (filters.facilityIds.length === 0) {
-    return translate('All');
-  } else if (filters.facilityIds.length === 1) {
-    const facility = facilities.value.find((f: any) => f.facilityId === filters.facilityIds[0]);
-    return facility?.facilityName || filters.facilityIds[0];
-  } else {
-    return `${filters.facilityIds.length} ${translate('facilities')}`;
-  }
-});
+const facilityChipLabel = computed(() => getFacilityChipLabel(filters.facilityIds, facilities.value));
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
