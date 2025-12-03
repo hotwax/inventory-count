@@ -182,7 +182,7 @@ import { translate } from '@/i18n'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonText, alertController
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
@@ -362,9 +362,6 @@ async function addProductInPreCountedItems(product: any) {
   const productEntry = { ...product, countedQuantity: 0, saved: false }
   products.value.unshift(productEntry)
 
-  // Focus the quantity input for the newly added product as soon as it renders
-  await focusQuantityInput(productEntry.productId)
-
   try {
     await setProductQoh(productEntry)
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
@@ -375,6 +372,8 @@ async function addProductInPreCountedItems(product: any) {
   } catch (err) {
     console.error('Error adding product:', err)
   }
+  // Focus the quantity input for the newly added product as soon as it renders
+  await focusQuantityInput(productEntry.productId)
 }
 
 function openSearchResultsModal() {
