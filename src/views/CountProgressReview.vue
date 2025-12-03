@@ -66,7 +66,7 @@
             </ion-card>
 
             <!-- Card 3: Submit for Review -->
-            <ion-card v-if="canManageCountProgress && isWorkEffortInProgress && !isLoading" class="submission-card">
+            <ion-card v-if="isWorkEffortInProgress && !isLoading" class="submission-card">
               <ion-card-header v-if="!canSubmitForReview">
                 <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
                 <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
@@ -164,13 +164,13 @@
               <p>{{ translate("Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.") }}</p>
             </div>
             <template v-else>
-            <ion-item v-if="canManageCountProgress">
+            <ion-item :disabled="!canManageCountProgress">
               <ion-label>
                 {{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}
               </ion-label>
               <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
                 {{ translate("Discard all undirected items") }}
-            </ion-button>
+              </ion-button>
             </ion-item>
               <ion-accordion-group>
                 <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
@@ -196,7 +196,7 @@
                             <p>{{ translate("variance") }}</p>
                           </ion-label>
                           <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                            <ion-button fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                            <ion-button :disabled="!canManageCountProgress" fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
                               {{ translate("Discard") }}
                             </ion-button>
                           </div>
