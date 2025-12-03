@@ -117,7 +117,6 @@ function toggleSelection(facilityId: string, checked: boolean) {
 }
 
 function applySelection() {
-  emit('update:selectedFacilityIds', [...selectedIds.value]);
   emit('apply', [...selectedIds.value]);
   handleClose();
 }
