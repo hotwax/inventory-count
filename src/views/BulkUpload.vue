@@ -15,6 +15,11 @@
           <label for="inventoryCountInputFile">{{ translate("Upload") }}</label>
         </ion-item>
 
+        <ion-button color="medium" fill="outline" expand="block" @click="downloadTemplate">
+          {{ translate("Download template") }}
+          <ion-icon slot="end" :icon="downloadOutline" />
+        </ion-button>
+
         <ion-list>
           <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
           <div>
@@ -184,7 +189,7 @@
 
 <script setup>
 import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonInput, IonFab, IonFabButton } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, openOutline, saveOutline } from "ionicons/icons";
+import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline, saveOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
 import logger from "@/logger";
@@ -214,6 +219,26 @@ let fieldMapping = ref({});
 let fileColumns = ref([]);
 let selectedMappingId = ref(null);
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
+
+if (fields.statusId) delete fields.statusId;
+const templateRows = [
+  {
+    countImportName: "Weekly store audit",
+    purposeType: "DIRECTED_COUNT",
+    productSku: "SKU-12345",
+    facility: "FACILITY_100",
+    estimatedCompletionDate: "04-15-2024 10-30-00",
+    estimatedStartDate: "04-14-2024 09-00-00"
+  },
+  {
+    countImportName: "Distribution center spot check",
+    purposeType: "HARD_COUNT",
+    productSku: "",
+    facility: "FACILITY_DC_01",
+    estimatedCompletionDate: "04-20-2024 15-00-00",
+    estimatedStartDate: "04-19-2024 12-30-00"
+  }
+];
 
 /* ---------- CreateMappingModal Logic ---------- */
 const isCreateMappingModalOpen = ref(false);
@@ -348,6 +373,20 @@ function resetDefaults() {
   selectedMappingId.value = null;
 }
 
+function downloadTemplate() {
+  const columns = Object.keys(fields);
+  const rowsWithColumns = templateRows.map(row => {
+    if (!columns.length) return row;
+    return columns.reduce((result, key) => ({ ...result, [key]: row[key] || "" }), {});
+  });
+
+  jsonToCsv(rowsWithColumns, {
+    parse: {},
+    download: true,
+    name: "CycleCountTemplate.csv"
+  });
+}
+
 async function parse(event) {
   const file = event.target.files[0];
   try {
@@ -371,7 +410,7 @@ async function save() {
   const uploadedData = content.value.map(row => ({
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
-    statusId: row[fieldMapping.value.statusId] || "CYCLE_CNT_CREATED",
+    statusId: (fieldMapping.value.statusId ? row[fieldMapping.value.statusId] : "") || "CYCLE_CNT_CREATED",
     idValue: fieldMapping.value.productSku === "skip" ? "" : row[fieldMapping.value.productSku],
     idType: "SKU",
     estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
