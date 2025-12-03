@@ -6,14 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import emitter from '@/event-bus';
 import { loader } from './uiUtils';
 
-function unauthorised() {
-  const authStore = useAuthStore();
-  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
-  // Mark the user as unauthorised, this will help in not making the logout api call in actions
-  authStore.logout();
-  const redirectUrl = window.location.origin + '/login';
-  window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`;
-}
+
 
 axios.interceptors.request.use(async (config: any) => {
   config.headers["Authorization"] = "Bearer " + useAuthStore().token.value;
@@ -41,7 +34,7 @@ axios.interceptors.response.use(function (response) {
   // As we have yet added support for logout on unauthorization hence emitting unauth event only in case of ofbiz app
   const { status } = error.response || {};
   if (status == StatusCodes.UNAUTHORIZED) {
-    unauthorised();
+    useAuthStore().logout();
   }
   // Any status codes that falls outside the range of 2xx cause this function to trigger
   // Do something with response error
@@ -121,8 +114,8 @@ const api = async (customConfig: any) => {
     console.warn('Caching is not enabled in this build. Ignoring cache flag for request:', customConfig.url);
   }
 
-  if(customConfig.cache) config.adapter = axiosCache.adapter;
-  
+  if (customConfig.cache) config.adapter = axiosCache.adapter;
+
   if (customConfig.queue) {
     if (!config.headers) config.headers = { ...axios.defaults.headers.common, ...config.headers, "Authorization": `Bearer ${useAuthStore().token.value}` };
 
