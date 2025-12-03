@@ -268,13 +268,6 @@ body {
   text-align: center;
 }
 
-main {
-  display: flex;
-  justify-content: center;
-  align-items: start;
-  height: 100%;
-}
-
 .header {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
