@@ -438,7 +438,7 @@ const submissionRequirements = computed(() => [
     title: translate('Permission granted'),
     helpText: canManageCountProgress.value
       ? translate('You have the required permission to submit counts for review.')
-      : translate('You need the MANAGE_COUNT_PROGRESS permission to submit this count.')
+      : translate('You need one of these permissions: COMMON_ADMIN, INV_COUNT_ADMIN, or INV_COUNT_SUBMIT.')
   },
   {
     id: 'in-progress',
