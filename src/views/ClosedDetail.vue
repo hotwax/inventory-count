@@ -64,9 +64,11 @@
                 <ion-label>
                   {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
                   <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
-                  <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
                 </ion-label>
               </ion-item>
+              <ion-card-content>
+                <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
+              </ion-card-content>
             </ion-card>
             <ion-card>
               <ion-item lines="full">
@@ -212,7 +214,7 @@
 
 <script setup lang="ts">
 import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -401,8 +403,9 @@ function getFacilityName(id: string) {
   display: grid;
 }
 
-ion-item.due-date {
-  --padding-bottom: var(--spacer-sm)
+
+.statistics ion-item h3 {
+  font-size: 1.2rem;
 }
 
 .controls {

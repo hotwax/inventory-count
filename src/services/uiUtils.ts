@@ -50,8 +50,20 @@ const getStatusColor = (statusId: string): string => {
   return '';
 };
 
+const getFacilityChipLabel = (selectedFacilityIds: string[], facilities: any[]): string => {
+  if (selectedFacilityIds.length === 0) {
+    return translate('All');
+  } else if (selectedFacilityIds.length === 1) {
+    const facility = facilities.find((f: any) => f.facilityId === selectedFacilityIds[0]);
+    return facility?.facilityName || selectedFacilityIds[0];
+  } else {
+    return `${selectedFacilityIds.length} ${translate('facilities')}`;
+  }
+};
+
 export {
   loader,
   showToast,
-  getStatusColor
+  getStatusColor,
+  getFacilityChipLabel
 }
