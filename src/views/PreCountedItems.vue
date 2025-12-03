@@ -355,7 +355,6 @@ async function getProducts(query: any) {
 }
 
 async function addProductInPreCountedItems(product: any) {
-  await loader.present('Loading...')
   try {
     searchedProductString.value = ''
     searchedProducts.value = []
@@ -373,8 +372,6 @@ async function addProductInPreCountedItems(product: any) {
   } catch (err) {
     console.error('Error adding product:', err)
   }
-
-  await loader.dismiss()
 
   // Focus the quantity input for the newly added product
   await focusQuantityInput(product.productId)
