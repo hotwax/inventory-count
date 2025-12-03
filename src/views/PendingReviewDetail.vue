@@ -149,7 +149,7 @@
                       </div>
                       <ion-badge
                         v-else
-                        :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
+                        :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'"
                         style="--color: white;"
                       >
                         {{ item.decisionOutcomeEnumId }}
