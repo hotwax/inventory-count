@@ -1,5 +1,5 @@
 <template>
-  <ion-page>
+  <ion-page ref="pageRef">
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/tabs/count" />
@@ -63,6 +63,24 @@
                 <ion-label class="big-number">{{ countedItems.length }}</ion-label>
                 <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
               </ion-card-header>
+            </ion-card>
+
+            <ion-card v-if="adjustmentSession">
+              <ion-item lines="none">
+                <ion-label>
+                  <p class="overline">{{ translate('Adjustment session') }}</p>
+                  <h3>{{ adjustmentSession.countImportName || translate('Review adjustments') }}</h3>
+                  <p>{{ translate('Area: {area}', { area: adjustmentSession.facilityAreaId || '-' }) }}</p>
+                </ion-label>
+                <ion-badge slot="end" :color="adjustmentSession.statusId === 'SESSION_SUBMITTED' ? 'success' : 'warning'">
+                  {{ adjustmentSession.statusId === 'SESSION_SUBMITTED' ? translate('Submitted') : translate('Pending') }}
+                </ion-badge>
+              </ion-item>
+              <ion-card-content v-if="adjustmentSession.statusId !== 'SESSION_SUBMITTED'">
+                <ion-button expand="block" color="primary" @click="finalizeAdjustments" :disabled="isLoading">
+                  {{ translate('Finalize adjustments') }}
+                </ion-button>
+              </ion-card-content>
             </ion-card>
 
             <!-- Card 3: Submit for Review -->
@@ -273,12 +291,37 @@
             <div v-else-if="!countedItems.length" class="empty-state">
               <p>{{ translate("No items have been counted yet") }}</p>
             </div>
-            <ion-accordion-group v-else>
-              <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+            <template v-else>
+              <div class="controls ion-margin-top">
+                <ion-list lines="full" class="filters ion-margin">
+                  <ion-searchbar v-model="searchedProductString" :placeholder="translate('Search product name')"></ion-searchbar>
+                  <ion-item>
+                    <ion-select v-model="complianceFilter" :label="complianceLabel" placeholder="All" interface="popover" @ionChange="handleComplianceChange">
+                      <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
+                      <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
+                      <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
+                      <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                </ion-list>
+                <ion-item-divider color="light">
+                  <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
+                    <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
+                    <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
+                  </ion-select>
+                </ion-item-divider>
+              </div>
+
+              <div v-if="!filteredCountedItems.length" class="empty-state">
+                <p>{{ translate("No items match your filters") }}</p>
+              </div>
+
+              <ion-accordion-group v-else>
+              <DynamicScroller :items="filteredCountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                      <div class="list-item count-item-rollup" slot="header"> 
+                      <div class="list-item count-item-rollup" slot="header">
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
                             <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
@@ -296,6 +339,11 @@
                           {{ item.proposedVarianceQuantity }}
                           <p>{{ translate("variance") }}</p>
                         </ion-label>
+                        <div class="actions">
+                          <ion-button size="small" fill="outline" @click.stop="openAdjustmentModal(item)" :disabled="!canManageCountProgress">
+                            {{ translate('Adjust count') }}
+                          </ion-button>
+                        </div>
                       </div>
                       <div slot="content" @click.stop="stopAccordianEventProp">
                         <ion-list v-if="sessions === null">
@@ -351,18 +399,84 @@
                   </DynamicScrollerItem>
                 </template>
               </DynamicScroller>
-            </ion-accordion-group>
+              </ion-accordion-group>
+            </template>
           </ion-segment-content>
         </ion-segment-view>
       </div>
     </ion-content>
+
+    <ion-modal :is-open="isAdjustmentModalOpen" @didDismiss="closeAdjustmentModal" :presenting-element="pageRef?.$el">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ translate('Adjust count') }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <div v-if="selectedCountItem" class="adjustment-summary">
+          <h2>{{ useProductMaster().primaryId(selectedCountItem.product) }}</h2>
+          <p>{{ useProductMaster().secondaryId(selectedCountItem.product) }}</p>
+
+          <ion-item lines="full">
+            <ion-label>
+              {{ translate('Current counted quantity') }}
+              <p>{{ translate('Across all sessions') }}</p>
+            </ion-label>
+            <ion-note slot="end">{{ selectedCountItem.quantity }}</ion-note>
+          </ion-item>
+
+          <ion-item lines="full">
+            <ion-label>{{ translate('Adjustment quantity') }}</ion-label>
+            <ion-input type="number" inputmode="decimal" v-model.number="adjustmentQuantity" :placeholder="translate('Enter a positive or negative adjustment')" />
+          </ion-item>
+
+          <ion-item lines="none">
+            <ion-label>
+              {{ translate('Resulting total') }}
+              <p>{{ translate('Will be applied as a separate adjustment session') }}</p>
+            </ion-label>
+            <ion-note slot="end">{{ resultingTotal }}</ion-note>
+          </ion-item>
+        </div>
+
+        <ion-button expand="block" color="primary" class="ion-margin-top" :disabled="isSavingAdjustment" @click="saveAdjustment">
+          {{ translate('Save adjustment') }}
+        </ion-button>
+        <ion-button expand="block" fill="clear" class="ion-margin-top" @click="closeAdjustmentModal">
+          {{ translate('Cancel') }}
+        </ion-button>
+      </ion-content>
+    </ion-modal>
+
+    <ion-modal :is-open="isConfigureThresholdModalOpen" @didDismiss="closeConfigureThresholdModal" :presenting-element="pageRef?.$el">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ translate('Configure threshold') }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <ion-item>
+          <ion-label>{{ translate('Unit') }}</ion-label>
+          <ion-select v-model="thresholdConfig.unit" interface="popover">
+            <ion-select-option value="units">{{ translate('Units') }}</ion-select-option>
+            <ion-select-option value="percent">{{ translate('Percent') }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-label>{{ translate('Threshold value') }}</ion-label>
+          <ion-input type="number" v-model.number="thresholdConfig.value"></ion-input>
+        </ion-item>
+        <ion-button expand="block" color="primary" class="ion-margin-top" @click="saveThresholdConfig">{{ translate('Save threshold') }}</ion-button>
+        <ion-button expand="block" fill="clear" class="ion-margin-top" @click="closeConfigureThresholdModal">{{ translate('Cancel') }}</ion-button>
+      </ion-content>
+    </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, defineProps } from 'vue';
-import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
-import Image from '@/components/Image.vue'; 
+import { computed, reactive, ref, defineProps, toRefs, watch } from 'vue';
+import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter } from '@ionic/vue';
+import Image from '@/components/Image.vue';
 import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
@@ -379,6 +493,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
 
+const pageRef = ref<HTMLElement | null>(null);
+
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
 const totalItems = ref(0);
@@ -393,6 +509,39 @@ const countedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
+const filteredCountedItems = ref<any[]>([]);
+const searchedProductString = ref('');
+
+const filterAndSortBy = reactive({
+  sortBy: 'alphabetic',
+  complianceFilter: 'all'
+});
+
+const  { sortBy, complianceFilter } = toRefs(filterAndSortBy);
+
+const THRESHOLD_STORAGE_KEY = 'cyclecount_compliance_threshold';
+const thresholdConfig = reactive({
+  unit: 'units',
+  value: 2
+});
+
+const isConfigureThresholdModalOpen = ref(false);
+const isAdjustmentModalOpen = ref(false);
+const selectedCountItem = ref<any | null>(null);
+const adjustmentQuantity = ref<number | null>(null);
+const isSavingAdjustment = ref(false);
+
+const ADJUSTMENT_SESSION_AREA_ID = 'REVIEW_ADJUSTMENTS';
+const ADJUSTMENT_SESSION_NAME = 'Review adjustments';
+const adjustmentSession = ref<any | null>(null);
+const hasPendingAdjustments = computed(() => adjustmentSession.value && adjustmentSession.value.statusId !== 'SESSION_SUBMITTED');
+
+const resultingTotal = computed(() => {
+  if (!selectedCountItem.value) return 0;
+  const baseQuantity = Number(selectedCountItem.value.quantity) || 0;
+  const delta = Number(adjustmentQuantity.value) || 0;
+  return baseQuantity + delta;
+});
 
 const isCountStarted = computed(() => {
   const startDateTime = workEffort.value?.estimatedStartDate;
@@ -457,6 +606,14 @@ const submissionRequirements = computed(() => [
       : translate('Submit each session so they show as Submitted in this list.')
   },
   {
+    id: 'adjustments-submitted',
+    met: !hasPendingAdjustments.value,
+    title: translate('Adjustments finalized'),
+    helpText: !hasPendingAdjustments.value
+      ? translate('Any review adjustments have been submitted.')
+      : translate('Submit your adjustment session to continue.')
+  },
+  {
     id: 'items-counted',
     met: areRequestedItemsCounted.value,
     title: translate('All requested items counted'),
@@ -470,6 +627,7 @@ const isSubmitDisabled = computed(() => (
   isLoading.value
   || isLoadingUncounted.value
   || isLoadingUndirected.value
+  || hasPendingAdjustments.value
   || !canSubmitForReview.value
 ));
 
@@ -479,6 +637,7 @@ const props = defineProps<{
 
 onIonViewDidEnter (async () => {
   isLoading.value = true;
+  loadThresholdConfig();
   await getWorkEffortDetails();
   await getInventoryCycleCount();
   isLoading.value = false;
@@ -492,6 +651,7 @@ async function getWorkEffortDetails() {
     if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
       workEffort.value.sessions = sessionsResp.data;
     }
+    findAdjustmentSession();
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId});
     if (resp?.status === 200 && resp.data) {
       totalItems.value = resp.data.count || 0;
@@ -556,6 +716,7 @@ async function loadDirectedCount() {
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    applySearchAndSort();
 
     const countedProductIds = [...new Set(countedItems.value
       .filter(item => item?.productId)
@@ -766,6 +927,7 @@ async function loadHardCount() {
       loadedItems.value = countedItems.value.length;
     }
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    applySearchAndSort();
     getUncountedItems();
     const productIds = [...new Set(
       countedItems.value
@@ -798,6 +960,67 @@ async function loadHardCount() {
     uncountedItems.value = [];
   }
 }
+
+function handleComplianceChange(event: CustomEvent) {
+  if (event.detail.value === 'configure') {
+    openConfigureThresholdModal();
+  }
+}
+
+function openConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = true;
+  complianceFilter.value = 'all';
+}
+
+function closeConfigureThresholdModal() {
+  isConfigureThresholdModalOpen.value = false;
+}
+
+function loadThresholdConfig() {
+  try {
+    const stored = localStorage.getItem(THRESHOLD_STORAGE_KEY);
+    if (stored) {
+      const config = JSON.parse(stored);
+      thresholdConfig.unit = config.unit ?? 'units';
+      thresholdConfig.value = config.value ?? 2;
+    }
+  } catch (error) {
+    console.error('Error loading threshold config:', error);
+  }
+}
+
+function saveThresholdConfig() {
+  try {
+    localStorage.setItem(THRESHOLD_STORAGE_KEY, JSON.stringify({
+      unit: thresholdConfig.unit,
+      value: thresholdConfig.value
+    }));
+    showToast(translate('Threshold saved successfully'));
+    closeConfigureThresholdModal();
+  } catch (error) {
+    console.error('Error saving threshold config:', error);
+    showToast(translate('Failed to save threshold'));
+  }
+}
+
+function isItemCompliant(item: any): boolean {
+  const variance = Math.abs(item.proposedVarianceQuantity);
+
+  if (thresholdConfig.unit === 'units') {
+    return variance <= thresholdConfig.value;
+  } else if (thresholdConfig.unit === 'percent') {
+    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
+    const percentVariance = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
+    return percentVariance <= thresholdConfig.value;
+  }
+
+  return true;
+}
+
+const complianceLabel = computed(() => {
+  const unitText = thresholdConfig.unit === 'percent' ? '%' : ` ${thresholdConfig.unit}`;
+  return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
+});
 
 async function getAllProductsOnFacility() {
   try {
@@ -897,6 +1120,44 @@ async function getCountSessions(productId: any) {
   }
 }
 
+function applySearchAndSort() {
+  if (!Array.isArray(countedItems.value)) {
+    filteredCountedItems.value = [];
+    return;
+  }
+
+  const keyword = (searchedProductString.value || '').trim().toLowerCase();
+
+  let results = countedItems.value.filter(item => {
+    if (!keyword) return true;
+    const name = item.product?.internalName?.toLowerCase() || '';
+    const identifier = item.product ? (useProductMaster().primaryId(item.product) || '').toLowerCase() : '';
+    return name.includes(keyword) || identifier.includes(keyword);
+  });
+
+  if (complianceFilter.value === 'acceptable') {
+    results = results.filter(item => isItemCompliant(item));
+  } else if (complianceFilter.value === 'rejectable') {
+    results = results.filter(item => !isItemCompliant(item));
+  }
+
+  if (sortBy.value === 'alphabetic') {
+    results.sort((predecessor, successor) => (predecessor.product?.internalName || '').localeCompare(successor.product?.internalName || ''));
+  } else if (sortBy.value === 'variance') {
+    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  }
+
+  filteredCountedItems.value = results;
+}
+
+watch([searchedProductString, sortBy, complianceFilter], () => {
+  applySearchAndSort();
+}, { deep: true });
+
+watch(countedItems, () => {
+  applySearchAndSort();
+}, { deep: true });
+
 async function createSessionForUncountedItems() {
   if (!canManageCountProgress.value) {
     showToast(translate('You do not have permission to perform this action'));
@@ -972,9 +1233,124 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
   }
 }
 
+function findAdjustmentSession() {
+  if (!Array.isArray(workEffort.value?.sessions)) return;
+  adjustmentSession.value = workEffort.value.sessions.find((session: any) =>
+    session?.facilityAreaId === ADJUSTMENT_SESSION_AREA_ID || session?.countImportName === ADJUSTMENT_SESSION_NAME
+  ) || null;
+}
+
+async function ensureAdjustmentSession() {
+  if (adjustmentSession.value) return adjustmentSession.value;
+
+  const newSession = {
+    countImportName: ADJUSTMENT_SESSION_NAME,
+    facilityAreaId: ADJUSTMENT_SESSION_AREA_ID,
+    statusId: 'SESSION_CREATED',
+    uploadedByUserLogin: useUserProfile().getUserProfile.username,
+    createdDate: DateTime.now().toMillis(),
+    workEffortId: workEffort.value?.workEffortId
+  };
+
+  const resp = await useInventoryCountRun().createSessionOnServer(newSession);
+
+  if (resp?.status === 200 && resp.data) {
+    adjustmentSession.value = resp.data;
+    if (Array.isArray(workEffort.value.sessions)) {
+      workEffort.value.sessions.push(resp.data);
+    } else {
+      workEffort.value.sessions = [resp.data];
+    }
+    return adjustmentSession.value;
+  }
+
+  throw resp;
+}
+
+function openAdjustmentModal(item: any) {
+  selectedCountItem.value = item;
+  adjustmentQuantity.value = null;
+  isAdjustmentModalOpen.value = true;
+}
+
+function closeAdjustmentModal() {
+  isAdjustmentModalOpen.value = false;
+  selectedCountItem.value = null;
+  adjustmentQuantity.value = null;
+}
+
+async function saveAdjustment() {
+  if (!canManageCountProgress.value) {
+    showToast(translate('You do not have permission to perform this action'));
+    return;
+  }
+
+  if (!selectedCountItem.value) return;
+  const adjustment = Number(adjustmentQuantity.value);
+
+  if (!adjustment) {
+    showToast(translate('Enter a non-zero adjustment amount'));
+    return;
+  }
+
+  isSavingAdjustment.value = true;
+  await loader.present(translate('Saving adjustment...'));
+  try {
+    const session = await ensureAdjustmentSession();
+    const payload = [{
+      inventoryCountImportId: session.inventoryCountImportId,
+      productId: selectedCountItem.value.productId,
+      quantity: adjustment,
+      uploadedByUserLogin: useUserProfile().getUserProfile.username,
+      uuid: uuidv4(),
+      createdDate: DateTime.now().toMillis()
+    }];
+
+    const resp = await useInventoryCountImport().updateSessionItem({
+      inventoryCountImportId: session.inventoryCountImportId,
+      items: payload
+    });
+
+    if (resp?.status === 200) {
+      showToast(translate('Adjustment saved in review session'));
+      await getInventoryCycleCount();
+      await getWorkEffortDetails();
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error('Failed to save adjustment', error);
+    showToast(translate('Failed to save adjustment'));
+  }
+
+  loader.dismiss();
+  isSavingAdjustment.value = false;
+  closeAdjustmentModal();
+}
+
+async function finalizeAdjustments() {
+  if (!adjustmentSession.value) return;
+  await loader.present(translate('Submitting adjustments...'));
+  try {
+    await useInventoryCountImport().submitSession(adjustmentSession.value.inventoryCountImportId);
+    showToast(translate('Adjustment session submitted'));
+    await getWorkEffortDetails();
+    await getInventoryCycleCount();
+  } catch (error) {
+    console.error('Failed to submit adjustment session', error);
+    showToast(translate('Failed to submit adjustment session'));
+  }
+  loader.dismiss();
+}
+
 async function markAsCompleted() {
   if (!canManageCountProgress.value) {
     showToast(translate('You do not have permission to perform this action'));
+    return;
+  }
+
+  if (hasPendingAdjustments.value) {
+    showToast(translate('Finalize your adjustment session before submitting'));
     return;
   }
 
