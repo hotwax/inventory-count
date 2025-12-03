@@ -249,17 +249,22 @@ function onManualInputChange(event: CustomEvent, product: any) {
 }
 
 function setQuantityInputRef(productId: string, el: any) {
-  if (el) {
-    quantityInputRefs.value[productId] = el
-  }
+  if (!el) return
+
+  // IonInput refs can resolve to either the Vue proxy or the underlying web component.
+  // Store the deepest element so we can reliably call setFocus across render cycles.
+  quantityInputRefs.value[productId] = el?.$el ?? el
 }
 
 async function focusQuantityInput(productId: string) {
-  // Use nextTick to ensure DOM is updated
   await nextTick()
   const inputRef = quantityInputRefs.value[productId]
-  if (inputRef?.$el) {
-    inputRef.$el.setFocus()
+  const focusTarget = inputRef?.setFocus ? inputRef : inputRef?.querySelector?.('input')
+
+  if (focusTarget?.setFocus) {
+    await focusTarget.setFocus()
+  } else if (focusTarget?.focus) {
+    focusTarget.focus()
   }
 }
 
@@ -365,13 +370,14 @@ async function addProductInPreCountedItems(product: any) {
     );
     product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
     products.value.unshift(product)
-    
-    // Focus the quantity input for the newly added product
-    focusQuantityInput(product.productId)
   } catch (err) {
     console.error('Error adding product:', err)
   }
-  loader.dismiss()
+
+  await loader.dismiss()
+
+  // Focus the quantity input for the newly added product
+  await focusQuantityInput(product.productId)
 }
 
 function openSearchResultsModal() {
