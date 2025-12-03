@@ -88,7 +88,7 @@
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
             <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-            <ion-item>
+          <ion-item>
             <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
               <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
               <ion-select-option value="open">{{ translate("Open") }}</ion-select-option>
@@ -97,14 +97,16 @@
             </ion-select>
           </ion-item>
 
-          <ion-item>
-            <ion-select v-model="complianceFilter" :label="complianceLabel" placeholder="All" interface="popover" @ionChange="handleComplianceChange">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
-              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
-              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
+          <ComplianceFilter
+            v-model="complianceFilter"
+            :compliance-label="complianceLabel"
+            :threshold-config="thresholdConfig"
+            :is-configure-threshold-modal-open="isConfigureThresholdModalOpen"
+            :close-configure-threshold-modal="closeConfigureThresholdModal"
+            :save-threshold-config="saveThresholdConfig"
+            @update:threshold-config="config => Object.assign(thresholdConfig, config)"
+            @compliance-change="handleComplianceChange"
+          />
           </ion-list>
           <ion-item-divider color="light">
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
@@ -265,44 +267,6 @@
           </ion-content>
         </ion-modal>
 
-        <ion-modal :is-open="isConfigureThresholdModalOpen" @did-dismiss="closeConfigureThresholdModal" :backdrop-dismiss="false">
-          <ion-header>
-            <ion-toolbar>
-              <ion-buttons slot="start">
-                <ion-button @click="closeConfigureThresholdModal">
-                  <ion-icon :icon="closeOutline" slot="icon-only" />
-                </ion-button>
-              </ion-buttons>
-              <ion-title>{{ translate("Configure Threshold") }}</ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content>
-            <ion-list>
-              <ion-item>
-                <ion-select v-model="thresholdConfig.unit" label="Unit of Measurement" interface="popover">
-                  <ion-select-option value="units">{{ translate("Units") }}</ion-select-option>
-                  <ion-select-option value="percent">{{ translate("Percent") }}</ion-select-option>
-                  <ion-select-option value="cost">{{ translate("Cost") }}</ion-select-option>
-                </ion-select>
-              </ion-item>
-              <ion-item>
-                <ion-input 
-                  v-model.number="thresholdConfig.value" 
-                  type="number" 
-                  inputmode="decimal"
-                  min="0"
-                  :label="translate('Threshold Value')"
-                  label-placement="floating"
-                ></ion-input>
-              </ion-item>
-            </ion-list>
-            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-              <ion-fab-button @click="saveThresholdConfig">
-                <ion-icon :icon="checkmarkDoneOutline" />
-              </ion-fab-button>
-            </ion-fab>
-          </ion-content>
-        </ion-modal>
     </ion-content>
     
     <ion-footer>
@@ -390,12 +354,13 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import ComplianceFilter from '@/components/ComplianceFilter.vue';
+import { useComplianceThreshold } from '@/composables/useComplianceThreshold';
 
 const props = defineProps({
   workEffortId: String
 })
 
-const THRESHOLD_STORAGE_KEY = 'cyclecount_compliance_threshold';
 const isBulkCloseModalOpen = ref(false)
 const bulkAction = ref<any>(null)
 const isCloseAlertOpen = ref(false)
@@ -426,11 +391,22 @@ onIonViewDidEnter(async () => {
 })
 const filterAndSortBy = reactive({
   dcsnRsn: 'all',
-  sortBy: 'alphabetic',
-  complianceFilter: 'all'
+  sortBy: 'alphabetic'
 });
 
-const  { dcsnRsn, sortBy, complianceFilter } = toRefs(filterAndSortBy);
+const { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+
+const {
+  complianceFilter,
+  thresholdConfig,
+  isConfigureThresholdModalOpen,
+  complianceLabel,
+  handleComplianceChange,
+  closeConfigureThresholdModal,
+  saveThresholdConfig,
+  loadThresholdConfig,
+  isItemCompliant
+} = useComplianceThreshold();
 
 const searchedProductString = ref(''); 
 
@@ -445,82 +421,12 @@ const submittedItemsCount = ref (0);
 const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.value.reduce((sum, item) => sum + item.proposedVarianceQuantity, 0));
 
 const isEditImportItemModalOpen = ref(false);
-const isConfigureThresholdModalOpen = ref(false);
-
-const thresholdConfig = reactive({
-  unit: 'units',
-  value: 2
-});
-
 const sessions = ref();
 const selectedProductsReview = ref<any[]>([]);
 const isSessionPopoverOpen = ref(false);
 const selectedSession = ref<any | null>(null);
 const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
-
-function loadThresholdConfig() {
-  try {
-    const stored = localStorage.getItem(THRESHOLD_STORAGE_KEY);
-    if (stored) {
-      const config = JSON.parse(stored);
-      thresholdConfig.unit = config.unit ?? 'units';
-      thresholdConfig.value = config.value ?? 2;
-    }
-  } catch (error) {
-    console.error('Error loading threshold config:', error);
-  }
-}
-
-function saveThresholdConfig() {
-  try {
-    localStorage.setItem(THRESHOLD_STORAGE_KEY, JSON.stringify({
-      unit: thresholdConfig.unit,
-      value: thresholdConfig.value
-    }));
-    showToast(translate('Threshold saved successfully'));
-    closeConfigureThresholdModal();
-  } catch (error) {
-    console.error('Error saving threshold config:', error);
-    showToast(translate('Failed to save threshold'));
-  }
-}
-
-function handleComplianceChange(event: CustomEvent) {
-  if (event.detail.value === 'configure') {
-    openConfigureThresholdModal();
-  }
-}
-
-function openConfigureThresholdModal() {
-  isConfigureThresholdModalOpen.value = true;
-  complianceFilter.value = 'all';
-}
-
-function closeConfigureThresholdModal() {
-  isConfigureThresholdModalOpen.value = false;
-}
-
-function isItemCompliant(item: any): boolean {
-  const variance = Math.abs(item.proposedVarianceQuantity);
-  
-  if (thresholdConfig.unit === 'units') {
-    return variance <= thresholdConfig.value;
-  } else if (thresholdConfig.unit === 'percent') {
-    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
-    const percentVariance = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
-    return percentVariance <= thresholdConfig.value;
-  } else if (thresholdConfig.unit === 'cost') {
-    // Cost filtering not implemented yet, show all items
-    return true;
-  }
-  return true;
-}
-
-const complianceLabel = computed(() => {
-  const unitText = thresholdConfig.unit === 'percent' ? '%' : ` ${thresholdConfig.unit}`;
-  return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
-});
 
 async function removeProductFromSession() {
   await loader.present("Removing...");

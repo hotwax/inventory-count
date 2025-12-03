@@ -80,23 +80,25 @@
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
             <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-            <ion-item>
-            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
+          <ion-item>
+          <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
+            <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
 
               <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
               <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
             </ion-select>
           </ion-item>
 
-          <ion-item>
-            <ion-select label="Compliance" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
-              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
-              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
+          <ComplianceFilter
+            v-model="complianceFilter"
+            :compliance-label="complianceLabel"
+            :threshold-config="thresholdConfig"
+            :is-configure-threshold-modal-open="isConfigureThresholdModalOpen"
+            :close-configure-threshold-modal="closeConfigureThresholdModal"
+            :save-threshold-config="saveThresholdConfig"
+            @update:threshold-config="config => Object.assign(thresholdConfig, config)"
+            @compliance-change="handleComplianceChange"
+          />
           </ion-list>
           <ion-item-divider color="light">
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
@@ -220,6 +222,8 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import ComplianceFilter from '@/components/ComplianceFilter.vue';
+import { useComplianceThreshold } from '@/composables/useComplianceThreshold';
 
 const props = defineProps({
   workEffortId: String
@@ -235,6 +239,7 @@ const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.v
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   loadedItems.value = 0
+  loadThresholdConfig();
   try {
     const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId})
     if (resp?.status === 200) {
@@ -259,6 +264,18 @@ const filterAndSortBy = reactive({
 });
 
 const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
+
+const {
+  complianceFilter,
+  thresholdConfig,
+  isConfigureThresholdModalOpen,
+  complianceLabel,
+  handleComplianceChange,
+  closeConfigureThresholdModal,
+  saveThresholdConfig,
+  loadThresholdConfig,
+  isItemCompliant
+} = useComplianceThreshold();
 
 const searchedProductString = ref(''); 
 
@@ -296,6 +313,12 @@ function applySearchAndSort() {
     results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
   }
 
+  if (complianceFilter.value === 'acceptable') {
+    results = results.filter(item => isItemCompliant(item));
+  } else if (complianceFilter.value === 'rejectable') {
+    results = results.filter(item => !isItemCompliant(item));
+  }
+
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
   } else if (sortBy.value === 'variance') {
@@ -305,7 +328,7 @@ function applySearchAndSort() {
   filteredSessionItems.value = results;
 }
 
-watch([searchedProductString, dcsnRsn, sortBy], () => {
+watch([searchedProductString, dcsnRsn, sortBy, complianceFilter], () => {
   applySearchAndSort();
 }, { deep: true });
 
