@@ -775,6 +775,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
+          omsInstance: useAuthStore().getOMS,
           userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
@@ -1246,10 +1247,11 @@ async function saveMatchProduct() {
 
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
+    omsInstance: useAuthStore().getOMS,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
@@ -1281,6 +1283,7 @@ async function finalizeAggregationAndSync() {
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
+      omsInstance: useAuthStore().getOMS,
       userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,

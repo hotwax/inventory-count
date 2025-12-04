@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'
 import workerApi from "@/services/workerApi";
 import { expose } from 'comlink';
-import { db } from '@/services/commonDatabase';
+import { createCommonDB } from "@/services/commonDatabase";
+
+// DB instance for worker (created once)
+let db: any = null;
+let dbInitialized = false;
 
 export interface InventorySyncWorker {
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -64,6 +68,7 @@ const buildProductQuery = (params: any): Record<string, any> => {
 
 
 async function getById(productId: string, context: any) {
+  await ensureDB(context);
   const now = Date.now()
   const cached = await db.table('products').get(productId)
   const ttlMs = 60 * 60 * 1000
@@ -106,7 +111,8 @@ async function getById(productId: string, context: any) {
 }
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const ident = await db.table('productIdentification').where('value').equalsIgnoreCase(value).and(item => item.identKey === context.barcodeIdentification).first()
+  await ensureDB(context);
+  const ident = await db.table('productIdentification').where('value').equalsIgnoreCase(value).and((item: any) => item.identKey === context.barcodeIdentification).first()
   if (ident) return ident.productId
 
   if (!context?.token || !context?.maargUrl) return null
@@ -148,6 +154,7 @@ function ensureProductStored(productId: string | null, context: any) {
   if (!productId) return;
 
   (async () => {
+    await ensureDB(context);
     try {
       const existing = await db.table('products').get(productId);
       if (existing) return;
@@ -177,10 +184,11 @@ function ensureProductStored(productId: string | null, context: any) {
   })();
 }
 async function resolveMissingProducts(inventoryCountImportId: string, context: any) {
+  await ensureDB(context);
   // get all records in this session where productId is null / empty
   const unresolved = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
-    .and(item => !item.productId) // null, undefined, empty
+    .and((item: any) => !item.productId) // null, undefined, empty
     .toArray()
 
   if (!unresolved.length) return 0
@@ -212,7 +220,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 
     await db.table('scanEvents')
       .where({ inventoryCountImportId })
-      .and(scanEvent => scanEvent.scannedValue === identifier)
+      .and((scanEvent: any) => scanEvent.scannedValue === identifier)
       .modify({
         productId,
         lastUpdatedAt: now
@@ -225,10 +233,11 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 async function aggregate(inventoryCountImportId: string, context: any) {
   if (isAggregating) return 0
   isAggregating = true
+  await ensureDB(context);
   try {
     const scans = await db.table('scanEvents')
       .where({ inventoryCountImportId })
-      .and(scanEvent => scanEvent.aggApplied === 0)
+      .and((scanEvent: any) => scanEvent.aggApplied === 0)
       .toArray()
 
     if (!scans.length) {
@@ -247,7 +256,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
       let productId: any = null
-      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and(item => item.identKey === context.barcodeIdentification).first()
+      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
       if (identification) {
         productId = identification.productId
       } else {
@@ -265,7 +274,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       const existing = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .and(item => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
+        .and((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
         .first()
 
       // if (productId) ensureProductStored(productId, context);
@@ -296,7 +305,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       if (productId) {
         await db.table('scanEvents')
           .where({ inventoryCountImportId })
-          .and(scanEvent => scanEvent.scannedValue === scannedValue)
+          .and((scanEvent: any) => scanEvent.scannedValue === scannedValue)
           .modify({
             productId,
             lastUpdatedAt: now
@@ -307,7 +316,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
 
     await db.table('scanEvents')
       .where('id')
-      .anyOf(scans.map(scanEvent => scanEvent.id))
+      .anyOf(scans.map((scanEvent: any) => scanEvent.id))
       .modify({ aggApplied: 1 })
 
     return processed
@@ -323,6 +332,7 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
+  await ensureDB(context);
 
   try {
     ensureProductStored(productId, context);
@@ -378,13 +388,14 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 async function syncToServer(inventoryCountImportId: string, context: any) {
   if (isSyncing) return 0
   isSyncing = true
+  await ensureDB(context);
   try {
     const baseUrl = context.maargUrl
     const token = context.token
 
     const pending = await db.table('inventoryCountRecords')
       .where({ inventoryCountImportId })
-      .and(item =>
+      .and((item: any) =>
         !item.lastSyncedAt ||  // never synced
         (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt) // modified after last sync
       )
@@ -392,7 +403,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (!pending.length) return 0
 
-    const items = pending.map(item => ({
+    const items = pending.map((item: any) => ({
       uuid: item.uuid,
       productId: item.productId,
       productIdentifier: item.productIdentifier,
@@ -439,6 +450,22 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
   } finally {
     isSyncing = false
   }
+}
+
+async function ensureDB(context: any) {
+  if (dbInitialized && db) return db;
+
+  if (!context?.omsInstance) {
+    throw new Error("[Worker] Missing omsInstance in context");
+  }
+
+  db = createCommonDB(context.omsInstance);
+  await db.open();
+  dbInitialized = true;
+
+  console.log("[Worker] DB initialized:", context.omsInstance);
+
+  return db;
 }
 
 // Worker Listener

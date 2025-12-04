@@ -52,7 +52,7 @@ export interface AppPreferences {
   value: string
 }
 
-class CommonDB extends Dexie {
+export class CommonDB extends Dexie {
   products!: Table<Product, string>
   productIdentification!: Table<{ productId: string; identKey: string; value: string }, [string, string]>
   productInventory!: Table<ProductInventory, [string, string]>
@@ -60,8 +60,9 @@ class CommonDB extends Dexie {
   scanEvents!: Table<ScanEvent, number>
   appPreferences!: Table<AppPreferences, string>
 
-  constructor() {
-    super('CommonDB')
+  constructor(omsInstance: string) {
+    super(`CommonDB_${omsInstance}`)
+
     this.version(1).stores({
       products: 'productId, updatedAt',
       productIdentification: '[productId+identKey], identKey, value',
@@ -73,4 +74,6 @@ class CommonDB extends Dexie {
   }
 }
 
-export const db = new CommonDB()
+export function createCommonDB(omsInstance: string) {
+  return new CommonDB(omsInstance);
+}

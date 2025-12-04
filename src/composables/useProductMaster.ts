@@ -1,9 +1,9 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import api, { client } from '@/services/RemoteAPI';
+import api, { client } from '@/services/remoteAPI';
 import workerApi from "@/services/workerApi";
 
-import { db } from '@/services/commonDatabase'
+import { useDB } from '@/services/appInitializer';
 import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
 
@@ -76,6 +76,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
 }
 
 const getById = async (productId: string, opts?: { refresh?: boolean }) => {
+  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const now = Date.now()
@@ -105,6 +106,7 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
 }
 
 const findByIdentification = async (idValue: string) => {
+  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
   if (!idValue) return { product: undefined, identificationValue: undefined }
 
@@ -164,6 +166,7 @@ const getByIdentificationFromSolr = async (idValue: string) => {
 };
 
 const prefetch = async (productIds: string[]) => {
+  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const existing = await db.products.toArray()
@@ -181,6 +184,7 @@ const prefetch = async (productIds: string[]) => {
 
 const upsertFromApi = async (docs: any[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized");
+  const db = useDB();
 
   const now = Date.now()
 
@@ -220,6 +224,7 @@ const upsertFromApi = async (docs: any[]) => {
 };
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
+  const db = useDB();
   const ident = await db.table('productIdentification')
     .where('value')
     .equalsIgnoreCase(value)
@@ -265,6 +270,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 }
 
 async function searchProducts(value: string) {
+  const db = useDB();
   const products = await db.table('productIdentification')
     .where('value')
     .startsWithIgnoreCase(value)
@@ -275,6 +281,7 @@ async function searchProducts(value: string) {
 }
 
 const clearCache = async () => {
+  const db = useDB();
   await db.transaction('rw', db.products, db.productIdentification, async () => {
     await db.products.clear()
     await db.productIdentification.clear()
@@ -286,6 +293,7 @@ const setStaleMs = (ms: number) => {
 }
 
 const liveProduct = (productId: string) => {
+  const db = useDB();
   return liveQuery(() =>
     db.products.get(productId)
   )
@@ -469,6 +477,7 @@ const setInventoryStaleMs = (ms: number) => { inventoryStaleMs.value = ms }
 /** Upsert a batch of product+facility inventory records into IndexedDB */
 const upsertInventoryBatch = async (records: any[]) => {
   if (!records?.length) return
+  const db = useDB();
 
   const now = Date.now()
   const normalized = records.map(record => ({
@@ -554,6 +563,7 @@ const getProductInventory = async (
   opts: { forceRefresh?: boolean } = {}
 ) => {
   if (!productId || !facilityId) return null
+  const db = useDB();
 
   const key = [productId, facilityId] as [string, string]
   const cached = await db.productInventory
