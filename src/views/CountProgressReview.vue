@@ -521,6 +521,7 @@ const ADJUSTMENT_SESSION_AREA_ID = 'REVIEW_ADJUSTMENTS';
 const ADJUSTMENT_SESSION_NAME = 'Review adjustments';
 const adjustmentSession = ref<any | null>(null);
 const hasPendingAdjustments = computed(() => adjustmentSession.value && adjustmentSession.value.statusId !== 'SESSION_SUBMITTED');
+const LOCK_LEASE_SECONDS = 300;
 
 const resultingTotal = computed(() => {
   if (!selectedCountItem.value) return 0;
@@ -1186,10 +1187,46 @@ async function ensureAdjustmentSession() {
     } else {
       workEffort.value.sessions = [resp.data];
     }
+    await assignAndLockSession(adjustmentSession.value);
     return adjustmentSession.value;
   }
 
   throw resp;
+}
+
+async function assignAndLockSession(session: any) {
+  const inventoryCountImportId = session.inventoryCountImportId;
+  const userId = useUserProfile().getUserProfile?.username;
+  const deviceId = useUserProfile().getDeviceId;
+
+  try {
+    if (session.statusId !== 'SESSION_ASSIGNED') {
+      const updateResp = await useInventoryCountImport().updateSession({
+        inventoryCountImportId,
+        statusId: 'SESSION_ASSIGNED'
+      });
+
+      if (updateResp?.status === 200) {
+        session.statusId = 'SESSION_ASSIGNED';
+      }
+    }
+
+    const fromDate = Date.now();
+    const lockResp = await useInventoryCountImport().lockSession({
+      inventoryCountImportId,
+      userId,
+      deviceId,
+      fromDate,
+      thruDate: fromDate + LOCK_LEASE_SECONDS * 1000
+    });
+
+    if (lockResp?.status === 200) {
+      session.lock = lockResp.data;
+    }
+  } catch (error) {
+    console.error('Failed to assign and lock adjustment session', error);
+    showToast(translate('Failed to prepare adjustment session'));
+  }
 }
 
 function openAdjustmentModal(item: any) {
