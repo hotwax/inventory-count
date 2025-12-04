@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import qs from 'qs';
 import { useAuthStore } from '@/stores/authStore';
 import emitter from '@/event-bus';
-import { loader } from './uiUtils';
+import { loader } from './uiUtils'; 
 
 function unauthorised() {
   const authStore = useAuthStore();
