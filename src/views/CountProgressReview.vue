@@ -653,6 +653,14 @@ async function getWorkEffortDetails() {
 
 async function getInventoryCycleCount() {
   try {
+    countedItems.value = [];
+    uncountedItems.value = [];
+    undirectedItems.value = [];
+    filteredCountedItems.value = [];
+    loadedItems.value = 0;
+    isLoadingUncounted.value = false;
+    isLoadingUndirected.value = false;
+
     if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
       await loadDirectedCount();
     } else {
