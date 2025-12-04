@@ -1593,13 +1593,6 @@ ion-segment-view {
   color: rgba(var(--ion-text-color));
 }
 
-.scan-badge {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 1;
-}
-
 .virtual-list {
   display: block;
   width: 100%;
@@ -1648,14 +1641,5 @@ ion-segment-view {
   right: -1px;
   position: absolute;
   font-size: 10px;
-}
-
-.unagg-badge {
-  position: absolute;
-  top: 1px;
-  right: 2px;
-  font-size: 12px;
-  padding: 2px 4px;
-  z-index: 5;
 }
 </style>

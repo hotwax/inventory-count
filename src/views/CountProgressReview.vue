@@ -54,34 +54,35 @@
               </ion-list>
             </ion-card>
 
-            <!-- Card 2: Products Counted -->
-            <ion-card>
-              <ion-card-header>
-                <p class="overline">
-                  {{ translate("Products counted") }}
-                </p>
-                <ion-label class="big-number">{{ countedItems.length }}</ion-label>
-                <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
-              </ion-card-header>
-            </ion-card>
+            <div>
+              <!-- Card 2: Products Counted -->
+              <ion-card>
+                <ion-card-header>
+                  <p class="overline">
+                    {{ translate("Products counted") }}
+                  </p>
+                  <ion-label class="big-number">{{ countedItems.length }}</ion-label>
+                  <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
+                </ion-card-header>
+              </ion-card>
 
-            <ion-card v-if="adjustmentSession">
-              <ion-item lines="none">
-                <ion-label>
-                  <p class="overline">{{ translate('Adjustment session') }}</p>
-                  <h3>{{ adjustmentSession.countImportName || translate('Review adjustments') }}</h3>
-                  <p>{{ translate('Area: {area}', { area: adjustmentSession.facilityAreaId || '-' }) }}</p>
-                </ion-label>
-                <ion-badge slot="end" :color="adjustmentSession.statusId === 'SESSION_SUBMITTED' ? 'success' : 'warning'">
-                  {{ adjustmentSession.statusId === 'SESSION_SUBMITTED' ? translate('Submitted') : translate('Pending') }}
-                </ion-badge>
-              </ion-item>
-              <ion-card-content v-if="adjustmentSession.statusId !== 'SESSION_SUBMITTED'">
-                <ion-button expand="block" color="primary" @click="finalizeAdjustments" :disabled="isLoading">
-                  {{ translate('Finalize adjustments') }}
-                </ion-button>
-              </ion-card-content>
-            </ion-card>
+              <ion-card v-if="adjustmentSession">
+                <ion-item lines="none">
+                  <ion-label>
+                    <p class="overline">{{ translate('Adjustment session') }}</p>
+                    {{ adjustmentSession.countImportName || translate('Review adjustments') }}
+                  </ion-label>
+                  <ion-badge slot="end" :color="adjustmentSession.statusId === 'SESSION_SUBMITTED' ? 'success' : 'warning'">
+                    {{ adjustmentSession.statusId === 'SESSION_SUBMITTED' ? translate('Submitted') : translate('Pending') }}
+                  </ion-badge>
+                </ion-item>
+                <ion-card-content v-if="adjustmentSession.statusId !== 'SESSION_SUBMITTED'">
+                  <ion-button expand="block" color="primary" @click="finalizeAdjustments" :disabled="isLoading">
+                    {{ translate('Finalize adjustments') }}
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+            </div>
 
             <!-- Card 3: Submit for Review -->
             <ion-card v-if="isWorkEffortInProgress && !isLoading" class="submission-card">
@@ -408,45 +409,55 @@
       </div>
     </ion-content>
 
-    <ion-modal :is-open="isAdjustmentModalOpen" @didDismiss="closeAdjustmentModal" :presenting-element="pageRef?.$el">
+    <ion-modal :is-open="isAdjustmentModalOpen" @didDismiss="onAdjustmentModalDismissed" :presenting-element="pageRef?.$el">
       <ion-header>
         <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeAdjustmentModal">
+              <ion-icon slot="icon-only" :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
           <ion-title>{{ translate('Adjust count') }}</ion-title>
         </ion-toolbar>
       </ion-header>
-      <ion-content class="ion-padding">
-        <div v-if="selectedCountItem" class="adjustment-summary">
-          <h2>{{ useProductMaster().primaryId(selectedCountItem.product) }}</h2>
-          <p>{{ useProductMaster().secondaryId(selectedCountItem.product) }}</p>
+      <ion-content>
+        <ion-item lines="full">
+          <ion-thumbnail slot="start">
+            <Image :src="selectedCountItem.product?.mainImageUrl" />
+          </ion-thumbnail>
+          <ion-label>
+            <h2>{{ useProductMaster().primaryId(selectedCountItem.product) }}</h2>
+            <p>{{ useProductMaster().secondaryId(selectedCountItem.product) }}</p>
+          </ion-label>
+        </ion-item>
 
-          <ion-item lines="full">
-            <ion-label>
-              {{ translate('Current counted quantity') }}
-              <p>{{ translate('Across all sessions') }}</p>
-            </ion-label>
-            <ion-note slot="end">{{ selectedCountItem.quantity }}</ion-note>
-          </ion-item>
+        <ion-item lines="full">
+          <ion-label>
+            {{ translate('Current counted quantity') }}
+            <p>{{ translate('Across all sessions') }}</p>
+          </ion-label>
+          <ion-label slot="end">{{ selectedCountItem.quantity }}</ion-label>
+        </ion-item>
 
-          <ion-item lines="full">
-            <ion-label>{{ translate('Adjustment quantity') }}</ion-label>
-            <ion-input type="number" inputmode="decimal" v-model.number="adjustmentQuantity" :placeholder="translate('Enter a positive or negative adjustment')" />
-          </ion-item>
+        <ion-item lines="full">
+          <ion-input :label="translate('Adjustment quantity')" label-placement="floating" type="number" inputmode="decimal" v-model.number="adjustmentQuantity" :placeholder="translate('Enter a positive or negative adjustment')" />
+        </ion-item>
 
-          <ion-item lines="none">
-            <ion-label>
-              {{ translate('Resulting total') }}
-              <p>{{ translate('Will be applied as a separate adjustment session') }}</p>
-            </ion-label>
-            <ion-note slot="end">{{ resultingTotal }}</ion-note>
-          </ion-item>
-        </div>
+        <ion-item lines="none">
+          <ion-label>
+            {{ translate('Resulting total') }}
+            <!-- <p>{{ translate('Will be applied as a separate adjustment session') }}</p> -->
+          </ion-label>
+          <ion-label slot="end">{{ resultingTotal }}</ion-label>
+        </ion-item>
 
-        <ion-button expand="block" color="primary" class="ion-margin-top" :disabled="isSavingAdjustment" @click="saveAdjustment">
+        <ion-button expand="block" color="primary" class="ion-margin" :disabled="isSavingAdjustment" @click="saveAdjustment">
           {{ translate('Save adjustment') }}
         </ion-button>
         <ion-button expand="block" fill="clear" class="ion-margin-top" @click="closeAdjustmentModal">
           {{ translate('Cancel') }}
         </ion-button>
+
       </ion-content>
     </ion-modal>
 
@@ -457,7 +468,7 @@
 import { computed, reactive, ref, defineProps, toRefs, watch } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue';
-import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
+import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -1245,6 +1256,10 @@ function openAdjustmentModal(item: any) {
 
 function closeAdjustmentModal() {
   isAdjustmentModalOpen.value = false;
+}
+
+function onAdjustmentModalDismissed() {
+  isAdjustmentModalOpen.value = false;
   selectedCountItem.value = null;
   adjustmentQuantity.value = null;
 }
@@ -1388,6 +1403,16 @@ ion-segment {
 
 ion-segment-view {
   height: unset;
+}
+
+.filters {
+  display: flex;
+  gap: var(--spacer-sm);
+  align-items: end;
+}
+
+.filters>* {
+  flex: 1;
 }
 
 .virtual-scroller {
