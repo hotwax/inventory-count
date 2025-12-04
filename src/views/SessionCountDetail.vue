@@ -716,7 +716,9 @@ onIonViewDidEnter(async () => {
   try {
     await startSession();
     await fetchWorkEffort();
-    await handleSessionLock();
+    if (inventoryCountImport.value?.statusId !== 'SESSION_SUBMITTED' && inventoryCountImport.value?.statusId !== 'SESSION_VOIDED') {
+      await handleSessionLock();
+    }
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
@@ -1362,9 +1364,9 @@ async function confirmDiscard() {
 async function reopen() {
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
     await handleSessionLock();
+    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
     showToast('Failed to reopen session');
