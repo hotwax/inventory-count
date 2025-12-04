@@ -220,7 +220,7 @@ const isSearchResultsModalOpen = ref(false)
 const selectedProductFromModal = ref('')
 const isSearching = ref(false)
 const searchBar = ref()
-const quantityInputRefs = ref<Record<string, any>>({})
+const quantityInputRefs = ref<{ productId: string, el: any }[]>([])
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -253,13 +253,25 @@ function setQuantityInputRef(productId: string, el: any) {
 
   // IonInput refs can resolve to either the Vue proxy or the underlying web component.
   // Store the deepest element so we can reliably call setFocus across render cycles.
-  quantityInputRefs.value[productId] = el?.$el ?? el
+  const resolved = el?.$el ?? el
+
+  // Updating the previous element by product in object ends up focusing on the previous item with same productId, hence using always pushing the new el
+  const list = quantityInputRefs.value
+  list.push({ productId, el: resolved })
 }
 
 async function focusQuantityInput(productId: string) {
   await nextTick()
-  const inputRef = quantityInputRefs.value[productId]
-  const focusTarget = inputRef?.setFocus ? inputRef : inputRef?.querySelector?.('input')
+
+  const item = quantityInputRefs.value.find(entry => entry.productId === productId)
+
+  if (!item) {
+    console.warn("No input ref found for productId:", productId)
+    return
+  }
+
+  const inputRef = item.el
+  const focusTarget = inputRef?.setFocus ? inputRef : inputRef?.querySelector?.("input")
 
   if (focusTarget?.setFocus) {
     await focusTarget.setFocus()
