@@ -281,7 +281,7 @@
                       <div class="list-item count-item-rollup" slot="header"> 
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                            <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                           </ion-thumbnail>
                           <ion-label>
                             <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
@@ -760,6 +760,29 @@ async function loadHardCount() {
         } else {
           pageIndex++;
         }
+        try {
+          const productIds = [...new Set(
+            resp.data
+              .filter((item: any) => item?.productId)
+              .map((item: any) => item.productId)
+          )];
+
+          if (productIds.length) {
+            await useProductMaster().prefetch(productIds as any);
+            for (const productId of productIds) {
+              const { product } = await useProductMaster().getById(productId as any);
+              if (!product) continue;
+
+              countedItems.value
+              .filter(item => item.productId === productId)
+              .forEach(item => {
+                item.product = product;
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("Error in Prefetch: ", error);
+        }
       } else {
         hasMore = false;
       }
@@ -767,30 +790,6 @@ async function loadHardCount() {
     }
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     getUncountedItems();
-    const productIds = [...new Set(
-      countedItems.value
-        .filter(item => item?.productId)
-        .map(item => item.productId)
-    )];
-
-    if (productIds.length) {
-      useProductMaster().prefetch(productIds)
-        .then(async () => {
-          for (const productId of productIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-
-            countedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-        }
-      })
-      .catch(err => {
-        console.warn('Prefetch Failed for hard count:', err);
-      })
-    }
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
     showToast(translate("Something Went Wrong"));
@@ -799,11 +798,13 @@ async function loadHardCount() {
   }
 }
 
-async function getAllProductsOnFacility() {
+async function getUncountedItems() {
+  isLoadingUncounted.value = true;
   try {
     let pageIndex = 0;
     const pageSize = 500;
     let hasMore = true;
+    const countedSet = new Set(countedItems.value.map(item => item.productId));
     allProducts.value = [];
 
     while (hasMore) {
@@ -813,7 +814,7 @@ async function getAllProductsOnFacility() {
         pageIndex
       });
 
-      if (resp?.status === 200 && resp?.data?.entityValueList) {
+      if (resp?.status === 200 && resp?.data?.entityValueList && resp?.data?.entityValueList.length > 0) {
       const list = resp.data.entityValueList;
         allProducts.value.push(...list);
 
@@ -822,54 +823,38 @@ async function getAllProductsOnFacility() {
         } else {
           pageIndex++;
         }
+        const rawUncounted = list.filter((product: any) => !countedSet.has(product.productId));
+        const productIds = [...new Set(
+          rawUncounted.map((product: any) => product.productId).filter(Boolean)
+        )];
+
+        if (productIds.length) {
+          useProductMaster().prefetch(productIds as any).then(async () => {
+            const items: any[] = [];
+
+            for (const item of rawUncounted) {
+              const { product } = await useProductMaster().getById(item.productId);
+              items.push(product ? { ...item, product } : item);
+            }
+
+            uncountedItems.value.push(...items);
+          })
+          .catch(err => {
+            console.warn('Prefetch Failed for uncounted items:', err);
+            uncountedItems.value.push(...rawUncounted);
+          })
+        }
       } else {
         hasMore = false;
       }
     }
   } catch (error) {
     console.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
-  }
-}
-
-async function getUncountedItems() {
-  isLoadingUncounted.value = true;
-  try {
-    await getAllProductsOnFacility();
-
-    const countedSet = new Set(countedItems.value.map(item => item.productId));
-    const rawUncounted = allProducts.value.filter((product: any) => !countedSet.has(product.productId));
-    const productIds = [...new Set(
-      rawUncounted.map(product => product.productId).filter(Boolean)
-    )];
-
-    if (!productIds.length) {
-      uncountedItems.value = [];
-      isLoadingUncounted.value = false;
-      return;
-    }
-
-    useProductMaster().prefetch(productIds).then(async () => {
-      const items: any[] = [];
-
-      for (const item of rawUncounted) {
-        const { product } = await useProductMaster().getById(item.productId);
-        items.push(product ? { ...item, product } : item);
-      }
-
-      uncountedItems.value = items;
-    })
-    .catch(err => {
-      console.warn('Prefetch Failed for uncounted items:', err);
-      uncountedItems.value = rawUncounted;
-    })
-    .finally(() => {
-      isLoadingUncounted.value = false;
-    });
-  } catch (error) {
-    console.error("Error fetching uncounted:", error);
     showToast(translate("Something Went Wrong"));
+    isLoadingUncounted.value = false;
     uncountedItems.value = [];
   }
+  isLoadingUncounted.value = false;
 }
 
 function stopAccordianEventProp(event: Event) {
