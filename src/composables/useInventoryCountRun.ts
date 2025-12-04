@@ -1,4 +1,4 @@
-import api from '@/services/remoteAPI';
+import api from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore';
 import { DateTime } from 'luxon';
 import logger from '@/logger';

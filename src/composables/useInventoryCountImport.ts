@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
-import api from '@/services/remoteAPI';
+import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
 import { useDB } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'

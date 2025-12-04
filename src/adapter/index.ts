@@ -1,4 +1,4 @@
-import api, { client } from '@/services/remoteAPI';
+import api, { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore';
 import { transform } from 'node-json-transform';
 

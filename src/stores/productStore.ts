@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api from '@/services/remoteAPI'
+import api from '@/services/RemoteAPI'
 import { hasError } from '@/stores/authStore'
 import logger from '@/logger'
 import { useAuthStore } from './authStore'
