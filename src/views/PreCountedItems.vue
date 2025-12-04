@@ -101,7 +101,7 @@
               </ion-button>
               <ion-item lines="full">
                 <ion-input 
-                  :ref="el => setQuantityInputRef(product.productId, el)"
+                  :ref="el => setQuantityInputRef(el, index)"
                   @ionInput="onManualInputChange($event, product)" 
                   @keyup.enter="focusSearchBar"
                   label="Qty" 
@@ -220,7 +220,7 @@ const isSearchResultsModalOpen = ref(false)
 const selectedProductFromModal = ref('')
 const isSearching = ref(false)
 const searchBar = ref()
-const quantityInputRefs = ref<Record<string, any>>({})
+const firstQuantityInputRef = ref<any>(null)
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -248,25 +248,24 @@ function onManualInputChange(event: CustomEvent, product: any) {
   product.saved = value === 0
 }
 
-function setQuantityInputRef(productId: string, el: any) {
+function setQuantityInputRef(el: any, index: number) {
   if (!el) return
 
-  // IonInput refs can resolve to either the Vue proxy or the underlying web component.
-  // Store the deepest element so we can reliably call setFocus across render cycles.
-  quantityInputRefs.value[productId] = el?.$el ?? el
-}
-
-async function focusQuantityInput(productId: string) {
-  await nextTick()
-  const inputRef = quantityInputRefs.value[productId]
-  const focusTarget = inputRef?.setFocus ? inputRef : inputRef?.querySelector?.('input')
-
-  if (focusTarget?.setFocus) {
-    await focusTarget.setFocus()
-  } else if (focusTarget?.focus) {
-    focusTarget.focus()
+  if (index === 0) {
+    firstQuantityInputRef.value = el?.$el ?? el
   }
 }
+
+async function focusFirstQuantityInput() {
+  await nextTick()
+
+  const target = firstQuantityInputRef.value
+  const focusEl = target?.setFocus ? target : target?.querySelector?.('input')
+
+  if (focusEl?.setFocus) await focusEl.setFocus()
+  else if (focusEl?.focus) focusEl.focus()
+}
+
 
 function focusSearchBar() {
   searchBar.value?.$el?.setFocus()
@@ -373,7 +372,7 @@ async function addProductInPreCountedItems(product: any) {
     console.error('Error adding product:', err)
   }
   // Focus the quantity input for the newly added product as soon as it renders
-  await focusQuantityInput(productEntry.productId)
+  await focusFirstQuantityInput();
 }
 
 function openSearchResultsModal() {
