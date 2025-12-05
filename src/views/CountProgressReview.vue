@@ -824,25 +824,27 @@ async function getUncountedItems() {
           pageIndex++;
         }
         const rawUncounted = list.filter((product: any) => !countedSet.has(product.productId));
-        const productIds = [...new Set(
-          rawUncounted.map((product: any) => product.productId).filter(Boolean)
-        )];
+        uncountedItems.value.push(...rawUncounted);
+        try {
+          const productIds = [...new Set(
+            rawUncounted.map((product: any) => product.productId).filter(Boolean)
+          )];
 
-        if (productIds.length) {
-          useProductMaster().prefetch(productIds as any).then(async () => {
-            const items: any[] = [];
+          if (productIds.length) {
+            await useProductMaster().prefetch(productIds as any);
+            for (const productId of productIds) {
+              const { product } = await useProductMaster().getById(productId as any);
+              if (!product) continue;
 
-            for (const item of rawUncounted) {
-              const { product } = await useProductMaster().getById(item.productId);
-              items.push(product ? { ...item, product } : item);
+              uncountedItems.value
+              .filter(item => item.productId === productId)
+              .forEach(item => {
+                item.product = product;
+              });
             }
-
-            uncountedItems.value.push(...items);
-          })
-          .catch(err => {
-            console.warn('Prefetch Failed for uncounted items:', err);
-            uncountedItems.value.push(...rawUncounted);
-          })
+          }
+        } catch (error) {
+          console.warn("Error in Prefetch: ", error);
         }
       } else {
         hasMore = false;
