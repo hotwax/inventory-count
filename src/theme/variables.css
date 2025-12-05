@@ -320,8 +320,10 @@ ion-icon.standalone-icon {
   align-items: start;
 }
 
-ion-card-header {
+@media (prefers-color-scheme: light) {
+  ion-card-header {
     --ion-text-color: 0, 0, 0, .87;
+  }
 }
 
 .cards ion-card {
