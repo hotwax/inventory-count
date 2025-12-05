@@ -902,7 +902,7 @@ async function createSessionForUncountedItems() {
     showToast(translate('You do not have permission to perform this action'));
     return;
   }
-  await loader.present("Creating Session...");
+  await loader.present("Marking items as out of stock...");
   try {
     const newSession = {
       countImportName: workEffort.value?.workEffortName,
