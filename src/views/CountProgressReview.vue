@@ -876,7 +876,6 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
         quantity: 0,
         uploadedByUserLogin: username,
         uuid: uuidv4(),
-        isRequested: 'Y',
         createdDate: DateTime.now().toMillis()
       }));
 
