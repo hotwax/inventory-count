@@ -701,7 +701,11 @@ const scannerButtonLabel = computed(() => {
   return translate('Focus scanner');
 });
 
-const scannerButtonDisabled = computed(() => sessionLocked.value || (isSessionInProgress.value && isScannerFocused.value));
+const scannerButtonDisabled = computed(() =>
+  sessionLocked.value
+  || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
+  || (isSessionInProgress.value && isScannerFocused.value)
+);
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
