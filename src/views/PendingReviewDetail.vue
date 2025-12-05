@@ -221,7 +221,7 @@
                 <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
                 <ion-item button @click="removeProductFromSession()">
                   <ion-label>
-                    {{ translate('Remove from Count') }}
+                    {{ translate('Remove from count') }}
                   </ion-label>
                   <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-item>
