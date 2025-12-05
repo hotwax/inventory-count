@@ -17,7 +17,7 @@
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
-            <ion-label position="stacked">sku</ion-label>
+            <ion-label position="stacked">{{ barcodeIdentifierPref }}</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
               @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable"></ion-input>
           </ion-item>
@@ -640,6 +640,7 @@ let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
 const showQoh = useProductStore().getShowQoh;
+const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 
 const pageRef = ref(null);
 
