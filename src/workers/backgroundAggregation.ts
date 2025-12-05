@@ -27,7 +27,6 @@ expose({
 
 let isAggregating = false
 let isSyncing = false
-// const store = useStore();
 
 // Product Lookup Helper
 
@@ -68,7 +67,6 @@ const buildProductQuery = (params: any): Record<string, any> => {
 
 
 async function getById(productId: string, context: any) {
-  await ensureDB(context);
   const now = Date.now()
   const cached = await db.table('products').get(productId)
   const ttlMs = 60 * 60 * 1000
@@ -111,7 +109,6 @@ async function getById(productId: string, context: any) {
 }
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  await ensureDB(context);
   const ident = await db.table('productIdentification').where('value').equalsIgnoreCase(value).and((item: any) => item.identKey === context.barcodeIdentification).first()
   if (ident) return ident.productId
 
@@ -154,7 +151,6 @@ function ensureProductStored(productId: string | null, context: any) {
   if (!productId) return;
 
   (async () => {
-    await ensureDB(context);
     try {
       const existing = await db.table('products').get(productId);
       if (existing) return;
@@ -184,7 +180,6 @@ function ensureProductStored(productId: string | null, context: any) {
   })();
 }
 async function resolveMissingProducts(inventoryCountImportId: string, context: any) {
-  await ensureDB(context);
   // get all records in this session where productId is null / empty
   const unresolved = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
@@ -233,7 +228,6 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 async function aggregate(inventoryCountImportId: string, context: any) {
   if (isAggregating) return 0
   isAggregating = true
-  await ensureDB(context);
   try {
     const scans = await db.table('scanEvents')
       .where({ inventoryCountImportId })
@@ -332,7 +326,7 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
   if (!productId) throw new Error("Product ID is required");
 
   const now = Date.now();
-  await ensureDB(context);
+  ensureDB(context);
 
   try {
     ensureProductStored(productId, context);
@@ -388,7 +382,6 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 async function syncToServer(inventoryCountImportId: string, context: any) {
   if (isSyncing) return 0
   isSyncing = true
-  await ensureDB(context);
   try {
     const baseUrl = context.maargUrl
     const token = context.token
@@ -455,10 +448,6 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 async function ensureDB(context: any) {
   if (dbInitialized && db) return db;
 
-  if (!context?.omsInstance) {
-    throw new Error("[Worker] Missing omsInstance in context");
-  }
-
   db = createCommonDB(context.omsInstance);
   await db.open();
   dbInitialized = true;
@@ -474,6 +463,7 @@ self.onmessage = async (messageEvent: MessageEvent) => {
 
   if (type === 'aggregate') {
     const { inventoryCountImportId, context } = payload
+    await ensureDB(context);
     const count = await aggregate(inventoryCountImportId, context)
     await resolveMissingProducts(inventoryCountImportId, context)
     await syncToServer(inventoryCountImportId, context)
@@ -483,6 +473,7 @@ self.onmessage = async (messageEvent: MessageEvent) => {
 
   if (type === 'schedule') {
     const { inventoryCountImportId, context, intervalMs = 10000 } = payload
+    await ensureDB(context);
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       await resolveMissingProducts(inventoryCountImportId, context)

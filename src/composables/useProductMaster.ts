@@ -29,12 +29,14 @@ const staleMs = ref(24 * 60 * 60 * 1000)
 const cacheReady = ref(false)
 const duplicateIdentifiers = ref(false)
 const retentionPolicy = ref('keep')
+let db = null as any
 
 const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy: rp = 'keep' }: { staleMs?: number, duplicateIdentifiers?: boolean, retentionPolicy?: string } = {}) => {
   if (ttl !== undefined) staleMs.value = ttl
   duplicateIdentifiers.value = dup
   retentionPolicy.value = rp
   cacheReady.value = true
+  db = useDB();
 }
 
 const makeIdentKey = (type: string) => type
@@ -76,7 +78,6 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
 }
 
 const getById = async (productId: string, opts?: { refresh?: boolean }) => {
-  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const now = Date.now()
@@ -106,14 +107,13 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
 }
 
 const findByIdentification = async (idValue: string) => {
-  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
   if (!idValue) return { product: undefined, identificationValue: undefined }
 
   // Since Dexie cannot query inside arrays directly, we need to scan manually:
   const allProducts = await db.products.toArray()
-  const matchedProduct = allProducts.find(product =>
-    product.goodIdentifications?.some(identification => identification.value === idValue)
+  const matchedProduct = allProducts.find((product: any) =>
+    product.goodIdentifications?.some((identification: any) => identification.value === idValue)
   )
 
   if (!matchedProduct) return { product: undefined, identificationValue: undefined }
@@ -166,11 +166,10 @@ const getByIdentificationFromSolr = async (idValue: string) => {
 };
 
 const prefetch = async (productIds: string[]) => {
-  const db = useDB();
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const existing = await db.products.toArray()
-  const existingIds = new Set(existing.map(product => product.productId))
+  const existingIds = new Set(existing.map((product: any) => product.productId))
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
@@ -184,7 +183,6 @@ const prefetch = async (productIds: string[]) => {
 
 const upsertFromApi = async (docs: any[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized");
-  const db = useDB();
 
   const now = Date.now()
 
@@ -224,7 +222,6 @@ const upsertFromApi = async (docs: any[]) => {
 };
 
 async function findProductByIdentification(idType: string, value: string, context: any) {
-  const db = useDB();
   const ident = await db.table('productIdentification')
     .where('value')
     .equalsIgnoreCase(value)
@@ -270,18 +267,16 @@ async function findProductByIdentification(idType: string, value: string, contex
 }
 
 async function searchProducts(value: string) {
-  const db = useDB();
   const products = await db.table('productIdentification')
     .where('value')
     .startsWithIgnoreCase(value)
     .limit(250)
     .toArray()
-    if (products) return products.map(product => product.productId)
+    if (products) return products.map((product: any) => product.productId)
     return null
 }
 
 const clearCache = async () => {
-  const db = useDB();
   await db.transaction('rw', db.products, db.productIdentification, async () => {
     await db.products.clear()
     await db.productIdentification.clear()
@@ -293,7 +288,6 @@ const setStaleMs = (ms: number) => {
 }
 
 const liveProduct = (productId: string) => {
-  const db = useDB();
   return liveQuery(() =>
     db.products.get(productId)
   )
@@ -477,7 +471,6 @@ const setInventoryStaleMs = (ms: number) => { inventoryStaleMs.value = ms }
 /** Upsert a batch of product+facility inventory records into IndexedDB */
 const upsertInventoryBatch = async (records: any[]) => {
   if (!records?.length) return
-  const db = useDB();
 
   const now = Date.now()
   const normalized = records.map(record => ({
@@ -563,7 +556,6 @@ const getProductInventory = async (
   opts: { forceRefresh?: boolean } = {}
 ) => {
   if (!productId || !facilityId) return null
-  const db = useDB();
 
   const key = [productId, facilityId] as [string, string]
   const cached = await db.productInventory
