@@ -183,7 +183,7 @@
                               <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                             </ion-thumbnail>
                             <ion-label>
-                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                              <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
@@ -284,7 +284,7 @@
                             <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                           </ion-thumbnail>
                           <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                            <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
                             <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
@@ -535,6 +535,27 @@ async function loadDirectedCount() {
       if (resp?.status === 200 && resp.data?.length) {
         // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
         // Only include directed items (isRequested === 'Y' or null/undefined)
+
+        try {
+          const productsIds = [...new Set(resp.data
+            .filter((item: any) => item?.productId)
+            .map((item: any) => item.productId)
+          )];
+
+          await useProductMaster().prefetch(productsIds as any);
+          for (const productId of productsIds) {
+            const { product } = await useProductMaster().getById(productId as any);
+            if (!product) continue;
+            resp.data
+            .filter((item: any) => item.productId === productId)
+            .forEach((item: any) => {
+              item.product = product;
+            });
+          }
+        } catch (error) {
+          console.error("Error in Prefetch: ", error);
+        }
+
         const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
         const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
         undirectedItems.value.push(...undirected);
@@ -557,84 +578,6 @@ async function loadDirectedCount() {
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
-    const countedProductIds = [...new Set(countedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (countedProductIds.length) {
-      useProductMaster().prefetch(countedProductIds)
-        .then(async () => {
-          for (const productId of countedProductIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-            countedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-          }
-        })
-        .catch(err => {
-          console.warn("Prefetch Failed for counted items:", err);
-        })
-    }
-
-    const unDirectedProductIds = [...new Set(undirectedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (unDirectedProductIds.length) {
-      useProductMaster().prefetch(unDirectedProductIds)
-        .then(async () => {
-          for (const productId of unDirectedProductIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-            undirectedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-          }
-        })
-        .catch(err => {
-          console.warn("Prefetch Failed for counted items:", err);
-        })
-        .finally (() => {
-          isLoadingUndirected.value = false;
-        })
-    } else {
-      isLoadingUndirected.value = false;
-    }
-
-    const uncountedProductIds = [...new Set(uncountedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (uncountedProductIds.length) {
-      useProductMaster().prefetch(uncountedProductIds)
-      .then(async () => {
-        for (const productId of uncountedProductIds) {
-          const { product } = await useProductMaster().getById(productId);
-          if (!product) continue;
-          uncountedItems.value
-          .filter(item => item.productId === productId)
-          .forEach(item => {
-            item.product = product;
-          });
-        }
-      })
-      .catch(err => {
-        console.warn("Prefetch Failed for uncounted items:", err);
-      })
-      .finally(() => {
-        isLoadingUncounted.value = false;
-      });
-    } else {
-      isLoadingUncounted.value = false;
-    }
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
     showToast(translate("Something Went Wrong"));
@@ -642,6 +585,8 @@ async function loadDirectedCount() {
     uncountedItems.value =[];
     undirectedItems.value = [];
   }
+  isLoadingUncounted.value = false;
+  isLoadingUndirected.value = false;
 }
 
 async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any, event:  Event) {
