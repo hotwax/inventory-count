@@ -662,7 +662,7 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
-const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
+const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
@@ -701,7 +701,7 @@ const scannerButtonLabel = computed(() => {
   return translate('Focus scanner');
 });
 
-const scannerButtonDisabled = computed(() => !isSessionMutable.value || (hasSessionStarted.value && isScannerFocused.value));
+const scannerButtonDisabled = computed(() => sessionLocked.value || (isSessionInProgress.value && isScannerFocused.value));
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
