@@ -73,11 +73,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-label slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-label>
+              <ion-label slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-label slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-label>
+              <ion-label slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -218,6 +218,9 @@ const props = defineProps({
 })
 const totalItems = ref(0)
 const loadedItems = ref(0)
+
+const firstCountedAt = ref();
+const lastCountedAt = ref();
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -452,8 +455,13 @@ async function getInventoryCycleCount() {
       loadedItems.value = aggregatedSessionItems.value.length;
 
     }
-    const results = aggregatedSessionItems.value;
-    results.sort((predecessor, successor) => predecessor.lastUpdatedAt - successor.lastUpdatedAt);
+    if (aggregatedSessionItems.value.length > 0) {
+      const minTimes = aggregatedSessionItems.value.map(i => i.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map(i => i.maxLastUpdatedAt);
+
+      firstCountedAt.value = Math.min(...minTimes);
+      lastCountedAt.value = Math.max(...maxTimes);
+    }
     applySearchAndSort();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);

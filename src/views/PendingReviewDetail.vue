@@ -48,15 +48,15 @@
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].minLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(aggregatedSessionItems[0].minLastUpdatedAt, workEffort.estimatedStartDate) }}</p>
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
               </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].maxLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.estimatedCompletionDate) }}</p>
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -458,6 +458,8 @@ const isSessionPopoverOpen = ref(false);
 const selectedSession = ref<any | null>(null);
 const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
+const firstCountedAt = ref();
+const lastCountedAt = ref();
 
 function loadThresholdConfig() {
   try {
@@ -920,6 +922,13 @@ async function getInventoryCycleCount() {
       }
       loadedItems.value = aggregatedSessionItems.value.length;
 
+    }
+    if (aggregatedSessionItems.value.length > 0) {
+      const minTimes = aggregatedSessionItems.value.map(i => i.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map(i => i.maxLastUpdatedAt);
+
+      firstCountedAt.value = Math.min(...minTimes);
+      lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();

@@ -45,11 +45,11 @@
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].minLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(filteredSessionItems[0].maxLastUpdatedAt) : '-' }}</ion-note>
+              <ion-note slot="end">{{ filteredSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
             </ion-item>
           </ion-card>
 
@@ -265,6 +265,9 @@ const searchedProductString = ref('');
 const isLoading = ref(false);
 const workEffort = ref();
 
+const firstCountedAt = ref();
+const lastCountedAt = ref();
+
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
@@ -368,6 +371,13 @@ async function getInventoryCycleCount() {
       }
       loadedItems.value = aggregatedSessionItems.value.length;
 
+    }
+    if (aggregatedSessionItems.value.length > 0) {
+      const minTimes = aggregatedSessionItems.value.map(i => i.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map(i => i.maxLastUpdatedAt);
+
+      firstCountedAt.value = Math.min(...minTimes);
+      lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();
