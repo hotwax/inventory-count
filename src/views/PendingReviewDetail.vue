@@ -293,7 +293,7 @@
           <ion-title>{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeBulkCloseModal">
-              <ion-icon :icon="closeOutline" />
+              <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
@@ -692,6 +692,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
     const batchSize = 250;
     const batches = [];
+    let isAnyFailed = false;
 
     for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
@@ -719,16 +720,22 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
         submittedItemsCount.value += batch.length;
 
       } else {
+        isAnyFailed = true;
         console.error("Batch failed:", result);
       }
     }
 
     selectedProductsReview.value = [];
-
+    if (isAnyFailed) {
+      showToast(translate("Something Went Wrong, Some products failed"));
+    } else {
+      showToast(translate("Successfully Submitted all products"));
+    }
   } catch (err) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -796,6 +803,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     showToast(translate("Something Went Wrong"));
     console.error("Error Submitting Review: ", error);
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -910,7 +918,7 @@ async function performBulkCloseAction() {
     console.error(err)
     showToast("Bulk Action Failed")
   }
-
+  applySearchAndSort();
   loader.dismiss()
 }
 
