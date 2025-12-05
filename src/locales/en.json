@@ -200,7 +200,7 @@
   "Reject all outstanding variances and close": "Reject all outstanding variances and close",
   "Rejectable": "Rejectable",
   "Rejected": "Rejected",
-  "Remove from Count": "Remove from Count",
+  "Remove from count": "Remove from count",
   "Require barcode scanning": "Require barcode scanning",
   "Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.": "Require inventory to be scanned when counting instead of manually entering values.{space} If the identifier is not found, the scan will default to using the internal name.",
   "Required": "Required",
