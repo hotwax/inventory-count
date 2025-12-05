@@ -111,7 +111,6 @@
             <template v-else>
               <ion-item
                 v-if="canManageCountProgress && uncountedItems.length > 0"
-                :disabled="isMarkOutOfStockDisabled"
                 lines="full"
               >
                 <ion-label>
@@ -119,7 +118,7 @@
                   <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
                   <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">{{ markOutOfStockDisabledReason }}</p>
                 </ion-label>
-                <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
               </ion-item>
               <div v-if="isLoadingUncounted" class="empty-state">
                 <p>{{ translate("Loading...") }}</p>
