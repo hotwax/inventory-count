@@ -84,7 +84,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
+                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport.facilityAreaId }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
@@ -526,7 +526,7 @@
 
             <ion-radio-group v-model="selectedArea">
               <ion-item v-for="area in areas" :key="area.value">
-                <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
