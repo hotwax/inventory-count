@@ -8,6 +8,7 @@ import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './productStore';
 import { Settings } from 'luxon';
+import { db } from '@/services/commonDatabase';
 
 export interface LoginPayload {
   token: any;
@@ -154,6 +155,8 @@ export const useAuthStore = defineStore('authStore', {
           value: '',
           expiration: undefined,
         };
+        db.close();
+        await db.delete();
       }
     },
     setToken(token: string, expirationTime?: number) {
