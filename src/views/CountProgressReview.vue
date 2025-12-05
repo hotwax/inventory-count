@@ -928,7 +928,7 @@ async function markAsCompleted() {
       statusId: 'CYCLE_CNT_CMPLTD'
     });
     if (response?.status === 200 && response.data?.statusChanged) {
-      workEffort.value.workEffortPurposeTypeId = 'CYCLE_CNT_CMPLTD';
+      workEffort.value.statusId = 'CYCLE_CNT_CMPLTD';
       showToast(translate('Session sent for review successfully'));
     } else {
       throw response;
