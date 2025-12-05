@@ -326,7 +326,7 @@
     <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal">
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ translate("Close Count") }}</ion-title>
+          <ion-title>{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeBulkCloseModal">
               <ion-icon :icon="closeOutline" />
@@ -340,13 +340,11 @@
           <ion-list>
             <ion-radio-group v-model="bulkAction">
               <ion-item>
-                <ion-radio value="APPLIED" slot="start"></ion-radio>
-                <ion-label>{{ translate("Accept all outstanding variances and close") }}</ion-label>
+                <ion-radio value="APPLIED">{{ translate("Accept all outstanding variances and close") }}</ion-radio>
               </ion-item>
 
               <ion-item>
-                <ion-radio value="SKIPPED" slot="start"></ion-radio>
-                <ion-label>{{ translate("Reject all outstanding variances and close") }}</ion-label>
+                <ion-radio value="SKIPPED">{{ translate("Reject all outstanding variances and close") }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
