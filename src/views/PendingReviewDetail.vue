@@ -335,7 +335,7 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-content class="ion-padding">
+      <ion-content>
         <template v-if="openItems.length">
           <ion-list>
             <ion-radio-group v-model="bulkAction">
@@ -351,7 +351,7 @@
             </ion-radio-group>
           </ion-list>
 
-          <ion-button expand="block" color="primary" class="ion-margin-top"
+          <ion-button expand="block" color="primary" class="ion-margin"
             @click="performBulkCloseAction">
             {{ translate("Confirm") }}
           </ion-button>
