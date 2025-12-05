@@ -187,13 +187,9 @@
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
-                          <ion-label v-if="showQoh">
-                            {{ item.quantity }}/{{ item.quantityOnHand }}
-                            <p>{{ translate("counted/systemic") }}</p>
-                          </ion-label>
-                          <ion-label v-else>
-                            {{ item.quantity }}
-                            <p>{{ translate("counted") }}</p>
+                          <ion-label>
+                            {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                            <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label>
                             {{ item.proposedVarianceQuantity }}
@@ -292,13 +288,9 @@
                             <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
-                        <ion-label v-if="showQoh">
-                          {{ item.quantity }}/{{ item.quantityOnHand }}
-                          <p>{{ translate("counted/systemic") }}</p>
-                        </ion-label>
-                        <ion-label v-else>
-                          {{ item.quantity }}
-                          <p>{{ translate("counted") }}</p>
+                        <ion-label>
+                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                          <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label>
                           {{ item.proposedVarianceQuantity }}
