@@ -61,7 +61,7 @@ export class CommonDB extends Dexie {
   appPreferences!: Table<AppPreferences, string>
 
   constructor(omsInstance: string) {
-    super(`CommonDB_${omsInstance}`)
+    super(`${omsInstance}-CommonDB`)
 
     this.version(1).stores({
       products: 'productId, updatedAt',
