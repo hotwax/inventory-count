@@ -84,13 +84,13 @@
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
-              <div v-if="canSubmitForReview" class="submission-success ion-margin">
-                <ion-icon :icon="checkmarkCircleOutline" color="success" />
-                <div>
+              <ion-item v-if="canSubmitForReview" lines="none">
+                <ion-icon slot="start" :icon="checkmarkCircleOutline" color="success" />
+                <ion-label>
                   <p class="overline">{{ translate("All tasks completed") }}</p>
-                  <p>{{ translate("This count is ready to submit for review.") }}</p>
-                </div>
-              </div>
+                  {{ translate("This count is ready to submit for review.") }}
+                </ion-label>
+              </ion-item>
             </ion-card>
         </div>
         <!-- Segments -->
