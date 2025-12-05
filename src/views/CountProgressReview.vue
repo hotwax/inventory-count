@@ -278,57 +278,39 @@
             <div v-else-if="!countedItems.length" class="empty-state">
               <p>{{ translate("No items have been counted yet") }}</p>
             </div>
-            <ion-accordion-group v-else>
-              <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
-                <template #default="{ item, index, active }">
-                  <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                      <div class="list-item count-item-rollup" slot="header"> 
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                          </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                          </ion-label>
-                        </ion-item>
-                        <ion-label>
-                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
-                          <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
-                        </ion-label>
-                        <ion-label>
-                          {{ item.proposedVarianceQuantity }}
-                          <p>{{ translate("variance") }}</p>
-                        </ion-label>
-                      </div>
-                      <div slot="content" @click.stop="stopAccordianEventProp">
-                        <ion-list v-if="sessions === null">
-                          <ion-item v-for="number in item.numberOfSessions" :key="number">
-                            <ion-avatar slot="start">
-                              <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
-                            </ion-avatar>
-                            <ion-label>
-                              <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                            </ion-label>
-                            <ion-label>
-                              <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                            </ion-label>
-                            <ion-label>
-                              <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                              <p><ion-skeleton-text  animated style="width: 60%"></ion-skeleton-text></p>
-                            </ion-label>
-                            <ion-label>
-                              <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                              <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                            </ion-label>
-                            <ion-label>
-                              <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
-                              <p><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></p>
-                            </ion-label>
-                          </ion-item>
-                        </ion-list>
-                        <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
+            <template v-else>
+              <div class="controls ion-margin-top">
+                <ion-list lines="full" class="filters ion-margin">
+                  <ion-searchbar v-model="searchedProductString" :placeholder="translate('Search product name')"></ion-searchbar>
+                  <ComplianceFilter
+                    v-model="complianceFilter"
+                    :compliance-label="complianceLabel"
+                    :threshold-config="thresholdConfig"
+                    :is-configure-threshold-modal-open="isConfigureThresholdModalOpen"
+                    :close-configure-threshold-modal="closeConfigureThresholdModal"
+                    :save-threshold-config="saveThresholdConfig"
+                    @update:threshold-config="config => Object.assign(thresholdConfig, config)"
+                    @compliance-change="handleComplianceChange"
+                  />
+                </ion-list>
+                <ion-item-divider color="light">
+                  <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
+                    <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
+                    <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
+                  </ion-select>
+                </ion-item-divider>
+              </div>
+
+              <div v-if="!filteredCountedItems.length" class="empty-state">
+                <p>{{ translate("No items match your filters") }}</p>
+              </div>
+
+              <ion-accordion-group v-else>
+                <DynamicScroller :items="filteredCountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+                  <template #default="{ item, index, active }">
+                    <DynamicScrollerItem :item="item" :index="index" :active="active">
+                      <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                        <div class="list-item count-item-rollup" slot="header">
                           <ion-item lines="none">
                             <ion-thumbnail slot="start">
                               <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
