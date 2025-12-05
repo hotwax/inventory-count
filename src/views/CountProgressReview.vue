@@ -968,16 +968,6 @@ function areAllSessionCompleted() {
   margin-inline-start: auto;
 }
 
-.submission-success {
-  display: flex;
-  gap: var(--spacer-md);
-  align-items: center;
-  background: color-mix(in srgb, var(--ion-color-success), transparent 90%);
-  border: 1px solid color-mix(in srgb, var(--ion-color-success), transparent 50%);
-  border-radius: var(--spacer-sm);
-  padding: var(--spacer-md);
-}
-
 .big-number {
   font-size: 78px;
   line-height: 1.2;
