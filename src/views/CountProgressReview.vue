@@ -143,7 +143,7 @@
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
-                          <ion-label slot="end">
+                          <ion-label slot="end" v-if="showQoh">
                             {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                             {{ translate("QoH") }}
                           </ion-label>
@@ -188,8 +188,8 @@
                             </ion-label>
                           </ion-item>
                           <ion-label>
-                            {{ item.quantity }}/{{ item.quantityOnHand }}
-                            <p>{{ translate("counted/systemic") }}</p>
+                            {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                            <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label>
                             {{ item.proposedVarianceQuantity }}
@@ -289,8 +289,8 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ item.quantity }}/{{ item.quantityOnHand }}
-                          <p>{{ translate("counted/systemic") }}</p>
+                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                          <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label>
                           {{ item.proposedVarianceQuantity }}
@@ -472,6 +472,8 @@ const isSubmitDisabled = computed(() => (
   || isLoadingUndirected.value
   || !canSubmitForReview.value
 ));
+
+const showQoh = computed(() => useProductStore().getShowQoh);
 
 const props = defineProps<{
   workEffortId: string;
