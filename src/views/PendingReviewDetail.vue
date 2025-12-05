@@ -376,7 +376,7 @@
       :message="translate('Remove session from count description')"
       @didDismiss="isRemoveSessionAlertOpen = false"
       :buttons="[
-        { text: translate('Cancel'), role: 'cancel', handler: closeRemoveSessionAlert },
+        { text: translate('Cancel'), role: 'cancel' },
         { text: translate('Remove'), role: 'destructive', handler: confirmRemoveSessionRemoval }
       ]"
     >
@@ -606,12 +606,7 @@ async function removeProductFromSession() {
   loader.dismiss();
 }
 
-function closeRemoveSessionAlert() {
-  isRemoveSessionAlertOpen.value = false;
-}
-
 function confirmRemoveSessionRemoval() {
-  isRemoveSessionAlertOpen.value = false;
   removeProductFromSession();
 }
 
