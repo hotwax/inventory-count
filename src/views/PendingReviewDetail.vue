@@ -329,7 +329,7 @@
           <ion-title>{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeBulkCloseModal">
-              <ion-icon :icon="closeOutline" />
+              <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
