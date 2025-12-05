@@ -289,7 +289,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand || ''}` : item.quantity }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label>
@@ -927,7 +927,8 @@ async function markAsCompleted() {
       workEffortId: workEffort.value.workEffortId,
       statusId: 'CYCLE_CNT_CMPLTD'
     });
-    if (response?.status === 200) {
+    if (response?.status === 200 && response.data?.statusChanged) {
+      workEffort.value.workEffortPurposeTypeId = 'CYCLE_CNT_CMPLTD';
       showToast(translate('Session sent for review successfully'));
     } else {
       throw response;

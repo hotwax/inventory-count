@@ -132,7 +132,7 @@
                         </ion-item>
                       </div>
                       <ion-label class="stat">
-                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        {{ item.quantity || 0 }}/{{ item.quantityOnHand }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
                       <ion-label class="stat">
@@ -192,7 +192,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ session.counted }}
+                          {{ session.counted || 0 }}
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
                         <ion-label>
@@ -218,7 +218,7 @@
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted || 0 }}</ion-item>
                 <ion-item button @click="removeProductFromSession()">
                   <ion-label>
                     {{ translate('Remove from Count') }}
@@ -572,9 +572,9 @@ async function removeProductFromSession() {
         if (prodIndex !== -1) {
           aggregatedSessionItems.value.splice(prodIndex, 1);
         }
-      } else {
-        selectedProductCountReview.value.quantity -= selectedSession.value.quantity;
-        selectedProductCountReview.value.proposedVarianceQuantity -= selectedSession.value.quantity;
+      } else if (selectedSession.value.counted) {
+        selectedProductCountReview.value.quantity -= selectedSession.value.counted;
+        selectedProductCountReview.value.proposedVarianceQuantity -= selectedSession.value.counted;
       }
 
       closeSessionPopover();
