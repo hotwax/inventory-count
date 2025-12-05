@@ -219,7 +219,7 @@
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
                 <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item button @click="removeProductFromSession()">
+                <ion-item button @click="openRemoveSessionAlert">
                   <ion-label>
                     {{ translate('Remove from Count') }}
                   </ion-label>
@@ -370,6 +370,17 @@
       { text: 'Confirm', handler: forceCloseWithoutAction }
     ]">
     </ion-alert>
+    <ion-alert
+      :is-open="isRemoveSessionAlertOpen"
+      :header="translate('Remove session from count')"
+      :message="translate('Remove session from count description')"
+      @didDismiss="isRemoveSessionAlertOpen = false"
+      :buttons="[
+        { text: translate('Cancel'), role: 'cancel', handler: closeRemoveSessionAlert },
+        { text: translate('Remove'), role: 'destructive', handler: confirmRemoveSessionRemoval }
+      ]"
+    >
+    </ion-alert>
   </ion-page>
 </template>
 
@@ -444,6 +455,7 @@ const overallFilteredVarianceQtyProposed = computed(() => filteredSessionItems.v
 
 const isEditImportItemModalOpen = ref(false);
 const isConfigureThresholdModalOpen = ref(false);
+const isRemoveSessionAlertOpen = ref(false);
 
 const thresholdConfig = reactive({
   unit: 'units',
@@ -522,6 +534,10 @@ const complianceLabel = computed(() => {
   return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
 });
 
+function openRemoveSessionAlert() {
+  isRemoveSessionAlertOpen.value = true;
+}
+
 async function removeProductFromSession() {
   await loader.present("Removing...");
 
@@ -588,6 +604,15 @@ async function removeProductFromSession() {
   }
 
   loader.dismiss();
+}
+
+function closeRemoveSessionAlert() {
+  isRemoveSessionAlertOpen.value = false;
+}
+
+function confirmRemoveSessionRemoval() {
+  isRemoveSessionAlertOpen.value = false;
+  removeProductFromSession();
 }
 
 function closeEditImportItemModal () {
