@@ -218,13 +218,15 @@
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item button @click="removeProductFromSession()">
-                  <ion-label>
-                    {{ translate('Remove from Count') }}
-                  </ion-label>
-                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                </ion-item>
+                <template v-if="!isVarianceDecided">
+                  <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                  <ion-item button @click="removeProductFromSession()">
+                    <ion-label>
+                      {{ translate('Remove from Count') }}
+                    </ion-label>
+                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                  </ion-item>
+                </template>
               </ion-list>
             </ion-content>
           </ion-popover>
@@ -458,6 +460,9 @@ const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
 const firstCountedAt = ref();
 const lastCountedAt = ref();
+const isVarianceDecided = computed(() =>
+  ['APPLIED', 'SKIPPED'].includes(selectedProductCountReview.value?.decisionOutcomeEnumId)
+);
 
 function loadThresholdConfig() {
   try {
