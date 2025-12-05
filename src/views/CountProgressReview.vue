@@ -431,10 +431,6 @@ const markOutOfStockDisabledReason = computed(() => {
     return translate('Uncounted items are still loading.');
   }
 
-  if (uncountedItems.value.length === 0) {
-    return translate('There are no uncounted items left to mark as out of stock.');
-  }
-
   return '';
 });
 
