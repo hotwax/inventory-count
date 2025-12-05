@@ -84,6 +84,13 @@
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
+              <div v-if="canSubmitForReview" class="submission-success ion-margin">
+                <ion-icon :icon="checkmarkCircleOutline" color="success" />
+                <div>
+                  <p class="overline">{{ translate("All tasks completed") }}</p>
+                  <p>{{ translate("This count is ready to submit for review.") }}</p>
+                </div>
+              </div>
             </ion-card>
         </div>
         <!-- Segments -->
@@ -959,6 +966,16 @@ function areAllSessionCompleted() {
 
 .submission-card {
   margin-inline-start: auto;
+}
+
+.submission-success {
+  display: flex;
+  gap: var(--spacer-md);
+  align-items: center;
+  background: color-mix(in srgb, var(--ion-color-success), transparent 90%);
+  border: 1px solid color-mix(in srgb, var(--ion-color-success), transparent 50%);
+  border-radius: var(--spacer-sm);
+  padding: var(--spacer-md);
 }
 
 .big-number {
