@@ -50,7 +50,7 @@
                     {{ item.scannedValue }}
                     <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <ion-badge v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
                   <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
@@ -775,6 +775,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
+          omsInstance: useAuthStore().getOMS,
           userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
@@ -1246,10 +1247,11 @@ async function saveMatchProduct() {
 
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
+    omsInstance: useAuthStore().getOMS,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
@@ -1281,6 +1283,7 @@ async function finalizeAggregationAndSync() {
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
+      omsInstance: useAuthStore().getOMS,
       userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
@@ -1642,4 +1645,5 @@ ion-segment-view {
   position: absolute;
   font-size: 10px;
 }
+
 </style>
