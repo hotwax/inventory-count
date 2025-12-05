@@ -440,7 +440,6 @@
         </ion-fab>
       </ion-content>
     </ion-modal>
-
   </ion-page>
 </template>
 
@@ -829,18 +828,12 @@ async function loadHardCount() {
         } else {
           pageIndex++;
         }
-      } else {
-        hasMore = false;
-      }
-      loadedItems.value = countedItems.value.length;
-    }
-    countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
-    getUncountedItems();
-    const productIds = [...new Set(
-      countedItems.value
-        .filter(item => item?.productId)
-        .map(item => item.productId)
-    )];
+        try {
+          const productIds = [...new Set(
+            resp.data
+              .filter((item: any) => item?.productId)
+              .map((item: any) => item.productId)
+          )];
 
           if (productIds.length) {
             await useProductMaster().prefetch(productIds as any);
