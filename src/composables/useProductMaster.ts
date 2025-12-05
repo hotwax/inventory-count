@@ -3,7 +3,7 @@ import { liveQuery } from 'dexie'
 import api, { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
-import { useDB } from '@/services/appInitializer';
+import { db } from '@/services/appInitializer';
 import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
 
@@ -29,14 +29,12 @@ const staleMs = ref(24 * 60 * 60 * 1000)
 const cacheReady = ref(false)
 const duplicateIdentifiers = ref(false)
 const retentionPolicy = ref('keep')
-let db = null as any
 
 const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy: rp = 'keep' }: { staleMs?: number, duplicateIdentifiers?: boolean, retentionPolicy?: string } = {}) => {
   if (ttl !== undefined) staleMs.value = ttl
   duplicateIdentifiers.value = dup
   retentionPolicy.value = rp
   cacheReady.value = true
-  db = useDB();
 }
 
 const makeIdentKey = (type: string) => type

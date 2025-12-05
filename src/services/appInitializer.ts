@@ -38,16 +38,6 @@ export async function initialize() {
   await useProductMaster().init();
 }
 
-/**
- * Global DB accessor
- */
-export function useDB(): CommonDB {
-  if (!initialized || !db) {
-    throw new Error("Database not initialized. Call initialize() first.")
-  }
-  return db
-}
-
 async function initializeDeviceId() {
   const pref = await db?.appPreferences.get("deviceId");
   let deviceId = pref?.key;

@@ -14,8 +14,6 @@ interface RecordScanParams {
   locationSeqId?: string | null;
 }
 
-// const db = useDB();
-
 /**
  * Utility Functions
  */
