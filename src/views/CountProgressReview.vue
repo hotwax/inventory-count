@@ -143,7 +143,7 @@
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
-                          <ion-label slot="end">
+                          <ion-label slot="end" v-if="showQoh">
                             {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                             {{ translate("QoH") }}
                           </ion-label>
@@ -187,9 +187,13 @@
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
-                          <ion-label>
+                          <ion-label v-if="showQoh">
                             {{ item.quantity }}/{{ item.quantityOnHand }}
                             <p>{{ translate("counted/systemic") }}</p>
+                          </ion-label>
+                          <ion-label v-else>
+                            {{ item.quantity }}
+                            <p>{{ translate("counted") }}</p>
                           </ion-label>
                           <ion-label>
                             {{ item.proposedVarianceQuantity }}
@@ -288,9 +292,13 @@
                             <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
-                        <ion-label>
+                        <ion-label v-if="showQoh">
                           {{ item.quantity }}/{{ item.quantityOnHand }}
                           <p>{{ translate("counted/systemic") }}</p>
+                        </ion-label>
+                        <ion-label v-else>
+                          {{ item.quantity }}
+                          <p>{{ translate("counted") }}</p>
                         </ion-label>
                         <ion-label>
                           {{ item.proposedVarianceQuantity }}
@@ -472,6 +480,8 @@ const isSubmitDisabled = computed(() => (
   || isLoadingUndirected.value
   || !canSubmitForReview.value
 ));
+
+const showQoh = computed(() => useProductStore().getShowQoh);
 
 const props = defineProps<{
   workEffortId: string;
