@@ -786,6 +786,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
     const batchSize = 250;
     const batches = [];
+    let isAnyFailed = false;
 
     for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
@@ -813,12 +814,17 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
         submittedItemsCount.value += batch.length;
 
       } else {
+        isAnyFailed = true;
         console.error("Batch failed:", result);
       }
     }
 
     selectedProductsReview.value = [];
-
+    if (isAnyFailed) {
+      showToast(translate("Something Went Wrong, Some products failed"));
+    } else {
+      showToast(translate("Successfully Submitted all products"));
+    }
   } catch (err) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
