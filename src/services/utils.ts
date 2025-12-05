@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { v4 as uuidv4 } from 'uuid'
-import { db } from '@/services/commonDatabase'
+import { db } from '@/services/appInitializer';
 import { useUserProfile } from '@/stores/userProfileStore';
 
 async function initDeviceId() {
