@@ -708,9 +708,9 @@ function applySearchAndSort() {
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
   } else if (sortBy.value === 'variance-asc') {
-    results.sort((a, b) => Math.abs(a.proposedVarianceQuantity || 0) - Math.abs(b.proposedVarianceQuantity || 0));
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
   } else if (sortBy.value === 'variance-desc') {
-    results.sort((a, b) => Math.abs(b.proposedVarianceQuantity || 0) - Math.abs(a.proposedVarianceQuantity || 0));
+    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
