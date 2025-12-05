@@ -110,7 +110,8 @@
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
+                <ion-select-option value="variance-asc">{{ translate("Variance (Low → High)") }}</ion-select-option>
+                <ion-select-option value="variance-desc">{{ translate("Variance (High → Low)") }}</ion-select-option>
             </ion-select>
           </ion-item-divider>
         </div>
@@ -706,8 +707,10 @@ function applySearchAndSort() {
 
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-asc') {
+    results.sort((a, b) => Math.abs(a.proposedVarianceQuantity || 0) - Math.abs(b.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-desc') {
+    results.sort((a, b) => Math.abs(b.proposedVarianceQuantity || 0) - Math.abs(a.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
