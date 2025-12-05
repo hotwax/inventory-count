@@ -419,7 +419,6 @@ const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_C
 const isMarkOutOfStockDisabled = computed(() => (
   !areAllSessionCompleted()
   || isLoadingUncounted.value
-  || uncountedItems.value.length === 0
 ));
 
 const markOutOfStockDisabledReason = computed(() => {
