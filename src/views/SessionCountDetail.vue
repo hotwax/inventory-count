@@ -716,7 +716,7 @@ onIonViewDidEnter(async () => {
   try {
     await startSession();
     await fetchWorkEffort();
-    if (inventoryCountImport.value?.statusId !== 'SESSION_SUBMITTED' && inventoryCountImport.value?.statusId !== 'SESSION_VOIDED') {
+    if (!['SESSION_SUBMITTED', 'SESSION_VOIDED'].includes(inventoryCountImport.value?.statusId)) {
       await handleSessionLock();
     }
 
