@@ -823,6 +823,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -890,6 +891,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     showToast(translate("Something Went Wrong"));
     console.error("Error Submitting Review: ", error);
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -1004,7 +1006,7 @@ async function performBulkCloseAction() {
     console.error(err)
     showToast("Bulk Action Failed")
   }
-
+  applySearchAndSort();
   loader.dismiss()
 }
 
