@@ -820,7 +820,11 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     }
 
     selectedProductsReview.value = [];
-    isAnyFailed ? showToast(translate("Something Went Wrong, Some products failed")) : showToast("Successfully Submitted all products");
+    if (isAnyFailed) {
+      showToast(translate("Something Went Wrong, Some products failed"));
+    } else {
+      showToast(translate("Successfully Submitted all products"));
+    }
   } catch (err) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
