@@ -5,7 +5,7 @@ import { useUserProfile } from '@/stores/userProfileStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { createCommonDB } from '@/services/commonDatabase';
 
-let db: CommonDB | null = null
+export let db: CommonDB
 let currentOMS: string | null = null
 let initialized = false
 

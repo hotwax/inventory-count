@@ -2,7 +2,7 @@ import { liveQuery } from 'dexie';
 import { useProductMaster } from './useProductMaster';
 import api from '@/services/RemoteAPI';
 import { v4 as uuidv4 } from 'uuid';
-import { useDB } from '@/services/appInitializer'
+import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
 
@@ -14,6 +14,8 @@ interface RecordScanParams {
   locationSeqId?: string | null;
 }
 
+// const db = useDB();
+
 /**
  * Utility Functions
  */
@@ -23,7 +25,6 @@ function currentMillis(): number {
 /* Stateless functions */
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
-    const db = useDB();
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
       productId: params.productId || null,
@@ -38,7 +39,6 @@ function currentMillis(): number {
 
   async function storeInventoryCountItems(items: any[]) {
     if (!items?.length) return;
-    const db = useDB();
 
     await useProductMaster().upsertInventoryFromSessionItems(items);
     try {
@@ -74,8 +74,7 @@ function currentMillis(): number {
   }
 
   async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
-    if (!keyword?.trim()) return []
-    const db = useDB();
+    if (!keyword?.trim()) return []    
 
     const value = keyword.trim().toLowerCase()
 
@@ -139,7 +138,6 @@ function currentMillis(): number {
   }
 
   async function getInventoryCountImportItems(inventoryCountImportId: string) {
-    const db = useDB();
     try {
       const records = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -154,7 +152,6 @@ function currentMillis(): number {
   }
 
   async function getInventoryCountImportItemsCount(inventoryCountImportId: string): Promise<number> {
-    const db = useDB();
     try {
       const count = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -169,8 +166,7 @@ function currentMillis(): number {
   }
 
   async function getInventoryCountImportByProductId(inventoryCountImportId: string, productId: string) {
-  if (!inventoryCountImportId || !productId) return '';
-  const db = useDB();
+  if (!inventoryCountImportId || !productId) return ''; 
   try {
     const record = await db.inventoryCountRecords
       .where('inventoryCountImportId')
@@ -185,8 +181,7 @@ function currentMillis(): number {
   }
 }
 
-  async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {
-    const db = useDB();
+  async function getSessionProductIds(inventoryCountImportId: string): Promise<string[]> {  
     try {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -221,8 +216,7 @@ function currentMillis(): number {
 
 
   const getUnmatchedItems = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const db = useDB();
+    liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -240,8 +234,7 @@ function currentMillis(): number {
     });
 
   const getCountedItems = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const db = useDB();
+    liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -279,8 +272,7 @@ function currentMillis(): number {
     });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const db = useDB();
+    liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -308,8 +300,7 @@ function currentMillis(): number {
     });
 
   const getUndirectedItems = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const db = useDB();
+    liveQuery(async () => {    
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -327,8 +318,7 @@ function currentMillis(): number {
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
-    liveQuery(async () => {
-      const db = useDB();
+    liveQuery(async () => {    
       const events = await db.scanEvents
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
@@ -349,8 +339,7 @@ function currentMillis(): number {
     });
 
   const getTotalCountedUnits = (inventoryCountImportId: string) =>
-  liveQuery(async () => {
-    const db = useDB();
+  liveQuery(async () => { 
     const items = await db.inventoryCountRecords
       .where('inventoryCountImportId')
       .equals(inventoryCountImportId)
