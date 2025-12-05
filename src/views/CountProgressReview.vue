@@ -839,7 +839,7 @@ async function createSessionForUncountedItems() {
   await loader.present(translate("Marking items as out of stock..."));
   try {
     const newSession = {
-      countImportName: workEffort.value?.workEffortName,
+      countImportName: `Auto OOS Session – ${workEffort.value?.workEffortName} – ` + DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS"),
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
@@ -876,6 +876,7 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
         quantity: 0,
         uploadedByUserLogin: username,
         uuid: uuidv4(),
+        isRequested: 'Y',
         createdDate: DateTime.now().toMillis()
       }));
 
