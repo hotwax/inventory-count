@@ -41,10 +41,11 @@
           <ion-label>
             {{ useProductMaster().primaryId(searchedProducts[0]) }}
             <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+            <ion-text color="danger" v-if="searchedProducts[0].isUndirected">{{ translate("Undirected items cannot be added to count") }}</ion-text>
           </ion-label>
-          <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
+          <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-            Add to count
+            {{ translate("Add to count") }}
           </ion-button>
         </ion-item>
         <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
@@ -133,10 +134,11 @@
             <ion-thumbnail slot="start">
               <Image :src="product.mainImageUrl" />
             </ion-thumbnail>
-            <ion-radio :value="product.productId">
+            <ion-radio :value="product.productId" :disabled="product.isUndirected">
               <ion-label>
                 {{ useProductMaster().primaryId(product) }}
                 <p>{{ useProductMaster().secondaryId(product) }}</p>
+                <ion-text color="danger" v-if="product.isUndirected">{{ translate("Undirected") }}</ion-text>
               </ion-label>
             </ion-radio>
           </ion-item>
@@ -183,6 +185,10 @@ const props = defineProps({
     required: true
   },
   inventoryCountImportId: {
+    type: String,
+    required: true
+  },
+  inventoryCountTypeId: {
     type: String,
     required: true
   }
@@ -304,7 +310,32 @@ async function getProductBySearch(term: string) {
     const resp = await getProducts(query);
 
     const products = resp?.data?.response?.docs || []
-    searchedProducts.value = products
+    
+    // Check if products are already in the session as undirected
+    // In a DIRECTED_COUNT: "Undirected" means "Not in session" OR "In session but isRequested=N"
+    const isDirected = props.inventoryCountTypeId === 'DIRECTED_COUNT'
+
+    const enrichedProducts = await Promise.all(products.map(async (product: any) => {
+      let isUndirected = false
+      if (isDirected) {
+        const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
+          props.inventoryCountImportId,
+          product.productId
+        )
+        // If not in session, or in session but not requested -> Undirected
+        if (!inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N') {
+          isUndirected = true
+        }
+      }
+      
+      return {
+        ...product,
+        inventoryCountTypeId: props.inventoryCountTypeId, // passing for debugging if needed
+        isUndirected
+      }
+    }))
+
+    searchedProducts.value = enrichedProducts
     if (products.length === 0) showToast(`No products found for "${term}"`)
   } catch (err) {
     console.error('Failed to fetch products', err)
