@@ -220,7 +220,7 @@
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
                 <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item button @click="removeProductFromSession()">
+                <ion-item button @click="confirmRemoveSessionRemoval">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
@@ -371,6 +371,17 @@
       { text: 'Confirm', handler: forceCloseWithoutAction }
     ]">
     </ion-alert>
+    <ion-alert
+      :is-open="isRemoveSessionAlertOpen"
+      header="Remove session from count"
+      message="Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone."
+      @didDismiss="isRemoveSessionAlertOpen = false"
+      :buttons="[
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Remove', handler: () => removeProductFromSession(sessionToDelete, productToDelete) }
+      ]"
+    >
+    </ion-alert>
   </ion-page>
 </template>
 
@@ -398,6 +409,9 @@ const THRESHOLD_STORAGE_KEY = 'cyclecount_compliance_threshold';
 const isBulkCloseModalOpen = ref(false)
 const bulkAction = ref<any>(null)
 const isCloseAlertOpen = ref(false)
+const isRemoveSessionAlertOpen = ref(false);
+const sessionToDelete = ref<any>(null);
+const productToDelete = ref<any>(null);
 
 const openItems = computed(() =>
   aggregatedSessionItems.value.filter(item => !item.decisionOutcomeEnumId)
@@ -523,13 +537,20 @@ const complianceLabel = computed(() => {
   return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
 });
 
-async function removeProductFromSession() {
+function confirmRemoveSessionRemoval() {
+  sessionToDelete.value = selectedSession.value;
+  productToDelete.value = selectedProductCountReview.value;
+  closeSessionPopover();
+  isRemoveSessionAlertOpen.value = true;
+}
+
+async function removeProductFromSession(session: any, product: any) {
   await loader.present("Removing...");
 
   try {
     const getResp = await useInventoryCountImport().getSessionItemsByImportId({
-      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
-      productId: selectedSession.value.productId,
+      inventoryCountImportId: session.inventoryCountImportId,
+      productId: session.productId,
       facilityId: workEffort.value.facilityId
     });
 
@@ -540,7 +561,7 @@ async function removeProductFromSession() {
     const importItemsToDelete = getResp.data;
 
     const resp = await useInventoryCountImport().deleteSessionItem({
-      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+      inventoryCountImportId: session.inventoryCountImportId,
       data: importItemsToDelete
     });
 
@@ -549,8 +570,8 @@ async function removeProductFromSession() {
     }
     try {
       const sessionIndex = sessions.value.findIndex(
-        (session: any) =>
-          session.inventoryCountImportId === selectedSession.value.inventoryCountImportId
+        (s: any) =>
+          s.inventoryCountImportId === session.inventoryCountImportId
       );
 
       if (sessionIndex !== -1) {
@@ -559,7 +580,7 @@ async function removeProductFromSession() {
 
       if (sessions.value.length === 0) {
         const filterredProdIndex = filteredSessionItems.value.findIndex(
-          (product: any) => product.productId === selectedSession.value.productId
+          (p: any) => p.productId === session.productId
         );
 
         if (filterredProdIndex !== -1) {
@@ -567,18 +588,21 @@ async function removeProductFromSession() {
         }
 
         const prodIndex = aggregatedSessionItems.value.findIndex(
-          (product: any) => product.productId === selectedSession.value.productId
+          (p: any) => p.productId === session.productId
         );
 
         if (prodIndex !== -1) {
           aggregatedSessionItems.value.splice(prodIndex, 1);
         }
       } else {
-        selectedProductCountReview.value.quantity -= selectedSession.value.quantity;
-        selectedProductCountReview.value.proposedVarianceQuantity -= selectedSession.value.quantity;
+        product.quantity -= session.quantity;
+        product.proposedVarianceQuantity -= session.quantity;
       }
-
-      closeSessionPopover();
+      
+      // If we called this from the alert, the popover would have been closed already.
+      // But if we ever call it directly, we might need to close it.
+      // Since confirmRemoveSessionRemoval closes it, we can comment this out or leave it safe-guarded.
+      closeSessionPopover(); 
     } catch (error) {
       console.error("Error Updating UI");
     }
