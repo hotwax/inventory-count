@@ -7,7 +7,6 @@ import { createCommonDB } from '@/services/commonDatabase';
 
 export let db: CommonDB
 let currentOMS: string | null = null
-let initialized = false
 
 /**
  * Initialize the app:
@@ -34,7 +33,6 @@ export async function initialize() {
 
   // Initialize deviceId inside this OMS DB
   await initializeDeviceId();
-  initialized = true
   await useProductMaster().init();
 }
 

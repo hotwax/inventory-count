@@ -1,7 +1,6 @@
 {
   "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "Accept": "Accept",
-  "Acceptable": "Acceptable",
   "Accept all outstanding variances and close": "Accept all outstanding variances and close",
   "Accepted": "Accepted",
   "Add Due Date": "Add Due Date",
@@ -27,6 +26,7 @@
   "Barcode Identifier": "Barcode Identifier",
   "Built:": "Built: {builtDateTime}",
   "Bulk Upload": "Bulk Upload",
+  "Compliant": "Compliant",
   "CSV Mapping": "CSV Mapping",
   "CSV data is missing or incorrect. Please check your file.": "CSV data is missing or incorrect. Please check your file.",
   "CYCLE_CNT_CLOSED": "CYCLE_CNT_CLOSED",
@@ -275,6 +275,7 @@
   "If these items were not intended to be counted in this session, you can discard them on the review and complete page.": "If these items were not intended to be counted in this session, you can discard them on the review and complete page.",
   "Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.": "Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.",
   "If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.": "If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.",
+  "Uncompliant": "Uncompliant",
   "Units": "Units",
   "Units counted": "Units counted",
   "Unmatched": "Unmatched ({unmatchedItemsLength})",

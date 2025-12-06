@@ -77,34 +77,24 @@
           </div>
         </div>
 
-        <div class="controls ion-margin-top">
-          <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-            <ion-item>
-            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-
-              <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
-              <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item>
-            <ion-select label="Compliance" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
-              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
-              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          </ion-list>
-          <ion-item-divider color="light">
-            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
-            </ion-select>
-          </ion-item-divider>
-        </div>
+        <SmartFilterSortBar
+          :items="aggregatedSessionItems"
+          :show-search="true"
+          :show-status="true"
+          :show-compliance="true"
+          :show-sort="true"
+          :show-select="false"
+          :status-options="[
+            { label: translate('Accepted'), value: 'accepted' },
+            { label: translate('Rejected'), value: 'rejected' }
+          ]"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+          ]"
+          @update:filtered="filteredSessionItems = $event"
+        />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
@@ -208,8 +198,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { computed, defineProps, ref } from "vue";
+import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -220,6 +210,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 const props = defineProps({
   workEffortId: String
@@ -253,15 +244,6 @@ onIonViewDidEnter(async () => {
   isLoading.value = false;
 })
 
-const filterAndSortBy = reactive({
-  dcsnRsn: 'all',
-  sortBy: 'alphabetic'
-});
-
-const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
-
-const searchedProductString = ref(''); 
-
 const isLoading = ref(false);
 const workEffort = ref();
 
@@ -278,52 +260,7 @@ async function getWorkEffortDetails() {
   }
 }
 
-function applySearchAndSort() {
-  if (!Array.isArray(aggregatedSessionItems.value)) {
-    filteredSessionItems.value = [];
-    return;
-  }
-
-  const keyword = (searchedProductString.value || '').trim().toLowerCase();
-
-  let results = aggregatedSessionItems.value.filter(item => {
-    if (!keyword) return true;
-    return (
-      (item.internalName?.toLowerCase().includes(keyword)) ||
-      (item.productIdentifier?.toLowerCase().includes(keyword))
-    );
-  });
-
-  const decisionOutcome = getDcsnFilter();
-  if (decisionOutcome) {
-    results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
-  }
-
-  if (sortBy.value === 'alphabetic') {
-    results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
-  }
-
-  filteredSessionItems.value = results;
-}
-
-watch([searchedProductString, dcsnRsn, sortBy], () => {
-  applySearchAndSort();
-}, { deep: true });
-
 const sessions = ref();
-
-function getDcsnFilter() {
-  if (dcsnRsn.value === 'all') {
-    return null;
-
-  } else if (dcsnRsn.value === 'accepted') {
-    return 'APPLIED';
-  } else if (dcsnRsn.value === 'rejected') {
-    return 'SKIPPED';
-  }
-}
 
 async function getCountSessions(productId: any) {
   sessions.value = null;
@@ -380,7 +317,9 @@ async function getInventoryCycleCount() {
       lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
-    applySearchAndSort();
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
+      (a.internalName || '').localeCompare(b.internalName || '')
+    );
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));
