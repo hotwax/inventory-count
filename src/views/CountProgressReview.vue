@@ -117,18 +117,15 @@
             </div>
             <template v-else>
               <ion-item
-                v-if="canManageCountProgress"
-                :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0"
+                v-if="canManageCountProgress && uncountedItems.length > 0"
                 lines="full"
               >
-                <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
-                  <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
-                </ion-label>
-                <ion-label v-else>
+                <ion-label>
                   {{ translate("Save uncounted items as out of stock") }}
                   <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
+                  <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">{{ markOutOfStockDisabledReason }}</p>
                 </ion-label>
-                <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
               </ion-item>
               <div v-if="isLoadingUncounted" class="empty-state">
                 <p>{{ translate("Loading...") }}</p>
@@ -424,6 +421,23 @@ const canPreviewItems = computed(() => (
 ));
 
 const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
+
+const isMarkOutOfStockDisabled = computed(() => (
+  !areAllSessionCompleted()
+  || isLoadingUncounted.value
+));
+
+const markOutOfStockDisabledReason = computed(() => {
+  if (!areAllSessionCompleted()) {
+    return translate('Submit or complete all sessions before marking uncounted items as out of stock.');
+  }
+
+  if (isLoadingUncounted.value) {
+    return translate('Uncounted items are still loading.');
+  }
+
+  return '';
+});
 
 const isWorkEffortInProgress = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_IN_PRGS');
 
@@ -973,6 +987,11 @@ function areAllSessionCompleted() {
   line-height: 1.2;
   margin: 0;
   color: rgba(var(--ion-text-color));
+}
+
+.helper-text {
+  color: var(--ion-color-medium);
+  margin-top: 4px;
 }
 
 ion-segment {
