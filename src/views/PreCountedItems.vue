@@ -7,7 +7,7 @@
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
+        <ion-title>{{ translate("Add Hand Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
@@ -61,18 +61,18 @@
             </ion-label>
           </ion-item>
         </ion-card>
-        <ion-card v-if="products.length === 0" class="pre-counted-empty-state">
+        <ion-card v-if="products.length === 0" class="hand-counted-empty-state">
           <ion-card-header>
-            <ion-card-title>{{ translate('What are pre-counted items?') }}</ion-card-title>
+            <ion-card-title>{{ translate('What are Hand-counted items?') }}</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <p>{{ translate('Pre-counted items description') }}</p>
-            <p>{{ translate('Pre-counted items stability note') }}</p>
-            <p>{{ translate('Pre-counted items movement note') }}</p>
-            <p>{{ translate('Pre-counted items benefit note') }}</p>
+            <p>{{ translate('Hand-counted items description') }}</p>
+            <p>{{ translate('Hand-counted items stability note') }}</p>
+            <p>{{ translate('Hand-counted items movement note') }}</p>
+            <p>{{ translate('Hand-counted items benefit note') }}</p>
             <ion-text color="medium">
               <p class="ion-padding-top">
-                {{ translate('Begin typing pre-counted product prompt') }}
+                {{ translate('Begin typing hand-counted product prompt') }}
               </p>
             </ion-text>
           </ion-card-content>
@@ -87,7 +87,7 @@
           </ion-button>
         </div>
         
-        <ion-list v-if="products.length > 0" class="pre-counted-items">
+        <ion-list v-if="products.length > 0" class="hand-counted-items">
           <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
             <div class="item ion-padding-end">
               <ion-item class="product" lines="none">
@@ -107,11 +107,11 @@
                   <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
                 <ion-item lines="full">
-                  <ion-input 
-                    :ref="el => setQuantityInputRef(product.productId, el)"
-                    @ionInput="onManualInputChange($event, product)" 
+                  <ion-input
+                    :ref="el => setQuantityInputRef(product.sequenceId, el)"
+                    @ionInput="onManualInputChange($event, product)"
                     @keyup.enter="focusSearchBar"
-                    label="Qty" 
+                    label="Qty"
                     label-placement="stacked" 
                     type="number" 
                     min="0" 
@@ -221,6 +221,7 @@ const selectedProductFromModal = ref('')
 const isSearching = ref(false)
 const searchBar = ref()
 const quantityInputRefs = ref<Record<string, any>>({})
+let productSequenceId = 0
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -248,23 +249,20 @@ function onManualInputChange(event: CustomEvent, product: any) {
   product.saved = value === 0
 }
 
-function setQuantityInputRef(productId: string, el: any) {
-  if (!el) return
-
-  // IonInput refs can resolve to either the Vue proxy or the underlying web component.
-  // Store the deepest element so we can reliably call setFocus across render cycles.
-  quantityInputRefs.value[productId] = el?.$el ?? el
+function setQuantityInputRef(sequenceId: string, el: any) {
+  if (el) {
+    quantityInputRefs.value[sequenceId] = el
+  } else {
+    delete quantityInputRefs.value[sequenceId]
+  }
 }
 
-async function focusQuantityInput(productId: string) {
+async function focusQuantityInput(sequenceId: string) {
+  // Use nextTick to ensure DOM is updated
   await nextTick()
-  const inputRef = quantityInputRefs.value[productId]
-  const focusTarget = inputRef?.setFocus ? inputRef : inputRef?.querySelector?.('input')
-
-  if (focusTarget?.setFocus) {
-    await focusTarget.setFocus()
-  } else if (focusTarget?.focus) {
-    focusTarget.focus()
+  const inputRef = quantityInputRefs.value[sequenceId]
+  if (inputRef?.$el) {
+    inputRef.$el.setFocus()
   }
 }
 
@@ -273,7 +271,7 @@ function focusSearchBar() {
 }
 
 function removeProduct(productToRemove: any) {
-  products.value = products.value.filter(existingProduct => existingProduct.productId !== productToRemove.productId)
+  products.value = products.value.filter(existingProduct => existingProduct.sequenceId !== productToRemove.sequenceId)
 }
 
 async function getInventoryCycleCount() {
@@ -361,15 +359,23 @@ async function addProductInPreCountedItems(product: any) {
     searchedProducts.value = []
     isSearchResultsModalOpen.value = false
 
-    product.countedQuantity = 0
-    product.saved = false
-    await setProductQoh(product)
+    const productToAdd = {
+      ...product,
+      sequenceId: `${++productSequenceId}`,
+      countedQuantity: 0,
+      saved: false
+    }
+
+    await setProductQoh(productToAdd)
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
       props.inventoryCountImportId,
       product.productId
     );
-    product.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
-    products.value.unshift(product)
+    productToAdd.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
+    products.value.unshift(productToAdd)
+
+    // Focus the quantity input for the newly added product
+    focusQuantityInput(productToAdd.sequenceId)
   } catch (err) {
     console.error('Error adding product:', err)
   }
@@ -440,8 +446,8 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: translate('Save pre-counted items'),
-    message: translate('Pre-counted items will be added to the scan events log.'),
+    header: translate('Save hand-counted items'),
+    message: translate('Hand-counted items will be added to the scan events log.'),
     buttons: [
       { text: translate('Cancel'), role: 'cancel' },
       {
@@ -465,7 +471,7 @@ main {
   width: 100%;
 }
 
-.pre-counted-items {
+.hand-counted-items {
   .item {
     flex: 1;
     display: flex;
@@ -497,7 +503,7 @@ main {
   border-bottom: 1px solid var(--ion-color-medium);
 }
 
-.pre-counted-empty-state {
+.hand-counted-empty-state {
   ion-card-content {
     display: flex;
     flex-direction: column;

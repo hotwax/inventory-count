@@ -19,9 +19,9 @@
           <ion-item class="scan">
             <ion-label position="stacked">sku</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
-              :disabled="!isSessionMutable"></ion-input>
+              @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable"></ion-input>
           </ion-item>
-          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="!isSessionMutable">
+          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled">
 
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ scannerButtonLabel }}
@@ -50,7 +50,7 @@
                     {{ item.scannedValue }}
                     <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <ion-badge v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
                   <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
@@ -69,10 +69,10 @@
           </ion-popover>
           </div>
 
-          <ion-card class="add-pre-counted" :disabled="!isSessionMutable" button
-            @click="router.push(`/add-pre-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
+          <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
+            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
             <ion-item lines="none">
-              <ion-label class="ion-text-nowrap">{{ translate("Add pre-counted items") }}</ion-label>
+              <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
             </ion-item>
           </ion-card>
@@ -701,12 +701,7 @@ const scannerButtonLabel = computed(() => {
   return translate('Focus scanner');
 });
 
-const scannerButtonDisabled = computed(() =>
-  sessionLocked.value
-  || inventoryCountImport.value?.statusId === 'SESSION_VOIDED'
-  || inventoryCountImport.value?.statusId === 'SESSION_SUBMITTED'
-  || (hasSessionStarted.value && isScannerFocused.value)
-);
+const scannerButtonDisabled = computed(() => !isSessionMutable.value || (hasSessionStarted.value && isScannerFocused.value));
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -721,7 +716,9 @@ onIonViewDidEnter(async () => {
   try {
     await startSession();
     await fetchWorkEffort();
-    await handleSessionLock();
+    if (!['SESSION_SUBMITTED', 'SESSION_VOIDED'].includes(inventoryCountImport.value?.statusId)) {
+      await handleSessionLock();
+    }
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
@@ -780,6 +777,7 @@ onIonViewDidEnter(async () => {
         intervalMs: 8000,
         context: {
           omsUrl: useAuthStore().getOmsRedirectionUrl,
+          omsInstance: useAuthStore().getOMS,
           userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
@@ -1251,10 +1249,11 @@ async function saveMatchProduct() {
 
   const context = {
     maargUrl: useAuthStore().getBaseUrl,
+    omsInstance: useAuthStore().getOMS,
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
-    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : '',
+    isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
   };
 
   const plainItem = JSON.parse(JSON.stringify(toRaw(matchedItem.value)));
@@ -1286,6 +1285,7 @@ async function finalizeAggregationAndSync() {
 
     const context = {
       omsUrl: useAuthStore().getOmsRedirectionUrl,
+      omsInstance: useAuthStore().getOMS,
       userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
@@ -1367,9 +1367,9 @@ async function confirmDiscard() {
 async function reopen() {
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     showToast('Session reopened');
     await handleSessionLock();
+    inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
     showToast('Failed to reopen session');
@@ -1550,7 +1550,7 @@ main {
   inset-inline: 0;
 }
 
-.add-pre-counted {
+.add-hand-counted {
   position: absolute;
   bottom: var(--spacer-base);
   inset-inline: var(--spacer-sm);
@@ -1607,13 +1607,6 @@ ion-segment-view {
   color: rgba(var(--ion-text-color));
 }
 
-.scan-badge {
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  z-index: 1;
-}
-
 .virtual-list {
   display: block;
   width: 100%;
@@ -1664,12 +1657,4 @@ ion-segment-view {
   font-size: 10px;
 }
 
-.unagg-badge {
-  position: absolute;
-  top: 1px;
-  right: 2px;
-  font-size: 12px;
-  padding: 2px 4px;
-  z-index: 5;
-}
 </style>

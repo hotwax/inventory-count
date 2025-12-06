@@ -35,11 +35,9 @@ import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-import { db } from '@/services/commonDatabase'
-import { initDeviceId } from '@/services/utils'
 import { useUserProfile } from './stores/userProfileStore';
-import { useProductMaster } from './composables/useProductMaster';
 import { setPermissions } from '@/authorization';
+import { initialize } from '@/services/appInitializer'
 
 
 const pinia = createPinia().use(piniaPluginPersistedstate);
@@ -87,9 +85,7 @@ app.config.globalProperties.$filters = {
 router.isReady().then(async () => {
   try {
     // Ensures the database is opened and schema initialized
-    await db.open()
-    await initDeviceId()
-    await useProductMaster().init();
+    await initialize()
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }

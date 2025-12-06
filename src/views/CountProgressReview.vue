@@ -143,7 +143,7 @@
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
-                          <ion-label slot="end">
+                          <ion-label slot="end" v-if="showQoh">
                             {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                             {{ translate("QoH") }}
                           </ion-label>
@@ -183,13 +183,13 @@
                               <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                             </ion-thumbnail>
                             <ion-label>
-                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                              <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
                               <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
                           <ion-label>
-                            {{ item.quantity }}/{{ item.quantityOnHand }}
-                            <p>{{ translate("counted/systemic") }}</p>
+                            {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                            <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label>
                             {{ item.proposedVarianceQuantity }}
@@ -281,16 +281,16 @@
                       <div class="list-item count-item-rollup" slot="header"> 
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                            <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                           </ion-thumbnail>
                           <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                            <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
                             <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ item.quantity }}/{{ item.quantityOnHand }}
-                          <p>{{ translate("counted/systemic") }}</p>
+                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                          <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label>
                           {{ item.proposedVarianceQuantity }}
@@ -473,6 +473,8 @@ const isSubmitDisabled = computed(() => (
   || !canSubmitForReview.value
 ));
 
+const showQoh = computed(() => useProductStore().getShowQoh);
+
 const props = defineProps<{
   workEffortId: string;
 }>();
@@ -535,6 +537,27 @@ async function loadDirectedCount() {
       if (resp?.status === 200 && resp.data?.length) {
         // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
         // Only include directed items (isRequested === 'Y' or null/undefined)
+
+        try {
+          const productsIds = [...new Set(resp.data
+            .filter((item: any) => item?.productId)
+            .map((item: any) => item.productId)
+          )];
+
+          await useProductMaster().prefetch(productsIds as any);
+          for (const productId of productsIds) {
+            const { product } = await useProductMaster().getById(productId as any);
+            if (!product) continue;
+            resp.data
+            .filter((item: any) => item.productId === productId)
+            .forEach((item: any) => {
+              item.product = product;
+            });
+          }
+        } catch (error) {
+          console.error("Error in Prefetch: ", error);
+        }
+
         const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
         const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
         undirectedItems.value.push(...undirected);
@@ -557,84 +580,6 @@ async function loadDirectedCount() {
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
-    const countedProductIds = [...new Set(countedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (countedProductIds.length) {
-      useProductMaster().prefetch(countedProductIds)
-        .then(async () => {
-          for (const productId of countedProductIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-            countedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-          }
-        })
-        .catch(err => {
-          console.warn("Prefetch Failed for counted items:", err);
-        })
-    }
-
-    const unDirectedProductIds = [...new Set(undirectedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (unDirectedProductIds.length) {
-      useProductMaster().prefetch(unDirectedProductIds)
-        .then(async () => {
-          for (const productId of unDirectedProductIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-            undirectedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-          }
-        })
-        .catch(err => {
-          console.warn("Prefetch Failed for counted items:", err);
-        })
-        .finally (() => {
-          isLoadingUndirected.value = false;
-        })
-    } else {
-      isLoadingUndirected.value = false;
-    }
-
-    const uncountedProductIds = [...new Set(uncountedItems.value
-      .filter(item => item?.productId)
-      .map(item => item.productId)
-    )];
-
-    if (uncountedProductIds.length) {
-      useProductMaster().prefetch(uncountedProductIds)
-      .then(async () => {
-        for (const productId of uncountedProductIds) {
-          const { product } = await useProductMaster().getById(productId);
-          if (!product) continue;
-          uncountedItems.value
-          .filter(item => item.productId === productId)
-          .forEach(item => {
-            item.product = product;
-          });
-        }
-      })
-      .catch(err => {
-        console.warn("Prefetch Failed for uncounted items:", err);
-      })
-      .finally(() => {
-        isLoadingUncounted.value = false;
-      });
-    } else {
-      isLoadingUncounted.value = false;
-    }
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
     showToast(translate("Something Went Wrong"));
@@ -642,6 +587,8 @@ async function loadDirectedCount() {
     uncountedItems.value =[];
     undirectedItems.value = [];
   }
+  isLoadingUncounted.value = false;
+  isLoadingUndirected.value = false;
 }
 
 async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any, event:  Event) {
@@ -760,6 +707,29 @@ async function loadHardCount() {
         } else {
           pageIndex++;
         }
+        try {
+          const productIds = [...new Set(
+            resp.data
+              .filter((item: any) => item?.productId)
+              .map((item: any) => item.productId)
+          )];
+
+          if (productIds.length) {
+            await useProductMaster().prefetch(productIds as any);
+            for (const productId of productIds) {
+              const { product } = await useProductMaster().getById(productId as any);
+              if (!product) continue;
+
+              countedItems.value
+              .filter(item => item.productId === productId)
+              .forEach(item => {
+                item.product = product;
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("Error in Prefetch: ", error);
+        }
       } else {
         hasMore = false;
       }
@@ -767,30 +737,6 @@ async function loadHardCount() {
     }
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     getUncountedItems();
-    const productIds = [...new Set(
-      countedItems.value
-        .filter(item => item?.productId)
-        .map(item => item.productId)
-    )];
-
-    if (productIds.length) {
-      useProductMaster().prefetch(productIds)
-        .then(async () => {
-          for (const productId of productIds) {
-            const { product } = await useProductMaster().getById(productId);
-            if (!product) continue;
-
-            countedItems.value
-            .filter(item => item.productId === productId)
-            .forEach(item => {
-              item.product = product;
-            });
-        }
-      })
-      .catch(err => {
-        console.warn('Prefetch Failed for hard count:', err);
-      })
-    }
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
     showToast(translate("Something Went Wrong"));
@@ -799,11 +745,13 @@ async function loadHardCount() {
   }
 }
 
-async function getAllProductsOnFacility() {
+async function getUncountedItems() {
+  isLoadingUncounted.value = true;
   try {
     let pageIndex = 0;
     const pageSize = 500;
     let hasMore = true;
+    const countedSet = new Set(countedItems.value.map(item => item.productId));
     allProducts.value = [];
 
     while (hasMore) {
@@ -813,7 +761,7 @@ async function getAllProductsOnFacility() {
         pageIndex
       });
 
-      if (resp?.status === 200 && resp?.data?.entityValueList) {
+      if (resp?.status === 200 && resp?.data?.entityValueList && resp?.data?.entityValueList.length > 0) {
       const list = resp.data.entityValueList;
         allProducts.value.push(...list);
 
@@ -822,54 +770,40 @@ async function getAllProductsOnFacility() {
         } else {
           pageIndex++;
         }
+        const rawUncounted = list.filter((product: any) => !countedSet.has(product.productId));
+        uncountedItems.value.push(...rawUncounted);
+        try {
+          const productIds = [...new Set(
+            rawUncounted.map((product: any) => product.productId).filter(Boolean)
+          )];
+
+          if (productIds.length) {
+            await useProductMaster().prefetch(productIds as any);
+            for (const productId of productIds) {
+              const { product } = await useProductMaster().getById(productId as any);
+              if (!product) continue;
+
+              uncountedItems.value
+              .filter(item => item.productId === productId)
+              .forEach(item => {
+                item.product = product;
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("Error in Prefetch: ", error);
+        }
       } else {
         hasMore = false;
       }
     }
   } catch (error) {
     console.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
-  }
-}
-
-async function getUncountedItems() {
-  isLoadingUncounted.value = true;
-  try {
-    await getAllProductsOnFacility();
-
-    const countedSet = new Set(countedItems.value.map(item => item.productId));
-    const rawUncounted = allProducts.value.filter((product: any) => !countedSet.has(product.productId));
-    const productIds = [...new Set(
-      rawUncounted.map(product => product.productId).filter(Boolean)
-    )];
-
-    if (!productIds.length) {
-      uncountedItems.value = [];
-      isLoadingUncounted.value = false;
-      return;
-    }
-
-    useProductMaster().prefetch(productIds).then(async () => {
-      const items: any[] = [];
-
-      for (const item of rawUncounted) {
-        const { product } = await useProductMaster().getById(item.productId);
-        items.push(product ? { ...item, product } : item);
-      }
-
-      uncountedItems.value = items;
-    })
-    .catch(err => {
-      console.warn('Prefetch Failed for uncounted items:', err);
-      uncountedItems.value = rawUncounted;
-    })
-    .finally(() => {
-      isLoadingUncounted.value = false;
-    });
-  } catch (error) {
-    console.error("Error fetching uncounted:", error);
     showToast(translate("Something Went Wrong"));
+    isLoadingUncounted.value = false;
     uncountedItems.value = [];
   }
+  isLoadingUncounted.value = false;
 }
 
 function stopAccordianEventProp(event: Event) {
@@ -902,10 +836,10 @@ async function createSessionForUncountedItems() {
     showToast(translate('You do not have permission to perform this action'));
     return;
   }
-  await loader.present("Creating Session...");
+  await loader.present(translate("Marking items as out of stock..."));
   try {
     const newSession = {
-      countImportName: workEffort.value?.workEffortName,
+      countImportName: `Auto OOS Session – ${workEffort.value?.workEffortName} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`,
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),

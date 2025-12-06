@@ -302,10 +302,10 @@ export const useProductStore = defineStore('productStore', {
       try {
         const { product } = await productMaster.getById(productId)
         if (product) {
-          const match = product.goodIdentifications?.find(
+          const matchedValue = (type === 'internalName') ? product.internalName : product.goodIdentifications?.find(
             (goodIdentification: any) => goodIdentification.type === type
-          )
-          if (match?.value) return match.value
+          )?.value
+          if (matchedValue) return matchedValue
         }
       } catch (err) {
         console.error(`[useProductStore] Failed to get identification for ${productId}/${type}`, err)
