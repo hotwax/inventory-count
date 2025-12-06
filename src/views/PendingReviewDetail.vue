@@ -599,10 +599,7 @@ async function removeProductFromSession(session: any, product: any) {
         product.proposedVarianceQuantity -= session.quantity;
       }
       
-      // If we called this from the alert, the popover would have been closed already.
-      // But if we ever call it directly, we might need to close it.
-      // Since confirmRemoveSessionRemoval closes it, we can comment this out or leave it safe-guarded.
-      closeSessionPopover(); 
+ 
     } catch (error) {
       console.error("Error Updating UI");
     }
