@@ -142,7 +142,7 @@
 
               <ion-radio-group v-model="selectedArea">
                 <ion-item v-for="area in areas" :key="area.value">
-                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                  <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
                 </ion-item>
               </ion-radio-group>
             </ion-list>
