@@ -10,7 +10,7 @@
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
-      <template v-else>
+      <template v-else-if="cycleCounts.length > 0">
         <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
           <ion-card-header>
             <div>
@@ -119,6 +119,11 @@
           </ion-list>
         </ion-card>
       </template>
+      <div v-else class="empty-state">
+        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count" />
+        <h2>{{ translate("All caught up!") }}</h2>
+        <p>{{ translate("You have no cycle counts assigned to you right now.") }}</p>
+      </div>
       <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false">
           <ion-header>
             <ion-toolbar>
@@ -545,5 +550,19 @@ main {
           / auto;
     padding: 0;
   }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: var(--spacer-2xl);
+}
+
+.empty-state img {
+  max-width: 300px;
+  margin-bottom: var(--spacer-lg);
 }
 </style>
