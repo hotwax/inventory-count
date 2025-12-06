@@ -108,7 +108,7 @@
                 </ion-button>
                 <ion-item lines="full">
                   <ion-input
-                    :ref="el => setQuantityInputRef(product.sequenceId, el)"
+                    :ref="el => setQuantityInputRef(el, index)"
                     @ionInput="onManualInputChange($event, product)"
                     @keyup.enter="focusSearchBar"
                     label="Qty"
@@ -182,7 +182,7 @@ import { translate } from '@/i18n'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonText, alertController
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
@@ -220,8 +220,8 @@ const isSearchResultsModalOpen = ref(false)
 const selectedProductFromModal = ref('')
 const isSearching = ref(false)
 const searchBar = ref()
-const quantityInputRefs = ref<Record<string, any>>({})
-let productSequenceId = 0
+const firstQuantityInputRef = ref<any>(null)
+const productSequenceId = ref(0);
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -249,22 +249,24 @@ function onManualInputChange(event: CustomEvent, product: any) {
   product.saved = value === 0
 }
 
-function setQuantityInputRef(sequenceId: string, el: any) {
-  if (el) {
-    quantityInputRefs.value[sequenceId] = el
-  } else {
-    delete quantityInputRefs.value[sequenceId]
+function setQuantityInputRef(el: any, index: number) {
+  if (!el) return
+
+  if (index === 0) {
+    firstQuantityInputRef.value = el?.$el ?? el
   }
 }
 
-async function focusQuantityInput(sequenceId: string) {
-  // Use nextTick to ensure DOM is updated
+async function focusFirstQuantityInput() {
   await nextTick()
-  const inputRef = quantityInputRefs.value[sequenceId]
-  if (inputRef?.$el) {
-    inputRef.$el.setFocus()
-  }
+
+  const target = firstQuantityInputRef.value
+  const focusEl = target?.setFocus ? target : target?.querySelector?.('input')
+
+  if (focusEl?.setFocus) await focusEl.setFocus()
+  else if (focusEl?.focus) focusEl.focus()
 }
+
 
 function focusSearchBar() {
   searchBar.value?.$el?.setFocus()
@@ -353,31 +355,25 @@ async function getProducts(query: any) {
 }
 
 async function addProductInPreCountedItems(product: any) {
+  searchedProductString.value = ''
+  searchedProducts.value = []
+  isSearchResultsModalOpen.value = false
+
+  const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
+  products.value.unshift(productEntry)
+
   try {
-    searchedProductString.value = ''
-    searchedProducts.value = []
-    isSearchResultsModalOpen.value = false
-
-    const productToAdd = {
-      ...product,
-      sequenceId: `${++productSequenceId}`,
-      countedQuantity: 0,
-      saved: false
-    }
-
-    await setProductQoh(productToAdd)
+    await setProductQoh(productEntry)
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
       props.inventoryCountImportId,
-      product.productId
+      productEntry.productId
     );
-    productToAdd.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
-    products.value.unshift(productToAdd)
-
-    // Focus the quantity input for the newly added product
-    focusQuantityInput(productToAdd.sequenceId)
+    productEntry.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
   } catch (err) {
     console.error('Error adding product:', err)
   }
+  // Focus the quantity input for the newly added product as soon as it renders
+  await focusFirstQuantityInput();
 }
 
 function openSearchResultsModal() {
