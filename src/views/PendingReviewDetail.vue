@@ -219,8 +219,8 @@
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item button @click="removeProductFromSession()">
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="removeProductFromSession()">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
