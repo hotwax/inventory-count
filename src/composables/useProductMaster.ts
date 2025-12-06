@@ -3,7 +3,7 @@ import { liveQuery } from 'dexie'
 import api, { client } from '@/services/RemoteAPI';
 import workerApi from "@/services/workerApi";
 
-import { db } from '@/services/commonDatabase'
+import { db } from '@/services/appInitializer';
 import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
 
@@ -110,8 +110,8 @@ const findByIdentification = async (idValue: string) => {
 
   // Since Dexie cannot query inside arrays directly, we need to scan manually:
   const allProducts = await db.products.toArray()
-  const matchedProduct = allProducts.find(product =>
-    product.goodIdentifications?.some(identification => identification.value === idValue)
+  const matchedProduct = allProducts.find((product: any) =>
+    product.goodIdentifications?.some((identification: any) => identification.value === idValue)
   )
 
   if (!matchedProduct) return { product: undefined, identificationValue: undefined }
@@ -167,7 +167,7 @@ const prefetch = async (productIds: string[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
   const existing = await db.products.toArray()
-  const existingIds = new Set(existing.map(product => product.productId))
+  const existingIds = new Set(existing.map((product: any) => product.productId))
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
@@ -270,7 +270,7 @@ async function searchProducts(value: string) {
     .startsWithIgnoreCase(value)
     .limit(250)
     .toArray()
-    if (products) return products.map(product => product.productId)
+    if (products) return products.map((product: any) => product.productId)
     return null
 }
 

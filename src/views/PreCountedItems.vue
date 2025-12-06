@@ -7,137 +7,137 @@
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate("Add Pre Counted Items")}}</ion-title>
+        <ion-title>{{ translate("Add Hand Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <ion-card>
-        <ion-card-header>
-          <ion-card-title>
-            {{ translate("Add Items") }}
-          </ion-card-title>
-        </ion-card-header>
-        <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
-        <ion-item lines="none">
-          <ion-label>
-            {{ translate("Search for products by parent name, SKU or UPC") }}
-          </ion-label>
-        </ion-item>
-        <!-- Skeleton loader during search -->
-        <ion-item v-if="isSearching" lines="none">
-          <ion-thumbnail slot="start">
-            <ion-skeleton-text :animated="true"></ion-skeleton-text>
-          </ion-thumbnail>
-          <ion-label>
-            <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
-            <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
-          </ion-label>
-        </ion-item>
-        <!-- Search result -->
-        <ion-item v-else-if="searchedProducts.length > 0" lines="none">
-          <ion-thumbnail slot="start">
-            <Image :src="searchedProducts[0].mainImageUrl"/>
-          </ion-thumbnail>
-          <ion-label>
-            {{ useProductMaster().primaryId(searchedProducts[0]) }}
-            <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
-          </ion-label>
-          <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
-            <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-            Add to count
-          </ion-button>
-        </ion-item>
-        <ion-item v-if="searchedProducts.length > 0" lines="none">
-          <ion-label>
-            <p>
-              {{ translate('Press enter to add helper') }}
-            </p>
-          </ion-label>
-        </ion-item>
-        <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
-          <ion-label>
-            {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
-          </ion-label>
-        </ion-item>
-      </ion-card>
-      <ion-card v-if="products.length === 0" class="pre-counted-empty-state">
-        <ion-card-header>
-          <ion-card-title>{{ translate('What are pre-counted items?') }}</ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <p>{{ translate('Pre-counted items description') }}</p>
-          <p>{{ translate('Pre-counted items stability note') }}</p>
-          <p>{{ translate('Pre-counted items movement note') }}</p>
-          <p>{{ translate('Pre-counted items benefit note') }}</p>
-          <ion-text color="medium">
-            <p class="ion-padding-top">
-              {{ translate('Begin typing pre-counted product prompt') }}
-            </p>
-          </ion-text>
-        </ion-card-content>
-      </ion-card>
-      <h2 v-if="products.length > 0">
-        {{ translate("Counted Items") }}
-      </h2>
+      <main>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate("Add Items") }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
+          <ion-item lines="none">
+            <ion-label>
+              {{ translate("Search for products by parent name, SKU or UPC") }}
+            </ion-label>
+          </ion-item>
+          <!-- Skeleton loader during search -->
+          <ion-item v-if="isSearching" lines="none">
+            <ion-thumbnail slot="start">
+              <ion-skeleton-text :animated="true"></ion-skeleton-text>
+            </ion-thumbnail>
+            <ion-label>
+              <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
+              <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
+            </ion-label>
+          </ion-item>
+          <!-- Search result -->
+          <ion-item v-else-if="searchedProducts.length > 0" lines="none">
+            <ion-thumbnail slot="start">
+              <Image :src="searchedProducts[0].mainImageUrl"/>
+            </ion-thumbnail>
+            <ion-label>
+              {{ useProductMaster().primaryId(searchedProducts[0]) }}
+              <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+            </ion-label>
+            <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
+              <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
+              Add to count
+            </ion-button>
+          </ion-item>
+          <ion-item v-if="searchedProducts.length > 0" lines="none">
+            <ion-label>
+              <p>
+                {{ translate('Press enter to add helper') }}
+              </p>
+            </ion-label>
+          </ion-item>
+          <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
+            <ion-label>
+              {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
+            </ion-label>
+          </ion-item>
+        </ion-card>
+        <ion-card v-if="products.length === 0" class="hand-counted-empty-state">
+          <ion-card-header>
+            <ion-card-title>{{ translate('What are Hand-counted items?') }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p>{{ translate('Hand-counted items description') }}</p>
+            <p>{{ translate('Hand-counted items stability note') }}</p>
+            <p>{{ translate('Hand-counted items movement note') }}</p>
+            <p>{{ translate('Hand-counted items benefit note') }}</p>
+            <ion-text color="medium">
+              <p class="ion-padding-top">
+                {{ translate('Begin typing hand-counted product prompt') }}
+              </p>
+            </ion-text>
+          </ion-card-content>
+        </ion-card>
 
-      <ion-list v-if="products.length > 0" class="pre-counted-items">
-        <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
-          <div class="item ion-padding-end">
-            <ion-item class="product" lines="none">
-              <ion-thumbnail slot="start">
-                <img :src="product.mainImageUrl"/>
-              </ion-thumbnail>
-              <ion-label>
-                {{ useProductMaster().primaryId(product) }}
-                <p>{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text v-if="!product.isRequested" color="danger">
-                  {{ translate("Undirected") }}
-                </ion-text>
-              </ion-label>
-            </ion-item>
-            <div class="quantity">
-              <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
-                <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-              </ion-button>
-              <ion-item lines="full">
-                <ion-input 
-                  :ref="el => setQuantityInputRef(el, index)"
-                  @ionInput="onManualInputChange($event, product)" 
-                  @keyup.enter="focusSearchBar"
-                  label="Qty" 
-                  label-placement="stacked" 
-                  type="number" 
-                  min="0" 
-                  inputmode="numeric" 
-                  placeholder="0" 
-                  v-model.number="product.countedQuantity"
-                ></ion-input>
+        <div class="counted-items-header" v-if="products.length > 0">
+          <h2>
+            {{ translate("Counted Items") }}
+          </h2>
+          <ion-button :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="addAllProductsToScanEvents">
+            {{ translate("Save progress") }}
+          </ion-button>
+        </div>
+        
+        <ion-list v-if="products.length > 0" class="hand-counted-items">
+          <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
+            <div class="item ion-padding-end">
+              <ion-item class="product" lines="none">
+                <ion-thumbnail slot="start">
+                  <img :src="product.mainImageUrl"/>
+                </ion-thumbnail>
+                <ion-label>
+                  {{ useProductMaster().primaryId(product) }}
+                  <p>{{ useProductMaster().secondaryId(product) }}</p>
+                  <ion-text v-if="!product.isRequested" color="danger">
+                    {{ translate("Undirected") }}
+                  </ion-text>
+                </ion-label>
               </ion-item>
-              <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
-                <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+              <div class="quantity">
+                <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-item lines="full">
+                  <ion-input
+                    :ref="el => setQuantityInputRef(el, index)"
+                    @ionInput="onManualInputChange($event, product)"
+                    @keyup.enter="focusSearchBar"
+                    label="Qty"
+                    label-placement="stacked" 
+                    type="number" 
+                    min="0" 
+                    inputmode="numeric" 
+                    placeholder="0" 
+                    v-model.number="product.countedQuantity"
+                  ></ion-input>
+                </ion-item>
+                <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                  <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+            <div class="progress ion-padding">
+              <ion-progress-bar :value="product.countedQuantity && product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
+              <ion-label>
+                {{ product.quantityOnHand > 0 ? product.quantityOnHand + ' QoH' : 'Not stocked' }}
+              </ion-label>
+              <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)">
+                <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
-          </div>
-          <div class="progress ion-padding">
-            <ion-progress-bar :value="product.countedQuantity && product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
-            <ion-label>
-              {{ product.quantityOnHand }}
-            </ion-label>
-            <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)">
-              <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
-            </ion-button>
-          </div>
-        </ion-card>
-      </ion-list>
+          </ion-card>
+        </ion-list>
+      </main>
     </ion-content>
-    <ion-footer>
-      <ion-toolbar>
-        <ion-button slot="end" :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="success" size="small" @click="addAllProductsToScanEvents">
-          {{ translate("Save") }}
-        </ion-button>
-      </ion-toolbar>
-    </ion-footer>
-
     <!-- Search Results Modal -->
     <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
       <ion-header>
@@ -221,6 +221,7 @@ const selectedProductFromModal = ref('')
 const isSearching = ref(false)
 const searchBar = ref()
 const firstQuantityInputRef = ref<any>(null)
+const productSequenceId = ref(0);
 
 const hasUnsavedProducts = computed(() =>
   products.value.some(product => !product.saved && product.countedQuantity > 0)
@@ -272,7 +273,7 @@ function focusSearchBar() {
 }
 
 function removeProduct(productToRemove: any) {
-  products.value = products.value.filter(existingProduct => existingProduct.productId !== productToRemove.productId)
+  products.value = products.value.filter(existingProduct => existingProduct.sequenceId !== productToRemove.sequenceId)
 }
 
 async function getInventoryCycleCount() {
@@ -358,7 +359,7 @@ async function addProductInPreCountedItems(product: any) {
   searchedProducts.value = []
   isSearchResultsModalOpen.value = false
 
-  const productEntry = { ...product, countedQuantity: 0, saved: false }
+  const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
   products.value.unshift(productEntry)
 
   try {
@@ -435,8 +436,8 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: translate('Save pre-counted items'),
-    message: translate('Pre-counted items will be added to the scan events log.'),
+    header: translate('Save hand-counted items'),
+    message: translate('Hand-counted items will be added to the scan events log.'),
     buttons: [
       { text: translate('Cancel'), role: 'cancel' },
       {
@@ -452,10 +453,17 @@ async function confirmGoBack() {
 }
 </script>
 
-<style>
+<style scoped>
 
-.pre-counted-items {
+main {
+  max-width: 768px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hand-counted-items {
   .item {
+    flex: 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -477,7 +485,15 @@ async function confirmGoBack() {
   }
 }
 
-.pre-counted-empty-state {
+.counted-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  padding: var(--spacer-sm);
+  border-bottom: 1px solid var(--ion-color-medium);
+}
+
+.hand-counted-empty-state {
   ion-card-content {
     display: flex;
     flex-direction: column;

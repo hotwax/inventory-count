@@ -48,15 +48,15 @@
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].minLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(aggregatedSessionItems[0].minLastUpdatedAt, workEffort.estimatedStartDate) }}</p>
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
               </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(aggregatedSessionItems[0].maxLastUpdatedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(aggregatedSessionItems[0].maxLastUpdatedAt, workEffort.estimatedCompletionDate) }}</p>
+                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -110,7 +110,8 @@
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
+                <ion-select-option value="variance-asc">{{ translate("Variance (Low → High)") }}</ion-select-option>
+                <ion-select-option value="variance-desc">{{ translate("Variance (High → Low)") }}</ion-select-option>
             </ion-select>
           </ion-item-divider>
         </div>
@@ -221,7 +222,7 @@
                 <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
                 <ion-item button @click="removeProductFromSession()">
                   <ion-label>
-                    {{ translate('Remove from Count') }}
+                    {{ translate('Remove from count') }}
                   </ion-label>
                   <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-item>
@@ -326,32 +327,30 @@
     <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal">
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ translate("Close Count") }}</ion-title>
+          <ion-title>{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeBulkCloseModal">
-              <ion-icon :icon="closeOutline" />
+              <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
 
-      <ion-content class="ion-padding">
+      <ion-content>
         <template v-if="openItems.length">
           <ion-list>
             <ion-radio-group v-model="bulkAction">
               <ion-item>
-                <ion-radio value="APPLIED" slot="start"></ion-radio>
-                <ion-label>{{ translate("Accept all outstanding variances and close") }}</ion-label>
+                <ion-radio value="APPLIED">{{ translate("Accept all outstanding variances and close") }}</ion-radio>
               </ion-item>
 
               <ion-item>
-                <ion-radio value="SKIPPED" slot="start"></ion-radio>
-                <ion-label>{{ translate("Reject all outstanding variances and close") }}</ion-label>
+                <ion-radio value="SKIPPED">{{ translate("Reject all outstanding variances and close") }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
 
-          <ion-button expand="block" color="primary" class="ion-margin-top"
+          <ion-button expand="block" color="primary" class="ion-margin"
             @click="performBulkCloseAction">
             {{ translate("Confirm") }}
           </ion-button>
@@ -458,6 +457,8 @@ const isSessionPopoverOpen = ref(false);
 const selectedSession = ref<any | null>(null);
 const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
+const firstCountedAt = ref();
+const lastCountedAt = ref();
 
 function loadThresholdConfig() {
   try {
@@ -706,8 +707,10 @@ function applySearchAndSort() {
 
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-asc') {
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-desc') {
+    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
@@ -786,6 +789,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
     const batchSize = 250;
     const batches = [];
+    let isAnyFailed = false;
 
     for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
@@ -813,16 +817,22 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
         submittedItemsCount.value += batch.length;
 
       } else {
+        isAnyFailed = true;
         console.error("Batch failed:", result);
       }
     }
 
     selectedProductsReview.value = [];
-
+    if (isAnyFailed) {
+      showToast(translate("Something Went Wrong, Some products failed"));
+    } else {
+      showToast(translate("Successfully Submitted all products"));
+    }
   } catch (err) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -890,6 +900,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     showToast(translate("Something Went Wrong"));
     console.error("Error Submitting Review: ", error);
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -920,6 +931,13 @@ async function getInventoryCycleCount() {
       }
       loadedItems.value = aggregatedSessionItems.value.length;
 
+    }
+    if (aggregatedSessionItems.value.length > 0) {
+      const minTimes = aggregatedSessionItems.value.map(i => i.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map(i => i.maxLastUpdatedAt);
+
+      firstCountedAt.value = Math.min(...minTimes);
+      lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
     applySearchAndSort();
@@ -997,7 +1015,7 @@ async function performBulkCloseAction() {
     console.error(err)
     showToast("Bulk Action Failed")
   }
-
+  applySearchAndSort();
   loader.dismiss()
 }
 
