@@ -236,7 +236,7 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((Number(item.quantity) || 0) > 0 && item.isRequested === 'Y' && Boolean(item.productId)))
+        .filter(item => ((Number(item.quantity) || 0) > 0 && (item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
         .toArray()
 
       items.sort((predecessor, successor) => {

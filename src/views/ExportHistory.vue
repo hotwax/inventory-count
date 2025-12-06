@@ -10,6 +10,9 @@
     </ion-header>
     <ion-content>
       <ion-list>
+        <ion-list-header>
+          <ion-label>{{ translate("Latest exports are at the top") }}</ion-label>
+        </ion-list-header>
         <div class="list-item" v-for="message in systemMessages" :key="message.systemMessageId">
           <ion-item lines="none">
             <ion-icon :icon="documentOutline" slot="start"></ion-icon>
@@ -43,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, onIonViewDidEnter } from '@ionic/vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
 import { translate } from '@/i18n';
 import { documentOutline, downloadOutline } from 'ionicons/icons';

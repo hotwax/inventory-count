@@ -110,7 +110,8 @@
             <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
             <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
                 <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
+                <ion-select-option value="variance-asc">{{ translate("Variance (Low → High)") }}</ion-select-option>
+                <ion-select-option value="variance-desc">{{ translate("Variance (High → Low)") }}</ion-select-option>
             </ion-select>
           </ion-item-divider>
         </div>
@@ -218,15 +219,13 @@
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
-                <template v-if="!isVarianceDecided">
-                  <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                  <ion-item button @click="removeProductFromSession()">
-                    <ion-label>
-                      {{ translate('Remove from Count') }}
-                    </ion-label>
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-item>
-                </template>
+                <ion-item button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                <ion-item button @click="removeProductFromSession()">
+                  <ion-label>
+                    {{ translate('Remove from count') }}
+                  </ion-label>
+                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-item>
               </ion-list>
             </ion-content>
           </ion-popover>
@@ -331,7 +330,7 @@
           <ion-title>{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeBulkCloseModal">
-              <ion-icon :icon="closeOutline" />
+              <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
@@ -460,9 +459,6 @@ const sessionPopoverEvent = ref<Event | null>(null);
 const selectedProductCountReview = ref<any | null>(null);
 const firstCountedAt = ref();
 const lastCountedAt = ref();
-const isVarianceDecided = computed(() =>
-  ['APPLIED', 'SKIPPED'].includes(selectedProductCountReview.value?.decisionOutcomeEnumId)
-);
 
 function loadThresholdConfig() {
   try {
@@ -711,8 +707,10 @@ function applySearchAndSort() {
 
   if (sortBy.value === 'alphabetic') {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-asc') {
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
+  } else if (sortBy.value === 'variance-desc') {
+    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
@@ -791,6 +789,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
 
     const batchSize = 250;
     const batches = [];
+    let isAnyFailed = false;
 
     for (let i = 0; i < inventoryCountProductsList.length; i += batchSize) {
       batches.push(inventoryCountProductsList.slice(i, i + batchSize));
@@ -818,16 +817,22 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
         submittedItemsCount.value += batch.length;
 
       } else {
+        isAnyFailed = true;
         console.error("Batch failed:", result);
       }
     }
 
     selectedProductsReview.value = [];
-
+    if (isAnyFailed) {
+      showToast(translate("Something Went Wrong, Some products failed"));
+    } else {
+      showToast(translate("Successfully Submitted all products"));
+    }
   } catch (err) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -895,6 +900,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     showToast(translate("Something Went Wrong"));
     console.error("Error Submitting Review: ", error);
   }
+  applySearchAndSort();
   loader.dismiss();
 }
 
@@ -1009,7 +1015,7 @@ async function performBulkCloseAction() {
     console.error(err)
     showToast("Bulk Action Failed")
   }
-
+  applySearchAndSort();
   loader.dismiss()
 }
 

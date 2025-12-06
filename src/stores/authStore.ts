@@ -147,6 +147,10 @@ export const useAuthStore = defineStore('authStore', {
         useProductStore().$reset();
         useUserProfile().$reset();
         useAuthStore().$reset();
+
+        const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+        const redirectUrl = window.location.origin + '/login';
+        window.location.href = `${appLoginUrl}?isLoggedOut=true&redirectUrl=${redirectUrl}`;
       } catch (error) {
         console.warn('Logout request failed', error);
       } finally {
@@ -161,7 +165,8 @@ export const useAuthStore = defineStore('authStore', {
         value: token,
         expiration: expirationTime,
       };
-    }
+    },
+
   },
   persist: true,
 });

@@ -162,10 +162,7 @@ onMounted(async () => {
 })
 
 function logout() {
-  useAuthStore().logout().then(() => {
-    const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${process.env.VUE_APP_LOGIN_URL}?isLoggedOut=true&redirectUrl=${redirectUrl}`
-  })
+  useAuthStore().logout();
 }
 
 function goToLaunchpad() {
