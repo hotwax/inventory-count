@@ -351,7 +351,7 @@
           </ion-list>
 
           <ion-button expand="block" color="primary" class="ion-margin"
-            @click="performBulkCloseAction">
+            :disabled="!bulkAction" @click="performBulkCloseAction">
             {{ translate("Confirm") }}
           </ion-button>
         </template>
