@@ -85,36 +85,14 @@
           </div>
         </div>
 
-        <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :show-checkbox="true" :checkbox-value="isAllSelected" @checkbox-change="toggleSelectAll" :filters="[
-            {
-              key: 'dcsnRsn',
-              label: translate('Status'),
-              placeholder: 'All',
-              options: [
-                { label: translate('All'), value: 'all' },
-                { label: translate('Open'), value: 'open' },
-                { label: translate('Accepted'), value: 'accepted' },
-                { label: translate('Rejected'), value: 'rejected' }
-              ]
-            },
-            {
-              key: 'complianceFilter',
-              label: complianceLabel,
-              placeholder: 'All',
-              options: [
-                { label: translate('All'), value: 'all' },
-                { label: translate('Acceptable'), value: 'acceptable' },
-                { label: translate('Rejectable'), value: 'rejectable' },
-                { label: translate('Configure threshold'), value: 'configure' }
-              ]
-            }
-          ]"
-          :selected-count="selectedProductsReview.length"
-          :sort-options="[
-            { label: translate('Alphabetic'), value: 'alphabetic' },
-            { label: translate('Variance Asc'), value: 'variance-asc' },
-            { label: translate('Variance Desc'), value: 'variance-desc' }
-          ]"
+        <SmartFilterSortBar
+          :items="aggregatedSessionItems"
+          :selected-items="selectedProductsReview"
+          :threshold-config="thresholdConfig"
+          @update:filtered="filteredSessionItems = $event"
+          @toggle-item="toggleSelectedForReview"
+          @select-all="toggleSelectAll"
+          @configure-threshold="openConfigureThresholdModal"
         />
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
@@ -390,7 +368,7 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
-import CountFilterSortBar from "@/components/CountFilterSortBar.vue";
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 const props = defineProps({
   workEffortId: String

@@ -77,22 +77,12 @@
           </div>
         </div>
 
-        <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :filters="[
-            {
-              key: 'dcsnRsn',
-              label: 'Status',
-              options: [
-                { label: translate('All'), value: 'all' },
-                { label: translate('Accepted'), value: 'accepted' },
-                { label: translate('Rejected'), value: 'rejected' }
-              ]
-            }
-          ]"
-          :sort-options="[
-            { label: translate('Alphabetic'), value: 'alphabetic' },
-            { label: translate('Variance Asc'), value: 'variance-asc' },
-            { label: translate('Variance Desc'), value: 'variance-desc' }
-          ]"
+        <SmartFilterSortBar
+          :items="aggregatedSessionItems"
+          :selected-items="[]"
+          :threshold-config="{ unit: 'units', value: 0 }"
+          @update:filtered="filteredSessionItems = $event"
+          :extra-filter="false"
         />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
@@ -209,7 +199,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
-import CountFilterSortBar from "@/components/CountFilterSortBar.vue";
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 const props = defineProps({
   workEffortId: String
