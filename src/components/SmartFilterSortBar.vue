@@ -188,7 +188,7 @@ const compliantLabel = computed(() => {
 
 const nonCompliantLabel = computed(() => {
   const unit = internalThreshold.unit === "percent" ? "%" : " units";
-  return `${t("Non-Compliant")} (> ${internalThreshold.value}${unit})`;
+  return `${t("Uncompliant")} (> ${internalThreshold.value}${unit})`;
 });
 
 const emit = defineEmits([
