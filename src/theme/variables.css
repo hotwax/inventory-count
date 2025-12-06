@@ -325,7 +325,6 @@ ion-icon.standalone-icon {
     --ion-text-color: 0, 0, 0, .87;
   }
 }
-}
 
 .cards ion-card {
   flex: 0 1 304px;
