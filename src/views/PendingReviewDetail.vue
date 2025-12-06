@@ -85,6 +85,7 @@
           </div>
         </div>
 
+<<<<<<< Updated upstream
         <div class="controls ion-margin-top">
           <ion-list lines="full" class="filters ion-margin">
             <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
@@ -115,6 +116,38 @@
             </ion-select>
           </ion-item-divider>
         </div>
+=======
+        <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :show-checkbox="true" :checkbox-value="isAllSelected" @checkbox-change="toggleSelectAll" :filters="[
+            {
+              key: 'dcsnRsn',
+              label: translate('Status'),
+              placeholder: 'All',
+              options: [
+                { label: translate('All'), value: 'all' },
+                { label: translate('Open'), value: 'open' },
+                { label: translate('Accepted'), value: 'accepted' },
+                { label: translate('Rejected'), value: 'rejected' }
+              ]
+            },
+            {
+              key: 'complianceFilter',
+              label: complianceLabel,
+              placeholder: 'All',
+              options: [
+                { label: translate('All'), value: 'all' },
+                { label: translate('Acceptable'), value: 'acceptable' },
+                { label: translate('Rejectable'), value: 'rejectable' },
+                { label: translate('Configure threshold'), value: 'configure' }
+              ]
+            }
+          ]"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance Asc'), value: 'variance-asc' },
+            { label: translate('Variance Desc'), value: 'variance-desc' }
+          ]"
+        />
+>>>>>>> Stashed changes
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
@@ -389,6 +422,7 @@ import ProgressBar from '@/components/ProgressBar.vue';
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import CountFilterSortBar from "@/components/CountFilterSortBar.vue";
 
 const props = defineProps({
   workEffortId: String
@@ -423,15 +457,13 @@ onIonViewDidEnter(async () => {
   }
   isLoading.value = false;
 })
-const filterAndSortBy = reactive({
-  dcsnRsn: 'all',
-  sortBy: 'alphabetic',
-  complianceFilter: 'all'
+
+const filterState = ref({
+  search: "",
+  dcsnRsn: "all",
+  complianceFilter: "all",
+  sortBy: "alphabetic"
 });
-
-const  { dcsnRsn, sortBy, complianceFilter } = toRefs(filterAndSortBy);
-
-const searchedProductString = ref(''); 
 
 const isLoading = ref(false);
 const workEffort = ref();
@@ -495,7 +527,7 @@ function handleComplianceChange(event: CustomEvent) {
 
 function openConfigureThresholdModal() {
   isConfigureThresholdModalOpen.value = true;
-  complianceFilter.value = 'all';
+  filterState.value.complianceFilter = 'all';
 }
 
 function closeConfigureThresholdModal() {
@@ -675,13 +707,14 @@ async function getWorkEffortDetails() {
   }
 }
 
-function applySearchAndSort() {
+function applyFilters() {
   if (!Array.isArray(aggregatedSessionItems.value)) {
     filteredSessionItems.value = [];
     return;
   }
 
-  const keyword = (searchedProductString.value || '').trim().toLowerCase();
+  const { search, dcsnRsn, complianceFilter, sortBy } = filterState.value;
+  const keyword = search.trim().toLowerCase();
 
   let results = aggregatedSessionItems.value.filter(item => {
     if (!keyword) return true;
@@ -691,34 +724,40 @@ function applySearchAndSort() {
     );
   });
 
-  const decisionOutcome = getDcsnFilter();
-  if (decisionOutcome && decisionOutcome !== 'empty') {
-    results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
-  } else if (decisionOutcome === 'empty') {
-    results = results.filter(item => !item.decisionOutcomeEnumId);
+  // Status filter
+  const dFilter = getDcsnFilter(filterState.value.dcsnRsn);
+  if (dFilter && dFilter !== "empty") {
+    results = results.filter(i => i.decisionOutcomeEnumId === dFilter);
+  } else if (dFilter === "empty") {
+    results = results.filter(i => !i.decisionOutcomeEnumId);
   }
 
-  // Apply compliance filtering
-  if (complianceFilter.value === 'acceptable') {
+  // Compliance filter
+  if (complianceFilter === "acceptable") {
     results = results.filter(item => isItemCompliant(item));
-  } else if (complianceFilter.value === 'rejectable') {
+  } else if (complianceFilter === "rejectable") {
     results = results.filter(item => !isItemCompliant(item));
   }
 
-  if (sortBy.value === 'alphabetic') {
+  // Sorting
+  if (sortBy === "alphabetic") {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
+<<<<<<< Updated upstream
   } else if (sortBy.value === 'variance-asc') {
     results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
   } else if (sortBy.value === 'variance-desc') {
+=======
+  } else if (sortBy === "variance-asc") {
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
+  } else if (sortBy === "variance-desc") {
+>>>>>>> Stashed changes
     results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
 }
 
-watch([searchedProductString, dcsnRsn, sortBy, complianceFilter], () => {
-  applySearchAndSort();
-}, { deep: true });
+watch(filterState, applyFilters, { deep: true });
 
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
@@ -840,16 +879,12 @@ function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
 }
 
-function getDcsnFilter() {
-  if (dcsnRsn.value === 'all') {
-    return null;
-  } else if (dcsnRsn.value === 'open') {
-    return 'empty';
-  } else if (dcsnRsn.value === 'accepted') {
-    return 'APPLIED';
-  } else if (dcsnRsn.value === 'rejected') {
-    return 'SKIPPED';
-  }
+function getDcsnFilter(value: string) {
+  if (value === "all") return null;
+  if (value === "open") return "empty";
+  if (value === "accepted") return "APPLIED";
+  if (value === "rejected") return "SKIPPED";
+  return null;
 }
 
 async function getCountSessions(productId: any) {
@@ -917,7 +952,7 @@ async function getInventoryCycleCount() {
         workEffortId: props.workEffortId,
         pageSize,
         pageIndex,
-        internalName: searchedProductString.value || null,
+        internalName: filterState.value.search?.trim() || null,
       });
       if (resp && resp.status === 200 && resp.data?.length) {
         aggregatedSessionItems.value.push(...resp.data);
@@ -940,7 +975,7 @@ async function getInventoryCycleCount() {
       lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
-    applySearchAndSort();
+    applyFilters();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));

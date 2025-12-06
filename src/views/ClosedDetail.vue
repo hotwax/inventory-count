@@ -77,34 +77,23 @@
           </div>
         </div>
 
-        <div class="controls ion-margin-top">
-          <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-            <ion-item>
-            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-
-              <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
-              <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item>
-            <ion-select label="Compliance" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
-              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
-              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          </ion-list>
-          <ion-item-divider color="light">
-            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance">{{ translate("Variance") }}</ion-select-option>
-            </ion-select>
-          </ion-item-divider>
-        </div>
+        <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :filters="[
+            {
+              key: 'dcsnRsn',
+              label: 'Status',
+              options: [
+                { label: translate('All'), value: 'all' },
+                { label: translate('Accepted'), value: 'accepted' },
+                { label: translate('Rejected'), value: 'rejected' }
+              ]
+            }
+          ]"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance Asc'), value: 'variance-asc' },
+            { label: translate('Variance Desc'), value: 'variance-desc' }
+          ]"
+        />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
@@ -220,6 +209,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import CountFilterSortBar from "@/components/CountFilterSortBar.vue";
 
 const props = defineProps({
   workEffortId: String
@@ -253,14 +243,11 @@ onIonViewDidEnter(async () => {
   isLoading.value = false;
 })
 
-const filterAndSortBy = reactive({
-  dcsnRsn: 'all',
-  sortBy: 'alphabetic'
+const filterState = ref({
+  search: "",
+  dcsnRsn: "all",
+  sortBy: "alphabetic"
 });
-
-const  { dcsnRsn, sortBy } = toRefs(filterAndSortBy);
-
-const searchedProductString = ref(''); 
 
 const isLoading = ref(false);
 const workEffort = ref();
@@ -284,7 +271,9 @@ function applySearchAndSort() {
     return;
   }
 
-  const keyword = (searchedProductString.value || '').trim().toLowerCase();
+  const { search, dcsnRsn, sortBy } = filterState.value;
+
+  const keyword = search.trim().toLowerCase();
 
   let results = aggregatedSessionItems.value.filter(item => {
     if (!keyword) return true;
@@ -294,33 +283,33 @@ function applySearchAndSort() {
     );
   });
 
-  const decisionOutcome = getDcsnFilter();
+  const decisionOutcome = getDcsnFilter(dcsnRsn);
   if (decisionOutcome) {
     results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
   }
 
-  if (sortBy.value === 'alphabetic') {
+  if (sortBy === "alphabetic") {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  } else if (sortBy === "variance-asc") {
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
+  } else if (sortBy === "variance-desc") {
+    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
 }
 
-watch([searchedProductString, dcsnRsn, sortBy], () => {
-  applySearchAndSort();
-}, { deep: true });
+watch(filterState, applySearchAndSort, { deep: true });
 
 const sessions = ref();
 
-function getDcsnFilter() {
-  if (dcsnRsn.value === 'all') {
+function getDcsnFilter(dcsnRsn: any) {
+  if (dcsnRsn === 'all') {
     return null;
 
-  } else if (dcsnRsn.value === 'accepted') {
+  } else if (dcsnRsn === 'accepted') {
     return 'APPLIED';
-  } else if (dcsnRsn.value === 'rejected') {
+  } else if (dcsnRsn === 'rejected') {
     return 'SKIPPED';
   }
 }

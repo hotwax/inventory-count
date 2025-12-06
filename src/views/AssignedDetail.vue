@@ -82,17 +82,12 @@
           </ion-card>
         </div>
 
-        <div class="controls ion-margin-top">
-          <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-          </ion-list>
-          <ion-item-divider color="light">
-            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
-                <ion-select-option value="variance">Variance</ion-select-option>
-            </ion-select>
-          </ion-item-divider>
-        </div>
+        <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :filters="[]"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance Asc'), value: 'variance-asc' },
+            { label: translate('Variance Desc'), value: 'variance-desc' }
+          ]"/>
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
@@ -209,6 +204,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import CountFilterSortBar from "@/components/CountFilterSortBar.vue";
 
 
 const facilities = computed(() => useProductStore().getFacilities);
@@ -243,15 +239,6 @@ onIonViewDidEnter(async () => {
   }
   isLoading.value = false;
 })
-
-const searchAndSortBy = reactive({
-  sortBy: 'alphabetic'
-});
-
-const  { sortBy } = toRefs(searchAndSortBy);
-
-const searchedProductString = ref('');
-
 
 const isLoading = ref(false);
 const workEffort = ref();
@@ -376,35 +363,41 @@ async function openEditNameAlert() {
   await editCountNameAlert.present();
 }
 
-function applySearchAndSort() {
+function applyFilters() {
   if (!Array.isArray(aggregatedSessionItems.value)) {
     filteredSessionItems.value = [];
     return;
   }
 
-  const keyword = (searchedProductString.value || '').trim().toLowerCase();
+  const { search, sortBy } = filterState.value;
+  const searchTerm = search.trim().toLowerCase();
 
   let results = aggregatedSessionItems.value.filter(item => {
-    if (!keyword) return true;
+    if (!searchTerm) return true;
+
     return (
-      (item.internalName?.toLowerCase().includes(keyword)) ||
-      (item.productIdentifier?.toLowerCase().includes(keyword))
+      (item.internalName?.toLowerCase().includes(searchTerm)) ||
+      (item.productIdentifier?.toLowerCase().includes(searchTerm))
     );
   });
 
-  if (sortBy.value === 'alphabetic') {
+  if (sortBy === "alphabetic") {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
+  } else if (sortBy === "variance-asc") {
+    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
+  } else if (sortBy === "variance-desc") {
+    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
   filteredSessionItems.value = results;
 }
 
+const filterState = ref({
+  search: "",
+  sortBy: "alphabetic"
+});
 
-watch([searchedProductString, sortBy], () => {
-  applySearchAndSort();
-}, { deep: true });
+watch(filterState, applyFilters, { deep: true });
 
 const sessions = ref();
 
@@ -462,7 +455,7 @@ async function getInventoryCycleCount() {
       firstCountedAt.value = Math.min(...minTimes);
       lastCountedAt.value = Math.max(...maxTimes);
     }
-    applySearchAndSort();
+    applyFilters();
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));
