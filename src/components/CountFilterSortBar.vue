@@ -1,6 +1,5 @@
 <template>
   <div class="controls">
-
     <!-- FILTER LIST (Search + Status + Compliance) -->
     <ion-list lines="full" class="filters ion-margin">
 
@@ -43,6 +42,9 @@
         :checked="checkboxValue"
         @ionChange="emitCheckbox"
       />
+      <div v-if="selectedCount !== undefined && selectedCount > 0" class="selected-count-display" slot="start">
+        {{ selectedCount }} {{ selectedCount === 1 ? translate("item selected") : translate("items selected") }}
+      </div>
 
       <!-- Sort Select -->
       <ion-select
@@ -67,6 +69,7 @@
 </template>
 
 <script setup>
+import { translate } from '@/i18n';
 import { IonList, IonSearchbar, IonItem, IonSelect, IonSelectOption, IonItemDivider, IonCheckbox } from '@ionic/vue';
 import { defineProps, defineEmits, reactive, watch } from 'vue';
 
@@ -78,7 +81,8 @@ const props = defineProps({
   searchPlaceholder: { type: String, default: "Search" },
   showCheckbox: { type: Boolean, default: false },
   checkboxValue: { type: Boolean, default: false },
-  sortLabel: { type: String, default: "Sort by" }
+  sortLabel: { type: String, default: "Sort by" },
+  selectedCount: { type: Number, default: undefined }
 });
 
 const emit = defineEmits(["update:modelValue", "checkbox-change"]);
@@ -116,6 +120,13 @@ function emitCheckbox(ev) {
 
 .filters > * {
   flex: 1;
+}
+
+.selected-count-display {
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: auto;
+  padding-right: 8px;
 }
 </style>
 

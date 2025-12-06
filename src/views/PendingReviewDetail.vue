@@ -85,38 +85,6 @@
           </div>
         </div>
 
-<<<<<<< Updated upstream
-        <div class="controls ion-margin-top">
-          <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-            <ion-item>
-            <ion-select v-model="dcsnRsn" label="Status" placeholder="All" interface="popover">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="open">{{ translate("Open") }}</ion-select-option>
-              <ion-select-option value="accepted">{{ translate("Accepted") }}</ion-select-option>
-              <ion-select-option value="rejected">{{ translate("Rejected") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item>
-            <ion-select v-model="complianceFilter" :label="complianceLabel" placeholder="All" interface="popover" @ionChange="handleComplianceChange">
-              <ion-select-option value="all">{{ translate("All") }}</ion-select-option>
-              <ion-select-option value="acceptable">{{ translate("Acceptable") }}</ion-select-option>
-              <ion-select-option value="rejectable">{{ translate("Rejectable") }}</ion-select-option>
-              <ion-select-option value="configure">{{ translate("Configure threshold") }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-          </ion-list>
-          <ion-item-divider color="light">
-            <ion-checkbox slot="start" :checked="isAllSelected" @ionChange="toggleSelectAll"/>
-            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">{{ translate("Alphabetic") }}</ion-select-option>
-                <ion-select-option value="variance-asc">{{ translate("Variance (Low → High)") }}</ion-select-option>
-                <ion-select-option value="variance-desc">{{ translate("Variance (High → Low)") }}</ion-select-option>
-            </ion-select>
-          </ion-item-divider>
-        </div>
-=======
         <CountFilterSortBar v-model="filterState" :show-search="true" search-placeholder="Search product name" :show-checkbox="true" :checkbox-value="isAllSelected" @checkbox-change="toggleSelectAll" :filters="[
             {
               key: 'dcsnRsn',
@@ -141,13 +109,13 @@
               ]
             }
           ]"
+          :selected-count="selectedProductsReview.length"
           :sort-options="[
             { label: translate('Alphabetic'), value: 'alphabetic' },
             { label: translate('Variance Asc'), value: 'variance-asc' },
             { label: translate('Variance Desc'), value: 'variance-desc' }
           ]"
         />
->>>>>>> Stashed changes
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
@@ -742,15 +710,9 @@ function applyFilters() {
   // Sorting
   if (sortBy === "alphabetic") {
     results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-<<<<<<< Updated upstream
-  } else if (sortBy.value === 'variance-asc') {
-    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
-  } else if (sortBy.value === 'variance-desc') {
-=======
   } else if (sortBy === "variance-asc") {
     results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
   } else if (sortBy === "variance-desc") {
->>>>>>> Stashed changes
     results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
   }
 
@@ -784,7 +746,7 @@ const isAllSelected = computed(() => {
 });
 
 function toggleSelectAll(event: CustomEvent) {
-  const isChecked = event.detail.checked;
+  const isChecked = event;
 
   if (isChecked) {
     selectedProductsReview.value = filteredSessionItems.value.filter(
@@ -871,7 +833,7 @@ async function submitSelectedProductReviews(decisionOutcomeEnumId: string) {
     console.error("Error while submitting:", err);
     showToast("Something Went Wrong");
   }
-  applySearchAndSort();
+  applyFilters();
   loader.dismiss();
 }
 
@@ -935,7 +897,7 @@ async function submitSingleProductReview(productId: any, proposedVarianceQuantit
     showToast(translate("Something Went Wrong"));
     console.error("Error Submitting Review: ", error);
   }
-  applySearchAndSort();
+  applyFilters();
   loader.dismiss();
 }
 
@@ -1050,7 +1012,7 @@ async function performBulkCloseAction() {
     console.error(err)
     showToast("Bulk Action Failed")
   }
-  applySearchAndSort();
+  applyFilters();
   loader.dismiss()
 }
 
