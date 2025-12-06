@@ -84,7 +84,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport.facilityAreaId }}</h1>
+                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
