@@ -85,7 +85,15 @@
         <SmartFilterSortBar
           :items="aggregatedSessionItems"
           :selected-items="[]"
-          :threshold-config="{ unit: 'units', value: 0 }"
+          :show-status="false"
+          :show-compliance="false"
+          :show-select="false"
+          :show-search="true"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+          ]"
           @update:filtered="filteredSessionItems = $event"
         />
 

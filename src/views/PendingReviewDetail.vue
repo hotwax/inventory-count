@@ -85,12 +85,23 @@
           </div>
         </div>
 
-        <SmartFilterSortBar
-          :items="aggregatedSessionItems"
-          :selected-items="selectedProductsReview"
-          :threshold-config="thresholdConfig"
+        <SmartFilterSortBar :items="aggregatedSessionItems" :selected-items="selectedProductsReview" :threshold-config="thresholdConfig"
+          :show-search="true"
+          :show-status="true"
+          :show-compliance="true"
+          :show-sort="true"
+          :show-select="true"
+          :status-options="[
+            { label: translate('Open'), value: 'open' },
+            { label: translate('Accepted'), value: 'accepted' },
+            { label: translate('Rejected'), value: 'rejected' }
+          ]"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+          ]"
           @update:filtered="filteredSessionItems = $event"
-          @toggle-item="toggleSelectedForReview"
           @select-all="toggleSelectAll"
           @configure-threshold="openConfigureThresholdModal"
         />

@@ -80,9 +80,19 @@
         <SmartFilterSortBar
           :items="aggregatedSessionItems"
           :selected-items="[]"
-          :threshold-config="{ unit: 'units', value: 0 }"
+          :show-status="true"
+          :status-options="[
+            { label: translate('Accepted'), value: 'accepted' },
+            { label: translate('Rejected'), value: 'rejected' }
+          ]"
+          :show-compliance="false"
+          :show-select="false"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+          ]"
           @update:filtered="filteredSessionItems = $event"
-          :extra-filter="false"
         />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
