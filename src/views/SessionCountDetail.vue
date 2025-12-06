@@ -84,7 +84,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
+                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport.facilityAreaId }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
@@ -526,7 +526,7 @@
 
             <ion-radio-group v-model="selectedArea">
               <ion-item v-for="area in areas" :key="area.value">
-                <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
@@ -665,7 +665,7 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
-const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
+const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
@@ -704,7 +704,11 @@ const scannerButtonLabel = computed(() => {
   return translate('Focus scanner');
 });
 
-const scannerButtonDisabled = computed(() => !isSessionMutable.value || (hasSessionStarted.value && isScannerFocused.value));
+const scannerButtonDisabled = computed(() =>
+  sessionLocked.value
+  || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
+  || (isSessionInProgress.value && isScannerFocused.value)
+);
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -1499,11 +1503,20 @@ async function removeScan(item: any) {
 </script>
 
 <style scoped>
+
+/* main {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  height: 100%;
+} */
+
 main {
   display: grid;
   grid-template-columns: 25% auto;
   justify-content: unset;
   align-items: stretch;
+  height: 100%;
 }
 
 .count-events {

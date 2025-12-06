@@ -5,7 +5,8 @@
         <ion-title>{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="router.push('/export-history')">
-            <ion-icon slot="icon-only" :icon="downloadOutline" />
+            <ion-icon slot="start" :icon="downloadOutline" />
+            {{ translate("Export history") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -331,7 +332,12 @@ async function exportCycleCounts() {
     const resp = await useInventoryCountRun().queueCycleCountsFileExport(payload);
 
     if (!hasError(resp)) {
-      showToast(translate("Your export has been queued. You can find it in Export history."));
+      showToast(translate("Your export has been queued. You can find it in Export history."), [{
+        text: translate("View"),
+        handler: () => {
+          router.push('/export-history');
+        }
+      }]);
     } else {
       throw resp.data;
     }
