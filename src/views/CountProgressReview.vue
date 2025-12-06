@@ -289,7 +289,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand || ''}` : item.quantity }}
+                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand || '-'}` : item.quantity }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label>
