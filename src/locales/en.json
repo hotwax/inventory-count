@@ -275,6 +275,8 @@
   "Upload": "Upload",
   "User Login": "User Login",
   "Variance": "Variance",
+  "Variance (High → Low)": "Variance (High → Low)",
+  "Variance (Low → High)": "Variance (Low → High)",
   "Version:": "Version: {appVersion}",
   "View": "View",
   "View error": "View error",
