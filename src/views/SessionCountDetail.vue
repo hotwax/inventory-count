@@ -1496,11 +1496,20 @@ async function removeScan(item: any) {
 </script>
 
 <style scoped>
+
+/* main {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  height: 100%;
+} */
+
 main {
   display: grid;
   grid-template-columns: 25% auto;
   justify-content: unset;
   align-items: stretch;
+  height: 100%;
 }
 
 .count-events {
