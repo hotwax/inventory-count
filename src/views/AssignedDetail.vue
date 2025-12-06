@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref, watch } from "vue";
+import { computed, defineProps, ref } from "vue";
 import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'

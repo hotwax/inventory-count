@@ -414,14 +414,14 @@ import {
   IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent,
   IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon,
   IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover,
-  IonRadio, IonRadioGroup, IonSelect, IonSelectOption, IonTitle, IonToolbar,
+  IonRadio, IonRadioGroup, IonTitle, IonToolbar,
   IonThumbnail, onIonViewDidEnter, IonSkeletonText
 } from "@ionic/vue";
 import {
   checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
-import { ref, computed, reactive } from "vue";
+import { ref, computed, defineProps } from "vue";
 import { translate } from "@/i18n";
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -477,11 +477,6 @@ const overallFilteredVarianceQtyProposed = computed(() =>
   )
 );
 
-const thresholdConfig = reactive({
-  unit: "units",
-  value: 2
-});
-
 /* lifecycle */
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -492,7 +487,9 @@ onIonViewDidEnter(async () => {
       workEffortId: props.workEffortId,
     });
     totalItems.value = resp?.data?.count || 0;
-  } catch {}
+  } catch {
+    totalItems.value = 0;
+  }
 
   await getWorkEffortDetails();
   if (workEffort.value) {
@@ -607,7 +604,7 @@ async function removeProductFromSession() {
       facilityId: workEffort.value.facilityId,
     });
 
-    const delResp = await useInventoryCountImport().deleteSessionItem({
+    const deleteResp = await useInventoryCountImport().deleteSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
       data: resp.data,
     });
@@ -645,9 +642,10 @@ async function getWorkEffortDetails() {
 async function getInventoryCycleCount() {
   let pageIndex = 0;
   let pageSize = totalItems.value > 5000 ? 500 : 250;
+  let hasMore = true;
 
   try {
-    while (true) {
+    while (hasMore) {
       const resp = await useInventoryCountRun().getCycleCount({
         workEffortId: props.workEffortId,
         pageSize,
@@ -660,8 +658,10 @@ async function getInventoryCycleCount() {
 
       loadedItems.value = aggregatedSessionItems.value.length;
 
-      if (resp.data.length < pageSize) break;
-
+      if (resp.data.length < pageSize) {
+        hasMore = false;
+        break;
+      }
       pageIndex++;
     }
 
@@ -679,7 +679,10 @@ async function getInventoryCycleCount() {
     filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
       (a.internalName || '').localeCompare(b.internalName || '')
     );
-  } catch {}
+  } catch {
+    aggregatedSessionItems.value = [];
+    filteredSessionItems.value = [];
+  }
 }
 
 async function getCountSessions(productId: any) {

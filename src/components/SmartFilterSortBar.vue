@@ -148,7 +148,6 @@ import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 const props = defineProps({
   items: Array,
   selectedItems: Array,
-  thresholdConfig: Object,
 
   showSearch: Boolean,
   showStatus: Boolean,
@@ -253,18 +252,6 @@ function saveThreshold() {
 
   applyFilters();
   closeThresholdModal();
-}
-
-function applyThreshold(newConfig) {
-  internalThreshold.unit = newConfig.unit;
-  internalThreshold.value = newConfig.value;
-
-  localStorage.setItem(
-    "cyclecount_compliance_threshold",
-    JSON.stringify(internalThreshold)
-  );
-
-  applyFilters(); // re-evaluate immediately
 }
 
 /* SELECT ALL */
