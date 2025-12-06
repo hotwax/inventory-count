@@ -17,7 +17,7 @@
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
-            <ion-label position="stacked">{{ barcodeIdentifierPref }}</ion-label>
+            <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
               @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable"></ion-input>
           </ion-item>
@@ -222,8 +222,8 @@
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">
-                          {{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}
+                        <ion-note v-if="showQoh" slot="end">
+                          {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -249,7 +249,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">{{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end" v-if="showQoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -639,8 +639,10 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = useProductStore().getShowQoh;
+const showQoh = computed(() => useProductStore().getShowQoh);
+const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
+const barcodeIdentifierDescription = getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description;
 
 const pageRef = ref(null);
 
