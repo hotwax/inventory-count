@@ -1195,6 +1195,7 @@ function openMatchModal(item: any) {
   matchedItem.value = item;
   queryString.value = item.productIdentifier;
   isMatchModalOpen.value = true;
+  handleSearch();
 }
 
 function closeMatchModal() {
