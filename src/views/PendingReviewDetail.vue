@@ -378,7 +378,8 @@
             </ion-radio-group>
           </ion-list>
 
-          <ion-button expand="block" color="primary" class="ion-margin" @click="performBulkCloseAction">
+          <ion-button expand="block" color="primary" class="ion-margin"
+            :disabled="!bulkAction" @click="performBulkCloseAction">
             {{ translate("Confirm") }}
           </ion-button>
         </template>
