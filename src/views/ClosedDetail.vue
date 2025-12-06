@@ -79,14 +79,15 @@
 
         <SmartFilterSortBar
           :items="aggregatedSessionItems"
-          :selected-items="[]"
+          :show-search="true"
           :show-status="true"
+          :show-compliance="true"
+          :show-sort="true"
+          :show-select="false"
           :status-options="[
             { label: translate('Accepted'), value: 'accepted' },
             { label: translate('Rejected'), value: 'rejected' }
           ]"
-          :show-compliance="false"
-          :show-select="false"
           :sort-options="[
             { label: translate('Alphabetic'), value: 'alphabetic' },
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
@@ -197,7 +198,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref, watch } from "vue";
+import { computed, defineProps, reactive, ref, watch } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
@@ -243,12 +244,6 @@ onIonViewDidEnter(async () => {
   isLoading.value = false;
 })
 
-const filterState = ref({
-  search: "",
-  dcsnRsn: "all",
-  sortBy: "alphabetic"
-});
-
 const isLoading = ref(false);
 const workEffort = ref();
 
@@ -265,54 +260,7 @@ async function getWorkEffortDetails() {
   }
 }
 
-function applySearchAndSort() {
-  if (!Array.isArray(aggregatedSessionItems.value)) {
-    filteredSessionItems.value = [];
-    return;
-  }
-
-  const { search, dcsnRsn, sortBy } = filterState.value;
-
-  const keyword = search.trim().toLowerCase();
-
-  let results = aggregatedSessionItems.value.filter(item => {
-    if (!keyword) return true;
-    return (
-      (item.internalName?.toLowerCase().includes(keyword)) ||
-      (item.productIdentifier?.toLowerCase().includes(keyword))
-    );
-  });
-
-  const decisionOutcome = getDcsnFilter(dcsnRsn);
-  if (decisionOutcome) {
-    results = results.filter(item => item.decisionOutcomeEnumId === decisionOutcome);
-  }
-
-  if (sortBy === "alphabetic") {
-    results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy === "variance-asc") {
-    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
-  } else if (sortBy === "variance-desc") {
-    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
-  }
-
-  filteredSessionItems.value = results;
-}
-
-watch(filterState, applySearchAndSort, { deep: true });
-
 const sessions = ref();
-
-function getDcsnFilter(dcsnRsn: any) {
-  if (dcsnRsn === 'all') {
-    return null;
-
-  } else if (dcsnRsn === 'accepted') {
-    return 'APPLIED';
-  } else if (dcsnRsn === 'rejected') {
-    return 'SKIPPED';
-  }
-}
 
 async function getCountSessions(productId: any) {
   sessions.value = null;
@@ -369,7 +317,9 @@ async function getInventoryCycleCount() {
       lastCountedAt.value = Math.max(...maxTimes);
     }
     submittedItemsCount.value = aggregatedSessionItems.value.filter(item => item.decisionOutcomeEnumId).length;
-    applySearchAndSort();
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
+      (a.internalName || '').localeCompare(b.internalName || '')
+    );
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));

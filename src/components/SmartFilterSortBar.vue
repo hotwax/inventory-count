@@ -2,6 +2,7 @@
   <div class="smart-controls">
     <!-- FILTER ROW -->
     <ion-list lines="full" class="filters ion-margin">
+
       <!-- SEARCH -->
       <ion-searchbar
         v-if="showSearch"
@@ -18,7 +19,11 @@
           interface="popover"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
-          <ion-select-option v-for="opt in statusOptions" :value="opt.value" :key="opt.value">
+          <ion-select-option
+            v-for="opt in statusOptions"
+            :key="opt.value"
+            :value="opt.value"
+          >
             {{ opt.label }}
           </ion-select-option>
         </ion-select>
@@ -34,8 +39,8 @@
           @ionChange="handleComplianceChange"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
-          <ion-select-option value="acceptable">{{ t("Acceptable") }}</ion-select-option>
-          <ion-select-option value="rejectable">{{ t("Rejectable") }}</ion-select-option>
+          <ion-select-option value="acceptable">{{ compliantLabel }}</ion-select-option>
+          <ion-select-option value="rejectable">{{ nonCompliantLabel }}</ion-select-option>
           <ion-select-option value="configure">{{ t("Configure threshold") }}</ion-select-option>
         </ion-select>
       </ion-item>
@@ -47,62 +52,150 @@
 
     </ion-list>
 
-    <!-- SORT & SELECT -->
+    <!-- SORT BAR -->
     <ion-item-divider color="light" class="sort-row">
+
       <!-- SELECT ALL -->
       <div class="select-left" v-if="showSelect">
         <ion-checkbox
+          class="checkbox"
           :checked="isAllSelected"
           @ionChange="toggleSelectAll"
-          class="checkbox"
         />
-        <span class="selected-count" v-if="selectedItems?.length">
+        <span v-if="selectedItems?.length" class="selected-count">
           {{ selectedItems.length }} {{ t("selected") }}
         </span>
       </div>
 
-      <!-- empty placeholder so Sort aligns on right -->
+      <!-- Placeholder for alignment -->
       <div v-else></div>
+
       <!-- SORT -->
       <ion-select
-        v-if="showSort" v-model="localSort" slot="end" :label="sortByLabel" interface="popover">
-        <ion-select-option v-for="opt in sortOptions" :value="opt.value" :key="opt.value">
+        v-if="showSort"
+        v-model="localSort"
+        slot="end"
+        :label="sortByLabel"
+        interface="popover"
+      >
+        <ion-select-option
+          v-for="opt in sortOptions"
+          :value="opt.value"
+          :key="opt.value"
+        >
           {{ opt.label }}
         </ion-select-option>
       </ion-select>
+
     </ion-item-divider>
+
+    <!-- INTERNAL THRESHOLD CONFIG MODAL -->
+    <ion-modal :is-open="isThresholdModalOpen" @did-dismiss="closeThresholdModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ t("Configure Threshold") }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="closeThresholdModal">
+              <ion-icon slot="icon-only" :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <ion-list>
+          <ion-item>
+            <ion-select v-model="tempThreshold.unit" label="Unit" interface="popover">
+              <ion-select-option value="units">{{ t("Units") }}</ion-select-option>
+              <ion-select-option value="percent">{{ t("Percent") }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-input
+              v-model.number="tempThreshold.value"
+              type="number"
+              min="0"
+              label="Threshold"
+              label-placement="floating"
+            />
+          </ion-item>
+        </ion-list>
+
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="saveThreshold">
+            <ion-icon :icon="checkmarkDoneOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </ion-content>
+    </ion-modal>
+
   </div>
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, watch, computed } from "vue";
-import { IonList, IonItem, IonSelect, IonSelectOption, IonSearchbar, IonItemDivider, IonCheckbox } from "@ionic/vue";
+import {
+  IonList, IonItem, IonSelect, IonSelectOption, IonSearchbar, IonItemDivider,
+  IonCheckbox, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons,
+  IonButton, IonIcon, IonContent, IonInput, IonFab, IonFabButton
+} from "@ionic/vue";
+
+import { ref, watch, computed, defineProps, defineEmits, onMounted, reactive } from "vue";
 import { translate as t } from "@/i18n";
+import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 
+/* PROPS */
 const props = defineProps({
-  items: { type: Array, required: true },
-  selectedItems: { type: Array, default: () => [] },
-  thresholdConfig: { type: Object, default: () => ({ unit: "units", value: 0 }) },
+  items: Array,
+  selectedItems: Array,
+  thresholdConfig: Object,
 
-  showSearch: { type: Boolean, default: true },
-  showStatus: { type: Boolean, default: false },
-  showCompliance: { type: Boolean, default: false },
-  showSort: { type: Boolean, default: true },
-  showSelect: { type: Boolean, default: false },
-  showExtraFilter: { type: Boolean, default: false },
+  showSearch: Boolean,
+  showStatus: Boolean,
+  showCompliance: Boolean,
+  showSort: Boolean,
+  showSelect: Boolean,
 
-  placeholderSearch: { type: String, default: "Search" },
-  statusLabel: { type: String, default: "Status" },
-  sortByLabel: { type: String, default: "Sort by" },
+  placeholderSearch: {
+    type: String,
+    default: () => t("Search product name")
+  },
+  statusLabel: {
+    type: String,
+    default: () => t("Status")
+  },
+  sortByLabel: {
+    type: String,
+    default: () => t("Sort By")
+  },
 
-  statusOptions: { type: Array, default: () => [] },  
-  sortOptions: { type: Array, required: true }
+  statusOptions: Array,
+  sortOptions: Array,
+  thresholdConfig: {
+  type: Object,
+  default: () => ({ unit: "units", value: 2 })
+},
+});
+
+const internalThreshold = reactive({
+  unit: "units",
+  value: 2,
+});
+
+const compliantLabel = computed(() => {
+  const unit = internalThreshold.unit === "percent" ? "%" : " units";
+  return `${t("Compliant")} (≤ ${internalThreshold.value}${unit})`;
+});
+
+const nonCompliantLabel = computed(() => {
+  const unit = internalThreshold.unit === "percent" ? "%" : " units";
+  return `${t("Non-Compliant")} (> ${internalThreshold.value}${unit})`;
 });
 
 const emit = defineEmits([
   "update:filtered",
   "select-all",
-  "configure-threshold"
+  "update:threshold"
 ]);
 
 /* LOCAL STATE */
@@ -111,85 +204,150 @@ const localStatus = ref("all");
 const localCompliance = ref("all");
 const localSort = ref("alphabetic");
 
-/* COMPLIANCE LABEL */
+/* THRESHOLD MODAL */
+const isThresholdModalOpen = ref(false);
+const tempThreshold = ref({ unit: "units", value: 0 });
+
+/* LABEL */
 const computedComplianceLabel = computed(() => {
-  const unit = props.thresholdConfig.unit === "percent" ? "%" : " units";
-  return `${t("Compliance")} (${props.thresholdConfig.value}${unit})`;
+  const unit = internalThreshold.unit === "percent" ? "%" : " units";
+  return `${t("Compliance")} (${internalThreshold.value}${unit})`;
 });
 
-/* FILTER ENGINE */
-const checkCompliance = (item, thresholdConfig) => {
-  const variance = Math.abs(item.proposedVarianceQuantity);
+onMounted(() => {
+  internalThreshold.unit = props.thresholdConfig.unit;
+  internalThreshold.value = props.thresholdConfig.value;
+});
 
-  if (thresholdConfig.unit === "units") {
-    return variance <= thresholdConfig.value;
-  }
+/* OPEN / CLOSE MODAL */
+function openThresholdModal() {
+  tempThreshold.value = {
+    unit: internalThreshold.unit,
+    value: internalThreshold.value
+  };
+  isThresholdModalOpen.value = true;
+}
 
-  if (thresholdConfig.unit === "percent") {
-    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
-    const percent = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
-    return percent <= thresholdConfig.value;
-  }
 
-  return true;
-};
+function closeThresholdModal() {
+  isThresholdModalOpen.value = false;
+}
 
-watch(
-  [localSearch, localStatus, localSort, localCompliance, () => props.items],
-  () => {
-    let results = [...props.items];
+/* SAVE THRESHOLD */
+function saveThreshold() {
+  // Copy from temp → internal
+  internalThreshold.unit = tempThreshold.value.unit;
+  internalThreshold.value = tempThreshold.value.value;
 
-    /* SEARCH */
-    if (props.showSearch) {
-      const key = localSearch.value.trim().toLowerCase();
-      if (key) {
-        results = results.filter(i =>
-          i.internalName?.toLowerCase().includes(key) ||
-          i.productIdentifier?.toLowerCase().includes(key)
-        );
-      }
-    }
+  const newConfig = {
+    unit: internalThreshold.unit,
+    value: internalThreshold.value
+  };
 
-    /* STATUS */
-    if (props.showStatus) {
-      if (localStatus.value === "accepted") results = results.filter(i => i.decisionOutcomeEnumId === "APPLIED");
-      if (localStatus.value === "rejected") results = results.filter(i => i.decisionOutcomeEnumId === "SKIPPED");
-    }
+  localStorage.setItem(
+    "cyclecount_compliance_threshold",
+    JSON.stringify(newConfig)
+  );
 
-    /* COMPLIANCE */
-    if (props.showCompliance) {
-    if (localCompliance.value === "acceptable") {
-        results = results.filter(i => checkCompliance(i, props.thresholdConfig));
-    } else if (localCompliance.value === "rejectable") {
-        results = results.filter(i => !checkCompliance(i, props.thresholdConfig));
-    }
-    }
+  emit("update:threshold", newConfig);
 
-    /* SORT */
-    if (props.showSort) {
-      if (localSort.value === "alphabetic") {
-        results.sort((predecessor, successor) => predecessor.internalName.localeCompare(successor.internalName));
-      } else if (localSort.value === "variance-asc") {
-        results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
-      } else if (localSort.value === "variance-desc") {
-        results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
-      }
-    }
-    emit("update:filtered", results);
-  }
-);
+  applyFilters();
+  closeThresholdModal();
+}
 
+function applyThreshold(newConfig) {
+  internalThreshold.unit = newConfig.unit;
+  internalThreshold.value = newConfig.value;
+
+  localStorage.setItem(
+    "cyclecount_compliance_threshold",
+    JSON.stringify(internalThreshold)
+  );
+
+  applyFilters(); // re-evaluate immediately
+}
+
+/* SELECT ALL */
 function toggleSelectAll(ev) {
   emit("select-all", ev.detail.checked);
 }
 
+/* COMPLIANCE CLICK LOGIC */
 function handleComplianceChange(ev) {
   if (ev.detail.value === "configure") {
     localCompliance.value = "all";
-    emit("configure-threshold");
+    openThresholdModal();
   }
 }
 
+/* COMPLIANCE CHECKER */
+function isCompliant(item) {
+  const limit = internalThreshold.value;
+  const variance = Math.abs(item.proposedVarianceQuantity);
+
+  if (internalThreshold.unit === "units") {
+    return variance <= limit;
+  }
+
+  if (internalThreshold.unit === "percent") {
+    if (item.quantityOnHand === 0) return variance === 0;
+    return Math.abs((variance / item.quantityOnHand) * 100) <= limit;
+  }
+
+  return true;
+}
+
+/* MAIN FILTER ENGINE */
+function applyFilters() {
+  let results = [...props.items];
+
+  // Search
+  const key = localSearch.value.trim().toLowerCase();
+  if (props.showSearch && key) {
+    results = results.filter(i =>
+      i.internalName?.toLowerCase().includes(key) ||
+      i.productIdentifier?.toLowerCase().includes(key)
+    );
+  }
+
+  // Status
+  if (props.showStatus) {
+    if (localStatus.value === "accepted") results = results.filter(i => i.decisionOutcomeEnumId === "APPLIED");
+    if (localStatus.value === "rejected") results = results.filter(i => i.decisionOutcomeEnumId === "SKIPPED");
+    if (localStatus.value === "open") results = results.filter(i => !i.decisionOutcomeEnumId);
+  }
+
+  // Compliance
+  if (props.showCompliance) {
+    if (localCompliance.value === "acceptable") {
+      results = results.filter(i => isCompliant(i, internalThreshold.unit));
+    } else if (localCompliance.value === "rejectable") {
+      results = results.filter(i => !isCompliant(i, internalThreshold.unit));
+    }
+  }
+
+  // Sort
+  if (props.showSort) {
+    if (localSort.value === "alphabetic")
+      results.sort((a,b) => a.internalName.localeCompare(b.internalName));
+
+    if (localSort.value === "variance-asc")
+      results.sort((a,b) => Math.abs(a.proposedVarianceQuantity) - Math.abs(b.proposedVarianceQuantity));
+
+    if (localSort.value === "variance-desc")
+      results.sort((a,b) => Math.abs(b.proposedVarianceQuantity) - Math.abs(a.proposedVarianceQuantity));
+  }
+
+  emit("update:filtered", results);
+}
+
+/* WATCH FILTERS + THRESHOLD */
+watch([localSearch, localStatus, localCompliance, localSort, () => props.items], applyFilters, { deep: true });
+watch(
+  () => [internalThreshold.unit, internalThreshold.value],
+  applyFilters
+);
+/* ALL SELECTED? */
 const isAllSelected = computed(() =>
   props.items.length > 0 &&
   props.selectedItems.length === props.items.filter(i => !i.decisionOutcomeEnumId).length
@@ -229,5 +387,6 @@ const isAllSelected = computed(() =>
 .selected-count {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
+  font-size: .9rem;
 }
 </style>

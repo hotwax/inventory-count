@@ -1,7 +1,6 @@
 {
   "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.": "A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.",
   "Accept": "Accept",
-  "Acceptable": "Acceptable",
   "Accept all outstanding variances and close": "Accept all outstanding variances and close",
   "Accepted": "Accepted",
   "Add Due Date": "Add Due Date",
@@ -26,6 +25,7 @@
   "Barcode Identifier": "Barcode Identifier",
   "Built:": "Built: {builtDateTime}",
   "Bulk Upload": "Bulk Upload",
+  "Compliant": "Compliant",
   "CSV Mapping": "CSV Mapping",
   "CSV data is missing or incorrect. Please check your file.": "CSV data is missing or incorrect. Please check your file.",
   "CYCLE_CNT_CLOSED": "CYCLE_CNT_CLOSED",
@@ -149,6 +149,7 @@
   "No products found for": "No products found for",
   "No results found for": "No results found for {queryString}",
   "No time zone found": "No time zone found",
+  "Non-Compliant": "Non-Compliant",
   "None": "None",
   "Open": "Open",
   "On time": "On time",

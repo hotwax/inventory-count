@@ -89,6 +89,7 @@
           :show-compliance="false"
           :show-select="false"
           :show-search="true"
+          :show-sort="true"
           :sort-options="[
             { label: translate('Alphabetic'), value: 'alphabetic' },
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
@@ -371,42 +372,6 @@ async function openEditNameAlert() {
   await editCountNameAlert.present();
 }
 
-function applyFilters() {
-  if (!Array.isArray(aggregatedSessionItems.value)) {
-    filteredSessionItems.value = [];
-    return;
-  }
-
-  const { search, sortBy } = filterState.value;
-  const searchTerm = search.trim().toLowerCase();
-
-  let results = aggregatedSessionItems.value.filter(item => {
-    if (!searchTerm) return true;
-
-    return (
-      (item.internalName?.toLowerCase().includes(searchTerm)) ||
-      (item.productIdentifier?.toLowerCase().includes(searchTerm))
-    );
-  });
-
-  if (sortBy === "alphabetic") {
-    results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy === "variance-asc") {
-    results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity || 0) - Math.abs(successor.proposedVarianceQuantity || 0));
-  } else if (sortBy === "variance-desc") {
-    results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity || 0) - Math.abs(predecessor.proposedVarianceQuantity || 0));
-  }
-
-  filteredSessionItems.value = results;
-}
-
-const filterState = ref({
-  search: "",
-  sortBy: "alphabetic"
-});
-
-watch(filterState, applyFilters, { deep: true });
-
 const sessions = ref();
 
 async function getCountSessions(productId: any) {
@@ -463,7 +428,9 @@ async function getInventoryCycleCount() {
       firstCountedAt.value = Math.min(...minTimes);
       lastCountedAt.value = Math.max(...maxTimes);
     }
-    applyFilters();
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
+      (a.internalName || '').localeCompare(b.internalName || '')
+    );
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));
