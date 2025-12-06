@@ -365,8 +365,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonAlert, IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
+import { computed, defineProps, reactive, ref, watch } from "vue";
+import { IonAlert, IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent, IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover, IonRadio, IonRadioGroup, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import router from "@/router";
@@ -476,12 +476,6 @@ function saveThresholdConfig() {
   }
 }
 
-function handleComplianceChange(event: CustomEvent) {
-  if (event.detail.value === 'configure') {
-    openConfigureThresholdModal();
-  }
-}
-
 function openConfigureThresholdModal() {
   isConfigureThresholdModalOpen.value = true;
   filterState.value.complianceFilter = 'all';
@@ -506,11 +500,6 @@ function isItemCompliant(item: any): boolean {
   }
   return true;
 }
-
-const complianceLabel = computed(() => {
-  const unitText = thresholdConfig.unit === 'percent' ? '%' : ` ${thresholdConfig.unit}`;
-  return `${translate('Compliance')} (${thresholdConfig.value}${unitText})`;
-});
 
 async function removeProductFromSession() {
   await loader.present("Removing...");
@@ -670,7 +659,7 @@ function applyFilters() {
     return;
   }
 
-  const { search, dcsnRsn, complianceFilter, sortBy } = filterState.value;
+  const { search, complianceFilter, sortBy } = filterState.value;
   const keyword = search.trim().toLowerCase();
 
   let results = aggregatedSessionItems.value.filter(item => {
@@ -727,12 +716,6 @@ function toggleSelectedForReview(product: any) {
     selectedProductsReview.value.splice(index, 1);
   }
 }
-
-const isAllSelected = computed(() => {
-  return (
-    filteredSessionItems.value?.length > 0 && selectedProductsReview.value?.length === filteredSessionItems.value.length
-  );
-});
 
 function toggleSelectAll(event: CustomEvent) {
   const isChecked = event;

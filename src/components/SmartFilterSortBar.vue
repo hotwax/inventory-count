@@ -18,7 +18,7 @@
           interface="popover"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
-          <ion-select-option v-for="opt in statusOptions" :value="opt.value">
+          <ion-select-option v-for="opt in statusOptions" :value="opt.value" :key="opt.value">
             {{ opt.label }}
           </ion-select-option>
         </ion-select>
@@ -66,7 +66,7 @@
       <!-- SORT -->
       <ion-select
         v-if="showSort" v-model="localSort" slot="end" :label="sortByLabel" interface="popover">
-        <ion-select-option v-for="opt in sortOptions" :value="opt.value">
+        <ion-select-option v-for="opt in sortOptions" :value="opt.value" :key="opt.value">
           {{ opt.label }}
         </ion-select-option>
       </ion-select>
@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { defineProps, defineEmits, ref, watch, computed } from "vue";
 import { IonList, IonItem, IonSelect, IonSelectOption, IonSearchbar, IonItemDivider, IonCheckbox } from "@ionic/vue";
 import { translate as t } from "@/i18n";
 
@@ -118,6 +118,22 @@ const computedComplianceLabel = computed(() => {
 });
 
 /* FILTER ENGINE */
+const checkCompliance = (item, thresholdConfig) => {
+  const variance = Math.abs(item.proposedVarianceQuantity);
+
+  if (thresholdConfig.unit === "units") {
+    return variance <= thresholdConfig.value;
+  }
+
+  if (thresholdConfig.unit === "percent") {
+    if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
+    const percent = Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100);
+    return percent <= thresholdConfig.value;
+  }
+
+  return true;
+};
+
 watch(
   [localSearch, localStatus, localSort, localCompliance, () => props.items],
   () => {
@@ -142,20 +158,11 @@ watch(
 
     /* COMPLIANCE */
     if (props.showCompliance) {
-      const limit = props.thresholdConfig.value;
-
-      function isCompliant(item) {
-        const variance = Math.abs(item.proposedVarianceQuantity);
-        if (props.thresholdConfig.unit === "units") return variance <= limit;
-        if (props.thresholdConfig.unit === "percent") {
-          if (item.quantityOnHand === 0) return item.proposedVarianceQuantity === 0;
-          return Math.abs((item.proposedVarianceQuantity / item.quantityOnHand) * 100) <= limit;
-        }
-        return true;
-      }
-
-      if (localCompliance.value === "acceptable") results = results.filter(isCompliant);
-      if (localCompliance.value === "rejectable") results = results.filter(i => !isCompliant(i));
+    if (localCompliance.value === "acceptable") {
+        results = results.filter(i => checkCompliance(i, props.thresholdConfig));
+    } else if (localCompliance.value === "rejectable") {
+        results = results.filter(i => !checkCompliance(i, props.thresholdConfig));
+    }
     }
 
     /* SORT */
