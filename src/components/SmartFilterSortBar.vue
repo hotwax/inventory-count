@@ -291,38 +291,38 @@ function applyFilters() {
   // Search
   const key = localSearch.value.trim().toLowerCase();
   if (props.showSearch && key) {
-    results = results.filter(i =>
-      i.internalName?.toLowerCase().includes(key) ||
-      i.productIdentifier?.toLowerCase().includes(key)
+    results = results.filter(item =>
+      item.internalName?.toLowerCase().includes(key) ||
+      item.productIdentifier?.toLowerCase().includes(key)
     );
   }
 
   // Status
   if (props.showStatus) {
-    if (localStatus.value === "accepted") results = results.filter(i => i.decisionOutcomeEnumId === "APPLIED");
-    if (localStatus.value === "rejected") results = results.filter(i => i.decisionOutcomeEnumId === "SKIPPED");
-    if (localStatus.value === "open") results = results.filter(i => !i.decisionOutcomeEnumId);
+    if (localStatus.value === "accepted") results = results.filter(item => item.decisionOutcomeEnumId === "APPLIED");
+    if (localStatus.value === "rejected") results = results.filter(item => item.decisionOutcomeEnumId === "SKIPPED");
+    if (localStatus.value === "open") results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
   // Compliance
   if (props.showCompliance) {
     if (localCompliance.value === "acceptable") {
-      results = results.filter(i => isCompliant(i, internalThreshold.unit));
+      results = results.filter(item => isCompliant(item, internalThreshold.unit));
     } else if (localCompliance.value === "rejectable") {
-      results = results.filter(i => !isCompliant(i, internalThreshold.unit));
+      results = results.filter(item => !isCompliant(item, internalThreshold.unit));
     }
   }
 
   // Sort
   if (props.showSort) {
     if (localSort.value === "alphabetic")
-      results.sort((a,b) => a.internalName.localeCompare(b.internalName));
+      results.sort((predecessor, successor) => predecessor.internalName.localeCompare(successor.internalName));
 
     if (localSort.value === "variance-asc")
-      results.sort((a,b) => Math.abs(a.proposedVarianceQuantity) - Math.abs(b.proposedVarianceQuantity));
+      results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
 
     if (localSort.value === "variance-desc")
-      results.sort((a,b) => Math.abs(b.proposedVarianceQuantity) - Math.abs(a.proposedVarianceQuantity));
+      results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
   }
 
   emit("update:filtered", results);
@@ -337,7 +337,7 @@ watch(
 /* ALL SELECTED? */
 const isAllSelected = computed(() =>
   props.items.length > 0 &&
-  props.selectedItems.length === props.items.filter(i => !i.decisionOutcomeEnumId).length
+  props.selectedItems.length === props.items.filter(item => !item.decisionOutcomeEnumId).length
 );
 </script>
 
