@@ -276,11 +276,13 @@ async function getCycleCounts(reset = false) {
   try {
     const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
 
+    let combined = [];
     if (pageIndex.value === 0) {
-      cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);
+      combined = [...workEfforts];
     } else {
-      cycleCounts.value.push(...workEfforts);
+      combined = [...cycleCounts.value, ...workEfforts];
     }
+    cycleCounts.value = sortCycleCounts(combined);
 
     isScrollable.value = scrollable;
   } catch (err) {
@@ -290,6 +292,20 @@ async function getCycleCounts(reset = false) {
     isLoading.value = false;
   }
 }
+
+function sortCycleCounts(list) {
+  return [...list].sort((predecessor, successor) => {
+    const predecessorEstimatedStartDate = predecessor.estimatedStartDate;
+    const successorEstimatedStartDate = successor.estimatedStartDate;
+
+    if (!predecessorEstimatedStartDate && successorEstimatedStartDate) return -1;
+    if (!successorEstimatedStartDate && predecessorEstimatedStartDate) return 1;
+    if (!predecessorEstimatedStartDate && !successorEstimatedStartDate) return 0;
+
+    return predecessorEstimatedStartDate - successorEstimatedStartDate;
+  });
+}
+
 
 const areas = [
   { value: 'back_stock', label: 'Back stock' },
