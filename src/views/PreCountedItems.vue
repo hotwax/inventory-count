@@ -42,8 +42,9 @@
             <ion-label>
               {{ useProductMaster().primaryId(searchedProducts[0]) }}
               <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+              <ion-text color="danger" v-if="searchedProducts[0].isUndirected">{{ translate("Undirected items cannot be added to count") }}</ion-text>
             </ion-label>
-            <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
+            <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])">
               <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
               Add to count
             </ion-button>
@@ -337,27 +338,19 @@ async function getProductBySearch(term: string) {
     
     // Check if products are already in the session as undirected
     // In a DIRECTED_COUNT: "Undirected" means "Not in session" OR "In session but isRequested=N"
-    const isDirected = props.inventoryCountTypeId === 'DIRECTED_COUNT'
+    const productIds = products.map((product: any) => product.productId);
+    const importItems = await useInventoryCountImport().getInventoryCountImportItemsByProductIds(props.inventoryCountImportId, productIds);
+    const importItemsMap = new Map(importItems.map(item => [item.productId, item]));
 
-    const enrichedProducts = await Promise.all(products.map(async (product: any) => {
-      let isUndirected = false
-      if (isDirected) {
-        const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
-          props.inventoryCountImportId,
-          product.productId
-        )
-        // If not in session, or in session but not requested -> Undirected
-        if (!inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N') {
-          isUndirected = true
-        }
-      }
-      
+    const enrichedProducts = products.map((product: any) => {
+      const inventoryCountImportItem = importItemsMap.get(product.productId);
+      const isUndirected = !inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N';
       return {
         ...product,
-        inventoryCountTypeId: props.inventoryCountTypeId, // passing for debugging if needed
+        inventoryCountTypeId: props.inventoryCountTypeId,
         isUndirected
-      }
-    }))
+      };
+    });
 
     searchedProducts.value = enrichedProducts
     if (products.length === 0) showToast(`No products found for "${term}"`)
