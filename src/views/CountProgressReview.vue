@@ -55,7 +55,7 @@
             </ion-card>
 
             <!-- Card 2: Products Counted -->
-            <ion-card>
+            <ion-card v-if="isCountStarted || isCountStatusBeyondCreated">
               <ion-card-header>
                 <p class="overline">
                   {{ translate("Products counted") }}
@@ -96,14 +96,14 @@
         <!-- Segments -->
 
         <div class="segments-container">
-          <ion-segment value="counted">
+          <ion-segment value="uncounted">
             <ion-segment-button value="uncounted" content-id="uncounted">
               <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-segment-button v-if="(isCountStarted || isCountStatusBeyondCreated) && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
               <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="counted" content-id="counted">
+            <ion-segment-button v-if="isCountStarted || isCountStatusBeyondCreated" value="counted" content-id="counted">
               <ion-label>{{ countedItems.length }} COUNTED</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -117,7 +117,7 @@
             </div>
             <template v-else>
               <ion-item
-                v-if="canManageCountProgress && uncountedItems.length > 0"
+                v-if="canManageCountProgress && isWorkEffortInProgress && uncountedItems.length > 0"
                 lines="full"
               >
                 <ion-label>
@@ -423,13 +423,13 @@ const canPreviewItems = computed(() => (
 const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
 
 const isMarkOutOfStockDisabled = computed(() => (
-  !areAllSessionCompleted()
+  !areSessionsSubmitted.value
   || isLoadingUncounted.value
 ));
 
 const markOutOfStockDisabledReason = computed(() => {
-  if (!areAllSessionCompleted()) {
-    return translate('Submit or complete all sessions before marking uncounted items as out of stock.');
+  if (!areSessionsSubmitted.value) {
+    return translate('Submit all sessions before marking uncounted items as out of stock.');
   }
 
   if (isLoadingUncounted.value) {
@@ -960,9 +960,7 @@ async function markAsCompleted() {
   loader.dismiss();
 }
 
-function areAllSessionCompleted() {
-  return !workEffort.value?.sessions?.length || !workEffort.value?.sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
-}
+
 
 </script>
 
