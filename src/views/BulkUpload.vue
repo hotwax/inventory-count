@@ -499,7 +499,7 @@ const downloadCsv = (csv, fileName) => {
   max-width: 80%;
 }
 
-.field-mappings ion-select::part(placeholder), .field-mappings ion-select::part(icon) {
+.field-mappings ion-select.select-disabled::part(placeholder), .field-mappings ion-select.select-disabled::part(icon) {
   opacity: .3;
 }
 
