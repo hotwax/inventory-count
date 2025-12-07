@@ -187,7 +187,7 @@ const cycleCounts = ref([]);
 const isScrollable = ref(true);
 let isLoading = ref(false);
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = 250;
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isScrollingEnabled = ref(false);
@@ -265,7 +265,7 @@ async function getCycleCounts(reset = false) {
   }
 
   const params = {
-    pageSize: pageSize.value,
+    pageSize: pageSize,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     statusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
