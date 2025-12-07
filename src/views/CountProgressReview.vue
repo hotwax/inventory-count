@@ -271,6 +271,21 @@
           </ion-segment-content>
 
           <ion-segment-content id="counted">
+            <SmartFilterSortBar
+              v-if="countedItems.length"
+              :items="countedItems"
+              :show-search="true"
+              :show-status="false"
+              :show-compliance="true"
+              :show-sort="true"
+              :show-select="false"
+              :sort-options="[
+                { label: translate('Alphabetic'), value: 'alphabetic' },
+                { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+                { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+              ]"
+              @update:filtered="filteredCountedItems = $event"
+            />
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
@@ -278,7 +293,7 @@
               <p>{{ translate("No items have been counted yet") }}</p>
             </div>
             <ion-accordion-group v-else>
-              <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+              <DynamicScroller :items="filteredCountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
@@ -382,6 +397,7 @@ import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
@@ -394,6 +410,7 @@ const allProducts = ref<any[]>([]);
 
 const uncountedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
+const filteredCountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
@@ -599,6 +616,7 @@ async function loadDirectedCount() {
 
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    filteredCountedItems.value = [...countedItems.value];
     undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
   } catch (error) {
@@ -757,6 +775,7 @@ async function loadHardCount() {
       loadedItems.value = countedItems.value.length;
     }
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    filteredCountedItems.value = [...countedItems.value];
     getUncountedItems();
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);

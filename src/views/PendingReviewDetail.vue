@@ -200,7 +200,7 @@
                     <!-- ACCORDION CONTENT -->
                     <div slot="content" @click.stop="stopAccordianEventProp">
                       <ion-list v-if="sessions === null">
-                        <ion-item v-for="n in item.numberOfSessions" :key="n">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
                           <ion-avatar slot="start">
                             <ion-skeleton-text animated style="width: 100%; height: 40px"></ion-skeleton-text>
                           </ion-avatar>
@@ -468,7 +468,7 @@ const lastCountedAt = ref();
 
 /* computed */
 const openItems = computed(() =>
-  aggregatedSessionItems.value.filter((i) => !i.decisionOutcomeEnumId)
+  aggregatedSessionItems.value.filter((item) => !item.decisionOutcomeEnumId)
 );
 
 const overallFilteredVarianceQtyProposed = computed(() =>
@@ -503,13 +503,13 @@ onIonViewDidEnter(async () => {
 /* PRODUCT SELECTION */
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
-    (p) => p.productId === product.productId
+    (productReview) => productReview.productId === product.productId
   );
 }
 
 function toggleSelectedForReview(product: any) {
   const index = selectedProductsReview.value.findIndex(
-    (p) => p.productId === product.productId
+    (productReview) => productReview.productId === product.productId
   );
   if (index === -1) selectedProductsReview.value.push(product);
   else selectedProductsReview.value.splice(index, 1);
@@ -518,7 +518,7 @@ function toggleSelectedForReview(product: any) {
 function toggleSelectAll(isChecked: any) {
   if (isChecked) {
     selectedProductsReview.value = filteredSessionItems.value.filter(
-      (i) => !i.decisionOutcomeEnumId
+      (item) => !item.decisionOutcomeEnumId
     );
   } else {
     selectedProductsReview.value = [];
@@ -564,7 +564,7 @@ async function showEditImportItemsModal() {
 async function saveEditImportItems() {
   await loader.present("Saving...");
   try {
-    const items = selectedSession.value.importItems.filter((i) => i.changed);
+    const items = selectedSession.value.importItems.filter((item: any) => item.changed);
 
     await useInventoryCountImport().updateSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
@@ -572,7 +572,7 @@ async function saveEditImportItems() {
     });
 
     const updatedTotal = selectedSession.value.importItems.reduce(
-      (sum: number, i: any) => sum + (Number(i.quantity) || 0),
+      (sum: number, item: any) => sum + (Number(item.quantity) || 0),
       0
     );
 
@@ -580,7 +580,7 @@ async function saveEditImportItems() {
 
     if (sessions?.value?.length) {
       const total = sessions.value.reduce(
-        (sum: number, s: any) => sum + Number(s.counted || 0),
+        (sum: number, session: any) => sum + Number(session.counted || 0),
         0
       );
       selectedProductCountReview.value.quantity = total;
@@ -611,17 +611,17 @@ async function removeProductFromSession() {
     });
 
     sessions.value = sessions.value.filter(
-      (s: any) =>
-        s.inventoryCountImportId !==
+      (session: any) =>
+        session.inventoryCountImportId !==
         selectedSession.value.inventoryCountImportId
     );
 
     if (!sessions.value.length) {
       aggregatedSessionItems.value = aggregatedSessionItems.value.filter(
-        (i) => i.productId !== selectedSession.value.productId
+        (item) => item.productId !== selectedSession.value.productId
       );
       filteredSessionItems.value = filteredSessionItems.value.filter(
-        (i) => i.productId !== selectedSession.value.productId
+        (item) => item.productId !== selectedSession.value.productId
       );
     }
 
@@ -667,18 +667,18 @@ async function getInventoryCycleCount() {
     }
 
     if (aggregatedSessionItems.value.length) {
-      const minTimes = aggregatedSessionItems.value.map((i) => i.minLastUpdatedAt);
-      const maxTimes = aggregatedSessionItems.value.map((i) => i.maxLastUpdatedAt);
+      const minTimes = aggregatedSessionItems.value.map((item) => item.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map((item) => item.maxLastUpdatedAt);
 
       firstCountedAt.value = Math.min(...minTimes);
       lastCountedAt.value = Math.max(...maxTimes);
     }
 
     submittedItemsCount.value = aggregatedSessionItems.value.filter(
-      (i) => i.decisionOutcomeEnumId
+      (item) => item.decisionOutcomeEnumId
     ).length;
-    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
-      (a.internalName || '').localeCompare(b.internalName || '')
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((predecessor, successor) =>
+      (predecessor.internalName || '').localeCompare(successor.internalName || '')
     );
   } catch {
     aggregatedSessionItems.value = [];
@@ -740,13 +740,13 @@ async function submitSelectedProductReviews(outcome: any) {
   await loader.present("Submitting Review...");
 
   try {
-    const items = selectedProductsReview.value.map((p) => ({
+    const items = selectedProductsReview.value.map((product) => ({
       workEffortId: props.workEffortId,
-      productId: p.productId,
+      productId: product.productId,
       facilityId: workEffort.value.facilityId,
-      varianceQuantity: p.proposedVarianceQuantity,
-      systemQuantity: p.quantityOnHand,
-      countedQuantity: p.quantity,
+      varianceQuantity: product.proposedVarianceQuantity,
+      systemQuantity: product.quantityOnHand,
+      countedQuantity: product.quantity,
       decisionOutcomeEnumId: outcome,
       decisionReasonEnumId: "PARTIAL_SCOPE_POST",
     }));
@@ -760,11 +760,11 @@ async function submitSelectedProductReviews(outcome: any) {
         inventoryCountProductsList: batch,
       });
 
-      const processedIds = batch.map((b) => b.productId);
+      const processedIds = batch.map((batch) => batch.productId);
 
-      filteredSessionItems.value.forEach((i) => {
-        if (processedIds.includes(i.productId)) {
-          i.decisionOutcomeEnumId = outcome;
+      filteredSessionItems.value.forEach((item) => {
+        if (processedIds.includes(item.productId)) {
+          item.decisionOutcomeEnumId = outcome;
         }
       });
 
@@ -841,17 +841,17 @@ async function performBulkCloseAction() {
         inventoryCountProductsList: batch,
       });
 
-      const ids = batch.map((b) => b.productId);
+      const ids = batch.map((batch) => batch.productId);
 
-      aggregatedSessionItems.value.forEach((i) => {
-        if (ids.includes(i.productId)) i.decisionOutcomeEnumId = bulkAction.value;
+      aggregatedSessionItems.value.forEach((item) => {
+        if (ids.includes(item.productId)) item.decisionOutcomeEnumId = bulkAction.value;
       });
 
       submittedItemsCount.value += batch.length;
     }
 
     await closeCycleCount();
-  } catch {
+  } catch (error: any) {
     showToast("Bulk action failed");
   }
 
@@ -864,13 +864,13 @@ async function forceCloseWithoutAction() {
 }
 
 /* HELPERS */
-function stopAccordianEventProp(e) {
-  e.stopPropagation();
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
 }
 
 function getFacilityName(id: any) {
   const facilities = useProductStore().getFacilities || [];
-  return facilities.find((f) => f.facilityId === id)?.facilityName || id;
+  return facilities.find((facility) => facility.facilityId === id)?.facilityName || id;
 }
 
 function getTimeDifference(actual: any, expected: any) {
@@ -880,7 +880,7 @@ function getTimeDifference(actual: any, expected: any) {
     const diff = dtActual.diff(dtExpected, ['days', 'hours', 'minutes']);
   
     const isLate = diff.toMillis() > 0;
-    const absDiff = diff.mapUnits(x => Math.abs(x));
+    const absDiff = diff.mapUnits(number => Math.abs(number));
   
     const duration = absDiff.toFormat("d'd' h'h' m'm'")
       .replace(/\b0[dhm]\s*/g, '')
