@@ -8,14 +8,14 @@
 
     <ion-content>
       <div class="main">
-        <ion-item>
+        <ion-item lines="full">
           <ion-label>{{ translate("Cycle count") }}</ion-label>
           <ion-label class="ion-text-right ion-padding-end">{{ uploadedFile.name }}</ion-label>
           <input @change="parse" ref="file" class="ion-hide" type="file" id="inventoryCountInputFile"/>
           <label for="inventoryCountInputFile">{{ translate("Upload") }}</label>
         </ion-item>
 
-        <ion-button color="medium" fill="outline" expand="block" @click="downloadTemplate">
+        <ion-button color="medium" expand="block" @click="downloadTemplate">
           {{ translate("Download template") }}
           <ion-icon slot="end" :icon="downloadOutline" />
         </ion-button>
@@ -62,7 +62,7 @@
           </ion-item>
         </ion-list>
 
-        <ion-button :disabled="!content.length" color="medium" @click="save" expand="block">
+        <ion-button :disabled="!content.length" @click="save" expand="block">
           {{ translate("Submit") }}
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
@@ -499,8 +499,16 @@ const downloadCsv = (csv, fileName) => {
   max-width: 80%;
 }
 
+.field-mappings ion-select.select-disabled::part(placeholder), .field-mappings ion-select.select-disabled::part(icon) {
+  opacity: .3;
+}
+
 .field-mappings ion-select ion-label {
   padding-block: var(--spacer-xs)
+}
+
+.field-mappings ion-item ion-label[slot="label"], .field-mappings ion-item ion-select.select-disabled {
+  opacity: 1;
 }
 
 .system-message-section {

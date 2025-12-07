@@ -82,17 +82,21 @@
           </ion-card>
         </div>
 
-        <div class="controls ion-margin-top">
-          <ion-list lines="full" class="filters ion-margin">
-            <ion-searchbar v-model="searchedProductString" placeholder="Search product name"></ion-searchbar>
-          </ion-list>
-          <ion-item-divider color="light">
-            <ion-select v-model="sortBy" slot="end" label="Sort by" interface="popover">
-                <ion-select-option value="alphabetic">Alphabetic</ion-select-option>
-                <ion-select-option value="variance">Variance</ion-select-option>
-            </ion-select>
-          </ion-item-divider>
-        </div>
+        <SmartFilterSortBar
+          :items="aggregatedSessionItems"
+          :selected-items="[]"
+          :show-status="false"
+          :show-compliance="false"
+          :show-select="false"
+          :show-search="true"
+          :show-sort="true"
+          :sort-options="[
+            { label: translate('Alphabetic'), value: 'alphabetic' },
+            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+          ]"
+          @update:filtered="filteredSessionItems = $event"
+        />
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
@@ -197,8 +201,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, reactive, ref, toRefs, watch } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { computed, defineProps, ref } from "vue";
+import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -209,6 +213,7 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 
 const facilities = computed(() => useProductStore().getFacilities);
@@ -243,15 +248,6 @@ onIonViewDidEnter(async () => {
   }
   isLoading.value = false;
 })
-
-const searchAndSortBy = reactive({
-  sortBy: 'alphabetic'
-});
-
-const  { sortBy } = toRefs(searchAndSortBy);
-
-const searchedProductString = ref('');
-
 
 const isLoading = ref(false);
 const workEffort = ref();
@@ -376,36 +372,6 @@ async function openEditNameAlert() {
   await editCountNameAlert.present();
 }
 
-function applySearchAndSort() {
-  if (!Array.isArray(aggregatedSessionItems.value)) {
-    filteredSessionItems.value = [];
-    return;
-  }
-
-  const keyword = (searchedProductString.value || '').trim().toLowerCase();
-
-  let results = aggregatedSessionItems.value.filter(item => {
-    if (!keyword) return true;
-    return (
-      (item.internalName?.toLowerCase().includes(keyword)) ||
-      (item.productIdentifier?.toLowerCase().includes(keyword))
-    );
-  });
-
-  if (sortBy.value === 'alphabetic') {
-    results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
-  } else if (sortBy.value === 'variance') {
-    results.sort((predecessor, successor) => (predecessor.proposedVarianceQuantity || 0) - (successor.proposedVarianceQuantity || 0));
-  }
-
-  filteredSessionItems.value = results;
-}
-
-
-watch([searchedProductString, sortBy], () => {
-  applySearchAndSort();
-}, { deep: true });
-
 const sessions = ref();
 
 async function getCountSessions(productId: any) {
@@ -462,7 +428,9 @@ async function getInventoryCycleCount() {
       firstCountedAt.value = Math.min(...minTimes);
       lastCountedAt.value = Math.max(...maxTimes);
     }
-    applySearchAndSort();
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
+      (a.internalName || '').localeCompare(b.internalName || '')
+    );
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));

@@ -84,6 +84,13 @@
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
+              <ion-item v-if="canSubmitForReview" lines="none">
+                <ion-icon slot="start" :icon="checkmarkCircleOutline" color="success" />
+                <ion-label>
+                  <p class="overline">{{ translate("All tasks completed") }}</p>
+                  {{ translate("This count is ready to submit for review.") }}
+                </ion-label>
+              </ion-item>
             </ion-card>
         </div>
         <!-- Segments -->
@@ -110,18 +117,15 @@
             </div>
             <template v-else>
               <ion-item
-                v-if="canManageCountProgress"
-                :disabled="!areAllSessionCompleted() || isLoadingUncounted || uncountedItems.length === 0"
+                v-if="canManageCountProgress && uncountedItems.length > 0"
                 lines="full"
               >
-                <ion-label v-if="areAllSessionCompleted() && uncountedItems.length === 0">
-                  <p>{{ translate("This function is disabled because all sessions in your count are not completed yet") }}</p>
-                </ion-label>
-                <ion-label v-else>
+                <ion-label>
                   {{ translate("Save uncounted items as out of stock") }}
                   <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
+                  <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">{{ markOutOfStockDisabledReason }}</p>
                 </ion-label>
-                <ion-button color="warning" slot="end" fill="outline" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
               </ion-item>
               <div v-if="isLoadingUncounted" class="empty-state">
                 <p>{{ translate("Loading...") }}</p>
@@ -267,6 +271,21 @@
           </ion-segment-content>
 
           <ion-segment-content id="counted">
+            <SmartFilterSortBar
+              v-if="countedItems.length"
+              :items="countedItems"
+              :show-search="true"
+              :show-status="false"
+              :show-compliance="true"
+              :show-sort="true"
+              :show-select="false"
+              :sort-options="[
+                { label: translate('Alphabetic'), value: 'alphabetic' },
+                { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+                { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+              ]"
+              @update:filtered="filteredCountedItems = $event"
+            />
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
@@ -274,7 +293,7 @@
               <p>{{ translate("No items have been counted yet") }}</p>
             </div>
             <ion-accordion-group v-else>
-              <DynamicScroller :items="countedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
+              <DynamicScroller :items="filteredCountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
@@ -361,7 +380,7 @@
 
 <script setup lang="ts">
 import { computed, ref, defineProps } from 'vue';
-import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonItemDivider, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
@@ -378,6 +397,7 @@ import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
+import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
@@ -390,6 +410,7 @@ const allProducts = ref<any[]>([]);
 
 const uncountedItems = ref<any[]>([]);
 const countedItems = ref<any[]>([]);
+const filteredCountedItems = ref<any[]>([]);
 const undirectedItems = ref<any[]>([]);
 
 const sessions = ref();
@@ -417,6 +438,23 @@ const canPreviewItems = computed(() => (
 ));
 
 const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
+
+const isMarkOutOfStockDisabled = computed(() => (
+  !areAllSessionCompleted()
+  || isLoadingUncounted.value
+));
+
+const markOutOfStockDisabledReason = computed(() => {
+  if (!areAllSessionCompleted()) {
+    return translate('Submit or complete all sessions before marking uncounted items as out of stock.');
+  }
+
+  if (isLoadingUncounted.value) {
+    return translate('Uncounted items are still loading.');
+  }
+
+  return '';
+});
 
 const isWorkEffortInProgress = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_IN_PRGS');
 
@@ -578,6 +616,7 @@ async function loadDirectedCount() {
 
     uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    filteredCountedItems.value = [...countedItems.value];
     undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
 
   } catch (error) {
@@ -736,6 +775,7 @@ async function loadHardCount() {
       loadedItems.value = countedItems.value.length;
     }
     countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
+    filteredCountedItems.value = [...countedItems.value];
     getUncountedItems();
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
@@ -839,7 +879,7 @@ async function createSessionForUncountedItems() {
   await loader.present(translate("Marking items as out of stock..."));
   try {
     const newSession = {
-      countImportName: workEffort.value?.workEffortName,
+      countImportName: `Auto OOS Session – ${workEffort.value?.workEffortName} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`,
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
@@ -966,6 +1006,11 @@ function areAllSessionCompleted() {
   line-height: 1.2;
   margin: 0;
   color: rgba(var(--ion-text-color));
+}
+
+.helper-text {
+  color: var(--ion-color-medium);
+  margin-top: 4px;
 }
 
 ion-segment {

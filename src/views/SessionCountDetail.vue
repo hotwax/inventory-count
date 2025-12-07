@@ -17,7 +17,7 @@
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
-            <ion-label position="stacked">sku</ion-label>
+            <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
               @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable"></ion-input>
           </ion-item>
@@ -84,7 +84,7 @@
             <ion-item lines="none">
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }}</h1>
+                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
                 <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
               </ion-label>
             </ion-item>
@@ -222,8 +222,8 @@
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">
-                          {{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}
+                        <ion-note v-if="showQoh" slot="end">
+                          {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -249,7 +249,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end">{{ showQoh ? item.inventory?.quantityOnHandTotal || item.quantity : item.quantity }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end" v-if="showQoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -526,7 +526,7 @@
 
             <ion-radio-group v-model="selectedArea">
               <ion-item v-for="area in areas" :key="area.value">
-                <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
@@ -639,7 +639,10 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = useProductStore().getShowQoh;
+const showQoh = computed(() => useProductStore().getShowQoh);
+const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
+const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
+const barcodeIdentifierDescription = getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description;
 
 const pageRef = ref(null);
 
@@ -662,7 +665,7 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const userLogin = computed(() => useUserProfile().getUserProfile);
-const isSessionInProgress = computed(() => ['SESSION_ASSIGNED', 'SESSION_CREATED'].includes(inventoryCountImport.value?.statusId));
+const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
 const lastScannedEvent = computed(() => events.value[0]);
@@ -701,7 +704,11 @@ const scannerButtonLabel = computed(() => {
   return translate('Focus scanner');
 });
 
-const scannerButtonDisabled = computed(() => !isSessionMutable.value || (hasSessionStarted.value && isScannerFocused.value));
+const scannerButtonDisabled = computed(() =>
+  sessionLocked.value
+  || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
+  || (isSessionInProgress.value && isScannerFocused.value)
+);
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -1496,11 +1503,20 @@ async function removeScan(item: any) {
 </script>
 
 <style scoped>
+
+/* main {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  height: 100%;
+} */
+
 main {
   display: grid;
   grid-template-columns: 25% auto;
   justify-content: unset;
   align-items: stretch;
+  height: 100%;
 }
 
 .count-events {

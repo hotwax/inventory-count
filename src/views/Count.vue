@@ -10,7 +10,7 @@
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
-      <template v-else>
+      <template v-else-if="cycleCounts.length > 0">
         <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
           <ion-card-header>
             <div>
@@ -119,6 +119,11 @@
           </ion-list>
         </ion-card>
       </template>
+      <div v-else class="empty-state">
+        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count" />
+        <h2>{{ translate("All caught up!") }}</h2>
+        <p>{{ translate("You have no cycle counts assigned to you right now.") }}</p>
+      </div>
       <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false">
           <ion-header>
             <ion-toolbar>
@@ -142,7 +147,7 @@
 
               <ion-radio-group v-model="selectedArea">
                 <ion-item v-for="area in areas" :key="area.value">
-                  <ion-radio label-placement="start" :value="area.value">{{ area.label }}</ion-radio>
+                  <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
                 </ion-item>
               </ion-radio-group>
             </ion-list>
@@ -182,7 +187,7 @@ const cycleCounts = ref([]);
 const isScrollable = ref(true);
 let isLoading = ref(false);
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = 250;
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isScrollingEnabled = ref(false);
@@ -260,7 +265,7 @@ async function getCycleCounts(reset = false) {
   }
 
   const params = {
-    pageSize: pageSize.value,
+    pageSize: pageSize,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     statusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
@@ -271,11 +276,13 @@ async function getCycleCounts(reset = false) {
   try {
     const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
 
+    let combined = [];
     if (pageIndex.value === 0) {
-      cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);
+      combined = [...workEfforts];
     } else {
-      cycleCounts.value.push(...workEfforts);
+      combined = [...cycleCounts.value, ...workEfforts];
     }
+    cycleCounts.value = sortCycleCounts(combined);
 
     isScrollable.value = scrollable;
   } catch (err) {
@@ -285,6 +292,20 @@ async function getCycleCounts(reset = false) {
     isLoading.value = false;
   }
 }
+
+function sortCycleCounts(list) {
+  return [...list].sort((predecessor, successor) => {
+    const predecessorEstimatedStartDate = predecessor.estimatedStartDate;
+    const successorEstimatedStartDate = successor.estimatedStartDate;
+
+    if (!predecessorEstimatedStartDate && successorEstimatedStartDate) return -1;
+    if (!successorEstimatedStartDate && predecessorEstimatedStartDate) return 1;
+    if (!predecessorEstimatedStartDate && !successorEstimatedStartDate) return 0;
+
+    return predecessorEstimatedStartDate - successorEstimatedStartDate;
+  });
+}
+
 
 const areas = [
   { value: 'back_stock', label: 'Back stock' },
@@ -545,5 +566,19 @@ main {
           / auto;
     padding: 0;
   }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: var(--spacer-2xl);
+}
+
+.empty-state img {
+  max-width: 300px;
+  margin-bottom: var(--spacer-lg);
 }
 </style>
