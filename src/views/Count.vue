@@ -88,7 +88,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                   <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
