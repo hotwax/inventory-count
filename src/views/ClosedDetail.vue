@@ -114,11 +114,11 @@
                         </ion-item>
                       </div>
                       <ion-label class="stat">
-                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        {{ item.quantity }}/{{ item.systemQuantity }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
                       <ion-label class="stat">
-                        {{ item.proposedVarianceQuantity }}
+                        {{ item.varianceQuantity }}
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
                       <div v-if="item.decisionOutcomeEnumId">
