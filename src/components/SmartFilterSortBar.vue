@@ -316,7 +316,7 @@ function applyFilters() {
   // Sort
   if (props.showSort) {
     if (localSort.value === "alphabetic")
-      results.sort((predecessor, successor) => predecessor.internalName.localeCompare(successor.internalName));
+      results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
 
     if (localSort.value === "variance-asc")
       results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
