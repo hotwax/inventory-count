@@ -311,6 +311,14 @@
             <!-- Unmatched -->
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+               <template v-if="unmatchedItems.length === 0">
+                <div class="empty-state ion-padding ion-text-center">
+                  <ion-label>
+                    <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
+                    <p>{{ translate("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
+                  </ion-label>
+                </div>
+              </template>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
                   <ion-item>
