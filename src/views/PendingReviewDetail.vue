@@ -270,13 +270,6 @@
               </ion-list>
             </ion-content>
           </ion-popover>
-            <ion-alert :is-open="isRemoveSessionAlertOpen" header="Remove session from count"
-            message="Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone."
-            @didDismiss="isRemoveSessionAlertOpen = false"
-            :buttons="[
-              { text: 'Cancel', role: 'cancel' },
-              { text: 'Remove', handler: () => removeProductFromSession() }
-            ]"></ion-alert>
         </div>
 
         <div v-else class="empty-state">
@@ -454,6 +447,16 @@
       :buttons="[
         { text: 'Cancel', role: 'cancel' },
         { text: 'Confirm', handler: forceCloseWithoutAction }
+      ]"
+    ></ion-alert>
+    <ion-alert
+      :is-open="isRemoveSessionAlertOpen"
+      header="Remove session from count"
+      message="Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone."
+      @didDismiss="isRemoveSessionAlertOpen = false"
+      :buttons="[
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Remove', handler: () => removeProductFromSession() }
       ]"
     ></ion-alert>
   </ion-page>
