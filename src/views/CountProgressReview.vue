@@ -951,15 +951,6 @@ async function markAsCompleted() {
     showToast(translate('You do not have permission to perform this action'));
     return;
   }
-
-  // Check if there are any unskipped undirected items for directed counts
-  if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
-    const unskippedUndirectedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
-    if (unskippedUndirectedItems.length > 0) {
-      showToast(translate('Please skip all undirected items before submitting for review'));
-      return;
-    }
-  }
   
   await loader.present("Submitting...");
   try {
