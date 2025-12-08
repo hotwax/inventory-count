@@ -460,7 +460,7 @@ const isWorkEffortInProgress = computed(() => workEffort.value?.statusId === 'CY
 
 const areSessionsSubmitted = computed(() => {
   const sessions = workEffort.value?.sessions ?? [];
-  return sessions.length > 0 && sessions.every((session: any) => session.statusId === 'SESSION_SUBMITTED');
+  return sessions.length > 0 && !sessions.some((session: any) => session.statusId === 'SESSION_CREATED' || session.statusId === 'SESSION_ASSIGNED');
 });
 
 const areRequestedItemsCounted = computed(() => uncountedItems.value.length === 0);
