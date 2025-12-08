@@ -195,7 +195,7 @@
                             {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
                             <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
-                          <ion-label>
+                          <ion-label v-if="showQoh">
                             {{ item.proposedVarianceQuantity }}
                             <p>{{ translate("variance") }}</p>
                           </ion-label>
@@ -311,7 +311,7 @@
                           {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
-                        <ion-label>
+                        <ion-label v-if="showQoh">
                           {{ item.proposedVarianceQuantity }}
                           <p>{{ translate("variance") }}</p>
                         </ion-label>
