@@ -364,25 +364,112 @@
                             {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
+                          <ion-button fill="clear" color="medium"
+                            @click.stop="openSessionPopover($event, session, item)">
+                            <ion-icon :icon="ellipsisVerticalOutline"></ion-icon>
+                          </ion-button>
                         </div>
                       </div>
                     </ion-accordion>
                   </DynamicScrollerItem>
                 </template>
               </DynamicScroller>
+              <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
+                <ion-content>
+                  <ion-list>
+                    <ion-list-header>{{ selectedProduct?.internalName }}</ion-list-header>
+                    <ion-item button @click="showEditImportItemsModal()">
+                      {{ translate("Edit Count") }}: {{ selectedSession?.counted }}
+                    </ion-item>
+                  </ion-list>
+                </ion-content>
+              </ion-popover>
+
             </ion-accordion-group>
           </ion-segment-content>
         </ion-segment-view>
       </div>
     </ion-content>
+    <!-- EDIT ITEM MODAL -->
+    <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeEditImportItemModal">
+              <ion-icon :icon="closeOutline" slot="icon-only" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("Edit Item Count") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+
+        <ion-card>
+          <ion-item lines="none">
+            <ion-thumbnail slot="start">
+              <Image :src="selectedProduct?.detailImageUrl || selectedProduct?.product?.mainImageUrl" />
+            </ion-thumbnail>
+            <ion-label>
+              <h2>{{ selectedProduct?.internalName }}</h2>
+              <p class="overline">{{ selectedProduct?.productId }}</p>
+            </ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>{{ translate("Cycle count total") }}</ion-label>
+            <ion-label slot="end">{{ selectedProduct?.quantity }} {{ translate("units") }}</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>{{ translate("Session count total") }}</ion-label>
+            <ion-label slot="end">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
+          </ion-item>
+        </ion-card>
+
+        <!-- EDIT SECTION -->
+        <ion-card>
+          <ion-item lines="full">
+            <ion-label>{{ translate("Edit session count") }}</ion-label>
+            <ion-item slot="end" lines="none">
+              <ion-button fill="clear" @click="adjustEdit(-1)">
+                <ion-icon :icon="removeCircleOutline"></ion-icon>
+              </ion-button>
+
+              <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
+
+              <ion-button fill="clear" @click="adjustEdit(1)">
+                <ion-icon :icon="addCircleOutline"></ion-icon>
+              </ion-button>
+            </ion-item>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>{{ translate("New session count total") }}</ion-label>
+            <ion-label slot="end">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>{{ translate("New cycle count total") }}</ion-label>
+            <ion-label slot="end">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
+          </ion-item>
+        </ion-card>
+
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button @click="saveEditImportItems">
+            <ion-icon :icon="checkmarkDoneOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </ion-content>
+    </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, defineProps } from 'vue';
-import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonNote, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
+import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, personCircleOutline } from 'ionicons/icons';
+import { addCircleOutline, alertCircleOutline, createOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -512,6 +599,98 @@ const isSubmitDisabled = computed(() => (
 ));
 
 const showQoh = computed(() => useProductStore().getShowQoh);
+
+const isEditImportItemModalOpen = ref(false);
+const selectedProduct = ref<any | null>(null);
+const selectedSession = ref<any | null>(null);
+
+const isSessionPopoverOpen = ref(false);
+const sessionPopoverEvent = ref<Event | null>(null);
+
+function openSessionPopover(event: Event, session: any, product: any) {
+  event.stopPropagation();
+  selectedSession.value = session;
+  selectedProduct.value = product;
+  sessionPopoverEvent.value = event;
+  isSessionPopoverOpen.value = true;
+}
+
+function closeSessionPopover() {
+  isSessionPopoverOpen.value = false;
+  sessionPopoverEvent.value = null;
+}
+
+const editAdjustment = ref(0);
+
+const newSessionTotal = computed(() => {
+  return (selectedSession.value?.counted || 0) + editAdjustment.value;
+});
+
+const newCycleCountTotal = computed(() => {
+  return (selectedProduct.value?.quantity || 0) + editAdjustment.value;
+});
+
+function adjustEdit(delta: number) {
+  editAdjustment.value = Math.max(0, editAdjustment.value + delta);
+}
+
+async function showEditImportItemsModal() {
+  const resp = await useInventoryCountImport().getSessionItemsByImportId({
+    inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+    productId: selectedSession.value.productId,
+    facilityId: workEffort.value.facilityId,
+  });
+
+  selectedSession.value.importItems = resp.data;
+  editAdjustment.value = 0;
+
+  isEditImportItemModalOpen.value = true;
+}
+
+function closeEditImportItemModal() {
+  isEditImportItemModalOpen.value = false;
+  selectedProduct.value = null;
+  selectedSession.value = null;
+  editAdjustment.value = 0;
+  closeSessionPopover();
+}
+
+async function saveEditImportItems() {
+  await loader.present("Saving...");
+
+  try {
+    const total = newSessionTotal.value;
+
+    await useInventoryCountImport().updateSessionItem({
+      inventoryCountImportId: selectedSession.value.inventoryCountImportId,
+      items: [{
+        ...selectedSession.value.importItems[0],
+        quantity: total
+      }],
+    });
+
+    // update session count
+    selectedSession.value.counted = total;
+
+    // recompute parent total
+    const newTotal = sessions.value.reduce(
+      (sum: number, s: any) => sum + Number(s.counted || 0),
+      0
+    );
+
+    selectedProduct.value.quantity = newTotal;
+    selectedProduct.value.proposedVarianceQuantity = newTotal - selectedProduct.value.quantityOnHand;
+
+    countedItems.value = [...countedItems.value];
+    filteredCountedItems.value = [...filteredCountedItems.value];
+
+    closeEditImportItemModal();
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to update count");
+  }
+  loader.dismiss();
+}
 
 const props = defineProps<{
   workEffortId: string;

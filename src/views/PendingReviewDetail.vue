@@ -293,21 +293,65 @@
             <ion-title>{{ translate("Edit Item Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
-        <ion-content>
-          <ion-list>
-            <ion-list-header>{{ selectedSession?.countImportName }}</ion-list-header>
-            <ion-item v-for="item in selectedSession?.importItems" :key="item.importItemSeqId">
-              <ion-label>{{ item.importItemSeqId }}</ion-label>
-              <ion-input
-                @ion-input="item.changed = true"
-                slot="end"
-                type="number"
-                min="0"
-                v-model.number="item.quantity"
-              ></ion-input>
-            </ion-item>
-          </ion-list>
 
+        <ion-content>
+
+          <ion-card>
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="selectedProductCountReview?.detailImageUrl" />
+              </ion-thumbnail>
+
+              <ion-label>
+                {{ selectedProductCountReview?.internalName }}
+                <p>{{ selectedProductCountReview?.productId }}</p>
+              </ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("Cycle count total") }}</ion-label>
+              <ion-label slot="end">{{ selectedProductCountReview?.quantity }} {{ translate("units") }}</ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("Session count total") }}</ion-label>
+              <ion-label slot="end">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
+            </ion-item>
+          </ion-card>
+
+          <!-- EDIT SECTION -->
+          <ion-card>
+            <ion-item lines="full">
+              <ion-label>{{ translate("Edit session count") }}</ion-label>
+              <ion-item slot="end">
+                <!-- MINUS BUTTON -->
+                <ion-button fill="clear" @click="adjustEdit(-1)">
+                  <ion-icon slot="icon-only" :icon="removeCircleOutline"></ion-icon>
+                </ion-button>
+  
+                <!-- INPUT -->
+                <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
+  
+                <!-- PLUS BUTTON -->
+                <ion-button fill="clear" @click="adjustEdit(1)">
+                  <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-item>
+
+            <!-- NEW TOTALS -->
+            <ion-item>
+              <ion-label>{{ translate("New session count total") }}</ion-label>
+              <ion-label slot="end">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("New cycle count total") }}</ion-label>
+              <ion-label slot="end">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
+            </ion-item>
+          </ion-card>
+
+          <!-- FLOAT SAVE BUTTON -->
           <ion-fab vertical="bottom" horizontal="end" slot="fixed">
             <ion-fab-button @click="saveEditImportItems">
               <ion-icon :icon="checkmarkDoneOutline" />
@@ -419,7 +463,7 @@ import {
   IonThumbnail, onIonViewDidEnter, IonSkeletonText
 } from "@ionic/vue";
 import {
-  checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
+  addCircleOutline, checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
 import { ref, computed, defineProps } from "vue";
@@ -478,6 +522,20 @@ const overallFilteredVarianceQtyProposed = computed(() =>
   )
 );
 
+const editAdjustment = ref(0);
+
+const newSessionTotal = computed(() => {
+  return (selectedSession.value?.counted || 0) + editAdjustment.value;
+});
+
+const newCycleCountTotal = computed(() => {
+  return (selectedProductCountReview.value?.quantity || 0) + editAdjustment.value;
+});
+
+function adjustEdit(delta: number) {
+  const result = editAdjustment.value + delta;
+  editAdjustment.value = Math.max(0, result);
+}
 /* lifecycle */
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -543,6 +601,7 @@ function closeSessionPopover() {
 function closeEditImportItemModal() {
   isEditImportItemModalOpen.value = false;
   closeSessionPopover();
+  editAdjustment.value = 0;
 }
 
 async function showEditImportItemsModal() {
@@ -564,34 +623,66 @@ async function showEditImportItemsModal() {
 async function saveEditImportItems() {
   await loader.present("Saving...");
   try {
-    const items = selectedSession.value.importItems.filter((item: any) => item.changed);
+    const newTotal = newSessionTotal.value;
 
     await useInventoryCountImport().updateSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
-      items,
+      items: [{
+        ...selectedSession.value.importItems[0],
+        quantity: newTotal
+      }],
     });
 
-    const updatedTotal = selectedSession.value.importItems.reduce(
-      (sum: number, item: any) => sum + (Number(item.quantity) || 0),
+    selectedSession.value.counted = newTotal;
+
+    const index = sessions.value.findIndex(
+      (session: any) => session.inventoryCountImportId === selectedSession.value.inventoryCountImportId
+    );
+    if (index !== -1) {
+      sessions.value[index] = {
+        ...sessions.value[index],
+        counted: newTotal
+      };
+    }
+
+    const parent = selectedProductCountReview.value;
+
+    // recompute total counted from all sessions for this product
+    const headerTotal = sessions.value.reduce(
+      (sum: number, session: any) => sum + Number(session.counted || 0),
       0
     );
 
-    selectedSession.value.counted = updatedTotal;
+    parent.quantity = headerTotal;
+    parent.proposedVarianceQuantity = headerTotal - parent.quantityOnHand;
 
-    if (sessions?.value?.length) {
-      const total = sessions.value.reduce(
-        (sum: number, session: any) => sum + Number(session.counted || 0),
-        0
-      );
-      selectedProductCountReview.value.quantity = total;
-      selectedProductCountReview.value.proposedVarianceQuantity =
-        total - selectedProductCountReview.value.quantityOnHand;
+    const listIndex = filteredSessionItems.value.findIndex(
+      sessionItem => sessionItem.productId === parent.productId
+    );
+    if (listIndex !== -1) {
+      filteredSessionItems.value[listIndex] = {
+        ...filteredSessionItems.value[listIndex],
+        quantity: parent.quantity,
+        proposedVarianceQuantity: parent.proposedVarianceQuantity
+      };
+    }
+
+    const aggIndex = aggregatedSessionItems.value.findIndex(
+      aggregatedItem => aggregatedItem.productId === parent.productId
+    );
+    if (aggIndex !== -1) {
+      aggregatedSessionItems.value[aggIndex] = {
+        ...aggregatedSessionItems.value[aggIndex],
+        quantity: parent.quantity,
+        proposedVarianceQuantity: parent.proposedVarianceQuantity
+      };
     }
 
     closeEditImportItemModal();
   } catch {
     showToast("Failed to update count");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -605,23 +696,55 @@ async function removeProductFromSession() {
       facilityId: workEffort.value.facilityId,
     });
 
-    const deleteResp = await useInventoryCountImport().deleteSessionItem({
+    await useInventoryCountImport().deleteSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
       data: resp.data,
     });
 
+    const parent = selectedProductCountReview.value;
+    const removedSessionId = selectedSession.value.inventoryCountImportId;
+
     sessions.value = sessions.value.filter(
-      (session: any) =>
-        session.inventoryCountImportId !==
-        selectedSession.value.inventoryCountImportId
+      (session: any) => session.inventoryCountImportId !== removedSessionId
     );
 
-    if (!sessions.value.length) {
+    if (sessions.value.length > 0) {
+      const newTotal = sessions.value.reduce(
+        (sum: number, session: any) => sum + Number(session.counted || 0),
+        0
+      );
+
+      parent.quantity = newTotal;
+      parent.proposedVarianceQuantity = newTotal - parent.quantityOnHand;
+
+      const aggregatedIndex = aggregatedSessionItems.value.findIndex(
+        (item) => item.productId === parent.productId
+      );
+      if (aggregatedIndex !== -1) {
+        aggregatedSessionItems.value[aggregatedIndex] = {
+          ...aggregatedSessionItems.value[aggregatedIndex],
+          quantity: parent.quantity,
+          proposedVarianceQuantity: parent.proposedVarianceQuantity,
+        };
+      }
+
+      const filterIndex = filteredSessionItems.value.findIndex(
+        (item) => item.productId === parent.productId
+      );
+      if (filterIndex !== -1) {
+        filteredSessionItems.value[filterIndex] = {
+          ...filteredSessionItems.value[filterIndex],
+          quantity: parent.quantity,
+          proposedVarianceQuantity: parent.proposedVarianceQuantity,
+        };
+      }
+
+    } else {
       aggregatedSessionItems.value = aggregatedSessionItems.value.filter(
-        (item) => item.productId !== selectedSession.value.productId
+        (item) => item.productId !== parent.productId
       );
       filteredSessionItems.value = filteredSessionItems.value.filter(
-        (item) => item.productId !== selectedSession.value.productId
+        (item) => item.productId !== parent.productId
       );
     }
 
@@ -629,6 +752,7 @@ async function removeProductFromSession() {
   } catch {
     showToast("Failed to remove item");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -732,7 +856,7 @@ async function submitSingleProductReview(
   } catch {
     showToast("Error submitting review");
   }
-
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -777,6 +901,7 @@ async function submitSelectedProductReviews(outcome: any) {
   } catch {
     showToast("Some items failed");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
   loader.dismiss();
 }
@@ -854,7 +979,7 @@ async function performBulkCloseAction() {
   } catch (error: any) {
     showToast("Bulk action failed");
   }
-
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
