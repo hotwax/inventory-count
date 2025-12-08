@@ -173,16 +173,16 @@ const templateRows = [
     purposeType: "DIRECTED_COUNT",
     productSku: "SKU-12345",
     facility: "FACILITY_100",
-    estimatedCompletionDate: "04-15-2024 10-30-00",
-    estimatedStartDate: "04-14-2024 09-00-00"
+    estimatedCompletionDate: "02-20-2001 02:00:00",
+    estimatedStartDate: "07-21-2003 08:20:00"
   },
   {
     countImportName: "Distribution center spot check",
     purposeType: "HARD_COUNT",
     productSku: "",
     facility: "FACILITY_DC_01",
-    estimatedCompletionDate: "04-20-2024 15-00-00",
-    estimatedStartDate: "04-19-2024 12-30-00"
+    estimatedCompletionDate: "02-20-2001 02:00:00",
+    estimatedStartDate: "07-21-2003 08:20:00"
   }
 ];
 
