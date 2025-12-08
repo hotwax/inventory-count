@@ -294,7 +294,7 @@
           </ion-toolbar>
         </ion-header>
 
-        <ion-content class="ion-padding">
+        <ion-content>
 
           <ion-card>
             <ion-item lines="none">
@@ -303,8 +303,8 @@
               </ion-thumbnail>
 
               <ion-label>
-                <h2>{{ selectedProductCountReview?.internalName }}</h2>
-                <p class="overline">{{ selectedProductCountReview?.sku || selectedProductCountReview?.productId }}</p>
+                {{ selectedProductCountReview?.internalName }}
+                <p>{{ selectedProductCountReview?.productId }}</p>
               </ion-label>
             </ion-item>
 
@@ -326,15 +326,15 @@
               <ion-item slot="end">
                 <!-- MINUS BUTTON -->
                 <ion-button fill="clear" @click="adjustEdit(-1)">
-                  <ion-icon :icon="removeCircleOutline"></ion-icon>
+                  <ion-icon slot="icon-only" :icon="removeCircleOutline"></ion-icon>
                 </ion-button>
   
                 <!-- INPUT -->
-                <ion-input class="ion-text-center" type="number" min="0" v-model.number="editAdjustment"></ion-input>
+                <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
   
                 <!-- PLUS BUTTON -->
                 <ion-button fill="clear" @click="adjustEdit(1)">
-                  <ion-icon :icon="addCircleOutline"></ion-icon>
+                  <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
                 </ion-button>
               </ion-item>
             </ion-item>
