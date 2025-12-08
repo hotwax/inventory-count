@@ -70,7 +70,7 @@
           </div>
 
           <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
-            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
+            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
