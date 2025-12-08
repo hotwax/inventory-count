@@ -115,7 +115,7 @@
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
