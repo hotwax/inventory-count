@@ -137,7 +137,7 @@
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";

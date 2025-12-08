@@ -23,7 +23,9 @@
                   </ion-label>
                   <ion-item lines="none" class="ion-no-padding">
                     <h1>{{ workEffort?.workEffortName }}</h1>
-                    <ion-badge slot="end">{{ useProductStore().getStatusDescription(workEffort?.statusId) }}</ion-badge>
+                    <ion-badge slot="end" :color="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' ? 'success' : undefined">
+                      {{ useProductStore().getStatusDescription(workEffort?.statusId) }}
+                    </ion-badge>
                   </ion-item>
                   <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
                 </div>
@@ -66,7 +68,13 @@
             </ion-card>
 
             <!-- Card 3: Submit for Review -->
-            <ion-card v-if="isWorkEffortInProgress && !isLoading" class="submission-card">
+            <ion-card v-if="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' && !isLoading" class="submission-card">
+              <ion-card-header>
+                <h2>{{ translate("Count submitted for review") }}</h2>
+                <p>{{ translate("This count has been submitted for review.") }}</p>
+              </ion-card-header>
+            </ion-card>
+            <ion-card v-else-if="isWorkEffortInProgress && !isLoading" class="submission-card">
               <ion-card-header v-if="!canSubmitForReview">
                 <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
                 <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
@@ -80,7 +88,7 @@
                   </ion-label>
                 </ion-item>
               </ion-list>
-              <ion-button class="ion-margin" expand="block" :disabled="isSubmitDisabled" color="success" @click="markAsCompleted">
+              <ion-button class="ion-margin" expand="block" :disabled="isSubmitDisabled || isSubmitted" color="success" @click="markAsCompleted">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
@@ -125,7 +133,7 @@
                   <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
                   <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">{{ markOutOfStockDisabledReason }}</p>
                 </ion-label>
-                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled || isSubmitted" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
               </ion-item>
               <div v-if="isLoadingUncounted" class="empty-state">
                 <p>{{ translate("Loading...") }}</p>
@@ -172,7 +180,7 @@
               <ion-label>
                 {{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}
               </ion-label>
-              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED')" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
+              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED') || isSubmitted" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
                 {{ translate("Discard all undirected items") }}
               </ion-button>
             </ion-item>
@@ -200,7 +208,7 @@
                             <p>{{ translate("variance") }}</p>
                           </ion-label>
                           <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                            <ion-button :disabled="!canManageCountProgress" fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                            <ion-button :disabled="!canManageCountProgress || isSubmitted" fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
                               {{ translate("Discard") }}
                             </ion-button>
                           </div>
@@ -364,7 +372,7 @@
                             {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
-                          <ion-button fill="clear" color="medium"
+                          <ion-button fill="clear" color="medium" :disabled="isSubmitted"
                             @click.stop="openSessionPopover($event, session, item)">
                             <ion-icon :icon="ellipsisVerticalOutline"></ion-icon>
                           </ion-button>
@@ -395,7 +403,7 @@
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button @click="closeEditImportItemModal">
+            <ion-button @click="closeEditImportItemModal" :disabled="isSubmitted">
               <ion-icon :icon="closeOutline" slot="icon-only" />
             </ion-button>
           </ion-buttons>
@@ -469,7 +477,7 @@
 import { computed, ref, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { addCircleOutline, alertCircleOutline, createOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -519,6 +527,8 @@ const isCountStatusBeyondCreated = computed(() => {
   const statusId = workEffort.value?.statusId;
   return !!statusId && statusId !== 'CYCLE_CNT_CREATED';
 });
+
+const isSubmitted = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CMPLTD');
 
 const canPreviewItems = computed(() => (
   isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
@@ -1138,7 +1148,8 @@ async function markAsCompleted() {
       statusId: 'CYCLE_CNT_CMPLTD'
     });
     if (response?.status === 200) {
-      showToast(translate('Session sent for review successfully'));
+      workEffort.value.statusId = 'CYCLE_CNT_CMPLTD';
+      showToast(translate('Count submitted for review successfully'));
     } else {
       throw response;
     }
@@ -1227,4 +1238,8 @@ ion-segment-view {
   --columns-desktop: 5;
 }
 
+.disabled-section {
+  pointer-events: none;
+  opacity: 0.5;
+}
 </style>
