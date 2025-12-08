@@ -166,7 +166,6 @@ let fileColumns = ref([]);
 
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
 
-if (fields.statusId) delete fields.statusId;
 const templateRows = [
   {
     countImportName: "Weekly store audit",
@@ -308,7 +307,6 @@ async function save() {
   const uploadedData = content.value.map(row => ({
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
-    statusId: (fieldMapping.value.statusId ? row[fieldMapping.value.statusId] : "") || "CYCLE_CNT_CREATED",
     idValue: fieldMapping.value.productSku === "skip" ? "" : row[fieldMapping.value.productSku],
     idType: "SKU",
     estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
