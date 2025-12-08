@@ -37,7 +37,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
-import { initialize } from '@/services/appInitializer'
+import { db, initialize } from '@/services/appInitializer'
 
 
 const pinia = createPinia().use(piniaPluginPersistedstate);
@@ -85,7 +85,9 @@ app.config.globalProperties.$filters = {
 router.isReady().then(async () => {
   try {
     // Ensures the database is opened and schema initialized
-    await initialize()
+    if (!db) {
+      await initialize();
+    }
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
   }

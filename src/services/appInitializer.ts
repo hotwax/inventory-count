@@ -49,7 +49,7 @@ async function initializeDeviceId() {
   }
 
   // Store it in Vuex state
-  useUserProfile().setDeviceId(pref?.value as string);
+  useUserProfile().setDeviceId(pref?.value || deviceId);
 
   return deviceId;
 }
