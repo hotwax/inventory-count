@@ -261,7 +261,7 @@
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
                 <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="removeProductFromSession()">
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
@@ -449,6 +449,16 @@
         { text: 'Confirm', handler: forceCloseWithoutAction }
       ]"
     ></ion-alert>
+    <ion-alert
+      :is-open="isRemoveSessionAlertOpen"
+      :header="translate('Remove session from count')"
+      :message="translate('Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone.')"
+      @didDismiss="isRemoveSessionAlertOpen = false"
+      :buttons="[
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Remove'), handler: async () => await removeProductFromSession() }
+      ]"
+    ></ion-alert>
   </ion-page>
 </template>
 
@@ -509,6 +519,7 @@ const submittedItemsCount = ref(0);
 
 const firstCountedAt = ref();
 const lastCountedAt = ref();
+const isRemoveSessionAlertOpen = ref(false);
 
 /* computed */
 const openItems = computed(() =>
