@@ -456,7 +456,7 @@
       @didDismiss="isRemoveSessionAlertOpen = false"
       :buttons="[
         { text: translate('Cancel'), role: 'cancel' },
-        { text: translate('Remove'), handler: () => removeProductFromSession() }
+        { text: translate('Remove'), handler: async () => await removeProductFromSession() }
       ]"
     ></ion-alert>
   </ion-page>
