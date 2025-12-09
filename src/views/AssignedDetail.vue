@@ -213,7 +213,7 @@
     :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
     :buttons="[
       { text: translate('Cancel'), role: 'cancel' },
-      { text: translate('Remove'), handler: () => closeCycleCount() }
+      { text: translate('Close'), handler: () => closeCycleCount() }
     ]">
     </ion-alert>
   </ion-page>
