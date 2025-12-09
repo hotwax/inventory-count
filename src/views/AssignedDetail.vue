@@ -197,12 +197,31 @@
         <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-buttons slot="end">
+          <ion-button color="danger" fill="outline" @click="isCloseCountAlertOpen = true">
+            {{ translate("Close") }}
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
+    <ion-alert
+    :is-open="isCloseCountAlertOpen"
+    @did-dismiss="isCloseCountAlertOpen = false"
+    :header="translate('Confirm Close')"
+    :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
+    :buttons="[
+      { text: translate('Cancel'), role: 'cancel' },
+      { text: translate('Remove'), handler: () => closeCycleCount() }
+    ]">
+    </ion-alert>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, defineProps, ref } from "vue";
-import { IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
+import { IonAlert, IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -214,6 +233,7 @@ import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
+import router from "@/router";
 
 
 const facilities = computed(() => useProductStore().getFacilities);
@@ -226,6 +246,8 @@ const loadedItems = ref(0)
 
 const firstCountedAt = ref();
 const lastCountedAt = ref();
+
+const isCloseCountAlertOpen = ref(false);
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -447,6 +469,44 @@ function getFacilityName(id: string) {
 }
 function getFacilityTimezone(id: string) {
   return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityTimeZone
+}
+
+async function closeCycleCount() {
+  try {
+    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
+    let inventoryCountImport = [] as any;
+    if (sessionsResp?.status === 200 && sessionsResp.data.length) {
+      for (const session of sessionsResp.data) {
+        session.statusId = "SESSION_VOIDED"
+        inventoryCountImport.push(session);
+      }
+    } else {
+      throw sessionsResp;
+    }
+
+    const resp = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      InventoryCountImport: inventoryCountImport
+    });
+
+    if (resp?.status === 200) {
+      const updateCountResp = await useInventoryCountRun().updateWorkEffort({
+        workEffortId: workEffort.value.workEffortId,
+        statusId: "CYCLE_CNT_CNCL"
+      });
+      if (updateCountResp?.status === 200) {
+        showToast(translate("Cycle Count Closed Successfully"));
+        router.replace("/assigned");
+      } else {
+        throw updateCountResp;
+      }
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error closing cycle count:", error);
+    showToast(translate("Failed to close cycle count"));
+  }
 }
 
 </script>
