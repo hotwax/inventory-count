@@ -832,7 +832,7 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
       systemQuantity,
       countedQuantity,
       decisionOutcomeEnumId: 'SKIPPED',
-      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+      decisionReasonEnumId: 'MANAGER_OVERRIDE'
     }];
 
     const resp = await useInventoryCountRun().submitProductReview({ inventoryCountProductsList} );
@@ -873,7 +873,7 @@ async function skipAllUndirectedItems() {
       systemQuantity: product.quantityOnHand,
       countedQuantity: product.quantity,
       decisionOutcomeEnumId: 'SKIPPED',
-      decisionReasonEnumId: 'PARTIAL_SCOPE_POST'
+      decisionReasonEnumId: 'MANAGER_OVERRIDE'
     }));
 
     const batchSize = 250;
