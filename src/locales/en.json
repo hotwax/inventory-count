@@ -197,6 +197,8 @@
   "Rejectable": "Rejectable",
   "Rejected": "Rejected",
   "Remove from count": "Remove from count",
+  "Remove session from count": "Remove session from count",
+  "Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone.": "Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone.",
   "Require barcode scanning": "Require barcode scanning",
   "Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.": "Require inventory to be scanned when counting instead of manually entering values.{space} If the identifier is not found, the scan will default to using the internal name.",
   "Required": "Required",

@@ -451,12 +451,12 @@
     ></ion-alert>
     <ion-alert
       :is-open="isRemoveSessionAlertOpen"
-      header="Remove session from count"
-      message="Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone."
+      :header="translate('Remove session from count')"
+      :message="translate('Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone.')"
       @didDismiss="isRemoveSessionAlertOpen = false"
       :buttons="[
-        { text: 'Cancel', role: 'cancel' },
-        { text: 'Remove', handler: () => removeProductFromSession() }
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Remove'), handler: () => removeProductFromSession() }
       ]"
     ></ion-alert>
   </ion-page>
