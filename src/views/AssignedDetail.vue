@@ -475,7 +475,7 @@ async function closeCycleCount() {
   try {
     const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
     let inventoryCountImport = [] as any;
-    if (sessionsResp?.status === 200 && sessionsResp.data.length) {
+    if (sessionsResp?.status === 200) {
       for (const session of sessionsResp.data) {
         session.statusId = "SESSION_VOIDED"
         inventoryCountImport.push(session);
