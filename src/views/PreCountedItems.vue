@@ -98,7 +98,7 @@
                 <ion-label>
                   {{ useProductMaster().primaryId(product) }}
                   <p>{{ useProductMaster().secondaryId(product) }}</p>
-                  <ion-text v-if="!product.isRequested" color="danger">
+                  <ion-text v-if="product.isRequested && product.isRequested === 'N'" color="danger">
                     {{ translate("Undirected") }}
                   </ion-text>
                 </ion-label>
@@ -380,18 +380,24 @@ async function getProducts(query: any) {
 async function addProductInPreCountedItems(product: any) {
   searchedProductString.value = ''
   searchedProducts.value = []
-  isSearchResultsModalOpen.value = false
-
-  const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
-  products.value.unshift(productEntry)
+  isSearchResultsModalOpen.value = false  
 
   try {
-    await setProductQoh(productEntry)
+    const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
       props.inventoryCountImportId,
       productEntry.productId
     );
-    productEntry.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
+    if (props.inventoryCountTypeId === 'DIRECTED_COUNT') {
+      if (inventoryCountImportItem && (!inventoryCountImportItem.isRequested || inventoryCountImportItem.isRequested === 'Y')) {
+        productEntry.isRequested = 'Y';
+      } else {
+        showToast(translate("Undirected items cannot be added to count"));
+        return;
+      }
+    }
+    products.value.unshift(productEntry)
+    await setProductQoh(productEntry)
   } catch (err) {
     console.error('Error adding product:', err)
   }
