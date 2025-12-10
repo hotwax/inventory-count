@@ -57,7 +57,7 @@
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section">
-          <ion-list-header class="counts-header">
+          <ion-list-header>
             <ion-label>
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
@@ -469,27 +469,5 @@ const downloadCsv = (csv, fileName) => {
 }
 .system-message-action>ion-button {
   vertical-align: middle;
-}
-
-.counts-header {
-  padding-right: 12px;
-  padding-left: 12px;
-}
-
-.counts-header-content {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.counts-title {
-  font-weight: 500;
-}
-
-.counts-next-run {
-  font-size: 13px;
-  opacity: 0.7;
-  white-space: nowrap; /* prevent wrapping */
 }
 </style>
