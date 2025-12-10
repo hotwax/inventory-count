@@ -708,7 +708,7 @@ const scannerButtonColor = computed(() => {
 
 const scannerButtonLabel = computed(() => {
   if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return translate('start counting');
-  if (isScannerFocused.value) return translate('Scanner focused');
+  if (isScannerFocused.value) return translate('Scanner ready');
   return translate('Focus scanner');
 });
 
