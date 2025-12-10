@@ -57,6 +57,7 @@
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section">
+          <ion-list-header>{{ translate("Recently uploaded counts") }}</ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
             <ion-label>
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
@@ -406,4 +407,5 @@ const downloadCsv = (csv, fileName) => {
 .system-message-action>ion-button {
   vertical-align: middle;
 }
+
 </style>
