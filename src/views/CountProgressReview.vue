@@ -788,7 +788,7 @@ async function loadDirectedCount() {
   isLoadingUncounted.value = true;
   isLoadingUndirected.value = true;
   let pageIndex = 0;
-  let pageSize = 1000;
+  let pageSize = 250;
   if (totalItems.value > 5000) {
     pageSize = 500;
   }
@@ -955,7 +955,7 @@ async function skipAllUndirectedItems() {
 
 async function loadHardCount() {
   let pageIndex = 0;
-  let pageSize = 1000;
+  let pageSize = 250;
   if (totalItems.value > 5000) {
     pageSize = 500;
   }
