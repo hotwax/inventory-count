@@ -125,10 +125,7 @@
             </div>
             <template v-else>
               <ion-item v-if="canManageCountProgress && uncountedItems.length > 0" lines="full">
-                <ion-checkbox slot="start" :checked="areAllUncountedSelected" :indeterminate="selectedOutOfStockCount > 0 && !areAllUncountedSelected" :disabled="isSubmitted" @ionChange="toggleSelectAllOutOfStock"></ion-checkbox>
                 <ion-label>
-                  {{ translate("Select all uncounted items") }}
-                  <p>{{ translate("Use the checkboxes to choose which items to mark as out of stock.") }}</p>
                   <p v-if="selectedOutOfStockCount">
                     {{ translate("Selected") }}: {{ selectedOutOfStockCount }}
                   </p>
@@ -153,11 +150,6 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <div class="list-item count-item-rollup">
                         <ion-item lines="none">
-                          <ion-checkbox slot="start"
-                            :checked="outOfStockSelections[item.productId]"
-                            :disabled="isSubmitted"
-                            @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
-                          ></ion-checkbox>
                           <ion-thumbnail slot="start">
                             <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                           </ion-thumbnail>
@@ -172,6 +164,11 @@
                           {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                           {{ translate("QoH") }}
                         </ion-label>
+                        <ion-checkbox slot="start"
+                            :checked="outOfStockSelections[item.productId]"
+                            :disabled="isSubmitted"
+                            @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
+                          ></ion-checkbox>
                       </div>
                     </DynamicScrollerItem>
                   </template>
@@ -1114,24 +1111,6 @@ const areAllUncountedSelected = computed(() =>
 );
 
 const isBulkOutOfStockConfirmOpen = ref(false);
-
-function toggleSelectAllOutOfStock(ev: any) {
-  const checked = ev.detail.checked;
-
-  if (checked) {
-    uncountedItems.value.forEach(item => {
-      if (item.productId) {
-        outOfStockSelections[item.productId] = true;
-      }
-    });
-  } else {
-    uncountedItems.value.forEach(item => {
-      if (item.productId) {
-        outOfStockSelections[item.productId] = false;
-      }
-    });
-  }
-}
 
 function openBulkOutOfStockConfirm() {
   if (!isAnyOutOfStockSelected.value) return;
