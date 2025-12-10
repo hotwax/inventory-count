@@ -57,7 +57,14 @@
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section">
-          <ion-list-header>{{ translate("Recently uploaded counts") }}</ion-list-header>
+          <ion-list-header>
+            <ion-list-header class="counts-header">
+              <ion-label>{{ translate("Recently uploaded counts") }}</ion-label>
+              <ion-label v-if="nextExecutionTime" slot="end" class="next-run">
+                {{ translate("Next run") }} {{ nextExecutionTime }}
+              </ion-label>
+            </ion-list-header>
+          </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
             <ion-label>
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
@@ -154,6 +161,11 @@ onIonViewDidEnter(async () => {
   resetDefaults();
 
   systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+  const jobResp = await useInventoryCountImport().getServiceJobDetail("consume_AllReceivedSystemMessages_frequent");
+  if (!hasError(jobResp)) {
+    nextExecutionTime.value = new Date(jobResp.data?.jobDetail?.nextExecutionDateTime).toLocaleString();
+    console.log("Next Execution Time:", nextExecutionTime.value);
+  }
 });
 
 /* ---------- Existing BulkUpload Data ---------- */
@@ -193,6 +205,7 @@ const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
+const nextExecutionTime = ref(null);
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -408,4 +421,14 @@ const downloadCsv = (csv, fileName) => {
   vertical-align: middle;
 }
 
+.counts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.next-run {
+  font-size: 13px;
+  opacity: 0.8;
+}
 </style>

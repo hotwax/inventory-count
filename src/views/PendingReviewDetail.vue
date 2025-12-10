@@ -138,7 +138,7 @@
                       </div>
 
                       <ion-label class="stat">
-                        {{ item.quantity }}/{{ item.quantityOnHand || '-' }}
+                        {{ item.quantity || '-' }}/{{ item.quantityOnHand || '-' }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 

@@ -478,6 +478,14 @@ const getSessionLock = async (payload: any): Promise<any> => {
       method: 'GET'
     })
   }
+
+  async function getServiceJobDetail(jobName: string) {
+    return api({
+      url: `admin/serviceJobs/${jobName}`,
+      method: 'GET'
+    })
+  }
+  
 /**
  * Composable to manage InventoryCountImport related operations using singleton pattern
  */
@@ -495,6 +503,7 @@ export function useInventoryCountImport() {
     getInventoryCountImportItemsCount,
     getInventoryCountImportSession,
     getScanEvents,
+    getServiceJobDetail,
     getSessionItemsByImportId,
     getSessionProductIds,
     getSessionLock,

@@ -213,7 +213,7 @@
                             </ion-label>
                           </ion-item>
                           <ion-label>
-                            {{ showQoh ? `${item.quantity}/${item.quantityOnHand || '-'}` : item.quantity }}
+                            {{ showQoh ? `${item.quantity || '-'}/${item.quantityOnHand || '-'}` : item.quantity || '-' }}
                             <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label v-if="showQoh">
@@ -329,7 +329,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand || '-'}` : item.quantity }}
+                          {{ showQoh ? `${item.quantity || '-'}/${item.quantityOnHand || '-'}` : item.quantity || '-' }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label v-if="showQoh">
@@ -481,33 +481,6 @@
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
-        <ion-alert :is-open="!!confirmOutOfStockItem"
-          header="{{ translate('Mark item as Out of Stock') }}"
-          :message="translate('This will set the counted quantity to 0 for this item. Do you want to continue?')"
-          :buttons="[
-            {
-              text: translate('Cancel'),
-              role: 'cancel',
-              handler: () => {
-                if (confirmOutOfStockItem?.productId) {
-                  outOfStockSelections[confirmOutOfStockItem.productId] = false;
-                }
-                confirmOutOfStockItem = null;
-              }
-            },
-            {
-              text: translate('Confirm'),
-              role: 'confirm',
-              handler: async () => {
-                if (confirmOutOfStockItem) {
-                  await markSingleItemOutOfStock(confirmOutOfStockItem);
-                }
-                confirmOutOfStockItem = null;
-              }
-            }
-          ]"
-          @didDismiss="confirmOutOfStockItem = null"
-        />
       </ion-content>
     </ion-modal>
     <ion-alert :is-open="isBulkOutOfStockConfirmOpen"
@@ -1127,7 +1100,6 @@ async function getCountSessions(productId: any) {
 }
 
 const outOfStockSelections = reactive<Record<string, boolean>>({});
-const confirmOutOfStockItem = ref<any | null>(null);
 
 // NEW: bulk selection helpers
 const selectedOutOfStockCount = computed(() =>
@@ -1172,58 +1144,9 @@ function handleOutOfStockCheck(ev: any, item: any) {
 
   if (checked) {
     outOfStockSelections[item.productId] = true;
-    confirmOutOfStockItem.value = item;
   } else {
     outOfStockSelections[item.productId] = false;
   }
-}
-
-async function markSingleItemOutOfStock(item: any) {
-  try {
-    await loader.present(translate("Marking item as out of stock..."));
-
-    // Create a new session on server automatically
-    const newSessionResp = await useInventoryCountRun().createSessionOnServer({
-      countImportName: `OOS – ${item.productId} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss")}`,
-      statusId: "SESSION_SUBMITTED",
-      uploadedByUserLogin: useUserProfile().getUserProfile.username,
-      createdDate: DateTime.now().toMillis(),
-      workEffortId: workEffort.value?.workEffortId
-    });
-
-    if (newSessionResp?.status !== 200) throw newSessionResp;
-
-    const inventoryCountImportId = newSessionResp.data.inventoryCountImportId;
-
-    // Create the import item with quantity 0
-    const resp = await useInventoryCountImport().updateSessionItem({
-      inventoryCountImportId,
-      items: [
-        {
-          inventoryCountImportId,
-          productId: item.productId,
-          quantity: 0,
-          uploadedByUserLogin: useUserProfile().getUserProfile.username,
-          uuid: uuidv4(),
-          createdDate: DateTime.now().toMillis()
-        }
-      ]
-    });
-
-    if (resp?.status === 200) {
-      // Move item from uncounted → counted
-      countedItems.value.push({ ...item, quantity: 0 });
-      uncountedItems.value = uncountedItems.value.filter(p => p.productId !== item.productId);
-      showToast(translate("Marked out of stock"));
-    } else {
-      throw resp;
-    }
-  } catch (err) {
-    console.error(err);
-    showToast(translate("Failed to mark as out of stock"));
-    outOfStockSelections[item.productId] = false;
-  }
-  loader.dismiss();
 }
 
 async function markSelectedItemsOutOfStock() {
@@ -1307,81 +1230,6 @@ async function markSelectedItemsOutOfStock() {
   }
 
   loader.dismiss();
-}
-
-async function createSessionForUncountedItems() {
-  if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to perform this action'));
-    return;
-  }
-  await loader.present(translate("Marking items as out of stock..."));
-  try {
-    const newSession = {
-      countImportName: `Auto OOS Session – ${workEffort.value?.workEffortName} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`,
-      statusId: "SESSION_SUBMITTED",
-      uploadedByUserLogin: useUserProfile().getUserProfile.username,
-      createdDate: DateTime.now().toMillis(),
-      workEffortId: workEffort.value?.workEffortId
-    }
-    const resp = await useInventoryCountRun().createSessionOnServer(newSession);
-
-    if (resp?.status === 200 && resp.data) {
-      const inventoryCountImportId = resp.data.inventoryCountImportId;
-      await createUncountedImportItems(inventoryCountImportId);
-    } else {
-      throw resp;
-    }
-
-  } catch (error) {
-    console.error("Error Creating Session for Uncounted Items", error);
-    showToast(translate("Failed to Update Cycle Count"));
-  }
-  loader.dismiss();
-}
-
-async function createUncountedImportItems(inventoryCountImportId: any) {
-  try {
-    const batchSize = 250;
-    const batches: any[] = [];
-    const username = useUserProfile().getUserProfile.username;
-
-    for (let i = 0; i < uncountedItems.value.length; i += batchSize) {
-      const chunk = uncountedItems.value.slice(i, i + batchSize);
-
-      const batchPayload = chunk.map((item: any) => ({
-        inventoryCountImportId,
-        productId: item.productId,
-        quantity: 0,
-        uploadedByUserLogin: username,
-        uuid: uuidv4(),
-        createdDate: DateTime.now().toMillis()
-      }));
-
-      batches.push(batchPayload);
-    }
-
-    for (const batch of batches) {
-      try {
-        const resp = await useInventoryCountImport().updateSessionItem({
-          inventoryCountImportId,
-          items: batch
-        });
-
-        if (resp?.status === 200) {
-          const successfulProductIds = new Set(batch.map((item: any) => item.productId));
-          countedItems.value.push(...uncountedItems.value.filter((item: any) => successfulProductIds.has(item.productId)));
-          uncountedItems.value = uncountedItems.value.filter((item: any) => !successfulProductIds.has(item.productId));
-        } else {
-          console.error("Batch failed:", resp);
-        }
-      } catch (err) {
-        console.error("Batch failed:", err);
-      }
-    }
-  } catch (error) {
-    console.error("Error creating uncounted import items", error);
-    showToast(translate("Failed to Update Uncounted Items"));
-  }
 }
 
 async function markAsCompleted() {
