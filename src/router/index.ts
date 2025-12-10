@@ -78,7 +78,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'count',
         component: () => import('@/views/Count.vue'),
         meta: {
-          permissionId: "APP_COUNT_VIEW"
+          permissionId: "APP_COUNT_VIEW",
         }
       },
       {
