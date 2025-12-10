@@ -482,7 +482,7 @@
           </ion-fab-button>
         </ion-fab>
         <ion-alert :is-open="!!confirmOutOfStockItem"
-          header="{{ translate('Mark item as Out of Stock') }}"
+          :header="translate('Mark item as Out of Stock')"
           :message="translate('This will set the counted quantity to 0 for this item. Do you want to continue?')"
           :buttons="[
             {
