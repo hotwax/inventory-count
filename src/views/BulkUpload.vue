@@ -57,7 +57,14 @@
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section">
-          <ion-list-header>{{ translate("Recently uploaded counts") }}</ion-list-header>
+          <ion-list-header>
+            <ion-label>
+                {{ translate("Recently uploaded counts") }}
+              </ion-label>
+              <ion-label class="ion-text-end">
+                {{ translate("Processing") }} {{ nextExecutionRemaining }}
+              </ion-label>
+          </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
             <ion-label>
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
@@ -137,7 +144,7 @@
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
@@ -146,16 +153,55 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
+import { DateTime } from 'luxon';
 
 
 const systemMessages = ref([]);
+const nextExecutionTimestamp = ref(null);
+let refreshInterval = null;
+let countdownInterval = null;
+
 
 onIonViewDidEnter(async () => {
   resetDefaults();
 
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+  await fetchSystemMessages();
+  await fetchJobExecutionTime();
+
+  startCountdownTimer();
+
+  refreshInterval = setInterval(async () => {
+    await fetchSystemMessages();
+    await fetchJobExecutionTime();
+  }, 15000);
 });
 
+onBeforeUnmount(() => {
+  clearInterval(refreshInterval);
+  clearInterval(countdownInterval);
+});
+
+async function fetchSystemMessages() {
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+}
+
+async function fetchJobExecutionTime() {
+  const jobResp = await useInventoryCountImport().getServiceJobDetail(
+    "consume_AllReceivedSystemMessages_frequent"
+  );
+
+  if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
+    nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
+  }
+}
+
+function startCountdownTimer() {
+  countdownInterval = setInterval(() => {
+    if (!nextExecutionTimestamp.value) return;
+    const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
+    nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
+  }, 1000);
+}
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
 let uploadedFile = ref({});
@@ -193,6 +239,7 @@ const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
+const nextExecutionRemaining = ref("…");
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -408,5 +455,4 @@ const downloadCsv = (csv, fileName) => {
 .system-message-action>ion-button {
   vertical-align: middle;
 }
-
 </style>
