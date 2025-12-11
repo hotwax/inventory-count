@@ -108,10 +108,10 @@
             <ion-segment-button value="uncounted">
               <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected">
               <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="counted" content-id="counted">
+            <ion-segment-button value="counted">
               <ion-label>{{ countedItems.length }} COUNTED</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -119,7 +119,7 @@
 
         <!-- List -->
         <ion-segment-view>
-          <ion-segment-content id="uncounted">
+          <ion-segment-content v-show="activeSegment === 'uncounted'" id="uncounted">
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
@@ -177,7 +177,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
+          <ion-segment-content v-show="activeSegment === 'undirected' && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
             <div v-if="isLoadingUndirected" class="empty-state">
               <p>{{ translate("Loading...") }}</p>
             </div>
@@ -288,7 +288,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content id="counted">
+          <ion-segment-content v-show="activeSegment === 'counted'" id="counted">
             <SmartFilterSortBar
               v-if="countedItems.length"
               :items="countedItems"
@@ -480,7 +480,8 @@
         </ion-fab>
       </ion-content>
     </ion-modal>
-    <ion-alert :is-open="isBulkOutOfStockConfirmOpen"
+    <ion-alert
+      :is-open="isBulkOutOfStockConfirmOpen"
       :header="translate('Mark selected items as Out of Stock')"
       :message="translate('This will set the counted quantity to 0 for all selected items. Do you want to continue?')"
       :buttons="[
@@ -497,11 +498,9 @@
           handler: async () => {
             await markSelectedItemsOutOfStock();
             isBulkOutOfStockConfirmOpen = false;
-            selectedOutOfStockCount = 0;
           }
         }
       ]"
-      @didDismiss="activeSegment = lastSegment"
     />
   </ion-page>
 </template>
