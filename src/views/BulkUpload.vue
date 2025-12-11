@@ -62,7 +62,7 @@
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
               <ion-label class="ion-text-end">
-                {{ translate("Processing in") }} {{ nextExecutionRemaining }} {{ translate("minutes") }}
+                {{ translate("Processing") }} {{ nextExecutionRemaining }}
               </ion-label>
           </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
@@ -205,17 +205,8 @@ function startCountdownTimer() {
     const now = DateTime.now();
     const next = DateTime.fromMillis(nextExecutionTimestamp.value);
 
-    const diff = next.diff(now, ["minutes", "seconds"]);
-
-    let mins = Math.floor(diff.minutes);
-    let secs = Math.floor(diff.seconds);
-
-    if (mins < 0 || secs < 0) {
-      mins = 0;
-      secs = 0;
-    }
-
-    nextExecutionRemaining.value = `${mins}m ${secs}s`;
+    const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
+    nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
   }, 1000);
 }
 /* ---------- Existing BulkUpload Data ---------- */
