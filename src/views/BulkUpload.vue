@@ -198,10 +198,6 @@ async function fetchJobExecutionTime() {
 function startCountdownTimer() {
   countdownInterval = setInterval(() => {
     if (!nextExecutionTimestamp.value) return;
-
-    const now = DateTime.now();
-    const next = DateTime.fromMillis(nextExecutionTimestamp.value);
-
     const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
     nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
   }, 1000);
