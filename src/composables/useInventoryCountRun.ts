@@ -305,7 +305,8 @@ export function useInventoryCountRun() {
 
   async function getCycleCountSessions (params: any): Promise<any> {
     const resp = await api({
-      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`
+      url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
+      method: 'get'
     });
     return resp;
   }

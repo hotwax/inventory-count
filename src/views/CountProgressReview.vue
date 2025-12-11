@@ -108,10 +108,10 @@
             <ion-segment-button value="uncounted">
               <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected">
               <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="counted" content-id="counted">
+            <ion-segment-button value="counted">
               <ion-label>{{ countedItems.length }} COUNTED</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -119,16 +119,13 @@
 
         <!-- List -->
         <ion-segment-view>
-          <ion-segment-content id="uncounted">
+          <ion-segment-content v-show="activeSegment === 'uncounted'" id="uncounted">
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
             <template v-else>
               <ion-item v-if="canManageCountProgress && uncountedItems.length > 0" lines="full">
-                <ion-checkbox slot="start" :checked="areAllUncountedSelected" :indeterminate="selectedOutOfStockCount > 0 && !areAllUncountedSelected" :disabled="isSubmitted" @ionChange="toggleSelectAllOutOfStock"></ion-checkbox>
                 <ion-label>
-                  {{ translate("Select all uncounted items") }}
-                  <p>{{ translate("Use the checkboxes to choose which items to mark as out of stock.") }}</p>
                   <p v-if="selectedOutOfStockCount">
                     {{ translate("Selected") }}: {{ selectedOutOfStockCount }}
                   </p>
@@ -153,11 +150,6 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <div class="list-item count-item-rollup">
                         <ion-item lines="none">
-                          <ion-checkbox slot="start"
-                            :checked="outOfStockSelections[item.productId]"
-                            :disabled="isSubmitted"
-                            @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
-                          ></ion-checkbox>
                           <ion-thumbnail slot="start">
                             <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                           </ion-thumbnail>
@@ -172,6 +164,11 @@
                           {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                           {{ translate("QoH") }}
                         </ion-label>
+                        <ion-checkbox slot="start"
+                            :checked="outOfStockSelections[item.productId]"
+                            :disabled="isSubmitted"
+                            @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
+                          ></ion-checkbox>
                       </div>
                     </DynamicScrollerItem>
                   </template>
@@ -180,7 +177,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
+          <ion-segment-content v-show="activeSegment === 'undirected' && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
             <div v-if="isLoadingUndirected" class="empty-state">
               <p>{{ translate("Loading...") }}</p>
             </div>
@@ -291,7 +288,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content id="counted">
+          <ion-segment-content v-show="activeSegment === 'counted'" id="counted">
             <SmartFilterSortBar
               v-if="countedItems.length"
               :items="countedItems"
@@ -483,7 +480,8 @@
         </ion-fab>
       </ion-content>
     </ion-modal>
-    <ion-alert :is-open="isBulkOutOfStockConfirmOpen"
+    <ion-alert
+      :is-open="isBulkOutOfStockConfirmOpen"
       :header="translate('Mark selected items as Out of Stock')"
       :message="translate('This will set the counted quantity to 0 for all selected items. Do you want to continue?')"
       :buttons="[
@@ -500,11 +498,9 @@
           handler: async () => {
             await markSelectedItemsOutOfStock();
             isBulkOutOfStockConfirmOpen = false;
-            selectedOutOfStockCount = 0;
           }
         }
       ]"
-      @didDismiss="activeSegment = lastSegment"
     />
   </ion-page>
 </template>
@@ -1114,24 +1110,6 @@ const areAllUncountedSelected = computed(() =>
 );
 
 const isBulkOutOfStockConfirmOpen = ref(false);
-
-function toggleSelectAllOutOfStock(ev: any) {
-  const checked = ev.detail.checked;
-
-  if (checked) {
-    uncountedItems.value.forEach(item => {
-      if (item.productId) {
-        outOfStockSelections[item.productId] = true;
-      }
-    });
-  } else {
-    uncountedItems.value.forEach(item => {
-      if (item.productId) {
-        outOfStockSelections[item.productId] = false;
-      }
-    });
-  }
-}
 
 function openBulkOutOfStockConfirm() {
   if (!isAnyOutOfStockSelected.value) return;

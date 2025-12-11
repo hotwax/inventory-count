@@ -193,7 +193,7 @@
                         :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'"
                         style="--color: white;"
                       >
-                        {{ item.decisionOutcomeEnumId }}
+                        {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
                     </div>
 
