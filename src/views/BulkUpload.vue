@@ -191,10 +191,7 @@ async function fetchJobExecutionTime() {
   );
 
   if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
-    nextExecutionTimestamp.value = DateTime.fromMillis(
-      jobResp.data.jobDetail.nextExecutionDateTime
-    ).toMillis();
-    console.log("Fetched next execution time:", nextExecutionTimestamp.value);
+    nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
   }
 }
 
