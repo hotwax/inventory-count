@@ -104,7 +104,7 @@
                 </ion-label>
               </ion-item>
               <div class="quantity">
-                <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
                   <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
                 <ion-item lines="full">
@@ -119,9 +119,10 @@
                     inputmode="numeric" 
                     placeholder="0" 
                     v-model.number="product.countedQuantity"
+                    :disabled="product.saved"
                   ></ion-input>
                 </ion-item>
-                <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
                   <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
               </div>
@@ -246,13 +247,11 @@ function incrementProductQuantity(product: any) {
 
 function decrementProductQuantity(product: any) {
   product.countedQuantity = Math.max(0, product.countedQuantity - 1)
-  product.saved = product.countedQuantity === 0
 }
 
 function onManualInputChange(event: CustomEvent, product: any) {
   const value = Number(event.detail.value)
   product.countedQuantity = isNaN(value) ? 0 : value
-  product.saved = value === 0
 }
 
 function setQuantityInputRef(el: any, index: number) {
@@ -344,7 +343,7 @@ async function getProductBySearch(term: string) {
 
     const enrichedProducts = products.map((product: any) => {
       const inventoryCountImportItem = importItemsMap.get(product.productId);
-      const isUndirected = !inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N';
+      const isUndirected = props.inventoryCountTypeId === 'DIRECTED_COUNT' ? !inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N' : null;
       return {
         ...product,
         inventoryCountTypeId: props.inventoryCountTypeId,
