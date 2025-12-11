@@ -488,7 +488,7 @@ async function closeCycleCount() {
       workEffortId: workEffort.value.workEffortId,
       InventoryCountImport: inventoryCountImport
     });
-
+    // Making another call to update the WorkEffort's status because entity-auto does not seem to update the fields on different levels of nested json together.
     if (resp?.status === 200) {
       const updateCountResp = await useInventoryCountRun().updateWorkEffort({
         workEffortId: workEffort.value.workEffortId,
