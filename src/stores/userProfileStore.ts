@@ -41,7 +41,6 @@ export const useUserProfile = defineStore('userProfile', {
 
       /** Detail page filters (SmartFilterSortBar) */
       reviewDetail: {
-        search: '',
         status: 'all',
         compliance: 'all',
         sort: 'alphabetic',
