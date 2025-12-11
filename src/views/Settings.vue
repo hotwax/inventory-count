@@ -155,24 +155,26 @@
         <ion-content class="ion-padding">
           <p class="overline">Socket Mobile S700 / S720 / S730 / S740</p>
           <p>{{ translate('Follow these steps to get Basic Keyboard (HID) mode and pair with your iPad.') }}</p>
-          <div class="guide-step">
-            <h3>{{ translate('1) Reset/Unpair (if switching devices)') }}</h3>
-            <p>{{ translate('Turn the scanner on, then scan this barcode to clear old pairing info. The scanner will turn off after the reset.') }}</p>
-            <ion-img class="barcode-img" :src="pairingResetBarcode" alt="Pairing reset barcode" />
-          </div>
-          <div class="guide-step">
-            <h3>{{ translate('2) Set iOS Basic Keyboard Mode') }}</h3>
-            <p>{{ translate('Power the scanner back on, make sure the blue light is blinking fast, then scan this barcode to put it in HID keyboard mode (acts like a keyboard).') }}</p>
-            <ion-img class="barcode-img" :src="iosKeyboardBarcode" alt="iOS Basic Keyboard Mode barcode" />
-          </div>
-          <div class="guide-step">
-            <h3>{{ translate('3) Pair in iPad Bluetooth') }}</h3>
-            <p>{{ translate('On the iPad: Settings → Bluetooth → tap the scanner (shows as S7XX [xxxxxx]) → Pair. You should hear one beep when connected.') }}</p>
-          </div>
-          <div class="guide-step">
-            <h3>{{ translate('4) Test in the app') }}</h3>
-            <p>{{ translate('Place the cursor in any input field and scan a barcode. You should see the value appear like typed text.') }}</p>
-          </div>
+          <ol>
+            <li class="guide-step">
+              <h3>{{ translate('Reset/Unpair (if switching devices)') }}</h3>
+              <p>{{ translate('Turn the scanner on, then scan this barcode to clear old pairing info. The scanner will turn off after the reset.') }}</p>
+              <ion-img class="barcode-img" :src="pairingResetBarcode" alt="Pairing reset barcode" />
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Set iOS Basic Keyboard Mode') }}</h3>
+              <p>{{ translate('Power the scanner back on, make sure the blue light is blinking fast, then scan this barcode to put it in HID keyboard mode (acts like a keyboard).') }}</p>
+              <ion-img class="barcode-img" :src="iosKeyboardBarcode" alt="iOS Basic Keyboard Mode barcode" />
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Pair in iPad Bluetooth') }}</h3>
+              <p>{{ translate('On the iPad: Settings → Bluetooth → tap the scanner (shows as S7XX [xxxxxx]) → Pair. You should hear one beep when connected.') }}</p>
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Test in the app') }}</h3>
+              <p>{{ translate('Place the cursor in any input field and scan a barcode. You should see the value appear like typed text.') }}</p>
+            </li>
+          </ol>
           <ion-note color="medium">{{ translate('Tip: If you change devices or modes later, repeat the reset and keyboard steps first.') }}</ion-note>
         </ion-content>
       </ion-modal>
@@ -184,7 +186,7 @@
 import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { bluetoothOutline, closeOutline, openOutline, scanOutline, shieldCheckmarkOutline } from "ionicons/icons"
+import { bluetoothOutline, closeOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -275,6 +277,10 @@ const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
     justify-content: space-between;
     align-items: center;
     padding: var(--spacer-xs) 10px 0px;
+  }
+
+  li.guide-step::marker {
+    font-size: 1.375rem;
   }
 
   .barcode-img {
