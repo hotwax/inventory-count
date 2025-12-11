@@ -242,7 +242,6 @@ onMounted(async () => {
 
 function incrementProductQuantity(product: any) {
   product.countedQuantity++
-  product.saved = false
 }
 
 function decrementProductQuantity(product: any) {
