@@ -147,6 +147,7 @@ import { getDateWithOrdinalSuffix } from "@/services/utils";
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
+import { useUserProfile } from "@/stores/userProfileStore";
 
 const cycleCounts = ref<any[]>([])
 const isScrollable = ref(true);
@@ -175,18 +176,15 @@ const filterOptions = {
 
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
-  filters.value[key] = value;
+  userProfile.updateUiFilter('assigned', key, value)
   pageIndex.value = 0;
   await getAssignedCycleCounts();
   loader.dismiss();
 }
 
-const filters: any = ref({
-  countQueryString: '',
-  status: '',
-  countType: '',
-  facilityIds: [] as string[],
-});
+const userProfile = useUserProfile();
+
+const filters = computed(() => userProfile.uiFilters.assigned)
 
 const isFacilityFilterModalOpen = ref(false);
 
@@ -195,11 +193,10 @@ onIonViewDidEnter(async () => {
   pageIndex.value = 0;
   await getAssignedCycleCounts();
   loader.dismiss();
-})
+});
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  filters.value.countQueryString = '';
 })
 
 const facilities = computed(() => productStore.getFacilities || [])
@@ -342,7 +339,7 @@ async function getAssignedCycleCounts() {
 }
 
 async function applyFacilitySelection(selectedFacilityIds: string[]) {
-  filters.value.facilityIds = [...selectedFacilityIds];
+  userProfile.updateUiFilter("assigned", "facilityIds", selectedFacilityIds);
   pageIndex.value = 0;
   await loader.present("Loading...");
   await getAssignedCycleCounts();

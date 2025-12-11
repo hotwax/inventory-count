@@ -143,6 +143,9 @@ import {
 import { ref, watch, computed, defineProps, defineEmits, onMounted, reactive } from "vue";
 import { translate as t } from "@/i18n";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
+import { useUserProfile } from "@/stores/userProfileStore";
+
+const userProfile = useUserProfile()
 
 /* PROPS */
 const props = defineProps({
@@ -198,10 +201,15 @@ const emit = defineEmits([
 ]);
 
 /* LOCAL STATE */
-const localSearch = ref("");
-const localStatus = ref("all");
-const localCompliance = ref("all");
-const localSort = ref("alphabetic");
+// const localSearch = ref("");
+// const localStatus = ref("all");
+// const localCompliance = ref("all");
+// const localSort = ref("alphabetic");
+/* Load initial SmartFilter states */
+const localSearch = ref(userProfile.uiFilters.reviewDetail.search)
+const localStatus = ref(userProfile.uiFilters.reviewDetail.status)
+const localCompliance = ref(userProfile.uiFilters.reviewDetail.compliance)
+const localSort = ref(userProfile.uiFilters.reviewDetail.sort)
 
 /* THRESHOLD MODAL */
 const isThresholdModalOpen = ref(false);
@@ -214,8 +222,10 @@ const computedComplianceLabel = computed(() => {
 });
 
 onMounted(() => {
-  internalThreshold.unit = props.thresholdConfig.unit;
-  internalThreshold.value = props.thresholdConfig.value;
+  internalThreshold.unit = userProfile.uiFilters.reviewDetail.threshold.unit;
+  internalThreshold.value = userProfile.uiFilters.reviewDetail.threshold.value;
+
+  applyFilters();
 });
 
 /* OPEN / CLOSE MODAL */
@@ -234,21 +244,13 @@ function closeThresholdModal() {
 
 /* SAVE THRESHOLD */
 function saveThreshold() {
-  // Copy from temp → internal
   internalThreshold.unit = tempThreshold.value.unit;
   internalThreshold.value = tempThreshold.value.value;
 
-  const newConfig = {
-    unit: internalThreshold.unit,
-    value: internalThreshold.value
-  };
+  const config = { ...internalThreshold };
 
-  localStorage.setItem(
-    "cyclecount_compliance_threshold",
-    JSON.stringify(newConfig)
-  );
-
-  emit("update:threshold", newConfig);
+  userProfile.updateThreshold(config);
+  emit("update:threshold", config);
 
   applyFilters();
   closeThresholdModal();
@@ -272,12 +274,10 @@ function isCompliant(item) {
   const limit = internalThreshold.value;
   const variance = Math.abs(item.proposedVarianceQuantity);
 
-  if (internalThreshold.unit === "units") {
-    return variance <= limit;
-  }
+  if (internalThreshold.unit === "units") return variance <= limit;
 
   if (internalThreshold.unit === "percent") {
-    if (item.quantityOnHand === 0) return variance === 0;
+    if (!item.quantityOnHand) return variance === 0;
     return Math.abs((variance / item.quantityOnHand) * 100) <= limit;
   }
 
@@ -334,6 +334,13 @@ watch(
   () => [internalThreshold.unit, internalThreshold.value],
   applyFilters
 );
+
+/* Persist whenever changed */
+watch(localSearch, v => userProfile.updateUiFilter("reviewDetail", "search", v));
+watch(localStatus, v => userProfile.updateUiFilter("reviewDetail", "status", v));
+watch(localCompliance, v => userProfile.updateUiFilter("reviewDetail", "compliance", v));
+watch(localSort, v => userProfile.updateUiFilter("reviewDetail", "sort", v));
+
 /* ALL SELECTED? */
 const isAllSelected = computed(() =>
   props.items.length > 0 &&

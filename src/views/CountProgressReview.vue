@@ -1104,11 +1104,6 @@ const selectedOutOfStockCount = computed(() =>
 
 const isAnyOutOfStockSelected = computed(() => selectedOutOfStockCount.value > 0);
 
-const areAllUncountedSelected = computed(() =>
-  uncountedItems.value.length > 0 &&
-  selectedOutOfStockCount.value === uncountedItems.value.length
-);
-
 const isBulkOutOfStockConfirmOpen = ref(false);
 
 function openBulkOutOfStockConfirm() {

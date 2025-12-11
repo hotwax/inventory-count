@@ -83,6 +83,7 @@ import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
+import { useUserProfile } from "@/stores/userProfileStore";
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
@@ -94,11 +95,8 @@ const infiniteScrollRef = ref({}) as any
 const pageIndex = ref(0)
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
 
-const filters: any = ref({
-  countQueryString: '',
-  countType: '',
-  facilityIds: [] as string[],
-});
+const userProfile = useUserProfile();
+const filters = computed(() => userProfile.uiFilters.pendingReview)
 
 const isFacilityModalOpen = ref(false);
 
@@ -117,7 +115,7 @@ const filterOptions = {
 
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
-  filters.value[key] = value;
+  userProfile.updateUiFilter('pendingReview', key, value)
   pageIndex.value = 0;
   await getPendingCycleCounts();
   loader.dismiss();
@@ -132,7 +130,6 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  filters.value.countQueryString = '';
 })
 
 function enableScrolling() {
@@ -194,7 +191,7 @@ async function getPendingCycleCounts() {
 }
 
 async function applyFacilitySelection(selectedFacilityIds: string[]) {
-  filters.value.facilityIds = [...selectedFacilityIds];
+  userProfile.updateUiFilter('pendingReview', 'facilityIds', selectedFacilityIds);
   pageIndex.value = 0;
   await loader.present("Loading...");
   await getPendingCycleCounts();
