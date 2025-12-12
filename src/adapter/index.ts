@@ -639,7 +639,59 @@ async function getUserFacilities(token: any, baseURL: string, partyId: string, f
   return await fetchFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload)
 }
 
+const getSecurityGroupAndPermissions = async (payload: any) => {
+    const {
+      dataDocumentId,
+      filterByDate,
+      fieldsToSelect,
+      distinct,
+      pageIndex,
+      pageSize,
+      ...customParametersMap
+    } = payload || {};
+
+    return await api({
+      url: `oms/dataDocumentView`,
+      method: 'POST',
+      data: {
+        dataDocumentId: dataDocumentId || 'SecurityGroupAndPermission',
+        filterByDate: filterByDate != null ? filterByDate : true,
+        fieldsToSelect: fieldsToSelect || '',
+        distinct: distinct != null ? distinct : '',
+        pageIndex: 0,
+        pageSize: pageSize || 100,
+        customParametersMap
+      }
+    });
+}
+
+const createSecurityGroupPermission = async (payload: {
+  groupId: string;
+  permissionId: string;
+  fromDate: number;
+}) => {
+  return await api({
+    url: `admin/permissions/${payload.permissionId}`,
+    method: "POST",
+    data: payload,
+  });
+}
+
+const updateSecurityGroupPermission = async (payload: {
+  groupId: string;
+  permissionId: string;
+  fromDate?: number;
+  thruDate: number;
+}) => {
+  return await api({
+    url: `admin/permissions/${payload.permissionId}`,
+    method: "PUT",
+    data: payload,
+  });
+}
+
 export {
+  createSecurityGroupPermission,
   getProfile,
   omsGetAvailableTimeZones,
   setUserLocale,
@@ -650,6 +702,7 @@ export {
   getEComStores,
   getEComStoresByFacility,
   getProductIdentificationPref,
+  getSecurityGroupAndPermissions,
   getUserFacilities,
   getUserPreference,
   setProductIdentificationPref,
@@ -657,4 +710,5 @@ export {
   fetchFacilities,
   fetchFacilitiesByParty,
   fetchFacilitiesByGroup,
+  updateSecurityGroupPermission
 }
