@@ -77,7 +77,7 @@
             <ion-card v-else-if="isWorkEffortInProgress && !isLoading" class="submission-card">
               <ion-card-header v-if="!canSubmitForReview">
                 <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
-                <h3>{{ translate("Complete these steps to send your count for review") }}</h3>
+                <h3>{{ translate("Complete these steps to send your count for review and approval.") }}</h3>
               </ion-card-header>
               <ion-list v-if="!canSubmitForReview">
                 <ion-item v-for="requirement in submissionRequirements" :key="requirement.id" lines="none" :detail="false">
@@ -104,14 +104,14 @@
         <!-- Segments -->
 
         <div class="segments-container">
-          <ion-segment value="counted">
-            <ion-segment-button value="uncounted" content-id="uncounted">
+          <ion-segment v-model="activeSegment">
+            <ion-segment-button value="uncounted">
               <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" content-id="undirected">
+            <ion-segment-button v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected">
               <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="counted" content-id="counted">
+            <ion-segment-button value="counted">
               <ion-label>{{ countedItems.length }} COUNTED</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -119,21 +119,24 @@
 
         <!-- List -->
         <ion-segment-view>
-          <ion-segment-content id="uncounted">
+          <ion-segment-content v-show="activeSegment === 'uncounted'" id="uncounted">
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
             </div>
             <template v-else>
-              <ion-item
-                v-if="canManageCountProgress && uncountedItems.length > 0"
-                lines="full"
-              >
+              <ion-item v-if="canManageCountProgress && uncountedItems.length > 0" lines="full">
                 <ion-label>
-                  {{ translate("Save uncounted items as out of stock") }}
-                  <p>{{ translate("This will mark all uncounted items as out of stock when this cycle count is accepted") }}</p>
-                  <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">{{ markOutOfStockDisabledReason }}</p>
+                  <p v-if="selectedOutOfStockCount">
+                    {{ translate("Selected") }}: {{ selectedOutOfStockCount }}
+                  </p>
+                  <p v-if="isMarkOutOfStockDisabled && markOutOfStockDisabledReason" class="helper-text">
+                    {{ markOutOfStockDisabledReason }}
+                  </p>
                 </ion-label>
-                <ion-button color="warning" slot="end" fill="outline" :disabled="isMarkOutOfStockDisabled || isSubmitted" @click="createSessionForUncountedItems">{{ translate("Mark as Out of Stock") }}</ion-button>
+
+                <ion-button color="warning" slot="end" fill="outline" :disabled="selectedOutOfStockCount === 0 || isSubmitted || isMarkOutOfStockDisabled" @click="openBulkOutOfStockConfirm">
+                  {{ translate("Mark selected as Out of Stock") }}
+                </ion-button>
               </ion-item>
               <div v-if="isLoadingUncounted" class="empty-state">
                 <p>{{ translate("Loading...") }}</p>
@@ -145,21 +148,28 @@
                 <DynamicScroller :items="uncountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                   <template #default="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                        <div class="list-item count-item-rollup">
-                          <ion-item lines="none">
-                            <ion-thumbnail slot="start">
-                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                            </ion-thumbnail>
-                            <ion-label>
-                              <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                              <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                            </ion-label>
-                          </ion-item>
-                          <ion-label slot="end" v-if="showQoh">
-                            {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
-                            {{ translate("QoH") }}
+                      <div class="list-item count-item-rollup">
+                        <ion-item lines="none">
+                          <ion-thumbnail slot="start">
+                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          </ion-thumbnail>
+                          <ion-label>
+                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
+                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
+                          <div class="oos-checkbox">
                         </div>
+                        </ion-item>
+                        <ion-label slot="end" v-if="showQoh">
+                          {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
+                          {{ translate("QoH") }}
+                        </ion-label>
+                        <ion-checkbox slot="start"
+                            :checked="outOfStockSelections[item.productId]"
+                            :disabled="isSubmitted"
+                            @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
+                          ></ion-checkbox>
+                      </div>
                     </DynamicScrollerItem>
                   </template>
                 </DynamicScroller>
@@ -167,7 +177,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content v-if="workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
+          <ion-segment-content v-show="activeSegment === 'undirected' && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" id="undirected">
             <div v-if="isLoadingUndirected" class="empty-state">
               <p>{{ translate("Loading...") }}</p>
             </div>
@@ -200,7 +210,7 @@
                             </ion-label>
                           </ion-item>
                           <ion-label>
-                            {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                            {{ showQoh ? `${item.quantity || '-'}/${item.quantityOnHand || '-'}` : item.quantity || '-' }}
                             <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label v-if="showQoh">
@@ -278,7 +288,7 @@
             </template>
           </ion-segment-content>
 
-          <ion-segment-content id="counted">
+          <ion-segment-content v-show="activeSegment === 'counted'" id="counted">
             <SmartFilterSortBar
               v-if="countedItems.length"
               :items="countedItems"
@@ -316,7 +326,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ showQoh ? `${item.quantity}/${item.quantityOnHand}` : item.quantity }}
+                          {{ showQoh ? `${item.quantity || '-'}/${item.quantityOnHand || '-'}` : item.quantity || '-' }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label v-if="showQoh">
@@ -470,12 +480,34 @@
         </ion-fab>
       </ion-content>
     </ion-modal>
+    <ion-alert
+      :is-open="isBulkOutOfStockConfirmOpen"
+      :header="translate('Mark selected items as Out of Stock')"
+      :message="translate('This will set the counted quantity to 0 for all selected items. Do you want to continue?')"
+      :buttons="[
+        {
+          text: translate('Cancel'),
+          role: 'cancel',
+          handler: () => {
+            isBulkOutOfStockConfirmOpen = false;
+          }
+        },
+        {
+          text: translate('Confirm'),
+          role: 'confirm',
+          handler: async () => {
+            await markSelectedItemsOutOfStock();
+            isBulkOutOfStockConfirmOpen = false;
+          }
+        }
+      ]"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, defineProps } from 'vue';
-import { IonAccordion, IonAccordionGroup, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
+import { computed, ref, defineProps, reactive } from 'vue';
+import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
@@ -616,6 +648,9 @@ const selectedSession = ref<any | null>(null);
 
 const isSessionPopoverOpen = ref(false);
 const sessionPopoverEvent = ref<Event | null>(null);
+
+const activeSegment = ref("uncounted");
+const lastSegment = ref("uncounted");
 
 function openSessionPopover(event: Event, session: any, product: any) {
   event.stopPropagation();
@@ -1060,44 +1095,76 @@ async function getCountSessions(productId: any) {
   }
 }
 
-async function createSessionForUncountedItems() {
+const outOfStockSelections = reactive<Record<string, boolean>>({});
+
+// NEW: bulk selection helpers
+const selectedOutOfStockCount = computed(() =>
+  uncountedItems.value.filter(item => outOfStockSelections[item.productId]).length
+);
+
+const isAnyOutOfStockSelected = computed(() => selectedOutOfStockCount.value > 0);
+
+const areAllUncountedSelected = computed(() =>
+  uncountedItems.value.length > 0 &&
+  selectedOutOfStockCount.value === uncountedItems.value.length
+);
+
+const isBulkOutOfStockConfirmOpen = ref(false);
+
+function openBulkOutOfStockConfirm() {
+  if (!isAnyOutOfStockSelected.value) return;
+  lastSegment.value = activeSegment.value;
+  isBulkOutOfStockConfirmOpen.value = true;
+}
+
+function handleOutOfStockCheck(ev: any, item: any) {
+  const checked = ev.detail.checked;
+
+  if (checked) {
+    outOfStockSelections[item.productId] = true;
+  } else {
+    outOfStockSelections[item.productId] = false;
+  }
+}
+
+async function markSelectedItemsOutOfStock() {
   if (!canManageCountProgress.value) {
     showToast(translate('You do not have permission to perform this action'));
     return;
   }
-  await loader.present(translate("Marking items as out of stock..."));
+
+  const selectedItems = uncountedItems.value.filter(
+    item => outOfStockSelections[item.productId]
+  );
+
+  if (!selectedItems.length) {
+    showToast(translate("No items selected"));
+    return;
+  }
+
+  await loader.present(translate("Marking selected items as out of stock..."));
+
   try {
     const newSession = {
-      countImportName: `Auto OOS Session – ${workEffort.value?.workEffortName} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`,
+      countImportName: `OOS Selected – ${workEffort.value?.workEffortName} – ${DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss.SSS")}`,
       statusId: "SESSION_SUBMITTED",
       uploadedByUserLogin: useUserProfile().getUserProfile.username,
       createdDate: DateTime.now().toMillis(),
       workEffortId: workEffort.value?.workEffortId
-    }
+    };
+
     const resp = await useInventoryCountRun().createSessionOnServer(newSession);
 
-    if (resp?.status === 200 && resp.data) {
-      const inventoryCountImportId = resp.data.inventoryCountImportId;
-      await createUncountedImportItems(inventoryCountImportId);
-    } else {
+    if (resp?.status !== 200 || !resp.data) {
       throw resp;
     }
 
-  } catch (error) {
-    console.error("Error Creating Session for Uncounted Items", error);
-    showToast(translate("Failed to Update Cycle Count"));
-  }
-  loader.dismiss();
-}
-
-async function createUncountedImportItems(inventoryCountImportId: any) {
-  try {
+    const inventoryCountImportId = resp.data.inventoryCountImportId;
     const batchSize = 250;
-    const batches: any[] = [];
     const username = useUserProfile().getUserProfile.username;
 
-    for (let i = 0; i < uncountedItems.value.length; i += batchSize) {
-      const chunk = uncountedItems.value.slice(i, i + batchSize);
+    for (let i = 0; i < selectedItems.length; i += batchSize) {
+      const chunk = selectedItems.slice(i, i + batchSize);
 
       const batchPayload = chunk.map((item: any) => ({
         inventoryCountImportId,
@@ -1108,31 +1175,39 @@ async function createUncountedImportItems(inventoryCountImportId: any) {
         createdDate: DateTime.now().toMillis()
       }));
 
-      batches.push(batchPayload);
-    }
+      const batchResp = await useInventoryCountImport().updateSessionItem({
+        inventoryCountImportId,
+        items: batchPayload
+      });
 
-    for (const batch of batches) {
-      try {
-        const resp = await useInventoryCountImport().updateSessionItem({
-          inventoryCountImportId,
-          items: batch
-        });
+      if (batchResp?.status === 200) {
+        const successfulProductIds = new Set(batchPayload.map((p: any) => p.productId));
 
-        if (resp?.status === 200) {
-          const successfulProductIds = new Set(batch.map((item: any) => item.productId));
-          countedItems.value.push(...uncountedItems.value.filter((item: any) => successfulProductIds.has(item.productId)));
-          uncountedItems.value = uncountedItems.value.filter((item: any) => !successfulProductIds.has(item.productId));
-        } else {
-          console.error("Batch failed:", resp);
-        }
-      } catch (err) {
-        console.error("Batch failed:", err);
+        countedItems.value.push(
+          ...uncountedItems.value
+            .filter((item: any) => successfulProductIds.has(item.productId))
+            .map((item: any) => ({ ...item, quantity: 0 }))
+        );
+
+        uncountedItems.value = uncountedItems.value.filter(
+          (item: any) => !successfulProductIds.has(item.productId)
+        );
+      } else {
+        console.error("Batch failed:", batchResp);
       }
     }
+
+    // Clear selections after success
+    for (const key in outOfStockSelections) {
+      delete outOfStockSelections[key];
+    }
+    showToast(translate("Marked selected items as out of stock"));
   } catch (error) {
-    console.error("Error creating uncounted import items", error);
-    showToast(translate("Failed to Update Uncounted Items"));
+    console.error("Error marking selected items out of stock", error);
+    showToast(translate("Failed to update selected items"));
   }
+
+  loader.dismiss();
 }
 
 async function markAsCompleted() {

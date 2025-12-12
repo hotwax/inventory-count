@@ -114,7 +114,7 @@
                         </ion-item>
                       </div>
                       <ion-label class="stat">
-                        {{ item.quantity }}/{{ item.systemQuantity }}
+                        {{ item.quantity || '-' }}/{{ item.systemQuantity || '-' }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
                       <ion-label class="stat">
@@ -126,7 +126,7 @@
                         :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
                         style="--color: white;"
                       >
-                        {{ item.decisionOutcomeEnumId }}
+                        {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
                       </div>
                     </div>
