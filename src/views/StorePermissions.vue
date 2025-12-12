@@ -308,6 +308,8 @@ async function getActiveGroups(permissionId: string) {
     const resp = await getSecurityGroupAndPermissions({
       permissionId,
       filterByDate: true,
+      groupTypeEnumId: "PRM_CLASS_TYPE",
+      groupTypeEnumId_op: "not-equals"
     });
     if (hasError(resp)) throw resp?.data;
     const docs = (resp?.data && (resp.data.entityValueList)) || [];
@@ -327,6 +329,9 @@ async function openHistory(permission: PermissionMeta) {
     const resp = await getSecurityGroupAndPermissions({
       permissionId: permission.id,
       filterByDate: false,
+      orderByField: "-thruDate",
+      groupTypeEnumId: "PRM_CLASS_TYPE",
+      groupTypeEnumId_op: "not-equals",
       pageSize: 250,
     });
     if (hasError(resp)) throw resp?.data;
@@ -364,6 +369,8 @@ async function openSelectGroupsModal(permission: PermissionMeta) {
       // permissionId: permission.id,
       filterByDate: false,
       fieldsToSelect: "groupId,groupName",
+      groupTypeEnumId: "PRM_CLASS_TYPE",
+      groupTypeEnumId_op: "not-equals",
       distinct: "true",
       pageSize: 250,
     });
