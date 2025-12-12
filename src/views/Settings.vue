@@ -125,16 +125,68 @@
             </ion-select>
           </ion-item>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate('Scanner pairing guide') }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Quick steps to put Socket Mobile S7xx scanners in iOS Basic Keyboard (HID) mode and pair to your iPad.') }}
+          </ion-card-content>
+          <ion-button id="pairing-guide-modal" fill="outline" expand="block">
+            <ion-icon slot="start" :icon="bluetoothOutline" />
+            {{ translate('Pairing guide') }}
+          </ion-button>
+        </ion-card>
       </section>
+
+      <ion-modal ref="pairingGuideModal" trigger="pairing-guide-modal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-button @click="closePairingGuide">
+                <ion-icon :icon="closeOutline" />
+              </ion-button>
+            </ion-buttons>
+            <ion-title>{{ translate('Pair the scanner') }}</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <p class="overline">Socket Mobile S700 / S720 / S730 / S740</p>
+          <p>{{ translate('Follow these steps to get Basic Keyboard (HID) mode and pair with your iPad.') }}</p>
+          <ol>
+            <li class="guide-step">
+              <h3>{{ translate('Reset/Unpair (if switching devices)') }}</h3>
+              <p>{{ translate('Turn the scanner on, then scan this barcode to clear old pairing info. The scanner will turn off after the reset.') }}</p>
+              <ion-img class="barcode-img" :src="pairingResetBarcode" alt="Pairing reset barcode" />
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Set iOS Basic Keyboard Mode') }}</h3>
+              <p>{{ translate('Power the scanner back on, make sure the blue light is blinking fast, then scan this barcode to put it in HID keyboard mode (acts like a keyboard).') }}</p>
+              <ion-img class="barcode-img" :src="iosKeyboardBarcode" alt="iOS Basic Keyboard Mode barcode" />
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Pair in iPad Bluetooth') }}</h3>
+              <p>{{ translate('On the iPad: Settings → Bluetooth → tap the scanner (shows as S7XX [xxxxxx]) → Pair. You should hear one beep when connected.') }}</p>
+            </li>
+            <li class="guide-step">
+              <h3>{{ translate('Test in the app') }}</h3>
+              <p>{{ translate('Place the cursor in any input field and scan a barcode. You should see the value appear like typed text.') }}</p>
+            </li>
+          </ol>
+          <ion-note color="medium">{{ translate('Tip: If you change devices or modes later, repeat the reset and keyboard steps first.') }}</ion-note>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
+import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { openOutline, shieldCheckmarkOutline } from "ionicons/icons"
+import { bluetoothOutline, closeOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -143,6 +195,8 @@ import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
 import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
+import pairingResetBarcode from "@/assets/images/pairing-reset.png"
+import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
@@ -196,6 +250,10 @@ async function updateEComStore(eComStoreId: any) {
 function setProductIdentificationPref(value: string | any, id: string) {
   useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
+
+/* Pairing guide modal */
+const pairingGuideModal = ref();
+const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
 </script>
 
 <style scoped>
@@ -219,5 +277,19 @@ function setProductIdentificationPref(value: string | any, id: string) {
     justify-content: space-between;
     align-items: center;
     padding: var(--spacer-xs) 10px 0px;
+  }
+
+  li.guide-step::marker {
+    font-size: 1.375rem;
+  }
+
+  .barcode-img {
+    display: block;
+    max-width: 260px;
+    margin: var(--spacer-2xs) auto;
+    border: 1px solid var(--border-medium);
+    border-radius: 8px;
+    padding: var(--spacer-2xs);
+    background: var(--ion-color-light);
   }
 </style>
