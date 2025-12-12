@@ -88,7 +88,7 @@
                     {{ session.countImportName }} {{ session.facilityAreaId }}
                     <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="hasPermission('APP_PWA_STANDALONE_ACCESS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
                     {{ translate("Force Release") }}
                   </ion-button>
                   <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
@@ -187,7 +187,7 @@ const cycleCounts = ref([]);
 const isScrollable = ref(true);
 let isLoading = ref(false);
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = 250;
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isScrollingEnabled = ref(false);
@@ -265,7 +265,7 @@ async function getCycleCounts(reset = false) {
   }
 
   const params = {
-    pageSize: pageSize.value,
+    pageSize: pageSize,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
     statusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
@@ -276,11 +276,13 @@ async function getCycleCounts(reset = false) {
   try {
     const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
 
+    let combined = [];
     if (pageIndex.value === 0) {
-      cycleCounts.value.splice(0, cycleCounts.value.length, ...workEfforts);
+      combined = [...workEfforts];
     } else {
-      cycleCounts.value.push(...workEfforts);
+      combined = [...cycleCounts.value, ...workEfforts];
     }
+    cycleCounts.value = sortCycleCounts(combined);
 
     isScrollable.value = scrollable;
   } catch (err) {
@@ -290,6 +292,20 @@ async function getCycleCounts(reset = false) {
     isLoading.value = false;
   }
 }
+
+function sortCycleCounts(list) {
+  return [...list].sort((predecessor, successor) => {
+    const predecessorEstimatedStartDate = predecessor.estimatedStartDate;
+    const successorEstimatedStartDate = successor.estimatedStartDate;
+
+    if (!predecessorEstimatedStartDate && successorEstimatedStartDate) return -1;
+    if (!successorEstimatedStartDate && predecessorEstimatedStartDate) return 1;
+    if (!predecessorEstimatedStartDate && !successorEstimatedStartDate) return 0;
+
+    return predecessorEstimatedStartDate - successorEstimatedStartDate;
+  });
+}
+
 
 const areas = [
   { value: 'back_stock', label: 'Back stock' },

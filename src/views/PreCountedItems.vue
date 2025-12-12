@@ -42,8 +42,9 @@
             <ion-label>
               {{ useProductMaster().primaryId(searchedProducts[0]) }}
               <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+              <ion-text color="danger" v-if="searchedProducts[0].isUndirected">{{ translate("Undirected items cannot be added to count") }}</ion-text>
             </ion-label>
-            <ion-button slot="end" fill="outline" @click="addProductInPreCountedItems(searchedProducts[0])">
+            <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])">
               <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
               Add to count
             </ion-button>
@@ -97,7 +98,7 @@
                 <ion-label>
                   {{ useProductMaster().primaryId(product) }}
                   <p>{{ useProductMaster().secondaryId(product) }}</p>
-                  <ion-text v-if="!product.isRequested" color="danger">
+                  <ion-text v-if="product.isRequested && product.isRequested === 'N'" color="danger">
                     {{ translate("Undirected") }}
                   </ion-text>
                 </ion-label>
@@ -156,10 +157,11 @@
             <ion-thumbnail slot="start">
               <Image :src="product.mainImageUrl" />
             </ion-thumbnail>
-            <ion-radio :value="product.productId">
+            <ion-radio :value="product.productId" :disabled="product.isUndirected">
               <ion-label>
                 {{ useProductMaster().primaryId(product) }}
                 <p>{{ useProductMaster().secondaryId(product) }}</p>
+                <ion-text color="danger" v-if="product.isUndirected">{{ translate("Undirected") }}</ion-text>
               </ion-label>
             </ion-radio>
           </ion-item>
@@ -206,6 +208,10 @@ const props = defineProps({
     required: true
   },
   inventoryCountImportId: {
+    type: String,
+    required: true
+  },
+  inventoryCountTypeId: {
     type: String,
     required: true
   }
@@ -329,7 +335,24 @@ async function getProductBySearch(term: string) {
     const resp = await getProducts(query);
 
     const products = resp?.data?.response?.docs || []
-    searchedProducts.value = products
+    
+    // Check if products are already in the session as undirected
+    // In a DIRECTED_COUNT: "Undirected" means "Not in session" OR "In session but isRequested=N"
+    const productIds = products.map((product: any) => product.productId);
+    const importItems = await useInventoryCountImport().getInventoryCountImportItemsByProductIds(props.inventoryCountImportId, productIds);
+    const importItemsMap = new Map(importItems.map(item => [item.productId, item]));
+
+    const enrichedProducts = products.map((product: any) => {
+      const inventoryCountImportItem = importItemsMap.get(product.productId);
+      const isUndirected = !inventoryCountImportItem || inventoryCountImportItem.isRequested === 'N';
+      return {
+        ...product,
+        inventoryCountTypeId: props.inventoryCountTypeId,
+        isUndirected
+      };
+    });
+
+    searchedProducts.value = enrichedProducts
     if (products.length === 0) showToast(`No products found for "${term}"`)
   } catch (err) {
     console.error('Failed to fetch products', err)
@@ -357,18 +380,24 @@ async function getProducts(query: any) {
 async function addProductInPreCountedItems(product: any) {
   searchedProductString.value = ''
   searchedProducts.value = []
-  isSearchResultsModalOpen.value = false
-
-  const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
-  products.value.unshift(productEntry)
+  isSearchResultsModalOpen.value = false  
 
   try {
-    await setProductQoh(productEntry)
+    const productEntry = { ...product, sequenceId: `${++productSequenceId.value}`, countedQuantity: 0, saved: false }
     const inventoryCountImportItem = await useInventoryCountImport().getInventoryCountImportByProductId(
       props.inventoryCountImportId,
       productEntry.productId
     );
-    productEntry.isRequested = inventoryCountImportItem ? inventoryCountImportItem.isRequested === 'Y' : false;
+    if (props.inventoryCountTypeId === 'DIRECTED_COUNT') {
+      if (inventoryCountImportItem && (!inventoryCountImportItem.isRequested || inventoryCountImportItem.isRequested === 'Y')) {
+        productEntry.isRequested = 'Y';
+      } else {
+        showToast(translate("Undirected items cannot be added to count"));
+        return;
+      }
+    }
+    products.value.unshift(productEntry)
+    await setProductQoh(productEntry)
   } catch (err) {
     console.error('Error adding product:', err)
   }

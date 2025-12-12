@@ -70,7 +70,7 @@
           </div>
 
           <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
-            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}`)">
+            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
@@ -115,7 +115,7 @@
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
@@ -311,6 +311,14 @@
             <!-- Unmatched -->
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+               <template v-if="unmatchedItems.length === 0">
+                <div class="empty-state ion-padding ion-text-center">
+                  <ion-label>
+                    <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
+                    <p>{{ translate("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
+                  </ion-label>
+                </div>
+              </template>
               <template v-if="filteredItems.length">
                 <ion-card v-for="item in filteredItems" :key="item.uuid">
                   <ion-item>
@@ -699,9 +707,9 @@ const scannerButtonColor = computed(() => {
 });
 
 const scannerButtonLabel = computed(() => {
-  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return translate('start counting');
-  if (isScannerFocused.value) return translate('Scanner focused');
-  return translate('Focus scanner');
+  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return translate('Start counting');
+  if (isScannerFocused.value) return translate('Scanner ready');
+  return translate('Resume counting');
 });
 
 const scannerButtonDisabled = computed(() =>
@@ -1202,6 +1210,7 @@ function openMatchModal(item: any) {
   matchedItem.value = item;
   queryString.value = item.productIdentifier;
   isMatchModalOpen.value = true;
+  handleSearch();
 }
 
 function closeMatchModal() {

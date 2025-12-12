@@ -20,18 +20,7 @@
           <ion-icon slot="end" :icon="downloadOutline" />
         </ion-button>
 
-        <ion-list>
-          <ion-list-header>{{ translate("Saved mappings") }}</ion-list-header>
-          <div>
-            <ion-chip :disabled="!content.length" outline="true" @click="openCreateMappingModal">
-              <ion-icon :icon="addOutline" />
-              <ion-label>{{ translate("New mapping") }}</ion-label>
-            </ion-chip>
-            <ion-chip :disabled="!content.length" v-for="(mapping, index) in fieldMappings('INVCOUNT') ?? []" :key="index" @click="mapFields(mapping, index)" :outline="selectedMappingId != index">
-              {{ mapping.name }}
-            </ion-chip>
-          </div>
-        </ion-list>   
+
 
         <ion-list class="field-mappings">
           <ion-item-divider color="light">
@@ -68,7 +57,14 @@
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section">
-          <ion-list-header>{{ translate("Recently uploaded counts") }}</ion-list-header>
+          <ion-list-header>
+            <ion-label>
+                {{ translate("Recently uploaded counts") }}
+              </ion-label>
+              <ion-label class="ion-text-end">
+                {{ translate("Processing") }} {{ nextExecutionRemaining }}
+              </ion-label>
+          </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
             <ion-label>
               <p class="overline">{{ systemMessage.systemMessageId }}</p>
@@ -85,50 +81,7 @@
       </div>
     </ion-content>
 
-    <ion-modal :is-open="isCreateMappingModalOpen" :keep-contents-mounted="true" @did-dismiss="closeCreateMappingModal">
-      <ion-header>
-        <ion-toolbar>
-          <ion-buttons slot="start">
-            <ion-button @click="closeCreateMappingModal">
-              <ion-icon :icon="close" />
-            </ion-button>
-          </ion-buttons>
-          <ion-title>{{ translate("CSV Mapping") }}</ion-title>
-        </ion-toolbar>
-      </ion-header>
 
-      <ion-item>
-        <ion-input :label="translate('Mapping name')" :placeholder="translate('Field mapping name')" v-model="mappingName" />
-      </ion-item>
-
-      <ion-content>
-        <ion-list>
-          <ion-item-divider>
-            <ion-label>{{ translate("Required") }}</ion-label>
-          </ion-item-divider>
-          <ion-item v-for="(fieldValues, field) in getFields(fields, true)" :key="field">
-            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder="translate('Select')" v-model="modalFieldMapping[field]">
-              <ion-select-option :key="index" v-for="(prop, index) in modalFileColumns">{{ prop }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item-divider>
-            <ion-label>{{ translate("Optional") }}</ion-label>
-          </ion-item-divider>
-          <ion-item v-for="(fieldValues, field) in getFields(fields, false)" :key="field">
-            <ion-select :label="translate(fieldValues.label)" interface="popover" :placeholder="translate('Select')" v-model="modalFieldMapping[field]">
-              <ion-select-option :key="index" v-for="(prop, index) in modalFileColumns">{{ prop }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </ion-list>
-
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="saveMapping">
-            <ion-icon :icon="saveOutline" />
-          </ion-fab-button>
-        </ion-fab>
-      </ion-content>
-    </ion-modal>
 
     <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false">
       <ion-content>
@@ -188,28 +141,67 @@
 </template>
 
 <script setup>
-import { IonButton, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonInput, IonFab, IonFabButton } from '@ionic/vue';
-import { addOutline, cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline, saveOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
+import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
-import { computed, ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { useUserProfile } from '@/stores/userProfileStore';
+
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
+import { DateTime } from 'luxon';
 
-const fieldMappings = computed(() => useUserProfile().loadFieldMappings);
+
 const systemMessages = ref([]);
+const nextExecutionTimestamp = ref(null);
+let refreshInterval = null;
+let countdownInterval = null;
+
 
 onIonViewDidEnter(async () => {
   resetDefaults();
-  await useUserProfile().loadFieldMappings();
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+
+  await fetchSystemMessages();
+  await fetchJobExecutionTime();
+
+  startCountdownTimer();
+
+  refreshInterval = setInterval(async () => {
+    await fetchSystemMessages();
+    await fetchJobExecutionTime();
+  }, 15000);
 });
 
+onBeforeUnmount(() => {
+  clearInterval(refreshInterval);
+  clearInterval(countdownInterval);
+});
+
+async function fetchSystemMessages() {
+  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+}
+
+async function fetchJobExecutionTime() {
+  const jobResp = await useInventoryCountImport().getServiceJobDetail(
+    "consume_AllReceivedSystemMessages_frequent"
+  );
+
+  if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
+    nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
+  }
+}
+
+function startCountdownTimer() {
+  countdownInterval = setInterval(() => {
+    if (!nextExecutionTimestamp.value) return;
+    const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
+    nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
+  }, 1000);
+}
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
 let uploadedFile = ref({});
@@ -217,78 +209,29 @@ let fileName = ref(null);
 let content = ref([]);
 let fieldMapping = ref({});
 let fileColumns = ref([]);
-let selectedMappingId = ref(null);
+
 const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
 
-if (fields.statusId) delete fields.statusId;
 const templateRows = [
   {
     countImportName: "Weekly store audit",
     purposeType: "DIRECTED_COUNT",
     productSku: "SKU-12345",
     facility: "FACILITY_100",
-    estimatedCompletionDate: "04-15-2024 10-30-00",
-    estimatedStartDate: "04-14-2024 09-00-00"
+    estimatedCompletionDate: "02-20-2001 02:00:00",
+    estimatedStartDate: "07-21-2003 08:20:00"
   },
   {
     countImportName: "Distribution center spot check",
     purposeType: "HARD_COUNT",
     productSku: "",
     facility: "FACILITY_DC_01",
-    estimatedCompletionDate: "04-20-2024 15-00-00",
-    estimatedStartDate: "04-19-2024 12-30-00"
+    estimatedCompletionDate: "02-20-2001 02:00:00",
+    estimatedStartDate: "07-21-2003 08:20:00"
   }
 ];
 
-/* ---------- CreateMappingModal Logic ---------- */
-const isCreateMappingModalOpen = ref(false);
-const mappingName = ref(null);
-const modalFieldMapping = ref({});
-const modalFileColumns = ref([]);
 
-function openCreateMappingModal() {
-  modalFieldMapping.value = { ...fieldMapping.value };
-  modalFileColumns.value = Object.keys(content.value[0] || {});
-  mappingName.value = null;
-  isCreateMappingModalOpen.value = true;
-}
-function closeCreateMappingModal() {
-  isCreateMappingModalOpen.value = false;
-}
-function getFields(fields, required = true) {
-  return Object.keys(fields).reduce((result, key) => {
-    if (fields[key].required === required) result[key] = fields[key];
-    return result;
-  }, {});
-}
-function areAllModalFieldsSelected() {
-  const requiredFields = Object.keys(getFields(fields, true));
-  const selectedFields = Object.keys(modalFieldMapping.value).filter(key => modalFieldMapping.value[key] !== '');
-  return requiredFields.every(field => selectedFields.includes(field));
-}
-function generateUniqueMappingPrefId() {
-  const id = Math.floor(Math.random() * 1000);
-  return !fieldMappings.value[id] ? id : generateUniqueMappingPrefId();
-}
-async function saveMapping() {
-  if (!mappingName.value || !mappingName.value.trim()) {
-    showToast(translate("Enter mapping name"));
-    return;
-  }
-  if (!areAllModalFieldsSelected()) {
-    showToast(translate("Map all required fields"));
-    return;
-  }
-  const id = generateUniqueMappingPrefId();
-  await useUserProfile().createFieldMapping({
-    id,
-    name: mappingName.value,
-    value: modalFieldMapping.value,
-    mappingType: "INVCOUNT"
-  })
-  showToast(translate("Mapping saved"));
-  closeCreateMappingModal();
-}
 
 /* ---------- UploadActionPopover Logic ---------- */
 const isUploadPopoverOpen = ref(false);
@@ -296,6 +239,7 @@ const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
+const nextExecutionRemaining = ref("…");
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -370,7 +314,7 @@ function resetDefaults() {
   content.value = [];
   fileName.value = null;
   file.value.value = "";
-  selectedMappingId.value = null;
+
 }
 
 function downloadTemplate() {
@@ -410,12 +354,12 @@ async function save() {
   const uploadedData = content.value.map(row => ({
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
-    statusId: (fieldMapping.value.statusId ? row[fieldMapping.value.statusId] : "") || "CYCLE_CNT_CREATED",
     idValue: fieldMapping.value.productSku === "skip" ? "" : row[fieldMapping.value.productSku],
     idType: "SKU",
     estimatedCompletionDate: row[fieldMapping.value.estimatedCompletionDate],
     estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
-    externalFacilityId: row[fieldMapping.value.facility],
+    facilityId: row[fieldMapping.value.facility],
+    externalFacilityId: row[fieldMapping.value.externalFacility],
   }));
   const data = jsonToCsv(uploadedData, {
     parse: {},
@@ -437,13 +381,7 @@ async function save() {
     showToast(translate("Failed to upload the file, please try again"));
   }
 }
-function mapFields(mapping, index) {
-  const data = JSON.parse(JSON.stringify(mapping));
-  const csvFields = Object.keys(content.value[0]);
-  Object.keys(data.value).forEach(key => { if (!csvFields.includes(data.value[key])) data.value[key] = ""; });
-  fieldMapping.value = data.value;
-  selectedMappingId.value = index;
-}
+
 const parseCsv = async (file, options) => {
   return new Promise ((resolve, reject) => {
     Papa.parse(file, {
@@ -499,7 +437,7 @@ const downloadCsv = (csv, fileName) => {
   max-width: 80%;
 }
 
-.field-mappings ion-select::part(placeholder), .field-mappings ion-select::part(icon) {
+.field-mappings ion-select.select-disabled::part(placeholder), .field-mappings ion-select.select-disabled::part(icon) {
   opacity: .3;
 }
 
@@ -517,5 +455,4 @@ const downloadCsv = (csv, fileName) => {
 .system-message-action>ion-button {
   vertical-align: middle;
 }
-
 </style>

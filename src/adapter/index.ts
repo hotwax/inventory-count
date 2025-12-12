@@ -139,8 +139,19 @@ async function fetchFacilities(token: string, baseURL: string, partyId: string, 
       resp = await fetchFacilitiesByParty(partyId, baseURL, token)
 
       facilityIds = resp.map((facility: any) => facility.facilityId);
+      if (!facilityIds.length) {
+        return Promise.reject({
+          code: 'error',
+          message: 'Failed to fetch user facilities',
+          serverResponse: resp.data
+        })
+      }
     } catch(error) {
-      return error
+      return Promise.reject({
+        code: 'error',
+        message: 'Failed to fetch user facilities',
+        serverResponse: error
+      })
     }
   }
 
@@ -150,8 +161,19 @@ async function fetchFacilities(token: string, baseURL: string, partyId: string, 
       resp = await fetchFacilitiesByGroup(facilityGroupId, baseURL, token, filters)
 
       facilityIds = resp.map((facility: any) => facility.facilityId);
+      if (!facilityIds.length) {
+        return Promise.reject({
+          code: 'error',
+          message: 'Failed to fetch user facilities',
+          serverResponse: resp.data
+        })
+      }
     } catch(error) {
-      return error
+      return Promise.reject({
+        code: 'error',
+        message: 'Failed to fetch user facilities',
+        serverResponse: error
+      })
     }
   }
 

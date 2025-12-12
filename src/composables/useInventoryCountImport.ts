@@ -212,6 +212,14 @@ function currentMillis(): number {
     }
   }
 
+  async function getInventoryCountImportItemsByProductIds(inventoryCountImportId: string, productIds: any[]) {
+    if (!inventoryCountImportId || !productIds.length) return [];
+    // Assumes you have access to the Dexie db instance
+    return db.inventoryCountRecords
+      .where('inventoryCountImportId').equals(inventoryCountImportId)
+      .and(item => productIds.includes(item.productId))
+      .toArray();
+  }
 
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {  
@@ -470,6 +478,14 @@ const getSessionLock = async (payload: any): Promise<any> => {
       method: 'GET'
     })
   }
+
+  async function getServiceJobDetail(jobName: string) {
+    return api({
+      url: `admin/serviceJobs/${jobName}`,
+      method: 'GET'
+    })
+  }
+  
 /**
  * Composable to manage InventoryCountImport related operations using singleton pattern
  */
@@ -483,9 +499,11 @@ export function useInventoryCountImport() {
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
+    getInventoryCountImportItemsByProductIds,
     getInventoryCountImportItemsCount,
     getInventoryCountImportSession,
     getScanEvents,
+    getServiceJobDetail,
     getSessionItemsByImportId,
     getSessionProductIds,
     getSessionLock,

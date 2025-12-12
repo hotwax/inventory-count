@@ -138,7 +138,7 @@
                       </div>
 
                       <ion-label class="stat">
-                        {{ item.quantity }}/{{ item.quantityOnHand }}
+                        {{ item.quantity || '-' }}/{{ item.quantityOnHand || '-' }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 
@@ -193,14 +193,14 @@
                         :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'"
                         style="--color: white;"
                       >
-                        {{ item.decisionOutcomeEnumId }}
+                        {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
                     </div>
 
                     <!-- ACCORDION CONTENT -->
                     <div slot="content" @click.stop="stopAccordianEventProp">
                       <ion-list v-if="sessions === null">
-                        <ion-item v-for="n in item.numberOfSessions" :key="n">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number">
                           <ion-avatar slot="start">
                             <ion-skeleton-text animated style="width: 100%; height: 40px"></ion-skeleton-text>
                           </ion-avatar>
@@ -261,7 +261,7 @@
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.createdDate) }}</ion-item>
                 <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="removeProductFromSession()">
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
@@ -293,21 +293,65 @@
             <ion-title>{{ translate("Edit Item Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
-        <ion-content>
-          <ion-list>
-            <ion-list-header>{{ selectedSession?.countImportName }}</ion-list-header>
-            <ion-item v-for="item in selectedSession?.importItems" :key="item.importItemSeqId">
-              <ion-label>{{ item.importItemSeqId }}</ion-label>
-              <ion-input
-                @ion-input="item.changed = true"
-                slot="end"
-                type="number"
-                min="0"
-                v-model.number="item.quantity"
-              ></ion-input>
-            </ion-item>
-          </ion-list>
 
+        <ion-content>
+
+          <ion-card>
+            <ion-item lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="selectedProductCountReview?.detailImageUrl" />
+              </ion-thumbnail>
+
+              <ion-label>
+                {{ selectedProductCountReview?.internalName }}
+                <p>{{ selectedProductCountReview?.productId }}</p>
+              </ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("Cycle count total") }}</ion-label>
+              <ion-label slot="end">{{ selectedProductCountReview?.quantity }} {{ translate("units") }}</ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("Session count total") }}</ion-label>
+              <ion-label slot="end">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
+            </ion-item>
+          </ion-card>
+
+          <!-- EDIT SECTION -->
+          <ion-card>
+            <ion-item lines="full">
+              <ion-label>{{ translate("Edit session count") }}</ion-label>
+              <ion-item slot="end">
+                <!-- MINUS BUTTON -->
+                <ion-button fill="clear" @click="adjustEdit(-1)">
+                  <ion-icon slot="icon-only" :icon="removeCircleOutline"></ion-icon>
+                </ion-button>
+  
+                <!-- INPUT -->
+                <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
+  
+                <!-- PLUS BUTTON -->
+                <ion-button fill="clear" @click="adjustEdit(1)">
+                  <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
+                </ion-button>
+              </ion-item>
+            </ion-item>
+
+            <!-- NEW TOTALS -->
+            <ion-item>
+              <ion-label>{{ translate("New session count total") }}</ion-label>
+              <ion-label slot="end">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
+            </ion-item>
+
+            <ion-item>
+              <ion-label>{{ translate("New cycle count total") }}</ion-label>
+              <ion-label slot="end">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
+            </ion-item>
+          </ion-card>
+
+          <!-- FLOAT SAVE BUTTON -->
           <ion-fab vertical="bottom" horizontal="end" slot="fixed">
             <ion-fab-button @click="saveEditImportItems">
               <ion-icon :icon="checkmarkDoneOutline" />
@@ -405,6 +449,16 @@
         { text: 'Confirm', handler: forceCloseWithoutAction }
       ]"
     ></ion-alert>
+    <ion-alert
+      :is-open="isRemoveSessionAlertOpen"
+      :header="translate('Remove session from count')"
+      :message="translate('Removing this session item will delete this entry and new proposed variances will be calculated. This action cannot be undone.')"
+      @didDismiss="isRemoveSessionAlertOpen = false"
+      :buttons="[
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Remove'), handler: async () => await removeProductFromSession() }
+      ]"
+    ></ion-alert>
   </ion-page>
 </template>
 
@@ -419,7 +473,7 @@ import {
   IonThumbnail, onIonViewDidEnter, IonSkeletonText
 } from "@ionic/vue";
 import {
-  checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
+  addCircleOutline, checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
 import { ref, computed, defineProps } from "vue";
@@ -465,10 +519,11 @@ const submittedItemsCount = ref(0);
 
 const firstCountedAt = ref();
 const lastCountedAt = ref();
+const isRemoveSessionAlertOpen = ref(false);
 
 /* computed */
 const openItems = computed(() =>
-  aggregatedSessionItems.value.filter((i) => !i.decisionOutcomeEnumId)
+  aggregatedSessionItems.value.filter((item) => !item.decisionOutcomeEnumId)
 );
 
 const overallFilteredVarianceQtyProposed = computed(() =>
@@ -478,6 +533,20 @@ const overallFilteredVarianceQtyProposed = computed(() =>
   )
 );
 
+const editAdjustment = ref(0);
+
+const newSessionTotal = computed(() => {
+  return (selectedSession.value?.counted || 0) + editAdjustment.value;
+});
+
+const newCycleCountTotal = computed(() => {
+  return (selectedProductCountReview.value?.quantity || 0) + editAdjustment.value;
+});
+
+function adjustEdit(delta: number) {
+  const result = editAdjustment.value + delta;
+  editAdjustment.value = Math.max(0, result);
+}
 /* lifecycle */
 onIonViewDidEnter(async () => {
   isLoading.value = true;
@@ -503,13 +572,13 @@ onIonViewDidEnter(async () => {
 /* PRODUCT SELECTION */
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
-    (p) => p.productId === product.productId
+    (productReview) => productReview.productId === product.productId
   );
 }
 
 function toggleSelectedForReview(product: any) {
   const index = selectedProductsReview.value.findIndex(
-    (p) => p.productId === product.productId
+    (productReview) => productReview.productId === product.productId
   );
   if (index === -1) selectedProductsReview.value.push(product);
   else selectedProductsReview.value.splice(index, 1);
@@ -518,7 +587,7 @@ function toggleSelectedForReview(product: any) {
 function toggleSelectAll(isChecked: any) {
   if (isChecked) {
     selectedProductsReview.value = filteredSessionItems.value.filter(
-      (i) => !i.decisionOutcomeEnumId
+      (item) => !item.decisionOutcomeEnumId
     );
   } else {
     selectedProductsReview.value = [];
@@ -543,6 +612,7 @@ function closeSessionPopover() {
 function closeEditImportItemModal() {
   isEditImportItemModalOpen.value = false;
   closeSessionPopover();
+  editAdjustment.value = 0;
 }
 
 async function showEditImportItemsModal() {
@@ -564,34 +634,66 @@ async function showEditImportItemsModal() {
 async function saveEditImportItems() {
   await loader.present("Saving...");
   try {
-    const items = selectedSession.value.importItems.filter((i) => i.changed);
+    const newTotal = newSessionTotal.value;
 
     await useInventoryCountImport().updateSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
-      items,
+      items: [{
+        ...selectedSession.value.importItems[0],
+        quantity: newTotal
+      }],
     });
 
-    const updatedTotal = selectedSession.value.importItems.reduce(
-      (sum: number, i: any) => sum + (Number(i.quantity) || 0),
+    selectedSession.value.counted = newTotal;
+
+    const index = sessions.value.findIndex(
+      (session: any) => session.inventoryCountImportId === selectedSession.value.inventoryCountImportId
+    );
+    if (index !== -1) {
+      sessions.value[index] = {
+        ...sessions.value[index],
+        counted: newTotal
+      };
+    }
+
+    const parent = selectedProductCountReview.value;
+
+    // recompute total counted from all sessions for this product
+    const headerTotal = sessions.value.reduce(
+      (sum: number, session: any) => sum + Number(session.counted || 0),
       0
     );
 
-    selectedSession.value.counted = updatedTotal;
+    parent.quantity = headerTotal;
+    parent.proposedVarianceQuantity = headerTotal - parent.quantityOnHand;
 
-    if (sessions?.value?.length) {
-      const total = sessions.value.reduce(
-        (sum: number, s: any) => sum + Number(s.counted || 0),
-        0
-      );
-      selectedProductCountReview.value.quantity = total;
-      selectedProductCountReview.value.proposedVarianceQuantity =
-        total - selectedProductCountReview.value.quantityOnHand;
+    const listIndex = filteredSessionItems.value.findIndex(
+      sessionItem => sessionItem.productId === parent.productId
+    );
+    if (listIndex !== -1) {
+      filteredSessionItems.value[listIndex] = {
+        ...filteredSessionItems.value[listIndex],
+        quantity: parent.quantity,
+        proposedVarianceQuantity: parent.proposedVarianceQuantity
+      };
+    }
+
+    const aggIndex = aggregatedSessionItems.value.findIndex(
+      aggregatedItem => aggregatedItem.productId === parent.productId
+    );
+    if (aggIndex !== -1) {
+      aggregatedSessionItems.value[aggIndex] = {
+        ...aggregatedSessionItems.value[aggIndex],
+        quantity: parent.quantity,
+        proposedVarianceQuantity: parent.proposedVarianceQuantity
+      };
     }
 
     closeEditImportItemModal();
   } catch {
     showToast("Failed to update count");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -605,23 +707,55 @@ async function removeProductFromSession() {
       facilityId: workEffort.value.facilityId,
     });
 
-    const deleteResp = await useInventoryCountImport().deleteSessionItem({
+    await useInventoryCountImport().deleteSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
       data: resp.data,
     });
 
+    const parent = selectedProductCountReview.value;
+    const removedSessionId = selectedSession.value.inventoryCountImportId;
+
     sessions.value = sessions.value.filter(
-      (s: any) =>
-        s.inventoryCountImportId !==
-        selectedSession.value.inventoryCountImportId
+      (session: any) => session.inventoryCountImportId !== removedSessionId
     );
 
-    if (!sessions.value.length) {
+    if (sessions.value.length > 0) {
+      const newTotal = sessions.value.reduce(
+        (sum: number, session: any) => sum + Number(session.counted || 0),
+        0
+      );
+
+      parent.quantity = newTotal;
+      parent.proposedVarianceQuantity = newTotal - parent.quantityOnHand;
+
+      const aggregatedIndex = aggregatedSessionItems.value.findIndex(
+        (item) => item.productId === parent.productId
+      );
+      if (aggregatedIndex !== -1) {
+        aggregatedSessionItems.value[aggregatedIndex] = {
+          ...aggregatedSessionItems.value[aggregatedIndex],
+          quantity: parent.quantity,
+          proposedVarianceQuantity: parent.proposedVarianceQuantity,
+        };
+      }
+
+      const filterIndex = filteredSessionItems.value.findIndex(
+        (item) => item.productId === parent.productId
+      );
+      if (filterIndex !== -1) {
+        filteredSessionItems.value[filterIndex] = {
+          ...filteredSessionItems.value[filterIndex],
+          quantity: parent.quantity,
+          proposedVarianceQuantity: parent.proposedVarianceQuantity,
+        };
+      }
+
+    } else {
       aggregatedSessionItems.value = aggregatedSessionItems.value.filter(
-        (i) => i.productId !== selectedSession.value.productId
+        (item) => item.productId !== parent.productId
       );
       filteredSessionItems.value = filteredSessionItems.value.filter(
-        (i) => i.productId !== selectedSession.value.productId
+        (item) => item.productId !== parent.productId
       );
     }
 
@@ -629,6 +763,7 @@ async function removeProductFromSession() {
   } catch {
     showToast("Failed to remove item");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -667,18 +802,18 @@ async function getInventoryCycleCount() {
     }
 
     if (aggregatedSessionItems.value.length) {
-      const minTimes = aggregatedSessionItems.value.map((i) => i.minLastUpdatedAt);
-      const maxTimes = aggregatedSessionItems.value.map((i) => i.maxLastUpdatedAt);
+      const minTimes = aggregatedSessionItems.value.map((item) => item.minLastUpdatedAt);
+      const maxTimes = aggregatedSessionItems.value.map((item) => item.maxLastUpdatedAt);
 
       firstCountedAt.value = Math.min(...minTimes);
       lastCountedAt.value = Math.max(...maxTimes);
     }
 
     submittedItemsCount.value = aggregatedSessionItems.value.filter(
-      (i) => i.decisionOutcomeEnumId
+      (item) => item.decisionOutcomeEnumId
     ).length;
-    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
-      (a.internalName || '').localeCompare(b.internalName || '')
+    filteredSessionItems.value = [...aggregatedSessionItems.value].sort((predecessor, successor) =>
+      (predecessor.internalName || '').localeCompare(successor.internalName || '')
     );
   } catch {
     aggregatedSessionItems.value = [];
@@ -732,7 +867,7 @@ async function submitSingleProductReview(
   } catch {
     showToast("Error submitting review");
   }
-
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -740,13 +875,13 @@ async function submitSelectedProductReviews(outcome: any) {
   await loader.present("Submitting Review...");
 
   try {
-    const items = selectedProductsReview.value.map((p) => ({
+    const items = selectedProductsReview.value.map((product) => ({
       workEffortId: props.workEffortId,
-      productId: p.productId,
+      productId: product.productId,
       facilityId: workEffort.value.facilityId,
-      varianceQuantity: p.proposedVarianceQuantity,
-      systemQuantity: p.quantityOnHand,
-      countedQuantity: p.quantity,
+      varianceQuantity: product.proposedVarianceQuantity,
+      systemQuantity: product.quantityOnHand,
+      countedQuantity: product.quantity,
       decisionOutcomeEnumId: outcome,
       decisionReasonEnumId: "PARTIAL_SCOPE_POST",
     }));
@@ -760,11 +895,11 @@ async function submitSelectedProductReviews(outcome: any) {
         inventoryCountProductsList: batch,
       });
 
-      const processedIds = batch.map((b) => b.productId);
+      const processedIds = batch.map((batch) => batch.productId);
 
-      filteredSessionItems.value.forEach((i) => {
-        if (processedIds.includes(i.productId)) {
-          i.decisionOutcomeEnumId = outcome;
+      filteredSessionItems.value.forEach((item) => {
+        if (processedIds.includes(item.productId)) {
+          item.decisionOutcomeEnumId = outcome;
         }
       });
 
@@ -777,6 +912,7 @@ async function submitSelectedProductReviews(outcome: any) {
   } catch {
     showToast("Some items failed");
   }
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
   loader.dismiss();
 }
@@ -841,20 +977,20 @@ async function performBulkCloseAction() {
         inventoryCountProductsList: batch,
       });
 
-      const ids = batch.map((b) => b.productId);
+      const ids = batch.map((batch) => batch.productId);
 
-      aggregatedSessionItems.value.forEach((i) => {
-        if (ids.includes(i.productId)) i.decisionOutcomeEnumId = bulkAction.value;
+      aggregatedSessionItems.value.forEach((item) => {
+        if (ids.includes(item.productId)) item.decisionOutcomeEnumId = bulkAction.value;
       });
 
       submittedItemsCount.value += batch.length;
     }
 
     await closeCycleCount();
-  } catch {
+  } catch (error: any) {
     showToast("Bulk action failed");
   }
-
+  aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
 }
 
@@ -864,13 +1000,13 @@ async function forceCloseWithoutAction() {
 }
 
 /* HELPERS */
-function stopAccordianEventProp(e) {
-  e.stopPropagation();
+function stopAccordianEventProp(event: Event) {
+  event.stopPropagation();
 }
 
 function getFacilityName(id: any) {
   const facilities = useProductStore().getFacilities || [];
-  return facilities.find((f) => f.facilityId === id)?.facilityName || id;
+  return facilities.find((facility) => facility.facilityId === id)?.facilityName || id;
 }
 
 function getTimeDifference(actual: any, expected: any) {
@@ -880,7 +1016,7 @@ function getTimeDifference(actual: any, expected: any) {
     const diff = dtActual.diff(dtExpected, ['days', 'hours', 'minutes']);
   
     const isLate = diff.toMillis() > 0;
-    const absDiff = diff.mapUnits(x => Math.abs(x));
+    const absDiff = diff.mapUnits(number => Math.abs(number));
   
     const duration = absDiff.toFormat("d'd' h'h' m'm'")
       .replace(/\b0[dhm]\s*/g, '')

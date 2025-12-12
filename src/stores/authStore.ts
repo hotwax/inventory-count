@@ -8,6 +8,7 @@ import { translate } from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './productStore';
 import { Settings } from 'luxon';
+import { initialize } from '@/services/appInitializer';
 
 export interface LoginPayload {
   token: any;
@@ -136,6 +137,8 @@ export const useAuthStore = defineStore('authStore', {
         await useProductStore().getProductIdentifierSettings();
         await useProductStore().getSettings(useProductStore().getCurrentProductStore?.productStoreId);
         await useInventoryCountRun().loadStatusDescription();
+
+        await initialize();
 
       } catch (err) {
         console.error("Error in Login: ", err);
