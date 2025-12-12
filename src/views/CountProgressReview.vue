@@ -164,7 +164,9 @@
                           {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
                           {{ translate("QoH") }}
                         </ion-label>
-                        <ion-checkbox slot="start"
+                        <ion-checkbox
+                            v-if="isCountStarted || isCountStatusBeyondCreated"
+                            slot="start"
                             :checked="outOfStockSelections[item.productId]"
                             :disabled="isSubmitted"
                             @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
