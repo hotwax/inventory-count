@@ -521,8 +521,6 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
 }
 
 async function handleRefresh(event) {
-  pageIndex.value = 0;
-  cycleCounts.value = [];
   await getCycleCounts(true);
   await event.target.complete();
 }
