@@ -14,7 +14,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
+        <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
         <ion-item>
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
@@ -113,6 +113,8 @@ const filterOptions = {
   ]
 }
 
+const searchQuery = ref("") as any;
+
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
   userProfile.updateUiFilter('pendingReview', key, value)
@@ -131,6 +133,17 @@ onIonViewDidEnter(async () => {
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
 })
+
+function applyLocalSearch() {
+  pageIndex.value = 0;
+  getPendingCycleCounts();
+}
+
+function clearLocalSearch() {
+  searchQuery.value = "";
+  pageIndex.value = 0;
+  getPendingCycleCounts();
+}
 
 function enableScrolling() {
   const parentElement = contentRef.value.$el

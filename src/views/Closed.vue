@@ -15,7 +15,7 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
       <ion-list>
         <div class="filters">
-          <ion-searchbar :placeholder="translate('Search')" @keyup.enter="updateFilters('keyword', $event.target.value?.trim() || '')"/>
+          <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
           <ion-item>
             <ion-label>{{ translate('Facility') }}</ion-label>
             <ion-chip slot="end" outline @click="isFacilityModalOpen = true">
@@ -161,6 +161,8 @@ const facilities = computed(() => productStore.getFacilities || []);
 
 const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
+const searchQuery = ref("") as any;
+
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
   pageIndex.value = 0;
@@ -182,6 +184,16 @@ function enableScrolling() {
   } else {
     isScrollingEnabled.value = true;
   }
+}
+function applyLocalSearch() {
+  pageIndex.value = 0;
+  getClosedCycleCounts();
+}
+
+function clearLocalSearch() {
+  searchQuery.value = "";
+  pageIndex.value = 0;
+  getClosedCycleCounts();
 }
 
 async function refreshList() {
@@ -215,8 +227,8 @@ function buildFilterParams() {
   if (filters.value.closedDateTo) {
     params.closedDateTo = formatDateTime(filters.value.closedDateTo, true);
   }
-  if (filters.value.keyword) {
-    params.keyword = filters.value.keyword;
+  if (searchQuery.value?.trim()) {
+    params.keyword = searchQuery.value.trim();
   }
 
   return params;
