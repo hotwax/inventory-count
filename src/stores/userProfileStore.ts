@@ -59,7 +59,7 @@ export const useUserProfile = defineStore('userProfile', {
     getListPageFilters: (state) => (segment: string) => {
       return state.uiFilters[segment] || {}
     },
-    getReviewDetailFilters: (state) => state.uiFilters.reviewDetail
+    getDetailPageFilters: (state) => state.uiFilters.reviewDetail
   },
 
   actions: {
