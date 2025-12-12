@@ -184,7 +184,7 @@
               <ion-content>
                 <ion-list>
                   <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
-                  <ion-item size="small">{{ translate('Last Counted') }}: {{ selectedSession?.counted }}</ion-item>
+                  <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-item>
                 </ion-list>
               </ion-content>
             </ion-popover>
