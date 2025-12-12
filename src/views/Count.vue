@@ -7,6 +7,9 @@
     </ion-header>
 
     <ion-content class="ion-padding" ref="pageRef" :scroll-events="true" @ionScroll="enableScrolling()">
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+        <ion-refresher-content refreshing-spinner="circular"></ion-refresher-content>
+      </ion-refresher>
       <template v-if="isLoading">
         <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
       </template>
@@ -168,7 +171,7 @@
 </template>
 
 <script setup>
-import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonInput, alertController } from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate } from '@/i18n';
 import { computed, ref } from "vue";
@@ -515,6 +518,13 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     console.error('Error checking session lock before navigation:', err);
     showToast("Failed to check session lock. Please try again.");
   }
+}
+
+async function handleRefresh(event) {
+  pageIndex.value = 0;
+  cycleCounts.value = [];
+  await getCycleCounts(true);
+  await event.target.complete();
 }
 </script>
 
