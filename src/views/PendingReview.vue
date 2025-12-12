@@ -96,7 +96,7 @@ const pageIndex = ref(0)
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
 
 const userProfile = useUserProfile();
-const filters = computed(() => userProfile.uiFilters.pendingReview)
+const filters = computed(() => userProfile.getListPageFilters('pendingReview'));
 
 const isFacilityModalOpen = ref(false);
 

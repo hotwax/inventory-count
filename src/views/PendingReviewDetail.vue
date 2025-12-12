@@ -115,7 +115,7 @@
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
             { label: translate('Variance (High → Low)'), value: 'variance-desc' }
           ]"
-          :threshold-config="userProfile.uiFilters.reviewDetail.threshold"
+          :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
           @select-all="toggleSelectAll"
         />

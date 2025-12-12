@@ -180,7 +180,7 @@ const emit = defineEmits([
 ]);
 
 /* DIRECT STATE REFERENCE */
-const filters = computed(() => userProfile.getReviewDetailFilters);
+const filters = computed(() => userProfile.getDetailPageFilters);
 const search = ref("");
 
 function handleSearch(value) {

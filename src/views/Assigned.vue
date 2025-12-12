@@ -17,7 +17,7 @@
         <ion-searchbar :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"
         />
         <ion-item>
-          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover">
+          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select> 
         </ion-item>
@@ -185,7 +185,7 @@ async function updateQuery(key: any, value: any) {
 
 const userProfile = useUserProfile();
 
-const filters = computed(() => userProfile.uiFilters.assigned)
+const filters = computed(() => userProfile.getListPageFilters('assigned'));
 
 const isFacilityFilterModalOpen = ref(false);
 

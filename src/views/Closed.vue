@@ -17,17 +17,22 @@
         <div class="filters">
           <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
           <ion-item>
+            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All">
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
             <ion-label>{{ translate('Facility') }}</ion-label>
             <ion-chip slot="end" outline @click="isFacilityModalOpen = true">
               <ion-label>{{ facilityChipLabel }}</ion-label>
             </ion-chip>
           </ion-item>
 
-          <ion-item>
-            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
-          </ion-select>
-          </ion-item>
           
           <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
             {{ translate("More filters") }}
@@ -146,13 +151,18 @@ const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);
 
 const userProfile = useUserProfile();
-const filters = computed(() => userProfile.uiFilters.closed)
+const filters = computed(() => userProfile.getListPageFilters('closed'));
 
 const filterOptions = {
   typeOptions : [
     { label: "All Types",  value: "" },
     { label: "Hard Count", value: "HARD_COUNT" },
     { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ],
+  statusOptions: [
+    { label: "All", value: "" },
+    { label: "Cancelled", value: "CYCLE_CNT_CNCL" },
+    { label: "Closed", value: "CYCLE_CNT_CLOSED" }
   ]
 }
 
@@ -211,6 +221,11 @@ function buildFilterParams() {
     params.facilityId_op = 'in';
   }
 
+  if (filters.value.status) {
+    params.statusId = filters.value.status;
+    params.statusId_op = 'in';
+  }
+
   if (filters.value.countType) {
     params.countType = filters.value.countType;
   }
@@ -238,7 +253,7 @@ async function getClosedCycleCounts() {
   const baseParams = {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
-    statusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
+    statusId: filters.value.status || "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
     statusId_op: "in"
   };
 

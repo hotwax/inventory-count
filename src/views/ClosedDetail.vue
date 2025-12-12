@@ -93,7 +93,7 @@
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
             { label: translate('Variance (High → Low)'), value: 'variance-desc' }
           ]"
-          :threshold-config="userProfile.uiFilters.reviewDetail.threshold"
+          :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
         />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
