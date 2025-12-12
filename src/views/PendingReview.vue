@@ -14,7 +14,7 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar">
-        <ion-searchbar @keyup.enter="updateQuery('countQueryString', $event.target.value)" @ion-clear="updateQuery('countQueryString', '')"></ion-searchbar>
+        <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
         <ion-item>
           <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
@@ -83,6 +83,7 @@ import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
 import { getDateWithOrdinalSuffix } from "@/services/utils";
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
+import { useUserProfile } from "@/stores/userProfileStore";
 
 const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
@@ -94,11 +95,8 @@ const infiniteScrollRef = ref({}) as any
 const pageIndex = ref(0)
 const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20)
 
-const filters: any = ref({
-  countQueryString: '',
-  countType: '',
-  facilityIds: [] as string[],
-});
+const userProfile = useUserProfile();
+const filters = computed(() => userProfile.getListPageFilters('pendingReview'));
 
 const isFacilityModalOpen = ref(false);
 
@@ -115,9 +113,11 @@ const filterOptions = {
   ]
 }
 
+const searchQuery = ref("") as any;
+
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
-  filters.value[key] = value;
+  userProfile.updateUiFilter('pendingReview', key, value)
   pageIndex.value = 0;
   await getPendingCycleCounts();
   loader.dismiss();
@@ -132,8 +132,18 @@ onIonViewDidEnter(async () => {
 
 onIonViewWillLeave(async () => {
   await useInventoryCountRun().clearCycleCountList();
-  filters.value.countQueryString = '';
 })
+
+function applyLocalSearch() {
+  pageIndex.value = 0;
+  getPendingCycleCounts();
+}
+
+function clearLocalSearch() {
+  searchQuery.value = "";
+  pageIndex.value = 0;
+  getPendingCycleCounts();
+}
 
 function enableScrolling() {
   const parentElement = contentRef.value.$el
@@ -194,7 +204,7 @@ async function getPendingCycleCounts() {
 }
 
 async function applyFacilitySelection(selectedFacilityIds: string[]) {
-  filters.value.facilityIds = [...selectedFacilityIds];
+  userProfile.updateUiFilter('pendingReview', 'facilityIds', selectedFacilityIds);
   pageIndex.value = 0;
   await loader.present("Loading...");
   await getPendingCycleCounts();

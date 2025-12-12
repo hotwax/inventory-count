@@ -6,14 +6,17 @@
       <!-- SEARCH -->
       <ion-searchbar
         v-if="showSearch"
-        v-model="localSearch"
-        :placeholder="placeholderSearch"
+          :inputmode="'search'"
+          :value="search"
+          @ionInput="handleSearch($event.target.value)"
+          :placeholder="placeholderSearch"
       />
 
       <!-- STATUS FILTER -->
       <ion-item v-if="showStatus">
         <ion-select
-          v-model="localStatus"
+          :value="filters.status"
+          @ionChange="updateFilter('status', $event.detail.value)"
           :label="statusLabel"
           placeholder="All"
           interface="popover"
@@ -32,11 +35,11 @@
       <!-- COMPLIANCE FILTER -->
       <ion-item v-if="showCompliance">
         <ion-select
-          v-model="localCompliance"
+          :value="filters.compliance"
+          @ionChange="handleComplianceChange($event.detail.value)"
           :label="computedComplianceLabel"
           placeholder="All"
           interface="popover"
-          @ionChange="handleComplianceChange"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
           <ion-select-option value="acceptable">{{ compliantLabel }}</ion-select-option>
@@ -73,7 +76,8 @@
       <!-- SORT -->
       <ion-select
         v-if="showSort"
-        v-model="localSort"
+        :value="filters.sort"
+        @ionChange="updateFilter('sort', $event.detail.value)"
         slot="end"
         :label="sortByLabel"
         interface="popover"
@@ -140,45 +144,54 @@ import {
   IonButton, IonIcon, IonContent, IonInput, IonFab, IonFabButton
 } from "@ionic/vue";
 
-import { ref, watch, computed, defineProps, defineEmits, onMounted, reactive } from "vue";
+import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
 import { translate as t } from "@/i18n";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
+import { useUserProfile } from "@/stores/userProfileStore";
+
+const userProfile = useUserProfile();
 
 /* PROPS */
 const props = defineProps({
   items: Array,
   selectedItems: Array,
-
   showSearch: Boolean,
   showStatus: Boolean,
   showCompliance: Boolean,
   showSort: Boolean,
   showSelect: Boolean,
 
-  placeholderSearch: {
-    type: String,
-    default: () => t("Search product name")
-  },
-  statusLabel: {
-    type: String,
-    default: () => t("Status")
-  },
-  sortByLabel: {
-    type: String,
-    default: () => t("Sort By")
-  },
+  placeholderSearch: { type: String, default: () => t("Search product name") },
+  statusLabel: { type: String, default: () => t("Status") },
+  sortByLabel: { type: String, default: () => t("Sort By") },
 
   statusOptions: Array,
   sortOptions: Array,
   thresholdConfig: {
-  type: Object,
-  default: () => ({ unit: "units", value: 2 })
-},
+    type: Object,
+    default: () => ({ unit: "units", value: 2 })
+  },
 });
 
+const emit = defineEmits([
+  "update:filtered",
+  "select-all",
+  "update:threshold"
+]);
+
+/* DIRECT STATE REFERENCE */
+const filters = computed(() => userProfile.getDetailPageFilters);
+const search = ref("");
+
+function handleSearch(value) {
+  search.value = value;
+  applyFilters();
+}
+
+/* THRESHOLD CONFIG */
 const internalThreshold = reactive({
-  unit: "units",
-  value: 2,
+  unit: filters.value.threshold.unit,
+  value: filters.value.threshold.value
 });
 
 const compliantLabel = computed(() => {
@@ -191,65 +204,33 @@ const nonCompliantLabel = computed(() => {
   return `${t("Uncompliant")} (> ${internalThreshold.value}${unit})`;
 });
 
-const emit = defineEmits([
-  "update:filtered",
-  "select-all",
-  "update:threshold"
-]);
-
-/* LOCAL STATE */
-const localSearch = ref("");
-const localStatus = ref("all");
-const localCompliance = ref("all");
-const localSort = ref("alphabetic");
-
-/* THRESHOLD MODAL */
-const isThresholdModalOpen = ref(false);
-const tempThreshold = ref({ unit: "units", value: 0 });
-
-/* LABEL */
 const computedComplianceLabel = computed(() => {
   const unit = internalThreshold.unit === "percent" ? "%" : " units";
   return `${t("Compliance")} (${internalThreshold.value}${unit})`;
 });
 
-onMounted(() => {
-  internalThreshold.unit = props.thresholdConfig.unit;
-  internalThreshold.value = props.thresholdConfig.value;
-});
+/* THRESHOLD MODAL */
+const isThresholdModalOpen = ref(false);
+const tempThreshold = reactive({ unit: "units", value: 0 });
 
-/* OPEN / CLOSE MODAL */
 function openThresholdModal() {
-  tempThreshold.value = {
-    unit: internalThreshold.unit,
-    value: internalThreshold.value
-  };
+  tempThreshold.unit = internalThreshold.unit;
+  tempThreshold.value = internalThreshold.value;
   isThresholdModalOpen.value = true;
 }
-
 
 function closeThresholdModal() {
   isThresholdModalOpen.value = false;
 }
 
-/* SAVE THRESHOLD */
 function saveThreshold() {
-  // Copy from temp → internal
-  internalThreshold.unit = tempThreshold.value.unit;
-  internalThreshold.value = tempThreshold.value.value;
+  internalThreshold.unit = tempThreshold.unit;
+  internalThreshold.value = tempThreshold.value;
 
-  const newConfig = {
-    unit: internalThreshold.unit,
-    value: internalThreshold.value
-  };
+  // persist to store
+  userProfile.updateThreshold({ ...internalThreshold });
 
-  localStorage.setItem(
-    "cyclecount_compliance_threshold",
-    JSON.stringify(newConfig)
-  );
-
-  emit("update:threshold", newConfig);
-
+  emit("update:threshold", { ...internalThreshold });
   applyFilters();
   closeThresholdModal();
 }
@@ -259,25 +240,15 @@ function toggleSelectAll(ev) {
   emit("select-all", ev.detail.checked);
 }
 
-/* COMPLIANCE CLICK LOGIC */
-function handleComplianceChange(ev) {
-  if (ev.detail.value === "configure") {
-    localCompliance.value = "all";
-    openThresholdModal();
-  }
-}
-
 /* COMPLIANCE CHECKER */
 function isCompliant(item) {
   const limit = internalThreshold.value;
   const variance = Math.abs(item.proposedVarianceQuantity);
 
-  if (internalThreshold.unit === "units") {
-    return variance <= limit;
-  }
+  if (internalThreshold.unit === "units") return variance <= limit;
 
   if (internalThreshold.unit === "percent") {
-    if (item.quantityOnHand === 0) return variance === 0;
+    if (!item.quantityOnHand) return variance === 0;
     return Math.abs((variance / item.quantityOnHand) * 100) <= limit;
   }
 
@@ -289,7 +260,7 @@ function applyFilters() {
   let results = [...props.items];
 
   // Search
-  const key = localSearch.value.trim().toLowerCase();
+  const key = search.value.trim().toLowerCase();
   if (props.showSearch && key) {
     results = results.filter(item =>
       item.internalName?.toLowerCase().includes(key) ||
@@ -299,41 +270,50 @@ function applyFilters() {
 
   // Status
   if (props.showStatus) {
-    if (localStatus.value === "accepted") results = results.filter(item => item.decisionOutcomeEnumId === "APPLIED");
-    if (localStatus.value === "rejected") results = results.filter(item => item.decisionOutcomeEnumId === "SKIPPED");
-    if (localStatus.value === "open") results = results.filter(item => !item.decisionOutcomeEnumId);
+    const status = filters.value.status;
+
+    if (status === "accepted") results = results.filter(item => item.decisionOutcomeEnumId === "APPLIED");
+    if (status === "rejected") results = results.filter(item => item.decisionOutcomeEnumId === "SKIPPED");
+    if (status === "open") results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
   // Compliance
   if (props.showCompliance) {
-    if (localCompliance.value === "acceptable") {
-      results = results.filter(item => isCompliant(item, internalThreshold.unit));
-    } else if (localCompliance.value === "rejectable") {
-      results = results.filter(item => !isCompliant(item, internalThreshold.unit));
-    }
+    const compliance = filters.value.compliance;
+
+    if (compliance === "acceptable") results = results.filter(isCompliant);
+    if (compliance === "rejectable") results = results.filter(item => !isCompliant(item));
   }
 
   // Sort
   if (props.showSort) {
-    if (localSort.value === "alphabetic")
-      results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
+    const sort = filters.value.sort;
 
-    if (localSort.value === "variance-asc")
-      results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
-
-    if (localSort.value === "variance-desc")
-      results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
+    if (sort === "alphabetic") results.sort((predecessor, successor) => (predecessor.internalName || "").localeCompare(successor.internalName || ""));
+    if (sort === "variance-asc") results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
+    if (sort === "variance-desc") results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
   }
-
   emit("update:filtered", results);
 }
 
-/* WATCH FILTERS + THRESHOLD */
-watch([localSearch, localStatus, localCompliance, localSort, () => props.items], applyFilters, { deep: true });
-watch(
-  () => [internalThreshold.unit, internalThreshold.value],
-  applyFilters
-);
+function updateFilter(key, value) {
+  userProfile.updateUiFilter("reviewDetail", key, value);
+  applyFilters();
+}
+
+onMounted(() => {
+  applyFilters();
+});
+
+function handleComplianceChange(value) {
+  if (value === "configure") {
+    openThresholdModal();
+    return;
+  }
+
+  updateFilter("compliance", value);
+}
+
 /* ALL SELECTED? */
 const isAllSelected = computed(() =>
   props.items.length > 0 &&

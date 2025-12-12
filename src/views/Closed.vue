@@ -15,7 +15,17 @@
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
       <ion-list>
         <div class="filters">
-          <ion-searchbar :placeholder="translate('Search')" @keyup.enter="updateFilters('keyword', $event.target.value?.trim() || '')"/>
+          <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
+          <ion-item>
+            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All">
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
           <ion-item>
             <ion-label>{{ translate('Facility') }}</ion-label>
             <ion-chip slot="end" outline @click="isFacilityModalOpen = true">
@@ -23,11 +33,6 @@
             </ion-chip>
           </ion-item>
 
-          <ion-item>
-            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.detail.value)" interface="popover">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
-          </ion-select>
-          </ion-item>
           
           <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
             {{ translate("More filters") }}
@@ -117,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
+import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
@@ -130,6 +135,7 @@ import { DateTime } from 'luxon';
 import { hasError } from '@/stores/authStore';
 import logger from '@/logger';
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
+import { useUserProfile } from '@/stores/userProfileStore';
 
 const isScrollingEnabled = ref(false);
 const contentRef = ref({}) as any
@@ -144,29 +150,28 @@ const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
 const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);
 
-// Filters state
-const filters = reactive({
-  facilityIds: [] as string[],
-  countType: '',
-  createdDateFrom: '',
-  createdDateTo: '',
-  closedDate: '',
-  closedDateTo: '',
-  keyword: ''
-});
+const userProfile = useUserProfile();
+const filters = computed(() => userProfile.getListPageFilters('closed'));
 
 const filterOptions = {
   typeOptions : [
     { label: "All Types",  value: "" },
     { label: "Hard Count", value: "HARD_COUNT" },
     { label: "Directed Count", value: "DIRECTED_COUNT" }
+  ],
+  statusOptions: [
+    { label: "All", value: "" },
+    { label: "Cancelled", value: "CYCLE_CNT_CNCL" },
+    { label: "Closed", value: "CYCLE_CNT_CLOSED" }
   ]
 }
 
 const productStore = useProductStore();
 const facilities = computed(() => productStore.getFacilities || []);
 
-const facilityChipLabel = computed(() => getFacilityChipLabel(filters.facilityIds, facilities.value));
+const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
+
+const searchQuery = ref("") as any;
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
@@ -190,6 +195,16 @@ function enableScrolling() {
     isScrollingEnabled.value = true;
   }
 }
+function applyLocalSearch() {
+  pageIndex.value = 0;
+  getClosedCycleCounts();
+}
+
+function clearLocalSearch() {
+  searchQuery.value = "";
+  pageIndex.value = 0;
+  getClosedCycleCounts();
+}
 
 async function refreshList() {
   pageIndex.value = 0;
@@ -201,29 +216,34 @@ async function refreshList() {
 function buildFilterParams() {
   const params: any = {};
 
-  if (filters.facilityIds.length) {
-    params.facilityId = filters.facilityIds.join(',');
+  if (filters.value.facilityIds.length) {
+    params.facilityId = filters.value.facilityIds.join(',');
     params.facilityId_op = 'in';
   }
 
-  if (filters.countType) {
-    params.countType = filters.countType;
+  if (filters.value.status) {
+    params.statusId = filters.value.status;
+    params.statusId_op = 'in';
   }
 
-  if (filters.createdDateFrom) {
-    params.createdDateFrom = formatDateTime(filters.createdDateFrom, false);
+  if (filters.value.countType) {
+    params.countType = filters.value.countType;
   }
-  if (filters.createdDateTo) {
-    params.createdDateTo = formatDateTime(filters.createdDateTo, true);
+
+  if (filters.value.createdDateFrom) {
+    params.createdDateFrom = formatDateTime(filters.value.createdDateFrom, false);
   }
-  if (filters.closedDate) {
-    params.closedDate = formatDateTime(filters.closedDate, false);
+  if (filters.value.createdDateTo) {
+    params.createdDateTo = formatDateTime(filters.value.createdDateTo, true);
   }
-  if (filters.closedDateTo) {
-    params.closedDateTo = formatDateTime(filters.closedDateTo, true);
+  if (filters.value.closedDate) {
+    params.closedDate = formatDateTime(filters.value.closedDate, false);
   }
-  if (filters.keyword) {
-    params.keyword = filters.keyword;
+  if (filters.value.closedDateTo) {
+    params.closedDateTo = formatDateTime(filters.value.closedDateTo, true);
+  }
+  if (searchQuery.value?.trim()) {
+    params.keyword = searchQuery.value.trim();
   }
 
   return params;
@@ -233,7 +253,7 @@ async function getClosedCycleCounts() {
   const baseParams = {
     pageSize: pageSize.value,
     pageIndex: pageIndex.value,
-    statusId: "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
+    statusId: filters.value.status || "CYCLE_CNT_CLOSED,CYCLE_CNT_CNCL",
     statusId_op: "in"
   };
 
@@ -278,14 +298,14 @@ function getFacilityName(id: string) {
 function validateDateFilters() {
   const today = DateTime.now().startOf('day');
 
-  if (filters.createdDateFrom) {
-    const createdFrom = DateTime.fromISO(filters.createdDateFrom);
+  if (filters.value.createdDateFrom) {
+    const createdFrom = DateTime.fromISO(filters.value.createdDateFrom);
     if (createdFrom > today) {
       showToast(translate("Created after date cannot be in the future."));
       return false;
     }
-    if (filters.createdDateTo) {
-      const createdTo = DateTime.fromISO(filters.createdDateTo);
+    if (filters.value.createdDateTo) {
+      const createdTo = DateTime.fromISO(filters.value.createdDateTo);
       if (createdFrom > createdTo) {
         showToast(translate("Created after date cannot be later than created before date."));
         return false;
@@ -293,9 +313,9 @@ function validateDateFilters() {
     }
   }
 
-  if (filters.closedDate && filters.closedDateTo) {
-    const closedFrom = DateTime.fromISO(filters.closedDate);
-    const closedTo = DateTime.fromISO(filters.closedDateTo);
+  if (filters.value.closedDate && filters.value.closedDateTo) {
+    const closedFrom = DateTime.fromISO(filters.value.closedDate);
+    const closedTo = DateTime.fromISO(filters.value.closedDateTo);
     if (closedFrom > closedTo) {
       showToast(translate("Closed after date cannot be later than closed before date."));
       return false;
@@ -320,8 +340,8 @@ function buildExportPayload() {
   return buildFilterParams();
 }
 
-async function updateFilters(key: keyof typeof filters, value: any) {
-  filters[key] = value;
+async function updateFilters(key: any, value: any) {
+  userProfile.updateUiFilter("closed", key, value)
   await refreshList();
 }
 
@@ -350,7 +370,7 @@ async function exportCycleCounts() {
 }
 
 async function applyFacilitySelection(selectedFacilityIds: string[]) {
-  filters.facilityIds = [...selectedFacilityIds];
+  userProfile.updateUiFilter("closed", "facilityIds", selectedFacilityIds);
   await refreshList();
 }
 </script>

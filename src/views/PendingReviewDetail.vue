@@ -115,6 +115,7 @@
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
             { label: translate('Variance (High → Low)'), value: 'variance-desc' }
           ]"
+          :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
           @select-all="toggleSelectAll"
         />
@@ -489,6 +490,7 @@ import Image from "@/components/Image.vue";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 /* props */
 const props = defineProps({
@@ -520,6 +522,8 @@ const submittedItemsCount = ref(0);
 const firstCountedAt = ref();
 const lastCountedAt = ref();
 const isRemoveSessionAlertOpen = ref(false);
+
+const userProfile = useUserProfile();
 
 /* computed */
 const openItems = computed(() =>

@@ -93,6 +93,7 @@
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
             { label: translate('Variance (High → Low)'), value: 'variance-desc' }
           ]"
+          :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
         />
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
@@ -211,6 +212,7 @@ import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 const props = defineProps({
   workEffortId: String
@@ -249,6 +251,8 @@ const workEffort = ref();
 
 const firstCountedAt = ref();
 const lastCountedAt = ref();
+
+const userProfile = useUserProfile();
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });

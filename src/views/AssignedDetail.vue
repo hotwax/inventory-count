@@ -95,6 +95,7 @@
             { label: translate('Variance (Low → High)'), value: 'variance-asc' },
             { label: translate('Variance (High → Low)'), value: 'variance-desc' }
           ]"
+          :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
         />
 
@@ -234,6 +235,7 @@ import Image from "@/components/Image.vue";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import router from "@/router";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 
 const facilities = computed(() => useProductStore().getFacilities);
@@ -248,6 +250,8 @@ const firstCountedAt = ref();
 const lastCountedAt = ref();
 
 const isCloseCountAlertOpen = ref(false);
+
+const userProfile = useUserProfile();
 
 onIonViewDidEnter(async () => {
   isLoading.value = true;

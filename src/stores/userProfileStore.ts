@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api, { client } from '@/services/RemoteAPI';
+import { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
@@ -12,18 +12,38 @@ export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     permissions: [] as any,
-    fieldMappings: {} as Record<string, any>,
-    currentMapping: {
-      id: '',
-      mappingType: '',
-      name: '',
-      value: {}
-    },
     localeOptions: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     currentTimeZoneId: '',
     timeZones: [],
     deviceId: '',
+    uiFilters: {
+      assigned: {
+        status: '',
+        countType: '',
+        facilityIds: [] as string[]
+      },
+      pendingReview: {
+        countType: '',
+        facilityIds: [] as string[]
+      },
+      closed: {
+        countType: '',
+        facilityIds: [],
+        createdFrom: '',
+        createdTo: '',
+        closedFrom: '',
+        closedTo: ''
+      },
+
+      /** Detail page filters (SmartFilterSortBar) */
+      reviewDetail: {
+        status: 'all',
+        compliance: 'all',
+        sort: 'alphabetic',
+        threshold: { unit: 'units', value: 2 }
+      }
+    } as any
   }),
 
   persist: true,
@@ -35,9 +55,11 @@ export const useUserProfile = defineStore('userProfile', {
     getCurrentTimeZone: (state) => state.currentTimeZoneId,
     getUserProfile: (state) => state.current,
     getUserPermissions: (state) => state.permissions,
-    getFieldMappings: (state) => (type?: string) =>
-      type ? state.fieldMappings[type] || {} : state.fieldMappings,
     getDeviceId: (state) => state.deviceId,
+    getListPageFilters: (state) => (segment: string) => {
+      return state.uiFilters[segment] || {}
+    },
+    getReviewDetailFilters: (state) => state.uiFilters.reviewDetail
   },
 
   actions: {
@@ -116,122 +138,6 @@ export const useUserProfile = defineStore('userProfile', {
 
     setDeviceId(deviceId: string) {
       this.deviceId = deviceId
-    },
-
-    async loadFieldMappings() {
-      let fieldMappings: Record<string, any> = {}
-      try {
-        const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
-        const payload = {
-          mappingPrefTypeEnumId: Object.values(mappingTypes),
-          mappingPrefTypeEnumId_op: 'in',
-          pageSize: 100
-        }
-        const mappingTypesFlip = Object.keys(mappingTypes).reduce((acc: any, key) => {
-          fieldMappings[key] = {}
-          acc[mappingTypes[key]] = key
-          return acc
-        }, {})
-
-        const resp = await api({
-          url: 'inventory-cycle-count/dataManagerMappings',
-          method: 'GET',
-          params: payload
-        })
-        if (!hasError(resp) && Array.isArray(resp?.data)) {
-          fieldMappings = resp?.data?.reduce((acc: any, mapping: any) => {
-            const mappingType = mappingTypesFlip[mapping.mappingPrefTypeEnumId]
-            if (!mappingType) return acc // <-- skip missing type safely
-
-            if (!acc[mappingType]) acc[mappingType] = {}
-
-            let parsedValue = {}
-            try {
-              parsedValue =
-                typeof mapping.mappingPrefValue === 'string' && mapping.mappingPrefValue.trim()
-                  ? JSON.parse(mapping.mappingPrefValue)
-                  : {}
-            } catch {
-              parsedValue = {}
-            }
-
-            acc[mappingType][mapping.mappingPrefId] = {
-              name: mapping.mappingPrefName,
-              value: parsedValue
-            }
-
-            return acc
-          }, fieldMappings)
-        }
-        this.fieldMappings = fieldMappings
-      } catch (err) {
-        logger.error('Failed to load field mappings', err)
-      }
-    },
-
-    async createFieldMapping(payload: any) {
-      try {
-        const mappingTypes = JSON.parse(process.env.VUE_APP_MAPPING_TYPES as string)
-        const mappingPrefTypeEnumId = mappingTypes[payload.mappingType]
-        const resp = await api({
-          url: 'inventory-cycle-count/dataManagerMappings',
-          method: 'POST',
-          data: {
-            mappingPrefName: payload.name,
-            mappingPrefValue: JSON.stringify(payload.value),
-            mappingPrefTypeEnumId
-          }
-        })
-        if (!hasError(resp)) {
-          const id = resp?.data.mappingPrefId
-          if (!this.fieldMappings[payload.mappingType])
-            this.fieldMappings[payload.mappingType] = {}
-          this.fieldMappings[payload.mappingType][id] = {
-            name: payload.name,
-            value: payload.value
-          }
-          showToast(translate('This CSV mapping has been saved.'))
-        }
-      } catch (err) {
-        showToast(translate('Failed to save CSV mapping.'))
-        logger.error(err)
-      }
-    },
-
-    async deleteFieldMapping(mappingType: string, id: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/dataManagerMappings/${id}`,
-          method: 'DELETE'
-        })
-        if (!hasError(resp)) {
-          delete this.fieldMappings[mappingType][id]
-          showToast(translate('This CSV mapping has been deleted.'))
-        }
-      } catch (err) {
-        showToast(translate('Failed to delete CSV mapping.'))
-        logger.error(err)
-      }
-    },
-
-    setCurrentMapping(mappingType: string, id: string) {
-      const mapping = this.fieldMappings[mappingType]?.[id]
-      if (mapping) {
-        this.currentMapping = {
-          id,
-          mappingType,
-          ...mapping
-        }
-      }
-    },
-
-    clearCurrentMapping() {
-      this.currentMapping = {
-        id: '',
-        mappingType: '',
-        name: '',
-        value: {}
-      }
     },
 
     async login(token: string, omsBaseUrl: string): Promise<string> {
@@ -369,6 +275,16 @@ export const useUserProfile = defineStore('userProfile', {
         logger.error('loadUserPermissions failed', err)
         throw err
       }
+    },
+
+    updateUiFilter(page: string, key: string, value: any) {
+      if (!this.uiFilters[page]) this.uiFilters[page] = {}
+      this.uiFilters[page][key] = value
+    },
+
+    /** For SmartFilterSortBar threshold updates */
+    updateThreshold(newConfig: any) {
+      this.uiFilters.reviewDetail.threshold = newConfig
     }
   }
 })
