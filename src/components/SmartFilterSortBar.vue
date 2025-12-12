@@ -179,8 +179,8 @@ const emit = defineEmits([
   "update:threshold"
 ]);
 
-/* DIRECT STATE REFERENCE — NO LOCAL COPY */
-const filters = userProfile.uiFilters.reviewDetail;
+/* DIRECT STATE REFERENCE */
+const filters = computed(() => userProfile.getReviewDetailFilters);
 const search = ref("");
 
 function handleSearch(value) {
@@ -190,8 +190,8 @@ function handleSearch(value) {
 
 /* THRESHOLD CONFIG */
 const internalThreshold = reactive({
-  unit: filters.threshold.unit,
-  value: filters.threshold.value
+  unit: filters.value.threshold.unit,
+  value: filters.value.threshold.value
 });
 
 const compliantLabel = computed(() => {
@@ -270,31 +270,31 @@ function applyFilters() {
 
   // Status
   if (props.showStatus) {
-    if (filters.status === "accepted") results = results.filter(item => item.decisionOutcomeEnumId === "APPLIED");
-    if (filters.status === "rejected") results = results.filter(item => item.decisionOutcomeEnumId === "SKIPPED");
-    if (filters.status === "open") results = results.filter(item => !item.decisionOutcomeEnumId);
+    const status = filters.value.status;
+
+    if (status === "accepted") results = results.filter(item => item.decisionOutcomeEnumId === "APPLIED");
+    if (status === "rejected") results = results.filter(item => item.decisionOutcomeEnumId === "SKIPPED");
+    if (status === "open") results = results.filter(item => !item.decisionOutcomeEnumId);
   }
 
   // Compliance
   if (props.showCompliance) {
-    if (filters.compliance === "acceptable") results = results.filter(isCompliant);
-    if (filters.compliance === "rejectable") results = results.filter(i => !isCompliant(i));
+    const compliance = filters.value.compliance;
+
+    if (compliance === "acceptable") results = results.filter(isCompliant);
+    if (compliance === "rejectable") results = results.filter(item => !isCompliant(item));
   }
 
   // Sort
   if (props.showSort) {
-    if (filters.sort === "alphabetic")
-      results.sort((predecessor, successor) => (predecessor.internalName || '').localeCompare(successor.internalName || ''));
+    const sort = filters.value.sort;
 
-    if (filters.sort === "variance-asc")
-      results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
-
-    if (filters.sort === "variance-desc")
-      results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
+    if (sort === "alphabetic") results.sort((predecessor, successor) => (predecessor.internalName || "").localeCompare(successor.internalName || ""));
+    if (sort === "variance-asc") results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
+    if (sort === "variance-desc") results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
   }
-
   emit("update:filtered", results);
-} 
+}
 
 function updateFilter(key, value) {
   userProfile.updateUiFilter("reviewDetail", key, value);
