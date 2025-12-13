@@ -22,7 +22,7 @@ export function useDiagnostics() {
     "Session lock heartbeat stream",
     "Product & facility inventory stream",
     "Cycle count variance statuses",
-    "Cycle count & session database relations"
+    // "Cycle count & session database relations"
     ];
 
   async function runDiagnostics() {

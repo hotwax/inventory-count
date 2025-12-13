@@ -62,7 +62,7 @@
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
               <ion-label class="ion-text-end">
-                {{ translate("Processing") }} {{ nextExecutionRemaining }}
+                {{ nextExecutionRemaining.includes("ago") ? translate("Last run") : translate("Next run") }} {{ nextExecutionRemaining }}
               </ion-label>
           </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
