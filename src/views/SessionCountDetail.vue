@@ -703,7 +703,7 @@ const hasSessionStarted = computed(() =>
 const scannerButtonColor = computed(() => {
   if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return 'success';
   if (hasSessionStarted.value && !isScannerFocused.value) return 'danger';
-  return 'medium';
+  return 'success';
 });
 
 const scannerButtonLabel = computed(() => {
@@ -968,11 +968,22 @@ async function loadInventoryItemsWithProgress() {
   }
 }
 
-function focusScanner() {
-  barcodeInput.value?.$el?.setFocus();
-  isScannerFocused.value = true;
+async function focusScanner() {
+  if (!isSessionMutable.value) return;
+
   filteredItems.value = [];
   searchKeyword.value = '';
+
+  setTimeout(() => {
+    const el = barcodeInput.value?.$el;
+
+    if (el && typeof el.setFocus === 'function') {
+      el.setFocus();
+      isScannerFocused.value = true;
+    } else {
+      console.warn('Scanner element not ready', el);
+    }
+  }, 0);
 }
 
 function handleScan() {
@@ -1006,8 +1017,9 @@ async function handleStartOrFocus() {
       return;
     }
   }
-
-  focusScanner();
+  setTimeout(() => {
+    focusScanner();
+  }, 0);
 }
 
 function handleScannerFocus() {
