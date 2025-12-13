@@ -645,7 +645,6 @@ const getSecurityGroupAndPermissions = async (payload: any) => {
       filterByDate,
       fieldsToSelect,
       distinct,
-      pageIndex,
       pageSize,
       ...customParametersMap
     } = payload || {};

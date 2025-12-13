@@ -194,7 +194,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
   for (const rec of unresolved) {
     const identifier = rec.productIdentifier
     if (!identifier) continue
-    let productId = null
+    let productId: any = null
     productId = await findProductByIdentification(context.barcodeIdentification, identifier, context)
     if (!productId) {
       const product = await getById(identifier, context)
@@ -204,12 +204,18 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
     if (!productId) {
       continue
     }
+ 
+    const item = await db.table('inventoryCountRecords')
+      .where('inventoryCountImportId').equals(inventoryCountImportId)
+      .and((item: any) => item.productId == productId)
+      .toArray();
 
     await db.table('inventoryCountRecords')
       .where('[inventoryCountImportId+uuid]')
       .equals([inventoryCountImportId, rec.uuid])
       .modify({
         productId,
+        isRequested: context.inventoryCountTypeId === 'DIRECTED_COUNT' ? item.length > 0 ? item[0].isRequested : 'N' : 'Y',
         lastUpdatedAt: now
       })
 
