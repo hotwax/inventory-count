@@ -81,6 +81,24 @@
       </section>
       <hr />
       <div class="section-header">
+        <h1>{{ translate("Diagnostics") }}</h1>
+      </div>
+      <section>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Diagnostics</ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            <p class="overline">Run diagnostics to validate your device is correctly configured.</p>
+            <ion-button expand="block" @click="openDiagnosisModal" fill="clear">
+              <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
+              <ion-label>{{ translate('Run Diagnostics') }}</ion-label>
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+      </section>
+      <div class="section-header">
         <h1>
           {{ translate("App") }}
           <p class="overline">{{ translate("Version:") + appVersion }}</p>
@@ -179,14 +197,57 @@
         </ion-content>
       </ion-modal>
     </ion-content>
+    <ion-modal :is-open="isDiagnosisOpen" @did-dismiss="isDiagnosisOpen = false">
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button @click="isDiagnosisOpen = false">
+            <ion-icon :icon="closeOutline" />
+          </ion-button>
+        </ion-buttons>
+        <ion-title>Diagnosis</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content>
+      <ion-list>
+        <ion-item v-for="test in diagnosisResults" :key="test.name">
+          <ion-label>
+            {{ test.name }}
+            <p v-if="test.detail" class="diagnosis-detail">{{ test.detail }}</p>
+          </ion-label>
+
+          <ion-badge
+            :color="
+              test.status === 'passed'
+                ? 'success'
+                : test.status === 'failed'
+                ? 'danger'
+                : 'medium'
+            "
+            slot="end"
+          >
+            {{ test.status }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
+<<<<<<< Updated upstream
 import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { bluetoothOutline, closeOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
+=======
+import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonLabel, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
+import { computed, onMounted, ref } from "vue";
+import { translate } from "@/i18n"
+import { closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, snowOutline } from "ionicons/icons"
+>>>>>>> Stashed changes
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -195,8 +256,13 @@ import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
 import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
+<<<<<<< Updated upstream
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
+=======
+import { useDiagnostics } from "@/composables/useDiagnostics";
+
+>>>>>>> Stashed changes
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
@@ -250,10 +316,54 @@ async function updateEComStore(eComStoreId: any) {
 function setProductIdentificationPref(value: string | any, id: string) {
   useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
+<<<<<<< Updated upstream
 
 /* Pairing guide modal */
 const pairingGuideModal = ref();
 const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
+=======
+// Diagnostics code
+const isDiagnosisOpen = ref(false) as any;
+const diagnosisResults = ref([]) as any;
+
+const { runDiagnostics } = useDiagnostics();
+
+const baseDiagnosticsList = [
+  "Local database",
+  "Unique device id",
+  "Local product cache",
+  "Search index ping (Solr)",
+  "Scan event parsing",
+  "Session lock heartbeat",
+  "Barcode identifier",
+  "Product display identifier",
+  "Cycle count statuses",
+  "User permissions",
+  "Session lock heartbeat stream",
+  "Product & facility inventory stream",
+  "Cycle count variance statuses",
+  "Cycle count & session database relations"
+];
+async function openDiagnosisModal() {
+  isDiagnosisOpen.value = true;
+
+  diagnosisResults.value = baseDiagnosticsList.map(name => ({
+    name,
+    status: "passing",
+    detail: ""
+  }));
+
+  // Step 2: Run diagnostics
+  const finalResults = await runDiagnostics();
+
+  // Step 3: animate updates one by one
+  finalResults.forEach((result, index) => {
+    setTimeout(() => {
+      diagnosisResults.value[index] = result;
+    }, index * 150); // 150ms per row for effect
+  });
+}
+>>>>>>> Stashed changes
 </script>
 
 <style scoped>
