@@ -237,17 +237,10 @@
 </template>
 
 <script setup lang="ts">
-<<<<<<< Updated upstream
 import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { bluetoothOutline, closeOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
-=======
-import { IonAvatar, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonMenuButton, IonPage, IonLabel, IonTitle, IonToolbar, IonSelect, IonSelectOption } from "@ionic/vue";
-import { computed, onMounted, ref } from "vue";
-import { translate } from "@/i18n"
-import { closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, snowOutline } from "ionicons/icons"
->>>>>>> Stashed changes
+import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -256,13 +249,10 @@ import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
 import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
-<<<<<<< Updated upstream
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
-=======
 import { useDiagnostics } from "@/composables/useDiagnostics";
 
->>>>>>> Stashed changes
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
@@ -316,12 +306,11 @@ async function updateEComStore(eComStoreId: any) {
 function setProductIdentificationPref(value: string | any, id: string) {
   useProductStore().setDxpProductIdentificationPref(id, value, currentEComStore.value.productStoreId)
 }
-<<<<<<< Updated upstream
 
 /* Pairing guide modal */
 const pairingGuideModal = ref();
 const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
-=======
+
 // Diagnostics code
 const isDiagnosisOpen = ref(false) as any;
 const diagnosisResults = ref([]) as any;
@@ -363,7 +352,6 @@ async function openDiagnosisModal() {
     }, index * 150); // 150ms per row for effect
   });
 }
->>>>>>> Stashed changes
 </script>
 
 <style scoped>
