@@ -218,7 +218,7 @@ async function openFacilityModal(count: any, event: Event) {
   event.stopPropagation();
   if (!facilityModal.value) return;
   selectedCount.value = count;
-  await facilityModal.value.present?.();
+  await facilityModal.value.$el?.present?.();
 }
 
 function loadFacilities() {
@@ -230,7 +230,7 @@ function loadFacilities() {
 
 const closeModal = async () => {
   if (!facilityModal.value) return;
-  await facilityModal.value.dismiss?.();
+  await facilityModal.value?.$el?.dismiss?.();
   clearSearch();
 }
 
