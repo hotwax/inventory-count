@@ -47,12 +47,6 @@
           <ion-select-option value="configure">{{ t("Configure threshold") }}</ion-select-option>
         </ion-select>
       </ion-item>
-
-      <!-- EXTRA FILTER SLOT -->
-      <ion-item v-if="showExtraFilter">
-        <slot name="extra-filter"></slot>
-      </ion-item>
-
     </ion-list>
 
     <!-- SORT BAR -->

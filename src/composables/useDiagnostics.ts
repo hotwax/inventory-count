@@ -8,6 +8,22 @@ export function useDiagnostics() {
   const userProfile = useUserProfile();
   const productStore = useProductStore();
   const productMaster = useProductMaster();
+  const baseDiagnosticsList = [
+    "Local database",
+    "Unique device id",
+    "Local product cache",
+    "Search index ping (Solr)",
+    "Scan event parsing",
+    "Session lock heartbeat",
+    "Barcode identifier",
+    "Product display identifier",
+    "Cycle count statuses",
+    "User permissions",
+    "Session lock heartbeat stream",
+    "Product & facility inventory stream",
+    "Cycle count variance statuses",
+    "Cycle count & session database relations"
+    ];
 
   function push(results: any[], name: string, status: string, detail?: string) {
     results.push({ name, status, detail });
@@ -22,7 +38,7 @@ export function useDiagnostics() {
       push(results, "Local database", "failed");
     }
 
-    const deviceId = userProfile.getDeviceId;
+   const deviceId = userProfile.getDeviceId;
     push(results, "Unique device id", deviceId ? "passed" : "failed", deviceId);
 
     try {
@@ -49,7 +65,6 @@ export function useDiagnostics() {
     push(results, "Scan event parsing", scanTableExists ? "passed" : "failed");
 
     try {
-      // call aggregate with impossible params → only to test worker availability
       await inventorySyncWorker.aggregate("diagnostic-test", {});
       push(results, "Session lock heartbeat", "passed");
     } catch (err) {
@@ -67,9 +82,7 @@ export function useDiagnostics() {
       const statuses = productStore.getStatusDescriptions;
       push(
         results,
-        "Cycle count statuses",
-        statuses?.length ? "passed" : "failed",
-        `Count: ${statuses?.length}`
+        "Cycle count statuses", statuses?.length ? "passed" : "failed", `Count: ${statuses?.length}`
       );
     } catch {
       push(results, "Cycle count statuses", "failed");
@@ -78,10 +91,7 @@ export function useDiagnostics() {
     try {
       const perms = userProfile.getUserPermissions;
       push(
-        results,
-        "User permissions",
-        perms?.length ? "passed" : "failed",
-        `Count: ${perms?.length}`
+        results, "User permissions", perms?.length ? "passed" : "failed", `Count: ${perms?.length}`
       );
     } catch {
       push(results, "User permissions", "failed");
@@ -95,12 +105,9 @@ export function useDiagnostics() {
     }
 
     try {
-      const cnt = await db.productInventory.count();
+      const count = await db.productInventory.count();
       push(
-        results,
-        "Product & facility inventory stream",
-        cnt >= 0 ? "passed" : "failed",
-        `Records: ${cnt}`
+        results, "Product & facility inventory stream", count >= 0 ? "passed" : "failed", `Records: ${count}`
       );
     } catch {
       push(results, "Product & facility inventory stream", "failed");
@@ -110,28 +117,22 @@ export function useDiagnostics() {
       const count = productStore.statusDesc?.length || 0;
       push(
         results,
-        "Cycle count variance statuses",
-        count ? "passed" : "failed",
-        `Count: ${count}`
+        "Cycle count variance statuses", count ? "passed" : "failed", `Count: ${count}`
       );
     } catch {
       push(results, "Cycle count variance statuses", "failed");
     }
 
     try {
-      const cnt = await db.inventoryCountRecords.count();
+      const count = await db.inventoryCountRecords.count();
       push(
-        results,
-        "Cycle count & session database relations",
-        cnt >= 0 ? "passed" : "failed",
-        `Rows: ${cnt}`
+        results, "Cycle count & session database relations", count >= 0 ? "passed" : "failed", `Rows: ${count}`
       );
     } catch {
       push(results, "Cycle count & session database relations", "failed");
     }
-
     return results;
   }
 
-  return { runDiagnostics };
+  return { baseDiagnosticsList, runDiagnostics };
 }

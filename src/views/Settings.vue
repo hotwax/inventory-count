@@ -86,14 +86,14 @@
       <section>
         <ion-card>
           <ion-card-header>
-            <ion-card-title>Diagnostics</ion-card-title>
+            <ion-card-title>{{ translate("Diagnostics") }}</ion-card-title>
           </ion-card-header>
 
           <ion-card-content>
-            <p class="overline">Run diagnostics to validate your device is correctly configured.</p>
+            <p class="overline">{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
             <ion-button expand="block" @click="openDiagnosisModal" fill="clear">
               <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
-              <ion-label>{{ translate('Run Diagnostics') }}</ion-label>
+              <ion-label>{{ translate("Run diagnostics") }}</ion-label>
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -217,16 +217,7 @@
             <p v-if="test.detail" class="diagnosis-detail">{{ test.detail }}</p>
           </ion-label>
 
-          <ion-badge
-            :color="
-              test.status === 'passed'
-                ? 'success'
-                : test.status === 'failed'
-                ? 'danger'
-                : 'medium'
-            "
-            slot="end"
-          >
+          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
             {{ test.status }}
           </ion-badge>
         </ion-item>
@@ -237,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
@@ -315,24 +306,8 @@ const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
 const isDiagnosisOpen = ref(false) as any;
 const diagnosisResults = ref([]) as any;
 
-const { runDiagnostics } = useDiagnostics();
+const { baseDiagnosticsList, runDiagnostics } = useDiagnostics();
 
-const baseDiagnosticsList = [
-  "Local database",
-  "Unique device id",
-  "Local product cache",
-  "Search index ping (Solr)",
-  "Scan event parsing",
-  "Session lock heartbeat",
-  "Barcode identifier",
-  "Product display identifier",
-  "Cycle count statuses",
-  "User permissions",
-  "Session lock heartbeat stream",
-  "Product & facility inventory stream",
-  "Cycle count variance statuses",
-  "Cycle count & session database relations"
-];
 async function openDiagnosisModal() {
   isDiagnosisOpen.value = true;
 
