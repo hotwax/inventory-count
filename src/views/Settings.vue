@@ -81,24 +81,6 @@
       </section>
       <hr />
       <div class="section-header">
-        <h1>{{ translate("Diagnostics") }}</h1>
-      </div>
-      <section>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>{{ translate("Diagnostics") }}</ion-card-title>
-          </ion-card-header>
-
-          <ion-card-content>
-            <p class="overline">{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
-            <ion-button expand="block" @click="openDiagnosisModal" fill="clear">
-              <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
-              <ion-label>{{ translate("Run diagnostics") }}</ion-label>
-            </ion-button>
-          </ion-card-content>
-        </ion-card>
-      </section>
-      <div class="section-header">
         <h1>
           {{ translate("App") }}
           <p class="overline">{{ translate("Version:") + appVersion }}</p>
@@ -155,6 +137,19 @@
           <ion-button id="pairing-guide-modal" fill="outline" expand="block">
             <ion-icon slot="start" :icon="bluetoothOutline" />
             {{ translate('Pairing guide') }}
+          </ion-button>
+        </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>{{ translate("Diagnostics") }}</ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            <p>{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
+          </ion-card-content>
+          <ion-button expand="block" @click="openDiagnosisModal" fill="outline">
+            <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
+            <ion-label>{{ translate("Run diagnostics") }}</ion-label>
           </ion-button>
         </ion-card>
       </section>
@@ -214,7 +209,7 @@
         <ion-item v-for="test in diagnosisResults" :key="test.name">
           <ion-label>
             {{ test.name }}
-            <p v-if="test.detail" class="diagnosis-detail">{{ test.detail }}</p>
+            <p v-if="test.detail">{{ test.detail }}</p>
           </ion-label>
 
           <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
@@ -313,7 +308,7 @@ async function openDiagnosisModal() {
 
   diagnosisResults.value = baseDiagnosticsList.map(name => ({
     name,
-    status: "passing",
+    status: "testing",
     detail: ""
   }));
 
