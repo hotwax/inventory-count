@@ -27,7 +27,6 @@ export const useProductStore = defineStore('productStore', {
     currentFacility: null as any,
     settings: {
       forceScan: false,
-      showQoh: false,
       productIdentifier: {
         productIdentificationPref: {
           primaryId: 'SKU',
@@ -54,7 +53,6 @@ export const useProductStore = defineStore('productStore', {
 
     getProductStoreSettings: (state) => state.settings,
     getForceScan: (state) => state.settings.forceScan,
-    getShowQoh: (state) => state.settings.showQoh,
     getBarcodeIdentificationPref: (state) => state.settings.productIdentifier.barcodeIdentificationPref,
 
     // Shortcuts for productIdentifier nested object
@@ -209,12 +207,10 @@ export const useProductStore = defineStore('productStore', {
           const parsedSettings = resp.data.reduce((acc: any, setting: any) => {
             const keyMap: Record<string, string> = {
               INV_FORCE_SCAN: 'forceScan',
-              INV_CNT_VIEW_QOH: 'showQoh',
               BARCODE_IDEN_PREF: 'barcodeIdentificationPref'
             }
             const key = keyMap[setting.settingTypeEnumId]
             if (key === 'forceScan') acc.forceScan = JSON.parse(setting.settingValue)
-            if (key === 'showQoh') acc.showQoh = JSON.parse(setting.settingValue)  
             if (key === 'barcodeIdentificationPref') acc.productIdentifier.barcodeIdentificationPref = setting.settingValue
             return acc
           }, this.settings)
@@ -228,7 +224,6 @@ export const useProductStore = defineStore('productStore', {
     async setProductStoreSetting(key: string, value: any, productStoreId: string) {
       const keyToEnum: Record<string, string> = {
         forceScan: 'INV_FORCE_SCAN',
-        showQoh: 'INV_CNT_VIEW_QOH',
         barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
       }
       const enumId = keyToEnum[key]
@@ -246,7 +241,6 @@ export const useProductStore = defineStore('productStore', {
         })
         if (!hasError(resp)) {
           if (key === 'forceScan') this.settings.forceScan = value
-          if (key === 'showQoh') this.settings.showQoh = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
           showToast(translate('Store preference updated successfully.'))
         } else {
