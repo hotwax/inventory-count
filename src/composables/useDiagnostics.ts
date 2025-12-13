@@ -22,7 +22,7 @@ export function useDiagnostics() {
       push(results, "Local database", "failed");
     }
 
-   const deviceId = userProfile.getDeviceId;
+    const deviceId = userProfile.getDeviceId;
     push(results, "Unique device id", deviceId ? "passed" : "failed", deviceId);
 
     try {
