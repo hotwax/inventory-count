@@ -18,21 +18,6 @@
         </ion-card>
       </div>
       <div class="permission-cards">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              {{ translate('Quantity on hand') }}
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <p>{{ translate("Show the current physical quantity expected at locations while counting to help gauge inventory accuracy.") }}</p>
-          </ion-card-content>
-          <ion-item lines="none">
-            <ion-toggle :checked="useProductStore().getShowQoh" @click.prevent="updateProductStoreSetting($event, 'showQoh')">
-              {{ translate("Show systemic inventory") }}
-            </ion-toggle>
-          </ion-item>
-        </ion-card>
         <ion-card v-for="permission in permissionCards" :key="permission.id">
           <ion-card-header>
             <ion-card-title>
@@ -235,6 +220,12 @@ const permissionCards: PermissionMeta[] = [
     description:
       "Select security groups that can forcefully release sessions that are not their own. The force released device will be booted from their session within 30 seconds.",
   },
+  {
+    id: "INV_CNT_VIEW_QOH",
+    title: "View quantity on hand",
+    description:
+      "Select security groups that can view the current quantity on hand for products during counting.",
+  }
 ];
 
 const activeGroupsByPermission = ref<Record<string, any[]>>({});
@@ -276,18 +267,6 @@ onIonViewWillEnter(async () => {
     permissionCards.map((permission) => getActiveGroups(permission.id))
   );
 });
-
-/**
- * Helpers
- */
-function updateProductStoreSetting(event: any, key: string) {
-  // Currently only showQoh is controlled here
-  useProductStore().setProductStoreSetting(
-    key,
-    !useProductStore().getShowQoh,
-    useProductStore().getCurrentProductStore.productStoreId
-  );
-}
 
 function getDateTime(time: any) {
   if (!time) return "";

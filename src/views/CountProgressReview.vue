@@ -642,7 +642,7 @@ const isSubmitDisabled = computed(() => (
   || !canSubmitForReview.value
 ));
 
-const showQoh = computed(() => useProductStore().getShowQoh);
+const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 
 const isEditImportItemModalOpen = ref(false);
 const selectedProduct = ref<any | null>(null);
