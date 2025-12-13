@@ -235,6 +235,12 @@ const permissionCards: PermissionMeta[] = [
     description:
       "Select security groups that can forcefully release sessions that are not their own. The force released device will be booted from their session within 30 seconds.",
   },
+  {
+    id: "INV_COUNT_ADMIN",
+    title: "Inventory count admin",
+    description:
+      "Select security groups that can perform all cycle count functions without any restrictions including start counts early, submit cycle counts for review and accept and reject variances. This permission is required to access the cycle count admin pages.",
+  },
 ];
 
 const activeGroupsByPermission = ref<Record<string, any[]>>({});
