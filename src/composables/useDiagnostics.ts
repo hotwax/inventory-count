@@ -25,27 +25,23 @@ export function useDiagnostics() {
     "Cycle count & session database relations"
     ];
 
-  function push(results: any[], name: string, status: string, detail?: string) {
-    results.push({ name, status, detail });
-  }
-
   async function runDiagnostics() {
     const results: any[] = [];
     try {
       await db.open();
-      push(results, "Local database", "passed");
+      results.push({ name: "Local database", status: "passed" });
     } catch {
-      push(results, "Local database", "failed");
+      results.push({ name: "Local database", status: "failed" });
     }
 
    const deviceId = userProfile.getDeviceId;
-    push(results, "Unique device id", deviceId ? "passed" : "failed", deviceId);
+    results.push({ name: "Unique device id", status: deviceId ? "passed" : "failed", detail: deviceId });
 
     try {
       const count = await db.products.count();
-      push(results, "Local product cache", count >= 0 ? "passed" : "failed", `Count: ${count}`);
+      results.push({ name: "Local product cache", status: count >= 0 ? "passed" : "failed", detail: `Count: ${count}` });
     } catch {
-      push(results, "Local product cache", "failed");
+      results.push({ name: "Local product cache", status: "failed" });
     }
     try {
       const dummyQuery = productMaster.buildProductQuery({
@@ -55,82 +51,78 @@ export function useDiagnostics() {
       });
 
       await productMaster.loadProducts(dummyQuery);
-      push(results, "Search index ping (Solr)", "passed");
+      results.push({ name: "Search index ping (Solr)", status: "passed" });
     } catch (err) {
       console.warn("Solr check failed:", err);
-      push(results, "Search index ping (Solr)", "failed");
+      results.push({ name: "Search index ping (Solr)", status: "failed" });
     }
 
     const scanTableExists = !!db.scanEvents;
-    push(results, "Scan event parsing", scanTableExists ? "passed" : "failed");
-
+    results.push({ name: "Scan event parsing", status: scanTableExists ? "passed" : "failed" });
     try {
       await inventorySyncWorker.aggregate("diagnostic-test", {});
-      push(results, "Session lock heartbeat", "passed");
+      results.push({ name: "Session lock heartbeat", status: "passed" });
     } catch (err) {
       console.warn("Worker heartbeat failed:", err);
-      push(results, "Session lock heartbeat", "failed");
+      results.push({ name: "Session lock heartbeat", status: "failed" });
     }
 
     const barcodeId = productStore.getBarcodeIdentificationPref;
-    push(results, "Barcode identifier", barcodeId ? "passed" : "failed", barcodeId);
-
+    results.push({ name: "Barcode identifier", status: barcodeId ? "passed" : "failed", detail: barcodeId });
     const primaryId = productStore.getProductIdentificationPref?.primaryId;
-    push(results, "Product display identifier", primaryId ? "passed" : "failed", primaryId);
+    results.push({ name: "Product display identifier", status: primaryId ? "passed" : "failed", detail: primaryId });
 
     try {
       const statuses = productStore.getStatusDescriptions;
-      push(
-        results,
-        "Cycle count statuses", statuses?.length ? "passed" : "failed", `Count: ${statuses?.length}`
+      results.push(
+        { name: "Cycle count statuses", status: statuses?.length ? "passed" : "failed", detail: `Count: ${statuses?.length}` }
       );
     } catch {
-      push(results, "Cycle count statuses", "failed");
+      results.push({ name: "Cycle count statuses", status: "failed" });
     }
 
     try {
       const perms = userProfile.getUserPermissions;
-      push(
-        results, "User permissions", perms?.length ? "passed" : "failed", `Count: ${perms?.length}`
+      results.push(
+        { name: "User permissions", status: perms?.length ? "passed" : "failed", detail: `Count: ${perms?.length}` }
       );
     } catch {
-      push(results, "User permissions", "failed");
+      results.push({ name: "User permissions", status: "failed" });
     }
 
     try {
       await inventorySyncWorker.aggregate("diagnostic-heartbeat", {});
-      push(results, "Session lock heartbeat stream", "passed");
+      results.push({ name: "Session lock heartbeat stream", status: "passed" });
     } catch {
-      push(results, "Session lock heartbeat stream", "failed");
+      results.push({ name: "Session lock heartbeat stream", status: "failed" });
     }
 
     try {
       const count = await db.productInventory.count();
-      push(
-        results, "Product & facility inventory stream", count >= 0 ? "passed" : "failed", `Records: ${count}`
+      results.push(
+        { name: "Product & facility inventory stream", status: count >= 0 ? "passed" : "failed", detail: `Records: ${count}` }
       );
     } catch {
-      push(results, "Product & facility inventory stream", "failed");
+      results.push({ name: "Product & facility inventory stream", status: "failed" });
     }
 
     try {
       const count = productStore.statusDesc?.length || 0;
-      push(
-        results,
-        "Cycle count variance statuses", count ? "passed" : "failed", `Count: ${count}`
+      results.push(
+        { name: "Cycle count variance statuses", status: count ? "passed" : "failed", detail: `Count: ${count}` }
       );
     } catch {
-      push(results, "Cycle count variance statuses", "failed");
+      results.push({ name: "Cycle count variance statuses", status: "failed" });
     }
 
-    try {
-      const count = await db.inventoryCountRecords.count();
-      push(
-        results, "Cycle count & session database relations", count >= 0 ? "passed" : "failed", `Rows: ${count}`
-      );
-    } catch {
-      push(results, "Cycle count & session database relations", "failed");
-    }
+    // try {
+    //   const count = await db.inventoryCountRecords.count();
+    //   results.push(
+    //     { name: "Cycle count & session database relations", status: count >= 0 ? "passed" : "failed", detail: `Rows: ${count}` }
+    //   );
+    // } catch {
+    //   results.push({ name: "Cycle count & session database relations", status: "failed" });
+    // }
     return results;
   }
 
