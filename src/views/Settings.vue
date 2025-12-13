@@ -202,7 +202,7 @@
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-button @click="isDiagnosisOpen = false">
-            <ion-icon :icon="closeOutline" />
+            <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
         <ion-title>Diagnosis</ion-title>
