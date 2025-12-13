@@ -197,6 +197,12 @@ const permissionCards: PermissionMeta[] = [
       "Select security groups that can access the inventory count app store view and create counts in sessions. This does not allow them to impact inventory.",
   },
   {
+    id: "INV_CNT_VIEW_QOH",
+    title: "View quantity on hand",
+    description:
+      "Select security groups that can view the current quantity on hand for products during counting.",
+  },
+  {
     id: "PREVIEW_COUNT_ITEM",
     title: "Preview count",
     description:
@@ -226,12 +232,6 @@ const permissionCards: PermissionMeta[] = [
     description:
       "Select security groups that can perform all cycle count functions without any restrictions including start counts early, submit cycle counts for review and accept and reject variances. This permission is required to access the cycle count admin pages.",
   },
-  {
-    id: "INV_CNT_VIEW_QOH",
-    title: "View quantity on hand",
-    description:
-      "Select security groups that can view the current quantity on hand for products during counting.",
-  }
 ];
 
 const activeGroupsByPermission = ref<Record<string, any[]>>({});
