@@ -139,6 +139,19 @@
             {{ translate('Pairing guide') }}
           </ion-button>
         </ion-card>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>{{ translate("Diagnostics") }}</ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            <p>{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
+          </ion-card-content>
+          <ion-button expand="block" @click="openDiagnosisModal" fill="outline">
+            <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
+            <ion-label>{{ translate("Run diagnostics") }}</ion-label>
+          </ion-button>
+        </ion-card>
       </section>
 
       <ion-modal ref="pairingGuideModal" trigger="pairing-guide-modal">
@@ -179,14 +192,41 @@
         </ion-content>
       </ion-modal>
     </ion-content>
+    <ion-modal :is-open="isDiagnosisOpen" @did-dismiss="isDiagnosisOpen = false">
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-button @click="isDiagnosisOpen = false">
+            <ion-icon slot="icon-only" :icon="closeOutline" />
+          </ion-button>
+        </ion-buttons>
+        <ion-title>Diagnosis</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content>
+      <ion-list>
+        <ion-item v-for="test in diagnosisResults" :key="test.name">
+          <ion-label>
+            {{ test.name }}
+            <p v-if="test.detail">{{ test.detail }}</p>
+          </ion-label>
+
+          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
+            {{ test.status }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+  </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { bluetoothOutline, closeOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
+import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -197,6 +237,8 @@ import { useProductStore } from "@/stores/productStore";
 import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
+import { useDiagnostics } from "@/composables/useDiagnostics";
+
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
@@ -254,6 +296,32 @@ function setProductIdentificationPref(value: string | any, id: string) {
 /* Pairing guide modal */
 const pairingGuideModal = ref();
 const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
+
+// Diagnostics code
+const isDiagnosisOpen = ref(false) as any;
+const diagnosisResults = ref([]) as any;
+
+const { baseDiagnosticsList, runDiagnostics } = useDiagnostics();
+
+async function openDiagnosisModal() {
+  isDiagnosisOpen.value = true;
+
+  diagnosisResults.value = baseDiagnosticsList.map(name => ({
+    name,
+    status: "testing",
+    detail: ""
+  }));
+
+  // Step 2: Run diagnostics
+  const finalResults = await runDiagnostics();
+
+  // Step 3: animate updates one by one
+  finalResults.forEach((result, index) => {
+    setTimeout(() => {
+      diagnosisResults.value[index] = result;
+    }, index * 150); // 150ms per row for effect
+  });
+}
 </script>
 
 <style scoped>

@@ -307,10 +307,8 @@ function getInitialValue(field: string) {
   return facilityTimeZone.value ? date.setZone(facilityTimeZone.value).toISO() : date.toISO();
 }
 
-function getMinDateTime() {
-  return facilityTimeZone.value
-    ? DateTime.now().setZone(facilityTimeZone.value).toISO()
-    : DateTime.now().toISO();
+function getMinDateTime(): any {
+  return facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO();
 }
 
 async function handleChange(ev: any, currentField: string) {
