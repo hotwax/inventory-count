@@ -197,7 +197,7 @@ export const useProductStore = defineStore('productStore', {
           url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
           method: 'GET',
           params: {
-            settingTypeEnumId: ['INV_FORCE_SCAN', 'INV_CNT_VIEW_QOH', 'BARCODE_IDEN_PREF'],
+            settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
             settingTypeEnumId_op: 'in',
             pageSize: 5
           }

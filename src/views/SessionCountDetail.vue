@@ -651,7 +651,7 @@ let lockGracePeriod = 300
 const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
-const barcodeIdentifierDescription = getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description;
+const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
 
 const pageRef = ref(null);
 

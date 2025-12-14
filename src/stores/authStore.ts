@@ -136,6 +136,7 @@ export const useAuthStore = defineStore('authStore', {
         // Fetch and set product identifier settings based on current product store
         await useProductStore().getProductIdentifierSettings();
         await useProductStore().getSettings(useProductStore().getCurrentProductStore?.productStoreId);
+        await useProductStore().prepareProductIdentifierOptions();
         await useInventoryCountRun().loadStatusDescription();
 
         await initialize();
