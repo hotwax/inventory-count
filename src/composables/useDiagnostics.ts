@@ -3,6 +3,7 @@ import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
+import { useInventoryCountRun } from "./useInventoryCountRun";
 
 export function useDiagnostics() {
   const userProfile = useUserProfile();
@@ -17,31 +18,33 @@ export function useDiagnostics() {
     "Session lock heartbeat",
     "Barcode identifier",
     "Product display identifier",
+    "User permissions"
+    ];
+   const omsDiagnosticsList = [
     "Cycle count statuses",
+    "Cycle count status transitions",
     "User permissions",
-    "Session lock heartbeat stream",
-    "Product & facility inventory stream",
+    "Product and facility inventory stream",
     "Cycle count variance statuses",
-    // "Cycle count & session database relations"
+    "Cycle count and session database relations",
     ];
 
   async function runDiagnostics() {
-    const results: any[] = [];
+    const localResults: any[] = [];
     try {
       await db.open();
-      results.push({ name: "Local database", status: "passed" });
+      localResults.push({ name: "Local database", status: "passed", detail: "Database connection successful" });
     } catch {
-      results.push({ name: "Local database", status: "failed" });
+      localResults.push({ name: "Local database", status: "failed", detail: "Database connection failed" });
     }
 
    const deviceId = userProfile.getDeviceId;
-    results.push({ name: "Unique device id", status: deviceId ? "passed" : "failed", detail: deviceId });
-
+    localResults.push({ name: "Unique device id", status: deviceId ? "passed" : "failed", detail: deviceId });
     try {
       const count = await db.products.count();
-      results.push({ name: "Local product cache", status: count >= 0 ? "passed" : "failed", detail: `Count: ${count}` });
+      localResults.push({ name: "Local product cache", status: count >= 0 ? "passed" : "failed", detail: `Count: ${count}` });
     } catch {
-      results.push({ name: "Local product cache", status: "failed" });
+      localResults.push({ name: "Local product cache", status: "failed" });
     }
     try {
       const dummyQuery = productMaster.buildProductQuery({
@@ -51,80 +54,72 @@ export function useDiagnostics() {
       });
 
       await productMaster.loadProducts(dummyQuery);
-      results.push({ name: "Search index ping (Solr)", status: "passed" });
-    } catch (err) {
+      localResults.push({ name: "Search index ping (Solr)", status: "passed", detail: "Ping successful" });
+    } catch (err: any) {
       console.warn("Solr check failed:", err);
-      results.push({ name: "Search index ping (Solr)", status: "failed" });
+      localResults.push({ name: "Search index ping (Solr)", status: "failed", detail: err.message || "Ping failed" });
     }
 
     const scanTableExists = !!db.scanEvents;
-    results.push({ name: "Scan event parsing", status: scanTableExists ? "passed" : "failed" });
+    localResults.push({ name: "Scan event parsing", status: scanTableExists ? "passed" : "failed", detail: scanTableExists ? "Scan events exists" : "Scan events missing" });
     try {
       await inventorySyncWorker.aggregate("diagnostic-test", {});
-      results.push({ name: "Session lock heartbeat", status: "passed" });
+      localResults.push({ name: "Session lock heartbeat", status: "passed", detail: "Heartbeat worker initialized" });
     } catch (err) {
       console.warn("Worker heartbeat failed:", err);
-      results.push({ name: "Session lock heartbeat", status: "failed" });
+      localResults.push({ name: "Session lock heartbeat", status: "failed", detail: "Heartbeat worker failed to initialize" });
     }
 
     const barcodeId = productStore.getBarcodeIdentificationPref;
-    results.push({ name: "Barcode identifier", status: barcodeId ? "passed" : "failed", detail: barcodeId });
+    localResults.push({ name: "Barcode identifier", status: barcodeId ? "passed" : "failed", detail: barcodeId });
     const primaryId = productStore.getProductIdentificationPref?.primaryId;
-    results.push({ name: "Product display identifier", status: primaryId ? "passed" : "failed", detail: primaryId });
-
-    try {
-      const statuses = productStore.getStatusDescriptions;
-      results.push(
-        { name: "Cycle count statuses", status: statuses?.length ? "passed" : "failed", detail: `Count: ${statuses?.length}` }
-      );
-    } catch {
-      results.push({ name: "Cycle count statuses", status: "failed" });
-    }
+    localResults.push({ name: "Product display identifier", status: primaryId ? "passed" : "failed", detail: primaryId });
 
     try {
       const perms = userProfile.getUserPermissions;
-      results.push(
+      localResults.push(
         { name: "User permissions", status: perms?.length ? "passed" : "failed", detail: `Count: ${perms?.length}` }
       );
     } catch {
-      results.push({ name: "User permissions", status: "failed" });
-    }
-
-    try {
-      await inventorySyncWorker.aggregate("diagnostic-heartbeat", {});
-      results.push({ name: "Session lock heartbeat stream", status: "passed" });
-    } catch {
-      results.push({ name: "Session lock heartbeat stream", status: "failed" });
+      localResults.push({ name: "User permissions", status: "failed" });
     }
 
     try {
       const count = await db.productInventory.count();
-      results.push(
+      localResults.push(
         { name: "Product & facility inventory stream", status: count >= 0 ? "passed" : "failed", detail: `Records: ${count}` }
       );
     } catch {
-      results.push({ name: "Product & facility inventory stream", status: "failed" });
+      localResults.push({ name: "Product & facility inventory stream", status: "failed" });
     }
+
+    // OMS DIAGNOSTICS
+
+    const omsDiagnosticsResults: any[] = [];
+    let omsDiagnostics = null;
 
     try {
-      const count = productStore.statusDesc?.length || 0;
-      results.push(
-        { name: "Cycle count variance statuses", status: count ? "passed" : "failed", detail: `Count: ${count}` }
-      );
-    } catch {
-      results.push({ name: "Cycle count variance statuses", status: "failed" });
+      const resp = await useInventoryCountRun().getDiagnostics();
+      omsDiagnostics = resp.data;
+} catch (err) {
+      console.warn("OMS diagnostics check failed:", err);
+      omsDiagnostics = null;
     }
 
-    // try {
-    //   const count = await db.inventoryCountRecords.count();
-    //   results.push(
-    //     { name: "Cycle count & session database relations", status: count >= 0 ? "passed" : "failed", detail: `Rows: ${count}` }
-    //   );
-    // } catch {
-    //   results.push({ name: "Cycle count & session database relations", status: "failed" });
-    // }
-    return results;
+    if (!omsDiagnostics) {
+      omsDiagnosticsResults.push({ name: "Unable to fetch OMS diagnostics", status: "failed" });
+      return {localResults, omsDiagnosticsResults};
+    }
+
+    omsDiagnosticsResults.push({ name: "Cycle count statuses", status: omsDiagnostics.isStatusConfigured ? "passed" : "failed", detail: omsDiagnostics.isStatusConfigured ? "All configured" : "Missing" });
+    omsDiagnosticsResults.push({ name: "Cycle count status transitions", status: omsDiagnostics.isWorkEffortStatusFlowConfigured ? "passed" : "failed", detail: omsDiagnostics.isWorkEffortStatusFlowConfigured ? "All configured" : "Missing" });
+    omsDiagnosticsResults.push({ name: "User permissions", status: omsDiagnostics.areAllPermissionConfigured ? "passed" : "failed", detail: omsDiagnostics.missingPermissions?.join(", ") || "No permissions missing" });
+    omsDiagnosticsResults.push({ name: "Product and facility inventory stream", status: omsDiagnostics.isAllProductFacDataDocPresent ? "passed" : "failed", detail: `Data document exists` });
+    omsDiagnosticsResults.push({ name: "Cycle count variance statuses", status: omsDiagnostics.areDecisionReasonsConfigured ? "passed" : "failed", detail: omsDiagnostics.areDecisionReasonsConfigured ? "All configured" : "Missing" });
+    omsDiagnosticsResults.push({ name: "Cycle count and session database relations", status: omsDiagnostics.isWorkEffortRelatedToInventoryCountImport ? "passed" : "failed", detail: omsDiagnostics.isWorkEffortRelatedToInventoryCountImport ? "Related" : "Not related" });
+
+    return {localResults, omsDiagnosticsResults};
   }
 
-  return { baseDiagnosticsList, runDiagnostics };
+  return { baseDiagnosticsList, omsDiagnosticsList, runDiagnostics };
 }

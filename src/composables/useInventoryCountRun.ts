@@ -311,12 +311,20 @@ export function useInventoryCountRun() {
     return resp;
   }
 
+  async function getDiagnostics (): Promise<any> {
+    const resp = await api({
+      url: `inventory-cycle-count/diagnostics`,
+      method: 'get'
+    });
+    return resp;
+  }
   /** Clear list utility */
   function clearCycleCountList() {
     return { cycleCounts: [], total: 0, isScrollable: false };
   }
 
   return {
+    getDiagnostics,
     getWorkEfforts,
     getWorkEffort,
     getProductReviewDetail,

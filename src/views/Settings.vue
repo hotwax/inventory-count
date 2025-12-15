@@ -206,12 +206,24 @@
 
     <ion-content>
       <ion-list>
-        <ion-item v-for="test in diagnosisResults" :key="test.name">
+        <ion-item v-for="test in diagnosisResults" :key="test.name" lines="full">
           <ion-label>
             {{ test.name }}
             <p v-if="test.detail">{{ test.detail }}</p>
           </ion-label>
 
+          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
+            {{ test.status }}
+          </ion-badge>
+        </ion-item>
+        <ion-item-divider color="light">
+          {{ translate('OMS diagnosis') }}
+        </ion-item-divider>
+        <ion-item v-for="test in omsDiagnosticsResults" :key="test.name" lines="full">
+          <ion-label>
+            {{ test.name }}
+            <p v-if="test.detail">{{ test.detail }}</p>
+          </ion-label>
           <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
             {{ test.status }}
           </ion-badge>
@@ -223,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
@@ -300,8 +312,9 @@ const closePairingGuide = () => pairingGuideModal.value?.$el?.dismiss();
 // Diagnostics code
 const isDiagnosisOpen = ref(false) as any;
 const diagnosisResults = ref([]) as any;
+const omsDiagnosticsResults = ref([]) as any;
 
-const { baseDiagnosticsList, runDiagnostics } = useDiagnostics();
+const { baseDiagnosticsList, omsDiagnosticsList, runDiagnostics } = useDiagnostics();
 
 async function openDiagnosisModal() {
   isDiagnosisOpen.value = true;
@@ -312,14 +325,25 @@ async function openDiagnosisModal() {
     detail: ""
   }));
 
+  omsDiagnosticsResults.value = omsDiagnosticsList.map(name => ({
+    name,
+    status: "testing",
+    detail: ""
+  }));
+
   // Step 2: Run diagnostics
   const finalResults = await runDiagnostics();
 
   // Step 3: animate updates one by one
-  finalResults.forEach((result, index) => {
+  finalResults.localResults.forEach((result, index) => {
     setTimeout(() => {
       diagnosisResults.value[index] = result;
-    }, index * 150); // 150ms per row for effect
+    }, index * 150);
+  });
+  finalResults.omsDiagnosticsResults.forEach((result, index) => {
+    setTimeout(() => {
+      omsDiagnosticsResults.value[index] = result;
+    }, index * 150);
   });
 }
 </script>

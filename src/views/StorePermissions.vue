@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonPopover, IonSearchbar, IonTitle, IonToggle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
+import { IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonPopover, IonSearchbar, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { ref, computed } from "vue";
 import { DateTime } from "luxon";
 import { translate } from "@/i18n";
@@ -175,7 +175,7 @@ import { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSe
 import { showToast } from "@/services/uiUtils";
 import logger from "@/logger";
 
-import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline, create } from "ionicons/icons";
+import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { hasError } from "@/stores/authStore";
 
 type PermissionMeta = {
