@@ -592,7 +592,7 @@ import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
-import { from, scan, Subscription } from 'rxjs';
+import { from, Subscription } from 'rxjs';
 import { Actions, hasPermission } from '@/authorization';
 
 const props = defineProps<{
