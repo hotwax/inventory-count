@@ -34,10 +34,10 @@
           </ion-item>
 
           <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+          <DynamicScroller ref="scanScroller" :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
             <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-item>
+              <DynamicScrollerItem :item="item" :index="index" :active="active" :key="item.createdAt">
+                <ion-item :class="{ 'highlighted-scan': highlightedScanId === item.createdAt }">
                   <div slot="start" class="img-preview">
                     <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
                       <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
@@ -333,7 +333,7 @@
                     </ion-button>
                   </ion-item>
                   <!-- Previous good scan -->
-                  <ion-item v-if="getScanContext(item).previousGood">
+                  <ion-item v-if="getScanContext(item).previousGood" button @click="scrollToScanByCreatedAt(getScanContext(item).previousGood.createdAt)">
                     <ion-thumbnail slot="start">
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
@@ -346,7 +346,7 @@
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
                   </ion-item>
                   <!-- Next good scan -->
-                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood" button @click="scrollToScanByCreatedAt(getScanContext(item).nextGood.createdAt)">
                     <ion-thumbnail slot="start">
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
@@ -381,7 +381,7 @@
                     </ion-button>
                   </ion-item>
                   <!-- Previous good scan -->
-                  <ion-item v-if="getScanContext(item).previousGood">
+                  <ion-item v-if="getScanContext(item).previousGood" button @click="scrollToScanByCreatedAt(getScanContext(item).previousGood.createdAt)">
                     <ion-thumbnail slot="start">
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
@@ -394,7 +394,7 @@
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
                   </ion-item>
                   <!-- Next good scan -->
-                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood" button @click="scrollToScanByCreatedAt(getScanContext(item).nextGood.createdAt)">
                     <ion-thumbnail slot="start">
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
@@ -592,7 +592,7 @@ import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
-import { from, Subscription } from 'rxjs';
+import { from, scan, Subscription } from 'rxjs';
 import { Actions, hasPermission } from '@/authorization';
 
 const props = defineProps<{
@@ -832,6 +832,31 @@ async function fetchWorkEffort() {
   } catch (err) {
     console.error('Failed to fetch work effort', err);
   }
+}
+
+const scanScroller = ref<any>(null)
+const highlightedScanId = ref<any>(null)
+
+function highlightScan(createdAt: number) {
+  highlightedScanId.value = createdAt
+
+  // Remove highlight after 2 seconds
+  setTimeout(() => {
+    if (highlightedScanId.value === createdAt) {
+      highlightedScanId.value = null
+    }
+  }, 2000)
+}
+function scrollToScanByCreatedAt(createdAt: number) {
+  if (!scanScroller.value) return
+
+  const index = events.value.findIndex(ev => ev.createdAt === createdAt)
+  if (index === -1) return
+
+  requestAnimationFrame(() => {
+    scanScroller.value.scrollToItem(index)
+    highlightScan(createdAt)
+  })
 }
 
 function updateTimer() {
@@ -1684,6 +1709,12 @@ ion-segment-view {
   right: -1px;
   position: absolute;
   font-size: 10px;
+}
+
+.highlighted-scan {
+  --background: var(--ion-color-medium);
+  transition: background 0.6s ease-in-out;
+  animation: pulseHighlight 0.6s ease-out;
 }
 
 </style>
