@@ -125,7 +125,7 @@ export function useDiagnostics() {
 
     // OMS DIAGNOSTICS
 
-    let omsDiagnosticsResults: any[] = [];
+    const omsDiagnosticsResults: any[] = [];
     let omsDiagnostics = null;
 
     try {
