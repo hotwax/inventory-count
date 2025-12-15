@@ -294,7 +294,8 @@ async function getActiveGroups(permissionId: string) {
       permissionId,
       filterByDate: true,
       groupTypeEnumId: "PRM_CLASS_TYPE",
-      groupTypeEnumId_op: "not-equals"
+      groupTypeEnumId_op: "equals",
+      groupTypeEnumId_not: 'Y',
     });
     if (hasError(resp)) throw resp?.data;
     const docs = (resp?.data && (resp.data.entityValueList)) || [];
@@ -316,7 +317,8 @@ async function openHistory(permission: PermissionMeta) {
       filterByDate: false,
       orderByField: "-thruDate",
       groupTypeEnumId: "PRM_CLASS_TYPE",
-      groupTypeEnumId_op: "not-equals",
+      groupTypeEnumId_op: "equals",
+      groupTypeEnumId_not: 'Y',
       pageSize: 250,
     });
     if (hasError(resp)) throw resp?.data;
@@ -355,7 +357,8 @@ async function openSelectGroupsModal(permission: PermissionMeta) {
       filterByDate: false,
       fieldsToSelect: "groupId,groupName",
       groupTypeEnumId: "PRM_CLASS_TYPE",
-      groupTypeEnumId_op: "not-equals",
+      groupTypeEnumId_op: "equals",
+      groupTypeEnumId_not: 'Y',
       distinct: "true",
       pageSize: 250,
     });
