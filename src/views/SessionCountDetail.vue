@@ -1717,4 +1717,13 @@ ion-segment-view {
   animation: pulseHighlight 0.6s ease-out;
 }
 
+@keyframes pulseHighlight {
+  from {
+    --background: var(--ion-color-light-tint);
+  }
+  to {
+    --background: var(--ion-color-medium);
+  }
+}
+
 </style>
