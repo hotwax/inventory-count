@@ -131,7 +131,8 @@ export function useDiagnostics() {
     try {
       const resp = await useInventoryCountRun().getDiagnostics();
       omsDiagnostics = resp.data;
-    } catch {
+} catch (err) {
+      console.warn("OMS diagnostics check failed:", err);
       omsDiagnostics = null;
     }
 
