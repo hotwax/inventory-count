@@ -1252,7 +1252,7 @@ async function getProducts() {
   const queryPayload = useProductMaster().buildProductQuery({
     keyword: queryString.value.trim(),
     viewSize: 100,
-    filter: 'isVirtual:false,isVariant:true',
+    filter: 'isVirtual:false,productTypeId:FINISHED_GOOD',
   })
 
   isLoading.value = true
