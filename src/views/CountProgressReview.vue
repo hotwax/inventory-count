@@ -165,7 +165,7 @@
                           {{ translate("QoH") }}
                         </ion-label>
                         <ion-checkbox
-                            v-if="isCountStarted || isCountStatusBeyondCreated"
+                            v-if="isCountStatusBeyondCreated"
                             slot="start"
                             :checked="outOfStockSelections[item.productId]"
                             :disabled="isSubmitted"
