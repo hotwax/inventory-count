@@ -326,7 +326,7 @@ async function getProductBySearch(term: string) {
   const query = useProductMaster().buildProductQuery({
     keyword: term,
     viewSize: 20,
-    filter: 'isVirtual:false,isVariant:true'
+    filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
   })
   isSearching.value = true
   try {
