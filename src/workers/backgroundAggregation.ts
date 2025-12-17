@@ -287,6 +287,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
           productId: existing.productId || productId,
+          facilityId: context.facilityId,
           isRequested: existing.isRequested ?? 'Y'
         })
       } else {
@@ -296,6 +297,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
+          facilityId: context.facilityId,
           isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
@@ -336,6 +338,21 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 
   try {
     ensureProductStored(productId, context);
+    const inventory = await workerApi({
+        baseURL: context.maargUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'oms/dataDocumentView',
+        method: 'POST',
+        data: {
+        dataDocumentId: 'ProductFacilityAndInventoryItem',
+        pageSize: 1,
+        customParametersMap: { productId: productId, facilityId: context.facilityId }
+      }
+      })
+
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
       const table = db.table('inventoryCountRecords');
 
@@ -352,7 +369,8 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
           .modify({
             productId,
             lastUpdatedAt: now,
-            isRequested: context.isRequested
+            isRequested: context.isRequested,
+            systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0
           });
       } else {
         await table.add({
@@ -411,7 +429,11 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       lastUpdatedAt: item.lastUpdatedAt || Date.now(),
       isRequested: item.isRequested,
       createdDate: item.createdAt || Date.now(),
-      countedByUserLoginId: context.userLoginId
+      countedByUserLoginId: context.userLoginId,
+      ...(item.systemQuantityOnHand !== undefined &&
+        item.systemQuantityOnHand !== null && {
+          systemQuantityOnHand: item.systemQuantityOnHand
+        })
     }))
 
     const payload = { items }
@@ -451,6 +473,66 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
   }
 }
 
+async function resolveMissingSystemQOH(
+  inventoryCountImportId: string,
+  context: any
+) {
+  // fetch only items that have productId but no QOH yet, and are going to be synced
+    const records = await db.table('inventoryCountRecords')
+    .where({ inventoryCountImportId })
+    .and((item: any) =>
+      item.productId &&
+      item.facilityId &&
+      (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null) &&
+      (
+        !item.lastSyncedAt ||  // never synced
+        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
+      )
+    )
+    .toArray()
+
+  if (!records.length) return 0
+
+  const now = Date.now()
+  let enrichedCount = 0
+
+  for (const record of records) {
+    try {
+      const inventory = await workerApi({
+        baseURL: context.maargUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'oms/dataDocumentView',
+        method: 'POST',
+        data: {
+        dataDocumentId: 'ProductFacilityAndInventoryItem',
+        pageSize: 1,
+        customParametersMap: { productId: record.productId, facilityId: record.facilityId }
+      }
+      })
+
+      await db.table('inventoryCountRecords')
+        .where('[inventoryCountImportId+uuid]')
+        .equals([inventoryCountImportId, record.uuid])
+        .modify({
+          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0,
+          lastUpdatedAt: now
+        })
+
+      enrichedCount++
+    } catch (err) {
+      console.warn(
+        `[Worker] Failed to enrich QOH for ${record.productId} on facility ${record.facilityId}`,
+        err
+      )
+    }
+  }
+
+  return enrichedCount
+}
+
 async function ensureDB(context: any) {
   if (dbInitialized && db) return db;
 
@@ -472,6 +554,7 @@ self.onmessage = async (messageEvent: MessageEvent) => {
     await ensureDB(context);
     const count = await aggregate(inventoryCountImportId, context)
     await resolveMissingProducts(inventoryCountImportId, context)
+    if(count > 0) await resolveMissingSystemQOH(inventoryCountImportId, context)
     await syncToServer(inventoryCountImportId, context)
 
     self.postMessage({ type: 'aggregationComplete', count })
@@ -483,6 +566,7 @@ self.onmessage = async (messageEvent: MessageEvent) => {
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       await resolveMissingProducts(inventoryCountImportId, context)
+      if(count > 0) await resolveMissingSystemQOH(inventoryCountImportId, context)
       await syncToServer(inventoryCountImportId, context)
 
       self.postMessage({ type: 'aggregationComplete', count })
