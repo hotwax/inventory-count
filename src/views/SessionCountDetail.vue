@@ -798,7 +798,8 @@ onIonViewDidEnter(async () => {
           maargUrl: useAuthStore().getBaseUrl,
           token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
-          inventoryCountTypeId: props.inventoryCountTypeId
+          inventoryCountTypeId: props.inventoryCountTypeId,
+          facilityId: useProductStore().getCurrentFacility.facilityId
         }
       }
     })
@@ -1282,6 +1283,7 @@ async function saveMatchProduct() {
     token: useAuthStore().token.value,
     omsUrl: useAuthStore().getOmsRedirectionUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
+    facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
   };
 
@@ -1319,7 +1321,8 @@ async function finalizeAggregationAndSync() {
       maargUrl: useAuthStore().getBaseUrl,
       token: useAuthStore().token.value,
       barcodeIdentification,
-      inventoryCountTypeId: props.inventoryCountTypeId
+      inventoryCountTypeId: props.inventoryCountTypeId,
+      facilityId: useProductStore().getCurrentFacility.facilityId
     };
 
     aggregationWorker.postMessage({

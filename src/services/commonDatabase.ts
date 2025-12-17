@@ -33,7 +33,8 @@ export interface InventoryCountImportItem {
   lastSyncedAt?: number | null
   lastSyncedBatchId?: string | null
   aggApplied?: number
-  isRequested?: string
+  isRequested?: string,
+  systemQuantityOnHand: number
 }
 
 export interface ScanEvent {
