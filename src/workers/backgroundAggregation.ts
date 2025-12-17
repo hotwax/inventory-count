@@ -338,6 +338,21 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
 
   try {
     ensureProductStored(productId, context);
+    const inventory = await workerApi({
+        baseURL: context.maargUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'oms/dataDocumentView',
+        method: 'POST',
+        data: {
+        dataDocumentId: 'ProductFacilityAndInventoryItem',
+        pageSize: 1,
+        customParametersMap: { productId: productId, facilityId: context.facilityId }
+      }
+      })
+
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
       const table = db.table('inventoryCountRecords');
 
@@ -372,7 +387,8 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
           lastSyncedAt: null,
           lastSyncedBatchId: null,
           aggApplied: 1,
-          isRequested: context.isRequested
+          isRequested: context.isRequested,
+          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0
         });
       }
     });
@@ -461,14 +477,19 @@ async function resolveMissingSystemQOH(
   inventoryCountImportId: string,
   context: any
 ) {
-  // fetch only items that have productId but no QOH yet
-  const records = await db.table('inventoryCountRecords')
+  // fetch only items that have productId but no QOH yet, and are going to be synced
+    const records = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
     .and((item: any) =>
       item.productId &&
       item.facilityId &&
-      (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null)
-    ).toArray()
+      (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null) &&
+      (
+        !item.lastSyncedAt ||
+        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
+      )
+    )
+    .toArray()
 
   if (!records.length) return 0
 
@@ -491,7 +512,6 @@ async function resolveMissingSystemQOH(
         customParametersMap: { productId: record.productId, facilityId: record.facilityId }
       }
       })
-      console.log("Record: ", record)
 
       await db.table('inventoryCountRecords')
         .where('[inventoryCountImportId+uuid]')
