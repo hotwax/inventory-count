@@ -15,6 +15,10 @@ export interface LoginPayload {
   oms: any;
   omsRedirectionUrl: any;
   expirationTime: any;
+  isEmbedded?: any;
+  shop?: any;
+  host?: any;
+  shopifyAppBridge?: any;
 }
 
 type TokenState = {
@@ -45,6 +49,10 @@ export const useAuthStore = defineStore('authStore', {
       value: '',
       expiration: undefined,
     } as TokenState,
+    isEmbedded: false,
+    shop: undefined,
+    host: undefined,
+    shopifyAppBridge: undefined
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -66,6 +74,9 @@ export const useAuthStore = defineStore('authStore', {
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
     },
+    getShop: (state) => state.shop,
+    getHost: (state) => state.host,
+    getShopifyAppBridge: (state) => state.shopifyAppBridge,
   },
   actions: {
     setOMS(oms: string) {
@@ -79,6 +90,9 @@ export const useAuthStore = defineStore('authStore', {
       if (!value) return false;
       if (expiration && expiration < DateTime.now().toMillis()) return false;
       return true;
+    },
+    checkIsEmbedded(isEmbedded: boolean) {
+      return isEmbedded === true;
     },
     async login(payload: LoginPayload) {
       try {

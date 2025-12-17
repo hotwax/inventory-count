@@ -35,10 +35,17 @@ declare module 'vue-router' {
 }
 
 const authGuard = async (to: any, from: any, next: any) => {
+  console.log("Auth Guard: Checking authentication for route:", to.path);
   const authStore = useAuthStore()
   const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
   if (!authStore.isAuthenticated) {
+    console.log("User not authenticated, redirecting to login.");
     await loader.present('Authenticating')
+    if (authStore.isEmbedded) {
+      loader.dismiss();
+      next('/login');
+      return;
+    }
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
     window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
@@ -48,8 +55,14 @@ const authGuard = async (to: any, from: any, next: any) => {
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
+  console.log("Login Guard: Checking if user is already authenticated for route:", to.path);
   const authStore = useAuthStore();
+  if (to.query?.embedded === '1') {
+    console.log("Login Guard: Setting app as embedded based on query param.");
+    authStore.$reset();
+  }
   if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
+    console.log("User already authenticated, redirecting to home.");
     next('/')
   }
   next();

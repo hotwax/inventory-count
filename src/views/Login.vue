@@ -26,6 +26,8 @@ import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { translate } from "@/i18n";
+import { createShopifyAppBridge, getSessionTokenFromShopify } from "@/services/utils";
+import api from "@/services/RemoteAPI";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -36,9 +38,32 @@ const error = ref({
 
 const isLoggingIn = ref(false);
 let loader: any = null;
+const route = router.currentRoute.value;
 
-onMounted(() => {
-  login();
+onMounted(async () => {
+  console.log("Login view mounted with query params: ", route.query);
+  let isEmbedded = authStore.isEmbedded;
+  // This will be false for when apps run in browser directly and when user first time comes from Shopify POS or Admin embedded app.
+  console.log("Is Embedded from auth store: ", isEmbedded);
+  // Cases Handled: 
+  // If the app is not embedded and there are no query params, redirect to launchpad
+  // If the app is embedded, it will have query params from Shopify, even if the app is not marked as embedded in the auth store, we will mark it as embedded here.
+  // In case if the token expired and user is routed to login path, the app was already marked as embedded, so we should not redirect to launchpad in that case.
+  if (!isEmbedded && !Object.keys(route.query).length) {
+    window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
+    return
+  }
+
+  const { token, oms, expirationTime, omsRedirectionUrl, embedded, shop, host } = route.query
+  isEmbedded = isEmbedded || embedded === '1'
+  console.log("Is Embedded after checking query params: ", isEmbedded);
+
+  if (isEmbedded) {
+    console.log("This is an embedded app user, proceeding with Shopify App Bridge login flow.");
+    await appBridgeLogin(shop as string, host as string);
+  } else {
+    login();
+  }
 })
 
 const presentLoader = async (message: string) => {
@@ -84,6 +109,77 @@ const login = async () => {
     await dismissLoader();
   }
 };
+
+async function appBridgeLogin(shop: string, host: string) {
+  console.log("This is an embedded app user, proceeding with Shopify App Bridge login flow.");
+  // In case where token expired and user is routed login path, the query params will not have shop and host,
+  // So we get them from auth store before it is cleared.
+  if (!shop) {
+    shop = authStore.shop as any
+  }
+  if (!host) {
+    host = authStore.host as any
+  }
+  if (!shop || !host) {
+    console.error("Shop or host is missing, cannot proceed further.");
+    error.value.message = "Please contact the administrator.";
+    return;
+  }
+  const loginPayload = {} as any;
+  let loginResponse;
+  const maargUrl = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '')[shop].maarg;
+  let shopifyAppBridge;
+  try {
+    shopifyAppBridge = await createShopifyAppBridge(shop, host);
+    const shopifySessionToken = await getSessionTokenFromShopify(shopifyAppBridge);
+    const appState: any = await shopifyAppBridge.getState();
+
+    if (!appState) {
+      throw new Error("Couldn't get Shopify App Bridge state, cannot proceed further.");
+    }
+    // Since the Shopify Admin doesn't provide location and user details,
+    // we are using the app state to get the POS location and user details in case of POS Embedded Apps.
+    loginPayload.sessionToken = shopifySessionToken;
+    if (appState.pos?.location?.id) {
+      loginPayload.locationId = appState.pos.location.id
+    }
+    if (appState.pos?.user?.firstName) {
+      loginPayload.firstName = appState.pos.user.firstName;
+    }
+    if (appState.pos?.user?.lastName) {
+      loginPayload.lastName = appState.pos.user.lastName;
+    }
+
+    // loginResponse = await loginShopifyAppUser(`${maargUrl}/rest/s1/`, loginPayload);
+    loginResponse = await api({
+        url: `${maargUrl}/rest/s1/app-bridge/login`,
+        method: 'post',
+        data: loginPayload
+      }
+    );
+
+    if (!loginResponse?.data?.token) {
+      throw new Error("Login response doesn't have token, cannot proceed further.");
+    }
+
+    await authStore.login({
+      token: loginResponse?.data.token,
+      oms: maargUrl,
+      omsRedirectionUrl: loginResponse?.data.omsInstanceUrl,
+      expirationTime: loginResponse?.data.expiresAt,
+      isEmbedded: true,
+      shop: shop,
+      host: host,
+      shopifyAppBridge: shopifyAppBridge
+    });
+
+    router.replace("/");
+  } catch (e) {
+    console.error("Error ", e);
+    error.value.message = "Please contact the administrator.";
+    return;
+  }
+}
 
 function goToLaunchpad() {
   window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
