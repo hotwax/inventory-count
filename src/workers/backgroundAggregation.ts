@@ -369,7 +369,8 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
           .modify({
             productId,
             lastUpdatedAt: now,
-            isRequested: context.isRequested
+            isRequested: context.isRequested,
+            systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0
           });
       } else {
         await table.add({
@@ -387,8 +388,7 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
           lastSyncedAt: null,
           lastSyncedBatchId: null,
           aggApplied: 1,
-          isRequested: context.isRequested,
-          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0
+          isRequested: context.isRequested
         });
       }
     });
@@ -485,7 +485,7 @@ async function resolveMissingSystemQOH(
       item.facilityId &&
       (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null) &&
       (
-        !item.lastSyncedAt ||
+        !item.lastSyncedAt ||  // never synced
         (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
       )
     )
