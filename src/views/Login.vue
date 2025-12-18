@@ -54,7 +54,7 @@ onMounted(async () => {
     return
   }
 
-  const { token, oms, expirationTime, omsRedirectionUrl, embedded, shop, host } = route.query
+  const { embedded, shop, host } = route.query
   isEmbedded = isEmbedded || embedded === '1'
   console.log("Is Embedded after checking query params: ", isEmbedded);
 
