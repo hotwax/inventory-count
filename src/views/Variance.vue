@@ -5,7 +5,8 @@
         <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
+    <ion-content>
+      <main>
       <!-- Variance content goes here -->
        <ion-card>
           <ion-card-header>
@@ -63,48 +64,43 @@
               {{ translate("Current Stock:") }} {{ selectedProduct.quantityOnHand || 0 }}
             </ion-text>
           </ion-item>
-          <ion-item lines="full">
+          <div class="impact">
             <ion-radio-group v-model="selectedProduct.negate">
-              <ion-item lines="none" class="ion-justify-content-center">
-                <ion-radio value="false">
-                  {{ translate("Add") }}
-                </ion-radio>
-                <ion-radio value="true" class="ion-margin-start">
-                  {{ translate("Remove") }}
-                </ion-radio>
-              </ion-item>
+              <ion-radio value="false">
+                {{ translate("Add") }}
+              </ion-radio>
+              <ion-radio value="true">
+                {{ translate("Remove") }}
+              </ion-radio>
             </ion-radio-group>
-          </ion-item>
-          <ion-item>
-            <ion-select v-model="selectedProduct.varianceReason" placeholder="Select Reason" interface="popover" slot="end">
+          </div>
+          <ion-item lines="full">
+            <ion-select v-model="selectedProduct.varianceReason" label="Reason" label-placement="fixed" placeholder="Select" interface="popover">
               <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
                 {{ reason.label }}
               </ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item lines="full">
-            <div class="quantity" slot="end">
-              <ion-button fill="clear" color="medium" aria-label="decrease" @click="selectedProduct.varianceQuantity = Math.max(0, (selectedProduct.varianceQuantity || 0) - 1)">
-                <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-              </ion-button>
-              <ion-item lines="full">
-                <ion-input
-                  @ionInput="onManualInputChange($event, selectedProduct)"
-                  label="Qty"
-                  label-placement="stacked" 
-                  type="number" 
-                  min="0" 
-                  inputmode="numeric" 
-                  placeholder="0" 
-                  v-model.number="selectedProduct.varianceQuantity"
-                  :disabled="selectedProduct.saved"
-                ></ion-input>
-              </ion-item>
-              <ion-button fill="clear" color="medium" aria-label="increase" @click="selectedProduct.varianceQuantity = (selectedProduct.varianceQuantity || 0) + 1">
-                <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-item>
+          <div class="quantity">
+            <ion-button fill="clear" color="medium" aria-label="decrease" @click="selectedProduct.varianceQuantity = Math.max(0, (selectedProduct.varianceQuantity || 0) - 1)">
+              <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+            </ion-button>
+              <ion-input
+                @ionInput="onManualInputChange($event, selectedProduct)"
+                label="Qty"
+                fill="outline"
+                label-placement="stacked" 
+                type="number" 
+                min="0" 
+                inputmode="numeric" 
+                placeholder="0" 
+                v-model.number="selectedProduct.varianceQuantity"
+                :disabled="selectedProduct.saved"
+              ></ion-input>
+            <ion-button fill="clear" color="medium" aria-label="increase" @click="selectedProduct.varianceQuantity = (selectedProduct.varianceQuantity || 0) + 1">
+              <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
           <ion-item  v-if="!selectedProduct.saved">
             <ion-text>
               {{ translate("New Quantity:") }}
@@ -119,6 +115,7 @@
             {{ translate("Log Variance") }}
           </ion-button>
         </div>
+      </main>
     </ion-content>
     <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
       <ion-header>
@@ -382,19 +379,37 @@ async function logVariance(product: any) {
   }
 }
 </script>
-
 <style scoped>
+
+main {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
 .quantity {
   display: flex;
   align-items: center;
+  justify-content: center;
+  margin: var(--spacer-base);
 }
-.quantity ion-item {
-  width: 80px;
+.quantity ion-input {
+  width: 30ch;
   text-align: center;
 }
 
-.variance-product-card {
-  max-width: 450px;
-  margin-inline: auto;
+.impact ion-radio-group {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
 }
+
+.impact ion-radio {
+  padding: var(--spacer-base);
+  flex: 1;
+  border: 1px solid var(--ion-color-medium);
+}
+
+.impact ion-radio-group ion-radio:hover {
+}
+
 </style>
