@@ -64,7 +64,7 @@
             </ion-text>
           </ion-item>
           <ion-item lines="full">
-            <ion-radio-group v-model="selectedProduct.negate" :value="selectedProduct.negate">
+            <ion-radio-group v-model="selectedProduct.negate">
               <ion-item lines="none" class="ion-justify-content-center">
                 <ion-radio value="false">
                   {{ translate("Add") }}
@@ -110,7 +110,7 @@
               {{ translate("New Quantity:") }}
             </ion-text>
             <ion-text slot="end">
-              {{ (selectedProduct.quantityOnHand || 0) + (selectedProduct.varianceQuantity ? (selectedProduct.negate === 'true' ? (selectedProduct.varianceQuantity)*(-1) : selectedProduct.varianceQuantity) : 0) }}
+              {{ newQuantityOnHand }}
             </ion-text>
           </ion-item>
         </ion-card>
@@ -164,9 +164,9 @@
 import { translate } from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSkeletonText, IonText, onIonViewDidEnter, IonIcon, IonModal, IonButtons, IonFooter } from '@ionic/vue';
-import { addCircleOutline, removeCircleOutline } from 'ionicons/icons';
+import { addCircleOutline, closeOutline, removeCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useAuthStore } from '@/stores/authStore';
 import { client } from '@/adapter';
 import Image from '@/components/Image.vue';
@@ -190,10 +190,20 @@ const addSelectedProductFromModal = async () => {
   }
 };
 
+const newQuantityOnHand = computed(() => {
+  if (!selectedProduct.value) return 0;
 
+  const currentQty = selectedProduct.value.quantityOnHand || 0;
+  const varianceQty = selectedProduct.value.varianceQuantity || 0;
 
-onIonViewDidEnter(() => {
-  getVarianceReasonEnums();
+  if (varianceQty === 0) return currentQty;
+
+  const adjustment = selectedProduct.value.negate === 'true' ? -varianceQty : varianceQty;
+  return currentQty + adjustment;
+});
+
+onIonViewDidEnter(async () => {
+  await getVarianceReasonEnums();
 });
 
 const varianceReasons = ref<Array<any>>([]);
@@ -215,13 +225,16 @@ const getVarianceReasonEnums = async () => {
 
 };
 
+let searchTimeoutId: any;
+
 const handleLiveSearch = async () => {
   if (searchedProductString.value.trim().length === 0) {
     searchedProducts.value = [];
     return;
   }
   isSearching.value = true;
-  setTimeout(async() => {
+  clearTimeout(searchTimeoutId);
+  searchTimeoutId = setTimeout(async() => {
     searchedProducts.value = await searchProducts(searchedProductString.value);
     isSearching.value = false;
   }, 300);
@@ -327,7 +340,7 @@ async function logVariance(product: any) {
     showToast(translate("Variance quantity cannot be zero."));
     return;
   }
-  if (product.varianceReason == null || product.varianceReason === '') {
+  if (!product.varianceReason) {
     showToast(translate("Please select a variance reason."));
     return;
   }
@@ -377,7 +390,7 @@ async function logVariance(product: any) {
     }
   } catch (error) {
     showToast(translate("Failed to log variance. Please try again."));
-    throw error;
+    console.error("Error logging variance:", error);
   }
 }
 </script>
