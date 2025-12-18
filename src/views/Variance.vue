@@ -166,12 +166,11 @@ import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSkeletonText, IonText, onIonViewDidEnter, IonIcon, IonModal, IonButtons, IonFooter } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
-import { computed, ref, watch } from 'vue';
-import { useAuthStore } from '@/stores/authStore';
-import { client } from '@/adapter';
+import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { showToast } from '@/services/uiUtils';
+import api from '@/services/RemoteAPI';
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isSearching = ref(false);
@@ -209,14 +208,9 @@ onIonViewDidEnter(async () => {
 const varianceReasons = ref<Array<any>>([]);
 
 const getVarianceReasonEnums = async () => {
-  const resp = await client({
+  const resp = await api({
     url: 'admin/enums?enumTypeId=IID_REASON&pageNoLimit=true',
-    method: 'GET',
-    baseURL: useAuthStore().getBaseUrl,
-    headers: {
-      Authorization: `Bearer ${useAuthStore().token.value}`,
-      'Content-Type': 'application/json',
-    },
+    method: 'GET'
   });
   varianceReasons.value = resp?.data?.map((enumItem: any) => ({
     label: enumItem.description,
@@ -248,17 +242,10 @@ async function searchProducts(queryString: string): Promise<any> {
     filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
   })
 
-  const baseURL = useAuthStore().getBaseUrl;
-
-  const resp = await client({
+  const resp = await api({
     url: 'inventory-cycle-count/runSolrQuery',
     method: 'POST',
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: `Bearer ${useAuthStore().token.value}`,
-      'Content-Type': 'application/json',
-    },
+    data: query
   })
     const products = resp?.data?.response?.docs || []
     return products;
@@ -281,22 +268,15 @@ const handleEnterKey = async () => {
 };
 
 async function getProductInventory(productId: any) {
-  const baseURL = useAuthStore().getBaseUrl
-  const token = useAuthStore().token.value
 
   try {
-    const resp = await client({
+    const resp = await api({
       url: 'oms/dataDocumentView',
       method: 'POST',
-      baseURL,
       data: {
         dataDocumentId: 'ProductFacilityAndInventoryItem',
         pageSize: 1,
         customParametersMap: { productId: productId, facilityId: currentFacility.value.facilityId }
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
       }
     });
 
@@ -345,7 +325,6 @@ async function logVariance(product: any) {
     return;
   }
   try {
-    const baseURL = useAuthStore().getBaseUrl;
 
     const reasonEnumId = product.varianceReason || 'VAR_MANUAL';
 
@@ -365,20 +344,15 @@ async function logVariance(product: any) {
     };
     
 
-    const resp = await client({
+    const resp = await api({
       url: 'inventory-cycle-count/recordVariance',
       method: 'POST',
-      baseURL,
       data: {
         partyId: useUserProfile().getUserProfile?.partyId || '',
         productId: product.productId,
         facilityId: currentFacility.value.facilityId,
         inventoryItemVarianceMap
-      },
-      headers: {
-        Authorization: `Bearer ${useAuthStore().token.value}`,
-        'Content-Type': 'application/json',
-      },
+      }
     })
     
     if (resp?.status === 200) {
