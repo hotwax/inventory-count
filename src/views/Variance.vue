@@ -209,8 +209,12 @@ const varianceReasons = ref<Array<any>>([]);
 
 const getVarianceReasonEnums = async () => {
   const resp = await api({
-    url: 'admin/enums?enumTypeId=IID_REASON&pageNoLimit=true',
-    method: 'GET'
+    url: 'admin/enums',
+    method: 'GET',
+    params: {
+      enumTypeId: 'IID_REASON',
+      pageNoLimit: true
+    }
   });
   varianceReasons.value = resp?.data?.map((enumItem: any) => ({
     label: enumItem.description,
@@ -235,20 +239,26 @@ const handleLiveSearch = async () => {
 };
 
 async function searchProducts(queryString: string): Promise<any> {
+  try {
+    const query = useProductMaster().buildProductQuery({
+      keyword: queryString,
+      viewSize: 20,
+      filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
+    })
 
-  const query = useProductMaster().buildProductQuery({
-    keyword: queryString,
-    viewSize: 20,
-    filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
-  })
-
-  const resp = await api({
-    url: 'inventory-cycle-count/runSolrQuery',
-    method: 'POST',
-    data: query
-  })
+    const resp = await api({
+      url: 'inventory-cycle-count/runSolrQuery',
+      method: 'POST',
+      data: query
+    })
     const products = resp?.data?.response?.docs || []
     return products;
+  } catch (error) {
+    console.error("Error searching products:", error);
+    showToast(translate("Failed to search products. Please try again."));
+  }
+  isSearching.value = false;
+  return [];
 }
 
 async function onManualInputChange(event: any, item: any) {
@@ -298,11 +308,12 @@ function closeSearchResultsModal() {
 }
 
 const selectProduct = async (product: any) => {
-  selectedProduct.value = null;
-  if (product) {
-    const productInventory = await getProductInventory(product.productId);
+  try {
+    selectedProduct.value = null;
+    if (product) {
+      const productInventory = await getProductInventory(product.productId);
 
-    selectedProduct.value = {
+      selectedProduct.value = {
         ...product,
         inventoryItemId: productInventory?.inventoryItemId,
         quantityOnHand: productInventory?.quantityOnHandTotal || 0,
@@ -310,9 +321,12 @@ const selectProduct = async (product: any) => {
         varianceQuantity: 0,
         saved: false
       };
-    searchedProductString.value = '';
-    searchedProducts.value = [];
+    }
+  } catch (error) {
+    console.error("Error selecting product:", error);
   }
+  searchedProductString.value = '';
+  searchedProducts.value = [];
 }
 
 async function logVariance(product: any) {
