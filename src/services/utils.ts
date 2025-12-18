@@ -75,7 +75,7 @@ const createShopifyAppBridge = async (shop: string, host: string) => {
     if (!shop || !host) {
       throw new Error("Shop or host missing");
     }
-    const apiKey = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '')[shop]?.apiKey;
+    const apiKey = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '{}')[shop]?.apiKey;
     if (!apiKey) {
       throw new Error("Api Key not found");
     }

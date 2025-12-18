@@ -128,7 +128,7 @@ async function appBridgeLogin(shop: string, host: string) {
   const loginPayload = {} as any;
   let loginResponse;
   console.log("This is from env: ", JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG as any));
-  const maargUrl = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '')[shop].maarg;
+  const maargUrl = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '{}')[shop].maarg;
   let shopifyAppBridge;
   try {
     shopifyAppBridge = await createShopifyAppBridge(shop, host);
