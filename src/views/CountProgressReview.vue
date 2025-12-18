@@ -40,19 +40,28 @@
                 <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
               </ion-item>
 
+              <ion-item lines="full">
+                <ion-label>
+                  <p class="overline">{{ translate("Sessions") }}</p>
+                </ion-label>
+
+                <ion-button v-if="isWorkEffortInProgress" fill="clear" size="small" @click="openAddSessionModal">
+                  <ion-icon slot="start" :icon="addCircleOutline" />
+                  {{ translate("New session") }}
+                </ion-button>
+              </ion-item>
+
+              <!-- SESSIONS LIST -->
               <ion-list>
-                <ion-list-header>
-                  <ion-label>{{ translate("Sessions") }}</ion-label>
-                </ion-list-header>
-                <div v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId">
-                  <ion-item>
-                    <ion-label>
-                      {{ `${session.countImportName || ""} ${session.facilityAreaId || ""}` }}
-                      <p>{{ session.uploadedByUserLogin }}</p>
-                    </ion-label>
-                    <ion-note slot="end">{{ useProductStore().getStatusDescription(session.statusId) }}</ion-note>
-                  </ion-item>
-                </div>
+                <ion-item v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId" :detail="true" button :disabled="!isWorkEffortInProgress" @click="openSession(session)">
+                  <ion-label>
+                    {{ session.countImportName || '' }} {{ session.facilityAreaId || '' }}
+                    <p>{{ session.uploadedByUserLogin }}</p>
+                  </ion-label>
+                  <ion-note slot="end">
+                    {{ getSessionStatusDescription(session.statusId) }}
+                  </ion-note>
+                </ion-item>
               </ion-list>
             </ion-card>
 
@@ -504,6 +513,41 @@
         }
       ]"
     />
+    <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close">
+                  <ion-icon :icon="closeOutline" slot="icon-only" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("New session") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-item>
+              <ion-label position="stacked">{{ translate("Name") }}</ion-label>
+              <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
+              <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
+            </ion-item>
+
+            <ion-list>
+              <ion-list-header>{{ translate("Area") }}</ion-list-header>
+
+              <ion-radio-group v-model="selectedArea">
+                <ion-item v-for="area in areas" :key="area.value">
+                  <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-list>
+
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+              <ion-fab-button @click="addNewSession">
+                <ion-icon :icon="checkmarkDoneOutline" />
+              </ion-fab-button>
+            </ion-fab>
+          </ion-content>
+        </ion-modal>
   </ion-page>
 </template>
 
@@ -527,6 +571,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { Actions, hasPermission } from '@/authorization';
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
+import router from '@/router'
 
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
@@ -754,7 +799,7 @@ async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp?.status === 200 && workEffortResp.data) {
     workEffort.value = workEffortResp.data;
-    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
+    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId, pageNoLimit: true });
     if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
       workEffort.value.sessions = sessionsResp.data;
     }
@@ -1232,7 +1277,102 @@ async function markAsCompleted() {
   loader.dismiss();
 }
 
+// Sessions Card
+function getSessionStatusDescription(statusId: string) {
+  if (statusId === "SESSION_CREATED") return "Created"
+  if (statusId === "SESSION_ASSIGNED") return "In Progress"
+  if (statusId === "SESSION_SUBMITTED") return "Submitted"
+  if (statusId === "SESSION_VOIDED") return "Voided"
+  return ""
+}
 
+const isAddSessionModalOpen = ref(false)
+
+const areas = [
+  { value: 'back_stock', label: 'Back stock' },
+  { value: 'display', label: 'Display' },
+  { value: 'floor_wall', label: 'Floor - wall' },
+  { value: 'floor_shelf', label: 'Floor - shelf' },
+  { value: 'overflow', label: 'Overflow' },
+  { value: 'register', label: 'Register' },
+];
+const selectedArea = ref(areas[0].value);
+const countName = ref('');
+
+function openSession(session: any) {
+  router.replace(
+    `/session-count-detail/${session.workEffortId}/${workEffort.value.workEffortPurposeTypeId}/${session.inventoryCountImportId}`
+  )
+}
+
+function openAddSessionModal() {
+  countName.value = ''
+  selectedArea.value = areas[0].value
+  isAddSessionModalOpen.value = true
+}
+
+function closeAddSessionModal() {
+  isAddSessionModalOpen.value = false
+}
+
+async function addNewSession() {
+  try {
+    const username = useUserProfile().getUserProfile.username
+    const isHardCount = workEffort.value.workEffortPurposeTypeId === 'HARD_COUNT'
+    let resp = null
+
+    if (isHardCount) {
+      resp = await useInventoryCountRun().createSessionOnServer({
+        countImportName: countName.value,
+        statusId: "SESSION_CREATED",
+        uploadedByUserLogin: username,
+        facilityAreaId: selectedArea.value,
+        createdDate: DateTime.now().toMillis(),
+        workEffortId: workEffort.value.workEffortId
+      })
+    } else {
+      const sessions = workEffort.value.sessions || []
+      if (sessions.length) {
+        const oldest = [...sessions].sort(
+          (a: any, b: any) => a.createdDate - b.createdDate
+        )[0]
+
+        resp = await useInventoryCountImport().cloneSession({
+          inventoryCountImportId: oldest.inventoryCountImportId,
+          facilityAreaId: selectedArea.value,
+          countImportName: countName.value
+        })
+      } else {
+        resp = await useInventoryCountRun().createSessionOnServer({
+          countImportName: countName.value,
+          statusId: "SESSION_CREATED",
+          uploadedByUserLogin: username,
+          facilityAreaId: selectedArea.value,
+          createdDate: DateTime.now().toMillis(),
+          workEffortId: workEffort.value.workEffortId
+        })
+      }
+    }
+
+    if (resp?.status !== 200) throw resp
+
+    workEffort.value.sessions.push({
+      inventoryCountImportId: resp.data.inventoryCountImportId,
+      countImportName: countName.value,
+      statusId: "SESSION_CREATED",
+      uploadedByUserLogin: username,
+      facilityAreaId: selectedArea.value,
+      createdDate: DateTime.now().toMillis(),
+      workEffortId: workEffort.value.workEffortId
+    })
+
+    closeAddSessionModal()
+
+  } catch (err) {
+    console.error(err)
+    showToast("Failed to create session")
+  }
+}
 
 </script>
 

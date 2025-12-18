@@ -1370,6 +1370,7 @@ async function confirmSubmit() {
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
     showToast('Session submitted successfully')
+    router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
     showToast('Failed to submit session')
