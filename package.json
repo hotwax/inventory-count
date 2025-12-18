@@ -45,7 +45,9 @@
     "vue-router": "^4.0.12",
     "vue-virtual-scroll-list": "^2.3.5",
     "vue-virtual-scroller": "^2.0.0-beta.8",
-    "vue3-virtual-scroll-list": "^0.2.1"
+    "vue3-virtual-scroll-list": "^0.2.1",
+    "@shopify/app-bridge": "^3.7.10",
+    "@shopify/app-bridge-utils": "^3.5.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^2.4.7",
