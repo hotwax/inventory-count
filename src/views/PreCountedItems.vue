@@ -325,7 +325,7 @@ const handleLiveSearch = debounce(async () => {
 async function getProductBySearch(term: string) {
   const query = useProductMaster().buildProductQuery({
     keyword: term,
-    viewSize: 20,
+    viewSize: 50,
     filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
   })
   isSearching.value = true
