@@ -376,7 +376,8 @@ const buildProductQuery = (params: any): Record<string, any> => {
   }
 
   if (params.keyword) {
-    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    const wildcardTerms = params.keyword.split(/\s+/).filter(Boolean).map((term: any) => `*${term}*`).join(' OR ');
+    payload.json.query = `${wildcardTerms} OR "${params.keyword}"^100`
     payload.json.params['qf'] =
       params.queryFields ||
       'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
