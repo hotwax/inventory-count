@@ -221,6 +221,28 @@ function currentMillis(): number {
       .toArray();
   }
 
+
+  function groupByProductAndSum(items: any[]) {
+    const map = new Map<string, any>();
+  
+    for (const item of items) {
+      if (!item.productId) continue;
+      const key = String(item.productId).trim();
+  
+      if (!map.has(key)) {
+        map.set(key, { ...item });
+      } else {
+        const existing = map.get(key);
+        existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+        existing.lastUpdatedAt = Math.max(
+          Number(existing.lastUpdatedAt || 0),
+          Number(item.lastUpdatedAt || 0)
+        );
+      }
+    }
+  
+    return [...map.values()];
+  }
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
@@ -244,37 +266,20 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((Number(item.quantity) || 0) > 0 && (item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
+        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
         .toArray()
 
-      items.sort((predecessor, successor) => {
-        const predecessorTime = predecessor.lastUpdatedAt ? Number(predecessor.lastUpdatedAt) : 0;
-        const successorTime = successor.lastUpdatedAt ? Number(successor.lastUpdatedAt) : 0;
-        return successorTime - predecessorTime;
-      });
+      const grouped = groupByProductAndSum(items)
+      .filter(item => (Number(item.quantity) || 0) > 0)
+      .sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0));
 
-      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
+      const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
-      return items.map((item) => {
-        const product = productMap.get(item.productId || "");
-        let unmatched = false;
-
-        if (product) {
-          const allValues: string[] = [product.productId, product.internalName, ...(product.goodIdentifications?.map((gi: any) => gi.value) || []),
-          ].map((v) => (v || "").toLowerCase());
-
-          // Mark as unmatched if productIdentifier doesn't appear in product details
-          if (item.productIdentifier && !allValues.includes(item.productIdentifier.toLowerCase())) {
-            unmatched = true;
-          }
-        }
-        return {
-          ...item,
-          product,
-          unmatched,
-        };
-      });
+      return grouped.map(item => ({
+        ...item,
+        product: productMap.get(item.productId)
+      }))
     });
 
   const getUncountedItems = (inventoryCountImportId: string) =>
@@ -282,10 +287,12 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => (Number(item.quantity) || 0) === 0)
         .toArray()
 
-      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
+      const grouped = groupByProductAndSum(items)
+      .filter(item => (Number(item.quantity) || 0) === 0);
+
+      const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
@@ -298,9 +305,9 @@ function currentMillis(): number {
       const inventoryMap = new Map(
         inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
       )
-      return items.map(item => ({
+      return grouped.map(item => ({
         ...item,
-        product: productMap.get(item.productId || ''),
+        product: productMap.get(item.productId),
         inventory: inventoryMap.get(`${item.productId}::${item.facilityId}`)
       }))
     });
@@ -313,13 +320,16 @@ function currentMillis(): number {
         .filter(item => item.isRequested === 'N' && Boolean(item.productId))
         .toArray();
 
-      const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
+      const grouped = groupByProductAndSum(items)
+        .filter(item => (Number(item.quantity) || 0) > 0);
+
+      const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-      return items.map(item => ({
+      return grouped.map(item => ({
         ...item,
-        product: productMap.get(item.productId || '')
+        product: productMap.get(item.productId)
       }))
     });
 
