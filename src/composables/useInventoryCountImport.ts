@@ -223,26 +223,26 @@ function currentMillis(): number {
 
 
   function groupByProductAndSum(items: any[]) {
-  const map = new Map<string, any>();
-
-  for (const item of items) {
-    if (!item.productId) continue;
-    const key = String(item.productId).trim();
-
-    if (!map.has(key)) {
-      map.set(key, { ...item });
-    } else {
-      const existing = map.get(item.productId);
-      existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
-      existing.lastUpdatedAt = Math.max(
-        Number(existing.lastUpdatedAt || 0),
-        Number(item.lastUpdatedAt || 0)
-      );
+    const map = new Map<string, any>();
+  
+    for (const item of items) {
+      if (!item.productId) continue;
+      const key = String(item.productId).trim();
+  
+      if (!map.has(key)) {
+        map.set(key, { ...item });
+      } else {
+        const existing = map.get(key);
+        existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+        existing.lastUpdatedAt = Math.max(
+          Number(existing.lastUpdatedAt || 0),
+          Number(item.lastUpdatedAt || 0)
+        );
+      }
     }
+  
+    return [...map.values()];
   }
-
-  return [...map.values()];
-}
   const getUnmatchedItems = (inventoryCountImportId: string) =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
