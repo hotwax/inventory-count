@@ -85,7 +85,7 @@
               <ion-label>
                 <p class="overline">{{ countTypeLabel }}</p>
                 <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
-                <p>Created by {{ userLogin?.userFullName ? userLogin.userFullName : userLogin?.username }}</p>
+                <p v-if="inventoryCountImport?.uploadedByUserLogin">Created by {{ inventoryCountImport?.uploadedByUserLogin }}</p>
               </ion-label>
             </ion-item>
 
