@@ -106,25 +106,17 @@ const getCycleCountImportSystemMessages = async (payload: any): Promise<any> => 
 
 const cancelCycleCountFileProcessing = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
-    method: "post",
+    url: `inventory-cycle-count/cycleCounts/dataManagerLogs/${payload.logId}`,
+    method: "put",
     data: payload
   });
 };
 
 const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
+    url: `inventory-cycle-count/cycleCounts/dataManagerLogs/${payload.dataManagerLogId}/downloadFile`,
     method: "get",
     params: payload
-  });
-};
-
-const getCycleCountImportErrors = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
-    method: "get",
-    data: payload
   });
 };
 
@@ -220,16 +212,16 @@ export function useInventoryCountRun() {
   }
 
   /** Fetch cycle count import system messages (24h window) */
-  async function getCycleCntImportSystemMessages() {
+  async function getCycleCntImportDataManagerLogs(params?: any): Promise<any[]> {
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/systemMessages',
+        url: 'inventory-cycle-count/cycleCounts/dataManagerLogs',
         method: 'get',
         params: {
-          systemMessageTypeId: 'ImportInventoryCounts',
-          initDate_from: twentyFourHoursEarlier.toMillis(),
-          orderByField: 'initDate desc, processedDate desc',
+          ...params,
+          createdDate_from: twentyFourHoursEarlier.toMillis(),
+          orderByField: 'createdDate desc,finishDateTime desc',
           pageSize: 100
         }
       });
@@ -338,12 +330,11 @@ export function useInventoryCountRun() {
     getCycleCountImportSystemMessages,
     cancelCycleCountFileProcessing,
     getCycleCountUploadedFileData,
-    getCycleCountImportErrors,
     getExportedCycleCountsFileData,
     getExportedCycleCountsSystemMessages,
     submitProductReview,
     getCreatedAndAssignedWorkEfforts,
-    getCycleCntImportSystemMessages,
+    getCycleCntImportDataManagerLogs,
     getAssignedCycleCounts,
     getCycleCounts,
     clearCycleCountList,

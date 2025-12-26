@@ -56,23 +56,20 @@
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
 
-        <ion-list v-if="systemMessages.length" class="system-message-section">
+        <ion-list v-if="dataManagerLogs.length" class="system-message-section">
           <ion-list-header>
             <ion-label>
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
-              <ion-label class="ion-text-end">
-                {{ nextExecutionRemaining.includes("ago") ? translate("Last run") : translate("Next run") }} {{ nextExecutionRemaining }}
-              </ion-label>
           </ion-list-header>
-          <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
+          <ion-item v-for="dataManagerLog in dataManagerLogs" :key="dataManagerLog.logId">
             <ion-label>
-              <p class="overline">{{ systemMessage.systemMessageId }}</p>
-              {{ extractFilename(systemMessage.messageText) }}
+              <p class="overline">{{ dataManagerLog.logId }}</p>
+              {{ extractFilename(dataManagerLog?.contents.filter(content => content.logContentTypeEnumId === 'DmcntImported')[0].fileName ) }}
             </ion-label>
             <div slot="end" class="system-message-action">
-              <ion-note>{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+              <ion-note>{{ getFileProcessingStatus(dataManagerLog) }}</ion-note>
+              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, dataManagerLog)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -86,16 +83,16 @@
     <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false">
       <ion-content>
         <ion-list>
-          <ion-list-header>{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload">
+          <ion-list-header>{{ selectedDataManagerLog?.logId }}</ion-list-header>
+          <ion-item v-if="selectedDataManagerLog?.statusId === 'DmlsPending'" button @click="cancelUpload">
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+          <ion-item v-if="selectedDataManagerLog?.statusId === 'DmlsCrashed' || selectedDataManagerLog?.statusId === 'DmlsFailed' || selectedDataManagerLog.failedRecordCount > 0" button @click="viewFile(true)">
             <ion-icon slot="end" />
-            {{ translate("View error") }}
+            {{ translate("View error records") }}
           </ion-item>
-          <ion-item lines="none" button @click="viewFile">
+          <ion-item lines="none" button @click="viewFile(false)">
             <ion-icon slot="end" />
             {{ translate("View file") }}
           </ion-item>
@@ -124,8 +121,8 @@
 
               <ion-item lines="none">
                 <ion-label class="ion-text-wrap">
-                  <template v-if="systemMessageError?.errorText">
-                    {{ systemMessageError.errorText }}
+                  <template v-if="dataManagerError?.errorText">
+                    {{ dataManagerError.errorText }}
                   </template>
                   <template v-else>
                     {{ translate("No data found") }}
@@ -153,11 +150,9 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
-import { DateTime } from 'luxon';
 
 
-const systemMessages = ref([]);
-const nextExecutionTimestamp = ref(null);
+const dataManagerLogs = ref([]);
 let refreshInterval = null;
 let countdownInterval = null;
 
@@ -165,14 +160,10 @@ let countdownInterval = null;
 onIonViewDidEnter(async () => {
   resetDefaults();
 
-  await fetchSystemMessages();
-  await fetchJobExecutionTime();
-
-  startCountdownTimer();
+  await prepareCycleCountDataManagerLogs();
 
   refreshInterval = setInterval(async () => {
-    await fetchSystemMessages();
-    await fetchJobExecutionTime();
+    await prepareCycleCountDataManagerLogs();
   }, 15000);
 });
 
@@ -181,27 +172,6 @@ onBeforeUnmount(() => {
   clearInterval(countdownInterval);
 });
 
-async function fetchSystemMessages() {
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-}
-
-async function fetchJobExecutionTime() {
-  const jobResp = await useInventoryCountImport().getServiceJobDetail(
-    "consume_AllReceivedSystemMessages_frequent"
-  );
-
-  if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
-    nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
-  }
-}
-
-function startCountdownTimer() {
-  countdownInterval = setInterval(() => {
-    if (!nextExecutionTimestamp.value) return;
-    const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
-    nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
-  }, 1000);
-}
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
 let uploadedFile = ref({});
@@ -236,23 +206,19 @@ const templateRows = [
 /* ---------- UploadActionPopover Logic ---------- */
 const isUploadPopoverOpen = ref(false);
 const popoverEvent = ref(null);
-const selectedSystemMessage = ref(null);
+const selectedDataManagerLog = ref(null);
 const isErrorModalOpen = ref(false);
-const systemMessageError = ref({});
-const nextExecutionRemaining = ref("…");
+const dataManagerError = ref({});
 
-function openUploadActionPopover(event, systemMessage) {
+function openUploadActionPopover(event, dataManagerLog) {
   isUploadPopoverOpen.value = true;
   popoverEvent.value = event;
-  selectedSystemMessage.value = systemMessage;
+  selectedDataManagerLog.value = dataManagerLog;
 }
 function closeUploadPopover() {
   isUploadPopoverOpen.value = false;
 }
-function openErrorModal() {
-  isErrorModalOpen.value = true;
-  getCycleCountImportErrorsFromServer();
-}
+
 function closeErrorModal() {
   isErrorModalOpen.value = false;
   closeUploadPopover();
@@ -260,16 +226,14 @@ function closeErrorModal() {
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
 }
-async function getCycleCountImportErrorsFromServer() {
-  try {
-    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
-  } catch (err) { logger.error(err); }
-}
-async function viewFile() {
-  try {
-    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+
+async function viewFile(isError) {
+  try {    
+    const { logContentId, fileName } = isError ? selectedDataManagerLog.value.contents.filter(content => content.logContentTypeEnumId === 'DmcntError')[0]
+      : selectedDataManagerLog.value.contents.filter(content => content.logContentTypeEnumId === 'DmcntImported')[0];
+
+    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ logContentId: logContentId });
+    if (!hasError(resp)) downloadCsv(resp.data, fileName);
     else throw resp.data;
   } catch (err) {
     showToast(translate("Failed to download uploaded cycle count file."));
@@ -279,16 +243,27 @@ async function viewFile() {
 }
 async function cancelUpload() {
   try {
-    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
-    if (!hasError(resp)) {
-      showToast(translate("Cycle count cancelled successfully."));
-      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ logId: selectedDataManagerLog.value?.logId, statusId: "DmlsCancelled" });
+    if (resp?.status === 200) {
+      if (resp.data?.statusChanged === true) {
+        showToast(translate("Cycle count cancelled successfully."));
+      } else {
+        console.error("Failed to cancel import", resp.data);
+        showToast(translate("Failed to cancel import, file might be processed already."));
+      }
+    } else {
+      throw resp;
     }
+    await prepareCycleCountDataManagerLogs();
   } catch (err) {
     showToast(translate("Failed to cancel uploaded cycle count."));
     logger.error(err);
   }
   closeUploadPopover();
+}
+
+async function prepareCycleCountDataManagerLogs() {
+  dataManagerLogs.value = await useInventoryCountRun().getCycleCntImportDataManagerLogs({ configId: 'INV_COUNT_IMPORT' });
 }
 
 /* ---------- Bulk Upload Logic ---------- */
@@ -300,11 +275,12 @@ function extractFilename(path) {
   const fn = path.substring(path.lastIndexOf("/") + 1);
   return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
-function getFileProcessingStatus(systemMessage) {
-  if (systemMessage.statusId === "SmsgConsumed") return "processed";
-  if (systemMessage.statusId === "SmsgConsuming") return "processing";
-  if (systemMessage.statusId === "SmsgCancelled") return "cancelled";
-  if (systemMessage.statusId === "SmsgError") return "error";
+function getFileProcessingStatus(dataManagerLog) {
+  if (dataManagerLog.statusId === "DmlsFailed" || dataManagerLog.statusId === "DmlsCrashed" || (dataManagerLog.failedRecordCount > 0)) return "error";
+  if (dataManagerLog.statusId === "DmlsFinished") return "processed";
+  if (dataManagerLog.statusId === "DmlsPending") return "pending";
+  if (dataManagerLog.statusId === "DmlsRunning") return "processing";
+  if (dataManagerLog.statusId === "DmlsCancelled") return "cancelled";
   return "pending";
 }
 function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((mapping, key) => (mapping[key] = "", mapping), {}); }
@@ -367,13 +343,13 @@ async function save() {
     name: fileName.value
   });
   const fd = new FormData();
-  fd.append("uploadedFile", data, fileName.value);
+  fd.append("contentFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
-    const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
+    const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" }, params: { configId: "INV_COUNT_IMPORT" } });
     if (!hasError(resp)) {
       resetDefaults();
-      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+      await prepareCycleCountDataManagerLogs();
       showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {
