@@ -57,7 +57,24 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <ion-card v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')">
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate('Facility') }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+          </ion-card-content>
+          <ion-item lines="none">
+            <ion-label>
+              {{ currentFacility.facilityName }}
+              <p>{{ currentFacility.facilityId }}</p>
+            </ion-label>
+            <ion-button v-if="facilities?.length > 1" id="open-facility-modal" slot="end" fill="outline" color="dark">{{
+              translate('Change')}}</ion-button>
+          </ion-item>
+        </ion-card>
         <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-subtitle>
@@ -88,7 +105,31 @@
         <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
       </div>
       <section>
-        <TimeZoneSwitcher/>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ translate('Timezone') }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            {{ translate('The timezone you select is used to ensure automations you schedule are always accurate to the time you select.') }}
+          </ion-card-content>
+          <ion-item>
+            <ion-label>
+              <p class="overline">{{ translate("Browser TimeZone") }}</p>
+              {{ browserTimeZone.id }}
+              <p>{{ getCurrentTime(browserTimeZone.id, 't ZZZZ') }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item lines="none">
+            <ion-label>
+              <p class="overline">{{ translate("Selected TimeZone") }}</p>
+              {{ currentTimeZoneId }}
+              <p>{{ getCurrentTime(currentTimeZoneId, 't ZZZZ') }}</p>
+            </ion-label>
+            <ion-button id="time-zone-modal" slot="end" fill="outline" color="dark">{{ translate("Change") }}</ion-button>
+          </ion-item>
+        </ion-card>
         <ion-card v-if="!router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-title>
@@ -231,22 +272,134 @@
       </ion-list>
     </ion-content>
   </ion-modal>
+    <!-- Using inline modal(as recommended by ionic), also using it inline as the component inside modal is not getting mounted when using modalController -->
+    <ion-modal ref="timeZoneModal" trigger="time-zone-modal" @didPresent="search()" @didDismiss="clearTimeZoneSearch()">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeTimeZoneModal">
+              <ion-icon :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("Select time zone") }}</ion-title>
+        </ion-toolbar>
+        <ion-toolbar>
+          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search time zones')"  v-model="timeZoneQuery" @keyup.enter="timeZoneQuery = $event.target.value; findTimeZone()" @keydown="preventSpecialCharacters($event)" />
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <div>
+          <ion-radio-group v-model="timeZoneId">
+            <ion-list>
+              <ion-list-header>{{ translate("Browser time zone") }}</ion-list-header>
+              <ion-item>
+                <ion-radio label-placement="end" justify="start" :value="browserTimeZone.id">
+                  <ion-label>
+                    {{ browserTimeZone.label }} ({{ browserTimeZone.id }})
+                    <p>{{ getCurrentTime(browserTimeZone.id, 't ZZZZ') }}</p>
+                  </ion-label>
+                </ion-radio>
+              </ion-item>
+            </ion-list>
+            <ion-list>
+              <ion-list-header>{{ translate("Select a different time zone") }}</ion-list-header>
+              <!-- Loading state -->
+              <div class="empty-state" v-if="isTimeZoneLoading">
+                <ion-item lines="none">
+                  <ion-spinner color="secondary" name="crescent" slot="start" />
+                  {{ translate("Fetching time zones") }}
+                </ion-item>
+              </div>
+              <!-- Empty state -->
+              <div class="empty-state" v-else-if="filteredTimeZones.length === 0">
+                <p>{{ translate("No time zone found") }}</p>
+              </div>
+              <div v-else>
+                <ion-item :key="timeZone.id" v-for="timeZone in filteredTimeZones">
+                  <ion-radio label-placement="end" justify="start" :value="timeZone.id">
+                    <ion-label>
+                      {{ timeZone.label }} ({{ timeZone.id }})
+                      <p>{{ getCurrentTime(timeZone.id, 't ZZZZ') }}</p>
+                    </ion-label>
+                  </ion-radio>
+                </ion-item>
+              </div>
+            </ion-list>
+          </ion-radio-group>
+        </div>
+
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button :disabled="!timeZoneId || timeZoneId === currentTimeZoneId" @click="setUserTimeZone">
+            <ion-icon :icon="saveOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </ion-content>
+    </ion-modal>
+  <!-- Using inline modal(as recommended by ionic), also using it inline as the component inside modal is not getting mounted when using modalController -->
+    <ion-modal ref="facilityModal" trigger="open-facility-modal" @didPresent="loadFacilities()"
+      @didDismiss="clearFacilitySearch()">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeFacilityModal">
+              <ion-icon slot="icon-only" :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("Select Facility") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
+          v-model="facilityQuery" @ionInput="findFacility($event)"
+          @keydown="preventSpecialCharacters($event)" />
+        <ion-radio-group v-model="selectedFacilityId">
+          <ion-list>
+            <!-- Loading state -->
+            <div class="empty-state" v-if="isFacilityLoading">
+              <ion-item lines="none">
+                <ion-spinner color="secondary" name="crescent" slot="start" />
+                {{ translate("Fetching facilities") }}
+              </ion-item>
+            </div>
+            <!-- Empty state -->
+            <div class="empty-state" v-else-if="!filteredFacilities.length">
+              <p>{{ translate("No facilities found") }}</p>
+            </div>
+            <div v-else>
+              <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
+                <ion-radio label-placement="end" justify="start" :value="facility.facilityId">
+                  <ion-label>
+                    {{ facility.facilityName }}
+                    <p>{{ facility.facilityId }}</p>
+                  </ion-label>
+                </ion-radio>
+              </ion-item>
+            </div>
+          </ion-list>
+        </ion-radio-group>
+
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button :disabled="selectedFacilityId === currentFacility.facilityId" @click="updateFacility">
+            <ion-icon :icon="saveOutline" />
+          </ion-fab-button>
+        </ion-fab>
+      </ion-content>
+    </ion-modal>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonMenuButton, IonModal, IonNote, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTitle, IonToolbar } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
+import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, saveOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
-import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
-import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
@@ -262,11 +415,41 @@ const currentEComStore = computed(() => useProductStore().getCurrentProductStore
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
+const timeZones = computed(() => useUserProfile().getTimeZones)
+const currentTimeZoneId = computed(() => userProfile.value?.timeZone)
+
+const isFacilityLoading = ref(true);
+const isTimeZoneLoading = ref(true);
+const timeZoneModal = ref();
+const timeZoneQuery = ref('');
+const facilityQuery = ref('');
+const filteredTimeZones = ref([]) as any
+const timeZoneId = ref(currentTimeZoneId.value)
+// Fetching timeZone of the browser
+const browserTimeZone = ref({
+  label: '',
+  id: Intl.DateTimeFormat().resolvedOptions().timeZone
+})
+
+const productStore = useProductStore();
+
+const facilities = computed(() => productStore.getFacilities)
+const currentFacility = computed(() => productStore.getCurrentFacility)
+
+const facilityModal = ref()
+const filteredFacilities = ref([]) as any
+const selectedFacilityId = ref('')
+
 onMounted(async () => {
   appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
   await useProductStore().prepareProductIdentifierOptions();
   await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
+  await useUserProfile().getDxpAvailableTimeZones();
+  timeZoneId.value = userProfile.value.timeZone
+  browserTimeZone.value.label = ((timeZones.value as any[])?.find((timeZone: any) => (timeZone?.id || '').toLowerCase().includes(browserTimeZone.value.id.toLowerCase()))?.label) || ''
+
+  findTimeZone();
 })
 
 function logout() {
@@ -345,6 +528,92 @@ async function openDiagnosisModal() {
       omsDiagnosticsResults.value[index] = result;
     }, index * 150);
   });
+}
+
+const closeTimeZoneModal = () => {
+  timeZoneId.value = currentTimeZoneId.value;
+  timeZoneModal.value.$el.dismiss(null, 'cancel');
+}
+
+async function setUserTimeZone() {
+  try {
+    await useUserProfile().setDxpUserTimeZone(timeZoneId.value);
+  } catch (error) {
+    console.error("Error Updating Time Zone: ", error);
+  }
+  closeTimeZoneModal();
+}
+
+function findTimeZone() {
+  const searchedString = timeZoneQuery.value.toLowerCase();
+  filteredTimeZones.value = timeZones.value.filter((timeZone: any) => timeZone.id.toLowerCase().match(searchedString) || timeZone.label.toLowerCase().match(searchedString));
+
+  filteredTimeZones.value = filteredTimeZones.value.filter((timeZone: any) => !timeZone.id.toLowerCase().match(browserTimeZone.value.id.toLowerCase()));
+}
+
+async function selectSearchBarText(event: any) {
+  const element = await event.target.getInputElement()
+  element.select();
+}
+
+function preventSpecialCharacters($event: any) {
+  // Searching special characters fails the API, hence, they must be omitted
+  if(/[`!@#$%^&*()_+\-=\\|,.<>?~]/.test($event.key)) $event.preventDefault();
+}
+
+function search() {
+  isTimeZoneLoading.value = true;
+  findTimeZone();
+  isTimeZoneLoading.value = false;
+}
+
+// clearing the data explicitely as the modal is mounted due to the component being mounted always
+function clearTimeZoneSearch() {
+  timeZoneQuery.value = ''
+  filteredTimeZones.value = []
+  isTimeZoneLoading.value = true
+}
+
+const getCurrentTime = (zone: string, format = 't ZZZZ') => {
+  return DateTime.now().setZone(zone).toFormat(format)
+}
+
+const closeFacilityModal = () => {
+  facilityModal.value.$el.dismiss(null, 'cancel');
+}
+
+function loadFacilities() {
+  filteredFacilities.value = facilities.value;
+  selectedFacilityId.value = currentFacility.value.facilityId
+  isFacilityLoading.value = false;
+}
+
+const findFacility = (event?: any) => {
+  isFacilityLoading.value = true
+  const query = event ? event.target.value : facilityQuery.value;
+  const searchedString = (query || '').trim().toLowerCase();
+  if (searchedString) {
+    filteredFacilities.value = facilities.value.filter((facility: any) =>
+      facility.facilityName?.toLowerCase().includes(searchedString) ||
+      facility.facilityId?.toLowerCase().includes(searchedString)
+    );
+  } else {
+    filteredFacilities.value = facilities.value;
+  }
+  isFacilityLoading.value = false
+}
+
+async function updateFacility() {
+  const selectedFacility = facilities.value.find((facility: any) => facility.facilityId === selectedFacilityId.value)
+  await productStore.setFacilityPreference(selectedFacility)
+  closeFacilityModal();
+}
+
+function clearFacilitySearch() {
+  facilityQuery.value = ''
+  filteredFacilities.value = []
+  selectedFacilityId.value = ''
+  isFacilityLoading.value = true
 }
 </script>
 
