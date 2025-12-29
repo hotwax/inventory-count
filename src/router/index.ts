@@ -5,16 +5,10 @@ import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
-import Assigned from "@/views/Assigned.vue";
-import AssignedDetail from "@/views/AssignedDetail.vue";
-import PendingReview from '@/views/PendingReview.vue';
-import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
 import BulkUpload from "@/views/BulkUpload.vue";
-import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
-import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
@@ -22,6 +16,8 @@ import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
+import CycleCounts from "@/views/CycleCounts.vue";
+import CycleCountDetail from "@/views/CycleCountDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -31,6 +27,7 @@ declare module 'vue-router' {
     iosIcon?: any;
     mdIcon?: any;
     showInMenu?: boolean;
+    defaultBackRoutePath?: string;
   }
 }
 
@@ -95,7 +92,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/assigned',
     name: 'Assigned',
-    component: Assigned,
+    component: CycleCounts,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_ASSIGNED_VIEW",
@@ -108,7 +105,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/closed',
     name: 'Closed',
-    component: Closed,
+    component: CycleCounts,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_CLOSED_VIEW",
@@ -121,17 +118,19 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/assigned/:workEffortId',
     name: 'AssignedDetail',
-    component: AssignedDetail,
+    component: CycleCountDetail,
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW"
+      permissionId: "APP_ASSIGNED_VIEW",
+      title: 'Assigned Count',
+      defaultBackRoutePath: '/assigned'
     }
   },
   {
     path: '/pending-review',
     name: 'PendingReview',
-    component: PendingReview,
+    component: CycleCounts,
     beforeEnter: authGuard,
     meta: {
       permissionId: "APP_PENDING_REVIEW_VIEW",
@@ -144,11 +143,13 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/pending-review/:workEffortId',
     name: 'PendingReviewDetail',
-    component: PendingReviewDetail,
+    component: CycleCountDetail,
     beforeEnter: authGuard,
     props: true,
     meta: {
       permissionId: "APP_PENDING_REVIEW_VIEW",
+      title: 'Review Count',
+      defaultBackRoutePath: '/pending-review'
     }
   },
   {
@@ -193,49 +194,15 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/pending-review',
-    name: 'PendingReview',
-    component: PendingReview,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
-      showInMenu: true,
-      title: "Pending review",
-      iosIcon: mailUnreadOutline,
-      mdIcon: mailUnreadOutline,
-    }
-  },
-  {
-    path: '/pending-review/:workEffortId',
-    name: 'PendingReviewDetail',
-    component: PendingReviewDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
-    }
-  },
-  {
-    path: '/closed',
-    name: 'Closed',
-    component: Closed,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW",
-      showInMenu: true,
-      title: "Closed",
-      iosIcon: receiptOutline,
-      mdIcon: receiptOutline,
-    }
-  },
-  {
     path: '/closed/:workEffortId',
     name: 'ClosedDetail',
-    component: ClosedDetail,
+    component: CycleCountDetail,
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "APP_CLOSED_VIEW",
+      title: 'Closed Count',
+      defaultBackRoutePath: '/closed'
     }
   },
   {

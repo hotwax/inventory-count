@@ -29,6 +29,7 @@ export const useUserProfile = defineStore('userProfile', {
       },
       closed: {
         countType: '',
+        status: '',
         facilityIds: [],
         createdFrom: '',
         createdTo: '',
