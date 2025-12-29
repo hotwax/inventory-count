@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" :default-href="router.currentRoute.value.meta.defaultBackRoutePath" />
-        <ion-title>{{ router.currentRoute.value.meta.title }}</ion-title>
+        <ion-title>{{ translate(router.currentRoute.value.meta.title as string) }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -31,7 +31,7 @@
               </ion-label>
             </ion-item>
 
-            <section v-if="isCycleCountInCreatedOrProgressStatus">
+            <template v-if="isCycleCountInCreatedOrProgressStatus">
               <ion-item>
                 <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
                 <ion-label>{{ translate("Start Date") }}</ion-label>
@@ -71,9 +71,9 @@
                   <span slot="title">Cycle count due date</span>
                 </ion-datetime>
               </ion-modal>
-            </section>
+            </template>
 
-            <section v-if="isCycleCountInReview">
+            <template v-if="isCycleCountInReview">
               <ion-item>
                 <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
                 <ion-label>
@@ -89,9 +89,9 @@
                   {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
                 </ion-label>
               </ion-item>
-            </section>
+            </template>
 
-            <section v-if="isCycleCountInTerminalStatus">
+            <template v-if="isCycleCountInTerminalStatus">
               <ion-item class="due-date">
                 <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
                 <div>
@@ -105,7 +105,7 @@
                   </div>
                 </div>
               </ion-item>
-            </section>
+            </template>
           </ion-card>
           <ion-card>
             <ion-item>
@@ -184,7 +184,7 @@
                     <!-- HEADER -->
                     <div class="list-item count-item-rollup" slot="header">
                       <div class="item-key">
-                        <ion-checkbox v-if="isCycleCountInReview" :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(item)"></ion-checkbox>
+                        <ion-checkbox v-if="isCycleCountInReview" :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="toggleSelectedForReview(item)"></ion-checkbox>
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
                             <Image :src="item.detailImageUrl" />
@@ -485,13 +485,13 @@
       ]"
     ></ion-alert>
     <ion-alert
-    :is-open="isCancelCountAlertOpen"
-    @did-dismiss="isCancelCountAlertOpen = false"
-    :header="translate('Confirm Close')"
-    :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
-    :buttons="[
-      { text: translate('Cancel'), role: 'cancel' },
-      { text: translate('Close'), handler: () => cancelCycleCount() }
+      :is-open="isCancelCountAlertOpen"
+      @did-dismiss="isCancelCountAlertOpen = false"
+      :header="translate('Confirm Close')"
+      :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
+      :buttons="[
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Close'), handler: () => cancelCycleCount() }
     ]">
     </ion-alert>
   </ion-page>
@@ -659,11 +659,13 @@ function isSelected(product: any) {
 }
 
 function toggleSelectedForReview(product: any) {
-  const index = selectedProductsReview.value.findIndex(
-    (productReview) => productReview.productId === product.productId
-  );
-  if (index === -1) selectedProductsReview.value.push(product);
-  else selectedProductsReview.value.splice(index, 1);
+  if (isSelected(product)) {
+    selectedProductsReview.value = selectedProductsReview.value.filter(
+      (productReview) => productReview.productId !== product.productId
+    );
+  } else {
+    selectedProductsReview.value.push(product);
+  }
 }
 
 function toggleSelectAll(isChecked: any) {

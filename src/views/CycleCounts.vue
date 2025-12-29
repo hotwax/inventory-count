@@ -54,7 +54,7 @@
           </ion-item>
 
           <ion-chip v-if="count.facilityId" outline>
-            <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
+            <ion-label>{{ getFacilityName(count.facilityId) }}</ion-label>
           </ion-chip>
           <ion-button v-else-if="countsPageMeta.countPageEnum === 'ASSIGNED'" fill="outline" size="small" @click="openFacilityModal(count, $event)">
             <ion-icon :icon="addOutline" slot="start"></ion-icon>
@@ -301,17 +301,13 @@ function loadFacilities() {
 async function updateFacilityOnCycleCount() {
   await loader.present("Updating Cycle Count...");
   try {
-    const resp = await useInventoryCountRun().updateWorkEffort({
+    await useInventoryCountRun().updateWorkEffort({
       workEffortId: selectedCount.value?.workEffortId,
       facilityId: selectedFacilityId.value
     });
 
-    if (resp?.status === 200) {
-      selectedCount.value.facilityId = selectedFacilityId.value;
-      showToast("Updated Cycle Count Successfully");
-    } else {
-      throw resp;
-    }
+    selectedCount.value.facilityId = selectedFacilityId.value;
+    showToast("Updated Cycle Count Successfully");
   } catch (error) {
     console.error("Error Updating Cycle Count: ", error);
     showToast("Failed to Update Cycle Count");
@@ -340,7 +336,7 @@ const findFacility = (event?: any) => {
   if (searchedString) {
     filteredFacilities.value = facilities.value.filter((facility: any) =>
       facility.facilityName?.toLowerCase().includes(searchedString) ||
-      facility.facilityId?.toLowerCase().includes(searchedString)
+      facility.facilityId.toLowerCase().includes(searchedString)
     );
   } else {
     filteredFacilities.value = facilities.value;
