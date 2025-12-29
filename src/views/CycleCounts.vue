@@ -230,7 +230,10 @@ const countsPageMeta = computed(() => {
       countsPageName: "Pending Review",
       countPageEnum: "PENDING_REVIEW",
       uiFilterKey: 'pendingReview',
-      countDetailPageRoute: "/pending-review"
+      countDetailPageRoute: "/pending-review",
+      filterOptions: {
+        typeOptions
+      }
     };
   } else if (name === "Closed") {
     return {

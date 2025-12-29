@@ -99,7 +99,7 @@
                   <div v-if="workEffort.estimatedCompletionDate">
                     <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
                     <ion-modal keep-contents-mounted="true">
-                      <ion-datetime id="datetime" :value="getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate)" :disabled="true">
+                      <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true">
                       </ion-datetime>
                     </ion-modal>
                   </div>
@@ -597,8 +597,8 @@ const overallFilteredVarianceQtyProposed = computed(() =>
   filteredSessionItems.value.reduce(
     (sum, item) => sum +
       (isCycleCountInTerminalStatus.value
-        ? item.systemQuantity || 0
-        : item.proposedVarianceQuantity),
+        ? item.varianceQuantity || 0
+        : item.proposedVarianceQuantity || 0),
     0
   )
 );
@@ -1217,6 +1217,10 @@ async function cancelCycleCount() {
     console.error("Error closing cycle count:", error);
     showToast(translate("Failed to close cycle count"));
   }
+}
+
+const getDateTime = (time: any) => {
+  return time ? DateTime.fromMillis(time).toISO() : ''
 }
 </script>
 
