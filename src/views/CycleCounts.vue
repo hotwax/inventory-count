@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ translate(countsPageMeta?.countsPageName)}}</ion-title>
+        <ion-title>{{ translate(countsPageMeta.countsPageName)}}</ion-title>
         <ion-buttons v-if="countsPageMeta.countPageEnum === 'CLOSED'" slot="end">
           <ion-button @click="router.push('/export-history')">
             <ion-icon slot="start" :icon="downloadOutline" />
@@ -16,14 +16,14 @@
       <ion-list>
         <div class="filters">
           <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
-          <ion-item v-if="countsPageMeta.filterOptions?.statusOptions">
+          <ion-item v-if="countsPageMeta.filterOptions.statusOptions">
             <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All">
-            <ion-select-option v-for="option in countsPageMeta.filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+              <ion-select-option v-for="option in countsPageMeta.filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
             <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover">
-            <ion-select-option v-for="option in countsPageMeta.filterOptions?.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+              <ion-select-option v-for="option in countsPageMeta.filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item>
@@ -146,31 +146,29 @@
           <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
             v-model="facilityQueryString" @ionInput="findFacility($event)"
             @keydown="preventSpecialCharacters($event)" />
-          <ion-radio-group v-model="selectedFacilityId">
-            <ion-list>
-              <!-- Loading state -->
-              <div class="empty-state" v-if="isLoading">
-                <ion-item lines="none">
-                  <ion-spinner color="secondary" name="crescent" slot="start" />
-                  {{ translate("Fetching facilities") }}
-                </ion-item>
-              </div>
-              <!-- Empty state -->
-              <div class="empty-state" v-else-if="!filteredFacilities.length">
-                <p>{{ translate("No facilities found") }}</p>
-              </div>
-              <div v-else>
-                <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
-                  <ion-radio label-placement="end" justify="start" :value="facility.facilityId">
-                    <ion-label>
-                      {{ facility.facilityName }}
-                      <p>{{ facility.facilityId }}</p>
-                    </ion-label>
-                  </ion-radio>
-                </ion-item>
-              </div>
-            </ion-list>
-          </ion-radio-group>
+          <ion-list>
+            <!-- Loading state -->
+            <div class="empty-state" v-if="isLoading">
+              <ion-item lines="none">
+                <ion-spinner color="secondary" name="crescent" slot="start" />
+                {{ translate("Fetching facilities") }}
+              </ion-item>
+            </div>
+            <!-- Empty state -->
+            <div class="empty-state" v-else-if="!filteredFacilities.length">
+              <p>{{ translate("No facilities found") }}</p>
+            </div>
+            <ion-radio-group v-else v-model="selectedFacilityId">
+              <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
+                <ion-radio label-placement="end" justify="start" :value="facility.facilityId">
+                  <ion-label>
+                    {{ facility.facilityName }}
+                    <p>{{ facility.facilityId }}</p>
+                  </ion-label>
+                </ion-radio>
+              </ion-item>
+            </ion-radio-group>
+          </ion-list>
 
           <ion-fab vertical="bottom" horizontal="end" slot="fixed">
             <ion-fab-button :disabled="!selectedFacilityId" @click="updateFacilityOnCycleCount">
@@ -517,11 +515,6 @@ async function applyFilters() {
   loader.dismiss();
 }
 
-function buildExportPayload() {
-  // Same keys as list filters, but without paging/status fields
-  return buildFilterParams();
-}
-
 async function updateFilters(key: any, value: any) {
   userProfile.updateUiFilter(countsPageMeta.value.uiFilterKey, key, value)
   await refreshList();
@@ -530,7 +523,7 @@ async function updateFilters(key: any, value: any) {
 async function exportCycleCounts() {
   try {
     await loader.present(translate("Requesting export..."));
-    const payload = buildExportPayload();
+    const payload = buildFilterParams();
     const resp = await useInventoryCountRun().queueCycleCountsFileExport(payload);
 
     if (!hasError(resp)) {

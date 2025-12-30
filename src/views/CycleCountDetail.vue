@@ -73,7 +73,7 @@
               </ion-modal>
             </template>
 
-            <template v-if="isCycleCountInReview">
+            <template v-if="isCycleCountInReview || isCycleCountInTerminalStatus">
               <ion-item>
                 <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
                 <ion-label>
@@ -82,28 +82,17 @@
                 </ion-label>
               </ion-item>
 
-              <ion-item lines="none" class="due-date">
+              <ion-item lines="none">
                 <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-                <ion-label>
+                <ion-label v-if="isCycleCountInReview">
                   <p class="overline">{{ translate("Due Date") }}</p>
                   {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
                 </ion-label>
-              </ion-item>
-            </template>
-
-            <template v-if="isCycleCountInTerminalStatus">
-              <ion-item class="due-date">
-                <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-                <div>
-                  <p class="overline">{{ translate("Due Date") }}</p>
-                  <div v-if="workEffort.estimatedCompletionDate">
-                    <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
-                    <ion-modal keep-contents-mounted="true">
-                      <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true">
-                      </ion-datetime>
-                    </ion-modal>
-                  </div>
-                </div>
+                <ion-label v-if="isCycleCountInTerminalStatus">
+                  <p class="overline">{{ translate("Closed Date") }}</p>
+                  {{ workEffort.actualCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.actualCompletionDate) : translate("Not set") }}
+                  <p v-if="workEffort.actualCompletionDate && workEffort.estimatedCompletionDate">{{ getTimeDifference(workEffort.actualCompletionDate, workEffort.estimatedCompletionDate) }}</p>
+                </ion-label>
               </ion-item>
             </template>
           </ion-card>
@@ -175,7 +164,7 @@
           @select-all="smartFiltersProps.selectAll"
         />
 
-        <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+        <div class="ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
             <template #default="{ item, index, active }">
@@ -192,12 +181,12 @@
                           <ion-label>{{ item.internalName }}</ion-label>
                         </ion-item>
                       </div>
-                      <ion-label class="stat">
+                      <ion-label>
                         {{ item.quantity || '-' }}/{{ isCycleCountInTerminalStatus ? item.systemQuantity || '-' : item.systemQuantityOnHand || '-' }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 
-                      <ion-label class="stat">
+                      <ion-label>
                         {{ isCycleCountInTerminalStatus ? item.varianceQuantity || '-' : item.proposedVarianceQuantity || '-' }}
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
@@ -228,7 +217,7 @@
                         </ion-button>
                       </div>
 
-                      <ion-badge v-else-if="item.decisionOutcomeEnumId" :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'" style="--color: white;">
+                      <ion-badge v-else-if="item.decisionOutcomeEnumId" :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'">
                         {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
                     </div>
@@ -1219,10 +1208,6 @@ async function cancelCycleCount() {
     console.error("Error closing cycle count:", error);
     showToast(translate("Failed to close cycle count"));
   }
-}
-
-const getDateTime = (time: any) => {
-  return time ? DateTime.fromMillis(time).toISO() : ''
 }
 </script>
 
