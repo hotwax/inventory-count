@@ -143,6 +143,9 @@ export const useAuthStore = defineStore('authStore', {
 
       } catch (err) {
         console.error("Error in Login: ", err);
+        useProductStore().$reset();
+        useUserProfile().$reset();
+        this.$reset();
         throw `Login failed. Please try again`;
       }
     },
@@ -150,7 +153,7 @@ export const useAuthStore = defineStore('authStore', {
       try {
         useProductStore().$reset();
         useUserProfile().$reset();
-        useAuthStore().$reset();
+        this.$reset();
 
         const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
         const redirectUrl = window.location.origin + '/login';

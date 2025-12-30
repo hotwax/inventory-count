@@ -75,7 +75,8 @@ export const useProductStore = defineStore('productStore', {
         const response = await this.getEComStoresByFacility(100, facilityId)
         this.productStores = response
       } catch (error) {
-        console.error(error)
+        console.error(error);
+        throw error;
       }
       return this.productStores
     },
@@ -102,6 +103,7 @@ export const useProductStore = defineStore('productStore', {
         }
       } catch (error) {
         console.error(error)
+        throw error;
       }
       this.currentProductStore = preferredStore
     },
@@ -201,7 +203,8 @@ export const useProductStore = defineStore('productStore', {
           this.settings = parsedSettings
         }
       } catch (err) {
-        logger.error('Failed to load product store settings', err)
+        logger.error('Failed to load product store settings', err);
+        throw err;
       }
     },
 
@@ -271,6 +274,7 @@ export const useProductStore = defineStore('productStore', {
         console.info('[useProductStore] Loaded product identifier settings for', productStoreId)
       } catch (err) {
         console.error('[useProductStore] Failed to load identifier settings:', err)
+        throw err;
       }
     },
 
