@@ -2,8 +2,8 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/pending-review" />
-        <ion-title>{{ translate("Review count") }}</ion-title>
+        <ion-back-button slot="start" :default-href="router.currentRoute.value.meta.defaultBackRoutePath" />
+        <ion-title>{{ translate(router.currentRoute.value.meta.title as string) }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -19,6 +19,9 @@
                 <p class="overline">{{ workEffort?.workEffortId }}</p>
                 <h1>{{ workEffort?.workEffortName }}</h1>
               </ion-label>
+              <ion-button v-if="isCycleCountInCreatedStatus" id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert">
+                {{ translate("Edit") }}
+              </ion-button>
             </ion-item>
 
             <ion-item>
@@ -28,40 +31,89 @@
               </ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>
-                <p class="overline">{{ translate("Start Date") }}</p>
-                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}
-              </ion-label>
-            </ion-item>
+            <template v-if="isCycleCountInCreatedOrProgressStatus">
+              <ion-item>
+                <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+                <ion-label>{{ translate("Start Date") }}</ion-label>
+                <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate"/>
+                <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
+              </ion-item>
 
-            <ion-item lines="none" class="due-date">
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>
-                <p class="overline">{{ translate("Due Date") }}</p>
-                {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
-              </ion-label>
-            </ion-item>
+              <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted>
+                <ion-datetime
+                  id="estimatedStartDate"
+                  :value="getInitialValue('estimatedStartDate')"
+                  :min="getMinDateTime()"
+                  presentation="date-time"
+                  show-default-buttons
+                  @ionChange="(ev) => handleChange(ev, 'estimatedStartDate')"
+                >
+                  <span slot="title">Cycle count start date</span>
+                </ion-datetime>
+              </ion-modal>
+
+              <ion-item lines="none">
+                <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+                <ion-label>{{ translate("Due Date") }}</ion-label>
+                <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate"/>
+                <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
+              </ion-item>
+
+              <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted>
+                <ion-datetime
+                  id="estimatedCompletionDate"
+                  :value="getInitialValue('estimatedCompletionDate')"
+                  :min="getMinDateTime()"
+                  presentation="date-time"
+                  show-default-buttons
+                  @ionChange="(ev) => handleChange(ev, 'estimatedCompletionDate')"
+                >
+                  <span slot="title">Cycle count due date</span>
+                </ion-datetime>
+              </ion-modal>
+            </template>
+
+            <template v-if="isCycleCountInReview || isCycleCountInTerminalStatus">
+              <ion-item>
+                <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+                <ion-label>
+                  <p class="overline">{{ translate("Start Date") }}</p>
+                  {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}
+                </ion-label>
+              </ion-item>
+
+              <ion-item lines="none">
+                <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+                <ion-label v-if="isCycleCountInReview">
+                  <p class="overline">{{ translate("Due Date") }}</p>
+                  {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
+                </ion-label>
+                <ion-label v-if="isCycleCountInTerminalStatus">
+                  <p class="overline">{{ translate("Closed Date") }}</p>
+                  {{ workEffort.actualCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.actualCompletionDate) : translate("Not set") }}
+                  <p v-if="workEffort.actualCompletionDate && workEffort.estimatedCompletionDate">{{ getTimeDifference(workEffort.actualCompletionDate, workEffort.estimatedCompletionDate) }}</p>
+                </ion-label>
+              </ion-item>
+            </template>
           </ion-card>
           <ion-card>
             <ion-item>
               <ion-label>{{ translate("First item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
+                <p v-if="isCycleCountInReview && aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
               </ion-label>
             </ion-item>
             <ion-item>
               <ion-label>{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
+                <p v-if="isCycleCountInReview && aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
 
-          <div class="statistics">
+          <div v-if="!isCycleCountInCreatedOrProgressStatus" class="statistics">
             <ion-card>
               <ion-item lines="none">
                 <ion-label>
@@ -98,29 +150,21 @@
         </div>
 
         <SmartFilterSortBar
-          :items="aggregatedSessionItems"
-          :selected-items="selectedProductsReview"
-          :show-search="true"
-          :show-status="true"
-          :show-compliance="true"
-          :show-sort="true"
-          :show-select="true"
-          :status-options="[
-            { label: translate('Open'), value: 'open' },
-            { label: translate('Accepted'), value: 'accepted' },
-            { label: translate('Rejected'), value: 'rejected' }
-          ]"
-          :sort-options="[
-            { label: translate('Alphabetic'), value: 'alphabetic' },
-            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
-            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
-          ]"
-          :threshold-config="userProfile.getDetailPageFilters.threshold"
+          :items="smartFiltersProps.items"
+          :selected-items="smartFiltersProps.selectedItems"
+          :show-search="smartFiltersProps.showSearch"
+          :show-status="smartFiltersProps.showStatus"
+          :show-compliance="smartFiltersProps.showCompliance"
+          :show-sort="smartFiltersProps.showSort"
+          :show-select="smartFiltersProps.showSelect"
+          :status-options="smartFiltersProps.statusOptions"
+          :sort-options="smartFiltersProps.sortOptions"
+          :threshold-config="smartFiltersProps.thresholdConfig"
           @update:filtered="filteredSessionItems = $event"
-          @select-all="toggleSelectAll"
+          @select-all="smartFiltersProps.selectAll"
         />
 
-        <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+        <div class="ion-margin-top" v-if="filteredSessionItems?.length">
           <ion-accordion-group>
           <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
             <template #default="{ item, index, active }">
@@ -129,7 +173,7 @@
                     <!-- HEADER -->
                     <div class="list-item count-item-rollup" slot="header">
                       <div class="item-key">
-                        <ion-checkbox :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(item)"></ion-checkbox>
+                        <ion-checkbox v-if="isCycleCountInReview" :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="toggleSelectedForReview(item)"></ion-checkbox>
                         <ion-item lines="none">
                           <ion-thumbnail slot="start">
                             <Image :src="item.detailImageUrl" />
@@ -137,24 +181,18 @@
                           <ion-label>{{ item.internalName }}</ion-label>
                         </ion-item>
                       </div>
-
-                      <ion-label class="stat">
-                        {{ item.quantity || '-' }}/{{ item.systemQuantityOnHand || '-' }}
+                      <ion-label>
+                        {{ item.quantity || '-' }}/{{ isCycleCountInTerminalStatus ? item.systemQuantity || '-' : item.systemQuantityOnHand || '-' }}
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 
-                      <ion-label class="stat">
-                        {{ item.proposedVarianceQuantity }}
+                      <ion-label>
+                        {{ isCycleCountInTerminalStatus ? item.varianceQuantity || '-' : item.proposedVarianceQuantity || '-' }}
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
-
                       <!-- ACTION BUTTONS -->
-                      <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                        <ion-button
-                          fill="outline"
-                          color="success"
-                          size="small"
-                          @click.stop="stopAccordianEventProp"
+                      <div v-if="isCycleCountInReview && !item.decisionOutcomeEnumId" class="actions">
+                        <ion-button fill="outline" color="success" size="small" @click.stop="stopAccordianEventProp"
                           @click="
                             submitSingleProductReview(
                               item.productId,
@@ -162,18 +200,11 @@
                               'APPLIED',
                               item.quantityOnHand,
                               item.quantity,
-                              item
-                            )
-                          "
-                        >
+                              item)">
                           {{ translate("Accept") }}
                         </ion-button>
 
-                        <ion-button
-                          fill="outline"
-                          color="danger"
-                          size="small"
-                          @click.stop="stopAccordianEventProp"
+                        <ion-button fill="outline" color="danger" size="small" @click.stop="stopAccordianEventProp"
                           @click="
                             submitSingleProductReview(
                               item.productId,
@@ -181,19 +212,12 @@
                               'SKIPPED',
                               item.quantityOnHand,
                               item.quantity,
-                              item
-                            )
-                          "
-                        >
+                              item)">
                           {{ translate("Reject") }}
                         </ion-button>
                       </div>
 
-                      <ion-badge
-                        v-else
-                        :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'"
-                        style="--color: white;"
-                      >
+                      <ion-badge v-else-if="item.decisionOutcomeEnumId" :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'">
                         {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
                     </div>
@@ -209,13 +233,7 @@
                         </ion-item>
                       </ion-list>
 
-                      <div
-                        v-else
-                        v-for="session in sessions"
-                        :key="session.inventoryCountImportId"
-                        class="list-item count-item"
-                        @click.stop="stopAccordianEventProp"
-                      >
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
                         <ion-item lines="none">
                           <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
                           <ion-label>
@@ -239,7 +257,7 @@
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
 
-                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
+                        <ion-button v-if="!isCycleCountInTerminalStatus" fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
                           <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
                         </ion-button>
                       </div>
@@ -251,18 +269,13 @@
           </ion-accordion-group>
 
           <!-- SESSION POPOVER -->
-          <ion-popover
-            :is-open="isSessionPopoverOpen"
-            :event="sessionPopoverEvent"
-            @did-dismiss="closeSessionPopover"
-            show-backdrop="false"
-          >
+          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
             <ion-content>
               <ion-list>
                 <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true">
+                <ion-item v-if="isCycleCountInReview && !selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
+                <ion-item v-if="isCycleCountInReview && !selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
@@ -363,9 +376,9 @@
     </ion-content>
 
     <!-- FOOTER ACTIONS -->
-    <ion-footer>
+    <ion-footer v-if="!isCycleCountInTerminalStatus">
       <ion-toolbar>
-        <ion-buttons slot="start">
+        <ion-buttons v-if="isCycleCountInReview" slot="start">
           <ion-button
             :disabled="selectedProductsReview.length === 0"
             fill="outline"
@@ -389,7 +402,7 @@
         </ion-buttons>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick">
+          <ion-button :disabled="isLoading" fill="outline" :color="isCycleCountInReview ? 'dark' : 'danger'" size="small" @click="handleCloseClick">
             {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
@@ -460,18 +473,28 @@
         { text: translate('Remove'), handler: async () => await removeProductFromSession() }
       ]"
     ></ion-alert>
+    <ion-alert
+      :is-open="isCancelCountAlertOpen"
+      @did-dismiss="isCancelCountAlertOpen = false"
+      :header="translate('Confirm Close')"
+      :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
+      :buttons="[
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Close'), handler: () => cancelCycleCount() }
+    ]">
+    </ion-alert>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-/* imports stay EXACTLY the same */
 import {
   IonAlert, IonProgressBar, IonInput, IonAccordion, IonAccordionGroup, IonAvatar,
   IonBackButton, IonBadge, IonButtons, IonButton, IonCard, IonCardContent,
-  IonCheckbox, IonContent, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon,
+  IonCheckbox, IonContent, IonDatetime, IonDatetimeButton, IonFab, IonFabButton, IonFooter, IonHeader, IonIcon,
   IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonPopover,
   IonRadio, IonRadioGroup, IonTitle, IonToolbar,
-  IonThumbnail, onIonViewDidEnter, IonSkeletonText
+  IonThumbnail, onIonViewDidEnter, IonSkeletonText,
+  alertController
 } from "@ionic/vue";
 import {
   addCircleOutline, checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
@@ -492,12 +515,10 @@ import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import { useUserProfile } from "@/stores/userProfileStore";
 
-/* props */
 const props = defineProps({
   workEffortId: String,
 });
 
-/* state */
 const aggregatedSessionItems = ref<any[]>([]);
 const filteredSessionItems = ref<any[]>([]);
 const selectedProductsReview = ref<any[]>([]);
@@ -525,6 +546,37 @@ const isRemoveSessionAlertOpen = ref(false);
 
 const userProfile = useUserProfile();
 
+const facilityTimeZone: any = ref(null)
+const facilities = computed(() => useProductStore().getFacilities);
+const isCancelCountAlertOpen = ref(false);
+
+const isCycleCountInReview = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CMPLTD');
+const isCycleCountInCreatedStatus = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CREATED');
+const isCycleCountInCreatedOrProgressStatus = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CREATED' || workEffort.value?.statusId === 'CYCLE_CNT_IN_PRGS')
+const isCycleCountInTerminalStatus = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CLOSED' || workEffort.value?.statusId === 'CYCLE_CNT_CNCL')
+
+const smartFiltersProps = computed(() => ({
+  items: aggregatedSessionItems.value,
+  showSearch: true,
+  showSort: true,
+  sortOptions: [
+    { label: translate('Alphabetic'), value: 'alphabetic' },
+    { label: translate('Variance (Low → High)'), value: 'variance-asc' },
+    { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+  ],
+  thresholdConfig: userProfile.getDetailPageFilters.threshold,
+  showStatus: !isCycleCountInCreatedOrProgressStatus.value,
+  showCompliance: !isCycleCountInCreatedOrProgressStatus.value,
+  showSelect: isCycleCountInReview.value,
+  selectAll: isCycleCountInReview.value ? toggleSelectAll : null,
+  selectedItems: isCycleCountInReview.value ? selectedProductsReview.value : [],
+  statusOptions: isCycleCountInCreatedOrProgressStatus.value ? [] : [
+    { label: translate('Open'), value: 'open' },
+    { label: translate('Accepted'), value: 'accepted' },
+    { label: translate('Rejected'), value: 'rejected' }
+  ]
+}));
+
 /* computed */
 const openItems = computed(() =>
   aggregatedSessionItems.value.filter((item) => !item.decisionOutcomeEnumId)
@@ -532,7 +584,10 @@ const openItems = computed(() =>
 
 const overallFilteredVarianceQtyProposed = computed(() =>
   filteredSessionItems.value.reduce(
-    (sum, item) => sum + item.proposedVarianceQuantity,
+    (sum, item) => sum +
+      (isCycleCountInTerminalStatus.value
+        ? item.varianceQuantity || 0
+        : item.proposedVarianceQuantity || 0),
     0
   )
 );
@@ -551,7 +606,20 @@ function adjustEdit(delta: number) {
   const result = editAdjustment.value + delta;
   editAdjustment.value = Math.max(0, result);
 }
-/* lifecycle */
+
+function getInitialValue(field: string) {
+  const value = workEffort.value?.[field];
+  const date = value
+    ? DateTime.fromMillis(Number(value))
+    : DateTime.now();
+
+  return facilityTimeZone.value ? date.setZone(facilityTimeZone.value).toISO() : date.toISO();
+}
+
+function getFacilityTimezone(id: string) {
+  return facilities.value.find((facility: any) => facility.facilityId === id)?.facilityTimeZone
+}
+
 onIonViewDidEnter(async () => {
   isLoading.value = true;
   loadedItems.value = 0;
@@ -573,7 +641,6 @@ onIonViewDidEnter(async () => {
   isLoading.value = false;
 });
 
-/* PRODUCT SELECTION */
 function isSelected(product: any) {
   return selectedProductsReview.value.some(
     (productReview) => productReview.productId === product.productId
@@ -581,11 +648,13 @@ function isSelected(product: any) {
 }
 
 function toggleSelectedForReview(product: any) {
-  const index = selectedProductsReview.value.findIndex(
-    (productReview) => productReview.productId === product.productId
-  );
-  if (index === -1) selectedProductsReview.value.push(product);
-  else selectedProductsReview.value.splice(index, 1);
+  if (isSelected(product)) {
+    selectedProductsReview.value = selectedProductsReview.value.filter(
+      (productReview) => productReview.productId !== product.productId
+    );
+  } else {
+    selectedProductsReview.value.push(product);
+  }
 }
 
 function toggleSelectAll(isChecked: any) {
@@ -598,7 +667,6 @@ function toggleSelectAll(isChecked: any) {
   }
 }
 
-/* SESSION POPOVER */
 function openSessionPopover(event: Event, session: any, parentItem: any) {
   selectedSession.value = session;
   selectedProductCountReview.value = parentItem;
@@ -612,7 +680,6 @@ function closeSessionPopover() {
   selectedProductCountReview.value = null;
 }
 
-/* EDIT ITEM MODAL */
 function closeEditImportItemModal() {
   isEditImportItemModalOpen.value = false;
   closeSessionPopover();
@@ -701,7 +768,6 @@ async function saveEditImportItems() {
   loader.dismiss();
 }
 
-/* REMOVE FROM SESSION */
 async function removeProductFromSession() {
   await loader.present("Removing...");
   try {
@@ -771,12 +837,12 @@ async function removeProductFromSession() {
   loader.dismiss();
 }
 
-/* API CALLS */
 async function getWorkEffortDetails() {
   const resp = await useInventoryCountRun().getWorkEffort({
     workEffortId: props.workEffortId,
   });
   workEffort.value = resp?.data;
+    facilityTimeZone.value = getFacilityTimezone(workEffort.value?.facilityId)
 }
 
 async function getInventoryCycleCount() {
@@ -838,7 +904,6 @@ async function getCountSessions(productId: any) {
   }
 }
 
-/* REVIEW SUBMISSION */
 async function submitSingleProductReview(
   productId: any,
   variance: any,
@@ -921,7 +986,6 @@ async function submitSelectedProductReviews(outcome: any) {
   loader.dismiss();
 }
 
-/* CLOSE CYCLE COUNT */
 async function closeCycleCount() {
   await loader.present("Closing Cycle Count...");
   try {
@@ -938,6 +1002,10 @@ async function closeCycleCount() {
 }
 
 function handleCloseClick() {
+  if (isCycleCountInCreatedOrProgressStatus.value) {
+    isCancelCountAlertOpen.value = true;
+    return;
+  }
   if (!openItems.value.length) {
     isCloseAlertOpen.value = true;
   } else {
@@ -1003,7 +1071,6 @@ async function forceCloseWithoutAction() {
   await closeCycleCount();
 }
 
-/* HELPERS */
 function stopAccordianEventProp(event: Event) {
   event.stopPropagation();
 }
@@ -1030,10 +1097,121 @@ function getTimeDifference(actual: any, expected: any) {
   
     return `${duration} ${isLate ? translate('late') : translate('early')}`;
 }
+
+function getMinDateTime(): any {
+  return facilityTimeZone.value ? DateTime.now().setZone(facilityTimeZone.value).toISO() : DateTime.now().toISO();
+}
+
+async function handleChange(ev: any, currentField: string) {
+  const iso = ev.detail.value;
+  if (!iso) return;
+
+  try {
+    const millis = facilityTimeZone.value
+      ? DateTime.fromISO(iso, { zone: facilityTimeZone.value }).toMillis()
+      : DateTime.fromISO(iso).toMillis();
+
+    const resp = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      [currentField]: millis
+    })
+
+    if (resp?.status === 200) {
+      workEffort.value[currentField] = millis;
+      showToast(translate("Updated Successfully"))
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error Udpating Cycle Count: ", error);
+    showToast(`Failed to Update: ${currentField} on Cycle Count`);
+  }
+}
+
+async function openEditNameAlert() {
+  const editCountNameAlert = await alertController.create({
+    header: 'Edit Count Name',
+    inputs: [
+      {
+        name: 'workEffortName',
+        type: 'text',
+        value: workEffort.value?.workEffortName
+      }
+    ],
+    buttons: [
+      {
+        text: 'Cancel',
+        role: 'cancel'
+      },
+      {
+        text: 'Save',
+        handler: async (data) => {
+          await loader.present("Updating Cycle Count");
+          try {
+            const resp = await useInventoryCountRun().updateWorkEffort({
+              workEffortId: workEffort.value.workEffortId,
+              workEffortName: data.workEffortName
+            });
+
+            if (resp?.status === 200) {
+              workEffort.value.workEffortName = data.workEffortName;
+              showToast(translate("Count Name Updated Successfully"));
+            } else {
+              throw resp;
+            }
+          } catch (error) {
+            showToast(translate("Failed to Update Cycle Count Name"));
+            console.error("Failed to update cycle count name:", error);
+          }
+          loader.dismiss();
+        },
+      },
+    ],
+  })
+
+  await editCountNameAlert.present();
+}
+
+async function cancelCycleCount() {
+  try {
+    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId });
+    let inventoryCountImport = [] as any;
+    if (sessionsResp?.status === 200) {
+      for (const session of sessionsResp.data) {
+        session.statusId = "SESSION_VOIDED"
+        inventoryCountImport.push(session);
+      }
+    } else {
+      throw sessionsResp;
+    }
+
+    const resp = await useInventoryCountRun().updateWorkEffort({
+      workEffortId: workEffort.value.workEffortId,
+      InventoryCountImport: inventoryCountImport
+    });
+    // Making another call to update the WorkEffort's status because entity-auto does not seem to update the fields on different levels of nested json together.
+    if (resp?.status === 200) {
+      const updateCountResp = await useInventoryCountRun().updateWorkEffort({
+        workEffortId: workEffort.value.workEffortId,
+        statusId: "CYCLE_CNT_CNCL"
+      });
+      if (updateCountResp?.status === 200) {
+        showToast(translate("Cycle Count Closed Successfully"));
+        router.replace("/assigned");
+      } else {
+        throw updateCountResp;
+      }
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    console.error("Error closing cycle count:", error);
+    showToast(translate("Failed to close cycle count"));
+  }
+}
 </script>
 
 <style scoped>
-/* NO CSS CHANGES */
 .header {
   display: grid;
 }
