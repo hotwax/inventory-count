@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import { client } from '@/services/RemoteAPI';
+import api, { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
 import i18n, { translate } from '@/i18n'
 import { prepareAppPermissions } from '@/authorization';
-import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime, Settings } from 'luxon';
+import { jsonParse } from '@/services/utils';
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -94,7 +94,7 @@ export const useUserProfile = defineStore('userProfile', {
         // const appState = appContext.config.globalProperties.$store;
         const userProfile = useUserProfile().getUserProfile;
 
-        const resp = await setUserTimeZone({ userId: userProfile.userId, timeZone: tzId })
+        const resp = await this.setUserTimeZone({ userId: userProfile.userId, timeZone: tzId })
 
         if (resp?.status === 200) {
           this.current.timeZone = tzId;
@@ -119,7 +119,7 @@ export const useUserProfile = defineStore('userProfile', {
 
       try {
         // const resp = await userContext.getAvailableTimeZones()
-        const resp = await getAvailableTimeZones();
+        const resp = await this.getAvailableTimeZones();
         this.timeZones = resp.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
       } catch(err) {
         console.error('Error', err)
@@ -169,24 +169,17 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user profile with token as Maarg now supports token based auth
      */
-    async getProfile(token: string, omsBaseUrl: string): Promise<any> {
-      const baseURL = omsBaseUrl.startsWith('http')
-        ? omsBaseUrl.includes('/rest/s1')
-          ? omsBaseUrl
-          : `${omsBaseUrl}/rest/s1/`
-        : `https://${omsBaseUrl}.hotwax.io/rest/s1/`
-
+    async getProfile(): Promise<any> {
       try {
-        const resp = await client({
+        const resp = await api({
           url: 'admin/user/profile',
-          method: 'GET',
-          baseURL,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          method: 'GET'
         })
-        if (hasError(resp)) throw 'Error getting user profile'
+
+        if (!resp) {
+          throw 'Error getting user profile'
+        }
+
         this.current = resp.data
         return resp.data
       } catch (error) {
@@ -285,6 +278,148 @@ export const useUserProfile = defineStore('userProfile', {
     /** For SmartFilterSortBar threshold updates */
     updateThreshold(newConfig: any) {
       this.uiFilters.reviewDetail.threshold = newConfig
+    },
+
+    async updateUserPreference(payload: any) {
+      try {
+        await this.setUserPreference(payload);
+
+        // This is to get update the current user profile in the state.
+        await this.getProfile();
+      } catch (error) {
+        console.error("Error updating user profile: ", error);
+      }
+    },
+
+    async setUserTimeZone(payload: any): Promise<any> {
+      try {
+        const resp = await api({
+          url: "admin/user/profile",
+          method: "POST",
+          data: payload,
+        }) as any;
+        return Promise.resolve(resp);
+      } catch (error: any) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to set user time zone",
+          serverResponse: error
+        });
+      }
+    },
+
+    async getAvailableTimeZones(): Promise <any> {
+      try {
+        const resp: any = await api({
+          url: "admin/user/getAvailableTimeZones",
+          method: "get",
+          cache: true
+        });
+    
+        return Promise.resolve(resp.data?.timeZones)
+      } catch(error) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to fetch available timezones",
+          serverResponse: error
+        })
+      }
+    },
+
+    async getUserPreference(preferenceKey: string): Promise <any> {
+      const params = {
+        url: "admin/user/preferences",
+        method: "GET",
+        params: {
+          pageSize: 1,
+          userId: this.current.userId,
+          preferenceKey
+        }
+      }
+
+      let resp = {} as any;
+      try {
+        resp = await api(params);
+        return Promise.resolve(resp.data[0]?.preferenceValue ? jsonParse(resp.data[0]?.preferenceValue).toString() : "")
+      } catch(error) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to get user preference",
+          serverResponse: error
+        })
+      }
+    },
+
+    async setUserPreference(payload: any) {
+      try {
+        const resp = await api({
+          url: "admin/user/preferences",
+          method: "PUT",
+          data: {
+            userId: this.current.userId,
+            preferenceKey: payload.userPrefTypeId,
+            preferenceValue: payload.userPrefValue,
+          },
+        }) as any;
+        return Promise.resolve(resp.data)
+      } catch(error: any) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to update user preference",
+          serverResponse: error
+        })
+      }
+    },
+
+    
+    async getSecurityGroupAndPermissions (payload: any) {
+      const {
+        dataDocumentId,
+        filterByDate,
+        fieldsToSelect,
+        distinct,
+        pageSize,
+        ...customParametersMap
+      } = payload || {};
+
+      return await api({
+        url: `oms/dataDocumentView`,
+        method: 'POST',
+        data: {
+          dataDocumentId: dataDocumentId || 'SecurityGroupAndPermission',
+          filterByDate: filterByDate != null ? filterByDate : true,
+          fieldsToSelect: fieldsToSelect || '',
+          distinct: distinct != null ? distinct : '',
+          pageIndex: 0,
+          pageSize: pageSize || 100,
+          customParametersMap
+        }
+      });
+    },
+
+    async createSecurityGroupPermission (payload: {
+      groupId: string;
+      permissionId: string;
+      fromDate: number;
+    }) {
+      return await api({
+        url: `admin/permissions/${payload.permissionId}`,
+        method: "POST",
+        data: payload,
+      });
+    },
+
+    async updateSecurityGroupPermission  (payload: {
+      groupId: string;
+      permissionId: string;
+      fromDate?: number;
+      thruDate: number;
+    }) {
+      return await api({
+        url: `admin/permissions/${payload.permissionId}`,
+        method: "PUT",
+        data: payload,
+      });
     }
   }
 })

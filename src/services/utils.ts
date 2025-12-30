@@ -66,9 +66,20 @@ function formatDateTime(dateStr: string, endOfDay = false) {
   return final.toFormat("yyyy-MM-dd HH:mm:ss.SSS");
 }
 
+function jsonParse(value: any): any {
+  let parsedValue;
+  try {
+    parsedValue = JSON.parse(value);
+  } catch (e) {
+    parsedValue = value;
+  }
+  return parsedValue;
+}
+
 export {
   formatDateTime,
   getDateWithOrdinalSuffix,
   getDateTimeWithOrdinalSuffix,
-  initDeviceId
+  initDeviceId,
+  jsonParse
 } 

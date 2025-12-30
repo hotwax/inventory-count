@@ -171,12 +171,12 @@ import { ref, computed } from "vue";
 import { DateTime } from "luxon";
 import { translate } from "@/i18n";
 import { useProductStore } from "@/stores/productStore";
-import { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } from "@/adapter/index";
 import { showToast } from "@/services/uiUtils";
 import logger from "@/logger";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { hasError } from "@/stores/authStore";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 type PermissionMeta = {
   id: string;
@@ -290,7 +290,7 @@ const historyPermissionTitle = computed(() =>
  */
 async function getActiveGroups(permissionId: string) {
   try {
-    const resp = await getSecurityGroupAndPermissions({
+    const resp = await useUserProfile().getSecurityGroupAndPermissions({
       permissionId,
       filterByDate: true,
       groupTypeEnumId: "PRM_CLASS_TYPE",
@@ -312,7 +312,7 @@ async function getActiveGroups(permissionId: string) {
 async function openHistory(permission: PermissionMeta) {
   historyPermission.value = permission;
   try {
-    const resp = await getSecurityGroupAndPermissions({
+    const resp = await useUserProfile().getSecurityGroupAndPermissions({
       permissionId: permission.id,
       filterByDate: false,
       orderByField: "-thruDate",
@@ -352,7 +352,7 @@ async function openSelectGroupsModal(permission: PermissionMeta) {
 
   try {
     // Get all security groups that have ever been associated with this permission
-    const resp = await getSecurityGroupAndPermissions({
+    const resp = await useUserProfile().getSecurityGroupAndPermissions({
       // permissionId: permission.id,
       filterByDate: false,
       fieldsToSelect: "groupId,groupName",
@@ -449,7 +449,7 @@ async function saveSelectedSecurityGroups() {
         permissionId,
         fromDate: Date.now(),
       };
-      const resp = await createSecurityGroupPermission(payload);
+      const resp = await useUserProfile().createSecurityGroupPermission(payload);
       if (hasError(resp)) throw resp?.data;
     }
 
@@ -467,7 +467,7 @@ async function saveSelectedSecurityGroups() {
         payload.fromDate = original.fromDate;
       }
 
-      const resp = await updateSecurityGroupPermission(payload);
+      const resp = await useUserProfile().updateSecurityGroupPermission(payload);
       if (hasError(resp)) throw resp?.data;
     }
 
@@ -534,7 +534,7 @@ async function confirmRemoveGroupFromPermission() {
               payload.fromDate = group.fromDate;
             }
 
-            const resp = await updateSecurityGroupPermission(payload);
+            const resp = await useUserProfile().updateSecurityGroupPermission(payload);
             if (hasError(resp)) throw resp?.data;
 
             showToast(translate("Security group removed successfully."));
