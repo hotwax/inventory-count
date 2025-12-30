@@ -303,9 +303,9 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
+    async getDxpUserFacilities(partyId: string, payload = {}) {
       try {
-        const response = await this.getUserFacilities(partyId, facilityGroupId, isAdminUser, payload)
+        const response = await this.getUserFacilities(partyId, payload)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -365,11 +365,11 @@ export const useProductStore = defineStore('productStore', {
         })
       }
     },
-    async getUserFacilities(partyId: string, facilityGroupId: any, isAdminUser = false, payload = {}) {
-      return await this.fetchFacilities(partyId, facilityGroupId, isAdminUser, payload)
+    async getUserFacilities(partyId: string, payload = {}) {
+      return await this.fetchFacilities(partyId, payload)
     },
 
-    async fetchFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload: any): Promise <any> {
+    async fetchFacilities(partyId: string, payload: any): Promise <any> {
       let facilityIds: Array<string> = [];
       let filters: any = {};
       let resp = {} as any
@@ -378,28 +378,6 @@ export const useProductStore = defineStore('productStore', {
       if(partyId) {
         try {
           resp = await this.fetchFacilitiesByParty(partyId)
-
-          facilityIds = resp.map((facility: any) => facility.facilityId);
-          if (!facilityIds.length) {
-            return Promise.reject({
-              code: 'error',
-              message: 'Failed to fetch user facilities',
-              serverResponse: resp.data
-            })
-          }
-        } catch(error) {
-          return Promise.reject({
-            code: 'error',
-            message: 'Failed to fetch user facilities',
-            serverResponse: error
-          })
-        }
-      }
-
-      // Fetch the facilities associated with group
-      if(facilityGroupId) {
-        try {
-          resp = await this.fetchFacilitiesByGroup(facilityGroupId, filters)
 
           facilityIds = resp.map((facility: any) => facility.facilityId);
           if (!facilityIds.length) {

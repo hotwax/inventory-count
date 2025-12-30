@@ -119,7 +119,7 @@ export const useAuthStore = defineStore('authStore', {
         }
 
         const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
+        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, {
           parentTypeId: "VIRTUAL_FACILITY",
           parentTypeId_not: "Y",
           facilityTypeId: "VIRTUAL_FACILITY",
