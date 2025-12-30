@@ -6,6 +6,7 @@ import logger from '@/logger'
 import i18n, { translate } from '@/i18n'
 import { prepareAppPermissions } from '@/authorization';
 import { DateTime, Settings } from 'luxon';
+import { jsonParse } from '@/services/utils';
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -339,7 +340,7 @@ export const useUserProfile = defineStore('userProfile', {
       let resp = {} as any;
       try {
         resp = await api(params);
-        return Promise.resolve(resp.data[0]?.preferenceValue ? JSON.parse(resp.data[0]?.preferenceValue).toString() : "")
+        return Promise.resolve(resp.data[0]?.preferenceValue ? jsonParse(resp.data[0]?.preferenceValue).toString() : "")
       } catch(error) {
         return Promise.reject({
           code: "error",
@@ -395,7 +396,7 @@ export const useUserProfile = defineStore('userProfile', {
         }
       });
     },
-    
+
     async createSecurityGroupPermission (payload: {
       groupId: string;
       permissionId: string;
