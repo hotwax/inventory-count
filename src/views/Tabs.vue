@@ -25,7 +25,6 @@ import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouter
 import {
   fileTrayFullOutline,
   settingsOutline,
-  shirtOutline
 } from "ionicons/icons";
 import { translate } from '@/i18n'
 </script>
