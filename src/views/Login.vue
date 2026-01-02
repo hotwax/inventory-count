@@ -41,10 +41,8 @@ let loader: any = null;
 const route = router.currentRoute.value;
 
 onMounted(async () => {
-  console.log("Login view mounted with query params: ", route.query);
   let isEmbedded = authStore.isEmbedded;
   // This will be false for when apps run in browser directly and when user first time comes from Shopify POS or Admin embedded app.
-  console.log("Is Embedded from auth store: ", isEmbedded);
   // Cases Handled: 
   // If the app is not embedded and there are no query params, redirect to launchpad
   // If the app is embedded, it will have query params from Shopify, even if the app is not marked as embedded in the auth store, we will mark it as embedded here.
@@ -56,10 +54,8 @@ onMounted(async () => {
 
   const { embedded, shop, host } = route.query
   isEmbedded = isEmbedded || embedded === '1'
-  console.log("Is Embedded after checking query params: ", isEmbedded);
 
   if (isEmbedded) {
-    console.log("This is an embedded app user, proceeding with Shopify App Bridge login flow.");
     await appBridgeLogin(shop as string, host as string);
   } else {
     login();
@@ -111,7 +107,6 @@ const login = async () => {
 };
 
 async function appBridgeLogin(shop: string, host: string) {
-  console.log("This is an embedded app user, proceeding with Shopify App Bridge login flow.");
   // In case where token expired and user is routed login path, the query params will not have shop and host,
   // So we get them from auth store before it is cleared.
   if (!shop) {
@@ -127,7 +122,6 @@ async function appBridgeLogin(shop: string, host: string) {
   }
   const loginPayload = {} as any;
   let loginResponse;
-  console.log("This is from env: ", JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG as any));
   const maargUrl = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '{}')[shop].maarg;
   let shopifyAppBridge;
   try {
