@@ -15,6 +15,10 @@ export interface LoginPayload {
   oms: any;
   omsRedirectionUrl: any;
   expirationTime: any;
+  isEmbedded?: any;
+  shop?: any;
+  host?: any;
+  shopifyAppBridge?: any;
 }
 
 type TokenState = {
@@ -45,6 +49,10 @@ export const useAuthStore = defineStore('authStore', {
       value: '',
       expiration: undefined,
     } as TokenState,
+    isEmbedded: false,
+    shop: undefined,
+    host: undefined,
+    shopifyAppBridge: undefined
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -66,6 +74,9 @@ export const useAuthStore = defineStore('authStore', {
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
     },
+    getShop: (state) => state.shop,
+    getHost: (state) => state.host,
+    getShopifyAppBridge: (state) => state.shopifyAppBridge,
   },
   actions: {
     setOMS(oms: string) {
@@ -86,6 +97,10 @@ export const useAuthStore = defineStore('authStore', {
         this.token.value = payload.token;
         this.token.expiration = payload.expirationTime;
         this.omsRedirectionUrl = payload.omsRedirectionUrl;
+        this.isEmbedded = payload.isEmbedded || false;
+        this.shop = payload.shop;
+        this.host = payload.host;
+        this.shopifyAppBridge = payload.shopifyAppBridge;
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
         const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
@@ -150,11 +165,14 @@ export const useAuthStore = defineStore('authStore', {
       try {
         useProductStore().$reset();
         useUserProfile().$reset();
+        const shop = this.shop;
+        const host = this.host;
+        const isEmbedded = this.isEmbedded;
         useAuthStore().$reset();
 
         const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
         const redirectUrl = window.location.origin + '/login';
-        window.location.href = `${appLoginUrl}?isLoggedOut=true&redirectUrl=${redirectUrl}`;
+        window.location.href = isEmbedded ? `${redirectUrl}?embedded=1&shop=${shop}&host=${host}` : `${appLoginUrl}?isLoggedOut=true&redirectUrl=${redirectUrl}`;
       } catch (error) {
         console.warn('Logout request failed', error);
       } finally {
