@@ -8,6 +8,7 @@ import { useProductStore } from '@/stores/productStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
+  negatedScanEventId?: number | null;
   productId?: string;
   productIdentifier: string;
   quantity: number;
@@ -28,6 +29,7 @@ function currentMillis(): number {
       productId: params.productId || null,
       locationSeqId: params.locationSeqId || null,
       scannedValue: params.productIdentifier,
+      negatedScanEventId: params.negatedScanEventId || null,
       quantity: params.quantity,
       createdAt: currentMillis(),
       aggApplied: 0

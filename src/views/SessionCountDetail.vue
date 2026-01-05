@@ -53,7 +53,7 @@
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <ion-button v-if="item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>  
                 </ion-item>
@@ -652,6 +652,12 @@ const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
+const negatedScanEventIds = computed(() => {
+  return new Set(
+    events.value
+      .map((event: any) => event.negatedScanEventId)
+  )
+})
 
 const pageRef = ref(null);
 
@@ -1515,6 +1521,8 @@ async function removeScan(item: any) {
     await useInventoryCountImport().recordScan({
       inventoryCountImportId: props.inventoryCountImportId,
       productIdentifier: item.scannedValue,
+      productId: item.productId,
+      negatedScanEventId: item.id,
       quantity: -Math.abs(item.quantity || 1)
     })
     showToast(`Scan ${item.scannedValue} removed`)
