@@ -656,6 +656,7 @@ const negatedScanEventIds = computed(() => {
   return new Set(
     events.value
       .map((event: any) => event.negatedScanEventId)
+      .filter(id => id != null && id != '')
   )
 })
 
