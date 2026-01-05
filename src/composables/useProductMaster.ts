@@ -12,6 +12,8 @@ export interface Product {
   productId: string
   productName?: string
   parentProductName?: string
+  title?: string
+  primaryProductCategoryName?: string
   internalName?: string
   mainImageUrl?: string
   goodIdentifications?: { type: string, value: string }[]
@@ -53,7 +55,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
     const query = useProductMaster().buildProductQuery({
       filter: filter,
       viewSize: batch.length,
-      fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
+      fieldsToSelect: `productId, productName, parentProductName, primaryProductCategoryName, title, internalName, mainImageUrl, goodIdentifications`
     });
 
     const resp = await client({
@@ -135,7 +137,7 @@ const getByIdentificationFromSolr = async (idValue: string) => {
     const query = useProductMaster().buildProductQuery({
       filter: filter,
       viewSize: 1,
-      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
     });
 
   try {
@@ -232,7 +234,7 @@ async function findProductByIdentification(idType: string, value: string, contex
   const query = useProductMaster().buildProductQuery({
         filter: `goodIdentifications:${idType}/${value}`,
         viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+        fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
       });
   try {
     const resp = await workerApi({
@@ -322,6 +324,8 @@ const mapApiDocToProduct = (doc: any): Product => {
     productId: doc.productId,
     productName: doc.productName || '',
     parentProductName: doc.parentProductName || '',
+    title: doc.title || '',
+    primaryProductCategoryName: doc.primaryProductCategoryName || '',
     internalName: doc.internalName || '',
     mainImageUrl: doc.mainImageUrl || '',
     goodIdentifications: normalizedIdents,
@@ -376,7 +380,8 @@ const buildProductQuery = (params: any): Record<string, any> => {
   }
 
   if (params.keyword) {
-    payload.json.query = `*${params.keyword}* OR "${params.keyword}"^100`
+    const wildcardTerms = params.keyword.split(/\s+/).filter(Boolean).map((term: any) => `*${term}*`).join(' OR ');
+    payload.json.query = `${wildcardTerms} OR "${params.keyword}"^100`
     payload.json.params['qf'] =
       params.queryFields ||
       'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
@@ -413,6 +418,9 @@ const primaryId = (product?: any) => {
       return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
+    if (type === 'parentProductName' || type === 'groupName') return product.parentProductName || ''
+    if (type === 'title') return product.title || ''
+    if (type === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
     return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
@@ -439,6 +447,9 @@ const secondaryId = (product: any) => {
       return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
+    if (type === 'parentProductName' || type === 'groupName') return product.parentProductName || ''
+    if (type === 'title') return product.title || ''
+    if (type === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
     return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
