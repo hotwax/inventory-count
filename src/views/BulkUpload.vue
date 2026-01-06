@@ -326,6 +326,7 @@ async function save() {
     estimatedStartDate: row[fieldMapping.value.estimatedStartDate],
     facilityId: row[fieldMapping.value.facility],
     externalFacilityId: row[fieldMapping.value.externalFacility],
+    locationSeqId: row[fieldMapping.value.locationSeqId]
   }));
   const data = jsonToCsv(uploadedData, {
     parse: {},
