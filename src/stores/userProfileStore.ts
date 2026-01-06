@@ -42,6 +42,10 @@ export const useUserProfile = defineStore('userProfile', {
         compliance: 'all',
         sort: 'alphabetic',
         threshold: { unit: 'units', value: 2 }
+      },
+
+      countDetail: {
+        hideCompleted: false
       }
     } as any
   }),

@@ -4,16 +4,37 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/tabs/count"/>
         <ion-title slot="start">{{ translate("Count Details") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-menu-button menu="count-detail-filter">
+            <ion-icon :icon="filterOutline" />
+          </ion-menu-button>
+        </ion-buttons>
       </ion-toolbar>
       <ion-segment v-model="activeSegment">
         <ion-segment-button value="location">{{ translate("location") }}</ion-segment-button>
         <ion-segment-button value="product">{{ translate("product") }}</ion-segment-button>
       </ion-segment>
     </ion-header>
-    <ion-content>
+    <ion-menu side="end" content-id="count-detail-content" menu-id="count-detail-filter">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ translate("Filters") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content>
+        <ion-list>
+          <ion-item lines="none">
+            <ion-checkbox :checked="filters.hideCompleted" @ionChange="updateFilter('hideCompleted', $event.detail.checked)">
+              {{ translate("Hide completed") }}
+            </ion-checkbox>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ion-menu>
+    <ion-content id="count-detail-content">
       <ion-segment-view>
       <ion-segment-content v-show="activeSegment === 'location'" id="location">
-        <ion-card v-for="location in itemsByLocation" :key="location.locationSeqId">
+        <ion-card v-for="location in filteredItemsByLocation" :key="location.locationSeqId">
           <ion-card-header>
             <ion-card-title>
               {{ location.locationSeqId }}
@@ -71,7 +92,7 @@
         </ion-card>
       </ion-segment-content>
       <ion-segment-content v-show="activeSegment === 'product'" id="product">
-        <ion-card v-for="product in itemsByProduct" :key="product.productId">
+        <ion-card v-for="product in filteredItemsByProduct" :key="product.productId">
           <ion-card-header>
             <ion-card-title>
               {{ product.product.productName }}
@@ -139,7 +160,8 @@ import { useProductMaster } from '@/composables/useProductMaster';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { hasError } from '@/stores/authStore';
-import { IonBackButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonItem, IonItemDivider, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar, onIonViewDidEnter } from '@ionic/vue';
+import { IonBackButton, IonButtons, IonCheckbox, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonMenu, IonMenuButton, IonPage, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar, onIonViewDidEnter } from '@ionic/vue';
+import { filterOutline } from "ionicons/icons";
 import { ref, defineProps, computed } from 'vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import router from '@/router';
@@ -151,7 +173,27 @@ const sessions = ref<any>([]);
 const itemsByLocation = ref<any>([]);
 const itemsByProduct = ref<any>([]);
 const workEffort = ref<any>(null);
-const userProfile = computed(() => useUserProfile().getUserProfile);
+const userProfileStore = useUserProfile();
+const userProfile = computed(() => userProfileStore.getUserProfile);
+const filters = computed(() => userProfileStore.getListPageFilters('countDetail'));
+
+function updateFilter(key: string, value: any) {
+  userProfileStore.updateUiFilter('countDetail', key, value);
+}
+
+const filteredItemsByLocation = computed(() => {
+  if (filters.value.hideCompleted) {
+    return itemsByLocation.value.filter((location: any) => location.pendingCount > 0);
+  }
+  return itemsByLocation.value;
+})
+
+const filteredItemsByProduct = computed(() => {
+  if (filters.value.hideCompleted) {
+    return itemsByProduct.value.filter((product: any) => product.pendingCount > 0);
+  }
+  return itemsByProduct.value;
+})
 
 const props = defineProps<{
   workEffortId: string;
