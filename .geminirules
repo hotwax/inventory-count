@@ -1,0 +1,6 @@
+# Gemini Agent Rules
+
+- Follow all instructions in [.gemini/agent-instructions.md](.gemini/agent-instructions.md).
+- Strictly adhere to Ionic native components.
+- Avoid custom CSS at all costs.
+- Document any necessary custom styling in the walkthrough.

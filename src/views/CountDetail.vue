@@ -10,89 +10,126 @@
         <ion-segment-button value="product">{{ translate("product") }}</ion-segment-button>
       </ion-segment>
     </ion-header>
-    <ion-segment-view>
+    <ion-content>
+      <ion-segment-view>
       <ion-segment-content v-show="activeSegment === 'location'" id="location">
         <ion-card v-for="location in itemsByLocation" :key="location.locationSeqId">
           <ion-card-header>
-            <ion-card-title>{{ location.locationSeqId }}</ion-card-title>
+            <ion-card-title>
+              {{ location.locationSeqId }}
+            </ion-card-title>
+            <ion-label class="ion-text-end">
+                {{ translate("products remaining", { count: location.pendingCount }) }}
+                <p>{{ translate("requested", { count: location.totalCount }) }}</p>
+            </ion-label>
           </ion-card-header>
 
-          <ion-list v-if="location.pendingItems.length">
-            <ion-item-group>
-              <ion-item-divider>
-                <ion-label>Pending</ion-label>
-              </ion-item-divider>
+          <ion-item lines="none">
+            <ion-label>
+              <p>{{ translate("Sessions at this location") }}</p>
+            </ion-label>
+          </ion-item>
 
-              <ion-item
-                v-for="item in location.pendingItems"
-                :key="item.importItemSeqId">
-                <ion-label>
-                  {{ useProductMaster().primaryId(item.product) }}
-                  <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-item-group>
+          <ion-item-divider color="light">
+            <ion-label>{{ translate("On this device") }}</ion-label>
+          </ion-item-divider>
+
+          <ion-list v-if="location.sessions.onDevice.length">
+            <ion-item v-for="session in location.sessions.onDevice" :key="session.inventoryCountImportId" @click="viewSession(session)" button detail>
+              <ion-label>
+                {{ session.countImportName || translate("Untitled session") }}
+                <p>{{ translate("Created by") }} {{ session.uploadedByUserLogin }}</p>
+              </ion-label>
+              <ion-note slot="end">{{ getSessionStatus(session.statusId) }}</ion-note>
+            </ion-item>
+
+            <ion-button v-if="location.sessions.onDevice.length" fill="outline" expand="block" class="ion-margin" @click.stop="viewSession(location.sessions.onDevice[0])">
+              {{ translate("CONTINUE SESSION") }}
+            </ion-button>
           </ion-list>
 
-          <ion-list v-if="location.countedItems.length">
-            <ion-item-group>
-              <ion-item-divider>
-                <ion-label>Counted</ion-label>
-              </ion-item-divider>
+          <ion-button fill="outline" expand="block" class="ion-margin" @click="startNewSession(location.locationSeqId)">
+            {{ translate("START NEW SESSION") }}
+          </ion-button>
 
-              <ion-item
-                v-for="item in location.countedItems"
-                :key="item.importItemSeqId">
-                <ion-label>
-                  {{ useProductMaster().primaryId(item.product) }}
-                  <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                </ion-label>
-                <p v-if="item.countedByUserLogin">{{ item.countedByUserLogin }}</p>
-              </ion-item>
-            </ion-item-group>
+          <ion-item-divider color="light">
+            <ion-label>{{ translate("Other sessions") }}</ion-label>
+          </ion-item-divider>
+
+          <ion-list v-if="location.sessions.other.length">
+            <ion-item v-for="session in location.sessions.other" :key="session.inventoryCountImportId" @click="viewSession(session)" button detail>
+              <ion-label>
+                {{ session.countImportName || translate("Untitled session") }}
+                <p>{{ translate("Created by") }} {{ session.uploadedByUserLogin }}</p>
+              </ion-label>
+              <ion-note slot="end">{{ getSessionStatus(session.statusId) }}</ion-note>
+            </ion-item>
           </ion-list>
+          <ion-item v-else lines="none">
+            <ion-label><p>{{ translate("No other sessions") }}</p></ion-label>
+          </ion-item>
         </ion-card>
       </ion-segment-content>
       <ion-segment-content v-show="activeSegment === 'product'" id="product">
         <ion-card v-for="product in itemsByProduct" :key="product.productId">
           <ion-card-header>
-            <ion-card-title>{{ product.product.productName }}</ion-card-title>
+            <ion-card-title>
+              {{ product.product.productName }}
+            </ion-card-title>
+            <ion-label class="ion-text-end">
+              {{ translate("locations remaining", { count: product.pendingCount }) }}
+              <p>{{ translate("requested", { count: product.totalCount }) }}</p>
+            </ion-label>
           </ion-card-header>
 
-          <ion-list v-if="product.pendingItems.length">
-            <ion-item-group>
-              <ion-item-divider>
-                <ion-label>Pending</ion-label>
-              </ion-item-divider>
+          <ion-item lines="none">
+            <ion-label>
+              <p>{{ translate("Sessions for this product") }}</p>
+            </ion-label>
+          </ion-item>
 
-              <ion-item
-                v-for="item in product.pendingItems"
-                :key="item.importItemSeqId">
-                <ion-label>
-                  {{ item.locationSeqId }}
-                </ion-label>
-              </ion-item>
-            </ion-item-group>
+          <ion-item-divider color="light">
+            <ion-label>{{ translate("On this device") }}</ion-label>
+          </ion-item-divider>
+
+          <ion-list v-if="product.sessions.onDevice.length">
+            <ion-item v-for="session in product.sessions.onDevice" :key="session.inventoryCountImportId" @click="viewSession(session)" button detail>
+              <ion-label>
+                {{ session.countImportName || translate("Untitled session") }}
+                <p>{{ translate("Created by") }} {{ session.uploadedByUserLogin }}</p>
+              </ion-label>
+              <ion-note slot="end">{{ getSessionStatus(session.statusId) }}</ion-note>
+            </ion-item>
+
+            <ion-button v-if="product.sessions.onDevice.length" fill="outline" expand="block" class="ion-margin" @click.stop="viewSession(product.sessions.onDevice[0])">
+              {{ translate("CONTINUE SESSION") }}
+            </ion-button>
           </ion-list>
 
-          <ion-list v-if="product.countedItems.length">
-            <ion-item-group>
-              <ion-item-divider>
-                <ion-label>Counted</ion-label>
-              </ion-item-divider>
+          <ion-button fill="outline" expand="block" class="ion-margin" @click="startNewSession(undefined, product.product.productName)">
+            {{ translate("START NEW SESSION") }}
+          </ion-button>
 
-              <ion-item
-                v-for="item in product.countedItems"
-                :key="item.importItemSeqId">
-                <ion-label>
-                  Product: {{ item.productId }} | Qty: {{ item.quantity }}
-                </ion-label>
-              </ion-item>
-            </ion-item-group>
+          <ion-item-divider color="light">
+            <ion-label>{{ translate("Other sessions") }}</ion-label>
+          </ion-item-divider>
+
+          <ion-list v-if="product.sessions.other.length">
+            <ion-item v-for="session in product.sessions.other" :key="session.inventoryCountImportId" @click="viewSession(session)" button detail>
+              <ion-label>
+                {{ session.countImportName || translate("Untitled session") }}
+                <p>{{ translate("Created by") }} {{ session.uploadedByUserLogin }}</p>
+              </ion-label>
+              <ion-note slot="end">{{ getSessionStatus(session.statusId) }}</ion-note>
+            </ion-item>
           </ion-list>
+          <ion-item v-else lines="none">
+            <ion-label><p>{{ translate("No other sessions") }}</p></ion-label>
+          </ion-item>
         </ion-card>
       </ion-segment-content>
     </ion-segment-view>
+    </ion-content>
   </ion-page>
 </template>
 
@@ -102,14 +139,19 @@ import { useProductMaster } from '@/composables/useProductMaster';
 import { translate } from '@/i18n';
 import { loader, showToast } from '@/services/uiUtils';
 import { hasError } from '@/stores/authStore';
-import { IonBackButton, IonCard, IonCardHeader, IonCardTitle, IonItem, IonItemDivider, IonItemGroup, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter } from '@ionic/vue';
-import { ref, defineProps } from 'vue';
+import { IonBackButton, IonCard, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonItem, IonItemDivider, IonLabel, IonList, IonPage, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonTitle, IonToolbar, onIonViewDidEnter } from '@ionic/vue';
+import { ref, defineProps, computed } from 'vue';
+import { useUserProfile } from '@/stores/userProfileStore';
+import router from '@/router';
 
 const activeSegment = ref('location')
 
 const inventoryCountItems = ref<any>([]);
+const sessions = ref<any>([]);
 const itemsByLocation = ref<any>([]);
 const itemsByProduct = ref<any>([]);
+const workEffort = ref<any>(null);
+const userProfile = computed(() => useUserProfile().getUserProfile);
 
 const props = defineProps<{
   workEffortId: string;
@@ -118,36 +160,41 @@ const props = defineProps<{
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
   await getCycleCountItems();
+  groupItemsByLocationAndProduct();
   loader.dismiss();
 });
+
+
 
 async function getCycleCountItems() {
   try {
     const resp = await useInventoryCountRun().getCycleCountItems({ workEffortId: props.workEffortId });
 
-    if (resp && !hasError(resp) && resp.data?.items?.length) {
-      const importItems = resp.data.items;
+    if (resp && !hasError(resp)) {
+      workEffort.value = resp.data;
+      if (resp.data?.items?.length) {
+        const importItems = resp.data.items;
 
-      try {
-        const productsIds = [...new Set(importItems
-          .filter((item: any) => item?.productId)
-          .map((item: any) => item.productId)
-        )];
+        try {
+          const productsIds = [...new Set(importItems
+            .filter((item: any) => item?.productId)
+            .map((item: any) => item.productId)
+          )];
 
-        await useProductMaster().prefetch(productsIds as any);
-        for (const productId of productsIds) {
-          const { product } = await useProductMaster().getById(productId as any);
-          if (!product) continue;
-          importItems
-          .filter((item: any) => item.productId === productId)
-          .forEach((item: any) => {
-            item.product = product;
-          });
+          await useProductMaster().prefetch(productsIds as any);
+          for (const productId of productsIds) {
+            const { product } = await useProductMaster().getById(productId as any);
+            if (!product) continue;
+            importItems
+            .filter((item: any) => item.productId === productId)
+            .forEach((item: any) => {
+              item.product = product;
+            });
+          }
+          inventoryCountItems.value = importItems;
+        } catch (error) {
+          console.error("Error in Prefetch: ", error);
         }
-        inventoryCountItems.value = importItems;
-        groupItemsByLocationAndProduct();
-      } catch (error) {
-        console.error("Error in Prefetch: ", error);
       }
     } else {
       throw resp;
@@ -163,9 +210,10 @@ async function getCycleCountItems() {
 function groupItemsByLocationAndProduct() {
   const locationMap: Record<string, any[]> = {};
   const productMap: Record<string, any[]> = {};
+  const sessionMap: Record<string, any> = {};
 
   for (const item of inventoryCountItems.value) {
-    const { locationSeqId, productId } = item;
+    const { locationSeqId, productId, inventoryCountImportId } = item;
 
     if (locationSeqId) {
       (locationMap[locationSeqId] ||= []).push(item);
@@ -174,24 +222,89 @@ function groupItemsByLocationAndProduct() {
     if (productId) {
       (productMap[productId] ||= []).push(item);
     }
+
+    if (inventoryCountImportId && !sessionMap[inventoryCountImportId]) {
+      sessionMap[inventoryCountImportId] = {
+        inventoryCountImportId,
+        countImportName: item.countImportName,
+        uploadedByUserLogin: item.uploadedByUserLogin,
+        statusId: item.statusId,
+        facilityAreaId: locationSeqId
+      }
+    }
   }
 
+  sessions.value = Object.values(sessionMap);
+
   itemsByLocation.value = Object.entries(locationMap).map(
-    ([locationSeqId, items]) => ({
-      locationSeqId,
-      pendingItems: items.filter(i => i.quantity === null),
-      countedItems: items.filter(i => i.quantity !== null)
-    })
+    ([locationSeqId, items]) => {
+      const pendingItems = items.filter(i => i.quantity === null);
+      const locationSessions = sessions.value.filter((s: any) => s.facilityAreaId === locationSeqId);
+      return {
+        locationSeqId,
+        pendingCount: new Set(pendingItems.map(i => i.productId)).size,
+        totalCount: new Set(items.map(i => i.productId)).size,
+        sessions: {
+          onDevice: locationSessions.filter((s: any) => s.uploadedByUserLogin === userProfile.value.userLoginId),
+          other: locationSessions.filter((s: any) => s.uploadedByUserLogin !== userProfile.value.userLoginId)
+        }
+      }
+    }
   );
 
   itemsByProduct.value = Object.entries(productMap).map(
-    ([productId, items]) => ({
-      productId,
-      product: items[0].product,
-      pendingItems: items.filter(i => i.quantity === null),
-      countedItems: items.filter(i => i.quantity !== null)
-    })
+    ([productId, items]) => {
+      const pendingItems = items.filter(i => i.quantity === null);
+      const productSessions = sessions.value.filter((s: any) => 
+        items.some((item: any) => item.inventoryCountImportId === s.inventoryCountImportId)
+      );
+
+      return {
+        productId,
+        product: items[0].product,
+        pendingCount: new Set(pendingItems.map(i => i.locationSeqId)).size,
+        totalCount: new Set(items.map(i => i.locationSeqId)).size,
+        sessions: {
+          onDevice: productSessions.filter((s: any) => s.uploadedByUserLogin === userProfile.value.userLoginId),
+          other: productSessions.filter((s: any) => s.uploadedByUserLogin !== userProfile.value.userLoginId)
+        }
+      }
+    }
   );
 }
 
+function getSessionStatus(statusId: string) {
+  switch (statusId) {
+    case 'SESSION_CREATED': return 'Created';
+    case 'SESSION_ASSIGNED': return 'In progress';
+    case 'SESSION_SUBMITTED': return 'Submitted';
+    case 'SESSION_VOIDED': return 'Voided';
+    default: return statusId;
+  }
+}
+
+function viewSession(session: any) {
+  router.push(`/session-count-detail/${props.workEffortId}/${workEffort.value?.workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
+}
+
+async function startNewSession(locationSeqId?: string, productName?: string) {
+  showToast(translate("Session added successfully"));
+  await getCycleCountItems();
+  groupItemsByLocationAndProduct();
+  router.push(`/session-count-detail/${props.workEffortId}/${workEffort.value?.workEffortPurposeTypeId}/new`);
+}
+
 </script>
+
+<style scoped>
+ion-card-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+ion-card {
+  margin-bottom: var(--spacer-base);
+}
+</style>
