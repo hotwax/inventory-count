@@ -11,7 +11,7 @@
       <p v-if='error.message.length'>
         {{ $t(error.message) }}
       </p>
-      <ion-button v-if='error.message.length' class="ion-margin-top" @click="goToLaunchpad()">
+      <ion-button v-if='error.message.length && !authStore.isEmbedded' class="ion-margin-top" @click="goToLaunchpad()">
         <ion-icon slot="start" :icon="arrowBackOutline" />
         {{ $t("Back to Launchpad") }}
       </ion-button>
@@ -145,7 +145,6 @@ async function appBridgeLogin(shop: string, host: string) {
       loginPayload.lastName = appState.pos.user.lastName;
     }
 
-    // loginResponse = await loginShopifyAppUser(`${maargUrl}/rest/s1/`, loginPayload);
     loginResponse = await api({
         url: `${maargUrl}/rest/s1/app-bridge/login`,
         method: 'post',
@@ -157,6 +156,12 @@ async function appBridgeLogin(shop: string, host: string) {
       throw new Error("Login response doesn't have token, cannot proceed further.");
     }
 
+    const posContext = {
+      locationId: loginPayload.locationId,
+      firstName: loginPayload.firstName,
+      lastName: loginPayload.lastName
+    }
+
     await authStore.login({
       token: loginResponse?.data.token,
       oms: maargUrl,
@@ -165,13 +170,14 @@ async function appBridgeLogin(shop: string, host: string) {
       isEmbedded: true,
       shop: shop,
       host: host,
-      shopifyAppBridge: shopifyAppBridge
+      shopifyAppBridge: shopifyAppBridge,
+      posContext
     });
 
     router.replace("/");
   } catch (e) {
     console.error("Error ", e);
-    error.value.message = "Please contact the administrator.";
+    error.value.message = authStore.isEmbedded ? e as string : "Please contact the administrator.";
     return;
   }
 }

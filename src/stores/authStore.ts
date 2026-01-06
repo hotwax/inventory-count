@@ -19,6 +19,7 @@ export interface LoginPayload {
   shop?: any;
   host?: any;
   shopifyAppBridge?: any;
+  posContext?: any;
 }
 
 type TokenState = {
@@ -52,7 +53,12 @@ export const useAuthStore = defineStore('authStore', {
     isEmbedded: false,
     shop: undefined,
     host: undefined,
-    shopifyAppBridge: undefined
+    shopifyAppBridge: undefined,
+    posContext: {
+      locationId: undefined as (string | undefined),
+      firstName: '',
+      lastName: ''
+    }
   }),
   getters: {
     isAuthenticated: (state) => {
@@ -101,6 +107,11 @@ export const useAuthStore = defineStore('authStore', {
         this.shop = payload.shop;
         this.host = payload.host;
         this.shopifyAppBridge = payload.shopifyAppBridge;
+        this.posContext = payload.posContext || {
+          locationId: undefined,
+          firstName: '',
+          lastName: ''
+        }
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
         const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
@@ -158,7 +169,7 @@ export const useAuthStore = defineStore('authStore', {
 
       } catch (err) {
         console.error("Error in Login: ", err);
-        throw `Login failed. Please try again`;
+        throw this.isEmbedded ? err : `Login failed. Please try again`;
       }
     },
     async logout() {

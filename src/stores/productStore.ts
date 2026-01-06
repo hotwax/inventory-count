@@ -12,7 +12,8 @@ import {
   getUserPreference,
   setProductIdentificationPref,
   setUserPreference,
-  getUserFacilities
+  getUserFacilities,
+  fetchShopifyShopLocation
 } from '@/adapter'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
@@ -348,6 +349,25 @@ export const useProductStore = defineStore('productStore', {
       } catch (error) {
         console.error('Failed to fetch facility preference', error)
       }
+
+      if(authStore.isEmbedded) {
+        const locationId = authStore.posContext.locationId as string
+        const facilityId = await fetchShopifyShopLocation({
+          shopifyLocationId: locationId,
+          pageSize: 1
+        });
+        if(facilityId) {
+          const facility = this.facilities.find((facility: any) => facility.facilityId === facilityId);
+
+          if(!facility) {
+            throw "Unable to login. User is not associated with this location. Please contact the administrator."
+          }
+          preferredFacility = facility
+        } else {
+          throw "Failed to fetch location information. Please contact the administrator."
+        }
+      }
+
       this.currentFacility = preferredFacility
     },
 
@@ -364,6 +384,7 @@ export const useProductStore = defineStore('productStore', {
         console.error('Failed to set facility preference', error)
       }
     },
+
   },
 
   persist: true
