@@ -1392,13 +1392,6 @@ async function addNewSession() {
   margin-inline-start: auto;
 }
 
-.big-number {
-  font-size: 78px;
-  line-height: 1.2;
-  margin: 0;
-  color: rgba(var(--ion-text-color));
-}
-
 .helper-text {
   color: var(--ion-color-medium);
   margin-top: 4px;

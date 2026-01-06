@@ -329,3 +329,10 @@ ion-item ::slotted(ion-note) {
   align-self: unset;
   padding-block: unset;
 }
+
+.big-number {
+  font-size: 78px;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ion-text-color);
+}
