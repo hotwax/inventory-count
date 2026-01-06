@@ -1212,6 +1212,7 @@ async function markSelectedItemsOutOfStock() {
         inventoryCountImportId,
         productId: item.productId,
         quantity: 0,
+        systemQuantityOnHand: item.quantityOnHandTotal || item.quantityOnHand || 0,
         uploadedByUserLogin: username,
         uuid: uuidv4(),
         createdDate: DateTime.now().toMillis()
