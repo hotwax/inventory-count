@@ -135,9 +135,9 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">3 ITEMS AGO</p>
-                      &lt;primaryid&gt;
-                      <p>&lt;Secondaryid&gt;</p>
-                      <p>&lt;scanned value&gt;</p>
+                      primaryid
+                      <p>Secondaryid</p>
+                      <p>scanned value</p>
                     </ion-label>
                     <div slot="end" class="ion-text-end">
                       <p class="overline">last match</p>
@@ -150,7 +150,7 @@
                     </ion-thumbnail>
                     <ion-label>
                       <p class="overline">2 ITEMS LATER</p>
-                      &lt;primaryid&gt;
+                      primaryid
                     </ion-label>
                     <div slot="end" class="ion-text-end">
                       <p class="overline">next match</p>
