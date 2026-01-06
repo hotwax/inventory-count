@@ -66,7 +66,7 @@
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getStatusColor(count.statusId)" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
+            <ion-badge :color="getStatusColor(count.currentStatusId)" class="status-badge" slot="end">{{ useProductStore().getStatusDescription(count.currentStatusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -302,7 +302,7 @@ function enableScrolling() {
   const scrollEl = parentElement.shadowRoot.querySelector("div[part='scroll']")
   let scrollHeight = scrollEl.scrollHeight, infiniteHeight = infiniteScrollRef?.value?.$el?.offsetHeight, scrollTop = scrollEl.scrollTop, threshold = 100, height = scrollEl.offsetHeight
   const distanceFromInfinite = scrollHeight - infiniteHeight - scrollTop - threshold - height
-  if(distanceFromInfinite < 0) {
+  if(distanceFromInfinite <= 0) {
     isScrollingEnabled.value = false;
   } else {
     isScrollingEnabled.value = true;
@@ -325,7 +325,7 @@ async function getAssignedCycleCounts() {
     const params = {
       pageSize: pageSize.value,
       pageIndex: pageIndex.value,
-      statusId: filters.value.status ||  "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+      statusId: filters.value.status ||  ['CYCLE_CNT_CREATED','CYCLE_CNT_IN_PRGS'],
       statusId_op: "in"
     } as any;
     if (filters.value.countType) params.countType = filters.value.countType;

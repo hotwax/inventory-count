@@ -364,7 +364,7 @@ async function getProducts(query: any) {
   const baseURL = useAuthStore().getBaseUrl;
 
   return client({
-    url: 'inventory-cycle-count/runSolrQuery',
+    url: 'solr-query',
     method: 'POST',
     baseURL,
     data: query,

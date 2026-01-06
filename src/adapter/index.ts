@@ -30,12 +30,11 @@ interface RequestPayload {
 const getAvailableTimeZones = async (): Promise <any>  => {
   try {
     const resp: any = await api({
-      url: "admin/user/getAvailableTimeZones",
+      url: "getAvailableTimeZones",
       method: "get",
       cache: true
     });
-
-    return Promise.resolve(resp.data?.timeZones)
+    return Promise.resolve(resp.data)
   } catch(error) {
     return Promise.reject({
       code: "error",
@@ -225,135 +224,79 @@ async function fetchFacilities(token: string, baseURL: string, partyId: string, 
   return Promise.resolve(facilities)
 }
 
-async function getEComStores(token?: string, baseURL?: string, pageSize = 100): Promise <any> {
-  let params: RequestPayload = {
-    url: "oms/productStores",
-    method: "GET",
-    params: {
-      pageSize
-    }
-  }
-
-  let resp = {} as any;
-  let stores: Array<any> = []
-
+async function omsGetUserFacilities(partyId: string, facilityGroupId: any, isAdminUser = false): Promise<any> {
   try {
-    if(token && baseURL) {
-      params = {
-        ...params,
-        baseURL,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-  
-      resp = await client(params);
+    const params = {
+      "inputFields": {} as any,
+      "filterByDate": "Y",
+      "viewSize": 200,
+      "distinct": "Y",
+      "noConditionFind" : "Y",
+    } as any
+    
+    if (facilityGroupId) {
+      params.entityName = "FacilityGroupAndParty";
+      params.fieldList = ["facilityId", "facilityName", "sequenceNum", "facilityTypeId"];
+      params.fromDateName = "FGMFromDate";
+      params.thruDateName = "FGMThruDate";
+      params.orderBy = "sequenceNum ASC | facilityName ASC";
+      params.inputFields["facilityGroupId"] = facilityGroupId;
     } else {
-      resp = await api(params);
+      params.entityName = "FacilityAndParty";
+      params.fieldList = ["facilityId", "facilityName", "facilityTypeId"];
+      params.inputFields["facilityParentTypeId"] = "VIRTUAL_FACILITY";
+      params.inputFields["facilityParentTypeId_op"] = "notEqual";
+      params.orderBy = "facilityName ASC";
     }
-
-    stores = resp.data
-  } catch(error) {
+    if (!isAdminUser) {
+      params.inputFields["partyId"] = partyId;
+    }
+    let resp = {} as any;
+    resp = await api({
+      url: "performFind",
+      method: "get",
+      params,
+    });
+    if (resp.status === 200 && !hasError(resp)) {
+      return Promise.resolve(resp.data.docs);
+    } else {
+      return Promise.reject({
+        code: 'error',
+        message: 'Failed to fetch user facilities',
+        serverResponse: resp.data
+      })
+    }
+  } catch(error: any) {
     return Promise.reject({
-      code: "error",
-      message: "Failed to fetch product stores",
+      code: 'error',
+      message: 'Something went wrong',
       serverResponse: error
     })
-  }
 
-  return Promise.resolve(stores)
+  }
 }
 
-async function getEComStoresByFacility(token?: string, baseURL?: string, pageSize = 100, facilityId?: any): Promise <any> {
-  let params: RequestPayload = {
-    url: `oms/facilities/${facilityId}/productStores`,
-    method: "GET",
-    params: {
-      pageSize,
-      facilityId
-    }
-  }
-
-  let resp = {} as any;
-  let stores: Array<any> = []
-
+async function getUserPreference(token: any, baseURL: string, userPrefTypeId: string): Promise<any> {
   try {
-    if(token && baseURL) {
-      params = {
-        ...params,
-        baseURL,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+    const resp = await client({
+      url: "service/getUserPreference",
+      method: "post",
+      data: { userPrefTypeId },
+      baseURL,
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
       }
-  
-      resp = await client(params);
-    } else {
-      resp = await api(params);
+    });
+    if (hasError(resp)) {
+      throw resp.data
     }
-
-    // Filtering stores on which thruDate is set, as we are unable to pass thruDate check in the api payload
-    // Considering that the stores will always have a thruDate of the past.
-    stores = resp.data.filter((store: any) => !store.thruDate)
-  } catch(error) {
+    return Promise.resolve(jsonParse(resp.data.userPrefValue));
+  } catch (err) {
     return Promise.reject({
-      code: "error",
-      message: "Failed to fetch facility associated product stores",
-      serverResponse: error
-    })
-  }
-
-  if(!stores.length) return Promise.resolve(stores)
-
-  // Fetching all stores for the store name
-  const productStoresMap = {} as any;
-  try {
-    const productStores = await getEComStores(token, baseURL, 200);
-    productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
-  } catch(error) {
-    console.error(error);
-  }
-
-  stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
-  return Promise.resolve(stores)
-}
-
-async function getUserPreference(token: any, baseURL: string, preferenceKey: string, userId: any): Promise <any> {
-  let params: RequestPayload = {
-    url: "admin/user/preferences",
-    method: "GET",
-    params: {
-      pageSize: 1,
-      userId,
-      preferenceKey
-    }
-  }
-
-  let resp = {} as any;
-  try {
-    if(token && baseURL) {
-      params = {
-        ...params,
-        baseURL,
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      }
-  
-      resp = await client(params);
-    } else {
-      resp = await api(params);
-    }
-
-    return Promise.resolve(resp.data[0]?.preferenceValue ? jsonParse(resp.data[0]?.preferenceValue).toString() : "")
-  } catch(error) {
-    return Promise.reject({
-      code: "error",
-      message: "Failed to get user preference",
-      serverResponse: error
+      code: 'error',
+      message: 'Something went wrong',
+      serverResponse: err
     })
   }
 }
@@ -420,37 +363,45 @@ async function createProductIdentificationPref(productStoreId: string): Promise<
 
 
 async function setProductIdentificationPref(productStoreId: string, productIdentificationPref: any): Promise<any> {
-  let resp = {} as any, isSettingExists = false;
+  let resp = {} as any;
+  let isSettingExists = false;
+
+  const payload = {
+    "inputFields": {
+      "productStoreId": productStoreId,
+      "settingTypeEnumId": "PRDT_IDEN_PREF",
+      "filterByDate": "Y"
+    },
+    "entityName": "ProductStoreSetting",
+    "fieldList": ["productStoreId", "settingTypeEnumId", "fromDate"],
+    "viewSize": 1
+  }
 
   try {
     resp = await api({
-      url: `oms/productStores/${productStoreId}/settings`,
-      method: "GET",
-      params: {
-        productStoreId,
-        settingTypeEnumId: "PRDT_IDEN_PREF"
-      }
-    });
-
-    if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
+      url: "performFind",
+      method: "get",
+      params: payload,
+      cache: true
+    }) as any;
+    if(!hasError(resp) && resp.data.docs?.length) {
+      isSettingExists = true
+    }
   } catch(err) {
     console.error(err)
   }
 
+  // when fromDate is not found then reject the call with a message
   if(!isSettingExists) {
-    return Promise.reject({
-      code: "error",
-      message: "product store setting is missing",
-      serverResponse: resp.data
-    })
+    return Promise.reject('product store setting is missing');
   }
-
   try {
     resp = await api({
-      url: `oms/productStores/${productStoreId}/settings`,
+      url: `service/updateProductStoreSetting`,
       method: "POST",
       data: {
         productStoreId,
+        fromDate: resp.data.docs[0].fromDate,
         settingTypeEnumId: "PRDT_IDEN_PREF",
         settingValue: JSON.stringify(productIdentificationPref)
       }
@@ -557,7 +508,7 @@ const setUserLocale = async (payload: any): Promise<any> => {
 async function setUserTimeZone(payload: any): Promise<any> {
   try {
     const resp = await api({
-      url: "admin/user/profile",
+      url: "setUserTimeZone",
       method: "POST",
       data: payload,
     }) as any;
@@ -594,22 +545,32 @@ const omsGetAvailableTimeZones = async (): Promise <any>  => {
 }
 
 const fetchGoodIdentificationTypes = async (parentTypeId = "HC_GOOD_ID_TYPE"): Promise <any>  => {
+  const payload = {
+    "inputFields": {
+      "parentTypeId": parentTypeId,
+    },
+    "fieldList": ["goodIdentificationTypeId", "description"],
+    "viewSize": 50,
+    "entityName": "GoodIdentificationType",
+    "noConditionFind": "Y"
+  }
   try {
-    const resp: any = await api({
-      url: "oms/goodIdentificationTypes",
+    const resp = await api({
+      url: "performFind",
       method: "get",
-      params: {
-        parentTypeId,
-        pageSize: 50
-      }
-    });
+      params: payload
+    }) as any
 
-    return Promise.resolve(resp.data)
-  } catch(error) {
+    if (!hasError(resp)) {
+      return Promise.resolve(resp.data.docs)
+    } else {
+      throw resp.data;
+    }
+  } catch (err) {
     return Promise.reject({
       code: 'error',
-      message: 'Failed to fetch good identification types',
-      serverResponse: error
+      message: 'Something went wrong',
+      serverResponse: err
     })
   }
 }
@@ -617,12 +578,11 @@ const fetchGoodIdentificationTypes = async (parentTypeId = "HC_GOOD_ID_TYPE"): P
 const setUserPreference = async (payload: any) => {
   try {
     const resp = await api({
-      url: "admin/user/preferences",
-      method: "PUT",
+      url: "service/setUserPreference",
+      method: "POST",
       data: {
-        userId: payload.userId,
-        preferenceKey: payload.userPrefTypeId,
-        preferenceValue: payload.userPrefValue,
+        userPrefTypeId: payload.userPrefTypeId,
+        userPrefValue: payload.userPrefValue,
       },
     }) as any;
     return Promise.resolve(resp.data)
@@ -635,8 +595,8 @@ const setUserPreference = async (payload: any) => {
   }
 }
 
-async function getUserFacilities(token: any, baseURL: string, partyId: string, facilityGroupId: any, isAdminUser = false, payload = {}) {
-  return await fetchFacilities(token, baseURL, partyId, facilityGroupId, isAdminUser, payload)
+async function getUserFacilities(partyId: string, facilityGroupId: any, isAdminUser = false) {
+  return await omsGetUserFacilities(partyId, facilityGroupId, isAdminUser)
 }
 
 const getSecurityGroupAndPermissions = async (payload: any) => {
@@ -687,6 +647,87 @@ const updateSecurityGroupPermission = async (payload: {
     method: "PUT",
     data: payload,
   });
+}
+
+async function getEComStoresByFacility(token: any, baseURL: string, vSize = 100, facilityId?: string): Promise<any> {
+
+  if (!facilityId) {
+    return Promise.reject({
+      code: 'error',
+      message: 'FacilityId is missing',
+      serverResponse: 'FacilityId is missing'
+    });
+  }
+
+  const filters = {
+    facilityId: facilityId
+  } as any;
+
+  const params = {
+    "inputFields": {
+      "storeName_op": "not-empty",
+      ...filters
+    },
+    "viewSize": vSize,
+    "fieldList": ["productStoreId", "storeName", "productIdentifierEnumId"],
+    "entityName": "ProductStoreFacilityDetail",
+    "distinct": "Y",
+    "noConditionFind": "Y",
+    "filterByDate": 'Y',
+  };
+
+  try {
+    const resp = await client({
+      url: "performFind",
+      method: "get",
+      baseURL,
+      params,
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (resp.status === 200 && !hasError(resp)) {
+      return Promise.resolve(resp.data.docs);
+    } else {
+      throw resp.data
+    }
+  } catch(error) {
+    return Promise.reject({
+      code: 'error',
+      message: 'Something went wrong',
+      serverResponse: error
+    })
+  }
+}
+
+async function getEComStores(vSize = 100): Promise<any> {
+  const params = {
+    "viewSize": vSize,
+    "fieldList": ["productStoreId", "storeName", "productIdentifierEnumId"],
+    "entityName": "ProductStore",
+    "distinct": "Y",
+    "noConditionFind": "Y"
+  };
+
+  try {
+    const resp = await api({
+      url: "performFind",
+      method: "get",
+      params
+    }) as any;
+    if(!hasError(resp)) {
+      return Promise.resolve(resp.data.docs);
+    } else {
+      throw resp.data
+    }
+  } catch(error) {
+    return Promise.reject({
+      code: 'error',
+      message: 'Something went wrong',
+      serverResponse: error
+    })
+  }
 }
 
 export {

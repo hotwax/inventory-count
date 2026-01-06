@@ -22,6 +22,7 @@ import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
+import CountDetail from "@/views/CountDetail.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -282,6 +283,13 @@ const routes: Array<RouteRecordRaw> = [
     path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
     name: 'SessionCountDetail',
     component: SessionCountDetail,
+    beforeEnter: authGuard,
+    props: true
+  },
+    {
+    path: '/count-detail/:workEffortId',
+    name: 'CountDetail',
+    component: CountDetail,
     beforeEnter: authGuard,
     props: true
   }

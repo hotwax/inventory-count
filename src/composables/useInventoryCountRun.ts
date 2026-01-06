@@ -80,8 +80,8 @@ const getSessionsCount = async (payload: any): Promise<any> => {
 /** Update a work effort */
 const updateWorkEffort = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/workEfforts/${payload.workEffortId}`,
-    method: "put",
+    url: `service/updateCycleCount`,
+    method: "POST",
     data: payload
   });
 };
@@ -162,10 +162,13 @@ const submitProductReview = async (payload: any): Promise<any> => {
 
 const getCycleCountStatusDesc = async (): Promise<any> => {
   return api({
-    url: "oms/statuses",
+    url: "performFind",
     method: "GET",
     params: {
-      statusTypeId: "CYCLE_CNT_STATUS",
+      entityName: "StatusItem",
+      inputFields: {
+        statusTypeId: "CYCLE_CNT_STATUS",
+      },
       pageSize: 20
     }
   })
@@ -184,9 +187,9 @@ export function useInventoryCountRun() {
 
     try {
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/workEfforts',
-        method: 'get',
-        params: {
+        url: 'service/getCycleCounts',
+        method: 'POST',
+        data: {
           pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
           pageIndex: params.pageIndex || 0,
           facilityId: params.facilityId,
@@ -250,9 +253,9 @@ export function useInventoryCountRun() {
 
     try {
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/workEfforts',
-        method: 'get',
-        params
+        url: 'service/getCycleCounts',
+        method: 'POST',
+        data: params
       });
 
       if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
@@ -275,13 +278,12 @@ export function useInventoryCountRun() {
   async function getAssignedCycleCounts(params: any): Promise<{ data: any[]; total: number }> {
     try {
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/workEfforts',
-        method: 'get',
-        params: {
+        url: 'service/getCycleCounts',
+        method: 'post',
+        data: {
           pageSize: params.pageSize || Number(process.env.VUE_APP_VIEW_SIZE) || 20,
           pageIndex: params.pageIndex || 0,
-          statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
-          statusId_op: params.statusId_op || 'in',
+          statusId: params.statusId || ['CYCLE_CNT_CREATED','CYCLE_CNT_IN_PRGS'],
           ...(params.keyword ? { keyword: params.keyword} : {}),
           ...(params.countType ? { countType: params.countType }: {}),
           ...(params.facilityId ? { facilityId: params.facilityId } : {}),
@@ -324,6 +326,14 @@ export function useInventoryCountRun() {
     return { cycleCounts: [], total: 0, isScrollable: false };
   }
 
+  async function getCycleCountItems(payload: any): Promise<any> {
+    return api({
+      url: 'service/getInventoryCountSessionItems',
+      method: 'POST',
+      data: payload
+    });
+  }
+
   return {
     getDiagnostics,
     getWorkEfforts,
@@ -350,5 +360,6 @@ export function useInventoryCountRun() {
     loadStatusDescription,
     queueCycleCountsFileExport,
     getCycleCountSessions,
+    getCycleCountItems,
   };
 }

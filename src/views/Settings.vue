@@ -18,8 +18,8 @@
             is added on sides from ion-item and ion-padding-vertical to compensate the removed
             vertical padding -->
             <ion-card-header class="ion-no-padding ion-padding-vertical">
-              <ion-card-subtitle>{{ userProfile?.userId }}</ion-card-subtitle>
-              <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
+              <ion-card-subtitle>{{ userProfile?.userLoginId }}</ion-card-subtitle>
+              <ion-card-title>{{ userProfile?.partyName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
           <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
@@ -250,13 +250,14 @@ import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
+import { showToast } from "@/services/uiUtils";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
-const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
+const omsRedirectionLink = computed(() => useAuthStore().getBaseUrl);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -292,8 +293,13 @@ const goToOms = (token: string, oms: string) => {
 const barcodeContentMessage = translate("Require inventory to be scanned when counting instead of manually entering values. If the identifier is not found, the scan will default to using the internal name.", { space: '<br /><br />' })
 const productIdentifications = computed(() => useProductStore().getGoodIdentificationOptions) as any
 
-function setBarcodeIdentificationPref(value: any) {
-  useProductStore().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+async function setBarcodeIdentificationPref(value: any) {
+  try {
+    await useProductStore().setProductStoreSetting("barcodeIdentificationPref", value, useProductStore().getCurrentProductStore.productStoreId);
+  } catch (error) {
+    showToast(translate("Failed to Update Product Store Setting"));
+    console.error("Failed to update product store setting", error);
+  }
 }
 
 async function updateEComStore(eComStoreId: any) {

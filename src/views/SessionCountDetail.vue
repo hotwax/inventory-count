@@ -792,7 +792,7 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: useAuthStore().getOmsRedirectionUrl,
+          omsUrl: useAuthStore().getBaseUrl,
           omsInstance: useAuthStore().getOMS,
           userLoginId: useUserProfile().getUserProfile?.username,
           maargUrl: useAuthStore().getBaseUrl,
@@ -1281,7 +1281,7 @@ async function saveMatchProduct() {
     maargUrl: useAuthStore().getBaseUrl,
     omsInstance: useAuthStore().getOMS,
     token: useAuthStore().token.value,
-    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    omsUrl: useAuthStore().getBaseUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
     facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
@@ -1315,7 +1315,7 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
-      omsUrl: useAuthStore().getOmsRedirectionUrl,
+      omsUrl: useAuthStore().getBaseUrl,
       omsInstance: useAuthStore().getOMS,
       userLoginId: useUserProfile().getUserProfile?.username,
       maargUrl: useAuthStore().getBaseUrl,

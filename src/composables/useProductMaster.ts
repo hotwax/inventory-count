@@ -57,7 +57,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
     });
 
     const resp = await client({
-      url: "inventory-cycle-count/runSolrQuery",
+      url: "solr-query",
       method: "POST",
       baseURL,
       data: query,
@@ -140,7 +140,7 @@ const getByIdentificationFromSolr = async (idValue: string) => {
 
   try {
     const resp = await client({
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'solr-query',
       method: 'POST',
       baseURL,
       data: query,
@@ -241,7 +241,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'solr-query',
       method: 'POST',
       data: query
     })
@@ -348,7 +348,7 @@ const getProductStock = async (query: any): Promise<any> => {
 const loadProducts = async (query: any): Promise<any> => {
   const baseURL = useAuthStore().getBaseUrl;
   return await client({
-    url: "inventory-cycle-count/runSolrQuery",
+    url: "solr-query",
     method: "POST",
     baseURL,
     data: query,

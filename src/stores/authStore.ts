@@ -13,7 +13,6 @@ import { initialize } from '@/services/appInitializer';
 export interface LoginPayload {
   token: any;
   oms: any;
-  omsRedirectionUrl: any;
   expirationTime: any;
 }
 
@@ -63,7 +62,7 @@ export const useAuthStore = defineStore('authStore', {
     },
     getBaseUrl: (state) => {
       const baseURL = state.oms
-      if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
+      if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
       return "";
     },
   },
@@ -85,10 +84,9 @@ export const useAuthStore = defineStore('authStore', {
         this.setOMS(payload.oms);
         this.token.value = payload.token;
         this.token.expiration = payload.expirationTime;
-        this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
-        const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
+        const current = await useUserProfile().getProfile();
         Settings.defaultZone = current.timeZone;
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
@@ -96,7 +94,7 @@ export const useAuthStore = defineStore('authStore', {
 
         const serverPermissions = await useUserProfile().loadUserPermissions(
           { permissionIds: [...new Set(serverPermissionsFromRules)] },
-          this.omsRedirectionUrl || this.oms,
+          this.oms,
           this.token.value
         )
 
@@ -119,12 +117,7 @@ export const useAuthStore = defineStore('authStore', {
         }
 
         const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
-          parentTypeId: "VIRTUAL_FACILITY",
-          parentTypeId_not: "Y",
-          facilityTypeId: "VIRTUAL_FACILITY",
-          facilityTypeId_not: "Y"
-        });
+        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser);
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
 
         await useProductStore().getFacilityPreference("SELECTED_FACILITY", current?.userId)

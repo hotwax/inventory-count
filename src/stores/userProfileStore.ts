@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { client } from '@/services/RemoteAPI';
+import api, { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
@@ -94,7 +94,7 @@ export const useUserProfile = defineStore('userProfile', {
         // const appState = appContext.config.globalProperties.$store;
         const userProfile = useUserProfile().getUserProfile;
 
-        const resp = await setUserTimeZone({ userId: userProfile.userId, timeZone: tzId })
+        const resp = await setUserTimeZone({ tzId: tzId })
 
         if (resp?.status === 200) {
           this.current.timeZone = tzId;
@@ -165,36 +165,32 @@ export const useUserProfile = defineStore('userProfile', {
         throw new Error('Sorry, login failed. Please try again')
       }
     },
-
-    /**
-     * Get user profile with token as Maarg now supports token based auth
-     */
-    async getProfile(token: string, omsBaseUrl: string): Promise<any> {
-      const baseURL = omsBaseUrl.startsWith('http')
-        ? omsBaseUrl.includes('/rest/s1')
-          ? omsBaseUrl
-          : `${omsBaseUrl}/rest/s1/`
-        : `https://${omsBaseUrl}.hotwax.io/rest/s1/`
-
+    
+    async getProfile(): Promise<any> {
       try {
-        const resp = await client({
-          url: 'admin/user/profile',
-          method: 'GET',
-          baseURL,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+        const resp = await api({
+          url: "user-profile", 
+          method: "get",
+        }) as any;
+
+        if (resp.status === 200 && !hasError(resp)) {
+          this.current = resp.data
+          return Promise.resolve(this.current);
+        } else {
+          return Promise.reject({
+            code: 'error',
+            message: 'Failed to fetch user profile information',
+            serverResponse: resp.data
+          })
+        }
+      } catch(err) {
+        return Promise.reject({
+          code: 'error',
+          message: 'Something went wrong',
+          serverResponse: err
         })
-        if (hasError(resp)) throw 'Error getting user profile'
-        this.current = resp.data
-        return resp.data
-      } catch (error) {
-        logger.error('getUserProfile failed', error)
-        throw error
       }
     },
-
     /**
      * Get user-level permissions
      */

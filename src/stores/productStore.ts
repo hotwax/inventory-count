@@ -93,9 +93,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpEComStores() {
-      const authStore = useAuthStore()
       try {
-        const response = await getEComStores(authStore.token.value, authStore.getBaseUrl, 100)
+        const response = await getEComStores(100)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -109,7 +108,7 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredStore = this.productStores[0]
       try {
-        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId)
         if (preferredStoreId) {
           const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
           if (store) preferredStore = store
@@ -168,7 +167,7 @@ export const useProductStore = defineStore('productStore', {
         }
         return
       }
-      this.settings.productIdentifier.productIdentificationPref = await getProductIdentificationPref(eComStoreId)
+      this.settings.productIdentifier.productIdentificationPref = await this.getProductIdentifications(eComStoreId)
     },
 
     async prepareProductIdentifierOptions() {
@@ -193,18 +192,25 @@ export const useProductStore = defineStore('productStore', {
 
     async getSettings(productStoreId: string) {
       try {
+        const payload = {
+          "inputFields": {
+            "productStoreId": productStoreId,
+            "settingTypeEnumId": ["INV_FORCE_SCAN","BARCODE_IDEN_PREF"],
+            "settingTypeEnumId_op": 'in'
+          },
+          "entityName": "ProductStoreSetting",
+          "fieldList": ["settingValue", "settingTypeEnumId"],
+          "viewSize": 5
+        }
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
-          method: 'GET',
-          params: {
-            settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
-            settingTypeEnumId_op: 'in',
-            pageSize: 5
-          }
-        })
+          url: "performFind",
+          method: "get",
+          params: payload,
+          cache: true
+        }) as any;
 
-        if (!hasError(resp) && resp?.data?.length) {
-          const parsedSettings = resp.data.reduce((acc: any, setting: any) => {
+        if (!hasError(resp) && resp?.data?.docs?.length) {
+          const parsedSettings = resp.data.docs.reduce((acc: any, setting: any) => {
             const keyMap: Record<string, string> = {
               INV_FORCE_SCAN: 'forceScan',
               BARCODE_IDEN_PREF: 'barcodeIdentificationPref'
@@ -222,25 +228,57 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async setProductStoreSetting(key: string, value: any, productStoreId: string) {
+
+      let resp = {} as any; let isSettingExists = false;
+
+      const payload = {
+        "inputFields": {
+          "productStoreId": productStoreId,
+          "settingTypeEnumId": "BARCODE_IDEN_PREF",
+          "filterByDate": "Y"
+        },
+        "entityName": "ProductStoreSetting",
+        "fieldList": ["productStoreId", "settingTypeEnumId", "fromDate"],
+        "viewSize": 1
+      }
+
+      try {
+        resp = await api({
+          url: "performFind",
+          method: "get",
+          params: payload,
+          cache: true
+        }) as any;
+        if(!hasError(resp) && resp.data.docs?.length) {
+          isSettingExists = true
+        }
+      } catch(err) {
+        console.error(err)
+      }
+
+      // when fromDate is not found then reject the call with a message
+      if(!isSettingExists) {
+        return Promise.reject('product store setting is missing');
+      }
+
       const keyToEnum: Record<string, string> = {
-        forceScan: 'INV_FORCE_SCAN',
         barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
       }
       const enumId = keyToEnum[key]
       if (!enumId) return
 
       try {
-        const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+        resp = await api({
+          url: `service/updateProductStoreSetting`,
           method: 'POST',
           data: {
             productStoreId,
             settingTypeEnumId: enumId,
+            fromDate: resp.data.docs[0].fromDate,
             settingValue: value
           }
         })
         if (!hasError(resp)) {
-          if (key === 'forceScan') this.settings.forceScan = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
           showToast(translate('Store preference updated successfully.'))
         } else {
@@ -254,27 +292,64 @@ export const useProductStore = defineStore('productStore', {
 
 
     /** ---------- ProductStoreSettings Functions ---------- */
-    async getProductIdentifications(productStoreId: string) {
+    // async getProductIdentifications(productStoreId: string) {
+    //   try {
+    //     const resp = await api({
+    //       url: `oms/productStores/${productStoreId}/settings`,
+    //       method: 'GET',
+    //       params: { productStoreId, settingTypeEnumId: 'PRDT_IDEN_PREF' }
+    //     })
+
+    //     if (!hasError(resp) && resp?.data?.length) {
+    //       const settings = JSON.parse(resp.data[0].settingValue)
+    //       const primaryId = settings?.primaryId || 'SKU'
+    //       const secondaryId = settings?.secondaryId || 'productId'
+    //       return { primaryId, secondaryId }
+    //     }
+
+    //     console.warn('No valid identification settings returned for store:', productStoreId)
+    //     return { primaryId: 'SKU', secondaryId: 'productId' }
+    //   } catch (err) {
+    //     console.error('Failed to fetch product store settings:', err)
+    //     return { primaryId: 'SKU', secondaryId: 'productId' }
+    //   }
+    // },
+
+    async getProductIdentifications(eComStoreId: string): Promise<any> {
+
+      const productIdentifications = {
+        'primaryId': 'productId',
+        'secondaryId': ''
+      }
+
+      const payload = {
+        "inputFields": {
+          "productStoreId": eComStoreId,
+          "settingTypeEnumId": "PRDT_IDEN_PREF"
+        },
+        "entityName": "ProductStoreSetting",
+        "fieldList": ["settingValue", "settingTypeEnumId"],
+        "viewSize": 1
+      }
+
       try {
         const resp = await api({
-          url: `admin/productStores/${productStoreId}/settings`,
-          method: 'GET',
-          params: { productStoreId, settingTypeEnumId: 'PRDT_IDEN_PREF' }
-        })
+          url: "performFind",
+          method: "get",
+          params: payload,
+          cache: true
+        }) as any;
 
-        if (!hasError(resp) && resp?.data?.length) {
-          const settings = JSON.parse(resp.data[0].settingValue)
-          const primaryId = settings?.primaryId || 'SKU'
-          const secondaryId = settings?.secondaryId || 'productId'
-          return { primaryId, secondaryId }
+        if(!hasError(resp) && resp.data.docs[0].settingValue) {
+          const respValue = JSON.parse(resp.data.docs[0].settingValue)
+          productIdentifications['primaryId'] = respValue['primaryId']
+          productIdentifications['secondaryId'] = respValue['secondaryId']
         }
-
-        console.warn('No valid identification settings returned for store:', productStoreId)
-        return { primaryId: 'SKU', secondaryId: 'productId' }
-      } catch (err) {
-        console.error('Failed to fetch product store settings:', err)
-        return { primaryId: 'SKU', secondaryId: 'productId' }
+      } catch(err) {
+        console.error(err)
       }
+
+      return productIdentifications
     },
 
     async getProductIdentifierSettings() {
@@ -319,10 +394,9 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
-      const authStore = useAuthStore()
+    async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean) {
       try {
-        const response = await getUserFacilities(authStore.token.value, authStore.getBaseUrl, partyId, facilityGroupId, isAdminUser, payload)
+        const response = await getUserFacilities(partyId, facilityGroupId, isAdminUser)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -340,7 +414,7 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredFacility = this.facilities[0]
       try {
-        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId)
         if (preferredFacilityId) {
           const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility

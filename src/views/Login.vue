@@ -61,7 +61,7 @@ const dismissLoader = async () => {
 
 const login = async () => {
   const route = router.currentRoute.value;
-  const { oms, omsRedirectionUrl, token, expirationTime } = route.query;
+  const { oms, token, expirationTime } = route.query;
 
   try {
     isLoggingIn.value = true;
@@ -70,7 +70,6 @@ const login = async () => {
     await authStore.login({
       token: token,
       oms: oms,
-      omsRedirectionUrl: omsRedirectionUrl,
       expirationTime: expirationTime
     });
 

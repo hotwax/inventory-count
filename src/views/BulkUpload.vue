@@ -56,23 +56,20 @@
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
 
-        <ion-list v-if="systemMessages.length" class="system-message-section">
+        <ion-list v-if="dataManagerLogs.length" class="system-message-section">
           <ion-list-header>
             <ion-label>
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
-              <ion-label class="ion-text-end">
-                {{ nextExecutionRemaining.includes("ago") ? translate("Last run") : translate("Next run") }} {{ nextExecutionRemaining }}
-              </ion-label>
           </ion-list-header>
-          <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
+          <ion-item v-for="dataManagerLog in dataManagerLogs" :key="dataManagerLog.logId">
             <ion-label>
-              <p class="overline">{{ systemMessage.systemMessageId }}</p>
-              {{ extractFilename(systemMessage.messageText) }}
+              <p class="overline">{{ dataManagerLog.logId }}</p>
+              {{ extractFilename(dataManagerLog.contentName) }}
             </ion-label>
             <div slot="end" class="system-message-action">
-              <ion-note>{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+              <ion-note>{{ getFileProcessingStatus(dataManagerLog) }}</ion-note>
+              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, dataManagerLog)">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -86,16 +83,16 @@
     <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false">
       <ion-content>
         <ion-list>
-          <ion-list-header>{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload">
+          <ion-list-header>{{ selectedDataManagerLog?.logId }}</ion-list-header>
+          <ion-item v-if="selectedDataManagerLog?.statusId === 'SmsgReceived'" button @click="cancelUpload">
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+          <ion-item v-if="selectedDataManagerLog?.errorRecordContentId" button @click="viewFile({contentId: selectedDataManagerLog.errorRecordContentId})">
             <ion-icon slot="end" />
-            {{ translate("View error") }}
+            {{ translate("View error file") }}
           </ion-item>
-          <ion-item lines="none" button @click="viewFile">
+          <ion-item lines="none" button @click="viewFile({contentId: selectedDataManagerLog.logFileContentId})">
             <ion-icon slot="end" />
             {{ translate("View file") }}
           </ion-item>
@@ -149,31 +146,20 @@ import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
-import { DateTime } from 'luxon';
+import api from '@/services/RemoteAPI';
 
 
-const systemMessages = ref([]);
-const nextExecutionTimestamp = ref(null);
+const dataManagerLogs = ref([]);
 let refreshInterval = null;
 let countdownInterval = null;
 
 
 onIonViewDidEnter(async () => {
   resetDefaults();
-
-  await fetchSystemMessages();
-  await fetchJobExecutionTime();
-
-  startCountdownTimer();
-
-  refreshInterval = setInterval(async () => {
-    await fetchSystemMessages();
-    await fetchJobExecutionTime();
-  }, 15000);
+  fetchDataManagerLogs();
 });
 
 onBeforeUnmount(() => {
@@ -181,27 +167,6 @@ onBeforeUnmount(() => {
   clearInterval(countdownInterval);
 });
 
-async function fetchSystemMessages() {
-  systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-}
-
-async function fetchJobExecutionTime() {
-  const jobResp = await useInventoryCountImport().getServiceJobDetail(
-    "consume_AllReceivedSystemMessages_frequent"
-  );
-
-  if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
-    nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
-  }
-}
-
-function startCountdownTimer() {
-  countdownInterval = setInterval(() => {
-    if (!nextExecutionTimestamp.value) return;
-    const timeDiff = DateTime.fromMillis(nextExecutionTimestamp.value).diff(DateTime.local());
-    nextExecutionRemaining.value = DateTime.local().plus(timeDiff).toRelative();
-  }, 1000);
-}
 /* ---------- Existing BulkUpload Data ---------- */
 let file = ref(null);
 let uploadedFile = ref({});
@@ -236,7 +201,7 @@ const templateRows = [
 /* ---------- UploadActionPopover Logic ---------- */
 const isUploadPopoverOpen = ref(false);
 const popoverEvent = ref(null);
-const selectedSystemMessage = ref(null);
+const selectedDataManagerLog = ref(null);
 const isErrorModalOpen = ref(false);
 const systemMessageError = ref({});
 const nextExecutionRemaining = ref("…");
@@ -244,7 +209,7 @@ const nextExecutionRemaining = ref("…");
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
   popoverEvent.value = event;
-  selectedSystemMessage.value = systemMessage;
+  selectedDataManagerLog.value = systemMessage;
 }
 function closeUploadPopover() {
   isUploadPopoverOpen.value = false;
@@ -262,14 +227,14 @@ function viewUploadGuide() {
 }
 async function getCycleCountImportErrorsFromServer() {
   try {
-    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
+    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedDataManagerLog.value?.systemMessageId });
     if (!hasError(resp)) systemMessageError.value = resp?.data[0];
   } catch (err) { logger.error(err); }
 }
-async function viewFile() {
+async function viewFile(payload) {
   try {
-    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+    const resp = await fetchFileData(payload);
+    if (!hasError(resp)) saveDataFile(resp.data, resp.headers["Content-Disposition"]);
     else throw resp.data;
   } catch (err) {
     showToast(translate("Failed to download uploaded cycle count file."));
@@ -277,12 +242,13 @@ async function viewFile() {
   }
   closeUploadPopover();
 }
+
 async function cancelUpload() {
   try {
-    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
+    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedDataManagerLog.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
-      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+      await fetchDataManagerLogs();
     }
   } catch (err) {
     showToast(translate("Failed to cancel uploaded cycle count."));
@@ -301,10 +267,10 @@ function extractFilename(path) {
   return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
 function getFileProcessingStatus(systemMessage) {
-  if (systemMessage.statusId === "SmsgConsumed") return "processed";
-  if (systemMessage.statusId === "SmsgConsuming") return "processing";
-  if (systemMessage.statusId === "SmsgCancelled") return "cancelled";
-  if (systemMessage.statusId === "SmsgError") return "error";
+  if (systemMessage.errorRecordContentId != null || systemMessage.statusId === "SERVICE_CRASHED" || systemMessage.statusId === "SERVICE_FAILED") return "error";
+  if (systemMessage.statusId === "SERVICE_FINISHED") return "processed"
+  if (systemMessage.statusId === "SERVICE_RUNNING") return "processing";
+  if (systemMessage.statusId === "SERVICE_CANCELLED") return "cancelled";
   return "pending";
 }
 function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((mapping, key) => (mapping[key] = "", mapping), {}); }
@@ -369,11 +335,12 @@ async function save() {
   const fd = new FormData();
   fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
+  fd.append("configId", "IMPORT_INV_COUNT");
   try {
-    const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
+    const resp = await uploadAndImportFile({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
     if (!hasError(resp)) {
       resetDefaults();
-      systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
+      await fetchDataManagerLogs();
       showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {
@@ -419,6 +386,70 @@ const downloadCsv = (csv, fileName) => {
 
   return blob;
 };
+
+const uploadAndImportFile = async (payload)  => {
+  return api({
+    url: "uploadAndImportFile",
+    method: "post",
+    ...payload
+  });
+}
+
+const fetchDataManagerLogs = async () => {
+  const payload = {
+    "inputFields":  {
+      "configId": "IMPORT_INV_COUNT"
+    },
+    "fieldList": ["statusId", "logId", "createdDate", "startDateTime", "finishDateTime", "logFileContentId", "errorRecordContentId", "contentName", "dataResourceId"],
+    "noConditionFind": "Y",
+    "viewSize": 200,
+    "orderBy": "-createdDate",
+    "entityName": "DataManagerLogAndContent",
+  }
+
+  let fetchedLogs = [], viewIndex = 0, resp;
+
+  try {
+    do {
+      const currentPayload = { ...payload, viewIndex };
+      resp = await api ({
+        url: "performFind",
+        method: "GET",
+        params: currentPayload
+      });
+      if(!hasError(resp) && resp.data.docs?.length > 0) {
+        fetchedLogs = fetchedLogs.concat(resp.data.docs)
+        viewIndex++
+      } else {
+        throw resp.data
+      }
+    } while(resp.data.docs?.length >= 200)
+    dataManagerLogs.value = resp.data.docs;
+  } catch (err) {
+    logger.error(err);
+  }
+}
+
+const fetchFileData = async (payload) => {
+  return api ({
+    url: "DownloadCsvFile",
+    method: "GET",
+    params: payload
+  })
+}
+
+const saveDataFile = async (response, fileName) => {
+  let data;
+
+  if(typeof response === 'object') {
+    data = JSON.stringify(response)
+  } else {
+    data = response
+  }
+
+  const blob = new Blob([data], {type: "text/csv;charset=utf-8"})
+  saveAs(blob, fileName);
+}
 
 </script>
 

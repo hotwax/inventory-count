@@ -244,7 +244,7 @@ async function searchProducts(queryString: string): Promise<any> {
     })
 
     const resp = await api({
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'solr-query',
       method: 'POST',
       data: query
     })
