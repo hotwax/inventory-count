@@ -146,10 +146,15 @@
 
           <ion-card-content>
             <p>{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
+            <p>{{ translate("Clear local inventory data to remove cached products, identifications, count records, and scans from this device.") }}</p>
           </ion-card-content>
           <ion-button expand="block" @click="openDiagnosisModal" fill="outline">
             <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
             <ion-label>{{ translate("Run diagnostics") }}</ion-label>
+          </ion-button>
+          <ion-button expand="block" @click="confirmClearLocalInventoryData" fill="outline" color="danger">
+            <ion-icon :icon="trashOutline" slot="start"></ion-icon>
+            <ion-label>{{ translate("Clear local inventory data") }}</ion-label>
           </ion-button>
         </ion-card>
       </section>
@@ -235,10 +240,10 @@
 </template>
 
 <script setup lang="ts">
-import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar } from "@ionic/vue";
+import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, alertController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@/i18n"
-import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline } from "ionicons/icons"
+import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
@@ -250,6 +255,8 @@ import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
+import { showToast } from "@/services/uiUtils";
+import { db } from "@/services/appInitializer";
 
 const appVersion = ref("")
 const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
@@ -345,6 +352,48 @@ async function openDiagnosisModal() {
       omsDiagnosticsResults.value[index] = result;
     }, index * 150);
   });
+}
+
+async function confirmClearLocalInventoryData() {
+  const alert = await alertController.create({
+    header: translate("Clear local inventory data"),
+    message: translate("This will remove products, product identifications, scan events, and inventory count records from this device. This cannot be undone."),
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Clear data"),
+        handler: async () => {
+          if (!db) {
+            showToast(translate("Local database is not initialized."));
+            return;
+          }
+
+          try {
+            await db.transaction("rw", db.inventoryCountRecords, db.productIdentification, db.products, db.productInventory, async () => {
+              await Promise.all([
+                db.inventoryCountRecords.clear(),
+                db.productIdentification.clear(),
+                db.products.clear(),
+                db.productInventory.clear(),
+              ]);
+            });
+            await db.transaction("rw", db.scanEvents, async () => {
+              await db.scanEvents.clear();
+            });
+            showToast(translate("Local inventory data cleared."));
+          } catch (error) {
+            console.error("Failed to clear local inventory data:", error);
+            showToast(translate("Failed to clear local inventory data."));
+          }
+        }
+      }
+    ]
+  });
+
+  await alert.present();
 }
 </script>
 
