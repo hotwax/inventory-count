@@ -447,9 +447,6 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
     }
 
     if (!syncable.length) {
-      if (blocked.length) {
-        console.warn(`[Worker] Skipping sync for ${blocked.length} record(s) missing system QOH.`)
-      }
       return 0
     }
 
