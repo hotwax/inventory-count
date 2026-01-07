@@ -436,8 +436,15 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
         .toArray()
     }
 
-    const syncable = pending.filter((item: any) => !needsQoh(item))
-    const blocked = pending.filter((item: any) => needsQoh(item))
+    const syncable: InventoryCountImportItem[] = [];
+    const blocked: InventoryCountImportItem[] = [];
+    for (const item of pending as InventoryCountImportItem[]) {
+      if (needsQoh(item)) {
+        blocked.push(item);
+      } else {
+        syncable.push(item);
+      }
+    }
 
     if (!syncable.length) {
       if (blocked.length) {
