@@ -109,8 +109,8 @@
                             <Image :src="item.detailImageUrl"/>
                           </ion-thumbnail>
                           <ion-label>
-                              {{ item.internalName }}
-                              <!-- <p>Secondary Id</p> -->
+                            <h2>{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
+                            <p>{{ productMaster.secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                       </div>
@@ -204,6 +204,7 @@ import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, Io
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { translate } from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
+import { useProductMaster } from "@/composables/useProductMaster";
 import { showToast } from "@/services/uiUtils"
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
@@ -253,6 +254,9 @@ const firstCountedAt = ref();
 const lastCountedAt = ref();
 
 const userProfile = useUserProfile();
+const productMaster = useProductMaster();
+
+const hydratedProductIds = new Set<string>();
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
@@ -324,10 +328,58 @@ async function getInventoryCycleCount() {
     filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
       (a.internalName || '').localeCompare(b.internalName || '')
     );
+    scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
     showToast(translate("Something Went Wrong"));
     aggregatedSessionItems.value = [];
+  }
+}
+
+function scheduleProductHydration(items: any[]) {
+  if (!items?.length) return;
+  setTimeout(() => {
+    void hydrateProductsForItems(items);
+  }, 0);
+}
+
+async function hydrateProductsForItems(items: any[]) {
+  const productIds = [...new Set(
+    items
+      .filter((item: any) => item.productId && !item.product)
+      .map((item: any) => item.productId)
+  )].filter((id) => !hydratedProductIds.has(id));
+
+  if (!productIds.length) return;
+
+  productIds.forEach((id) => hydratedProductIds.add(id));
+  try {
+    try {
+      await productMaster.prefetch(productIds as any);
+    } catch (error) {
+      console.warn("Prefetch failed in ClosedDetail", error);
+    }
+    const results = await Promise.all(productIds.map((id) => productMaster.getById(id)));
+    const productsById = new Map<string, any>();
+    results.forEach((result, index) => {
+      if (result.product) productsById.set(productIds[index], result.product);
+    });
+
+    if (!productsById.size) return;
+    items.forEach((item: any) => {
+      const product = productsById.get(item.productId);
+      if (product) {
+        item.product = product;
+        item.primaryId = productMaster.primaryId(product);
+        item.secondaryId = productMaster.secondaryId(product);
+      }
+    });
+    productIds.forEach((id) => {
+      if (!productsById.has(id)) hydratedProductIds.delete(id);
+    });
+  } catch (error) {
+    console.warn("Failed to hydrate products in ClosedDetail", error);
+    productIds.forEach((id) => hydratedProductIds.delete(id));
   }
 }
 

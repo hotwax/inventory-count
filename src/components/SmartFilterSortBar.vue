@@ -142,8 +142,10 @@ import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vu
 import { translate as t } from "@/i18n";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
+import { useProductMaster } from "@/composables/useProductMaster";
 
 const userProfile = useUserProfile();
+const productMaster = useProductMaster();
 
 /* PROPS */
 const props = defineProps({
@@ -256,9 +258,13 @@ function applyFilters() {
   // Search
   const key = search.value.trim().toLowerCase();
   if (props.showSearch && key) {
+    const getPrimary = (item) => item.primaryId || productMaster.primaryId(item.product);
+    const getSecondary = (item) => item.secondaryId || productMaster.secondaryId(item.product);
     results = results.filter(item =>
       item.internalName?.toLowerCase().includes(key) ||
-      item.productIdentifier?.toLowerCase().includes(key)
+      item.productIdentifier?.toLowerCase().includes(key) ||
+      getPrimary(item)?.toLowerCase().includes(key) ||
+      getSecondary(item)?.toLowerCase().includes(key)
     );
   }
 
@@ -283,7 +289,10 @@ function applyFilters() {
   if (props.showSort) {
     const sort = filters.value.sort;
 
-    if (sort === "alphabetic") results.sort((predecessor, successor) => (predecessor.internalName || "").localeCompare(successor.internalName || ""));
+    if (sort === "alphabetic") {
+      const getSortKey = (item) => (item.primaryId || productMaster.primaryId(item.product) || item.internalName || "");
+      results.sort((predecessor, successor) => getSortKey(predecessor).localeCompare(getSortKey(successor)));
+    }
     if (sort === "variance-asc") results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
     if (sort === "variance-desc") results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
   }
