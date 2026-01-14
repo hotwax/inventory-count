@@ -338,9 +338,7 @@ async function getInventoryCycleCount() {
 
 function scheduleProductHydration(items: any[]) {
   if (!items?.length) return;
-  setTimeout(() => {
-    hydrateProductsForItems(items);
-  }, 0);
+  hydrateProductsForItems(items);
 }
 
 async function hydrateProductsForItems(items: any[]) {
