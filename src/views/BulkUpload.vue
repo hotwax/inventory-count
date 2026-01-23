@@ -91,7 +91,7 @@
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="viewError">
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError' || (selectedSystemMessage?.statusId === 'SmsgConsumed' && selectedSystemMessage?.errors?.length)" button @click="viewError">
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
@@ -314,10 +314,10 @@ function extractFilename(path) {
   return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
 function getFileProcessingStatus(systemMessage) {
-  if (systemMessage.statusId === "SmsgConsumed") return "processed";
+  if (systemMessage.statusId === "SmsgConsumed" && !systemMessage.errors?.length) return "processed";
   if (systemMessage.statusId === "SmsgConsuming") return "processing";
   if (systemMessage.statusId === "SmsgCancelled") return "cancelled";
-  if (systemMessage.statusId === "SmsgError") return "error";
+  if (systemMessage.statusId === "SmsgError" || (systemMessage.statusId === "SmsgConsumed" && systemMessage.errors?.length)) return "error";
   return "pending";
 }
 function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((mapping, key) => (mapping[key] = "", mapping), {}); }
