@@ -1623,7 +1623,7 @@ async function negateAllScansOfSku(item: any) {
     ));
 
     showToast(
-      translate('Removed all scans for') + `${sku}`
+      translate('Removed all scans for') + ` ${sku}`
     )
   } catch (err) {
     console.error(err)
