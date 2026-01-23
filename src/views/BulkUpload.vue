@@ -259,12 +259,6 @@ function closeErrorModal() {
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
 }
-async function getCycleCountImportErrorsFromServer() {
-  try {
-    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
-  } catch (err) { logger.error(err); }
-}
 async function viewFile() {
   try {
     const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
