@@ -480,7 +480,7 @@
             <ion-spinner name="crescent" />
             <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
           </div>
-          <div v-else-if="queryString && queryString.length < 4" class="empty-state ion-padding">
+          <div v-else-if="queryString && queryString.trim().length < 4" class="empty-state ion-padding">
             <p>{{ translate("Type at least 4 characters to search") }}</p>
           </div>
           <template v-else-if="isSearching && products.length">
@@ -498,7 +498,7 @@
               </ion-item>
             </ion-radio-group>
           </template>
-          <div v-else-if="queryString && isSearching && !products.length" class="empty-state ion-padding">
+          <div v-else-if="queryString.trim() && isSearching && !products.length" class="empty-state ion-padding">
             <p>{{ translate("No results found") }}</p>
           </div>
           <div v-else class="empty-state ion-padding">
