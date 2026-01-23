@@ -62,7 +62,7 @@
           </DynamicScroller>
           <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
             <ion-content>
-              <ion-item lines="none" button @click="removeScan(selectedScan)">
+              <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
                 <ion-label color="danger">{{ translate("Remove") }}</ion-label>
               </ion-item>
             </ion-content>
@@ -565,6 +565,7 @@
         ]"
         @didDismiss="showDiscardAlert = false"/>
     </ion-content>
+    <ion-alert :is-open="showRemoveConfirm" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
 
@@ -1533,6 +1534,110 @@ async function removeScan(item: any) {
   } finally {
     showScanAction.value = false
   }
+}
+
+// Remove confirmation
+const showRemoveConfirm = ref(false)
+const removeTargetScan = ref<any>(null)
+const removeConfirmMessage = ref('')
+
+function confirmRemoveScan(item: any) {
+  removeTargetScan.value = item
+  showScanAction.value = false
+
+  const sku = item.scannedValue
+  const qty = item.quantity
+
+  removeConfirmMessage.value = `
+    ${translate('SKU')}: <b>${sku}</b><br/>
+    ${translate('Quantity')}: <b>${qty}</b><br/><br/>
+    ${translate('What would you like to remove?')}
+  `
+
+  showRemoveConfirm.value = true
+}
+
+const removeConfirmButtons = [
+  {
+    text: translate('Cancel'),
+    role: 'cancel'
+  },
+  {
+    text: translate('Only this scan'),
+    handler: async () => {
+      await negateSingleScan(removeTargetScan.value)
+    }
+  },
+  {
+    text: translate('All scans of this SKU'),
+    cssClass: 'danger',
+    handler: async () => {
+      await negateAllScansOfSku(removeTargetScan.value)
+    }
+  }
+]
+
+async function negateSingleScan(item: any) {
+  try {
+    await useInventoryCountImport().recordScan({
+      inventoryCountImportId: props.inventoryCountImportId,
+      productIdentifier: item.scannedValue,
+      productId: item.productId,
+      negatedScanEventId: item.id,
+      quantity: -Math.abs(item.quantity || 1)
+    })
+
+    showToast(translate('Scan removed'))
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scan'))
+  } finally {
+    resetRemoveConfirm()
+  }
+}
+
+async function negateAllScansOfSku(item: any) {
+  try {
+    const sku = item.scannedValue
+
+    const scansToNegate = events.value.filter(
+      (e: any) =>
+        e.scannedValue === sku &&
+        e.quantity > 0 &&
+        e.aggApplied === 1 &&
+        !negatedScanEventIds.value.has(e.id)
+    )
+
+    if (!scansToNegate.length) {
+      showToast(translate('No scans available to remove'))
+      return
+    }
+
+    for (const scan of scansToNegate) {
+      await useInventoryCountImport().recordScan({
+        inventoryCountImportId: props.inventoryCountImportId,
+        productIdentifier: scan.scannedValue,
+        productId: scan.productId,
+        negatedScanEventId: scan.id,
+        quantity: -Math.abs(scan.quantity || 1)
+      })
+    }
+
+    showToast(
+      translate('Removed all scans for') + ` ${sku}`
+    )
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scans'))
+  } finally {
+    resetRemoveConfirm()
+  }
+}
+
+function resetRemoveConfirm() {
+  showRemoveConfirm.value = false
+  removeTargetScan.value = null
+  removeConfirmMessage.value = ''
 }
 
 </script>
