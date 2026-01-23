@@ -50,7 +50,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
 
   do {
     const batch = productIds.slice(index, index + batchSize)
-    const filter = `productId: (${batch.join(' OR ')}),isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED`
+    const filter = `productId: (${batch.join(' OR ')}),isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`
 
     const query = useProductMaster().buildProductQuery({
       filter: filter,

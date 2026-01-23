@@ -240,7 +240,7 @@ async function searchProducts(queryString: string): Promise<any> {
     const query = useProductMaster().buildProductQuery({
       keyword: queryString,
       viewSize: 20,
-      filter: 'isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED'
+      filter: 'isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED'
     })
 
     const resp = await api({
