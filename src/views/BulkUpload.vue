@@ -91,7 +91,7 @@
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="viewErrorFile">
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
@@ -273,6 +273,26 @@ async function viewFile() {
     else throw resp.data;
   } catch (err) {
     showToast(translate("Failed to download uploaded cycle count file."));
+    logger.error(err);
+  }
+  closeUploadPopover();
+}
+async function viewErrorFile() {
+  try {
+    const latestError = selectedSystemMessage.value.errors?.length
+      ? selectedSystemMessage.value.errors.slice().sort((a, b) => b.errorDate - a.errorDate)[0]
+      : null;
+
+    if (latestError.errorText && latestError.errorText.trim()?.endsWith('.csv')){
+      systemMessageError.value = latestError;
+        const resp = await useInventoryCountRun().getCycleCountErrorFileData({ contentLocation: latestError.errorText.trim() });
+        if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+        else throw resp.data;
+        return;
+    }
+    openErrorModal();
+  } catch (err) {
+    showToast(translate("Failed to download cycle count error file."));
     logger.error(err);
   }
   closeUploadPopover();
