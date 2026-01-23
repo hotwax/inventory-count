@@ -251,7 +251,6 @@ function closeUploadPopover() {
 }
 function openErrorModal() {
   isErrorModalOpen.value = true;
-  getCycleCountImportErrorsFromServer();
 }
 function closeErrorModal() {
   isErrorModalOpen.value = false;
@@ -284,12 +283,12 @@ async function viewErrorFile() {
       : null;
 
     if (latestError.errorText && latestError.errorText.trim()?.endsWith('.csv')){
-      systemMessageError.value = latestError;
         const resp = await useInventoryCountRun().getCycleCountErrorFileData({ contentLocation: latestError.errorText.trim() });
         if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
         else throw resp.data;
         return;
     }
+    systemMessageError.value = latestError;
     openErrorModal();
   } catch (err) {
     showToast(translate("Failed to download cycle count error file."));
