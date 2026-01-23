@@ -1607,11 +1607,6 @@ async function negateAllScansOfSku(item: any) {
         !negatedScanEventIds.value.has(e.id)
     )
 
-    if (!scansToNegate.length) {
-      showToast(translate('No scans available to remove'))
-      return
-    }
-
     await Promise.all(scansToNegate.map(scan => 
       useInventoryCountImport().recordScan({
         inventoryCountImportId: props.inventoryCountImportId,
