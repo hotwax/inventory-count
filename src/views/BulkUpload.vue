@@ -95,6 +95,14 @@
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
+          <ion-item
+            v-if="selectedSystemMessage?.statusId === 'SmsgError'"
+            button
+            @click="openCorrectionModal"
+          >
+            <ion-icon slot="end" />
+            {{ translate("Correct with agent") }}
+          </ion-item>
           <ion-item lines="none" button @click="viewFile">
             <ion-icon slot="end" />
             {{ translate("View file") }}
@@ -132,6 +140,73 @@
                   </template>
                 </ion-label>
               </ion-item>
+              <ion-item lines="none" v-if="systemMessageError?.errorText">
+                <ion-label class="ion-text-wrap">
+                  <p class="overline">{{ translate("Agent suggestions") }}</p>
+                  <ion-spinner v-if="agentHelpLoading" name="dots" />
+                  <template v-else-if="agentHelpResponse">
+                    <div class="agent-help-text">{{ agentHelpResponse }}</div>
+                  </template>
+                  <template v-else-if="agentHelpError">
+                    {{ agentHelpError }}
+                  </template>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none" v-if="systemMessageError?.errorText">
+                <ion-label class="ion-text-wrap">
+                  <p class="overline">{{ translate("Corrected file") }}</p>
+                  <ion-spinner v-if="agentCorrectionLoading" name="dots" />
+                  <template v-else-if="agentCorrectionSummary">
+                    <div class="agent-help-text">{{ agentCorrectionSummary }}</div>
+                    <ion-button size="small" class="agent-download" @click="downloadCorrectedFile">
+                      {{ translate("Download corrected file") }}
+                    </ion-button>
+                  </template>
+                  <template v-else-if="agentCorrectionError">
+                    {{ agentCorrectionError }}
+                  </template>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-content>
+        </ion-modal>
+
+        <ion-modal :is-open="isCorrectionModalOpen" :keep-contents-mounted="true" @did-dismiss="closeCorrectionModal">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button @click="closeCorrectionModal">
+                  <ion-icon :icon="close" />
+                </ion-button>
+              </ion-buttons>
+              <ion-title>{{ translate("Agent correction") }}</ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-list>
+              <ion-item lines="none">
+                <ion-label class="ion-text-wrap">
+                  <p class="overline">{{ translate("Corrected file") }}</p>
+                  <ion-spinner v-if="agentCorrectionLoading" name="dots" />
+                  <template v-else-if="agentCorrectionSummary">
+                    <div class="agent-help-text">{{ agentCorrectionSummary }}</div>
+                    <ion-button size="small" class="agent-download" @click="downloadCorrectedFile">
+                      {{ translate("Download corrected file") }}
+                    </ion-button>
+                  </template>
+                  <template v-else-if="agentCorrectionError">
+                    {{ agentCorrectionError }}
+                  </template>
+                  <template v-else>
+                    {{ translate("Run the agent to correct the file.") }}
+                  </template>
+                </ion-label>
+              </ion-item>
+              <ion-item lines="none">
+                <ion-button expand="block" :disabled="agentCorrectionLoading" @click="runCorrection">
+                  {{ translate("Run correction") }}
+                </ion-button>
+              </ion-item>
             </ion-list>
           </ion-content>
         </ion-modal>
@@ -141,15 +216,19 @@
 </template>
 
 <script setup>
-import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonSpinner } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { translate } from '@/i18n';
 import { onBeforeUnmount, ref } from "vue";
+import { useRoute } from "vue-router";
 import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { askInventoryAgent, executeAgentTool } from '@/services/AgentAPI';
+import { buildAgentContext } from '@/services/agentContext';
+import { useProductStore } from '@/stores/productStore';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
@@ -160,6 +239,7 @@ const systemMessages = ref([]);
 const nextExecutionTimestamp = ref(null);
 let refreshInterval = null;
 let countdownInterval = null;
+const route = useRoute();
 
 
 onIonViewDidEnter(async () => {
@@ -238,8 +318,143 @@ const isUploadPopoverOpen = ref(false);
 const popoverEvent = ref(null);
 const selectedSystemMessage = ref(null);
 const isErrorModalOpen = ref(false);
+const isCorrectionModalOpen = ref(false);
 const systemMessageError = ref({});
 const nextExecutionRemaining = ref("…");
+const agentHelpLoading = ref(false);
+const agentHelpResponse = ref('');
+const agentHelpError = ref('');
+const agentCorrectionLoading = ref(false);
+const agentCorrectionSummary = ref('');
+const agentCorrectionCsv = ref('');
+const agentCorrectionError = ref('');
+
+const parseValuesFromError = (errorText, label) => {
+  if (!errorText) return [];
+  const regex = new RegExp(`${label}[^:\\n]*:\\s*([^\\n]+)`, 'i');
+  const match = errorText.match(regex);
+  if (!match?.[1]) return [];
+  const raw = match[1].trim();
+  const parts = raw.split(/[,;|]+/).map((value) => value.trim()).filter(Boolean);
+  if (parts.length) return parts;
+  return raw.split(/\s+/).map((value) => value.trim()).filter(Boolean);
+};
+
+const parseCsvData = async (csvData) => {
+  return new Promise((resolve, reject) => {
+    Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results) {
+        if (results.errors.length) {
+          reject(results.errors)
+        } else {
+          resolve(results.data)
+        }
+      }
+    });
+  })
+}
+
+const requestUploadErrorHelp = async (errorText) => {
+  if (!errorText?.trim()) return;
+  agentHelpLoading.value = true;
+  agentHelpResponse.value = '';
+  agentHelpError.value = '';
+
+  const missingSkus = parseValuesFromError(errorText, 'sku');
+  const missingFacilities = parseValuesFromError(errorText, 'facility');
+
+  const prompt = `Help me fix this bulk upload error: ${errorText}`;
+
+  try {
+    const context = await buildAgentContext(route, prompt);
+    if (!context.intentData || typeof context.intentData !== 'object') context.intentData = {};
+    if (missingSkus.length) context.intentData.missingSkus = missingSkus;
+    if (missingFacilities.length) context.intentData.missingFacilities = missingFacilities;
+    context.uploadError = { errorText, missingSkus, missingFacilities };
+
+    const response = await askInventoryAgent(prompt, context);
+    agentHelpResponse.value = response?.text || JSON.stringify(response?.data, null, 2);
+  } catch (err) {
+    logger.error(err);
+    agentHelpError.value = translate("Unable to fetch agent suggestions.");
+  } finally {
+    agentHelpLoading.value = false;
+  }
+};
+
+const requestUploadCorrection = async (errorText) => {
+  const systemMessageId = selectedSystemMessage.value?.systemMessageId;
+  const failCount = Number(selectedSystemMessage.value?.failCount || systemMessageError.value?.failCount || 0);
+  if (!systemMessageId || failCount <= 0 || !errorText?.trim()) return;
+
+  agentCorrectionLoading.value = true;
+  agentCorrectionSummary.value = '';
+  agentCorrectionCsv.value = '';
+  agentCorrectionError.value = '';
+
+  const missingSkus = parseValuesFromError(errorText, 'sku');
+  const missingFacilities = parseValuesFromError(errorText, 'facility');
+
+  try {
+    const fileResp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId });
+    if (hasError(fileResp)) throw fileResp.data;
+
+    const csvData = fileResp.data?.csvData || '';
+    const rows = await parseCsvData(csvData);
+    if (!rows?.length) throw new Error('No rows found in uploaded file.');
+    const columns = rows?.length ? Object.keys(rows[0]) : [];
+
+    const currentFacility = useProductStore().getCurrentFacility;
+    const requiredFields = Object.keys(getFilteredFields(fields, true));
+
+    const toolInput = {
+      rows,
+      errorText,
+      missingSkus,
+      missingFacilities,
+      requiredFields,
+      dateFormat: "MM-dd-yyyy HH:mm:ss",
+      defaultFacilityId: currentFacility?.facilityId,
+    };
+
+    const prompt = `Correct this bulk upload CSV and return the corrected CSV. Use bulkUploadCorrectionInput from context with the bulk-upload-corrector tool. Error: ${errorText}`;
+    const context = await buildAgentContext(route, prompt);
+    context.uploadError = { errorText, missingSkus, missingFacilities };
+    context.bulkUploadFile = {
+      fileName: extractFilename(selectedSystemMessage.value?.messageText),
+      columns,
+      rows,
+    };
+    context.bulkUploadCorrectionInput = toolInput;
+
+    let correctionResult = null;
+    try {
+      const response = await askInventoryAgent(prompt, context);
+      correctionResult = response?.data || response;
+    } catch {
+      correctionResult = null;
+    }
+
+    if (!correctionResult?.correctedCsv) {
+      const toolResponse = await executeAgentTool('bulk-upload-corrector', toolInput);
+      correctionResult = toolResponse?.data || toolResponse;
+    }
+
+    if (correctionResult?.correctedCsv) {
+      agentCorrectionCsv.value = correctionResult.correctedCsv;
+      agentCorrectionSummary.value = correctionResult.summary || translate("Corrected file is ready to download.");
+    } else {
+      throw new Error('Corrected file data was not returned.');
+    }
+  } catch (err) {
+    logger.error(err);
+    agentCorrectionError.value = translate("Unable to generate corrected file.");
+  } finally {
+    agentCorrectionLoading.value = false;
+  }
+};
 
 function openUploadActionPopover(event, systemMessage) {
   isUploadPopoverOpen.value = true;
@@ -251,10 +466,31 @@ function closeUploadPopover() {
 }
 function openErrorModal() {
   isErrorModalOpen.value = true;
+  if (systemMessageError.value?.errorText) return;
   getCycleCountImportErrorsFromServer();
 }
 function closeErrorModal() {
   isErrorModalOpen.value = false;
+  agentHelpLoading.value = false;
+  agentHelpResponse.value = '';
+  agentHelpError.value = '';
+  agentCorrectionLoading.value = false;
+  agentCorrectionSummary.value = '';
+  agentCorrectionCsv.value = '';
+  agentCorrectionError.value = '';
+  closeUploadPopover();
+}
+function openCorrectionModal() {
+  isCorrectionModalOpen.value = true;
+  if (systemMessageError.value?.errorText) return;
+  getCycleCountImportErrorsFromServer();
+}
+function closeCorrectionModal() {
+  isCorrectionModalOpen.value = false;
+  agentCorrectionLoading.value = false;
+  agentCorrectionSummary.value = '';
+  agentCorrectionCsv.value = '';
+  agentCorrectionError.value = '';
   closeUploadPopover();
 }
 function viewUploadGuide() {
@@ -263,7 +499,12 @@ function viewUploadGuide() {
 async function getCycleCountImportErrorsFromServer() {
   try {
     const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
+    if (!hasError(resp)) {
+      systemMessageError.value = resp?.data[0];
+      const errorText = systemMessageError.value?.errorText || '';
+      if (errorText) requestUploadErrorHelp(errorText);
+      if (errorText) requestUploadCorrection(errorText);
+    }
   } catch (err) { logger.error(err); }
 }
 async function viewFile() {
@@ -420,6 +661,18 @@ const downloadCsv = (csv, fileName) => {
   return blob;
 };
 
+const downloadCorrectedFile = () => {
+  if (!agentCorrectionCsv.value) return;
+  const baseName = extractFilename(selectedSystemMessage.value?.messageText) || 'CycleCountImport.csv';
+  const correctedName = baseName.replace(/\.csv$/i, '-corrected.csv');
+  downloadCsv(agentCorrectionCsv.value, correctedName);
+};
+
+const runCorrection = async () => {
+  const errorText = systemMessageError.value?.errorText || '';
+  await requestUploadCorrection(errorText);
+};
+
 </script>
 
 <style scoped>
@@ -454,5 +707,12 @@ const downloadCsv = (csv, fileName) => {
 }
 .system-message-action>ion-button {
   vertical-align: middle;
+}
+.agent-help-text {
+  white-space: pre-wrap;
+}
+
+.agent-download {
+  margin-top: var(--spacer-xs);
 }
 </style>

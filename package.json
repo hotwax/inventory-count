@@ -21,6 +21,7 @@
     "@ionic/core": "8.4.2",
     "@ionic/vue": "8.4.2",
     "@ionic/vue-router": "8.4.2",
+    "@mastra/mcp": "^1.0.0",
     "@types/node-json-transform": "^1.0.0",
     "@types/papaparse": "^5.3.1",
     "axios": "^0.21.1",

@@ -366,6 +366,7 @@ const loadProducts = async (query: any): Promise<any> => {
 const buildProductQuery = (params: any): Record<string, any> => {
   const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
+  const excludeDiscontinued = params.excludeDiscontinued ?? Boolean(params.keyword)
 
   const payload: any = {
     json: {
@@ -386,6 +387,13 @@ const buildProductQuery = (params: any): Record<string, any> => {
       params.queryFields ||
       'sku^100 upc^100 productName^50 internalName^40 productId groupId groupName'
     payload.json.params['defType'] = 'edismax'
+  }
+
+  if (excludeDiscontinued) {
+    const discontinuedFilter = '-productCategories:PCCT_DISCONTINUED'
+    if (!payload.json.filter.includes(discontinuedFilter)) {
+      payload.json.filter.push(discontinuedFilter)
+    }
   }
 
   if (params.filter) {

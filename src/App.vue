@@ -31,10 +31,12 @@
 
       <ion-router-outlet id="main-content"></ion-router-outlet>
     </IonSplitPane>
+    <AgentAssist v-if="showAgent" />
   </ion-app>
 
   <ion-app v-else>
     <ion-router-outlet id="main-content"></ion-router-outlet>
+    <AgentAssist v-if="showAgent" />
   </ion-app>
 </template>
 
@@ -65,6 +67,7 @@ import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
 import { useAuthStore } from './stores/authStore';
+import AgentAssist from '@/components/AgentAssist.vue';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
@@ -76,6 +79,8 @@ const showMenu = computed(() => {
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
   return !isExcluded && hasPermission(Actions.APP_DRAFT_VIEW);
 });
+
+const showAgent = computed(() => !router.currentRoute.value.fullPath.includes('/login'))
 
 const loader = ref(null) as any;
 
