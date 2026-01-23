@@ -91,7 +91,7 @@
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="viewErrorFile">
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="viewError">
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
@@ -270,7 +270,7 @@ async function viewFile() {
   }
   closeUploadPopover();
 }
-async function viewErrorFile() {
+async function viewError() {
   try {
     const latestError = selectedSystemMessage.value.errors?.length
       ? selectedSystemMessage.value.errors.slice().sort((a, b) => b.errorDate - a.errorDate)[0]
