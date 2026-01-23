@@ -475,10 +475,13 @@
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @keyup.enter="handleSearch" />
+          <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @ion-input="handleLiveSearch" />
           <div v-if="isLoading" class="empty-state ion-padding">
             <ion-spinner name="crescent" />
             <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
+          </div>
+          <div v-else-if="queryString && queryString.length < 4" class="empty-state ion-padding">
+            <p>{{ translate("Type at least 4 characters to search") }}</p>
           </div>
           <template v-else-if="isSearching && products.length">
             <ion-radio-group v-model="selectedProductId">
@@ -734,6 +737,17 @@ watchEffect(() => {
     unmatched: unmatchedItems.value.length
   }
 })
+
+const debouncedMatchSearch = debounce(async () => {
+  if (queryString.value.trim().length < 4) {
+    products.value = []
+    isSearching.value = false
+    return
+  }
+
+  isSearching.value = true
+  await getProducts()
+}, 2000)
 
 onIonViewDidEnter(async () => {
   try {
@@ -1253,6 +1267,22 @@ async function handleSearch() {
   }
   await getProducts();
   isSearching.value = true;
+}
+
+function handleLiveSearch() {
+  selectedProductId.value = ''
+  if (!queryString.value?.trim()) {
+    products.value = []
+    isSearching.value = false
+    return
+  }
+  if (queryString.value.length < 4) {
+    products.value = []
+    isSearching.value = false
+    return
+  }
+  isLoading.value = true
+  debouncedMatchSearch()
 }
 
 async function getProducts() {
