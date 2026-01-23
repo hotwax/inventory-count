@@ -565,7 +565,7 @@
         ]"
         @didDismiss="showDiscardAlert = false"/>
     </ion-content>
-    <ion-alert :is-open="showRemoveConfirm" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
 
@@ -1537,7 +1537,7 @@ async function removeScan(item: any) {
 }
 
 // Remove confirmation
-const showRemoveConfirm = ref(false)
+const showRemoveConfirmAlert = ref(false)
 const removeTargetScan = ref<any>(null)
 const removeConfirmMessage = ref('')
 
@@ -1549,12 +1549,12 @@ function confirmRemoveScan(item: any) {
   const qty = item.quantity
 
   removeConfirmMessage.value = `
-    ${translate('SKU')}: <b>${sku}</b><br/>
+    ${translate('SKU')}: ${sku}<br/>
     ${translate('Quantity')}: <b>${qty}</b><br/><br/>
     ${translate('What would you like to remove?')}
   `
 
-  showRemoveConfirm.value = true
+  showRemoveConfirmAlert.value = true
 }
 
 const removeConfirmButtons = [
@@ -1570,7 +1570,6 @@ const removeConfirmButtons = [
   },
   {
     text: translate('All scans of this SKU'),
-    cssClass: 'danger',
     handler: async () => {
       await negateAllScansOfSku(removeTargetScan.value)
     }
@@ -1613,18 +1612,18 @@ async function negateAllScansOfSku(item: any) {
       return
     }
 
-    for (const scan of scansToNegate) {
-      await useInventoryCountImport().recordScan({
+    await Promise.all(scansToNegate.map(scan => 
+      useInventoryCountImport().recordScan({
         inventoryCountImportId: props.inventoryCountImportId,
         productIdentifier: scan.scannedValue,
         productId: scan.productId,
         negatedScanEventId: scan.id,
         quantity: -Math.abs(scan.quantity || 1)
       })
-    }
+    ));
 
     showToast(
-      translate('Removed all scans for') + ` ${sku}`
+      translate('Removed all scans for') + `${sku}`
     )
   } catch (err) {
     console.error(err)
@@ -1635,7 +1634,7 @@ async function negateAllScansOfSku(item: any) {
 }
 
 function resetRemoveConfirm() {
-  showRemoveConfirm.value = false
+  showRemoveConfirmAlert.value = false
   removeTargetScan.value = null
   removeConfirmMessage.value = ''
 }
