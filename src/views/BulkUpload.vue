@@ -276,7 +276,7 @@ async function viewError() {
       ? selectedSystemMessage.value.errors.slice().sort((a, b) => b.errorDate - a.errorDate)[0]
       : null;
 
-    if (latestError.errorText && latestError.errorText.trim()?.endsWith('.csv')){
+    if (latestError?.errorText?.trim()?.endsWith('.csv')){
         const resp = await useInventoryCountRun().getCycleCountErrorFileData({ contentLocation: latestError.errorText.trim() });
         if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
         else throw resp.data;
