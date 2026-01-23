@@ -117,7 +117,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   try {
     const query = buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value}`,
+        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED`,
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });

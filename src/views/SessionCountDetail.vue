@@ -1260,7 +1260,7 @@ async function getProducts() {
   const queryPayload = useProductMaster().buildProductQuery({
     keyword: queryString.value.trim(),
     viewSize: 100,
-    filter: 'isVirtual:false,productTypeId:FINISHED_GOOD',
+    filter: 'isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED',
   })
 
   isLoading.value = true

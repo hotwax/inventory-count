@@ -50,7 +50,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
 
   do {
     const batch = productIds.slice(index, index + batchSize)
-    const filter = `productId: (${batch.join(' OR ')})`
+    const filter = `productId: (${batch.join(' OR ')}),isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED`
 
     const query = useProductMaster().buildProductQuery({
       filter: filter,
@@ -121,50 +121,6 @@ const findByIdentification = async (idValue: string) => {
   return { product: matchedProduct, identificationValue: idValue }
 }
 
-const getByIdentificationFromSolr = async (idValue: string) => {
-  const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-  const productIdentifications = process.env.VUE_APP_PRDT_IDENT
-    ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
-    : [];
-
-  const baseURL = useAuthStore().getBaseUrl;
-
-  // Build Solr filter dynamically
-  const filter = productIdentifications.includes(barcodeIdentification)
-    ? `${barcodeIdentification}: ${idValue}`
-    : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
-
-    const query = useProductMaster().buildProductQuery({
-      filter: filter,
-      viewSize: 1,
-      fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
-    });
-
-  try {
-    const resp = await client({
-      url: 'inventory-cycle-count/runSolrQuery',
-      method: 'POST',
-      baseURL,
-      data: query,
-      headers: {
-        'Authorization': 'Bearer ' + useAuthStore().token.value,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const products = resp.data?.response?.docs || [];
-    if (products.length) {
-      const mapped = mapApiDocToProduct(products[0]);
-      await upsertFromApi([mapped]);
-      return { product: mapped, status: 'fresh' as const };
-    }
-  } catch (err) {
-    console.error('Failed to fetch product by identification from Solr:', err);
-  }
-
-  return { product: undefined, status: 'miss' as const };
-};
-
 const prefetch = async (productIds: string[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
@@ -232,7 +188,7 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!idType) idType = context.barcodeIdentification
 
   const query = useProductMaster().buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value}`,
+        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED`,
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
       });
@@ -604,7 +560,6 @@ export function useProductMaster() {
     findByIdentification,
     findProductByIdentification,
     searchProducts,
-    getByIdentificationFromSolr,
     prefetch,
     upsertFromApi,
     clearCache,
