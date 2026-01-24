@@ -188,7 +188,7 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!idType) idType = context.barcodeIdentification
 
   const query = useProductMaster().buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-productCategories:PCCT_DISCONTINUED`,
+        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
       });
