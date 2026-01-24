@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useUserProfile } from '@/stores/userProfileStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { createCommonDB } from '@/services/commonDatabase';
+import { useAgentControl } from '@/composables/useAgentControl';
+import { useProductStore } from '@/stores/productStore'
 
 export let db: CommonDB
 let currentOMS: string | null = null
@@ -13,6 +15,7 @@ let currentOMS: string | null = null
  *  - Create per-OMS DB
  *  - Open DB
  *  - Initialize deviceId
+ *  - Initialize agent control system
  */
 export async function initialize() {
   const auth = useAuthStore()
@@ -34,6 +37,20 @@ export async function initialize() {
   // Initialize deviceId inside this OMS DB
   await initializeDeviceId();
   await useProductMaster().init();
+
+  // Initialize agent control system using composable
+  // Note: This should only run once per session, not on every page refresh
+  const agentControl = useAgentControl();
+  const facilityId = useProductStore().getCurrentFacility.facilityId;
+
+  if (facilityId) {
+    // Run agent control initialization in background
+    agentControl.initialize(facilityId).catch((error: unknown) => {
+      console.error('[AppInit] Agent control initialization failed:', error);
+    });
+  } else {
+    console.warn('[AppInit] No facilityId available, skipping agent control initialization');
+  }
 }
 
 async function initializeDeviceId() {
