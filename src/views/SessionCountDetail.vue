@@ -62,7 +62,7 @@
           </DynamicScroller>
           <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
             <ion-content>
-              <ion-item lines="none" button @click="removeScan(selectedScan)">
+              <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
                 <ion-label color="danger">{{ translate("Remove") }}</ion-label>
               </ion-item>
             </ion-content>
@@ -565,6 +565,7 @@
         ]"
         @didDismiss="showDiscardAlert = false"/>
     </ion-content>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
 
@@ -680,7 +681,6 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => useUserProfile().getUserProfile);
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
@@ -1517,7 +1517,47 @@ function openScanActionMenu(item: any) {
   showScanAction.value = true
 }
 
-async function removeScan(item: any) {
+// Remove confirmation
+const showRemoveConfirmAlert = ref(false)
+const removeTargetScan = ref<any>(null)
+const removeConfirmMessage = ref('')
+
+function confirmRemoveScan(item: any) {
+  removeTargetScan.value = item
+  showScanAction.value = false
+
+  const sku = item.scannedValue
+  const qty = item.quantity
+
+  removeConfirmMessage.value = `
+    ${translate('SKU')}: ${sku}<br/>
+    ${translate('Quantity')}: <b>${qty}</b><br/><br/>
+    ${translate('What would you like to remove?')}
+  `
+
+  showRemoveConfirmAlert.value = true
+}
+
+const removeConfirmButtons = [
+  {
+    text: translate('Cancel'),
+    role: 'cancel'
+  },
+  {
+    text: translate('Only this scan'),
+    handler: async () => {
+      await negateSingleScan(removeTargetScan.value)
+    }
+  },
+  {
+    text: translate('All scans of this SKU'),
+    handler: async () => {
+      await negateAllScansOfSku(removeTargetScan.value)
+    }
+  }
+]
+
+async function negateSingleScan(item: any) {
   try {
     await useInventoryCountImport().recordScan({
       inventoryCountImportId: props.inventoryCountImportId,
@@ -1526,13 +1566,53 @@ async function removeScan(item: any) {
       negatedScanEventId: item.id,
       quantity: -Math.abs(item.quantity || 1)
     })
-    showToast(`Scan ${item.scannedValue} removed`)
-  } catch (error) {
-    console.error(error)
-    showToast("Failed to remove scan")
+
+    showToast(translate('Scan removed'))
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scan'))
   } finally {
-    showScanAction.value = false
+    resetRemoveConfirm()
   }
+}
+
+async function negateAllScansOfSku(item: any) {
+  try {
+    const sku = item.scannedValue
+
+    const scansToNegate = events.value.filter(
+      (e: any) =>
+        e.scannedValue === sku &&
+        e.quantity > 0 &&
+        e.aggApplied === 1 &&
+        !negatedScanEventIds.value.has(e.id)
+    )
+
+    await Promise.all(scansToNegate.map(scan => 
+      useInventoryCountImport().recordScan({
+        inventoryCountImportId: props.inventoryCountImportId,
+        productIdentifier: scan.scannedValue,
+        productId: scan.productId,
+        negatedScanEventId: scan.id,
+        quantity: -Math.abs(scan.quantity || 1)
+      })
+    ));
+
+    showToast(
+      translate('Removed all scans for') + ` ${sku}`
+    )
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scans'))
+  } finally {
+    resetRemoveConfirm()
+  }
+}
+
+function resetRemoveConfirm() {
+  showRemoveConfirmAlert.value = false
+  removeTargetScan.value = null
+  removeConfirmMessage.value = ''
 }
 
 </script>
