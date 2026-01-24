@@ -285,7 +285,7 @@ async function viewError() {
     systemMessageError.value = latestError;
     openErrorModal();
   } catch (err) {
-    showToast(translate("Failed to download cycle count error file."));
+    showToast(translate("Failed to get error details."));
     logger.error(err);
   }
   closeUploadPopover();

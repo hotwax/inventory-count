@@ -130,6 +130,7 @@
   "Failed to cancel uploaded cycle count.": "Failed to cancel uploaded cycle count.",
   "Failed to clear local inventory data.": "Failed to clear local inventory data.",
   "Failed to load export history": "Failed to load export history",
+  "Failed to get error details.": "Failed to get error details.",
   "Failed to update time zone": "Failed to update time zone",
   "Failed to upload the file, please try again": "Failed to upload the file, please try again",
   "Fetching cycle counts...": "Fetching cycle counts...",
