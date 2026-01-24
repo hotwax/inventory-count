@@ -747,7 +747,7 @@ const debouncedMatchSearch = debounce(async () => {
 
   isSearching.value = true
   await getProducts()
-}, 2000)
+}, 1000)
 
 onIonViewDidEnter(async () => {
   try {
@@ -1271,12 +1271,7 @@ async function handleSearch() {
 
 function handleLiveSearch() {
   selectedProductId.value = ''
-  if (!queryString.value?.trim()) {
-    products.value = []
-    isSearching.value = false
-    return
-  }
-  if (queryString.value.length < 4) {
+    if (!queryString.value?.trim() || queryString.value.trim().length < 4) {
     products.value = []
     isSearching.value = false
     return
