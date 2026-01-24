@@ -681,7 +681,6 @@ const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
-const userLogin = computed(() => useUserProfile().getUserProfile);
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
 
@@ -1516,24 +1515,6 @@ function openScanActionMenu(item: any) {
   selectedScan.value = item
   popoverTrigger.value = item.createdAt
   showScanAction.value = true
-}
-
-async function removeScan(item: any) {
-  try {
-    await useInventoryCountImport().recordScan({
-      inventoryCountImportId: props.inventoryCountImportId,
-      productIdentifier: item.scannedValue,
-      productId: item.productId,
-      negatedScanEventId: item.id,
-      quantity: -Math.abs(item.quantity || 1)
-    })
-    showToast(`Scan ${item.scannedValue} removed`)
-  } catch (error) {
-    console.error(error)
-    showToast("Failed to remove scan")
-  } finally {
-    showScanAction.value = false
-  }
 }
 
 // Remove confirmation
