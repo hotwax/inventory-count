@@ -1535,6 +1535,45 @@ async function removeScan(item: any) {
   }
 }
 
+<<<<<<< Updated upstream
+=======
+async function negateAllScansOfSku(item: any) {
+  try {
+    const sku = item.scannedValue
+
+    const scansToNegate = events.value.filter(
+      (e: any) =>
+        e.scannedValue === sku &&
+        e.quantity > 0 &&
+        e.aggApplied === 1 &&
+        !negatedScanEventIds.value.has(e.id)
+    )
+
+    for (const scan of scansToNegate) {
+      await useInventoryCountImport().recordScan({
+        inventoryCountImportId: props.inventoryCountImportId,
+        productIdentifier: scan.scannedValue,
+        productId: scan.productId,
+        negatedScanEventId: scan.id,
+        quantity: -Math.abs(scan.quantity || 1)
+      })
+    }
+    showToast(translate('Removed all scans for') + ` ${sku}`)
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scans'))
+  } finally {
+    resetRemoveConfirm()
+  }
+}
+
+function resetRemoveConfirm() {
+  showRemoveConfirmAlert.value = false
+  removeTargetScan.value = null
+  removeConfirmMessage.value = ''
+}
+
+>>>>>>> Stashed changes
 </script>
 
 <style scoped>
