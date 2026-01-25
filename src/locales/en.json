@@ -383,6 +383,7 @@
   "Timezone": "Timezone",
   "Track progress": "Track progress",
   "Type": "Type",
+  "Type at least 4 characters to search": "Type at least 4 characters to search",
   "Unaggregated": "Unaggregated",
   "Uncompliant": "Uncompliant",
   "Uncounted": "Uncounted ({uncountedItemsLength})",
