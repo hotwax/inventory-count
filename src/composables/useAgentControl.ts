@@ -160,6 +160,9 @@ async function handleClearIndexedDB(): Promise<void> {
 async function handleClearCache(): Promise<void> {
     try {
         // Clear all storage (deviceId is in IndexedDB, safe)
+        localStorage.clear();
+        sessionStorage.clear();
+        handleClearIndexedDB();
         console.log('[AgentControl] Local cache cleared (deviceId preserved in IndexedDB)');
     } catch (error) {
         console.error('[AgentControl] Error clearing cache:', error);
