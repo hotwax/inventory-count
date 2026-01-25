@@ -5,6 +5,12 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { db } from '@/services/appInitializer';
 
+const isInitialized = ref(false);
+const isInitializing = ref(false);
+const deviceId = ref<string | null>(null);
+const lastError = ref<Error | null>(null);
+const lastInitTime = ref<number | null>(null);
+
 /**
  * Agent Control Composable
  * 
@@ -59,7 +65,7 @@ async function getOrCreateDeviceId(facilityId: string): Promise<string | null> {
         }
     } catch (error) {
         console.error('[AgentControl] Error getting device ID:', error);
-        return null;
+        throw error;
     }
 }
 
@@ -129,52 +135,18 @@ async function acknowledgeInstruction(agentCtrlInstructionId: string, deviceId: 
  */
 async function handleClearIndexedDB(): Promise<void> {
     try {
-        const databases = await window.indexedDB.databases();
-
-        for (const dbInfo of databases) {
-            if (!dbInfo.name) continue;
-
-            const request = window.indexedDB.open(dbInfo.name);
-
-            await new Promise<void>((resolve, reject) => {
-                request.onsuccess = async (event) => {
-                    const db = (event.target as IDBOpenDBRequest).result;
-                    const objectStoreNames = Array.from(db.objectStoreNames);
-
-                    if (objectStoreNames.includes('appPreferences')) {
-                        const transaction = db.transaction(objectStoreNames, 'readwrite');
-
-                        for (const storeName of objectStoreNames) {
-                            if (storeName !== 'appPreferences') {
-                                try {
-                                    const store = transaction.objectStore(storeName);
-                                    store.clear();
-                                    console.log(`[AgentControl] Cleared object store: ${storeName}`);
-                                } catch (err) {
-                                    console.warn(`[AgentControl] Could not clear store ${storeName}:`, err);
-                                }
-                            }
-                        }
-
-                        db.close();
-                        resolve();
-                    } else {
-                        db.close();
-                        if (dbInfo.name) {
-                            window.indexedDB.deleteDatabase(dbInfo.name);
-                            console.log(`[AgentControl] Deleted database: ${dbInfo.name}`);
-                        }
-                        resolve();
-                    }
-                };
-
-                request.onerror = () => {
-                    console.error(`[AgentControl] Error opening database ${dbInfo.name}:`, request.error);
-                    reject(request.error);
-                };
-            });
-        }
-
+        
+        await db.transaction("rw", db.inventoryCountRecords, db.productIdentification, db.products, db.productInventory, async () => {
+            await Promise.all([
+            db.inventoryCountRecords.clear(),
+            db.productIdentification.clear(),
+            db.products.clear(),
+            db.productInventory.clear(),
+            ]);
+        });
+        await db.transaction("rw", db.scanEvents, async () => {
+            await db.scanEvents.clear();
+        });
         console.log('[AgentControl] IndexedDB cleared');
     } catch (error) {
         console.error('[AgentControl] Error clearing IndexedDB:', error);
@@ -188,8 +160,6 @@ async function handleClearIndexedDB(): Promise<void> {
 async function handleClearCache(): Promise<void> {
     try {
         // Clear all storage (deviceId is in IndexedDB, safe)
-        localStorage.clear();
-        sessionStorage.clear();
 
         console.log('[AgentControl] Local cache cleared (deviceId preserved in IndexedDB)');
     } catch (error) {
@@ -294,6 +264,7 @@ async function fetchAndExecuteInstructions(deviceId: string, facilityId: string)
         console.log('[AgentControl] Finished executing all instructions');
     } catch (error) {
         console.error('[AgentControl] Error in fetchAndExecuteInstructions:', error);
+        throw error;
     }
 }
 
@@ -319,6 +290,7 @@ async function initializeAgentControl(facilityId: string): Promise<void> {
         console.log('[AgentControl] Agent control system initialized successfully');
     } catch (error) {
         console.error('[AgentControl] Error initializing agent control:', error);
+        throw error;
     }
 }
 
@@ -326,12 +298,6 @@ async function initializeAgentControl(facilityId: string): Promise<void> {
  * Main composable export
  */
 export function useAgentControl() {
-    const isInitialized = ref(false);
-    const isInitializing = ref(false);
-    const deviceId = ref<string | null>(null);
-    const lastError = ref<Error | null>(null);
-    const lastInitTime = ref<number | null>(null);
-
     /**
      * Initialize the agent control system
      * Runs on EVERY app initialization
