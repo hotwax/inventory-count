@@ -1613,19 +1613,16 @@ async function negateAllScansOfSku(item: any) {
         !negatedScanEventIds.value.has(e.id)
     )
 
-    await Promise.all(scansToNegate.map(scan => 
-      useInventoryCountImport().recordScan({
+    for (const scan of scansToNegate) {
+      await useInventoryCountImport().recordScan({
         inventoryCountImportId: props.inventoryCountImportId,
         productIdentifier: scan.scannedValue,
         productId: scan.productId,
         negatedScanEventId: scan.id,
         quantity: -Math.abs(scan.quantity || 1)
       })
-    ));
-
-    showToast(
-      translate('Removed all scans for') + ` ${sku}`
-    )
+    }
+    showToast(translate('Removed all scans for') + ` ${sku}`)
   } catch (err) {
     console.error(err)
     showToast(translate('Failed to remove scans'))
