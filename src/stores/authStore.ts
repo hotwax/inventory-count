@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('authStore', {
         this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
         const permissionId = process.env.VUE_APP_PERMISSION_ID;
-        const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
+        const current = await useUserProfile().getProfile();
         Settings.defaultZone = current.timeZone;
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
@@ -119,7 +119,7 @@ export const useAuthStore = defineStore('authStore', {
         }
 
         const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW")
-        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
+        const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, {
           parentTypeId: "VIRTUAL_FACILITY",
           parentTypeId_not: "Y",
           facilityTypeId: "VIRTUAL_FACILITY",
@@ -127,10 +127,10 @@ export const useAuthStore = defineStore('authStore', {
         });
         if (!facilities.length) throw "Unable to login. User is not associated with any facility"
 
-        await useProductStore().getFacilityPreference("SELECTED_FACILITY", current?.userId)
+        await useProductStore().getFacilityPreference("SELECTED_FACILITY")
         const currentFacility: any = useProductStore().getCurrentFacility
         isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId)
-        await useProductStore().getEComStorePreference("SELECTED_BRAND", current?.userId)
+        await useProductStore().getEComStorePreference("SELECTED_BRAND")
 
         setPermissions(appPermissions);
         // Fetch and set product identifier settings based on current product store
@@ -143,6 +143,9 @@ export const useAuthStore = defineStore('authStore', {
 
       } catch (err) {
         console.error("Error in Login: ", err);
+        useProductStore().$reset();
+        useUserProfile().$reset();
+        this.$reset();
         throw `Login failed. Please try again`;
       }
     },
@@ -150,7 +153,7 @@ export const useAuthStore = defineStore('authStore', {
       try {
         useProductStore().$reset();
         useUserProfile().$reset();
-        useAuthStore().$reset();
+        this.$reset();
 
         const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
         const redirectUrl = window.location.origin + '/login';
