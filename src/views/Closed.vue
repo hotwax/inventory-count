@@ -10,10 +10,7 @@
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
-    </ion-header>
-    
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
-      <ion-list>
+      <ion-toolbar>
         <div class="filters">
           <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
           <ion-item>
@@ -32,7 +29,7 @@
               <ion-label>{{ facilityChipLabel }}</ion-label>
             </ion-chip>
           </ion-item>
-
+    
           
           <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
             {{ translate("More filters") }}
@@ -40,6 +37,11 @@
           </ion-button>
           
         </div>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
+      <ion-list>
         <p v-if="!cycleCounts?.length" class="empty-state">
           {{ translate("No cycle counts found") }}
         </p>

@@ -10,29 +10,31 @@
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
+      <ion-toolbar>
+        <div class="header searchbar">
+          <ion-searchbar :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"
+          />
+          <ion-item>
+            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All">
+              <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select> 
+          </ion-item>
+          <ion-item>
+            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
+              <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <ion-item>
+            <ion-label>{{ translate('Facility') }}</ion-label>
+            <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true">
+              <ion-label>{{ facilityChipLabel }}</ion-label>
+            </ion-chip>
+          </ion-item>
+        </div>
+      </ion-toolbar>
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
-      <div class="header searchbar">
-        <ion-searchbar :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"
-        />
-        <ion-item>
-          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All">
-            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
-          </ion-select> 
-        </ion-item>
-        <ion-item>
-          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
-          </ion-select>
-        </ion-item>
-        <ion-item>
-          <ion-label>{{ translate('Facility') }}</ion-label>
-          <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true">
-            <ion-label>{{ facilityChipLabel }}</ion-label>
-          </ion-chip>
-        </ion-item>
-      </div>
       <p v-if="!cycleCounts?.length" class="empty-state">
         {{ translate("No cycle counts found") }}
       </p>
