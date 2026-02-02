@@ -1,7 +1,7 @@
 # Inventory Count
 
 ## 1. Repository Overview
-- **Logical Name**: Inventory Count (cycle-count) — not a Sanskrit word.
+- **Logical Name**: Inventory Count (cycle-count)
 - **Business Purpose**: This repository delivers HotWax Commerce’s Inventory/Cycle Count mobile + web application used by store and warehouse teams to execute physical counts. It focuses on creating, running, and reviewing cycle counts, capturing scan events offline, and synchronizing results back to the HotWax OMS for inventory accuracy and variance review. It also supports bulk count imports, session management, and exporting completed count data for operations teams.
 
 ## 2. Core Responsibilities & Business Logic
@@ -14,12 +14,12 @@
   - Permissions-driven access to count actions and admin features.
 
 - **Core business logic & workflows**:
-  - **Authentication & permission gating**: users authenticate via token + OMS endpoint, load permissions, and are blocked if they lack the configured app permission. Facility and product store context is loaded on login to scope counts. The app configures product identifier preferences and status descriptions before initializing local storage for offline use.【F:src/stores/authStore.ts†L1-L177】
+  - **Authentication & permission gating**: users authenticate via token + OMS endpoint, load permissions, and are blocked if they lack the configured app permission. Facility and product store context is loaded on login to scope counts. The app configures product identifier preferences and status descriptions before initializing local storage for offline use.【F:src/stores/authStore.ts†L1-L176】
   - **Cycle Count work effort lifecycle**: the app lists cycle count work efforts, starts counts, and updates work effort status through the `inventory-cycle-count/cycleCounts/workEfforts` APIs. It also supports navigating into sessions tied to a work effort and initiating new sessions (including cloning sessions for directed counts).【F:src/composables/useInventoryCountRun.ts†L29-L285】【F:src/views/Count.vue†L280-L406】
-  - **Session operations**: sessions can be created, locked/released, submitted, or voided. The app manages session items and supports update/delete flows per item while tracking session locks in OMS data documents.【F:src/composables/useInventoryCountImport.ts†L300-L506】
+  - **Session operations**: sessions can be created, locked/released, submitted, or voided. The app manages session items and supports update/delete flows per item while tracking session locks in OMS data documents.【F:src/composables/useInventoryCountImport.ts†L370-L535】
   - **Scan event and item aggregation**: scanning produces `scanEvents` that are written to IndexedDB and aggregated into counted/uncounted/undirected/unmatched views. Local storage allows offline counting and later synchronization.【F:src/composables/useInventoryCountImport.ts†L20-L292】
   - **Bulk upload workflow**: users upload CSV files to create cycle count sessions, review processing errors, and download processed files, all via system message APIs.【F:src/views/BulkUpload.vue†L151-L377】【F:src/composables/useInventoryCountRun.ts†L72-L168】
-  - **Product lookup and inventory snapshot**: product data is cached in IndexedDB and refreshed using Solr queries and OMS inventory data views to support scanning, search, and QOH/ATP visibility while counting.【F:src/composables/useProductMaster.ts†L1-L338】【F:src/composables/useProductMaster.ts†L390-L553】
+  - **Product lookup and inventory snapshot**: product data is cached in IndexedDB and refreshed using Solr queries and OMS inventory data views to support scanning, search, and QOH/ATP visibility while counting.【F:src/composables/useProductMaster.ts†L1-L338】【F:src/composables/useProductMaster.ts†L433-L551】
 
 ## 3. Dependencies & Architecture
 - **Tech Stack**:
@@ -33,7 +33,7 @@
 - **Dependency Map (App repo)**:
   - **HotWax OMS API** (primary backend):
     - `inventory-cycle-count/*` endpoints for work efforts, sessions, uploads, exports, reviews, and diagnostics.【F:src/composables/useInventoryCountRun.ts†L29-L285】【F:src/composables/useInventoryCountImport.ts†L300-L506】
-    - `oms/dataDocumentView` for session locks and inventory snapshots.【F:src/composables/useInventoryCountImport.ts†L430-L469】【F:src/composables/useProductMaster.ts†L390-L487】
+    - `oms/dataDocumentView` for session locks and inventory snapshots.【F:src/composables/useInventoryCountImport.ts†L455-L469】【F:src/composables/useProductMaster.ts†L474-L511】
     - `oms/statuses` for cycle count status descriptions.【F:src/composables/useInventoryCountRun.ts†L150-L170】
     - `admin/serviceJobs/*` for upload job status details.【F:src/composables/useInventoryCountImport.ts†L507-L516】
   - **Search/Index services**: Solr-backed product queries via `inventory-cycle-count/runSolrQuery` to resolve product identifiers and lists.【F:src/composables/useProductMaster.ts†L43-L178】【F:src/composables/useProductMaster.ts†L255-L368】
