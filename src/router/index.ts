@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -36,7 +36,7 @@ declare module 'vue-router' {
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
+  const appLoginUrl = import.meta.env.VITE_VUE_APP_LOGIN_URL;
   if (!authStore.isAuthenticated) {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
@@ -288,7 +288,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 

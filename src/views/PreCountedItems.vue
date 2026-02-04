@@ -181,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,

@@ -16,7 +16,7 @@ import {
 } from '@/adapter'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n'
+import { translate } from '@common'
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({

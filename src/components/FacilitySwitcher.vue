@@ -74,7 +74,7 @@ import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardT
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
 import { computed, ref } from 'vue';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import { defineProps } from "vue";
 
 const productStore = useProductStore();

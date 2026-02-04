@@ -138,7 +138,7 @@
 import { computed, ref } from "vue";
 import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { getStatusColor, loader, showToast, getFacilityChipLabel } from "@/services/uiUtils";
@@ -158,7 +158,7 @@ const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = ref(Number(import.meta.env.VITE_VUE_APP_VIEW_SIZE) || 20);
 
 const productStore = useProductStore();
 

@@ -31,7 +31,7 @@ let isSyncing = false
 // Product Lookup Helper
 
 const buildProductQuery = (params: any): Record<string, any> => {
-  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewSize = params.viewSize || import.meta.env.VITE_VUE_APP_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
 
   const payload: any = {

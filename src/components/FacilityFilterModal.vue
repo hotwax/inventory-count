@@ -52,7 +52,7 @@
 import { ref, defineProps, defineEmits } from 'vue';
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonSearchbar, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkOutline, closeOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 
 interface Facility {
   facilityId: string;

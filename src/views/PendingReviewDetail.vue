@@ -481,7 +481,7 @@ import {
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
 import { ref, computed, defineProps } from "vue";
-import { translate } from "@/i18n";
+import { translate } from "@common";
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";

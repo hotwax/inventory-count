@@ -7,7 +7,7 @@ import { createLogger, StringifyObjectsHook } from 'vue-logger-plugin'
 // Log levels (one of: debug, info, warn, error, log)
 // log <-- error <-- warn <-- info <-- debug
 // (from left to right: least inclusive to most inclusive)
-// const level = (process.env.VUE_APP_DEFAULT_LOG_LEVEL ? process.env.VUE_APP_DEFAULT_LOG_LEVEL : "error") as any;
+// const level = (import.meta.env.VITE_VUE_APP_DEFAULT_LOG_LEVEL ? import.meta.env.VITE_VUE_APP_DEFAULT_LOG_LEVEL : "error") as any;
 
 // Using StringifyObjectsHook as the objects are references and values may change during the code execution
 // https://github.com/dev-tavern/vue-logger-plugin#built-in-hooks

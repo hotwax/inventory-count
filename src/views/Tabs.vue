@@ -26,7 +26,7 @@ import {
   fileTrayFullOutline,
   settingsOutline,
 } from "ionicons/icons";
-import { translate } from '@/i18n'
+import { translate } from '@common'
 </script>
 
 <style scoped>

@@ -173,7 +173,7 @@
 <script setup>
 import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import { computed, ref } from "vue";
 import router from '@/router';
 import { loader, showToast } from "@/services/uiUtils";

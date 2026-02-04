@@ -29,7 +29,6 @@ import '@hotwax/apps-theme';
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import i18n from './i18n'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
@@ -38,9 +37,11 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
+import { createDxpI18n, createDxpPinia } from '@common'
+import localeMessages from '@/locales'
 
-
-const pinia = createPinia().use(piniaPluginPersistedstate);
+const i18n = createDxpI18n(localeMessages)
+const pinia = createDxpPinia();
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',

@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { hasError } from '@/stores/authStore';

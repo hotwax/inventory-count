@@ -58,7 +58,7 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { translate } from "@/i18n";
+import { translate } from "@common";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/productStore';
 import logger from './logger';

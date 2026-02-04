@@ -76,7 +76,7 @@ const paramsSerializer = (parameters: any) => {
   return qs.stringify(params, { arrayFormat: 'repeat' });
 }
 
-const maxAge = process.env.VUE_APP_CACHE_MAX_AGE ? parseInt(process.env.VUE_APP_CACHE_MAX_AGE) : 0;
+const maxAge = import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_VUE_APP_CACHE_MAX_AGE) : 0;
 const axiosCache = setupCache({
   maxAge: maxAge * 1000
 })

@@ -187,7 +187,7 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
+          pageSize: params.pageSize || import.meta.env.VITE_VUE_APP_VIEW_SIZE,
           pageIndex: params.pageIndex || 0,
           facilityId: params.facilityId,
           statusId: params.statusId,
@@ -278,7 +278,7 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || Number(process.env.VUE_APP_VIEW_SIZE) || 20,
+          pageSize: params.pageSize || Number(import.meta.env.VITE_VUE_APP_VIEW_SIZE) || 20,
           pageIndex: params.pageIndex || 0,
           statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
           statusId_op: params.statusId_op || 'in',

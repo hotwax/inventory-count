@@ -125,7 +125,7 @@
 import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
@@ -145,7 +145,7 @@ const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
 
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = ref(Number(import.meta.env.VITE_VUE_APP_VIEW_SIZE) || 20);
 
 const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);

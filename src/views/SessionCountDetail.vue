@@ -580,7 +580,7 @@ import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
@@ -803,7 +803,7 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
+    // const productIdentifications = import.meta.env.VITE_VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_VUE_APP_PRDT_IDENT)) : []
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({

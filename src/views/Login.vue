@@ -25,7 +25,7 @@ import { arrowBackOutline, warningOutline } from 'ionicons/icons'
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
-import { translate } from "@/i18n";
+import { translate } from "@common";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -86,7 +86,7 @@ const login = async () => {
 };
 
 function goToLaunchpad() {
-  window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
+  window.location.replace(import.meta.env.VITE_VUE_APP_LOGIN_URL || "");
 }
 
 onUnmounted(() => {

@@ -3,7 +3,7 @@ import { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
-import i18n, { translate } from '@/i18n'
+import { i18n, translate } from '@common'
 import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime, Settings } from 'luxon';
@@ -12,7 +12,7 @@ export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     permissions: [] as any,
-    localeOptions: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : { "en-US": "English" },
+    localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     currentTimeZoneId: '',
     timeZones: [],

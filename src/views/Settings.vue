@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, alertController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { translate } from "@/i18n"
+import { translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuthStore } from "@/stores/authStore";
 import { Actions, hasPermission } from "@/authorization"
@@ -259,7 +259,7 @@ import { showToast } from "@/services/uiUtils";
 import { db } from "@/services/appInitializer";
 
 const appVersion = ref("")
-const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
+const appInfo = (import.meta.env.VITE_VERSION_INFO ? JSON.parse(import.meta.env.VITE_VERSION_INFO) : {}) as any
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
@@ -281,7 +281,7 @@ function logout() {
 }
 
 function goToLaunchpad() {
-  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
+  window.location.href = `${import.meta.env.VITE_VUE_APP_LOGIN_URL}`
 }
 
 function getDateTime(time: any) {
