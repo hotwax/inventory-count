@@ -20,7 +20,7 @@ import { createLogger, StringifyObjectsHook } from 'vue-logger-plugin'
 
 const logger = createLogger({
   enabled: true,
-  beforeHooks: [StringifyObjectsHook]
+  beforeHooks: [ StringifyObjectsHook ]
 });
 
 function getStack(error: any) {

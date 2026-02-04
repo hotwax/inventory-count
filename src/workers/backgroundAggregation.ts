@@ -76,10 +76,10 @@ async function getById(productId: string, context: any) {
 
   try {
     const query = buildProductQuery({
-      filter: `productId: ${productId}`,
-      viewSize: 1,
-      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-    });
+        filter: `productId: ${productId}`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
       baseURL: context.maargUrl,
       headers: {
@@ -117,10 +117,10 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   try {
     const query = buildProductQuery({
-      filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
-      viewSize: 1,
-      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-    });
+        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
+        viewSize: 1,
+        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+      });
     const resp = await workerApi({
       baseURL: context.maargUrl,
       headers: {
@@ -204,7 +204,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
     if (!productId) {
       continue
     }
-
+ 
     const item = await db.table('inventoryCountRecords')
       .where('inventoryCountImportId').equals(inventoryCountImportId)
       .and((item: any) => item.productId == productId)
@@ -283,7 +283,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
-          // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
+        // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
           productId: existing.productId || productId,
@@ -339,19 +339,19 @@ async function matchProductLocallyAndSync(inventoryCountImportId: string, item: 
   try {
     ensureProductStored(productId, context);
     const inventory = await workerApi({
-      baseURL: context.maargUrl,
-      headers: {
-        'Authorization': `Bearer ${context.token}`,
-        'Content-Type': 'application/json'
-      },
-      url: 'oms/dataDocumentView',
-      method: 'POST',
-      data: {
+        baseURL: context.maargUrl,
+        headers: {
+          'Authorization': `Bearer ${context.token}`,
+          'Content-Type': 'application/json'
+        },
+        url: 'oms/dataDocumentView',
+        method: 'POST',
+        data: {
         dataDocumentId: 'ProductFacilityAndInventoryItem',
         pageSize: 1,
         customParametersMap: { productId: productId, facilityId: context.facilityId }
       }
-    })
+      })
 
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
       const table = db.table('inventoryCountRecords');
@@ -462,8 +462,8 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       countedByUserLoginId: context.userLoginId,
       ...(item.systemQuantityOnHand !== undefined &&
         item.systemQuantityOnHand !== null && {
-        systemQuantityOnHand: item.systemQuantityOnHand
-      })
+          systemQuantityOnHand: item.systemQuantityOnHand
+        })
     }))
 
     const payload = { items }
@@ -508,7 +508,7 @@ async function resolveMissingSystemQOH(
   context: any
 ) {
   // fetch only items that have productId but no QOH yet, and are going to be synced
-  const records = await db.table('inventoryCountRecords')
+    const records = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
     .and((item: any) =>
       item.productId &&
@@ -537,10 +537,10 @@ async function resolveMissingSystemQOH(
         url: 'oms/dataDocumentView',
         method: 'POST',
         data: {
-          dataDocumentId: 'ProductFacilityAndInventoryItem',
-          pageSize: 1,
-          customParametersMap: { productId: record.productId, facilityId: record.facilityId }
-        }
+        dataDocumentId: 'ProductFacilityAndInventoryItem',
+        pageSize: 1,
+        customParametersMap: { productId: record.productId, facilityId: record.facilityId }
+      }
       })
 
       if (!inventory) throw new Error('No inventory response')
