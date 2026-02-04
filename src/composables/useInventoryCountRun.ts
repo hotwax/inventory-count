@@ -5,10 +5,10 @@ import logger from '@/logger';
 import { useProductStore } from '@/stores/productStore';
 
 async function loadStatusDescription() {
-    // Skip reload if already present
-    if (useProductStore().statusDesc?.length) {
-      return useProductStore().statusDesc;
-    }
+  // Skip reload if already present
+  if (useProductStore().statusDesc?.length) {
+    return useProductStore().statusDesc;
+  }
 
   try {
     const resp = await getCycleCountStatusDesc()
@@ -175,7 +175,7 @@ const getCycleCountStatusDesc = async (): Promise<any> => {
  * Composable for work-effort (cycle count run) level operations
  */
 export function useInventoryCountRun() {
-  
+
 
   async function getCreatedAndAssignedWorkEfforts(params: any) {
     let workEfforts: any[] = [];
@@ -187,7 +187,7 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || import.meta.env.VITE_VUE_APP_VIEW_SIZE,
+          pageSize: params.pageSize || import.meta.env.VITE_VIEW_SIZE,
           pageIndex: params.pageIndex || 0,
           facilityId: params.facilityId,
           statusId: params.statusId,
@@ -278,12 +278,12 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || Number(import.meta.env.VITE_VUE_APP_VIEW_SIZE) || 20,
+          pageSize: params.pageSize || Number(import.meta.env.VITE_VIEW_SIZE) || 20,
           pageIndex: params.pageIndex || 0,
           statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
           statusId_op: params.statusId_op || 'in',
-          ...(params.keyword ? { keyword: params.keyword} : {}),
-          ...(params.countType ? { countType: params.countType }: {}),
+          ...(params.keyword ? { keyword: params.keyword } : {}),
+          ...(params.countType ? { countType: params.countType } : {}),
           ...(params.facilityId ? { facilityId: params.facilityId } : {}),
           ...(params.facilityId_op ? { facilityId_op: params.facilityId_op } : {})
         }
@@ -303,7 +303,7 @@ export function useInventoryCountRun() {
     }
   }
 
-  async function getCycleCountSessions (params: any): Promise<any> {
+  async function getCycleCountSessions(params: any): Promise<any> {
     const resp = await api({
       url: `inventory-cycle-count/cycleCounts/workEfforts/${params.workEffortId}/sessions`,
       method: 'get',
@@ -312,7 +312,7 @@ export function useInventoryCountRun() {
     return resp;
   }
 
-  async function getDiagnostics (): Promise<any> {
+  async function getDiagnostics(): Promise<any> {
     const resp = await api({
       url: `inventory-cycle-count/diagnostics`,
       method: 'get'

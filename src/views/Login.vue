@@ -86,7 +86,7 @@ const login = async () => {
 };
 
 function goToLaunchpad() {
-  window.location.replace(import.meta.env.VITE_VUE_APP_LOGIN_URL || "");
+  window.location.replace(import.meta.env.VITE_LOGIN_URL || "");
 }
 
 onUnmounted(() => {

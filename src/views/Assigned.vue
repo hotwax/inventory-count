@@ -158,7 +158,7 @@ const contentRef = ref({}) as any
 const infiniteScrollRef = ref({}) as any
 
 const pageIndex = ref(0);
-const pageSize = ref(Number(import.meta.env.VITE_VUE_APP_VIEW_SIZE) || 20);
+const pageSize = ref(Number(import.meta.env.VITE_VIEW_SIZE) || 20);
 
 const productStore = useProductStore();
 

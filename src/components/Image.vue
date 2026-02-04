@@ -11,9 +11,9 @@ export default defineComponent({
   components: {},
   created() {
     if (
-      import.meta.env.VITE_VUE_APP_RESOURCE_URL
+      import.meta.env.VITE_RESOURCE_URL
     ) {
-      this.resourceUrl = import.meta.env.VITE_VUE_APP_RESOURCE_URL;
+      this.resourceUrl = import.meta.env.VITE_RESOURCE_URL;
     }
   },
   mounted() {

@@ -803,7 +803,7 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    // const productIdentifications = import.meta.env.VITE_VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_VUE_APP_PRDT_IDENT)) : []
+    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({

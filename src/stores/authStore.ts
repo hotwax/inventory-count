@@ -87,7 +87,7 @@ export const useAuthStore = defineStore('authStore', {
         this.token.expiration = payload.expirationTime;
         this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
-        const permissionId = import.meta.env.VITE_VUE_APP_PERMISSION_ID;
+        const permissionId = import.meta.env.VITE_PERMISSION_ID;
         const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
         Settings.defaultZone = current.timeZone;
 
@@ -152,7 +152,7 @@ export const useAuthStore = defineStore('authStore', {
         useUserProfile().$reset();
         useAuthStore().$reset();
 
-        const appLoginUrl = import.meta.env.VITE_VUE_APP_LOGIN_URL;
+        const appLoginUrl = import.meta.env.VITE_LOGIN_URL;
         const redirectUrl = window.location.origin + '/login';
         window.location.href = `${appLoginUrl}?isLoggedOut=true&redirectUrl=${redirectUrl}`;
       } catch (error) {

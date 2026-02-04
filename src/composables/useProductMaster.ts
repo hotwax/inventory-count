@@ -129,8 +129,8 @@ const prefetch = async (productIds: string[]) => {
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
-  for (let i=0; i<idsToFetch.length; i+=750) {
-    const docs = await getByIds(idsToFetch.slice(i, i+750))
+  for (let i = 0; i < idsToFetch.length; i += 750) {
+    const docs = await getByIds(idsToFetch.slice(i, i + 750))
     if (docs.length) {
       upsertFromApi(docs).catch(err => console.error("upsert failed", err))
     }
@@ -188,10 +188,10 @@ async function findProductByIdentification(idType: string, value: string, contex
   if (!idType) idType = context.barcodeIdentification
 
   const query = useProductMaster().buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
-      });
+    filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
+    viewSize: 1,
+    fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
+  });
   try {
     const resp = await workerApi({
       baseURL: context.omsUrl,
@@ -228,8 +228,8 @@ async function searchProducts(value: string) {
     .startsWithIgnoreCase(value)
     .limit(250)
     .toArray()
-    if (products) return products.map((product: any) => product.productId)
-    return null
+  if (products) return products.map((product: any) => product.productId)
+  return null
 }
 
 const clearCache = async () => {
@@ -320,7 +320,7 @@ const loadProducts = async (query: any): Promise<any> => {
 };
 
 const buildProductQuery = (params: any): Record<string, any> => {
-  const viewSize = params.viewSize || import.meta.env.VITE_VUE_APP_VIEW_SIZE || 100
+  const viewSize = params.viewSize || import.meta.env.VITE_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
 
   const payload: any = {
@@ -361,12 +361,12 @@ const primaryId = (product?: any) => {
   const pref = useProductStore().getPrimaryId
 
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
-        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
-          const [type, value] = goodIdentification.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return goodIdentification
-      }) : []
+    if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+      const [type, value] = goodIdentification.split('/', 2)
+      return { type: type?.trim(), value: value?.trim() }
+    }
+    return goodIdentification
+  }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
@@ -390,12 +390,12 @@ const secondaryId = (product: any) => {
 
   // Parse any flat "TYPE/VALUE" strings (from Solr)
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
-        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
-          const [type, value] = goodIdentification.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return goodIdentification
-      }) : []
+    if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+      const [type, value] = goodIdentification.split('/', 2)
+      return { type: type?.trim(), value: value?.trim() }
+    }
+    return goodIdentification
+  }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
@@ -413,7 +413,7 @@ const secondaryId = (product: any) => {
   return resolve(pref) || product.productId || ''
 }
 
-async function getProductsOnFacility (payload: any): Promise<any> {
+async function getProductsOnFacility(payload: any): Promise<any> {
   const resp = await api({
     url: `oms/dataDocumentView`,
     method: "post",

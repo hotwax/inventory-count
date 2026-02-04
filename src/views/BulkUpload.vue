@@ -210,7 +210,7 @@ let content = ref([]);
 let fieldMapping = ref({});
 let fileColumns = ref([]);
 
-const fields = import.meta.env["VITE_VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(import.meta.env["VITE_VUE_APP_MAPPING_INVCOUNT"]) : {};
+const fields = import.meta.env["VITE_MAPPING_INVCOUNT"] ? JSON.parse(import.meta.env["VITE_MAPPING_INVCOUNT"]) : {};
 
 const templateRows = [
   {

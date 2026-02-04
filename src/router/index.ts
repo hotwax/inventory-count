@@ -36,7 +36,7 @@ declare module 'vue-router' {
 
 const authGuard = async (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
-  const appLoginUrl = import.meta.env.VITE_VUE_APP_LOGIN_URL;
+  const appLoginUrl = import.meta.env.VITE_LOGIN_URL;
   if (!authStore.isAuthenticated) {
     await loader.present('Authenticating')
     // TODO use authenticate() when support is there
@@ -288,7 +288,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.VITE_BASE_URL),
   routes,
 });
 

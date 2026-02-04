@@ -281,7 +281,7 @@ function logout() {
 }
 
 function goToLaunchpad() {
-  window.location.href = `${import.meta.env.VITE_VUE_APP_LOGIN_URL}`
+  window.location.href = `${import.meta.env.VITE_LOGIN_URL}`
 }
 
 function getDateTime(time: any) {
