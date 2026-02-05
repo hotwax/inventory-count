@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "skipLibCheck": true,
     "baseUrl": ".",
     "types": [
       "vite/client"
@@ -10,16 +9,13 @@
       "@/*": ["./src/*"],
       "@common": ["../../common/index.ts"],
       "@common/*": ["../../common/*"]
-    },
+    }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
     "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules"
   ],
   "references": [
     {
