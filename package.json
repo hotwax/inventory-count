@@ -11,5 +11,40 @@
     "test:e2e": "cypress run",
     "test:unit": "vitest",
     "lint": "eslint ."
+  },
+  "dependencies": {
+    "@capacitor/android": "^2.5.0",
+    "@capacitor/ios": "^2.4.7",
+    "@hotwax/app-version-info": "^1.0.0",
+    "@ionic/core": "8.4.2",
+    "@types/papaparse": "^5.3.1",
+    "core-js": "^3.6.5",
+    "dexie": "^4.0.7",
+    "lodash-es": "^4.17.21",
+    "rxjs": "^7.8.2",
+    "vue-barcode-reader": "^1.0.3",
+    "vue-virtual-scroll-list": "^2.3.5",
+    "vue-virtual-scroller": "^2.0.0-beta.8",
+    "vue3-virtual-scroll-list": "^0.2.1"
+  },
+  "devDependencies": {
+    "@intlify/vue-i18n-loader": "^2.1.0",
+    "@types/file-saver": "^2.0.5",
+    "@types/luxon": "^3.7.1",
+    "@types/papaparse": "5.3.1",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "~5.26.0",
+    "@typescript-eslint/parser": "~5.26.0",
+    "@vue/cli-plugin-babel": "~5.0.8",
+    "@vue/cli-plugin-e2e-cypress": "~5.0.8",
+    "@vue/cli-plugin-eslint": "~5.0.8",
+    "@vue/cli-plugin-pwa": "^5.0.8",
+    "@vue/cli-plugin-router": "~5.0.8",
+    "@vue/cli-plugin-typescript": "~5.0.8",
+    "@vue/cli-service": "~5.0.8",
+    "@vue/compiler-sfc": "^3.0.0-0",
+    "file-saver": "^2.0.5",
+    "papaparse": "^5.3.1",
+    "vue-cli-plugin-i18n": "^1.0.1"
   }
 }
