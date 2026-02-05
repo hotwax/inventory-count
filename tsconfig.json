@@ -1,25 +1,13 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "skipLibCheck": true,
     "baseUrl": ".",
-    "types": [
-      "vite/client"
-    ],
     "paths": {
       "@/*": ["./src/*"],
-      "@common": ["../../common/index.ts"],
-      "@common/*": ["../../common/*"]
+      "@common": ["../../common/index.ts"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "src/**/*.d.ts"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/env.d.ts", "src/boon-js.d.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

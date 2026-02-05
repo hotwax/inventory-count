@@ -514,7 +514,7 @@
       </ion-modal>
       <!-- Edit Session Modal -->
       <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false"
-        :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+        :presenting-element="(pageRef as any)?.$el" :keep-contents-mounted="true">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">

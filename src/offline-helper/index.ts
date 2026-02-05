@@ -1,7 +1,5 @@
-import { Plugins } from '@capacitor/core';
+import { Network } from '@capacitor/network';
 import emitter from '@/event-bus';
-
-const { Network } = Plugins;
 
 const register = async () => {
     let networkStatus = await Network.getStatus();

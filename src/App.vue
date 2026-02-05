@@ -11,7 +11,7 @@
         <ion-content>
           <ion-list id="receiving-list">
             <ion-menu-toggle
-              auto-hide="false"
+              :auto-hide="false"
               v-for="(page, index) in visibleMenuItems"
               :key="index"
             >
@@ -79,8 +79,7 @@ const showMenu = computed(() => {
 
 const loader = ref(null) as any;
 
-async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
-  if (options.message && loader.value) dismissLoader();
+async function presentLoader(options: any = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
   if (!loader.value) {
     loader.value = await loadingController.create({
       message: translate(options.message),

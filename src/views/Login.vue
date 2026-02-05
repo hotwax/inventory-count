@@ -3,17 +3,17 @@
     <div class="center-div">
       <ion-item lines="none" v-if='error.message.length'>
         <ion-icon slot="start" color="warning" :icon="warningOutline" />
-        <h4>{{ $t('Login failed') }}</h4>
+        <h4>{{ translate('Login failed') }}</h4>
       </ion-item>
       <p v-if='error.responseMessage.length'>
-        {{ $t('Reason:') }} {{ $t(error.responseMessage) }}
+        {{ translate('Reason:') }} {{ translate(error.responseMessage) }}
       </p>
       <p v-if='error.message.length'>
-        {{ $t(error.message) }}
+        {{ translate(error.message) }}
       </p>
       <ion-button v-if='error.message.length' class="ion-margin-top" @click="goToLaunchpad()">
         <ion-icon slot="start" :icon="arrowBackOutline" />
-        {{ $t("Back to Launchpad") }}
+        {{ translate("Back to Launchpad") }}
       </ion-button>
     </div>
   </ion-content>

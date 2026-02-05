@@ -13,8 +13,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@capacitor/android": "^2.5.0",
-    "@capacitor/ios": "^2.4.7",
+    "@capacitor/network": "7.0.3",
     "@hotwax/app-version-info": "^1.0.0",
     "@ionic/core": "8.4.2",
     "@types/papaparse": "^5.3.1",
@@ -30,6 +29,7 @@
   "devDependencies": {
     "@intlify/vue-i18n-loader": "^2.1.0",
     "@types/file-saver": "^2.0.5",
+    "@types/lodash-es": "^4.17.12",
     "@types/luxon": "^3.7.1",
     "@types/papaparse": "5.3.1",
     "@types/uuid": "^10.0.0",
