@@ -37,11 +37,11 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n, createDxpPinia } from '@common'
+import { createDxpI18n } from '@common'
 import localeMessages from '@/locales'
 
 const i18n = createDxpI18n(localeMessages)
-const pinia = createDxpPinia();
+const pinia = createPinia().use(piniaPluginPersistedstate);
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
