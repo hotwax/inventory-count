@@ -4,6 +4,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import defaultImage from "@/assets/images/defaultImage.png";
 
 export default defineComponent({
   name: "Image",
@@ -25,7 +26,7 @@ export default defineComponent({
   data() {
     return {
       resourceUrl: '',
-      imageUrl: require("@/assets/images/defaultImage.png")
+      imageUrl: defaultImage
     }
   },
   methods: {
@@ -52,7 +53,7 @@ export default defineComponent({
             if (exists) {
               this.imageUrl = this.src;
             } else {
-              this.imageUrl = require("@/assets/images/defaultImage.png");
+              this.imageUrl = defaultImage;
             }
           })
         } else {
