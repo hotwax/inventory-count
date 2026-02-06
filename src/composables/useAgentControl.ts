@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import api from '@/services/RemoteAPI';
+import { api } from '@common';
 import { hasError } from '@/stores/authStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserProfile } from '@/stores/userProfileStore';

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import api, { client } from '@/services/RemoteAPI';
+import { api, client } from '@common';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/appInitializer';

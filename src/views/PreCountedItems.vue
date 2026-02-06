@@ -190,7 +190,7 @@ import {
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
 import router from '@/router'
-import { client } from '@/services/RemoteAPI'
+import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'

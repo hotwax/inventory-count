@@ -167,7 +167,7 @@ import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { showToast } from '@/services/uiUtils';
-import api from '@/services/RemoteAPI';
+import { api } from '@common';
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isSearching = ref(false);

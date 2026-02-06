@@ -37,7 +37,9 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n } from '@common'
+import { createDxpI18n, initialise, updateToken, updateInstanceUrl } from '@common'
+import { useAuthStore } from '@/stores/authStore'
+import { loader } from '@/services/uiUtils'
 import localeMessages from '@/locales'
 
 const i18n = createDxpI18n(localeMessages)
@@ -56,6 +58,25 @@ const app = createApp(App)
   })
 
 setPermissions(useUserProfile().getPermissions());
+
+const authStore = useAuthStore()
+
+initialise({
+  token: authStore.token.value,
+  instanceUrl: authStore.oms,
+  cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
+  events: {
+    unauthorised: () => authStore.logout(),
+    responseError: () => {
+      setTimeout(() => loader.dismiss(), 100);
+    }
+  }
+})
+
+authStore.$subscribe((mutation: any, state: any) => {
+  updateToken(state.token.value)
+  updateInstanceUrl(state.oms)
+})
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
