@@ -21,6 +21,9 @@ import PreCountedItems from "@/views/PreCountedItems.vue";
 import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
+import { useAuthStore } from "@/stores/authStore";
+import Login from "@/views/Login.vue";
+import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
 
 // Defining types for the meta values
@@ -85,10 +88,10 @@ const routes: Array<RouteRecordRaw> = [
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
-      /*{
+      {
         path: 'variance',
         component: () => import('@/views/Variance.vue')
-      }*/
+      }
     ],
     beforeEnter: authGuard,
   },
