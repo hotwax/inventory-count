@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission, setPermissions, Actions } from '@/authorization';
+import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
