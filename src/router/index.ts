@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission, setPermissions } from '@/authorization';
+import { hasPermission, setPermissions, Actions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@/i18n'
 import 'vue-router'
@@ -18,9 +18,6 @@ import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/authStore";
-import Login from "@/views/Login.vue";
-import { useUserProfile } from "@/stores/userProfileStore";
 import { useAuthStore } from "@/stores/authStore";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -90,7 +87,10 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'variance',
-        component: () => import('@/views/Variance.vue')
+        component: () => import('@/views/Variance.vue'),
+        meta: {
+          permissionId: "APP_VARIANCE_VIEW"
+        }
       }
     ],
     beforeEnter: authGuard,
