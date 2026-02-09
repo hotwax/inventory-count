@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -18,7 +18,7 @@ import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/composables/useAuth";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
@@ -34,22 +34,16 @@ declare module 'vue-router' {
   }
 }
 
-const authGuard = async (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
-  if (!authStore.isAuthenticated) {
-    await loader.present('Authenticating')
-    // TODO use authenticate() when support is there
-    const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
-    loader.dismiss()
+const authGuard = (to: any, from: any, next: any) => {
+  if (!useAuth().isAuthenticated.value) {
+    next('/login')
+  } else {
+    next()
   }
-  next()
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore();
-  if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
+  if (useAuth().isAuthenticated.value) {
     next('/')
   }
   next();
@@ -288,7 +282,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.VITE_BASE_URL),
   routes,
 });
 

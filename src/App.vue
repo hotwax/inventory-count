@@ -11,7 +11,7 @@
         <ion-content>
           <ion-list id="receiving-list">
             <ion-menu-toggle
-              auto-hide="false"
+              :auto-hide="false"
               v-for="(page, index) in visibleMenuItems"
               :key="index"
             >
@@ -58,17 +58,17 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { translate } from "@/i18n";
+import { translate } from "@common";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/productStore';
 import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
-import { useAuthStore } from './stores/authStore';
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const userToken = computed(() => useAuthStore().token.value);
+const userToken = useAuth().getToken;
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {
@@ -79,8 +79,7 @@ const showMenu = computed(() => {
 
 const loader = ref(null) as any;
 
-async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
-  if (options.message && loader.value) dismissLoader();
+async function presentLoader(options: any = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
   if (!loader.value) {
     loader.value = await loadingController.create({
       message: translate(options.message),

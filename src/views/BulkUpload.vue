@@ -143,10 +143,10 @@
 <script setup>
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -210,7 +210,7 @@ let content = ref([]);
 let fieldMapping = ref({});
 let fileColumns = ref([]);
 
-const fields = process.env["VUE_APP_MAPPING_INVCOUNT"] ? JSON.parse(process.env["VUE_APP_MAPPING_INVCOUNT"]) : {};
+const fields = import.meta.env["VITE_MAPPING_INVCOUNT"] ? JSON.parse(import.meta.env["VITE_MAPPING_INVCOUNT"]) : {};
 
 const templateRows = [
   {

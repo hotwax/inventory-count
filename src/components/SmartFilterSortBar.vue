@@ -139,7 +139,7 @@ import {
 } from "@ionic/vue";
 
 import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
-import { translate as t } from "@/i18n";
+import { translate as t } from "@common";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductMaster } from "@/composables/useProductMaster";

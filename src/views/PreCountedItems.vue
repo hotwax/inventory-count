@@ -181,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -190,11 +190,11 @@ import {
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
 import router from '@/router'
-import { client } from '@/services/RemoteAPI'
+import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/composables/useAuth'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
 import Image from '@/components/Image.vue'
@@ -361,7 +361,7 @@ async function getProductBySearch(term: string) {
 }
 
 async function getProducts(query: any) {
-  const baseURL = useAuthStore().getBaseUrl;
+  const baseURL = useAuth().getMaargUrl.value;
 
   return client({
     url: 'inventory-cycle-count/runSolrQuery',
@@ -369,7 +369,7 @@ async function getProducts(query: any) {
     baseURL,
     data: query,
     headers: {
-      Authorization: `Bearer ${useAuthStore().token.value}`,
+      Authorization: `Bearer ${useAuth().getToken.value}`,
       'Content-Type': 'application/json',
     },
   })

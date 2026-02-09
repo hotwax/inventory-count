@@ -117,7 +117,7 @@ import {
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { computed, onBeforeMount, ref, defineProps } from "vue";
-import { translate} from '../i18n'
+import { translate} from '@common'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';
 

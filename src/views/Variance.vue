@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
 
-import { translate } from '@/i18n';
+import { translate } from '@common';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSkeletonText, IonText, onIonViewDidEnter, IonIcon, IonModal, IonButtons, IonFooter } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline } from 'ionicons/icons';
@@ -167,7 +167,7 @@ import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { showToast } from '@/services/uiUtils';
-import api from '@/services/RemoteAPI';
+import { api } from '@common';
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isSearching = ref(false);

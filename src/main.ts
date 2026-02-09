@@ -29,7 +29,6 @@ import '@hotwax/apps-theme';
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import i18n from './i18n'
 import permissionPlugin from '@/authorization';
 import permissionRules from '@/authorization/Rules';
 import permissionActions from '@/authorization/Actions';
@@ -38,8 +37,12 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
+import { createDxpI18n, initialise } from '@common'
+import { loader } from '@/services/uiUtils'
+import localeMessages from '@/locales'
+import { useAuth } from '@/composables/useAuth'
 
-
+const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
 const app = createApp(App)
   .use(IonicVue, {
@@ -55,6 +58,17 @@ const app = createApp(App)
   })
 
 setPermissions(useUserProfile().getPermissions());
+
+// Configure remote API client
+initialise({
+  cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
+  events: {
+    unauthorised: () => useAuth().logout(),
+    responseError: () => {
+      setTimeout(() => loader.dismiss(), 100);
+    }
+  }
+})
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
