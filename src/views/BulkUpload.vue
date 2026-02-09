@@ -146,7 +146,7 @@ import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downlo
 import { translate } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';

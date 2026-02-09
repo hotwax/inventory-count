@@ -587,7 +587,7 @@ import router from '@/router';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/composables/useAuth';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
@@ -813,11 +813,11 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: useAuthStore().getOmsUrl,
-          omsInstance: useAuthStore().getOMS,
+          omsUrl: useAuth().getOMS.value,
+          omsInstance: useAuth().getOMS.value,
           userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: useAuthStore().getMaargUrl,
-          token: useAuthStore().token.value,
+          maargUrl: useAuth().getMaargUrl.value,
+          token: useAuth().getToken.value,
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId,
           facilityId: useProductStore().getCurrentFacility.facilityId
@@ -1096,8 +1096,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getMaargUrl,
-        token: useAuthStore().token.value,
+        maargUrl: useAuth().getMaargUrl.value,
+        token: useAuth().getToken.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -1157,8 +1157,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getMaargUrl,
-        token: useAuthStore().token.value,
+        maargUrl: useAuth().getMaargUrl.value,
+        token: useAuth().getToken.value,
         userId,
         deviceId: currentDeviceId
       };
@@ -1310,10 +1310,10 @@ async function saveMatchProduct() {
   const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
 
   const context = {
-    maargUrl: useAuthStore().getMaargUrl,
-    omsInstance: useAuthStore().getOMS,
-    token: useAuthStore().token.value,
-    omsUrl: useAuthStore().getOmsUrl,
+    maargUrl: useAuth().getMaargUrl.value,
+    omsInstance: useAuth().getOMS.value,
+    token: useAuth().getToken.value,
+    omsUrl: useAuth().getOMS.value,
     userLoginId: useUserProfile().getUserProfile?.username,
     facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
@@ -1347,11 +1347,11 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
-      omsUrl: useAuthStore().getOmsUrl,
-      omsInstance: useAuthStore().getOMS,
+      omsUrl: useAuth().getOMS.value,
+      omsInstance: useAuth().getOMS.value,
       userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: useAuthStore().getMaargUrl,
-      token: useAuthStore().token.value,
+      maargUrl: useAuth().getMaargUrl.value,
+      token: useAuth().getToken.value,
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId,
       facilityId: useProductStore().getCurrentFacility.facilityId

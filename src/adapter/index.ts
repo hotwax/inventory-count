@@ -1,5 +1,5 @@
 import { api, client } from '@common';
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import { transform } from 'node-json-transform';
 
 interface Response {

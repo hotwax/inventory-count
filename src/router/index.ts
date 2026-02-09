@@ -18,7 +18,7 @@ import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/composables/useAuth";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
@@ -35,8 +35,7 @@ declare module 'vue-router' {
 }
 
 const authGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (!authStore.isAuthenticated) {
+  if (!useAuth().isAuthenticated.value) {
     next('/login')
   } else {
     next()
@@ -44,8 +43,7 @@ const authGuard = (to: any, from: any, next: any) => {
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  if (authStore.isAuthenticated) {
+  if (useAuth().isAuthenticated.value) {
     next('/')
   }
   next();

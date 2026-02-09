@@ -64,11 +64,11 @@ import { useProductStore } from '@/stores/productStore';
 import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
-import { useAuthStore } from './stores/authStore';
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const userToken = computed(() => useAuthStore().token.value);
+const userToken = useAuth().getToken;
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {

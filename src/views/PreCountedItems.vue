@@ -194,7 +194,7 @@ import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader, showToast } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/composables/useAuth'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
 import Image from '@/components/Image.vue'
@@ -361,7 +361,7 @@ async function getProductBySearch(term: string) {
 }
 
 async function getProducts(query: any) {
-  const baseURL = useAuthStore().getMaargUrl;
+  const baseURL = useAuth().getMaargUrl.value;
 
   return client({
     url: 'inventory-cycle-count/runSolrQuery',
@@ -369,7 +369,7 @@ async function getProducts(query: any) {
     baseURL,
     data: query,
     headers: {
-      Authorization: `Bearer ${useAuthStore().token.value}`,
+      Authorization: `Bearer ${useAuth().getToken.value}`,
       'Content-Type': 'application/json',
     },
   })

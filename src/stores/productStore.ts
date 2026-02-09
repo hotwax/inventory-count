@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { api } from '@common'
-import { hasError } from '@/stores/authStore'
+import { hasError } from '@common'
+import { useAuth } from '@/composables/useAuth'
 import logger from '@/logger'
-import { useAuthStore } from './authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import {
   fetchGoodIdentificationTypes,
@@ -82,9 +82,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpEComStoresByFacility(facilityId?: any) {
-      const authStore = useAuthStore()
       try {
-        const response = await getEComStoresByFacility(authStore.token.value, authStore.getMaargUrl, 100, facilityId)
+        const response = await getEComStoresByFacility(useAuth().getToken.value, useAuth().getMaargUrl.value, 100, facilityId)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -93,9 +92,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpEComStores() {
-      const authStore = useAuthStore()
       try {
-        const response = await getEComStores(authStore.token.value, authStore.getMaargUrl, 100)
+        const response = await getEComStores(useAuth().getToken.value, useAuth().getMaargUrl.value, 100)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -104,12 +102,11 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getEComStorePreference(userPrefTypeId: any, userId = "") {
-      const authStore = useAuthStore()
       if (!this.productStores.length) return
 
       let preferredStore = this.productStores[0]
       try {
-        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getMaargUrl, userPrefTypeId, userId)
+        const preferredStoreId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
         if (preferredStoreId) {
           const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
           if (store) preferredStore = store
@@ -320,9 +317,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
-      const authStore = useAuthStore()
       try {
-        const response = await getUserFacilities(authStore.token.value, authStore.getMaargUrl, partyId, facilityGroupId, isAdminUser, payload)
+        const response = await getUserFacilities(useAuth().getToken.value, useAuth().getMaargUrl.value, partyId, facilityGroupId, isAdminUser, payload)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -335,12 +331,11 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getFacilityPreference(userPrefTypeId: string, userId = '') {
-      const authStore = useAuthStore()
       if (!this.facilities.length) return
 
       let preferredFacility = this.facilities[0]
       try {
-        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getMaargUrl, userPrefTypeId, userId)
+        const preferredFacilityId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
         if (preferredFacilityId) {
           const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility

@@ -51,7 +51,7 @@ import { ref } from 'vue';
 import { translate } from '@common';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger';
 import { getDateTimeWithOrdinalSuffix } from '@/services/utils';

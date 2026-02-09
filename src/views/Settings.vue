@@ -52,7 +52,7 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!useAuthStore().token.value || !omsUrl || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsUrl)" fill="clear">
+          <ion-button :disabled="!getToken || !getOmsUrl || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(getToken, getOmsUrl)" fill="clear">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -244,7 +244,7 @@ import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, Io
 import { computed, onMounted, ref } from "vue";
 import { translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/authStore";
+import { useAuth } from "@/composables/useAuth";
 import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
@@ -260,10 +260,8 @@ import { db } from "@/services/appInitializer";
 
 const appVersion = ref("")
 const appInfo = (import.meta.env.VITE_VERSION_INFO ? JSON.parse(import.meta.env.VITE_VERSION_INFO) : {}) as any
-
+const { oms, getOmsUrl, getToken } = useAuth();
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const oms = useAuthStore().oms
-const omsUrl = computed(() => useAuthStore().getOmsUrl);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
@@ -277,7 +275,7 @@ onMounted(async () => {
 })
 
 function logout() {
-  useAuthStore().logout();
+  useAuth().logout();
 }
 
 function goToLaunchpad() {

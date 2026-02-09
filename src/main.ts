@@ -37,10 +37,10 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n, initialise, updateToken, updateInstanceUrl } from '@common'
-import { useAuthStore } from '@/stores/authStore'
+import { createDxpI18n, initialise } from '@common'
 import { loader } from '@/services/uiUtils'
 import localeMessages from '@/locales'
+import { useAuth } from '@/composables/useAuth'
 
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
@@ -59,23 +59,15 @@ const app = createApp(App)
 
 setPermissions(useUserProfile().getPermissions());
 
-const authStore = useAuthStore()
-
+// Configure remote API client
 initialise({
-  token: authStore.token.value,
-  instanceUrl: authStore.maarg,
   cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
   events: {
-    unauthorised: () => authStore.logout(),
+    unauthorised: () => useAuth().logout(),
     responseError: () => {
       setTimeout(() => loader.dismiss(), 100);
     }
   }
-})
-
-authStore.$subscribe((mutation: any, state: any) => {
-  updateToken(state.token.value)
-  updateInstanceUrl(state.maarg)
 })
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters

@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { api } from '@common';
-import { hasError } from '@/stores/authStore';
-import { useAuthStore } from '@/stores/authStore';
+import { hasError } from '@common';
+import { useAuth } from '@/composables/useAuth';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { db } from '@/services/appInitializer';
 
@@ -175,8 +175,7 @@ async function handleClearCache(): Promise<void> {
  */
 async function handleLogoutUser(): Promise<void> {
     try {
-        const authStore = useAuthStore();
-        await authStore.logout();
+        await useAuth().logout();
         console.log('[AgentControl] User logged out');
     } catch (error) {
         console.error('[AgentControl] Error logging out user:', error);

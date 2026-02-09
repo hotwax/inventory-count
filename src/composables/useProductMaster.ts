@@ -4,7 +4,7 @@ import { api, client } from '@common';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/appInitializer';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/composables/useAuth';
 import { useProductStore } from '@/stores/productStore';
 
 // Product structure
@@ -42,7 +42,7 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const baseURL = useAuthStore().getMaargUrl;
+  const baseURL = useAuth().getMaargUrl.value;
 
   const batchSize = 250
   const results: Product[] = []
@@ -64,7 +64,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
       baseURL,
       data: query,
       headers: {
-        "Authorization": 'Bearer ' + useAuthStore().token.value,
+        "Authorization": 'Bearer ' + useAuth().getToken.value,
         'Content-Type': 'application/json'
       }
     })
@@ -290,8 +290,8 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = useAuthStore().getMaargUrl;
-  const token = useAuthStore().token.value;
+  const baseURL = useAuth().getMaargUrl.value;
+  const token = useAuth().getToken.value;
 
   return await client({
     url: "poorti/getInventoryAvailableByFacility",
@@ -306,14 +306,14 @@ const getProductStock = async (query: any): Promise<any> => {
 }
 
 const loadProducts = async (query: any): Promise<any> => {
-  const baseURL = useAuthStore().getMaargUrl;
+  const baseURL = useAuth().getMaargUrl.value;
   return await client({
     url: "inventory-cycle-count/runSolrQuery",
     method: "POST",
     baseURL,
     data: query,
     headers: {
-      Authorization: "Bearer " + useAuthStore().token.value,
+      Authorization: "Bearer " + useAuth().getToken.value,
       "Content-Type": "application/json",
     },
   });
@@ -477,8 +477,8 @@ const getInventory = async (
 ): Promise<any | null> => {
   if (!productId || !facilityId) return null
 
-  const baseURL = useAuthStore().getMaargUrl
-  const token = useAuthStore().token.value
+  const baseURL = useAuth().getMaargUrl.value
+  const token = useAuth().getToken.value
 
   const resp = await client({
     url: 'oms/dataDocumentView',

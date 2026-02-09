@@ -23,7 +23,7 @@
           <section v-else>
             <div class="ion-text-center ion-margin-bottom">
               <ion-chip :outline="true" @click="toggleOmsInput()">
-                {{ authStore.getOMS }}
+                {{ omsInstance }}
               </ion-chip>
             </div>
 
@@ -71,14 +71,12 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/authStore";
+import { hasError } from '@common';
+import { useAuth } from "@/composables/useAuth";
 import Logo from '@/components/Logo.vue';
 import { arrowForwardOutline, gridOutline } from 'ionicons/icons'
-import { UserService } from "@/services/UserService";
 import { translate } from "@common";
 import { showToast } from "@/services/uiUtils";
-import { hasError } from "@/stores/authStore";
-import { Actions, hasPermission } from "@/authorization";
 
 export default defineComponent({
   name: "Login",
@@ -112,6 +110,11 @@ export default defineComponent({
       isLoggingIn: false
     };
   },
+  computed: {
+    omsInstance() {
+      return useAuth().getOMS.value;
+    }
+  },
   ionViewWillEnter() {
     this.initialise()
   },
@@ -129,12 +132,12 @@ export default defineComponent({
       }
 
       // fetch login options only if OMS is there as API calls require OMS
-      if (this.authStore.getOMS) {
+      if (useAuth().getOMS.value) {
         await this.fetchLoginOptions()
       }
 
       // show OMS input if SAML if configured or if query or state does not have OMS
-      if (this.loginOption.loginAuthType !== 'BASIC' || route.query?.oms || !this.authStore.getOMS) {
+      if (this.loginOption.loginAuthType !== 'BASIC' || route.query?.oms || !useAuth().getOMS.value) {
         this.showOmsInput = true
       }
 
@@ -145,14 +148,14 @@ export default defineComponent({
       }
 
       // if a session is already active, login directly in the app
-      if (this.authStore.isAuthenticated) {
+      if (useAuth().isAuthenticated.value) {
         this.router.push('/')
       }
 
-      this.instanceUrl = this.authStore.oms;
-      if (this.authStore.oms) {
+      this.instanceUrl = useAuth().oms.value;
+      if (useAuth().oms.value) {
         // If the current URL is available in alias show it for consistency
-        const currentInstanceUrlAlias = Object.keys(this.alias).find((key) => this.alias[key] === this.authStore.oms);
+        const currentInstanceUrlAlias = Object.keys(this.alias).find((key) => this.alias[key] === useAuth().oms.value);
         currentInstanceUrlAlias && (this.instanceUrl = currentInstanceUrlAlias);
       }
       // If there is no current preference set the default one
@@ -199,7 +202,7 @@ export default defineComponent({
       this.isCheckingOms = true
 
       const instanceURL = this.instanceUrl.trim().toLowerCase();
-      if (!this.baseURL) this.authStore.setOMS(this.alias[instanceURL] ? this.alias[instanceURL] : instanceURL);
+      if (!this.baseURL) useAuth().setOMS(this.alias[instanceURL] ? this.alias[instanceURL] : instanceURL);
 
       // run SAML login flow if login options are configured for the OMS
       await this.fetchLoginOptions()
@@ -217,11 +220,11 @@ export default defineComponent({
     async fetchLoginOptions() {
       this.loginOption = {}
       try {
-        const resp = await UserService.checkLoginOptions()
+        const resp = await useAuth().checkLoginOptions()
         if (!hasError(resp)) {
           this.loginOption = resp.data
           if(resp.data.maargInstanceUrl) {
-             await this.authStore.setMaarg(resp.data.maargInstanceUrl)
+             await useAuth().setMaarg(resp.data.maargInstanceUrl)
           }
         }
       } catch (error) {
@@ -237,7 +240,7 @@ export default defineComponent({
 
       this.isLoggingIn = true;
       try {
-        await this.authStore.loginWithCredentials(username.trim(), password)
+        await useAuth().loginWithCredentials(username.trim(), password)
         // All the failure cases are handled in action, if then block is executing, login is successful
         this.username = ''
         this.password = ''
@@ -251,7 +254,7 @@ export default defineComponent({
       const route = useRoute()
       try {
         const { token, expirationTime } = route.query as any
-        await this.authStore.samlLogin(token, expirationTime)
+        await useAuth().samlLogin(token, expirationTime)
         this.router.push('/')
       } catch (error) {
         this.router.push('/')
@@ -261,10 +264,8 @@ export default defineComponent({
   },
   setup () {
     const router = useRouter();
-    const authStore = useAuthStore();
     return {
       arrowForwardOutline,
-      authStore,
       gridOutline,
       router,
       translate

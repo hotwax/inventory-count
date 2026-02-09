@@ -1,5 +1,5 @@
 import { api } from '@common';
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { useProductStore } from '@/stores/productStore';

@@ -176,7 +176,7 @@ import { showToast } from "@/services/uiUtils";
 import logger from "@/logger";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
-import { hasError } from "@/stores/authStore";
+import { hasError } from '@common';
 
 type PermissionMeta = {
   id: string;

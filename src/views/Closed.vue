@@ -132,7 +132,7 @@ import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
-import { hasError } from '@/stores/authStore';
+import { hasError } from '@common';
 import logger from '@/logger';
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
