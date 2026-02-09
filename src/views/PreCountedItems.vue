@@ -361,7 +361,7 @@ async function getProductBySearch(term: string) {
 }
 
 async function getProducts(query: any) {
-  const baseURL = useAuthStore().getBaseUrl;
+  const baseURL = useAuthStore().getMaargUrl;
 
   return client({
     url: 'inventory-cycle-count/runSolrQuery',

@@ -52,7 +52,7 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear">
+          <ion-button :disabled="!useAuthStore().token.value || !omsUrl || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsUrl)" fill="clear">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -263,7 +263,7 @@ const appInfo = (import.meta.env.VITE_VERSION_INFO ? JSON.parse(import.meta.env.
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const oms = useAuthStore().oms
-const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
+const omsUrl = computed(() => useAuthStore().getOmsUrl);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);

@@ -813,10 +813,10 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: useAuthStore().getOmsRedirectionUrl,
+          omsUrl: useAuthStore().getOmsUrl,
           omsInstance: useAuthStore().getOMS,
           userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: useAuthStore().getBaseUrl,
+          maargUrl: useAuthStore().getMaargUrl,
           token: useAuthStore().token.value,
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId,
@@ -1096,7 +1096,7 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
+        maargUrl: useAuthStore().getMaargUrl,
         token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
@@ -1157,7 +1157,7 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
+        maargUrl: useAuthStore().getMaargUrl,
         token: useAuthStore().token.value,
         userId,
         deviceId: currentDeviceId
@@ -1310,10 +1310,10 @@ async function saveMatchProduct() {
   const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
 
   const context = {
-    maargUrl: useAuthStore().getBaseUrl,
+    maargUrl: useAuthStore().getMaargUrl,
     omsInstance: useAuthStore().getOMS,
     token: useAuthStore().token.value,
-    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    omsUrl: useAuthStore().getOmsUrl,
     userLoginId: useUserProfile().getUserProfile?.username,
     facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
@@ -1347,10 +1347,10 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
-      omsUrl: useAuthStore().getOmsRedirectionUrl,
+      omsUrl: useAuthStore().getOmsUrl,
       omsInstance: useAuthStore().getOMS,
       userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: useAuthStore().getBaseUrl,
+      maargUrl: useAuthStore().getMaargUrl,
       token: useAuthStore().token.value,
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId,

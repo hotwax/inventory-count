@@ -1,3 +1,4 @@
+import emitter from '@/event-bus';
 import { defineStore } from 'pinia';
 import { DateTime } from 'luxon';
 import { useUserProfile } from './userProfileStore';
@@ -9,11 +10,13 @@ import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './productStore';
 import { Settings } from 'luxon';
 import { initialize } from '@/services/appInitializer';
+import { updateInstanceUrl, updateToken } from '@common';
+import { UserService } from '@/services/UserService';
+import router from '@/router';
 
 export interface LoginPayload {
   token: any;
   oms: any;
-  omsRedirectionUrl: any;
   expirationTime: any;
 }
 
@@ -40,7 +43,7 @@ export const hasError = (response: any): boolean => {
 export const useAuthStore = defineStore('authStore', {
   state: () => ({
     oms: '',
-    omsRedirectionUrl: '',
+    maarg: '',
     token: {
       value: '',
       expiration: undefined,
@@ -56,23 +59,23 @@ export const useAuthStore = defineStore('authStore', {
       return !!(state.token.value && !isTokenExpired);
     },
     getOMS: (state) => state.oms,
-    getOmsRedirectionUrl: (state) => {
-      const baseURL = state.omsRedirectionUrl;
+    getOmsUrl: (state) => {
+      const baseURL = state.oms;
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
       return ""
     },
-    getBaseUrl: (state) => {
-      const baseURL = state.oms
+    getMaargUrl: (state) => {
+      const baseURL = state.maarg;
       if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
       return "";
-    },
+    }
   },
   actions: {
     setOMS(oms: string) {
       this.oms = oms;
     },
-    setOmsRedirectionUrl(url: string) {
-      this.omsRedirectionUrl = url;
+    setMaarg(url: string) {
+      this.maarg = url
     },
     checkAuthenticated() {
       const { value, expiration } = this.token;
@@ -80,15 +83,57 @@ export const useAuthStore = defineStore('authStore', {
       if (expiration && expiration < DateTime.now().toMillis()) return false;
       return true;
     },
+    async loginWithCredentials(username: string, password: string) {
+      try {
+        const resp = await UserService.login(username, password);
+        if (hasError(resp)) {
+          showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
+          console.error("error", resp.data._ERROR_MESSAGE_);
+          return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
+        }
+
+        const token = resp.data.token;
+        const expirationTime = resp.data.expirationTime;
+
+        // Login success, set the state
+        await this.login({
+          token,
+          oms: this.oms,
+          expirationTime
+        })
+
+        // Handling case for warnings like password may expire in few days
+        if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
+          showToast(translate(resp.data._EVENT_MESSAGE_));
+        }
+
+      } catch (error: any) {
+        showToast(translate('Something went wrong while login. Please contact administrator.'));
+        console.error("error: ", error);
+        return Promise.reject(new Error(error))
+      }
+    },
+    async samlLogin(token: string, expirationTime: string) {
+      try {
+        await this.login({
+          token,
+          oms: this.oms,
+          expirationTime
+        })
+      } catch (error: any) {
+        showToast(translate('Something went wrong while login. Please contact administrator.'));
+        console.error("error: ", error);
+        return Promise.reject(new Error(error))
+      }
+    },
     async login(payload: LoginPayload) {
       try {
         this.setOMS(payload.oms);
         this.token.value = payload.token;
         this.token.expiration = payload.expirationTime;
-        this.omsRedirectionUrl = payload.omsRedirectionUrl;
 
         const permissionId = import.meta.env.VITE_PERMISSION_ID;
-        const current = await useUserProfile().getProfile(this.token.value, this.getBaseUrl);
+        const current = await useUserProfile().getProfile(this.token.value, this.getMaargUrl);
         Settings.defaultZone = current.timeZone;
 
         const serverPermissionsFromRules = getServerPermissionsFromRules();
@@ -96,7 +141,7 @@ export const useAuthStore = defineStore('authStore', {
 
         const serverPermissions = await useUserProfile().loadUserPermissions(
           { permissionIds: [...new Set(serverPermissionsFromRules)] },
-          this.omsRedirectionUrl || this.oms,
+          this.getOmsUrl || this.oms,
           this.token.value
         )
 
@@ -147,22 +192,44 @@ export const useAuthStore = defineStore('authStore', {
       }
     },
     async logout() {
-      try {
-        useProductStore().$reset();
-        useUserProfile().$reset();
-        useAuthStore().$reset();
+      // store the url on which we need to redirect the user after logout api completes in case of SSO enabled
+      let redirectionUrl = ""
 
-        const appLoginUrl = import.meta.env.VITE_LOGIN_URL;
-        const redirectUrl = window.location.origin + '/login';
-        window.location.href = `${appLoginUrl}?isLoggedOut=true&redirectUrl=${redirectUrl}`;
-      } catch (error) {
-        console.warn('Logout request failed', error);
-      } finally {
-        this.token = {
-          value: '',
-          expiration: undefined,
-        };
+      emitter.emit("presentLoader", { message: "Logging out...", backdropDismiss: false });
+      let resp;
+
+      // wrapping the parsing logic in try catch as in some case the logout api makes redirection, or fails when logout from maarg based apps, thus the logout process halts
+      try {
+        resp = await UserService.logout();
+
+        // Added logic to remove the `//` from the resp as in case of get request we are having the extra characters and in case of post we are having 403
+        resp = JSON.parse(resp.startsWith('//') ? resp.replace('//', '') : resp)
+      } catch (err) {
+        console.error('Error parsing data', err)
       }
+
+      if (resp?.logoutAuthType == 'SAML2SSO') {
+        redirectionUrl = resp.logoutUrl
+      }
+
+      useProductStore().$reset();
+      useUserProfile().$reset();
+      useAuthStore().$reset();
+
+      updateToken('');
+      updateInstanceUrl('');
+      this.oms = '';
+      this.maarg = '';
+
+      // If we get any url in logout api resp then we will redirect the user to the url
+      if (redirectionUrl) {
+        window.location.href = redirectionUrl
+      } else {
+        router.push('/login')
+      }
+
+      emitter.emit('dismissLoader')
+      return redirectionUrl;
     },
     setToken(token: string, expirationTime?: number) {
       this.token = {

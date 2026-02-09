@@ -63,7 +63,7 @@ const authStore = useAuthStore()
 
 initialise({
   token: authStore.token.value,
-  instanceUrl: authStore.oms,
+  instanceUrl: authStore.maarg,
   cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
   events: {
     unauthorised: () => authStore.logout(),
@@ -75,7 +75,7 @@ initialise({
 
 authStore.$subscribe((mutation: any, state: any) => {
   updateToken(state.token.value)
-  updateInstanceUrl(state.oms)
+  updateInstanceUrl(state.maarg)
 })
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters

@@ -84,7 +84,7 @@ export const useProductStore = defineStore('productStore', {
     async getDxpEComStoresByFacility(facilityId?: any) {
       const authStore = useAuthStore()
       try {
-        const response = await getEComStoresByFacility(authStore.token.value, authStore.getBaseUrl, 100, facilityId)
+        const response = await getEComStoresByFacility(authStore.token.value, authStore.getMaargUrl, 100, facilityId)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -95,7 +95,7 @@ export const useProductStore = defineStore('productStore', {
     async getDxpEComStores() {
       const authStore = useAuthStore()
       try {
-        const response = await getEComStores(authStore.token.value, authStore.getBaseUrl, 100)
+        const response = await getEComStores(authStore.token.value, authStore.getMaargUrl, 100)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -109,7 +109,7 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredStore = this.productStores[0]
       try {
-        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getMaargUrl, userPrefTypeId, userId)
         if (preferredStoreId) {
           const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
           if (store) preferredStore = store
@@ -322,7 +322,7 @@ export const useProductStore = defineStore('productStore', {
     async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
       const authStore = useAuthStore()
       try {
-        const response = await getUserFacilities(authStore.token.value, authStore.getBaseUrl, partyId, facilityGroupId, isAdminUser, payload)
+        const response = await getUserFacilities(authStore.token.value, authStore.getMaargUrl, partyId, facilityGroupId, isAdminUser, payload)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -340,7 +340,7 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredFacility = this.facilities[0]
       try {
-        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getMaargUrl, userPrefTypeId, userId)
         if (preferredFacilityId) {
           const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility
