@@ -346,9 +346,11 @@ async function logVariance(product: any) {
     const inventoryItemVarianceMap = {
       inventoryItemId: product.inventoryItemId,
       reasonEnumId,
+      availableToPromiseVar: varianceQuantity,
       quantityOnHandVar: varianceQuantity,
       comments: "Variance Logged from Cycle Count App",
       inventoryItemDetail: {
+        availableToPromiseDiff: varianceQuantity,
         quantityOnHandDiff: varianceQuantity,
         reasonEnumId
       }
