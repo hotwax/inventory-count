@@ -12,11 +12,14 @@
           <ion-button @click="clearAll" :disabled="selectedIds.length === 0">{{ translate("Clear all") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
-      <ion-toolbar>
-        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()"/>
-      </ion-toolbar>
     </ion-header>
     <ion-content>
+      <ion-searchbar
+        @ionFocus="selectSearchBarText($event)"
+        :placeholder="translate('Search facilities')"
+        v-model="queryString"
+        @ionInput="findFacility()"
+      />
       <ion-list>
         <div class="empty-state" v-if="!filteredFacilities.length">
           <p>{{ translate("No facilities found") }}</p>

@@ -109,12 +109,10 @@
             </ion-buttons>
             <ion-title>{{ translate("Select security groups") }}</ion-title>
           </ion-toolbar>
-          <ion-toolbar>
-            <ion-searchbar :placeholder="translate('Search security groups')" v-model="modalQuery"/>
-          </ion-toolbar>
         </ion-header>
 
         <ion-content>
+          <ion-searchbar :placeholder="translate('Search security groups')" v-model="modalQuery"/>
 
           <template v-if="filteredSecurityGroups.length">
             <ion-list>

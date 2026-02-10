@@ -29,11 +29,11 @@
         </ion-buttons>
         <ion-title>{{ translate("Select Facility") }}</ion-title>
       </ion-toolbar>
-      <ion-toolbar>
-        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility($event)" @keydown="preventSpecialCharacters($event)" />
-      </ion-toolbar>
     </ion-header>
     <ion-content>
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
+        v-model="queryString" @ionInput="findFacility($event)"
+        @keydown="preventSpecialCharacters($event)" />
       <ion-radio-group v-model="selectedFacilityId">
         <ion-list>
           <!-- Loading state -->
