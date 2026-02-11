@@ -7,10 +7,10 @@
           <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
-        <!-- <ion-tab-button tab="audit" href="/tabs/variance">
+        <ion-tab-button v-if="hasPermission(Actions.APP_VARIANCE_VIEW)" tab="audit" href="/tabs/variance">
           <ion-icon :icon="shirtOutline" />
           <ion-label>{{ translate("Variance") }}</ion-label>
-        </ion-tab-button> -->
+        </ion-tab-button>
         <ion-tab-button tab="more" href="/tabs/settings">
           <ion-icon :icon="settingsOutline" />
           <ion-label>{{ translate("Settings") }}</ion-label>
@@ -25,8 +25,10 @@ import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouter
 import {
   fileTrayFullOutline,
   settingsOutline,
+  shirtOutline
 } from "ionicons/icons";
 import { translate } from '@/i18n'
+import { Actions, hasPermission } from "@/authorization"
 </script>
 
 <style scoped>

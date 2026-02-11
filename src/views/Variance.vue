@@ -240,7 +240,7 @@ async function searchProducts(queryString: string): Promise<any> {
     const query = useProductMaster().buildProductQuery({
       keyword: queryString,
       viewSize: 20,
-      filter: 'isVirtual:false,productTypeId:FINISHED_GOOD'
+      filter: 'isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED'
     })
 
     const resp = await api({
@@ -346,12 +346,8 @@ async function logVariance(product: any) {
     const inventoryItemVarianceMap = {
       inventoryItemId: product.inventoryItemId,
       reasonEnumId,
-      quantityOnHandVar: varianceQuantity,
-      comments: "Variance Logged from Cycle Count App",
-      inventoryItemDetail: {
-        quantityOnHandDiff: varianceQuantity,
-        reasonEnumId
-      }
+      quantity: varianceQuantity,
+      comments: "Variance Logged from Cycle Count App"
     };
     
 

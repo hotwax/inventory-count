@@ -117,7 +117,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   try {
     const query = buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value}`,
+        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
@@ -410,7 +410,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
     const baseUrl = context.maargUrl
     const token = context.token
 
-    const pending = await db.table('inventoryCountRecords')
+    let pending = await db.table('inventoryCountRecords')
       .where({ inventoryCountImportId })
       .and((item: any) =>
         !item.lastSyncedAt ||  // never synced
@@ -420,7 +420,37 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (!pending.length) return 0
 
-    const items = pending.map((item: any) => ({
+    const needsQoh = (item: any) =>
+      item.productId &&
+      item.facilityId &&
+      (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null)
+
+    if (pending.some(needsQoh)) {
+      await resolveMissingSystemQOH(inventoryCountImportId, context)
+      pending = await db.table('inventoryCountRecords')
+        .where({ inventoryCountImportId })
+        .and((item: any) =>
+          !item.lastSyncedAt ||  // never synced
+          (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
+        )
+        .toArray()
+    }
+
+    const syncable: any = [];
+    const blocked: any = [];
+    for (const item of pending) {
+      if (needsQoh(item)) {
+        blocked.push(item);
+      } else {
+        syncable.push(item);
+      }
+    }
+
+    if (!syncable.length) {
+      return 0
+    }
+
+    const items = syncable.map((item: any) => ({
       uuid: item.uuid,
       productId: item.productId,
       productIdentifier: item.productIdentifier,
@@ -451,7 +481,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
     if (resp) {
       const now = Date.now()
       await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
-        for (const item of pending) {
+        for (const item of syncable) {
           await db.table('inventoryCountRecords')
             .where('[inventoryCountImportId+uuid]')
             .equals([inventoryCountImportId, item.uuid])
@@ -513,11 +543,13 @@ async function resolveMissingSystemQOH(
       }
       })
 
+      if (!inventory) throw new Error('No inventory response')
+
       await db.table('inventoryCountRecords')
         .where('[inventoryCountImportId+uuid]')
         .equals([inventoryCountImportId, record.uuid])
         .modify({
-          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal || 0,
+          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal ?? 0,
           lastUpdatedAt: now
         })
 
@@ -554,7 +586,6 @@ self.onmessage = async (messageEvent: MessageEvent) => {
     await ensureDB(context);
     const count = await aggregate(inventoryCountImportId, context)
     await resolveMissingProducts(inventoryCountImportId, context)
-    if(count > 0) await resolveMissingSystemQOH(inventoryCountImportId, context)
     await syncToServer(inventoryCountImportId, context)
 
     self.postMessage({ type: 'aggregationComplete', count })
@@ -566,7 +597,6 @@ self.onmessage = async (messageEvent: MessageEvent) => {
     setInterval(async () => {
       const count = await aggregate(inventoryCountImportId, context)
       await resolveMissingProducts(inventoryCountImportId, context)
-      if(count > 0) await resolveMissingSystemQOH(inventoryCountImportId, context)
       await syncToServer(inventoryCountImportId, context)
 
       self.postMessage({ type: 'aggregationComplete', count })

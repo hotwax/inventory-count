@@ -93,10 +93,13 @@ const routes: Array<RouteRecordRaw> = [
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
-      /*{
+      {
         path: 'variance',
-        component: () => import('@/views/Variance.vue')
-      }*/
+        component: () => import('@/views/Variance.vue'),
+        meta: {
+          permissionId: "APP_VARIANCE_VIEW"
+        }
+      }
     ],
     beforeEnter: authGuard,
   },

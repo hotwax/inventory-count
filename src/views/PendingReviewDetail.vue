@@ -134,7 +134,10 @@
                           <ion-thumbnail slot="start">
                             <Image :src="item.detailImageUrl" />
                           </ion-thumbnail>
-                          <ion-label>{{ item.internalName }}</ion-label>
+                          <ion-label>
+                            <h2>{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
+                            <p>{{ productMaster.secondaryId(item.product) }}</p>
+                          </ion-label>
                         </ion-item>
                       </div>
 
@@ -483,6 +486,7 @@ import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
+import { useProductMaster } from "@/composables/useProductMaster";
 import { useProductStore } from "@/stores/productStore";
 import { loader, showToast } from "@/services/uiUtils";
 import ProgressBar from "@/components/ProgressBar.vue";
@@ -524,6 +528,9 @@ const lastCountedAt = ref();
 const isRemoveSessionAlertOpen = ref(false);
 
 const userProfile = useUserProfile();
+const productMaster = useProductMaster();
+
+const hydratedProductIds = new Set<string>();
 
 /* computed */
 const openItems = computed(() =>
@@ -819,9 +826,55 @@ async function getInventoryCycleCount() {
     filteredSessionItems.value = [...aggregatedSessionItems.value].sort((predecessor, successor) =>
       (predecessor.internalName || '').localeCompare(successor.internalName || '')
     );
+    scheduleProductHydration(aggregatedSessionItems.value);
   } catch {
     aggregatedSessionItems.value = [];
     filteredSessionItems.value = [];
+  }
+}
+
+function scheduleProductHydration(items: any[]) {
+  if (!items?.length) return;
+  hydrateProductsForItems(items);
+}
+
+async function hydrateProductsForItems(items: any[]) {
+  const productIds = [...new Set(
+    items
+      .filter((item: any) => item.productId && !item.product)
+      .map((item: any) => item.productId)
+  )].filter((id) => !hydratedProductIds.has(id));
+
+  if (!productIds.length) return;
+
+  productIds.forEach((id) => hydratedProductIds.add(id));
+  try {
+    try {
+      await productMaster.prefetch(productIds as any);
+    } catch (error) {
+      console.warn("Prefetch failed in PendingReviewDetail", error);
+    }
+    const results = await Promise.all(productIds.map((id) => productMaster.getById(id)));
+    const productsById = new Map<string, any>();
+    results.forEach((result, index) => {
+      if (result.product) productsById.set(productIds[index], result.product);
+    });
+
+    if (!productsById.size) return;
+    items.forEach((item: any) => {
+      const product = productsById.get(item.productId);
+      if (product) {
+        item.product = product;
+        item.primaryId = productMaster.primaryId(product);
+        item.secondaryId = productMaster.secondaryId(product);
+      }
+    });
+    productIds.forEach((id) => {
+      if (!productsById.has(id)) hydratedProductIds.delete(id);
+    });
+  } catch (error) {
+    console.warn("Failed to hydrate products in PendingReviewDetail", error);
+    productIds.forEach((id) => hydratedProductIds.delete(id));
   }
 }
 
@@ -1061,7 +1114,7 @@ function getTimeDifference(actual: any, expected: any) {
 
 .list-item.count-item-rollup {
   --columns-desktop: 5;
-  border-top: 1px solid var(--ion-color-medium);
+  border-top : 1px solid var(--ion-color-medium);
 }
 
 .list-item > ion-item {

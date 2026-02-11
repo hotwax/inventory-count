@@ -250,7 +250,7 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => !item.productId)
+        .filter(item => !item.productId && Number(item.quantity) > 0)
         .toArray()
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
@@ -268,7 +268,7 @@ function currentMillis(): number {
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
+        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId) && Number(item.quantity) > 0))
         .toArray()
 
       const grouped = groupByProductAndSum(items)
@@ -319,7 +319,7 @@ function currentMillis(): number {
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => item.isRequested === 'N' && Boolean(item.productId))
+        .filter(item => item.isRequested === 'N' && Boolean(item.productId) && Number(item.quantity) > 0)
         .toArray();
 
       const grouped = groupByProductAndSum(items)
