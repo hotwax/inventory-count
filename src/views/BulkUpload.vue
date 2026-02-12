@@ -91,7 +91,7 @@
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError' || (selectedSystemMessage?.statusId === 'SmsgConsumed' && selectedSystemMessage?.errors?.length)" button @click="viewError">
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
@@ -251,7 +251,6 @@ function closeUploadPopover() {
 }
 function openErrorModal() {
   isErrorModalOpen.value = true;
-  getCycleCountImportErrorsFromServer();
 }
 function closeErrorModal() {
   isErrorModalOpen.value = false;
@@ -260,12 +259,6 @@ function closeErrorModal() {
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
 }
-async function getCycleCountImportErrorsFromServer() {
-  try {
-    const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
-  } catch (err) { logger.error(err); }
-}
 async function viewFile() {
   try {
     const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
@@ -273,6 +266,26 @@ async function viewFile() {
     else throw resp.data;
   } catch (err) {
     showToast(translate("Failed to download uploaded cycle count file."));
+    logger.error(err);
+  }
+  closeUploadPopover();
+}
+async function viewError() {
+  try {
+    const latestError = selectedSystemMessage.value.errors?.length
+      ? selectedSystemMessage.value.errors.slice().sort((a, b) => b.errorDate - a.errorDate)[0]
+      : null;
+
+    if (latestError?.errorText?.trim()?.endsWith('.csv')){
+        const resp = await useInventoryCountRun().getCycleCountErrorFileData({ contentLocation: latestError.errorText.trim() });
+        if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+        else throw resp.data;
+        return;
+    }
+    systemMessageError.value = latestError;
+    openErrorModal();
+  } catch (err) {
+    showToast(translate("Failed to get error details."));
     logger.error(err);
   }
   closeUploadPopover();
@@ -301,10 +314,10 @@ function extractFilename(path) {
   return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
 function getFileProcessingStatus(systemMessage) {
-  if (systemMessage.statusId === "SmsgConsumed") return "processed";
+  if (systemMessage.statusId === "SmsgConsumed" && !systemMessage.errors?.length) return "processed";
   if (systemMessage.statusId === "SmsgConsuming") return "processing";
   if (systemMessage.statusId === "SmsgCancelled") return "cancelled";
-  if (systemMessage.statusId === "SmsgError") return "error";
+  if (systemMessage.statusId === "SmsgError" || (systemMessage.statusId === "SmsgConsumed" && systemMessage.errors?.length)) return "error";
   return "pending";
 }
 function resetFieldMapping() { fieldMapping.value = Object.keys(fields).reduce((mapping, key) => (mapping[key] = "", mapping), {}); }

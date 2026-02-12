@@ -120,6 +120,14 @@ const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
   });
 };
 
+const getCycleCountErrorFileData = async (payload: any): Promise<any> => {
+  return api({
+    url: `inventory-cycle-count/cycleCounts/systemMessages/downloadErrorFile`,
+    method: "get",
+    params: payload
+  });
+};
+
 const getCycleCountImportErrors = async (payload: any): Promise<any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
@@ -350,5 +358,6 @@ export function useInventoryCountRun() {
     loadStatusDescription,
     queueCycleCountsFileExport,
     getCycleCountSessions,
+    getCycleCountErrorFileData
   };
 }
