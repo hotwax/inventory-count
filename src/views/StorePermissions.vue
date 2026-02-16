@@ -227,6 +227,12 @@ const permissionCards: PermissionMeta[] = [
       "Select security groups that can forcefully release sessions that are not their own. The force released device will be booted from their session within 30 seconds.",
   },
   {
+    id: "INV_COUNT_VAR_LOG",
+    title: "Log inventory variance",
+    description:
+      "Select security groups that can log inventory variances for products at a store. This allows users to manually adjust inventory levels by adding or removing stock with specific reason codes.",
+  },
+  {
     id: "INV_COUNT_ADMIN",
     title: "Inventory count admin",
     description:
