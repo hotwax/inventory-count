@@ -6,6 +6,8 @@ import workerApi from "@/services/workerApi";
 import { db } from '@/services/appInitializer';
 import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
+import { VarianceLogs } from '@/services/commonDatabase';
+import { DateTime } from 'luxon';
 
 // Product structure
 export interface Product {
@@ -549,6 +551,50 @@ const getProductQoh = async (
   return rec ? rec.quantityOnHandTotal : null
 }
 
+const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: string, productId?: string) => {
+  const varianceLog: VarianceLogs = {
+    scannedValue: scannedValue,
+    quantity: quantity,
+    productId: productId || null,
+    facilityId: facilityId,
+    aggApplied: 0,
+    createdAt: DateTime.now().toMillis()
+  }
+  await db.varianceLogs.add(varianceLog)
+}
+
+const getVarianceLogs = () =>
+  liveQuery(async () => {    
+    const varLogs = await db.varianceLogs
+      .reverse()
+      .sortBy('createdAt');
+
+    const enriched = await Promise.all(
+      varLogs.map(async event => {
+        if (event.productId) {
+          const product = await db.products.get(event.productId);
+          return { ...event, product };
+        }
+        return event;
+      })
+    );
+
+    return enriched || [];
+  });
+
+const getInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+    return adjusments || [];
+  });
+
+const clearVarianceLogsAndAdjustments = async () => {
+  await db.varianceLogs.clear();
+  await db.inventoryAdjustments.clear();
+}
+
 export function useProductMaster() {
 
   return {
@@ -573,6 +619,10 @@ export function useProductMaster() {
     upsertInventoryFromSessionItems,
     getProductInventory,
     getProductQoh,
-    setInventoryStaleMs
+    setInventoryStaleMs,
+    addVarianceLog,
+    getVarianceLogs,
+    getInventoryAdjustments,
+    clearVarianceLogsAndAdjustments
   }
 }

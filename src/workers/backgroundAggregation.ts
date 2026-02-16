@@ -17,12 +17,14 @@ export interface InventorySyncWorker {
     productId: string,
     context: any
   ) => Promise<{ success: boolean; error?: any }>;
+  aggregateVarianceLogs: (context: any) => Promise<number>;
 }
 
 expose({
   aggregate,
   syncToServer,
   matchProductLocallyAndSync,
+  aggregateVarianceLogs
 });
 
 let isAggregating = false
@@ -228,6 +230,89 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
       });
   }
   return;
+}
+
+const getProductStock = async (productId: string, context: any): Promise<any> => {
+  return await workerApi({
+    baseURL: context.maargUrl,
+    headers: {
+      'Authorization': `Bearer ${context.token}`,
+      'Content-Type': 'application/json'
+    },
+    url: 'poorti/getInventoryAvailableByFacility',
+    method: 'GET',
+    params: { productId: productId, facilityId: context.facilityId }
+  })
+}
+
+async function aggregateVarianceLogs(context: any) {
+  if (isAggregating) return 0
+  isAggregating = true
+  try {
+    const varianceLogs = await db.table('varianceLogs')
+      .where({ aggApplied: 0 })
+      .toArray()
+
+    if (!varianceLogs.length) {
+      return 0
+    }
+
+    const grouped: Record<string, number> = {}
+    for (const scan of varianceLogs) {
+      const key = scan.inventoryItemId || scan.scannedValue?.trim()
+      if (!key) continue
+      grouped[key] = (grouped[key] || 0) + scan.quantity
+    }
+
+    const now = Date.now()
+    for (const [key, quantity] of Object.entries(grouped)) {
+      let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
+      if (!productId) {
+        const product = await getById(key, context)
+        productId = product?.productId || null
+      }
+      
+      let stock = null;
+      if (productId) {
+        stock = await getProductStock(productId, context)
+      }
+
+      // Upsert by productId and facilityId in the inventoryAdjustments table here
+      const inventoryAdjustment = await db.table('inventoryAdjustments')
+        .where({ facilityId: context.facilityId })
+        .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
+        .first()
+
+      if (inventoryAdjustment) {
+        await db.table('inventoryAdjustments').put({
+          ...inventoryAdjustment,
+          quantity: inventoryAdjustment.quantity + quantity,
+          atp: stock?.atp || null,
+          qoh: stock?.qoh || null,
+          lastUpdatedAt: now
+        })
+      } else {
+        await db.table('inventoryAdjustments').add({
+          uuid: uuidv4(),
+          scannedValue: key,
+          productId,
+          facilityId: context.facilityId,
+          quantity,
+          atp: stock?.atp || null,
+          qoh: stock?.qoh || null,
+          lastUpdatedAt: now
+        })
+      }
+    }
+    await db.table('varianceLogs')
+      .where('id')
+      .anyOf(varianceLogs.map((scanEvent: any) => scanEvent.id))
+      .modify({ aggApplied: 1 })
+  } catch (error) {
+    console.error('Error aggregating variance logs:', error)
+  } finally {
+    isAggregating = false
+  }
 }
 
 // Aggregation Logic
@@ -600,6 +685,15 @@ self.onmessage = async (messageEvent: MessageEvent) => {
       await syncToServer(inventoryCountImportId, context)
 
       self.postMessage({ type: 'aggregationComplete', count })
+    }, intervalMs)
+  }
+
+  if (type === 'scheduleVarianceAggregation') {
+    const { context, intervalMs = 10000 } = payload;
+    await ensureDB(context);
+    setInterval(async () => {
+      const count = await aggregateVarianceLogs(context);
+      self.postMessage({ type: 'varianceAggregationComplete', count })
     }, intervalMs)
   }
 }
