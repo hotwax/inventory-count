@@ -313,6 +313,7 @@ async function aggregateVarianceLogs(context: any) {
     return processed;
   } catch (error) {
     console.error('Error aggregating variance logs:', error)
+    return 0;
   } finally {
     isAggregating = false
   }
