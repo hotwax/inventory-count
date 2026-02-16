@@ -263,7 +263,7 @@ async function aggregateVarianceLogs(context: any) {
       if (!key) continue
       grouped[key] = (grouped[key] || 0) + scan.quantity
     }
-
+    let processed = 0
     const now = Date.now()
     for (const [key, quantity] of Object.entries(grouped)) {
       let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
@@ -303,11 +303,14 @@ async function aggregateVarianceLogs(context: any) {
           lastUpdatedAt: now
         })
       }
+      processed++
     }
     await db.table('varianceLogs')
       .where('id')
       .anyOf(varianceLogs.map((scanEvent: any) => scanEvent.id))
       .modify({ aggApplied: 1 })
+
+    return processed;
   } catch (error) {
     console.error('Error aggregating variance logs:', error)
   } finally {
