@@ -276,7 +276,11 @@ async function aggregateVarianceLogs(context: any) {
       
       let stock = null;
       if (productId) {
-        stock = await getProductStock(productId, context)
+        try {
+          stock = await getProductStock(productId, context)
+        } catch (error) {
+          console.error('Error fetching stock', error)
+        }
       }
 
       // Upsert by productId and facilityId in the inventoryAdjustments table here
@@ -286,11 +290,20 @@ async function aggregateVarianceLogs(context: any) {
         .first()
 
       if (inventoryAdjustment) {
+        productId = inventoryAdjustment.productId;
+        if (productId && stock === null) {
+          try {
+            stock = await getProductStock(productId, context)
+            console.info("Refreshed stock for", productId)
+          } catch (error) {
+            console.error('Error fetching stock', error)
+          }
+        }
         await db.table('inventoryAdjustments').put({
           ...inventoryAdjustment,
           quantity: inventoryAdjustment.quantity + quantity,
-          atp: stock?.atp || null,
-          qoh: stock?.qoh || null,
+          atp: stock?.atp,
+          qoh: stock?.qoh,
           lastUpdatedAt: now
         })
       } else {
@@ -300,8 +313,8 @@ async function aggregateVarianceLogs(context: any) {
           productId,
           facilityId: context.facilityId,
           quantity,
-          atp: stock?.atp || null,
-          qoh: stock?.qoh || null,
+          atp: stock?.atp,
+          qoh: stock?.qoh,
           lastUpdatedAt: now
         })
       }

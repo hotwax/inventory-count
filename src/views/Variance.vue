@@ -88,11 +88,11 @@
                     <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
                   </ion-thumbnail>
                   <ion-label>
-                    {{ useProductMaster().primaryId(inventoryAdjustment) }}
-                    <p>{{ useProductMaster().secondaryId(inventoryAdjustment) }}</p>
+                    {{ useProductMaster().primaryId(inventoryAdjustment.product) }}
+                    <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
                   </ion-label>
                   <ion-text slot="end">
-                    {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
+                    {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || '-' }}
                   </ion-text>
                 </ion-item>
                 <div class="quantity">
@@ -370,7 +370,7 @@ async function unscheduleWorker() {
 
 const varianceReasons = ref<Array<any>>([]);
 
-const optedVarianceReason = ref<string>('');
+const optedVarianceReason = ref<string | null>(null);
 const optedAction = ref<string | null>(null);
 const negateVariances = computed(() => optedAction.value === 'remove');
 
