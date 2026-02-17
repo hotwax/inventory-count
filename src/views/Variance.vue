@@ -117,7 +117,7 @@
                 </div>
               </ion-card>
               <div class="ion-text-center">
-                <ion-button v-if="inventoryAdjustments.length" @click="logVariance()" :disabled="hasUnmatchedItem || isLogVarianceDisabled">
+                <ion-button v-if="inventoryAdjustments.length" @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled">
                   {{ translate("Log Variance") }}
                 </ion-button>
               </div>
@@ -373,7 +373,6 @@ const varianceReasons = ref<Array<any>>([]);
 const optedVarianceReason = ref<string>('');
 const optedAction = ref<string | null>(null);
 const negateVariances = computed(() => optedAction.value === 'remove');
-const hasUnmatchedItem = computed(() => inventoryAdjustments.value.some((item: any) => !item.productId));
 
 const selectedSegment = ref<'matched' | 'unmatched'>('matched');
 
