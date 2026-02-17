@@ -390,8 +390,6 @@ async function logVariance() {
       showToast(translate("Variance logged successfully."));
       // Clear the VarianceLogs table and the InventoryAdjustmentTables here
       useProductMaster().clearVarianceLogsAndAdjustments();
-      inventoryAdjustments.value = [];
-      varianceLogs.value = [];
     } else {
       throw resp;
     }
