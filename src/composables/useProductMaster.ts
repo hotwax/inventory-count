@@ -588,17 +588,29 @@ const getInventoryAdjustments = () =>
       .reverse()
       .sortBy('createdAt');
 
+    // Filter for items with productId (matched)
+    const matched = adjusments.filter(item => item.productId);
+
     const enriched = await Promise.all(
-      adjusments.map(async adjustment => {
-        if (adjustment.productId) {
-          const product = await db.products.get(adjustment.productId);
-          return { ...adjustment, product };
-        }
-        return adjustment;
+      matched.map(async adjustment => {
+        const product = await db.products.get(adjustment.productId!);
+        return { ...adjustment, product };
       })
     );
     
     return enriched || [];
+  });
+
+const getUnmatchedInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+
+    // Filter for items without productId (unmatched)
+    const unmatched = adjusments.filter(item => !item.productId);
+    
+    return unmatched || [];
   });
 
 const clearVarianceLogsAndAdjustments = async () => {
@@ -634,6 +646,7 @@ export function useProductMaster() {
     addVarianceLog,
     getVarianceLogs,
     getInventoryAdjustments,
+    getUnmatchedInventoryAdjustments,
     clearVarianceLogsAndAdjustments
   }
 }

@@ -18,13 +18,15 @@ export interface InventorySyncWorker {
     context: any
   ) => Promise<{ success: boolean; error?: any }>;
   aggregateVarianceLogs: (context: any) => Promise<number>;
+  matchUnmatchedInventoryAdjustment: (uuid: string, productId: string, context: any) => Promise<void>;
 }
 
 expose({
   aggregate,
   syncToServer,
   matchProductLocallyAndSync,
-  aggregateVarianceLogs
+  aggregateVarianceLogs,
+  matchUnmatchedInventoryAdjustment
 });
 
 let isAggregating = false
@@ -418,6 +420,49 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     return 0
   } finally {
     isAggregating = false
+  }
+}
+
+async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string, context: any) {
+  const now = Date.now();
+  await ensureDB(context);
+
+  try {
+    const facilityId = context.facilityId;
+    const adjustment = await db.table('inventoryAdjustments').get([facilityId, uuid]);
+
+    if (!adjustment) {
+      console.error(`[Worker] Inventory adjustment not found for uuid: ${uuid}`);
+      return;
+    }
+
+    ensureProductStored(productId, context);
+    const stock = await getProductStock(productId, context);
+
+    await db.transaction('rw', db.table('inventoryAdjustments'), db.table('varianceLogs'), async () => {
+      await db.table('inventoryAdjustments')
+        .where('[facilityId+uuid]')
+        .equals([facilityId, uuid])
+        .modify({
+          productId,
+          qoh: stock?.qoh || null,
+          atp: stock?.atp || null,
+          lastUpdatedAt: now
+        });
+
+      if (adjustment.scannedValue) {
+        await db.table('varianceLogs')
+        .where('scannedValue').equals(adjustment.scannedValue)
+        .modify({ 
+          productId,
+          aggApplied: 1,
+          lastUpdatedAt: now
+        })
+      }
+    });
+  } catch (err) {
+    console.error('[Worker] Error in matchUnmatchedInventoryAdjustment', err);
+    throw err;
   }
 }
 
