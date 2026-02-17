@@ -587,7 +587,18 @@ const getInventoryAdjustments = () =>
     const adjusments = await db.inventoryAdjustments
       .reverse()
       .sortBy('createdAt');
-    return adjusments || [];
+
+    const enriched = await Promise.all(
+      adjusments.map(async adjustment => {
+        if (adjustment.productId) {
+          const product = await db.products.get(adjustment.productId);
+          return { ...adjustment, product };
+        }
+        return adjustment;
+      })
+    );
+    
+    return enriched || [];
   });
 
 const clearVarianceLogsAndAdjustments = async () => {

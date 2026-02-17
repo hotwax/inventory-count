@@ -303,13 +303,15 @@ async function aggregateVarianceLogs(context: any) {
           lastUpdatedAt: now
         })
       }
-      processed++
+      processed++;
+      await db.table('varianceLogs')
+      .where('scannedValue').equals(key)
+      .modify({ 
+        productId,
+        aggApplied: 1,
+        lastUpdatedAt: now
+      })
     }
-    await db.table('varianceLogs')
-      .where('id')
-      .anyOf(varianceLogs.map((scanEvent: any) => scanEvent.id))
-      .modify({ aggApplied: 1 })
-
     return processed;
   } catch (error) {
     console.error('Error aggregating variance logs:', error)

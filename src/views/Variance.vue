@@ -42,6 +42,9 @@
                     {{ item.scannedValue }}
                     <p class="clickable-time">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
+                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                    {{ translate('unaggregated') }}
+                  </ion-badge>
                   <ion-button fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>  
@@ -70,7 +73,7 @@
           <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
             <ion-item lines="full">
               <ion-thumbnail slot="start">
-                <Image :src="inventoryAdjustment.mainImageUrl"/>
+                <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
               </ion-thumbnail>
               <ion-label v-if="inventoryAdjustment.productId">
                 {{ useProductMaster().primaryId(inventoryAdjustment) }}
