@@ -45,9 +45,9 @@
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <ion-button fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                  <!-- <ion-button fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>  
+                  </ion-button>-->
                 </ion-item>
               </DynamicScrollerItem>
             </template>
@@ -92,7 +92,7 @@
                     <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
                   </ion-label>
                   <ion-text slot="end">
-                    {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || '-' }}
+                    {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
                   </ion-text>
                 </ion-item>
                 <div class="quantity">
