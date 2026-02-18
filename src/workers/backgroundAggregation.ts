@@ -261,7 +261,7 @@ async function aggregateVarianceLogs(context: any) {
 
     const grouped: Record<string, number> = {}
     for (const scan of varianceLogs) {
-      const key = scan.inventoryItemId || scan.scannedValue?.trim()
+      const key = scan.scannedValue?.trim()
       if (!key) continue
       grouped[key] = (grouped[key] || 0) + scan.quantity
     }
@@ -319,14 +319,19 @@ async function aggregateVarianceLogs(context: any) {
         })
       }
       processed++;
-      await db.table('varianceLogs')
-      .where('scannedValue').equals(key)
-      .modify({ 
-        productId,
-        aggApplied: 1,
-        lastUpdatedAt: now
-      })
+      if (productId) {
+        await db.table('varianceLogs')
+        .where('scannedValue').equals(key)
+        .modify({ 
+          productId,
+          lastUpdatedAt: now
+        })
+      }
     }
+    await db.table('varianceLogs')
+      .where('id')
+      .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
+      .modify({ aggApplied: 1 })
     return processed;
   } catch (error) {
     console.error('Error aggregating variance logs:', error)
