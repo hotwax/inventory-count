@@ -265,9 +265,13 @@ const unmatchedItems = ref<any[]>([]);
 const unmatchedCount = computed(() => unmatchedItems.value.length);
 
 /* Stub Methods for Count Events */
-const handleScan = () => { 
+const handleScan = () => {
+  if (scannedValue.value.trim().length === 0) {
+    showToast(translate("Please enter a barcode"));
+    return;
+  }
   console.log('handleScan');
-  useProductMaster().addVarianceLog(scannedValue.value, 1, currentFacility.value.facilityId);
+  useProductMaster().addVarianceLog(scannedValue.value.trim(), 1, currentFacility.value.facilityId);
   scannedValue.value = '';
   isLogVarianceDisabled.value = true;
   setTimeout(() => {
