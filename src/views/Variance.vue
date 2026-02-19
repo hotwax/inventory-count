@@ -3,10 +3,14 @@
     <ion-header>
       <ion-toolbar>
         <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
+        <ion-toggle slot="end" :checked="mode === 'count'" @ionChange="updateMode($event)">
+          {{ translate("Manual Count") }}
+        </ion-toggle>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <main>
+      <main :class="mode">
+        <template v-if="mode === 'scan'">
         <!-- Left Panel -->
         <div class="count-events">
           <ion-item class="scan">
@@ -163,6 +167,129 @@
             </ion-segment-content>
           </ion-segment-view>
         </div>
+        </template>
+        <!-- Pre Counted Items -->
+        <template v-else>
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>
+                {{ translate("Add Items") }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-searchbar ref="manualCountSearchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
+            <ion-item lines="none">
+              <ion-label>
+                {{ translate("Search for products by parent name, SKU or UPC") }}
+              </ion-label>
+            </ion-item>
+            <!-- Skeleton loader during search -->
+            <ion-item v-if="isSearching" lines="none">
+              <ion-thumbnail slot="start">
+                <ion-skeleton-text :animated="true"></ion-skeleton-text>
+              </ion-thumbnail>
+              <ion-label>
+                <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
+                <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
+              </ion-label>
+            </ion-item>
+            <!-- Search result -->
+            <ion-item v-else-if="searchedProducts.length > 0" lines="none">
+              <ion-thumbnail slot="start">
+                <Image :src="searchedProducts[0].mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                {{ useProductMaster().primaryId(searchedProducts[0]) }}
+                <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+              </ion-label>
+              <ion-button slot="end" fill="outline" @click="addProductInhandCountedItems(searchedProducts[0])">
+                <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
+                Add to count
+              </ion-button>
+            </ion-item>
+            <ion-item v-if="searchedProducts.length > 0" lines="none">
+              <ion-label>
+                <p>
+                  {{ translate('Press enter to add helper') }}
+                </p>
+              </ion-label>
+            </ion-item>
+            <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
+              <ion-label>
+                {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
+              </ion-label>
+            </ion-item>
+          </ion-card>
+          <ion-item lines="full" class="ion-margin-top">
+              <ion-select slot="start" v-model="optedVarianceReasonForHandCounted" label="Reason" label-placement="fixed" placeholder="Select" interface="popover">
+                <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
+                  {{ translate(reason.label) }}
+                </ion-select-option>
+              </ion-select>
+              <ion-select slot="end" v-model="optedActionForHandCounted" label="Action" label-placement="fixed" placeholder="Select" interface="popover">
+                <ion-select-option value="add">
+                  {{ translate("Add") }}
+                </ion-select-option>
+                <ion-select-option value="remove">
+                  {{ translate("Remove") }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+
+          <div class="counted-items-header" v-if="handCountedProducts.length > 0">
+            <h2>
+              {{ translate("Counted Items") }}
+            </h2>
+            <ion-button :disabled="handCountedProducts?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="logHandCountedItemVariances">
+              {{ translate("Log Variance") }}
+            </ion-button>
+          </div>
+          
+          <ion-list v-if="handCountedProducts.length > 0" class="hand-counted-items">
+            <ion-card v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
+              <div class="item ion-padding-end">
+                <ion-item class="product" lines="none">
+                  <ion-thumbnail slot="start">
+                    <img :src="product.mainImageUrl"/>
+                  </ion-thumbnail>
+                  <ion-label>
+                    {{ useProductMaster().primaryId(product) }}
+                    <p>{{ useProductMaster().secondaryId(product) }}</p>
+                  </ion-label>
+                </ion-item>
+                <div class="quantity">
+                  <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-item lines="full">
+                    <ion-input
+                      :ref="el => setQuantityInputRef(el, index)"
+                      @ionInput="onManualInputChange($event, product)"
+                      @keyup.enter="focusSearchBar"
+                      label="Qty"
+                      label-placement="stacked" 
+                      type="number" 
+                      min="0" 
+                      inputmode="numeric" 
+                      placeholder="0" 
+                      v-model.number="product.countedQuantity"
+                    ></ion-input>
+                  </ion-item>
+                  <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                    <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+              <div class="progress ion-padding">
+                <ion-label>
+                  {{ 'Current Stock: ' + (product.quantityOnHand || 0) }}
+                </ion-label>
+                <ion-button fill="clear" color="danger" aria-label="remove-item" @click="removeProduct(product)">
+                  <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-card>
+          </ion-list>
+        </template>
       </main>
     </ion-content>
     <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal" @ionModalDidPresent="focusMatchSearch">
@@ -214,6 +341,33 @@
         </ion-toolbar>
       </ion-footer>
     </ion-modal>
+
+    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button @click="closeSearchResultsModal">
+              <ion-icon slot="icon-only" :icon="closeOutline" />
+            </ion-button>
+          </ion-buttons>
+          <ion-title>{{ translate("Select Product") }}</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content>
+        <ion-list>
+          <ion-item button v-for="product in searchedProducts" :key="product.productId" @click="addProductInhandCountedItems(product)">
+            <ion-thumbnail slot="start">
+              <Image :src="product.mainImageUrl" />
+            </ion-thumbnail>
+            <ion-label>
+              {{ useProductMaster().primaryId(product) || product.productName }}
+              <p>{{ useProductMaster().secondaryId(product) }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ion-modal>
   </ion-page>
 </template>
 
@@ -221,8 +375,8 @@
 
 import { translate } from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
-import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSegmentView, IonSegmentContent, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, addOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline } from 'ionicons/icons';
+import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSegmentView, IonSegmentContent, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonProgressBar, IonSkeletonText, IonToggle, IonList, alertController } from '@ionic/vue';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, addOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, arrowBackOutline, closeCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
@@ -234,9 +388,15 @@ import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { useAuthStore } from '@/stores/authStore';
 import { Subscription, from } from 'rxjs';
-import { db } from '@/services/appInitializer';
 import { saveOutline } from 'ionicons/icons';
+import { nextTick } from 'vue';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
+
+const mode = ref<'scan' | 'count'>('scan');
+
+function updateMode(event: any) {
+  mode.value = event.detail.checked ? 'count' : 'scan';
+}
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isSearching = ref(false);
@@ -290,6 +450,14 @@ const isLogVarianceDisabled = ref(false);
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
+
+/* Manual/Pre-Counted Items Logic */
+const handCountedProducts = ref<any[]>([]);
+const manualCountSearchBar = ref();
+const quantityInputRefs = ref<any>({});
+const hasUnsavedProducts = computed(() =>
+  handCountedProducts.value.some(product => product.countedQuantity > 0)
+)
 
 onIonViewDidEnter(async () => {
   await getVarianceReasonEnums();
@@ -364,7 +532,10 @@ const varianceReasons = ref<Array<any>>([]);
 
 const optedVarianceReason = ref<string | null>(null);
 const optedAction = ref<string | null>(null);
+const optedVarianceReasonForHandCounted = ref<string | null>(null);
+const optedActionForHandCounted = ref<string | null>(null);
 const negateVariances = computed(() => optedAction.value === 'remove');
+const negateVariancesForHandCounted = computed(() => optedActionForHandCounted.value === 'remove');
 
 const selectedSegment = ref<'matched' | 'unmatched'>('matched');
 
@@ -540,6 +711,54 @@ async function saveMatchProduct() {
   }
 }
 
+async function logHandCountedItemVariances() {
+  if (optedActionForHandCounted.value === null) {
+    showToast(translate("Please select an action."));
+    return;
+  }
+  if (optedVarianceReasonForHandCounted.value === null) {
+    showToast(translate("Please select a variance reason."));
+    return;
+  }
+  try {
+
+    const reasonEnumId = optedVarianceReasonForHandCounted.value || 'VAR_MANUAL';
+
+    const varianceList = handCountedProducts.value
+      .map((item: any) => {
+        return {
+          inventoryItemId: item.inventoryItemId,
+          productId: item.productId,
+          facilityId: currentFacility.value.facilityId,
+          reasonEnumId,
+          quantity: negateVariancesForHandCounted.value ? item.countedQuantity * (-1) : item.countedQuantity,
+          comments: "Variance Logged from Cycle Count App"
+        };
+      });
+
+    const resp = await api({
+      url: 'inventory-cycle-count/recordVariance',
+      method: 'POST',
+      data: {
+        partyId: useUserProfile().getUserProfile?.partyId || '',
+        varianceList
+      }
+    })
+    
+    if (resp?.status === 200) {
+      showToast(translate("Variance logged successfully."));
+      handCountedProducts.value = []
+      optedActionForHandCounted.value = null
+      optedVarianceReasonForHandCounted.value = null
+    } else {
+      throw resp;
+    }
+  } catch (error) {
+    showToast(translate("Failed to log variance. Please try again."));
+    console.error("Error logging variance:", error);
+  }
+}
+
 async function logVariance() {
   if (optedAction.value === null) {
     showToast(translate("Please select an action."));
@@ -586,10 +805,96 @@ async function logVariance() {
     console.error("Error logging variance:", error);
   }
 }
+
+/* Pre Counted Items Methods */
+
+function incrementProductQuantity(product: any) {
+  product.countedQuantity++
+}
+
+function decrementProductQuantity(product: any) {
+  product.countedQuantity = Math.max(0, product.countedQuantity - 1)
+}
+
+function onhandCountedInputChange(event: CustomEvent, product: any) {
+  const value = Number(event.detail.value)
+  product.countedQuantity = isNaN(value) ? 0 : value
+}
+
+function setQuantityInputRef(el: any, index: number) {
+  if (el) {
+    quantityInputRefs.value[index] = el.$el ?? el;
+  }
+}
+
+async function focusQuantityInput(index: number) {
+  await nextTick()
+  setTimeout(async () => {
+    const target = quantityInputRefs.value[index];
+    const focusEl = target?.setFocus ? target : target?.querySelector?.('input')
+
+    if (focusEl?.setFocus) await focusEl.setFocus()
+    else if (focusEl?.focus) focusEl.focus()
+  }, 100);
+}
+
+
+function focusSearchBar() {
+  manualCountSearchBar.value?.$el?.setFocus()
+}
+
+function removeProduct(productToRemove: any) {
+  const index = handCountedProducts.value.indexOf(productToRemove);
+  if (index > -1) {
+    handCountedProducts.value.splice(index, 1);
+  }
+}
+
+async function handleEnterKey() {
+  const term = searchedProductString.value.trim()
+  if (!term) return
+
+  if (searchedProducts.value.length === 0) {
+    searchedProducts.value = await searchProducts(term);
+  }
+  if (searchedProducts.value.length > 0) {
+    await addProductInhandCountedItems(searchedProducts.value[0])
+  }
+}
+
+async function addProductInhandCountedItems(product: any) {
+  searchedProductString.value = ''
+  searchedProducts.value = []
+  isSearchResultsModalOpen.value = false  
+
+  try {
+    await setProductQoh(product)
+    handCountedProducts.value.push(product)
+  } catch (err) {
+    console.error('Error adding product:', err)
+  }
+  // Focus the quantity input for the newly added product as soon as it renders
+  await focusQuantityInput(handCountedProducts.value.length - 1);
+}
+
+async function setProductQoh(product: any) {
+  try {
+    const facility: any = useProductStore().getCurrentFacility
+    const resp = await useProductMaster().getProductStock({
+      productId: product.productId,
+      facilityId: facility.facilityId,
+    })
+
+    product.quantityOnHand = resp?.data?.qoh || 0
+  } catch (err) {
+    console.error('Failed to fetch QOH:', err)
+  }
+}
+
 </script>
 <style scoped>
 
-main {
+main.scan {
   /* max-width: 720px;  Removed max-width to allow full split pane usage */
   margin-inline: auto;
   display: grid;
@@ -597,6 +902,12 @@ main {
   justify-content: unset;
   align-items: stretch;
   height: 100%;
+}
+
+main.count {
+  max-width: 768px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .count-events {
@@ -690,4 +1001,47 @@ main {
 .impact ion-radio-group ion-radio:hover {
 }
 
+.hand-counted-items {
+  .item {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .quantity {
+      display: flex;
+    }
+  }
+
+  .progress {
+    display: flex;
+    gap: var(--spacer-sm);
+    align-items: center;
+    border-top: 1px solid var(--ion-color-medium);
+
+    ion-label {
+      flex: 1 0 max-content;
+    }
+  }
+}
+
+.counted-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  padding: var(--spacer-sm);
+  border-bottom: 1px solid var(--ion-color-medium);
+}
+
+.hand-counted-empty-state {
+  ion-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer-sm);
+  }
+
+  p {
+    margin: 0;
+  }
+}
 </style>
