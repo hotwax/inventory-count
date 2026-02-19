@@ -104,7 +104,7 @@
                     {{ translate("Variance Qty") }}
                   </ion-label>
                   <ion-text slot="end">
-                    {{ optedAction === 'add' ? '+' : '-' }}{{ inventoryAdjustment.quantity }}
+                    {{ optedAction !== null ? optedAction === 'add' ? '+' : '-' : '' }}{{ inventoryAdjustment.quantity }}
                   </ion-text>
                 </ion-item>
               </ion-card>
@@ -239,7 +239,7 @@
             <h2>
               {{ translate("Counted Items") }}
             </h2>
-            <ion-button :disabled="handCountedProducts?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="logHandCountedItemVariances">
+            <ion-button :disabled="handCountedProducts?.length === 0 || hasProductWithZeroQuantity" fill="outline" color="primary" @click="logHandCountedItemVariances">
               {{ translate("Log Variance") }}
             </ion-button>
           </div>
@@ -263,7 +263,7 @@
                   <ion-item lines="full">
                     <ion-input
                       :ref="el => setQuantityInputRef(el, index)"
-                      @ionInput="onManualInputChange($event, product)"
+                      @ionInput="handCountedItemManualInputChange($event, product)"
                       @keyup.enter="focusSearchBar"
                       label="Qty"
                       label-placement="stacked" 
@@ -455,8 +455,8 @@ const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions
 const handCountedProducts = ref<any[]>([]);
 const manualCountSearchBar = ref();
 const quantityInputRefs = ref<any>({});
-const hasUnsavedProducts = computed(() =>
-  handCountedProducts.value.some(product => product.countedQuantity > 0)
+const hasProductWithZeroQuantity = computed(() =>
+  handCountedProducts.value.some((product: any) => !product.countedQuantity || product.countedQuantity === 0)
 )
 
 onIonViewDidEnter(async () => {
@@ -569,7 +569,7 @@ function getScanContext(item: any) {
   if (unmatchedIndex === -1) return {}
 
   //How many scans ago = index itself since list is newest→oldest
-  const scansAgo = unmatchedIndex + 1
+  const scansAgo = unmatchedIndex
 
   // Find previous good scan (relative newer scan)
   let previousGood = null
@@ -614,7 +614,15 @@ function getScanContext(item: any) {
   }
 }
 
-
+async function handCountedItemManualInputChange(event: any, item: any) {
+  const inputValue = event.target.value;
+  const numericValue = parseInt(inputValue, 10);
+  if (!isNaN(numericValue) && numericValue >= 0) {
+    item.countedQuantity = numericValue;
+  } else {
+    item.countedQuantity = 0;
+  }
+}
 
 let searchTimeoutId: any;
 
