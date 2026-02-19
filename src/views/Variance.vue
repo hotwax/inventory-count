@@ -74,7 +74,7 @@
                 </ion-select>
               </ion-item>
               <div class="action-segment-wrapper">
-                <ion-segment :value="optedAction || 'add'" @ionChange="optedAction = ($event.detail.value as any)" mode="ios">
+                <ion-segment :value="optedAction" @ionChange="optedAction = ($event.detail.value as any)" mode="ios">
                   <ion-segment-button value="add">
                     <ion-label>{{ translate("Add") }}</ion-label>
                   </ion-segment-button>
@@ -270,7 +270,7 @@
               </ion-select>
             </ion-item>
             <div class="action-segment-wrapper">
-              <ion-segment :value="optedActionForHandCounted || 'add'" @ionChange="optedActionForHandCounted = ($event.detail.value as any)" mode="ios">
+              <ion-segment :value="optedActionForHandCounted" @ionChange="optedActionForHandCounted = ($event.detail.value as any)" mode="ios">
                 <ion-segment-button value="add">
                   <ion-label>{{ translate("Add") }}</ion-label>
                 </ion-segment-button>
@@ -288,7 +288,7 @@
                 <p class="ion-no-margin">{{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? translate("unit") : translate("units") }} {{ translate("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? translate("product") : translate("products") }}</p>
               </ion-text>
             </div>
-            <ion-button :disabled="handCountedProducts?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="logHandCountedItemVariances">
+            <ion-button :disabled="handCountedProducts?.length === 0 || hasProductWithZeroQuantity" fill="outline" color="primary" @click="logHandCountedItemVariances">
               {{ translate("Log Variance") }}
             </ion-button>
           </div>
@@ -526,7 +526,6 @@ const quantityInputRefs = ref<any>({});
 const hasProductWithZeroQuantity = computed(() =>
   handCountedProducts.value.some((product: any) => !product.countedQuantity || product.countedQuantity === 0)
 )
-const hasUnsavedProducts = computed(() => handCountedProducts.value.length > 0)
 
 const totalVarianceUnits = computed(() => {
   if (mode.value === 'scan') {
@@ -597,7 +596,7 @@ onIonViewDidLeave(async () => {
 
   await unscheduleWorker();
 
-  useProductMaster().clearVarianceLogsAndAdjustments();
+  // useProductMaster().clearVarianceLogsAndAdjustments();
 
 })
 
@@ -616,9 +615,9 @@ async function unscheduleWorker() {
 const varianceReasons = ref<Array<any>>([]);
 
 const optedVarianceReason = ref<string | null>(null);
-const optedAction = ref<string | null>(null);
+const optedAction = ref<string>('add');
 const optedVarianceReasonForHandCounted = ref<string | null>(null);
-const optedActionForHandCounted = ref<string | null>(null);
+const optedActionForHandCounted = ref<string>('add');
 const negateVariances = computed(() => optedAction.value === 'remove');
 const negateVariancesForHandCounted = computed(() => optedActionForHandCounted.value === 'remove');
 
@@ -841,7 +840,7 @@ async function logHandCountedItemVariances() {
     if (resp?.status === 200) {
       showToast(translate("Variance logged successfully."));
       handCountedProducts.value = []
-      optedActionForHandCounted.value = null
+      optedActionForHandCounted.value = 'add'
       optedVarianceReasonForHandCounted.value = null
     } else {
       throw resp;
@@ -907,11 +906,6 @@ function incrementProductQuantity(product: any) {
 
 function decrementProductQuantity(product: any) {
   product.countedQuantity = Math.max(0, product.countedQuantity - 1)
-}
-
-function onManualInputChange(event: any, product: any) {
-  const value = Number(event.detail.value)
-  product.countedQuantity = isNaN(value) ? 0 : value
 }
 
 function setQuantityInputRef(el: any, index: number) {
@@ -998,7 +992,7 @@ async function confirmRemoveAdjustment(adjustment: any) {
       {
         text: translate("Remove"),
         handler: async () => {
-          await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid);
+          await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid, adjustment.scannedValue);
           showToast(translate("Record removed"));
         }
       }

@@ -618,8 +618,13 @@ const clearVarianceLogsAndAdjustments = async () => {
   await db.inventoryAdjustments.clear();
 }
 
-const removeInventoryAdjustment = async (facilityId: string, uuid: string) => {
-  await db.inventoryAdjustments.delete([facilityId, uuid]);
+const removeInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
+  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
+    await db.inventoryAdjustments.delete([facilityId, uuid]);
+    if (scannedValue) {
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+    }
+  });
 }
 
 const removeUnmatchedInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
