@@ -292,9 +292,6 @@
               {{ translate("Log Variance") }}
             </ion-button>
           </div>
-              {{ translate("Log Variance") }}
-            </ion-button>
-          </div>
           
           <ion-list v-if="handCountedProducts.length > 0" class="hand-counted-items">
             <ion-card v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
