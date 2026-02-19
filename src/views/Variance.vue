@@ -95,26 +95,14 @@
                     {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
                   </ion-text>
                 </ion-item>
-                <div class="quantity">
-                  <!-- <ion-button fill="clear" color="medium" aria-label="decrease" @click="inventoryAdjustment.quantity = Math.max(0, (inventoryAdjustment.quantity || 0) - 1)">
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button> -->
-                    <ion-input
-                      @ionInput="onManualInputChange($event, inventoryAdjustment)"
-                      label="Qty"
-                      fill="outline"
-                      label-placement="stacked" 
-                      type="number" 
-                      min="0" 
-                      inputmode="numeric" 
-                      placeholder="0" 
-                      v-model.number="inventoryAdjustment.quantity"
-                      :disabled="true"
-                    ></ion-input>
-                  <!-- <ion-button fill="clear" color="medium" aria-label="increase" @click="inventoryAdjustment.quantity = (inventoryAdjustment.quantity || 0) + 1">
-                    <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button> -->
-                </div>
+                <ion-item lines="none">
+                  <ion-label>
+                    {{ translate("Variance Qty") }}
+                  </ion-label>
+                  <ion-text slot="end">
+                    {{ optedAction === 'add' ? '+' : '-' }}{{ inventoryAdjustment.quantity }}
+                  </ion-text>
+                </ion-item>
               </ion-card>
               <div class="ion-text-center">
                 <ion-button v-if="inventoryAdjustments.length" @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled">
@@ -492,15 +480,6 @@ async function searchProducts(queryString: string): Promise<any> {
   return [];
 }
 
-async function onManualInputChange(event: any, item: any) {
-  const inputValue = event.target.value;
-  const numericValue = parseInt(inputValue, 10);
-  if (!isNaN(numericValue) && numericValue >= 0) {
-    item.quantity = numericValue;
-  } else {
-    item.quantity = 0;
-  }
-}
 
 function openSearchResultsModal() {
   isSearchResultsModalOpen.value = true
@@ -695,16 +674,6 @@ main {
 }
 
 
-.quantity {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: var(--spacer-base);
-}
-.quantity ion-input {
-  width: 30ch;
-  text-align: center;
-}
 
 .impact ion-radio-group {
   display: flex;
