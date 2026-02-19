@@ -1,0 +1,141 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e5]:
+  - generic [ref=e8]:
+    - banner [ref=e9]:
+      - generic [ref=e14]:
+        - generic: Settings
+    - main [ref=e15]:
+      - generic [ref=e17]:
+        - generic:
+          - generic [ref=e19]:
+            - generic:
+              - generic [ref=e23]:
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading [level=3]
+                      - heading [level=2]
+              - button "Logout" [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]:
+                  - generic: Logout
+              - button "Go to Launchpad" [ref=e28] [cursor=pointer]:
+                - generic [ref=e29]:
+                  - generic: Go to Launchpad
+                  - generic:
+                    - img:
+                      - generic:
+                        - img
+          - heading "OMS" [level=1] [ref=e31]
+          - generic [ref=e33]:
+            - generic:
+              - generic [ref=e34]:
+                - generic:
+                  - heading "OMS instance" [level=3] [ref=e35]:
+                    - generic: OMS instance
+                  - heading "dev-maarg" [level=2] [ref=e36]:
+                    - generic: dev-maarg
+              - generic [ref=e37]: This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.
+              - generic:
+                - button "Go to OMS" [disabled]:
+                  - generic:
+                    - generic: Go to OMS
+                    - generic:
+                      - img:
+                        - generic:
+                          - img
+          - separator [ref=e38]
+          - generic [ref=e39]:
+            - 'heading "App Version: scan-variance-logs-and-aggregate-26148ed" [level=1] [ref=e40]':
+              - text: App
+              - paragraph [ref=e41]: "Version: scan-variance-logs-and-aggregate-26148ed"
+            - paragraph [ref=e42]: "Built: Feb 19, 2026, 12:10 AM"
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic:
+                - heading "Timezone" [level=2] [ref=e46]:
+                  - generic: Timezone
+                - generic [ref=e47]: The timezone you select is used to ensure automations you schedule are always accurate to the time you select.
+                - generic [ref=e52]:
+                  - paragraph [ref=e53]: Browser TimeZone
+                  - text: Asia/Tokyo
+                  - paragraph [ref=e54]: 8:05 PM GMT+9
+                - generic [ref=e57]:
+                  - generic [ref=e59]:
+                    - paragraph [ref=e60]: Selected TimeZone
+                    - paragraph [ref=e61]: 8:05 PM GMT+9
+                  - button "Change" [ref=e63] [cursor=pointer]:
+                    - generic [ref=e64]:
+                      - generic: Change
+            - generic [ref=e65]:
+              - generic:
+                - heading "Force scan" [level=2] [ref=e67]:
+                  - generic: Force scan
+                - generic [ref=e68]:
+                  - text: Require inventory to be scanned when counting instead of manually entering values.
+                  - text: If the identifier is not found, the scan will default to using the internal name.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Barcode Identifier
+                              - generic:
+                                - generic:
+                                  - generic: Select
+                                  - button "Barcode Identifier, Select" [disabled]
+                                - img:
+                                  - generic:
+                                    - img
+            - generic [ref=e69]:
+              - generic:
+                - heading "Scanner pairing guide" [level=2] [ref=e71]:
+                  - generic: Scanner pairing guide
+                - generic [ref=e72]: Quick steps to put Socket Mobile S7xx scanners in iOS Basic Keyboard (HID) mode and pair to your iPad.
+                - button "Pairing guide" [ref=e74] [cursor=pointer]:
+                  - generic [ref=e75]:
+                    - generic:
+                      - img:
+                        - generic:
+                          - img
+                    - generic: Pairing guide
+            - generic [ref=e76]:
+              - generic:
+                - heading "Diagnostics" [level=2] [ref=e78]:
+                  - generic: Diagnostics
+                - generic [ref=e79]:
+                  - paragraph [ref=e80]: Run diagnostics to validate your device is correctly configured.
+                  - paragraph [ref=e81]: Clear local inventory data to remove cached products, identifications, count records, and scans from this device.
+                - button "Run diagnostics" [ref=e83] [cursor=pointer]:
+                  - generic [ref=e84]:
+                    - generic:
+                      - img:
+                        - generic:
+                          - img
+                    - generic [ref=e85]: Run diagnostics
+                - button "Clear local inventory data" [ref=e87] [cursor=pointer]:
+                  - generic [ref=e88]:
+                    - generic:
+                      - img:
+                        - generic:
+                          - img
+                    - generic [ref=e89]: Clear local inventory data
+  - tablist [ref=e90]:
+    - generic:
+      - tab "Counts" [ref=e92] [cursor=pointer]:
+        - generic [ref=e93]:
+          - generic:
+            - img [ref=e94]:
+              - img [ref=e96]
+            - generic [ref=e99]: Counts
+      - tab "Settings" [selected] [ref=e101] [cursor=pointer]:
+        - generic [ref=e102]:
+          - generic:
+            - img [ref=e103]:
+              - img [ref=e105]
+            - generic [ref=e107]: Settings
+```
