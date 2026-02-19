@@ -537,10 +537,13 @@ const totalVarianceUnits = computed(() => {
 
 const totalVarianceProducts = computed(() => {
   if (mode.value === 'scan') {
-    return inventoryAdjustments.value.length;
-  } else {
-    return handCountedProducts.value.filter(item => item.countedQuantity > 0).length;
+    const scanProductIds = inventoryAdjustments.value.map((item: any) => item.productId);
+    return new Set([...scanProductIds]).size;
   }
+  const manualProductIds = handCountedProducts.value
+    .filter((item: any) => item.countedQuantity > 0)
+    .map((item: any) => item.productId);
+  return new Set([...manualProductIds]).size;
 });
 
 onIonViewDidEnter(async () => {
