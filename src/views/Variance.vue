@@ -25,7 +25,7 @@
 
           <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top">
             <ion-label>
-              {{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}
+              {{ translate("Scanned items will appear here. Focus your scanner to start adding items to variance.") }}
             </ion-label>
           </ion-item>
 
@@ -82,44 +82,62 @@
             <ion-segment-button value="unmatched">
               <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
             </ion-segment-button>
+            <ion-button v-if="inventoryAdjustments.length > 0 || unmatchedItems.length > 0" fill="clear" color="danger" @click="confirmClearAll" class="clear-all">
+              <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+            </ion-button>
           </ion-segment>
+
 
           <ion-segment-view>
             <ion-segment-content v-if="selectedSegment === 'matched'">
-              <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
-                <ion-item lines="full">
-                  <ion-thumbnail slot="start">
-                    <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
-                  </ion-thumbnail>
+              <template v-if="inventoryAdjustments.length === 0">
+                <div class="empty-state ion-padding ion-text-center">
                   <ion-label>
-                    {{ useProductMaster().primaryId(inventoryAdjustment.product) }}
-                    <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
+                    <h2 class="ion-margin-bottom">{{ translate("No items scanned") }}</h2>
+                    <p>{{ translate("Scan items to adjust their inventory. You can select reasons like 'Damage' to remove them from your sellable inventory.") }}</p>
                   </ion-label>
-                  <ion-text slot="end">
-                    {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
-                  </ion-text>
-                </ion-item>
-                <ion-item lines="none">
-                  <ion-label>
-                    {{ translate("Variance Qty") }}
-                  </ion-label>
-                  <ion-text slot="end">
-                    {{ optedAction !== null ? optedAction === 'add' ? '+' : '-' : '' }}{{ inventoryAdjustment.quantity }}
-                  </ion-text>
-                </ion-item>
-              </ion-card>
-              <div class="ion-text-center">
-                <ion-button v-if="inventoryAdjustments.length" @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled">
-                  {{ translate("Log Variance") }}
-                </ion-button>
-              </div>
+                </div>
+              </template>
+              <template v-else>
+                <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
+                  <ion-item lines="full">
+                    <ion-thumbnail slot="start">
+                      <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
+                    </ion-thumbnail>
+                    <ion-label>
+                      {{ useProductMaster().primaryId(inventoryAdjustment.product) }}
+                      <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
+                    </ion-label>
+                    <ion-text slot="end">
+                      {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
+                    </ion-text>
+                    <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveAdjustment(inventoryAdjustment)">
+                      <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </ion-item>
+                  <ion-item lines="none">
+                    <ion-label>
+                      {{ translate("Variance Qty") }}
+                    </ion-label>
+                    <ion-text slot="end">
+                      {{ optedAction !== null ? optedAction === 'add' ? '+' : '-' : '' }}{{ inventoryAdjustment.quantity }}
+                    </ion-text>
+                  </ion-item>
+                </ion-card>
+
+                <div class="ion-text-center">
+                  <ion-button v-if="inventoryAdjustments.length" @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled || inventoryAdjustments.length === 0">
+                    {{ translate("Log Variance") }}
+                  </ion-button>
+                </div>
+              </template>
             </ion-segment-content>
             <ion-segment-content v-if="selectedSegment === 'unmatched'">
               <template v-if="unmatchedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center">
                   <ion-label>
                     <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
-                    <p>{{ translate("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
+                    <p>{{ translate("All scanned items have been matched to products in your catalog. If you scan an item that isn't found, it will appear here for matching.") }}</p>
                   </ion-label>
                 </div>
               </template>
@@ -135,7 +153,11 @@
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
+                    <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveUnmatchedItem(item)">
+                      <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+                    </ion-button>
                   </ion-item>
+
                   <!-- Previous good scan -->
                   <ion-item v-if="getScanContext(item).previousGood">
                     <ion-thumbnail slot="start">
@@ -376,7 +398,7 @@
 import { translate } from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSegmentView, IonSegmentContent, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonProgressBar, IonSkeletonText, IonToggle, IonList, alertController } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, addOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, arrowBackOutline, closeCircleOutline } from 'ionicons/icons';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, addOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, arrowBackOutline, closeCircleOutline, trashOutline, refreshOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
@@ -824,7 +846,7 @@ function decrementProductQuantity(product: any) {
   product.countedQuantity = Math.max(0, product.countedQuantity - 1)
 }
 
-function onhandCountedInputChange(event: CustomEvent, product: any) {
+function onManualInputChange(event: any, product: any) {
   const value = Number(event.detail.value)
   product.countedQuantity = isNaN(value) ? 0 : value
 }
@@ -899,7 +921,74 @@ async function setProductQoh(product: any) {
   }
 }
 
+async function confirmRemoveAdjustment(adjustment: any) {
+
+  const alert = await alertController.create({
+    header: translate("Remove record?"),
+    message: translate("This record will be removed from your scanning session and will no longer be included in the variance calculation. This action cannot be undone."),
+    buttons: [
+
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Remove"),
+        handler: async () => {
+          await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid);
+          showToast(translate("Record removed"));
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
+
+async function confirmRemoveUnmatchedItem(item: any) {
+
+  const alert = await alertController.create({
+    header: translate("Remove scan"),
+    message: translate("Are you sure you want to remove this record?"),
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Remove"),
+        handler: async () => {
+          await useProductMaster().removeUnmatchedInventoryAdjustment(item.facilityId, item.uuid, item.scannedValue);
+          showToast(translate("Record removed"));
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
+
+async function confirmClearAll() {
+  const alert = await alertController.create({
+    header: translate("Clear all"),
+    message: translate("Are you sure you want to remove all records? This action cannot be undone."),
+    buttons: [
+      {
+        text: translate("Cancel"),
+        role: "cancel",
+      },
+      {
+        text: translate("Clear data"),
+        handler: async () => {
+          await useProductMaster().clearVarianceLogsAndAdjustments();
+          showToast(translate("All records cleared"));
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
+
 </script>
+
 <style scoped>
 
 main.scan {
@@ -1052,4 +1141,10 @@ main.count {
     margin: 0;
   }
 }
+
+.clear-all {
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
 </style>
+
