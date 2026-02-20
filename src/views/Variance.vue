@@ -40,7 +40,7 @@
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item>
                   <div slot="start" class="img-preview">
-                    <ion-thumbnail>
+                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
                       <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                     </ion-thumbnail>
                       <ion-badge class="qty-badge" color="medium">
@@ -49,18 +49,25 @@
                   </div>
                   <ion-label>
                     {{ item.scannedValue }}
-                    <p class="clickable-time">{{ timeAgo(item.createdAt) }}</p>
+                    <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <!-- <ion-button fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                  <ion-button v-if="item.aggApplied === 1 && !negatedVarianceLogIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>-->
+                  </ion-button>
                 </ion-item>
               </DynamicScrollerItem>
             </template>
           </DynamicScroller>
+          <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
+            <ion-content>
+              <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
+                <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+              </ion-item>
+            </ion-content>
+          </ion-popover>
           </div>
         </div>
         <div class="count-dashboard">
@@ -125,7 +132,7 @@
                 <template v-else>
                   <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
                     <ion-item lines="full">
-                      <ion-thumbnail slot="start">
+                      <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(inventoryAdjustment.product?.mainImageUrl)">
                         <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
                       </ion-thumbnail>
                       <ion-label>
@@ -297,7 +304,7 @@
             <ion-card v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
               <div class="item ion-padding-end">
                 <ion-item class="product" lines="none">
-                  <ion-thumbnail slot="start">
+                  <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(product.mainImageUrl)">
                     <img :src="product.mainImageUrl"/>
                   </ion-thumbnail>
                   <ion-label>
@@ -417,6 +424,12 @@
         </ion-list>
       </ion-content>
     </ion-modal>
+    <ion-modal :is-open="isImageModalOpen" @didDismiss="isImageModalOpen = false">
+        <ion-content class="ion-padding image-preview-modal">
+          <ion-img :src="largeImage" />
+        </ion-content>
+      </ion-modal>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
 
@@ -424,8 +437,8 @@
 
 import { translate } from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
-import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonProgressBar, IonSkeletonText, IonToggle, IonList, alertController } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, addOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, arrowBackOutline, closeCircleOutline, trashOutline, refreshOutline } from 'ionicons/icons';
+import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref } from 'vue';
 import Image from '@/components/Image.vue';
@@ -480,6 +493,16 @@ const inventoryAdjustments = ref<any[]>([]);
 const unmatchedItems = ref<any[]>([]);
 const unmatchedCount = computed(() => unmatchedItems.value.length);
 
+const isImageModalOpen = ref(false)
+const largeImage = ref("")
+
+const showScanAction = ref(false)
+const selectedScan = ref<any>(null)
+const popoverTrigger = ref('')
+const showRemoveConfirmAlert = ref(false)
+const removeTargetScan = ref<any>(null)
+const removeConfirmMessage = ref('')
+
 /* Stub Methods for Count Events */
 const handleScan = () => {
   if (scannedValue.value.trim().length === 0) {
@@ -504,7 +527,80 @@ const handleScannerBlur = () => {
   isScannerActive.value = false;
 };
 const clearSearchResults = () => { console.log('clearSearchResults'); };
-const openScanActionMenu = (item: any) => { console.log('openScanActionMenu', item); };
+
+const negatedVarianceLogIds = computed(() => {
+  return new Set(
+    events.value
+      .map((event: any) => event.negatedVarianceLogId)
+      .filter(id => id != null && id !== '')
+  )
+})
+
+const openScanActionMenu = (item: any) => {
+  selectedScan.value = item
+  popoverTrigger.value = item.createdAt
+  showScanAction.value = true
+}
+
+const confirmRemoveScan = (item: any) => {
+  removeTargetScan.value = item
+  showScanAction.value = false
+
+  const scannedValue = item.scannedValue
+  const qty = item.quantity
+
+  removeConfirmMessage.value = `
+    ${translate('Scanned Barcode')}: ${scannedValue}<br/>
+    ${translate('Quantity')}: <b>${qty}</b><br/><br/>
+    ${translate('Would you like to remove this scan?')}
+  `
+
+  showRemoveConfirmAlert.value = true
+}
+
+const negateSingleScan = async (item: any) => {
+  try {
+    await useProductMaster().addVarianceLog(
+      item.scannedValue,
+      -Math.abs(item.quantity || 1),
+      currentFacility.value.facilityId,
+      item.productId,
+      item.id
+    )
+    showToast(translate('Scan removed'))
+  } catch (err) {
+    console.error(err)
+    showToast(translate('Failed to remove scan'))
+  } finally {
+    resetRemoveConfirm()
+  }
+}
+
+const removeConfirmButtons = [
+  {
+    text: translate('Cancel'),
+    role: 'cancel'
+  },
+  {
+    text: translate('Remove'),
+    handler: async () => {
+      await negateSingleScan(removeTargetScan.value)
+    }
+  }
+]
+
+const resetRemoveConfirm = () => {
+  showRemoveConfirmAlert.value = false
+  removeTargetScan.value = null
+  removeConfirmMessage.value = ''
+}
+
+function openImagePreview(src: string) {
+  if (!src) return
+  largeImage.value = src
+  isImageModalOpen.value = true
+}
+
 const timeAgo = (date: number) => DateTime.fromMillis(Number(date)).toRelative();
 let aggregationWorker: Worker | null = null
 const subscriptions: Subscription[] = [];

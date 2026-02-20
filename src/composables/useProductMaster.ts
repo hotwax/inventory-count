@@ -551,7 +551,7 @@ const getProductQoh = async (
   return rec ? rec.quantityOnHandTotal : null
 }
 
-const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: string, productId?: string) => {
+const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: string, productId?: string, negatedVarianceLogId?: number) => {
   const varianceLog: VarianceLogs = {
     scannedValue: scannedValue,
     quantity: quantity,
@@ -559,6 +559,9 @@ const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: st
     facilityId: facilityId,
     aggApplied: 0,
     createdAt: DateTime.now().toMillis()
+  }
+  if (negatedVarianceLogId) {
+    varianceLog.negatedVarianceLogId = negatedVarianceLogId;
   }
   await db.varianceLogs.add(varianceLog)
 }

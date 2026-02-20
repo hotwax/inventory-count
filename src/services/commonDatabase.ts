@@ -51,6 +51,7 @@ export interface ScanEvent {
 
 export interface VarianceLogs {
   id?: number
+  negatedVarianceLogId?: number | null
   scannedValue?: string
   productId: string | null
   facilityId: string | null
