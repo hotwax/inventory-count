@@ -235,16 +235,21 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 }
 
 const getProductStock = async (productId: string, context: any): Promise<any> => {
-  return await workerApi({
-    baseURL: context.maargUrl,
-    headers: {
-      'Authorization': `Bearer ${context.token}`,
-      'Content-Type': 'application/json'
-    },
-    url: 'poorti/getInventoryAvailableByFacility',
-    method: 'GET',
-    params: { productId: productId, facilityId: context.facilityId }
-  })
+  try {
+    return await workerApi({
+      baseURL: context.maargUrl,
+      headers: {
+        'Authorization': `Bearer ${context.token}`,
+        'Content-Type': 'application/json'
+      },
+      url: 'poorti/getInventoryAvailableByFacility',
+      method: 'GET',
+      params: { productId: productId, facilityId: context.facilityId }
+    })
+  } catch (error) {
+    console.error(`[Worker] Failed to get stock for ${productId}:`, error);
+    return null;
+  }
 }
 
 async function aggregateVarianceLogs(context: any) {

@@ -504,6 +504,9 @@ const removeTargetScan = ref<any>(null)
 const removeConfirmMessage = ref('')
 
 /* Stub Methods for Count Events */
+
+const aggregationInterval = 5000;
+
 const handleScan = () => {
   if (scannedValue.value.trim().length === 0) {
     showToast(translate("Please enter a barcode"));
@@ -515,7 +518,7 @@ const handleScan = () => {
   isLogVarianceDisabled.value = true;
   setTimeout(() => {
     isLogVarianceDisabled.value = false;
-  }, 5000);
+  }, aggregationInterval);
  };
 const handleStartOrFocus = () => { 
   barcodeInput.value.$el.setFocus();
@@ -676,7 +679,7 @@ onIonViewDidEnter(async () => {
   aggregationWorker.postMessage({
     type: 'scheduleVarianceAggregation',
     payload: {
-      intervalMs: 5000,
+      intervalMs: aggregationInterval,
       context: {
         omsUrl: useAuthStore().getOmsRedirectionUrl,
         omsInstance: useAuthStore().getOMS,
@@ -903,17 +906,17 @@ async function saveMatchProduct() {
 }
 
 async function logHandCountedItemVariances() {
-  if (optedActionForHandCounted.value === null) {
+  if (!optedActionForHandCounted.value) {
     showToast(translate("Please select an action."));
     return;
   }
-  if (optedVarianceReasonForHandCounted.value === null) {
+  if (!optedVarianceReasonForHandCounted.value) {
     showToast(translate("Please select a variance reason."));
     return;
   }
   try {
 
-    const reasonEnumId = optedVarianceReasonForHandCounted.value || 'VAR_MANUAL';
+    const reasonEnumId = optedVarianceReasonForHandCounted.value;
 
     const varianceList = handCountedProducts.value
       .map((item: any) => {
@@ -951,17 +954,17 @@ async function logHandCountedItemVariances() {
 }
 
 async function logVariance() {
-  if (optedAction.value === null) {
+  if (!optedAction.value) {
     showToast(translate("Please select an action."));
     return;
   }
-  if (optedVarianceReason.value === null) {
+  if (!optedVarianceReason.value) {
     showToast(translate("Please select a variance reason."));
     return;
   }
   try {
 
-    const reasonEnumId = optedVarianceReason.value || 'VAR_MANUAL';
+    const reasonEnumId = optedVarianceReason.value;
 
     const varianceList = inventoryAdjustments.value
       .map((item: any) => {
