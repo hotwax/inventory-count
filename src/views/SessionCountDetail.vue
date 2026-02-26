@@ -69,7 +69,7 @@
           </ion-popover>
           </div>
 
-          <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
+          <ion-card v-if="!isDirected" class="add-hand-counted" :disabled="!isSessionMutable" button
             @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)">
             <ion-item lines="none">
               <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
@@ -250,6 +250,10 @@
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
                         <ion-note slot="end" v-if="showQoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
+                        <ion-button slot="end" fill="outline" :disabled="!isSessionMutable" @click="openCountItemAlert(item)">
+                          <ion-icon :icon="addOutline" slot="start"></ion-icon>
+                          {{ translate("Add Count") }}
+                        </ion-button>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -574,7 +578,7 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave, alertController } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -1637,6 +1641,54 @@ function resetRemoveConfirm() {
   removeConfirmMessage.value = ''
 }
 
+async function openCountItemAlert(item: any) {
+  const alert = await alertController.create({
+    header: translate('Add Count'),
+    inputs: [
+      {
+        name: 'quantity',
+        type: 'number',
+        placeholder: translate('Enter quantity'),
+        min: 0,
+        value: 0
+      }
+    ],
+    buttons: [
+      {
+        text: translate('Cancel'),
+        role: 'cancel'
+      },
+      {
+        text: translate('Save'),
+        handler: async (data) => {
+          const quantity = parseInt(data.quantity, 10)
+          if (isNaN(quantity) || quantity <= 0) {
+            showToast(translate('Please enter a valid quantity'))
+            return false
+          }
+          try {
+            await useInventoryCountImport().recordScan({
+              inventoryCountImportId: props.inventoryCountImportId,
+              productId: item.productId,
+              productIdentifier: await useProductStore().getProductIdentificationValue(
+                item.productId,
+                useProductStore().getProductIdentificationPref.primaryId
+              ),
+              quantity: quantity
+            })
+            showToast(translate('Count saved successfully'))
+          } catch (err) {
+            console.error('Error saving count:', err)
+            showToast(translate('Failed to save count'))
+            return false
+          }
+        }
+      }
+    ]
+  })
+  await alert.present()
+}
+
 </script>
 
 <style scoped>
@@ -1801,4 +1853,8 @@ ion-segment-view {
   font-size: 10px;
 }
 
+ion-note {
+  align-self: center;
+  padding: 0;
+}
 </style>
