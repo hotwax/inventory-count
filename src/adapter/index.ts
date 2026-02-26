@@ -689,6 +689,27 @@ const updateSecurityGroupPermission = async (payload: {
   });
 }
 
+async function fetchShopifyShopLocation(payload: {
+  shopifyLocationId: string,
+  pageSize: number
+}): Promise<any> {
+  try {
+    const resp = await api({
+      url: "oms/shopifyShops/locations",
+      method: "GET",
+      params: payload
+    }) as any;
+
+    return Promise.resolve(resp.data[0]?.facilityId)
+  } catch(error) {
+    return Promise.reject({
+      code: "error",
+      message: "Failed to fetch location information",
+      serverResponse: error
+    })
+  }
+}
+
 export {
   createSecurityGroupPermission,
   getProfile,
@@ -709,5 +730,6 @@ export {
   fetchFacilities,
   fetchFacilitiesByParty,
   fetchFacilitiesByGroup,
+  fetchShopifyShopLocation,
   updateSecurityGroupPermission
 }
