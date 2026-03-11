@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 import { IonLabel, IonProgressBar, IonNote } from '@ionic/vue'
-import { computed, defineProps } from 'vue'
+import { computed } from 'vue'
 import { translate } from '@/i18n'
 
 const props = defineProps({

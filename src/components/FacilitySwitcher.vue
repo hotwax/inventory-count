@@ -75,7 +75,6 @@ import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
 import { computed, ref } from 'vue';
 import { translate } from '@/i18n';
-import { defineProps } from "vue";
 import { useAuthStore } from '@/stores/authStore';
 
 const productStore = useProductStore();
