@@ -1,7 +1,7 @@
 <template>
-  <figure>
-    <img class="light" src="../assets/images/LogoLight.png"/>
-    <img class="dark" src="../assets/images/LogoDark.png"/>
+  <figure data-testid="logo-container">
+    <img class="light" src="../assets/images/LogoLight.png" data-testid="logo-light"/>
+    <img class="dark" src="../assets/images/LogoDark.png" data-testid="logo-dark"/>
   </figure>
 </template>
 

@@ -2,8 +2,8 @@
   <ion-page>
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
-      <ion-tab-bar slot="bottom">
-        <ion-tab-button tab="orders" @click="$router.push('/tabs/count')" href="/tabs/count">
+      <ion-tab-bar slot="bottom" data-testid="tabs-bar">
+        <ion-tab-button tab="orders" @click="$router.push('/tabs/count')" href="/tabs/count" data-testid="tabs-count-btn">
           <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
@@ -11,7 +11,7 @@
           <ion-icon :icon="shirtOutline" />
           <ion-label>{{ translate("Variance") }}</ion-label>
         </ion-tab-button> -->
-        <ion-tab-button tab="more" href="/tabs/settings">
+        <ion-tab-button tab="more" href="/tabs/settings" data-testid="tabs-settings-btn">
           <ion-icon :icon="settingsOutline" />
           <ion-label>{{ translate("Settings") }}</ion-label>
         </ion-tab-button>

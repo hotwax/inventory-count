@@ -1,31 +1,32 @@
 <template>
-  <ion-modal :is-open="isOpen" @didDismiss="handleClose" @didPresent="initializeModal">
+  <ion-modal :is-open="isOpen" @didDismiss="handleClose" @didPresent="initializeModal" data-testid="facility-filter-modal">
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="handleClose">
+          <ion-button @click="handleClose" data-testid="facility-filter-close-btn">
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate(title || 'Select Facilities') }}</ion-title>
+        <ion-title data-testid="facility-filter-title">{{ translate(title || 'Select Facilities') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-button @click="clearAll" :disabled="selectedIds.length === 0">{{ translate("Clear all") }}</ion-button>
+          <ion-button @click="clearAll" :disabled="selectedIds.length === 0" data-testid="facility-filter-clear-all-btn">{{ translate("Clear all") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
       <ion-toolbar>
-        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()"/>
+        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()" data-testid="facility-filter-search-input"/>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-list>
-        <div class="empty-state" v-if="!filteredFacilities.length">
+      <ion-list data-testid="facility-filter-list">
+        <div class="empty-state" v-if="!filteredFacilities.length" data-testid="facility-filter-empty-state">
           <p>{{ translate("No facilities found") }}</p>
         </div>
         <div v-else>
-          <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
+          <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'facility-filter-item-' + facility.facilityId">
             <ion-checkbox
               :checked="selectedIds.includes(facility.facilityId)"
               @ionChange="toggleSelection(facility.facilityId, $event.detail.checked)"
+              :data-testid="'facility-filter-checkbox-' + facility.facilityId"
             >
               <ion-label>
                 {{ facility.facilityName }}
@@ -37,7 +38,7 @@
       </ion-list>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="applySelection">
+        <ion-fab-button @click="applySelection" data-testid="facility-filter-apply-btn">
           <ion-icon :icon="checkmarkOutline" />
         </ion-fab-button>
       </ion-fab>

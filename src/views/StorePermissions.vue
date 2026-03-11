@@ -2,55 +2,55 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ translate("Store permissions") }}</ion-title>
+        <ion-title data-testid="store-permissions-page-title">{{ translate("Store permissions") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
-      <div class="permission-cards">
-        <ion-card>
-          <ion-item button detail lines="full" :router-link="'/tabs/count'">
-            <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end"></ion-icon>
-            <ion-label>
+      <div class="permission-cards" data-testid="store-permissions-cards-container">
+        <ion-card data-testid="store-permissions-view-card">
+          <ion-item button detail lines="full" :router-link="'/tabs/count'" data-testid="store-permissions-view-item">
+            <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end" data-testid="store-permissions-view-icon"></ion-icon>
+            <ion-label data-testid="store-permissions-view-label">
               {{ translate("Store View") }}
             </ion-label>
           </ion-item>
         </ion-card>
       </div>
-      <div class="permission-cards">
-        <ion-card v-for="permission in permissionCards" :key="permission.id">
-          <ion-card-header>
-            <ion-card-title>
+      <div class="permission-cards" data-testid="store-permissions-dynamic-cards-container">
+        <ion-card v-for="permission in permissionCards" :key="permission.id" :data-testid="'store-permissions-card-' + permission.id">
+          <ion-card-header :data-testid="'store-permissions-header-' + permission.id">
+            <ion-card-title :data-testid="'store-permissions-title-' + permission.id">
               {{ translate(permission.title) }}
             </ion-card-title>
           </ion-card-header>
-          <ion-card-content>
-            <p>{{ translate(permission.description) }}</p>
+          <ion-card-content :data-testid="'store-permissions-content-' + permission.id">
+            <p :data-testid="'store-permissions-desc-' + permission.id">{{ translate(permission.description) }}</p>
           </ion-card-content>
-          <ion-list>
-            <ion-item-divider color="light">
-              {{ translate('Security groups') }}
-              <ion-button v-if="(activeGroupsByPermission[permission.id] || []).length" slot="end" fill="clear" size="small" @click="openSelectGroupsModal(permission)">
+          <ion-list :data-testid="'store-permissions-list-' + permission.id">
+            <ion-item-divider color="light" :data-testid="'store-permissions-divider-' + permission.id">
+              <ion-label :data-testid="'store-permissions-divider-label-' + permission.id">{{ translate('Security groups') }}</ion-label>
+              <ion-button v-if="(activeGroupsByPermission[permission.id] || []).length" slot="end" fill="clear" size="small" @click="openSelectGroupsModal(permission)" :data-testid="'store-permissions-add-btn-small-' + permission.id">
                 {{ translate('Add') }}
                 <ion-icon slot="end" :icon="addCircleOutline"></ion-icon>
               </ion-button>
             </ion-item-divider>
-            <ion-button v-if="!(activeGroupsByPermission[permission.id] || []).length" fill="outline" expand="block" class="ion-margin" @click="openSelectGroupsModal(permission)">
+            <ion-button v-if="!(activeGroupsByPermission[permission.id] || []).length" fill="outline" expand="block" class="ion-margin" @click="openSelectGroupsModal(permission)" :data-testid="'store-permissions-add-group-btn-' + permission.id">
               <ion-icon slot="start" :icon="addOutline"></ion-icon>
               {{ translate('Add security group') }}
             </ion-button>
 
-            <ion-item button @click="openHistory(permission)">
-              <ion-label>{{ translate('View history') }}</ion-label>
-              <ion-icon slot="end" :icon="timeOutline"></ion-icon>
+            <ion-item button @click="openHistory(permission)" :data-testid="'store-permissions-history-item-' + permission.id">
+              <ion-label :data-testid="'store-permissions-history-label-' + permission.id">{{ translate('View history') }}</ion-label>
+              <ion-icon slot="end" :icon="timeOutline" :data-testid="'store-permissions-history-icon-' + permission.id"></ion-icon>
             </ion-item>
 
-            <ion-item v-for="group in activeGroupsByPermission[permission.id]" :key="group.groupId">
-              <ion-label>
-                {{ group.groupName || group.groupId }}
-                <p>{{ group.groupId }}</p>
+            <ion-item v-for="group in activeGroupsByPermission[permission.id]" :key="group.groupId" :data-testid="'store-permissions-active-group-item-' + permission.id + '-' + group.groupId">
+              <ion-label :data-testid="'store-permissions-active-group-label-' + permission.id + '-' + group.groupId">
+                <span :data-testid="'store-permissions-active-group-name-' + permission.id + '-' + group.groupId">{{ group.groupName || group.groupId }}</span>
+                <p :data-testid="'store-permissions-active-group-id-' + permission.id + '-' + group.groupId">{{ group.groupId }}</p>
               </ion-label>
-              <ion-button color="medium" fill="clear" slot="end" @click="openGroupActionsPopover(permission.id, group, $event)">
+              <ion-button color="medium" fill="clear" slot="end" @click="openGroupActionsPopover(permission.id, group, $event)" :data-testid="'store-permissions-active-group-actions-btn-' + permission.id + '-' + group.groupId">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
               </ion-button>
             </ion-item>
@@ -59,15 +59,15 @@
       </div>
 
       <!-- History modal -->
-      <ion-modal :is-open="isHistoryModalOpen" @didDismiss="closeHistoryModal">
-        <ion-header>
-          <ion-toolbar>
+      <ion-modal :is-open="isHistoryModalOpen" @didDismiss="closeHistoryModal" data-testid="store-permissions-history-modal">
+        <ion-header data-testid="store-permissions-history-modal-header">
+          <ion-toolbar data-testid="store-permissions-history-modal-toolbar">
             <ion-buttons slot="start">
-              <ion-button @click="closeHistoryModal">
+              <ion-button @click="closeHistoryModal" data-testid="store-permissions-history-modal-close-btn">
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title>
+            <ion-title data-testid="store-permissions-history-modal-title">
               {{ translate("Security group history") }}
               <template v-if="historyPermissionTitle">
                 - {{ historyPermissionTitle }}
@@ -76,14 +76,14 @@
           </ion-toolbar>
         </ion-header>
 
-        <ion-content>
-          <ion-list v-if="historyRecords.length">
-            <ion-item v-for="record in historyRecords" :key="`${record.groupId}-${record.fromDate}`">
-              <ion-label>
+        <ion-content data-testid="store-permissions-history-modal-content">
+          <ion-list v-if="historyRecords.length" data-testid="store-permissions-history-list">
+            <ion-item v-for="record in historyRecords" :key="`${record.groupId}-${record.fromDate}`" :data-testid="'store-permissions-history-item-' + record.groupId">
+              <ion-label data-testid="store-permissions-history-item-label">
                 {{ record.groupName || record.groupId }}
                 <p>{{ record.groupId }}</p>
               </ion-label>
-              <ion-note slot="end">
+              <ion-note slot="end" data-testid="store-permissions-history-item-note">
                 {{ getDateTime(record.fromDate) }}
                 -
                 {{
@@ -92,33 +92,33 @@
               </ion-note>
             </ion-item>
           </ion-list>
-          <div v-else class="empty-state">
+          <div v-else class="empty-state" data-testid="store-permissions-history-empty-state">
             <p>{{ translate("No history found.") }}</p>
           </div>
         </ion-content>
       </ion-modal>
 
       <!-- Select security groups modal -->
-      <ion-modal :is-open="isSelectGroupsModalOpen" @didDismiss="closeSelectGroupsModal">
-        <ion-header>
-          <ion-toolbar>
+      <ion-modal :is-open="isSelectGroupsModalOpen" @didDismiss="closeSelectGroupsModal" data-testid="store-permissions-select-groups-modal">
+        <ion-header data-testid="store-permissions-select-groups-modal-header">
+          <ion-toolbar data-testid="store-permissions-select-groups-modal-toolbar">
             <ion-buttons slot="start">
-              <ion-button @click="closeSelectGroupsModal">
+              <ion-button @click="closeSelectGroupsModal" data-testid="store-permissions-select-groups-modal-close-btn">
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("Select security groups") }}</ion-title>
+            <ion-title data-testid="store-permissions-select-groups-modal-title">{{ translate("Select security groups") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
-        <ion-content>
-          <ion-searchbar :placeholder="translate('Search security groups')" v-model="modalQuery"/>
+        <ion-content data-testid="store-permissions-select-groups-modal-content">
+          <ion-searchbar :placeholder="translate('Search security groups')" v-model="modalQuery" data-testid="store-permissions-select-groups-modal-searchbar"/>
 
           <template v-if="filteredSecurityGroups.length">
-            <ion-list>
-              <ion-item v-for="securityGroup in filteredSecurityGroups" :key="securityGroup.groupId">
-                <ion-checkbox :checked="isGroupSelected(securityGroup.groupId)" @ionChange="toggleGroupSelection(securityGroup)">
-                  <ion-label>
+            <ion-list data-testid="store-permissions-select-groups-modal-list">
+              <ion-item v-for="securityGroup in filteredSecurityGroups" :key="securityGroup.groupId" :data-testid="'store-permissions-select-groups-modal-item-' + securityGroup.groupId">
+                <ion-checkbox :checked="isGroupSelected(securityGroup.groupId)" @ionChange="toggleGroupSelection(securityGroup)" :data-testid="'store-permissions-select-groups-modal-checkbox-' + securityGroup.groupId">
+                  <ion-label :data-testid="'store-permissions-select-groups-modal-label-' + securityGroup.groupId">
                     {{ securityGroup.groupName || securityGroup.groupId }}
                     <p>{{ securityGroup.groupId }}</p>
                   </ion-label>
@@ -127,12 +127,12 @@
             </ion-list>
           </template>
 
-          <div v-else class="empty-state">
+          <div v-else class="empty-state" data-testid="store-permissions-select-groups-modal-empty-state">
             <p>{{ translate("No security groups found") }}</p>
           </div>
 
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button @click="saveSelectedSecurityGroups">
+          <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="store-permissions-select-groups-modal-fab">
+            <ion-fab-button @click="saveSelectedSecurityGroups" data-testid="store-permissions-select-groups-modal-save-btn">
               <ion-icon :icon="saveOutline" />
             </ion-fab-button>
           </ion-fab>
@@ -140,22 +140,22 @@
       </ion-modal>
 
       <!-- Security group actions popover -->
-      <ion-popover :is-open="groupActionsPopoverState.isOpen" :event="groupActionsPopoverState.event" @didDismiss="closeGroupActionsPopover">
-        <ion-content>
-          <ion-list v-if="groupActionsPopoverState.group">
-            <ion-list-header>
+      <ion-popover :is-open="groupActionsPopoverState.isOpen" :event="groupActionsPopoverState.event" @didDismiss="closeGroupActionsPopover" data-testid="store-permissions-actions-popover">
+        <ion-content data-testid="store-permissions-actions-popover-content">
+          <ion-list v-if="groupActionsPopoverState.group" data-testid="store-permissions-actions-popover-list">
+            <ion-list-header data-testid="store-permissions-actions-popover-header">
               {{
                 groupActionsPopoverState.group.groupName ||
                 groupActionsPopoverState.group.groupId
               }}
             </ion-list-header>
-            <ion-item>
-              <ion-label>
+            <ion-item data-testid="store-permissions-actions-popover-date-item">
+              <ion-label data-testid="store-permissions-actions-popover-date-label">
                 {{ getDateTime(groupActionsPopoverState.group.fromDate) }}
                 <p>{{ translate("added to group") }}</p>
               </ion-label>
             </ion-item>
-            <ion-item button @click="confirmRemoveGroupFromPermission" lines="none">
+            <ion-item button @click="confirmRemoveGroupFromPermission" lines="none" data-testid="store-permissions-actions-popover-remove-btn">
               {{ translate("Remove") }}
             </ion-item>
           </ion-list>

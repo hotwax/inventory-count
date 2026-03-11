@@ -2,8 +2,8 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/pending-review" />
-        <ion-title>{{ translate("Review count") }}</ion-title>
+        <ion-back-button slot="start" default-href="/pending-review" data-testid="pending-review-detail-back-btn" />
+        <ion-title data-testid="pending-review-detail-page-title">{{ translate("Review count") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -13,78 +13,78 @@
       </template>
       <template v-else-if="workEffort">
         <div class="header">
-          <ion-card>
-            <ion-item lines="none">
-              <ion-label>
-                <p class="overline">{{ workEffort?.workEffortId }}</p>
-                <h1>{{ workEffort?.workEffortName }}</h1>
+          <ion-card data-testid="pending-review-detail-info-card">
+            <ion-item lines="none" data-testid="pending-review-detail-info-item">
+              <ion-label data-testid="pending-review-detail-info-label">
+                <p class="overline" data-testid="pending-review-detail-work-effort-id">{{ workEffort?.workEffortId }}</p>
+                <h1 data-testid="pending-review-detail-work-effort-name">{{ workEffort?.workEffortName }}</h1>
               </ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
-              <ion-label>
+            <ion-item data-testid="pending-review-detail-facility-item">
+              <ion-icon :icon="businessOutline" slot="start" data-testid="pending-review-detail-facility-icon"></ion-icon>
+              <ion-label data-testid="pending-review-detail-facility-name">
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>
-                <p class="overline">{{ translate("Start Date") }}</p>
-                {{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}
+            <ion-item data-testid="pending-review-detail-start-date-item">
+              <ion-icon :icon="calendarClearOutline" slot="start" data-testid="pending-review-detail-start-date-icon"></ion-icon>
+              <ion-label data-testid="pending-review-detail-start-date-label">
+                <p class="overline" data-testid="pending-review-detail-start-date-title">{{ translate("Start Date") }}</p>
+                <span data-testid="pending-review-detail-start-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}</span>
               </ion-label>
             </ion-item>
 
-            <ion-item lines="none" class="due-date">
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>
-                <p class="overline">{{ translate("Due Date") }}</p>
-                {{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}
+            <ion-item lines="none" class="due-date" data-testid="pending-review-detail-due-date-item">
+              <ion-icon :icon="calendarClearOutline" slot="start" data-testid="pending-review-detail-due-date-icon"></ion-icon>
+              <ion-label data-testid="pending-review-detail-due-date-label">
+                <p class="overline" data-testid="pending-review-detail-due-date-title">{{ translate("Due Date") }}</p>
+                <span data-testid="pending-review-detail-due-date-val">{{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}</span>
               </ion-label>
             </ion-item>
           </ion-card>
-          <ion-card>
-            <ion-item>
-              <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-label slot="end" class="ion-text-end">
+          <ion-card data-testid="pending-review-detail-timeline-card">
+            <ion-item data-testid="pending-review-detail-first-counted-item">
+              <ion-label data-testid="pending-review-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
+              <ion-label slot="end" class="ion-text-end" data-testid="pending-review-detail-first-counted-val">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate" data-testid="pending-review-detail-first-counted-diff">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
               </ion-label>
             </ion-item>
-            <ion-item>
-              <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-label slot="end" class="ion-text-end">
+            <ion-item data-testid="pending-review-detail-last-counted-item">
+              <ion-label data-testid="pending-review-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
+              <ion-label slot="end" class="ion-text-end" data-testid="pending-review-detail-last-counted-val">
                 {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
-                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
+                <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate" data-testid="pending-review-detail-last-counted-diff">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
           </ion-card>
 
-          <div class="statistics">
-            <ion-card>
-              <ion-item lines="none">
-                <ion-label>
+          <div class="statistics" data-testid="pending-review-detail-stats-container">
+            <ion-card data-testid="pending-review-detail-progress-card">
+              <ion-item lines="none" data-testid="pending-review-detail-progress-item">
+                <ion-label data-testid="pending-review-detail-progress-label">
                   {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
-                  <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
+                  <p data-testid="pending-review-detail-progress-subtitle">{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
                 </ion-label>
               </ion-item>
-              <ion-card-content>
-                <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
+              <ion-card-content data-testid="pending-review-detail-progress-content">
+                <ion-progress-bar :value="submittedItemsCount / totalItems" data-testid="pending-review-detail-progress-bar"></ion-progress-bar>
               </ion-card-content>
             </ion-card>
-            <ion-card>
-              <ion-item lines="full">
-                <ion-label>
-                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>
+            <ion-card data-testid="pending-review-detail-variance-card">
+              <ion-item lines="full" data-testid="pending-review-detail-variance-item">
+                <ion-label data-testid="pending-review-detail-variance-label">
+                  <p class="overline" data-testid="pending-review-detail-variance-title">{{ translate("Overall variance (Filtered)") }}</p>
+                  <h3 data-testid="pending-review-detail-variance-val">
                     {{
                       translate("filtered variance", {
                         overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed,
                       })
                     }}
                   </h3>
-                  <p>
+                  <p data-testid="pending-review-detail-variance-info">
                     {{
                       translate("filtered variance based", {
                         filteredSessionItemsCount: filteredSessionItems.length,
@@ -118,6 +118,7 @@
           :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
           @select-all="toggleSelectAll"
+          data-testid="pending-review-detail-filter-bar"
         />
 
         <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
@@ -127,32 +128,32 @@
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                   <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
                     <!-- HEADER -->
-                    <div class="list-item count-item-rollup" slot="header">
-                      <div class="item-key">
-                        <ion-checkbox :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(item)"></ion-checkbox>
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.detailImageUrl" />
+                    <div class="list-item count-item-rollup" slot="header" data-testid="pending-review-detail-item-header">
+                      <div class="item-key" data-testid="pending-review-detail-item-key">
+                        <ion-checkbox :color="item.decisionOutcomeEnumId ? 'medium' : 'primary'" :disabled="item.decisionOutcomeEnumId" @click.stop="stopAccordianEventProp" :checked="isSelected(item) || item.decisionOutcomeEnumId" @ionChange="() => toggleSelectedForReview(item)" data-testid="pending-review-detail-item-checkbox"></ion-checkbox>
+                        <ion-item lines="none" data-testid="pending-review-detail-product-info-item">
+                          <ion-thumbnail slot="start" data-testid="pending-review-detail-product-thumbnail">
+                            <Image :src="item.detailImageUrl" data-testid="pending-review-detail-product-img"/>
                           </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
-                            <p>{{ productMaster.secondaryId(item.product) }}</p>
+                          <ion-label data-testid="pending-review-detail-product-label">
+                            <h2 data-testid="pending-review-detail-product-primary-id">{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
+                            <p data-testid="pending-review-detail-product-secondary-id">{{ productMaster.secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                       </div>
 
-                      <ion-label class="stat">
-                        {{ item.quantity || '-' }}/{{ item.systemQuantityOnHand || '-' }}
+                      <ion-label class="stat" data-testid="pending-review-detail-item-count-stat">
+                        <span data-testid="pending-review-detail-item-count-val">{{ item.quantity || '-' }}/{{ item.systemQuantityOnHand || '-' }}</span>
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 
-                      <ion-label class="stat">
-                        {{ item.proposedVarianceQuantity }}
+                      <ion-label class="stat" data-testid="pending-review-detail-item-variance-stat">
+                        <span data-testid="pending-review-detail-item-variance-val">{{ item.proposedVarianceQuantity }}</span>
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
 
                       <!-- ACTION BUTTONS -->
-                      <div v-if="!item.decisionOutcomeEnumId" class="actions">
+                      <div v-if="!item.decisionOutcomeEnumId" class="actions" data-testid="pending-review-detail-item-actions">
                         <ion-button
                           fill="outline"
                           color="success"
@@ -168,6 +169,7 @@
                               item
                             )
                           "
+                          data-testid="pending-review-detail-item-accept-btn"
                         >
                           {{ translate("Accept") }}
                         </ion-button>
@@ -187,6 +189,7 @@
                               item
                             )
                           "
+                          data-testid="pending-review-detail-item-reject-btn"
                         >
                           {{ translate("Reject") }}
                         </ion-button>
@@ -196,6 +199,7 @@
                         v-else
                         :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'success' : 'danger'"
                         style="--color: white;"
+                        data-testid="pending-review-detail-item-badge"
                       >
                         {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
@@ -203,12 +207,12 @@
 
                     <!-- ACCORDION CONTENT -->
                     <div slot="content" @click.stop="stopAccordianEventProp">
-                      <ion-list v-if="sessions === null">
-                        <ion-item v-for="number in item.numberOfSessions" :key="number">
-                          <ion-avatar slot="start">
-                            <ion-skeleton-text animated style="width: 100%; height: 40px"></ion-skeleton-text>
+                      <ion-list v-if="sessions === null" data-testid="pending-review-detail-sessions-skeleton-list">
+                        <ion-item v-for="number in item.numberOfSessions" :key="number" data-testid="pending-review-detail-session-skeleton-item">
+                          <ion-avatar slot="start" data-testid="pending-review-detail-session-skeleton-avatar">
+                            <ion-skeleton-text animated style="width: 100%; height: 40px" data-testid="pending-review-detail-session-skeleton-text"></ion-skeleton-text>
                           </ion-avatar>
-                          <ion-label><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></ion-label>
+                          <ion-label data-testid="pending-review-detail-session-skeleton-label"><ion-skeleton-text animated style="width: 60%"></ion-skeleton-text></ion-label>
                         </ion-item>
                       </ion-list>
 
@@ -218,31 +222,32 @@
                         :key="session.inventoryCountImportId"
                         class="list-item count-item"
                         @click.stop="stopAccordianEventProp"
+                        :data-testid="'pending-review-detail-session-item-' + session.inventoryCountImportId"
                       >
-                        <ion-item lines="none">
-                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                          <ion-label>
-                            {{ session.countImportName || "-" }}
-                            <p>{{ session.uploadedByUserLogin }}</p>
+                        <ion-item lines="none" data-testid="pending-review-detail-session-header">
+                          <ion-icon :icon="personCircleOutline" slot="start" data-testid="pending-review-detail-session-icon"></ion-icon>
+                          <ion-label data-testid="pending-review-detail-session-label">
+                            <span data-testid="pending-review-detail-session-name">{{ session.countImportName || "-" }}</span>
+                            <p data-testid="pending-review-detail-session-user">{{ session.uploadedByUserLogin }}</p>
                           </ion-label>
                         </ion-item>
 
-                        <ion-label>
-                          {{ session.counted }}
+                        <ion-label data-testid="pending-review-detail-session-count-stat">
+                          <span data-testid="pending-review-detail-session-count-val">{{ session.counted }}</span>
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
 
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                        <ion-label data-testid="pending-review-detail-session-started-stat">
+                          <span data-testid="pending-review-detail-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                           <p>{{ translate("started") }}</p>
                         </ion-label>
 
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                        <ion-label data-testid="pending-review-detail-session-updated-stat">
+                          <span data-testid="pending-review-detail-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
 
-                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
+                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)" data-testid="pending-review-detail-session-popover-btn">
                           <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline"></ion-icon>
                         </ion-button>
                       </div>
@@ -259,17 +264,22 @@
             :event="sessionPopoverEvent"
             @did-dismiss="closeSessionPopover"
             show-backdrop="false"
+            data-testid="pending-review-detail-session-popover"
           >
-            <ion-content>
-              <ion-list>
-                <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
-                <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small">{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-item>
-                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true">
+            <ion-content data-testid="pending-review-detail-session-popover-content">
+              <ion-list data-testid="pending-review-detail-session-popover-list">
+                <ion-list-header data-testid="pending-review-detail-session-popover-header">{{ selectedProductCountReview?.internalName }}</ion-list-header>
+                <ion-item size="small" data-testid="pending-review-detail-session-popover-last-counted">
+                  <ion-label>{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
+                </ion-item>
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small" data-testid="pending-review-detail-session-popover-edit-btn">
+                  <ion-label>{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-label>
+                </ion-item>
+                <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="isRemoveSessionAlertOpen = true" data-testid="pending-review-detail-session-popover-remove-btn">
                   <ion-label>
                     {{ translate('Remove from count') }}
                   </ion-label>
-                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                  <ion-icon :icon="removeCircleOutline" slot="end"></ion-icon>
                 </ion-item>
               </ion-list>
             </ion-content>
@@ -286,78 +296,78 @@
       </template>
 
       <!-- EDIT ITEM MODAL -->
-      <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal">
-        <ion-header>
-          <ion-toolbar>
+      <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal" data-testid="pending-review-detail-edit-modal">
+        <ion-header data-testid="pending-review-detail-edit-modal-header">
+          <ion-toolbar data-testid="pending-review-detail-edit-modal-toolbar">
             <ion-buttons slot="start">
-              <ion-button @click="closeEditImportItemModal">
+              <ion-button @click="closeEditImportItemModal" data-testid="pending-review-detail-edit-modal-close-btn">
                 <ion-icon :icon="closeOutline" slot="icon-only" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("Edit Item Count") }}</ion-title>
+            <ion-title data-testid="pending-review-detail-edit-modal-title">{{ translate("Edit Item Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
         <ion-content>
 
-          <ion-card>
-            <ion-item lines="none">
-              <ion-thumbnail slot="start">
-                <Image :src="selectedProductCountReview?.detailImageUrl" />
+          <ion-card data-testid="pending-review-detail-edit-info-card">
+            <ion-item lines="none" data-testid="pending-review-detail-edit-info-item">
+              <ion-thumbnail slot="start" data-testid="pending-review-detail-edit-thumbnail">
+                <Image :src="selectedProductCountReview?.detailImageUrl" data-testid="pending-review-detail-edit-img"/>
               </ion-thumbnail>
 
-              <ion-label>
-                {{ selectedProductCountReview?.internalName }}
-                <p>{{ selectedProductCountReview?.productId }}</p>
+              <ion-label data-testid="pending-review-detail-edit-label">
+                <h2 data-testid="pending-review-detail-edit-name">{{ selectedProductCountReview?.internalName }}</h2>
+                <p data-testid="pending-review-detail-edit-id">{{ selectedProductCountReview?.productId }}</p>
               </ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-label>{{ translate("Cycle count total") }}</ion-label>
-              <ion-label slot="end">{{ selectedProductCountReview?.quantity }} {{ translate("units") }}</ion-label>
+            <ion-item data-testid="pending-review-detail-edit-cycle-total-item">
+              <ion-label data-testid="pending-review-detail-edit-cycle-total-label">{{ translate("Cycle count total") }}</ion-label>
+              <ion-label slot="end" data-testid="pending-review-detail-edit-cycle-total-val">{{ selectedProductCountReview?.quantity }} {{ translate("units") }}</ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-label>{{ translate("Session count total") }}</ion-label>
-              <ion-label slot="end">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
+            <ion-item data-testid="pending-review-detail-edit-session-total-item">
+              <ion-label data-testid="pending-review-detail-edit-session-total-label">{{ translate("Session count total") }}</ion-label>
+              <ion-label slot="end" data-testid="pending-review-detail-edit-session-total-val">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
             </ion-item>
           </ion-card>
 
           <!-- EDIT SECTION -->
-          <ion-card>
-            <ion-item lines="full">
-              <ion-label>{{ translate("Edit session count") }}</ion-label>
-              <ion-item slot="end">
+          <ion-card data-testid="pending-review-detail-edit-action-card">
+            <ion-item lines="full" data-testid="pending-review-detail-edit-action-item">
+              <ion-label data-testid="pending-review-detail-edit-action-label">{{ translate("Edit session count") }}</ion-label>
+              <ion-item slot="end" data-testid="pending-review-detail-edit-controls">
                 <!-- MINUS BUTTON -->
-                <ion-button fill="clear" @click="adjustEdit(-1)">
+                <ion-button fill="clear" @click="adjustEdit(-1)" data-testid="pending-review-detail-edit-remove-btn">
                   <ion-icon slot="icon-only" :icon="removeCircleOutline"></ion-icon>
                 </ion-button>
   
                 <!-- INPUT -->
-                <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
+                <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment" data-testid="pending-review-detail-edit-input"></ion-input>
   
                 <!-- PLUS BUTTON -->
-                <ion-button fill="clear" @click="adjustEdit(1)">
+                <ion-button fill="clear" @click="adjustEdit(1)" data-testid="pending-review-detail-edit-add-btn">
                   <ion-icon slot="icon-only" :icon="addCircleOutline"></ion-icon>
                 </ion-button>
               </ion-item>
             </ion-item>
 
             <!-- NEW TOTALS -->
-            <ion-item>
-              <ion-label>{{ translate("New session count total") }}</ion-label>
-              <ion-label slot="end">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
+            <ion-item data-testid="pending-review-detail-edit-new-session-total-item">
+              <ion-label data-testid="pending-review-detail-edit-new-session-total-label">{{ translate("New session count total") }}</ion-label>
+              <ion-label slot="end" data-testid="pending-review-detail-edit-new-session-total-val">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
             </ion-item>
 
-            <ion-item>
-              <ion-label>{{ translate("New cycle count total") }}</ion-label>
-              <ion-label slot="end">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
+            <ion-item data-testid="pending-review-detail-edit-new-cycle-total-item">
+              <ion-label data-testid="pending-review-detail-edit-new-cycle-total-label">{{ translate("New cycle count total") }}</ion-label>
+              <ion-label slot="end" data-testid="pending-review-detail-edit-new-cycle-total-val">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
             </ion-item>
           </ion-card>
 
           <!-- FLOAT SAVE BUTTON -->
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button @click="saveEditImportItems">
+          <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="pending-review-detail-edit-fab">
+            <ion-fab-button @click="saveEditImportItems" data-testid="pending-review-detail-edit-save-btn">
               <ion-icon :icon="checkmarkDoneOutline" />
             </ion-fab-button>
           </ion-fab>
@@ -366,8 +376,8 @@
     </ion-content>
 
     <!-- FOOTER ACTIONS -->
-    <ion-footer>
-      <ion-toolbar>
+    <ion-footer data-testid="pending-review-detail-footer">
+      <ion-toolbar data-testid="pending-review-detail-footer-toolbar">
         <ion-buttons slot="start">
           <ion-button
             :disabled="selectedProductsReview.length === 0"
@@ -375,6 +385,7 @@
             color="success"
             size="small"
             @click="submitSelectedProductReviews('APPLIED')"
+            data-testid="pending-review-detail-footer-accept-btn"
           >
             {{ translate("Accept") }}
           </ion-button>
@@ -386,13 +397,14 @@
             size="small"
             class="ion-margin-horizontal"
             @click="submitSelectedProductReviews('SKIPPED')"
+            data-testid="pending-review-detail-footer-reject-btn"
           >
             {{ translate("Reject") }}
           </ion-button>
         </ion-buttons>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick">
+          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick" data-testid="pending-review-detail-footer-close-btn">
             {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
@@ -400,42 +412,42 @@
     </ion-footer>
 
     <!-- BULK CLOSE MODAL -->
-    <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal">
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>{{ translate("Close count") }}</ion-title>
+    <ion-modal :is-open="isBulkCloseModalOpen" @did-dismiss="closeBulkCloseModal" data-testid="pending-review-detail-bulk-close-modal">
+      <ion-header data-testid="pending-review-detail-bulk-close-header">
+        <ion-toolbar data-testid="pending-review-detail-bulk-close-toolbar">
+          <ion-title data-testid="pending-review-detail-bulk-close-title">{{ translate("Close count") }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button @click="closeBulkCloseModal">
+            <ion-button @click="closeBulkCloseModal" data-testid="pending-review-detail-bulk-close-cancel-btn">
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
 
-      <ion-content>
+      <ion-content data-testid="pending-review-detail-bulk-close-content">
         <template v-if="openItems.length">
-          <ion-list>
-            <ion-radio-group v-model="bulkAction">
-              <ion-item>
-                <ion-radio value="APPLIED">{{ translate("Accept all outstanding variances and close") }}</ion-radio>
+          <ion-list data-testid="pending-review-detail-bulk-close-list">
+            <ion-radio-group v-model="bulkAction" data-testid="pending-review-detail-bulk-close-radio-group">
+              <ion-item data-testid="pending-review-detail-bulk-close-accept-item">
+                <ion-radio value="APPLIED" data-testid="pending-review-detail-bulk-close-accept-radio">{{ translate("Accept all outstanding variances and close") }}</ion-radio>
               </ion-item>
 
-              <ion-item>
-                <ion-radio value="SKIPPED">{{ translate("Reject all outstanding variances and close") }}</ion-radio>
+              <ion-item data-testid="pending-review-detail-bulk-close-reject-item">
+                <ion-radio value="SKIPPED" data-testid="pending-review-detail-bulk-close-reject-radio">{{ translate("Reject all outstanding variances and close") }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
 
           <ion-button expand="block" color="primary" class="ion-margin"
-            :disabled="!bulkAction" @click="performBulkCloseAction">
+            :disabled="!bulkAction" @click="performBulkCloseAction" data-testid="pending-review-detail-bulk-close-confirm-btn">
             {{ translate("Confirm") }}
           </ion-button>
         </template>
 
         <template v-else>
-          <p>{{ translate("All items are already reviewed. Do you want to close the cycle count?") }}</p>
+          <p data-testid="pending-review-detail-bulk-close-msg">{{ translate("All items are already reviewed. Do you want to close the cycle count?") }}</p>
 
-          <ion-button expand="block" color="primary" class="ion-margin-top" @click="forceCloseWithoutAction">
+          <ion-button expand="block" color="primary" class="ion-margin-top" @click="forceCloseWithoutAction" data-testid="pending-review-detail-bulk-close-btn">
             {{ translate("Close Cycle Count") }}
           </ion-button>
         </template>
@@ -452,6 +464,7 @@
         { text: 'Cancel', role: 'cancel' },
         { text: 'Confirm', handler: forceCloseWithoutAction }
       ]"
+      data-testid="pending-review-detail-close-alert"
     ></ion-alert>
     <ion-alert
       :is-open="isRemoveSessionAlertOpen"
@@ -462,6 +475,7 @@
         { text: translate('Cancel'), role: 'cancel' },
         { text: translate('Remove'), handler: async () => await removeProductFromSession() }
       ]"
+      data-testid="pending-review-detail-remove-session-alert"
     ></ion-alert>
   </ion-page>
 </template>
@@ -480,7 +494,7 @@ import {
   addCircleOutline, checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
-import { ref, computed, defineProps } from "vue";
+import { ref, computed } from "vue";
 import { translate } from "@/i18n";
 import router from "@/router";
 import { DateTime } from "luxon";

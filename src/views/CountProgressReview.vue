@@ -2,8 +2,8 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/tabs/count" />
-        <ion-title>{{ translate("Track progress") }}</ion-title>
+        <ion-back-button slot="start" default-href="/tabs/count" data-testid="count-progress-back-btn" />
+        <ion-title data-testid="count-progress-page-title">{{ translate("Track progress") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -15,50 +15,50 @@
       <div v-else>
         <div class="header ion-padding">
             <!-- Card 1: Count Info -->
-            <ion-card>
-              <ion-card-header>
+            <ion-card data-testid="count-progress-info-card">
+              <ion-card-header data-testid="count-progress-info-header">
                 <div>
-                  <ion-label v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
+                  <ion-label v-if="workEffort?.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline" data-testid="count-progress-hard-count-badge">
                     {{ translate("HARD COUNT") }}
                   </ion-label>
-                  <ion-item lines="none" class="ion-no-padding">
-                    <h1>{{ workEffort?.workEffortName }}</h1>
-                    <ion-badge slot="end" :color="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' ? 'success' : undefined">
+                  <ion-item lines="none" class="ion-no-padding" data-testid="count-progress-info-item">
+                    <h1 data-testid="count-progress-name">{{ workEffort?.workEffortName }}</h1>
+                    <ion-badge slot="end" :color="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' ? 'success' : undefined" data-testid="count-progress-status-badge">
                       {{ useProductStore().getStatusDescription(workEffort?.statusId) }}
                     </ion-badge>
                   </ion-item>
-                  <ion-card-subtitle>{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
+                  <ion-card-subtitle data-testid="count-progress-created-date">{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
                 </div>
               </ion-card-header>
 
-              <ion-item lines="none">
-                <ion-label>{{ translate("Due date") }}</ion-label>
-                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
+              <ion-item lines="none" data-testid="count-progress-due-date-item">
+                <ion-label data-testid="count-progress-due-date-label">{{ translate("Due date") }}</ion-label>
+                <ion-note slot="end" data-testid="count-progress-due-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
               </ion-item>
-              <ion-item lines="none">
-                <ion-label>{{ translate("Start date") }}</ion-label>
-                <ion-note slot="end">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
+              <ion-item lines="none" data-testid="count-progress-start-date-item">
+                <ion-label data-testid="count-progress-start-date-label">{{ translate("Start date") }}</ion-label>
+                <ion-note slot="end" data-testid="count-progress-start-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
               </ion-item>
 
-              <ion-item lines="full">
-                <ion-label>
+              <ion-item lines="full" data-testid="count-progress-sessions-header">
+                <ion-label data-testid="count-progress-sessions-title">
                   <p class="overline">{{ translate("Sessions") }}</p>
                 </ion-label>
 
-                <ion-button v-if="isWorkEffortInProgress" fill="clear" size="small" @click="openAddSessionModal">
+                <ion-button v-if="isWorkEffortInProgress" fill="clear" size="small" @click="openAddSessionModal" data-testid="count-progress-new-session-btn">
                   <ion-icon slot="start" :icon="addCircleOutline" />
                   {{ translate("New session") }}
                 </ion-button>
               </ion-item>
 
               <!-- SESSIONS LIST -->
-              <ion-list>
-                <ion-item v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId" :detail="true" button :disabled="!isWorkEffortInProgress" @click="openSession(session)">
-                  <ion-label>
-                    {{ session.countImportName || '' }} {{ session.facilityAreaId || '' }}
-                    <p>{{ session.uploadedByUserLogin }}</p>
+              <ion-list data-testid="count-progress-sessions-list">
+                <ion-item v-for="session in workEffort?.sessions" :key="session.inventoryCountImportId" :detail="true" button :disabled="!isWorkEffortInProgress" @click="openSession(session)" :data-testid="'count-progress-session-item-' + session.inventoryCountImportId">
+                  <ion-label data-testid="count-progress-session-label">
+                    <span data-testid="count-progress-session-name">{{ session.countImportName || '' }} {{ session.facilityAreaId || '' }}</span>
+                    <p data-testid="count-progress-session-user">{{ session.uploadedByUserLogin }}</p>
                   </ion-label>
-                  <ion-note slot="end">
+                  <ion-note slot="end" data-testid="count-progress-session-status">
                     {{ getSessionStatusDescription(session.statusId) }}
                   </ion-note>
                 </ion-item>
@@ -66,45 +66,45 @@
             </ion-card>
 
             <!-- Card 2: Products Counted -->
-            <ion-card v-if="isCountStarted || isCountStatusBeyondCreated">
-              <ion-card-header>
-                <p class="overline">
+            <ion-card v-if="isCountStarted || isCountStatusBeyondCreated" data-testid="count-progress-stats-card">
+              <ion-card-header data-testid="count-progress-stats-header">
+                <p class="overline" data-testid="count-progress-stats-title">
                   {{ translate("Products counted") }}
                 </p>
-                <ion-label class="big-number">{{ countedItems.length }}</ion-label>
-                <p v-if="uncountedItems.length">{{ uncountedItems.length }} products remaining</p>
+                <ion-label class="big-number" data-testid="count-progress-counted-count">{{ countedItems.length }}</ion-label>
+                <p v-if="uncountedItems.length" data-testid="count-progress-remaining-count">{{ uncountedItems.length }} products remaining</p>
               </ion-card-header>
             </ion-card>
 
             <!-- Card 3: Submit for Review -->
-            <ion-card v-if="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' && !isLoading" class="submission-card">
-              <ion-card-header>
-                <h2>{{ translate("Count submitted for review") }}</h2>
-                <p>{{ translate("This count has been submitted for review.") }}</p>
+            <ion-card v-if="workEffort?.statusId === 'CYCLE_CNT_CMPLTD' && !isLoading" class="submission-card" data-testid="count-progress-submitted-card">
+              <ion-card-header data-testid="count-progress-submitted-header">
+                <h2 data-testid="count-progress-submitted-title">{{ translate("Count submitted for review") }}</h2>
+                <p data-testid="count-progress-submitted-msg">{{ translate("This count has been submitted for review.") }}</p>
               </ion-card-header>
             </ion-card>
-            <ion-card v-else-if="isWorkEffortInProgress && !isLoading" class="submission-card">
-              <ion-card-header v-if="!canSubmitForReview">
-                <ion-card-subtitle>{{ translate("Submit requirements") }}</ion-card-subtitle>
-                <h3>{{ translate("Complete these steps to send your count for review and approval.") }}</h3>
+            <ion-card v-else-if="isWorkEffortInProgress && !isLoading" class="submission-card" data-testid="count-progress-requirements-card">
+              <ion-card-header v-if="!canSubmitForReview" data-testid="count-progress-requirements-header">
+                <ion-card-subtitle data-testid="count-progress-requirements-subtitle">{{ translate("Submit requirements") }}</ion-card-subtitle>
+                <h3 data-testid="count-progress-requirements-title">{{ translate("Complete these steps to send your count for review and approval.") }}</h3>
               </ion-card-header>
-              <ion-list v-if="!canSubmitForReview">
-                <ion-item v-for="requirement in submissionRequirements" :key="requirement.id" lines="none" :detail="false">
-                  <ion-icon slot="start" :color="requirement.met ? 'success' : 'warning'" :icon="requirement.met ? checkmarkCircleOutline : alertCircleOutline" />
-                  <ion-label>
+              <ion-list v-if="!canSubmitForReview" data-testid="count-progress-requirements-list">
+                <ion-item v-for="requirement in submissionRequirements" :key="requirement.id" lines="none" :detail="false" :data-testid="'count-progress-requirement-item-' + requirement.id">
+                  <ion-icon slot="start" :color="requirement.met ? 'success' : 'warning'" :icon="requirement.met ? checkmarkCircleOutline : alertCircleOutline" data-testid="count-progress-requirement-icon"/>
+                  <ion-label data-testid="count-progress-requirement-label">
                     {{ requirement.title }}
-                    <p>{{ requirement.helpText }}</p>
+                    <p data-testid="count-progress-requirement-help">{{ requirement.helpText }}</p>
                   </ion-label>
                 </ion-item>
               </ion-list>
-              <ion-button class="ion-margin" expand="block" :disabled="isSubmitDisabled || isSubmitted" color="success" @click="markAsCompleted">
+              <ion-button class="ion-margin" expand="block" :disabled="isSubmitDisabled || isSubmitted" color="success" @click="markAsCompleted" data-testid="count-progress-submit-btn">
                 <ion-icon slot="start" :icon="checkmarkDoneOutline" />
                 {{ translate("SUBMIT FOR REVIEW") }}
               </ion-button>
-              <ion-item v-if="canSubmitForReview" lines="none">
-                <ion-icon slot="start" :icon="checkmarkCircleOutline" color="success" />
-                <ion-label>
-                  <p class="overline">{{ translate("All tasks completed") }}</p>
+              <ion-item v-if="canSubmitForReview" lines="none" data-testid="count-progress-ready-item">
+                <ion-icon slot="start" :icon="checkmarkCircleOutline" color="success" data-testid="count-progress-ready-icon"/>
+                <ion-label data-testid="count-progress-ready-label">
+                  <p class="overline" data-testid="count-progress-ready-title">{{ translate("All tasks completed") }}</p>
                   {{ translate("This count is ready to submit for review.") }}
                 </ion-label>
               </ion-item>
@@ -112,15 +112,15 @@
         </div>
         <!-- Segments -->
 
-        <div class="segments-container">
-          <ion-segment v-model="activeSegment">
-            <ion-segment-button value="uncounted">
+        <div class="segments-container" data-testid="count-progress-segments-container">
+          <ion-segment v-model="activeSegment" data-testid="count-progress-segment">
+            <ion-segment-button value="uncounted" data-testid="count-progress-segment-uncounted">
               <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="(isCountStarted || isCountStatusBeyondCreated) && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected">
+            <ion-segment-button v-if="(isCountStarted || isCountStatusBeyondCreated) && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" data-testid="count-progress-segment-undirected">
               <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="isCountStarted || isCountStatusBeyondCreated" value="counted">
+            <ion-segment-button v-if="isCountStarted || isCountStatusBeyondCreated" value="counted" data-testid="count-progress-segment-counted">
               <ion-label>{{ countedItems.length }} COUNTED</ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -143,7 +143,7 @@
                   </p>
                 </ion-label>
 
-                <ion-button color="warning" slot="end" fill="outline" :disabled="selectedOutOfStockCount === 0 || isSubmitted || isMarkOutOfStockDisabled" @click="openBulkOutOfStockConfirm">
+                <ion-button color="warning" slot="end" fill="outline" :disabled="selectedOutOfStockCount === 0 || isSubmitted || isMarkOutOfStockDisabled" @click="openBulkOutOfStockConfirm" data-testid="count-progress-mark-oos-btn">
                   {{ translate("Mark selected as Out of Stock") }}
                 </ion-button>
               </ion-item>
@@ -159,12 +159,12 @@
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <div class="list-item count-item-rollup">
                         <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          <ion-thumbnail slot="start" data-testid="count-progress-uncounted-thumbnail">
+                            <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="count-progress-uncounted-img"/>
                           </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <ion-label data-testid="count-progress-uncounted-label">
+                            <h2 data-testid="count-progress-uncounted-primary-id">{{ useProductMaster().primaryId(item.product) }}</h2>
+                            <p data-testid="count-progress-uncounted-secondary-id">{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                           <div class="oos-checkbox">
                         </div>
@@ -179,6 +179,7 @@
                             :checked="outOfStockSelections[item.productId]"
                             :disabled="isSubmitted"
                             @ionChange="(event: any) => handleOutOfStockCheck(event, item)"
+                            data-testid="count-progress-uncounted-oos-checkbox"
                           ></ion-checkbox>
                       </div>
                     </DynamicScrollerItem>
@@ -197,11 +198,11 @@
               <p>{{ translate("Undirected items are products you counted even though they weren't requested in this directed count. Review this section to decide whether to keep them before completing the count.") }}</p>
             </div>
             <template v-else>
-            <ion-item :disabled="!canManageCountProgress">
-              <ion-label>
+            <ion-item :disabled="!canManageCountProgress" data-testid="count-progress-undirected-info">
+              <ion-label data-testid="count-progress-undirected-msg">
                 {{ translate("If these items were not intended to be counted in this session, discard them here before sending the count for head office approval.") }}
               </ion-label>
-              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED') || isSubmitted" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems">
+              <ion-button :disabled="undirectedItems.length === 0 || undirectedItems.every((item: any) => item.decisionOutcomeEnumId === 'SKIPPED') || isSubmitted" slot="end" fill="outline" color="danger" @click="skipAllUndirectedItems" data-testid="count-progress-discard-all-undirected-btn">
                 {{ translate("Discard all undirected items") }}
               </ion-button>
             </ion-item>
@@ -210,14 +211,14 @@
                   <template #default="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
                       <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                        <div class="list-item count-item-rollup" slot="header"> 
-                          <ion-item lines="none">
-                            <ion-thumbnail slot="start">
-                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        <div class="list-item count-item-rollup" slot="header" data-testid="count-progress-undirected-header">
+                          <ion-item lines="none" data-testid="count-progress-undirected-info-item">
+                            <ion-thumbnail slot="start" data-testid="count-progress-undirected-thumbnail">
+                              <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="count-progress-undirected-img"/>
                             </ion-thumbnail>
-                            <ion-label>
-                              <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
-                              <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                            <ion-label data-testid="count-progress-undirected-label">
+                              <h2 data-testid="count-progress-undirected-primary-id">{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
+                              <p data-testid="count-progress-undirected-secondary-id">{{ useProductMaster().secondaryId(item.product) }}</p>
                             </ion-label>
                           </ion-item>
                           <ion-label>
@@ -228,8 +229,8 @@
                             {{ item.proposedVarianceQuantity }}
                             <p>{{ translate("variance") }}</p>
                           </ion-label>
-                          <div v-if="!item.decisionOutcomeEnumId" class="actions">
-                            <ion-button :disabled="!canManageCountProgress || isSubmitted" fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)">
+                          <div v-if="!item.decisionOutcomeEnumId" class="actions" data-testid="count-progress-undirected-actions">
+                            <ion-button :disabled="!canManageCountProgress || isSubmitted" fill="outline" color="danger" size="small" @click="skipSingleProduct(item.productId, item.proposedVarianceQuantity, item.quantityOnHand, item.quantity, item, $event)" data-testid="count-progress-undirected-discard-btn">
                               {{ translate("Discard") }}
                             </ion-button>
                           </div>
@@ -237,6 +238,7 @@
                             v-else
                             color="danger"
                             style="--color: white;"
+                            data-testid="count-progress-undirected-badge"
                           >
                             {{ item.decisionOutcomeEnumId }}
                           </ion-badge>
@@ -267,26 +269,26 @@
                             </ion-label>
                           </ion-item>
                         </ion-list>
-                        <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                          <ion-item lines="none">
-                            <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                            <ion-label>
-                              {{ session.countImportName || "-" }}
-                              <p>
+                        <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp" :data-testid="'count-progress-undirected-session-item-' + session.inventoryCountImportId">
+                          <ion-item lines="none" data-testid="count-progress-undirected-session-header">
+                            <ion-icon :icon="personCircleOutline" slot="start" data-testid="count-progress-undirected-session-icon"></ion-icon>
+                            <ion-label data-testid="count-progress-undirected-session-label">
+                              <span data-testid="count-progress-undirected-session-name">{{ session.countImportName || "-" }}</span>
+                              <p data-testid="count-progress-undirected-session-user">
                                 {{ session.uploadedByUserLogin }}
                               </p>
                             </ion-label>
                           </ion-item>
-                          <ion-label>
-                            {{ session.counted }}
+                          <ion-label data-testid="count-progress-undirected-session-counted-stat">
+                            <span data-testid="count-progress-undirected-session-counted-qty">{{ session.counted }}</span>
                             <p>{{ translate("counted") }}</p>
                           </ion-label>
-                          <ion-label>
-                            {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                          <ion-label data-testid="count-progress-undirected-session-started-stat">
+                            <span data-testid="count-progress-undirected-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                             <p>{{ translate("started") }}</p>
                           </ion-label>
-                          <ion-label>
-                            {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <ion-label data-testid="count-progress-undirected-session-updated-stat">
+                            <span data-testid="count-progress-undirected-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
                         </div>
@@ -314,6 +316,7 @@
                 { label: translate('Variance (High → Low)'), value: 'variance-desc' }
               ]"
               @update:filtered="filteredCountedItems = $event"
+              data-testid="count-progress-filter-bar"
             />
             <div v-if="!canPreviewItems" class="empty-state">
               <p>{{ translate("You need the PREVIEW_COUNT_ITEM permission to view item details.") }}</p>
@@ -326,14 +329,14 @@
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
                     <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                      <div class="list-item count-item-rollup" slot="header"> 
-                        <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                      <div class="list-item count-item-rollup" slot="header" data-testid="count-progress-counted-header">
+                        <ion-item lines="none" data-testid="count-progress-counted-info-item">
+                          <ion-thumbnail slot="start" data-testid="count-progress-counted-thumbnail">
+                            <Image :src="item.detailImageUrl || item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="count-progress-counted-img"/>
                           </ion-thumbnail>
-                          <ion-label>
-                            <h2>{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
-                            <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <ion-label data-testid="count-progress-counted-label">
+                            <h2 data-testid="count-progress-counted-primary-id">{{ useProductMaster().primaryId(item.product) || item.internalName }}</h2>
+                            <p data-testid="count-progress-counted-secondary-id">{{ useProductMaster().secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                         <ion-label>
@@ -371,30 +374,30 @@
                             </ion-label>
                           </ion-item>
                         </ion-list>
-                        <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                          <ion-item lines="none">
-                            <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                            <ion-label>
-                              {{ session.countImportName || "-" }}
-                              <p>
+                        <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp" :data-testid="'count-progress-counted-session-item-' + session.inventoryCountImportId">
+                          <ion-item lines="none" data-testid="count-progress-counted-session-header">
+                            <ion-icon :icon="personCircleOutline" slot="start" data-testid="count-progress-counted-session-icon"></ion-icon>
+                            <ion-label data-testid="count-progress-counted-session-label">
+                              <span data-testid="count-progress-counted-session-name">{{ session.countImportName || "-" }}</span>
+                              <p data-testid="count-progress-counted-session-user">
                                 {{ session.uploadedByUserLogin }}
                               </p>
                             </ion-label>
                           </ion-item>
-                          <ion-label>
-                            {{ session.counted }}
+                          <ion-label data-testid="count-progress-counted-session-counted-stat">
+                            <span data-testid="count-progress-counted-session-counted-qty">{{ session.counted }}</span>
                             <p>{{ translate("counted") }}</p>
                           </ion-label>
-                          <ion-label>
-                            {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                          <ion-label data-testid="count-progress-counted-session-started-stat">
+                            <span data-testid="count-progress-counted-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                             <p>{{ translate("started") }}</p>
                           </ion-label>
-                          <ion-label>
-                            {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                          <ion-label data-testid="count-progress-counted-session-updated-stat">
+                            <span data-testid="count-progress-counted-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
                           <ion-button fill="clear" color="medium" :disabled="isSubmitted"
-                            @click.stop="openSessionPopover($event, session, item)">
+                            @click.stop="openSessionPopover($event, session, item)" data-testid="count-progress-counted-session-popover-btn">
                             <ion-icon :icon="ellipsisVerticalOutline"></ion-icon>
                           </ion-button>
                         </div>
@@ -403,11 +406,11 @@
                   </DynamicScrollerItem>
                 </template>
               </DynamicScroller>
-              <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
-                <ion-content>
-                  <ion-list>
-                    <ion-list-header>{{ selectedProduct?.internalName }}</ion-list-header>
-                    <ion-item button @click="showEditImportItemsModal()">
+              <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false" data-testid="count-progress-session-popover">
+                <ion-content data-testid="count-progress-session-popover-content">
+                  <ion-list data-testid="count-progress-session-popover-list">
+                    <ion-list-header data-testid="count-progress-session-popover-header">{{ selectedProduct?.internalName }}</ion-list-header>
+                    <ion-item button @click="showEditImportItemsModal()" data-testid="count-progress-session-popover-edit-btn">
                       {{ translate("Edit Count") }}: {{ selectedSession?.counted }}
                     </ion-item>
                   </ion-list>
@@ -420,72 +423,72 @@
       </div>
     </ion-content>
     <!-- EDIT ITEM MODAL -->
-    <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal">
-      <ion-header>
-        <ion-toolbar>
+    <ion-modal :is-open="isEditImportItemModalOpen" @did-dismiss="closeEditImportItemModal" data-testid="count-progress-edit-modal">
+      <ion-header data-testid="count-progress-edit-modal-header">
+        <ion-toolbar data-testid="count-progress-edit-modal-toolbar">
           <ion-buttons slot="start">
-            <ion-button @click="closeEditImportItemModal" :disabled="isSubmitted">
+            <ion-button @click="closeEditImportItemModal" :disabled="isSubmitted" data-testid="count-progress-edit-modal-close-btn">
               <ion-icon :icon="closeOutline" slot="icon-only" />
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ translate("Edit Item Count") }}</ion-title>
+          <ion-title data-testid="count-progress-edit-modal-title">{{ translate("Edit Item Count") }}</ion-title>
         </ion-toolbar>
       </ion-header>
 
       <ion-content>
 
-        <ion-card>
-          <ion-item lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="selectedProduct?.detailImageUrl || selectedProduct?.product?.mainImageUrl" />
+        <ion-card data-testid="count-progress-edit-info-card">
+          <ion-item lines="none" data-testid="count-progress-edit-info-item">
+            <ion-thumbnail slot="start" data-testid="count-progress-edit-thumbnail">
+              <Image :src="selectedProduct?.detailImageUrl || selectedProduct?.product?.mainImageUrl" data-testid="count-progress-edit-img"/>
             </ion-thumbnail>
-            <ion-label>
-              <h2>{{ selectedProduct?.internalName }}</h2>
-              <p class="overline">{{ selectedProduct?.productId }}</p>
+            <ion-label data-testid="count-progress-edit-label">
+              <h2 data-testid="count-progress-edit-name">{{ selectedProduct?.internalName }}</h2>
+              <p class="overline" data-testid="count-progress-edit-id">{{ selectedProduct?.productId }}</p>
             </ion-label>
           </ion-item>
 
-          <ion-item>
-            <ion-label>{{ translate("Cycle count total") }}</ion-label>
-            <ion-label slot="end">{{ selectedProduct?.quantity }} {{ translate("units") }}</ion-label>
+          <ion-item data-testid="count-progress-edit-cycle-total-item">
+            <ion-label data-testid="count-progress-edit-cycle-total-label">{{ translate("Cycle count total") }}</ion-label>
+            <ion-label slot="end" data-testid="count-progress-edit-cycle-total-val">{{ selectedProduct?.quantity }} {{ translate("units") }}</ion-label>
           </ion-item>
 
-          <ion-item>
-            <ion-label>{{ translate("Session count total") }}</ion-label>
-            <ion-label slot="end">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
+          <ion-item data-testid="count-progress-edit-session-total-item">
+            <ion-label data-testid="count-progress-edit-session-total-label">{{ translate("Session count total") }}</ion-label>
+            <ion-label slot="end" data-testid="count-progress-edit-session-total-val">{{ selectedSession?.counted }} {{ translate("units") }}</ion-label>
           </ion-item>
         </ion-card>
 
         <!-- EDIT SECTION -->
-        <ion-card>
-          <ion-item lines="full">
-            <ion-label>{{ translate("Edit session count") }}</ion-label>
-            <ion-item slot="end" lines="none">
-              <ion-button fill="clear" @click="adjustEdit(-1)">
+        <ion-card data-testid="count-progress-edit-action-card">
+          <ion-item lines="full" data-testid="count-progress-edit-action-item">
+            <ion-label data-testid="count-progress-edit-action-label">{{ translate("Edit session count") }}</ion-label>
+            <ion-item slot="end" lines="none" data-testid="count-progress-edit-controls">
+              <ion-button fill="clear" @click="adjustEdit(-1)" data-testid="count-progress-edit-remove-btn">
                 <ion-icon :icon="removeCircleOutline"></ion-icon>
               </ion-button>
 
-              <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment"></ion-input>
+              <ion-input class="ion-text-center" type="number" v-model.number="editAdjustment" data-testid="count-progress-edit-input"></ion-input>
 
-              <ion-button fill="clear" @click="adjustEdit(1)">
+              <ion-button fill="clear" @click="adjustEdit(1)" data-testid="count-progress-edit-add-btn">
                 <ion-icon :icon="addCircleOutline"></ion-icon>
               </ion-button>
             </ion-item>
           </ion-item>
 
-          <ion-item>
-            <ion-label>{{ translate("New session count total") }}</ion-label>
-            <ion-label slot="end">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
+          <ion-item data-testid="count-progress-edit-new-session-total-item">
+            <ion-label data-testid="count-progress-edit-new-session-total-label">{{ translate("New session count total") }}</ion-label>
+            <ion-label slot="end" data-testid="count-progress-edit-new-session-total-val">{{ newSessionTotal }} {{ translate("units") }}</ion-label>
           </ion-item>
 
-          <ion-item>
-            <ion-label>{{ translate("New cycle count total") }}</ion-label>
-            <ion-label slot="end">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
+          <ion-item data-testid="count-progress-edit-new-cycle-total-item">
+            <ion-label data-testid="count-progress-edit-new-cycle-total-label">{{ translate("New cycle count total") }}</ion-label>
+            <ion-label slot="end" data-testid="count-progress-edit-new-cycle-total-val">{{ newCycleCountTotal }} {{ translate("units") }}</ion-label>
           </ion-item>
         </ion-card>
 
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="saveEditImportItems">
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="count-progress-edit-fab">
+          <ion-fab-button @click="saveEditImportItems" data-testid="count-progress-edit-save-btn">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -513,36 +516,36 @@
         }
       ]"
     />
-    <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false">
-          <ion-header>
-            <ion-toolbar>
+    <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-progress-add-session-modal">
+          <ion-header data-testid="count-progress-add-session-header">
+            <ion-toolbar data-testid="count-progress-add-session-toolbar">
               <ion-buttons slot="start">
-                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close">
+                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close" data-testid="count-progress-add-session-close-btn">
                   <ion-icon :icon="closeOutline" slot="icon-only" />
                 </ion-button>
               </ion-buttons>
-              <ion-title>{{ translate("New session") }}</ion-title>
+              <ion-title data-testid="count-progress-add-session-title">{{ translate("New session") }}</ion-title>
             </ion-toolbar>
           </ion-header>
-          <ion-content>
-            <ion-item>
-              <ion-label position="stacked">{{ translate("Name") }}</ion-label>
-              <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
-              <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
+          <ion-content data-testid="count-progress-add-session-content">
+            <ion-item data-testid="count-progress-add-session-name-item">
+              <ion-label position="stacked" data-testid="count-progress-add-session-name-label">{{ translate("Name") }}</ion-label>
+              <ion-input v-model="countName" placeholder="category, section, or person" data-testid="count-progress-add-session-name-input"></ion-input>
+              <ion-note slot="helper" data-testid="count-progress-add-session-name-helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
             </ion-item>
 
-            <ion-list>
-              <ion-list-header>{{ translate("Area") }}</ion-list-header>
+            <ion-list data-testid="count-progress-add-session-area-list">
+              <ion-list-header data-testid="count-progress-add-session-area-header">{{ translate("Area") }}</ion-list-header>
 
-              <ion-radio-group v-model="selectedArea">
-                <ion-item v-for="area in areas" :key="area.value">
-                  <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
+              <ion-radio-group v-model="selectedArea" data-testid="count-progress-add-session-area-radio-group">
+                <ion-item v-for="area in areas" :key="area.value" :data-testid="'count-progress-add-session-area-item-' + area.value">
+                  <ion-radio label-placement="start" :value="area.label" :data-testid="'count-progress-add-session-area-radio-' + area.value">{{ area.label }}</ion-radio>
                 </ion-item>
               </ion-radio-group>
             </ion-list>
 
-            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-              <ion-fab-button @click="addNewSession">
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="count-progress-add-session-fab">
+              <ion-fab-button @click="addNewSession" data-testid="count-progress-add-session-save-btn">
                 <ion-icon :icon="checkmarkDoneOutline" />
               </ion-fab-button>
             </ion-fab>
@@ -552,7 +555,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, defineProps, reactive } from 'vue';
+import { computed, ref, reactive } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';

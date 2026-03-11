@@ -3,111 +3,111 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="confirmGoBack">
+          <ion-button @click="confirmGoBack" data-testid="pre-counted-items-back-btn">
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate("Add Hand Counted Items")}}</ion-title>
+        <ion-title data-testid="pre-counted-items-page-title">{{ translate("Add Hand Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
       <main>
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
+        <ion-card data-testid="pre-counted-items-search-card">
+          <ion-card-header data-testid="pre-counted-items-search-header">
+            <ion-card-title data-testid="pre-counted-items-search-title">
               {{ translate("Add Items") }}
             </ion-card-title>
           </ion-card-header>
-          <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
-          <ion-item lines="none">
-            <ion-label>
+          <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey" data-testid="pre-counted-items-search-bar"></ion-searchbar>
+          <ion-item lines="none" data-testid="pre-counted-items-search-info">
+            <ion-label data-testid="pre-counted-items-search-label">
               {{ translate("Search for products by parent name, SKU or UPC") }}
             </ion-label>
           </ion-item>
           <!-- Skeleton loader during search -->
-          <ion-item v-if="isSearching" lines="none">
-            <ion-thumbnail slot="start">
-              <ion-skeleton-text :animated="true"></ion-skeleton-text>
+          <ion-item v-if="isSearching" lines="none" data-testid="pre-counted-items-search-skeleton">
+            <ion-thumbnail slot="start" data-testid="pre-counted-items-search-skeleton-thumbnail">
+              <ion-skeleton-text :animated="true" data-testid="pre-counted-items-search-skeleton-img"></ion-skeleton-text>
             </ion-thumbnail>
-            <ion-label>
-              <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
-              <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
+            <ion-label data-testid="pre-counted-items-search-skeleton-label">
+              <h2><ion-skeleton-text :animated="true" style="width: 60%" data-testid="pre-counted-items-search-skeleton-title"></ion-skeleton-text></h2>
+              <p><ion-skeleton-text :animated="true" style="width: 40%" data-testid="pre-counted-items-search-skeleton-subtitle"></ion-skeleton-text></p>
             </ion-label>
           </ion-item>
           <!-- Search result -->
-          <ion-item v-else-if="searchedProducts.length > 0" lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="searchedProducts[0].mainImageUrl"/>
+          <ion-item v-else-if="searchedProducts.length > 0" lines="none" data-testid="pre-counted-items-search-result">
+            <ion-thumbnail slot="start" data-testid="pre-counted-items-search-result-thumbnail">
+              <Image :src="searchedProducts[0].mainImageUrl" data-testid="pre-counted-items-search-result-img"/>
             </ion-thumbnail>
-            <ion-label>
-              {{ useProductMaster().primaryId(searchedProducts[0]) }}
-              <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
-              <ion-text color="danger" v-if="searchedProducts[0].isUndirected">{{ translate("Undirected items cannot be added to count") }}</ion-text>
+            <ion-label data-testid="pre-counted-items-search-result-label">
+              <span data-testid="pre-counted-items-search-result-primary-id">{{ useProductMaster().primaryId(searchedProducts[0]) }}</span>
+              <p data-testid="pre-counted-items-search-result-secondary-id">{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+              <ion-text color="danger" v-if="searchedProducts[0].isUndirected" data-testid="pre-counted-items-search-result-undirected-msg">{{ translate("Undirected items cannot be added to count") }}</ion-text>
             </ion-label>
-            <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])">
+            <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])" data-testid="pre-counted-items-search-result-add-btn">
               <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-              Add to count
+              {{ translate("Add to count") }}
             </ion-button>
           </ion-item>
-          <ion-item v-if="searchedProducts.length > 0" lines="none">
-            <ion-label>
-              <p>
+          <ion-item v-if="searchedProducts.length > 0" lines="none" data-testid="pre-counted-items-search-helper">
+            <ion-label data-testid="pre-counted-items-search-helper-label">
+              <p data-testid="pre-counted-items-search-helper-text">
                 {{ translate('Press enter to add helper') }}
               </p>
             </ion-label>
           </ion-item>
-          <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
-            <ion-label>
+          <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal" data-testid="pre-counted-items-view-more-btn">
+            <ion-label data-testid="pre-counted-items-view-more-label">
               {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
             </ion-label>
           </ion-item>
         </ion-card>
-        <ion-card v-if="products.length === 0" class="hand-counted-empty-state">
-          <ion-card-header>
-            <ion-card-title>{{ translate('What are Hand-counted items?') }}</ion-card-title>
+        <ion-card v-if="products.length === 0" class="hand-counted-empty-state" data-testid="pre-counted-items-empty-state">
+          <ion-card-header data-testid="pre-counted-items-empty-state-header">
+            <ion-card-title data-testid="pre-counted-items-empty-state-title">{{ translate('What are Hand-counted items?') }}</ion-card-title>
           </ion-card-header>
-          <ion-card-content>
-            <p>{{ translate('Hand-counted items description') }}</p>
-            <p>{{ translate('Hand-counted items stability note') }}</p>
-            <p>{{ translate('Hand-counted items movement note') }}</p>
-            <p>{{ translate('Hand-counted items benefit note') }}</p>
-            <ion-text color="medium">
-              <p class="ion-padding-top">
+          <ion-card-content data-testid="pre-counted-items-empty-state-content">
+            <p data-testid="pre-counted-items-empty-state-desc-1">{{ translate('Hand-counted items description') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-2">{{ translate('Hand-counted items stability note') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-3">{{ translate('Hand-counted items movement note') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-4">{{ translate('Hand-counted items benefit note') }}</p>
+            <ion-text color="medium" data-testid="pre-counted-items-empty-state-prompt-text">
+              <p class="ion-padding-top" data-testid="pre-counted-items-empty-state-prompt">
                 {{ translate('Begin typing hand-counted product prompt') }}
               </p>
             </ion-text>
           </ion-card-content>
         </ion-card>
 
-        <div class="counted-items-header" v-if="products.length > 0">
-          <h2>
+        <div class="counted-items-header" v-if="products.length > 0" data-testid="pre-counted-items-results-header-container">
+          <h2 data-testid="pre-counted-items-results-title">
             {{ translate("Counted Items") }}
           </h2>
-          <ion-button :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="addAllProductsToScanEvents">
+          <ion-button :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="addAllProductsToScanEvents" data-testid="pre-counted-items-save-progress-btn">
             {{ translate("Save progress") }}
           </ion-button>
         </div>
         
-        <ion-list v-if="products.length > 0" class="hand-counted-items">
-          <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index">
-            <div class="item ion-padding-end">
-              <ion-item class="product" lines="none">
-                <ion-thumbnail slot="start">
-                  <img :src="product.mainImageUrl"/>
+        <ion-list v-if="products.length > 0" class="hand-counted-items" data-testid="pre-counted-items-list">
+          <ion-card v-for="(product, index) in products" :key="product.productId + '-' + index" :data-testid="'pre-counted-items-card-' + product.productId">
+            <div class="item ion-padding-end" data-testid="pre-counted-items-item-container">
+              <ion-item class="product" lines="none" data-testid="pre-counted-items-product-info">
+                <ion-thumbnail slot="start" data-testid="pre-counted-items-product-thumbnail">
+                  <img :src="product.mainImageUrl" data-testid="pre-counted-items-product-img"/>
                 </ion-thumbnail>
-                <ion-label>
-                  {{ useProductMaster().primaryId(product) }}
-                  <p>{{ useProductMaster().secondaryId(product) }}</p>
-                  <ion-text v-if="product.isRequested && product.isRequested === 'N'" color="danger">
+                <ion-label data-testid="pre-counted-items-product-label">
+                  <span data-testid="pre-counted-items-product-primary-id">{{ useProductMaster().primaryId(product) }}</span>
+                  <p data-testid="pre-counted-items-product-secondary-id">{{ useProductMaster().secondaryId(product) }}</p>
+                  <ion-text v-if="product.isRequested && product.isRequested === 'N'" color="danger" data-testid="pre-counted-items-undirected-badge">
                     {{ translate("Undirected") }}
                   </ion-text>
                 </ion-label>
               </ion-item>
-              <div class="quantity">
-                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+              <div class="quantity" data-testid="pre-counted-items-quantity-controls">
+                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)" data-testid="pre-counted-items-quantity-remove-btn">
                   <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
-                <ion-item lines="full">
+                <ion-item lines="full" data-testid="pre-counted-items-quantity-input-item">
                   <ion-input
                     :ref="el => setQuantityInputRef(el, index)"
                     @ionInput="onManualInputChange($event, product)"
@@ -120,19 +120,20 @@
                     placeholder="0" 
                     v-model.number="product.countedQuantity"
                     :disabled="product.saved"
+                    data-testid="pre-counted-items-quantity-input"
                   ></ion-input>
                 </ion-item>
-                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                <ion-button :disabled="product.saved" fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)" data-testid="pre-counted-items-quantity-add-btn">
                   <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
               </div>
             </div>
-            <div class="progress ion-padding">
-              <ion-progress-bar :value="product.countedQuantity && product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0"></ion-progress-bar>
-              <ion-label>
+            <div class="progress ion-padding" data-testid="pre-counted-items-progress-container">
+              <ion-progress-bar :value="product.countedQuantity && product.quantityOnHand > 0 ? (product.countedQuantity || 0) / product.quantityOnHand : 0" data-testid="pre-counted-items-progress-bar"></ion-progress-bar>
+              <ion-label data-testid="pre-counted-items-qoh-label">
                 {{ product.quantityOnHand > 0 ? product.quantityOnHand + ' QoH' : 'Not stocked' }}
               </ion-label>
-              <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)">
+              <ion-button fill="clear" color="danger" aria-label="remove-item" :disabled="product.saved" @click="removeProduct(product)" data-testid="pre-counted-items-remove-item-btn">
                 <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
@@ -141,36 +142,36 @@
       </main>
     </ion-content>
     <!-- Search Results Modal -->
-    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
-      <ion-header>
-        <ion-toolbar>
+    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal" data-testid="pre-counted-items-results-modal">
+      <ion-header data-testid="pre-counted-items-results-modal-header">
+        <ion-toolbar data-testid="pre-counted-items-results-modal-toolbar">
           <ion-buttons slot="start">
-            <ion-button @click="closeSearchResultsModal">
+            <ion-button @click="closeSearchResultsModal" data-testid="pre-counted-items-results-modal-close-btn">
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ translate("Search Results") }}</ion-title>
+          <ion-title data-testid="pre-counted-items-results-modal-title">{{ translate("Search Results") }}</ion-title>
         </ion-toolbar>
       </ion-header>
-      <ion-content>
-        <ion-radio-group v-model="selectedProductFromModal">
-          <ion-item v-for="product in searchedProducts" :key="product.productId">
-            <ion-thumbnail slot="start">
-              <Image :src="product.mainImageUrl" />
+      <ion-content data-testid="pre-counted-items-results-modal-content">
+        <ion-radio-group v-model="selectedProductFromModal" data-testid="pre-counted-items-results-modal-radio-group">
+          <ion-item v-for="product in searchedProducts" :key="product.productId" :data-testid="'pre-counted-items-results-modal-item-' + product.productId">
+            <ion-thumbnail slot="start" data-testid="pre-counted-items-results-modal-thumbnail">
+              <Image :src="product.mainImageUrl" data-testid="pre-counted-items-results-modal-img" />
             </ion-thumbnail>
-            <ion-radio :value="product.productId" :disabled="product.isUndirected">
-              <ion-label>
-                {{ useProductMaster().primaryId(product) }}
-                <p>{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text color="danger" v-if="product.isUndirected">{{ translate("Undirected") }}</ion-text>
+            <ion-radio :value="product.productId" :disabled="product.isUndirected" data-testid="pre-counted-items-results-modal-radio">
+              <ion-label data-testid="pre-counted-items-results-modal-label">
+                <span data-testid="pre-counted-items-results-modal-primary-id">{{ useProductMaster().primaryId(product) }}</span>
+                <p data-testid="pre-counted-items-results-modal-secondary-id">{{ useProductMaster().secondaryId(product) }}</p>
+                <ion-text color="danger" v-if="product.isUndirected" data-testid="pre-counted-items-results-modal-undirected-badge">{{ translate("Undirected") }}</ion-text>
               </ion-label>
             </ion-radio>
           </ion-item>
         </ion-radio-group>
       </ion-content>
-      <ion-footer>
-        <ion-toolbar>
-          <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal">
+      <ion-footer data-testid="pre-counted-items-results-modal-footer">
+        <ion-toolbar data-testid="pre-counted-items-results-modal-footer-toolbar">
+          <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal" data-testid="pre-counted-items-results-modal-add-btn">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
             {{ translate("Add to count") }}
           </ion-button>
@@ -188,7 +189,7 @@ import {
   IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
-import { ref, defineProps, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import router from '@/router'
 import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'

@@ -3,57 +3,57 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button default-href="/tabs/count"></ion-back-button>
+          <ion-back-button default-href="/tabs/count" data-testid="session-detail-back-btn"></ion-back-button>
         </ion-buttons>
-        <ion-title>{{ translate("Session Count Detail") }}</ion-title>
+        <ion-title data-testid="session-detail-page-title">{{ translate("Session Count Detail") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content ref="pageRef">
-        <div v-if="isLoadingItems" class="loading-overlay">
-          <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
+    <ion-content ref="pageRef" data-testid="session-detail-content">
+        <div v-if="isLoadingItems" class="loading-overlay" data-testid="session-detail-loading">
+          <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" data-testid="session-detail-progress-bar" />
         </div>
-      <main v-else>
+      <main v-else data-testid="session-detail-main">
         <!-- Left Panel -->
-        <div class="count-events">
-          <ion-item class="scan">
-            <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
+        <div class="count-events" data-testid="session-detail-events-panel">
+          <ion-item class="scan" data-testid="session-detail-scan-item">
+            <ion-label position="stacked" data-testid="session-detail-barcode-label">{{ barcodeIdentifierDescription }}</ion-label>
             <ion-input ref="barcodeInput" v-model="scannedValue" placeholder="Scan a barcode" @keyup.enter="handleScan" @click="clearSearchResults"
-              @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable"></ion-input>
+              @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur" :disabled="!isSessionMutable" data-testid="session-detail-scan-input"></ion-input>
           </ion-item>
-          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled">
+          <ion-button expand="block" :color="scannerButtonColor" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus" :disabled="scannerButtonDisabled" data-testid="session-detail-scanner-btn">
 
             <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
             {{ scannerButtonLabel }}
           </ion-button>
 
-          <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top">
+          <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top" data-testid="session-detail-empty-events">
             <ion-label>
               {{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}
             </ion-label>
           </ion-item>
 
-          <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+          <div class="events" data-testid="session-detail-events-list">
+          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-events-scroller">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-item>
+                <ion-item :data-testid="'session-detail-event-item-' + item.id">
                   <div slot="start" class="img-preview">
-                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
+                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)" data-testid="session-detail-event-thumbnail">
                       <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
                     </ion-thumbnail>
-                      <ion-badge class="qty-badge" color="medium">
+                      <ion-badge class="qty-badge" color="medium" data-testid="session-detail-event-qty">
                         {{ item.quantity }}
                       </ion-badge>
                   </div>
-                  <ion-label>
+                  <ion-label data-testid="session-detail-event-label">
                     {{ item.scannedValue }}
-                    <p class="clickable-time" @click="showTime(item.createdAt)">{{ timeAgo(item.createdAt) }}</p>
+                    <p class="clickable-time" @click="showTime(item.createdAt)" data-testid="session-detail-event-time">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
-                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary" data-testid="session-detail-event-unagg-badge">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>  
                 </ion-item>
@@ -70,9 +70,9 @@
           </div>
 
           <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
-            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)">
+            @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)" data-testid="session-detail-add-hand-counted-card">
             <ion-item lines="none">
-              <ion-label class="ion-text-nowrap">{{ translate("Add hand-counted items") }}</ion-label>
+              <ion-label class="ion-text-nowrap" data-testid="session-detail-add-hand-counted-label">{{ translate("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
             </ion-item>
           </ion-card>
@@ -80,18 +80,18 @@
 
         <!-- Right Panel -->
         <div class="count-dashboard">
-          <div class="header ion-padding">
+          <div class="header ion-padding" data-testid="session-detail-dashboard-header">
             <ion-item lines="none">
               <ion-label>
-                <p class="overline">{{ countTypeLabel }}</p>
-                <h1>{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
-                <p v-if="inventoryCountImport?.uploadedByUserLogin">{{ translate("Created by") }} {{ inventoryCountImport.uploadedByUserLogin }}</p>
+                <p class="overline" data-testid="session-detail-count-type">{{ countTypeLabel }}</p>
+                <h1 data-testid="session-detail-session-name">{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
+                <p v-if="inventoryCountImport?.uploadedByUserLogin" data-testid="session-detail-created-by">{{ translate("Created by") }} {{ inventoryCountImport.uploadedByUserLogin }}</p>
               </ion-label>
             </ion-item>
 
             <!-- When session is SUBMITTED: show only Re-open button -->
             <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
-              <ion-button color="warning" fill="outline" @click="reopen">
+              <ion-button color="warning" fill="outline" @click="reopen" data-testid="session-detail-reopen-btn">
                 <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                 {{ translate("Re-open session") }}
               </ion-button>
@@ -99,28 +99,28 @@
 
             <!-- When session is VOIDED: all buttons disabled -->
             <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
-              <ion-badge color="warning">
+              <ion-badge color="warning" data-testid="session-detail-discarded-badge">
                 {{ translate("Session discarded") }}
               </ion-badge>
             </template>
 
             <!-- Default: show Edit / Discard / Submit -->
             <template v-else>
-              <div class="actions">
-                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked">
+              <div class="actions" data-testid="session-detail-actions">
+                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked" data-testid="session-detail-edit-btn">
                   <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                   {{ translate("Edit") }}
                 </ion-button>
-                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked">
+                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked" data-testid="session-detail-discard-btn">
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
                 <ion-item lines="none" v-if="timeLeft">
-                  <ion-label slot="end" :color="timerColor">
+                  <ion-label slot="end" :color="timerColor" data-testid="session-detail-timer">
                     {{ timeLeft }}
                   </ion-label>
                 </ion-item>
@@ -130,21 +130,21 @@
 
           <div class="statistics ion-padding">
             <!-- Last Scanned Product Card -->
-            <ion-card v-if="lastScannedEvent">
+            <ion-card v-if="lastScannedEvent" data-testid="session-detail-last-scanned-card">
               <ion-item lines="none">
                 <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
               </ion-item>
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
-                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl"/>
+                  <Image :src="lastScannedEvent.product?.mainImageUrl || defaultImage" :key="lastScannedEvent.product?.mainImageUrl" data-testid="session-detail-last-scanned-img"/>
                 </ion-thumbnail>
-                <ion-label>
+                <ion-label data-testid="session-detail-last-scanned-label">
                   <template v-if="lastScannedEvent.product">
-                    <h2>{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
-                    <p>{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
+                    <h2 data-testid="session-detail-last-scanned-primary-id">{{ useProductMaster().primaryId(lastScannedEvent.product) }}</h2>
+                    <p data-testid="session-detail-last-scanned-secondary-id">{{ useProductMaster().secondaryId(lastScannedEvent.product) }}</p>
                   </template>
                   <template v-else>
-                    <h2>{{ lastScannedEvent.scannedValue }}</h2>
+                    <h2 data-testid="session-detail-last-scanned-value">{{ lastScannedEvent.scannedValue }}</h2>
                     <p>{{ translate("Identifying product...") }}</p>
                   </template>
                 </ion-label>
@@ -152,77 +152,77 @@
               
               <ion-item lines="none">
                 <ion-label>
-                  <p>{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                  <p data-testid="session-detail-last-updated">{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
                 </ion-label>
               </ion-item>
 
               <ion-item lines="none">
                 <ion-label>{{ translate("Units") }}</ion-label>
-                <ion-label slot="end">{{ lastScannedProductTotal }}</ion-label>
+                <ion-label slot="end" data-testid="session-detail-last-scanned-units">{{ lastScannedProductTotal }}</ion-label>
               </ion-item>
             </ion-card>
 
-            <ion-card>
+            <ion-card data-testid="session-detail-stats-products-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
-                <p class="big-number">{{ stats.productsCounted }}</p>
+                <p class="big-number" data-testid="session-detail-stats-products">{{ stats.productsCounted }}</p>
               </ion-card-content>
               <ion-list lines="none">
                 <ion-item>
                   <ion-label>{{ translate("Pending match scans") }}</ion-label>
-                  <p slot="end">{{events.filter((event: any) => event.aggApplied === 0).length}}</p>
+                  <p slot="end" data-testid="session-detail-stats-pending-match">{{events.filter((event: any) => event.aggApplied === 0).length}}</p>
                 </ion-item>
                 <ion-item>
                   <ion-label>{{ translate("Unmatched scans") }}</ion-label>
-                  <p slot="end">{{ stats.unmatched }}</p>
+                  <p slot="end" data-testid="session-detail-stats-unmatched">{{ stats.unmatched }}</p>
                 </ion-item>
               </ion-list>
             </ion-card>
 
-            <ion-card>
+            <ion-card data-testid="session-detail-stats-units-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Units counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
-                <p class="big-number">{{ stats.totalUnits }}</p>
+                <p class="big-number" data-testid="session-detail-stats-units">{{ stats.totalUnits }}</p>
               </ion-card-content>
             </ion-card>
           </div>
 
-          <ion-segment v-model="selectedSegment">
-            <ion-segment-button v-if="isDirected" value="uncounted">
+          <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
+            <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button v-if="isDirected" value="undirected">
+            <ion-segment-button v-if="isDirected" value="undirected" data-testid="session-detail-segment-undirected-btn">
               <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="unmatched">
+            <ion-segment-button value="unmatched" data-testid="session-detail-segment-unmatched-btn">
               <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
             </ion-segment-button>
-            <ion-segment-button value="counted">
+            <ion-segment-button value="counted" data-testid="session-detail-segment-counted-btn">
               <ion-label>{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
             </ion-segment-button>
           </ion-segment>
 
           <ion-segment-view>
             <!-- Uncounted -->
-            <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+            <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards" data-testid="session-detail-uncounted-content">
+              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-uncounted-search-input"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
+                      <ion-item :data-testid="'session-detail-uncounted-filtered-item-' + item.uuid">
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-filtered-item-img"/>
                         </ion-thumbnail>
-                        <ion-label>
+                        <ion-label data-testid="session-detail-uncounted-filtered-item-label">
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note v-if="showQoh" slot="end">
+                        <ion-note v-if="showQoh" slot="end" data-testid="session-detail-uncounted-filtered-item-qoh">
                           {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
@@ -238,18 +238,18 @@
               </template>
 
               <template v-else>
-                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
+                      <ion-item :data-testid="'session-detail-uncounted-item-' + item.uuid">
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-item-img"/>
                         </ion-thumbnail>
-                        <ion-label>
+                        <ion-label data-testid="session-detail-uncounted-item-label">
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end" v-if="showQoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end" v-if="showQoh" data-testid="session-detail-uncounted-item-qoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -258,9 +258,9 @@
             </ion-segment-content>
 
             <!-- Undirected -->
-            <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards">
+            <ion-segment-content v-if="isDirected && selectedSegment === 'undirected'" class="cards" data-testid="session-detail-undirected-content">
               <template v-if="undirectedItems.length === 0">
-                <div class="empty-state ion-padding ion-text-center">
+                <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-undirected-empty">
                   <ion-label>
                     <h2 class="ion-margin-bottom">{{ translate("No undirected items") }}</h2>
                     <p>{{ translate("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
@@ -268,39 +268,39 @@
                 </div>
               </template>
               <template v-else>
-                <ion-card class="info-card ion-margin-bottom">
+                <ion-card class="info-card ion-margin-bottom" data-testid="session-detail-undirected-info">
                   <ion-card-content>
                     <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
                   </ion-card-content>
                 </ion-card>
-                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-undirected-search-input"/>
                 <template v-if="filteredItems.length">
-                  <ion-card v-for="item in filteredItems" :key="item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-card-' + item.uuid">
+                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
                     <ion-item>
-                      <ion-label>
+                      <ion-label data-testid="session-detail-undirected-filtered-item-label">
                         <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                        <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
                   </ion-card>
                 </template>
 
                 <template v-else-if="searchKeyword && !filteredItems.length">
-                  <div class="empty-state ion-padding ion-text-center">
+                  <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-undirected-not-found">
                     <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
                   </div>
                 </template>
 
                 <template v-else>
-                  <ion-card v-for="item in undirectedItems" :key="item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                  <ion-card v-for="item in undirectedItems" :key="item.uuid" :data-testid="'session-detail-undirected-card-' + item.uuid">
+                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
                     <ion-item>
-                      <ion-label>
+                      <ion-label data-testid="session-detail-undirected-item-label">
                         <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        <p>{{ item.quantity }} {{ translate('Units') }}</p>
+                        <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
                   </ion-card>
@@ -309,10 +309,10 @@
             </ion-segment-content>
 
             <!-- Unmatched -->
-            <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+            <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards" data-testid="session-detail-unmatched-content">
+              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-unmatched-search-input"/>
                <template v-if="unmatchedItems.length === 0">
-                <div class="empty-state ion-padding ion-text-center">
+                <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-unmatched-empty">
                   <ion-label>
                     <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
                     <p>{{ translate("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
@@ -320,24 +320,24 @@
                 </div>
               </template>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid">
+                <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-unmatched-filtered-card-' + item.uuid">
                   <ion-item>
-                    <ion-label>
+                    <ion-label data-testid="session-detail-unmatched-filtered-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)" data-testid="session-detail-unmatched-filtered-match-btn">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
                   </ion-item>
                   <!-- Previous good scan -->
-                  <ion-item v-if="getScanContext(item).previousGood">
+                  <ion-item v-if="getScanContext(item).previousGood" data-testid="session-detail-unmatched-filtered-prev-good">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
+                      <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl" data-testid="session-detail-unmatched-filtered-prev-img"/>
                     </ion-thumbnail>
-                    <ion-label>
+                    <ion-label data-testid="session-detail-unmatched-filtered-prev-label">
                       <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
@@ -346,11 +346,11 @@
                     <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
                   </ion-item>
                   <!-- Next good scan -->
-                  <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                  <ion-item lines="none" v-if="getScanContext(item).nextGood" data-testid="session-detail-unmatched-filtered-next-good">
                     <ion-thumbnail slot="start">
-                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
+                      <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl" data-testid="session-detail-unmatched-filtered-next-img"/>
                     </ion-thumbnail>
-                    <ion-label>
+                    <ion-label data-testid="session-detail-unmatched-filtered-next-label">
                       <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
@@ -368,14 +368,14 @@
               </template>
 
               <template v-else>
-                <ion-card v-for="item in unmatchedItems" :key="item.uuid">
+                <ion-card v-for="item in unmatchedItems" :key="item.uuid" :data-testid="'session-detail-unmatched-card-' + item.uuid">
                   <ion-item>
-                    <ion-label>
+                    <ion-label data-testid="session-detail-unmatched-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
                       <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
-                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)">
+                    <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)" data-testid="session-detail-unmatched-match-btn">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
                       {{ translate("Match") }}
                     </ion-button>
@@ -411,22 +411,22 @@
             </ion-segment-content>
 
             <!-- Counted -->
-            <ion-segment-content v-if="selectedSegment === 'counted'" class="cards">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom"/>
+            <ion-segment-content v-if="selectedSegment === 'counted'" class="cards" data-testid="session-detail-counted-content">
+              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-counted-search-input"/>
               <template v-if="filteredItems.length">
-                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item>
+                      <ion-item :data-testid="'session-detail-counted-filtered-item-' + item.uuid">
                         <ion-thumbnail slot="start">
-                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-filtered-item-img"/>
                         </ion-thumbnail>
-                        <ion-label>
+                        <ion-label data-testid="session-detail-counted-filtered-item-label">
                           <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                          <p v-if="item.wasUnmatched">{{ item.scannedValue }}</p>
+                          <p v-if="item.wasUnmatched" data-testid="session-detail-counted-filtered-item-original-scan">{{ item.scannedValue }}</p>
                         </ion-label>
-                        <ion-note slot="end">
+                        <ion-note slot="end" data-testid="session-detail-counted-filtered-item-qty">
                           {{ item.quantity }} {{ translate('Units') }}
                         </ion-note>
                       </ion-item>
@@ -442,18 +442,18 @@
               </template>
               
               <template v-else>
-                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <DynamicScroller :items="countedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-scroller">
                 <template v-slot="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-item>
+                    <ion-item :data-testid="'session-detail-counted-item-' + item.uuid">
                       <ion-thumbnail slot="start">
-                        <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-item-img"/>
                       </ion-thumbnail>
-                      <ion-label>
+                      <ion-label data-testid="session-detail-counted-item-label">
                         {{ useProductMaster().primaryId(item.product) }}
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       </ion-label>
-                      <ion-note slot="end">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                      <ion-note slot="end" data-testid="session-detail-counted-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
                     </ion-item>
                   </DynamicScrollerItem>
                 </template>
@@ -463,34 +463,34 @@
           </ion-segment-view>
         </div>
       </main>
-      <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal" @didPresent="focusMatchSearch">
+      <ion-modal :is-open="isMatchModalOpen" @didDismiss="closeMatchModal" @didPresent="focusMatchSearch" data-testid="session-detail-match-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
-              <ion-button @click="closeMatchModal">
+              <ion-button @click="closeMatchModal" data-testid="session-detail-match-modal-close-btn">
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("Match Product") }}</ion-title>
+            <ion-title data-testid="session-detail-match-modal-title">{{ translate("Match Product") }}</ion-title>
           </ion-toolbar>
         </ion-header>
-        <ion-content>
-          <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @ion-input="handleLiveSearch" />
-          <div v-if="isLoading" class="empty-state ion-padding">
+        <ion-content data-testid="session-detail-match-modal-content">
+          <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @ion-input="handleLiveSearch" data-testid="session-detail-match-modal-search-input" />
+          <div v-if="isLoading" class="empty-state ion-padding" data-testid="session-detail-match-modal-loading">
             <ion-spinner name="crescent" />
             <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
           </div>
-          <div v-else-if="queryString && queryString.trim().length < 4" class="empty-state ion-padding">
+          <div v-else-if="queryString && queryString.trim().length < 4" class="empty-state ion-padding" data-testid="session-detail-match-modal-min-chars-msg">
             <p>{{ translate("Type at least 4 characters to search") }}</p>
           </div>
           <template v-else-if="isSearching && products.length">
-            <ion-radio-group v-model="selectedProductId">
-              <ion-item v-for="product in products" :key="product.productId">
+            <ion-radio-group v-model="selectedProductId" data-testid="session-detail-match-modal-radio-group">
+              <ion-item v-for="product in products" :key="product.productId" :data-testid="'session-detail-match-modal-item-' + product.productId">
                 <ion-thumbnail slot="start">
-                  <Image :src="product?.mainImageUrl" :key="product?.mainImageUrl"/>
+                  <Image :src="product?.mainImageUrl" :key="product?.mainImageUrl" data-testid="session-detail-match-modal-item-img"/>
                 </ion-thumbnail>
-                <ion-radio :value="product.productId">
-                  <ion-label>
+                <ion-radio :value="product.productId" :data-testid="'session-detail-match-modal-radio-' + product.productId">
+                  <ion-label data-testid="session-detail-match-modal-item-label">
                     {{ useProductMaster().primaryId(product) || product.productName }}
                     <p>{{ useProductMaster().secondaryId(product) }}</p>
                   </ion-label>
@@ -505,8 +505,8 @@
             <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
             <p>{{ translate("Enter a SKU or product name to search a product") }}</p>
           </div>
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button :disabled="!selectedProductId" @click="saveMatchProduct">
+          <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="session-detail-match-modal-fab">
+            <ion-fab-button :disabled="!selectedProductId" @click="saveMatchProduct" data-testid="session-detail-match-modal-save-btn">
               <ion-icon :icon="saveOutline" />
             </ion-fab-button>
           </ion-fab>
@@ -514,36 +514,36 @@
       </ion-modal>
       <!-- Edit Session Modal -->
       <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false"
-        :presenting-element="pageRef?.$el" :keep-contents-mounted="true">
+        :presenting-element="pageRef?.$el" :keep-contents-mounted="true" data-testid="session-detail-edit-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
-              <ion-button @click="isEditNewSessionModalOpen = false" fill="clear" aria-label="Close">
+              <ion-button @click="isEditNewSessionModalOpen = false" fill="clear" aria-label="Close" data-testid="session-detail-edit-modal-close-btn">
                 <ion-icon :icon="closeOutline" slot="icon-only" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate("Edit session") }}</ion-title>
+            <ion-title data-testid="session-detail-edit-modal-title">{{ translate("Edit session") }}</ion-title>
           </ion-toolbar>
         </ion-header>
-        <ion-content>
-          <ion-item>
+        <ion-content data-testid="session-detail-edit-modal-content">
+          <ion-item data-testid="session-detail-edit-modal-name-item">
             <ion-label position="stacked">{{ translate("Name") }}</ion-label>
-            <ion-input v-model="newCountName" placeholder="category, section, or person"></ion-input>
+            <ion-input v-model="newCountName" placeholder="category, section, or person" data-testid="session-detail-edit-modal-name-input"></ion-input>
             <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session")}}</ion-note>
           </ion-item>
 
-          <ion-list>
+          <ion-list data-testid="session-detail-edit-modal-area-list">
             <ion-list-header>{{ translate("Area")}}</ion-list-header>
 
-            <ion-radio-group v-model="selectedArea">
-              <ion-item v-for="area in areas" :key="area.value">
-                <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
+            <ion-radio-group v-model="selectedArea" data-testid="session-detail-edit-modal-area-radio-group">
+              <ion-item v-for="area in areas" :key="area.value" :data-testid="'session-detail-edit-modal-area-item-' + area.value">
+                <ion-radio label-placement="start" :value="area.label" :data-testid="'session-detail-edit-modal-area-radio-' + area.value">{{ area.label }}</ion-radio>
               </ion-item>
             </ion-radio-group>
           </ion-list>
 
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button @click="updateSessionOnServer">
+          <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="session-detail-edit-modal-fab">
+            <ion-fab-button @click="updateSessionOnServer" data-testid="session-detail-edit-modal-save-btn">
               <ion-icon :icon="checkmarkDoneOutline" />
             </ion-fab-button>
           </ion-fab>
@@ -559,16 +559,18 @@
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
           { text: 'Submit', role: 'confirm', handler: confirmSubmit }
         ]"
-        @didDismiss="showSubmitAlert = false"/>
+        @didDismiss="showSubmitAlert = false"
+        data-testid="session-detail-submit-alert"/>
 
       <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate('This session will be discarded and it won\'t be included for review when analyzing variances.')"
         :buttons="[
           { text: translate('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
           { text: translate('Discard'), role: 'confirm', handler: confirmDiscard }
         ]"
-        @didDismiss="showDiscardAlert = false"/>
+        @didDismiss="showDiscardAlert = false"
+        data-testid="session-detail-discard-alert"/>
     </ion-content>
-    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm" data-testid="session-detail-remove-confirm-alert"/>
   </ion-page>
 </template>
 

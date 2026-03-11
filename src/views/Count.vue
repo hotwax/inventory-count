@@ -2,117 +2,117 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
+        <ion-title slot="start" data-testid="count-page-title">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding" ref="pageRef" :scroll-events="true" @ionScroll="enableScrolling()">
-      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
-        <ion-refresher-content refreshing-spinner="circular"></ion-refresher-content>
+    <ion-content class="ion-padding" ref="pageRef" :scroll-events="true" @ionScroll="enableScrolling()" data-testid="count-content">
+      <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)" data-testid="count-refresher">
+        <ion-refresher-content refreshing-spinner="circular" data-testid="count-refresher-content"></ion-refresher-content>
       </ion-refresher>
       <template v-if="isLoading">
-        <p class="empty-state">{{ translate("Fetching cycle counts...") }}</p>
+        <p class="empty-state" data-testid="count-loading">{{ translate("Fetching cycle counts...") }}</p>
       </template>
       <template v-else-if="cycleCounts.length > 0">
-        <ion-card v-for="count in cycleCounts" :key="count.workEffortId">
+        <ion-card v-for="count in cycleCounts" :key="count.workEffortId" :data-testid="'count-card-' + count.workEffortId">
           <ion-card-header>
             <div>
-              <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline">
+              <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline" data-testid="count-badge-hard-count">
                 {{ translate("HARD COUNT") }}
               </ion-label>
-              <ion-card-title>
+              <ion-card-title data-testid="count-card-title">
                 {{ count.workEffortName }}
               </ion-card-title>
-              <ion-card-subtitle>
+              <ion-card-subtitle data-testid="count-card-subtitle">
                 {{ getDateTimeWithOrdinalSuffix(count.createdDate) }}
               </ion-card-subtitle>
             </div>
           </ion-card-header>
-          <ion-item lines="none">
-            {{ translate("Due date") }}
-            <ion-label slot="end">
+          <ion-item lines="none" data-testid="count-due-date-item">
+            <ion-label data-testid="count-due-date-label">{{ translate("Due date") }}</ion-label>
+            <ion-label slot="end" data-testid="count-due-date-value">
               <p v-if="count.estimatedCompletionDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-item lines="none">
-            {{ translate("Start date") }}
-            <ion-label slot="end">
+          <ion-item lines="none" data-testid="count-start-date-item">
+            <ion-label data-testid="count-start-date-label">{{ translate("Start date") }}</ion-label>
+            <ion-label slot="end" data-testid="count-start-date-value">
               <p v-if="count.estimatedStartDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT'))">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT'))" data-testid="count-start-counting-btn">
             {{ translate("Start counting") }}
           </ion-button>
-          <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)">
+          <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)" data-testid="count-future-start-warning">
             <ion-note color="warning">
               {{ translate("This count is scheduled to start") }} {{ getTimeUntil(count.estimatedStartDate) }}
             </ion-note>
           </div>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-preview-btn">
             {{ translate("Preview count") }}
           </ion-button>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-review-btn">
             {{ translate("Review progress") }}
           </ion-button>
           
-          <ion-list>
-            <ion-list-header>
-              <ion-label>
+          <ion-list data-testid="count-session-list">
+            <ion-list-header data-testid="count-session-header">
+              <ion-label data-testid="count-session-header-label">
                 {{ translate("Sessions") }}
               </ion-label>
 
-              <ion-button v-if="count.sessions?.length" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)">
+              <ion-button v-if="count.sessions?.length" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)" data-testid="count-new-session-header-btn">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
                 {{ translate("New session") }}
               </ion-button>
             </ion-list-header>
-            <ion-button v-if="count.sessions?.length === 0" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)">
+            <ion-button v-if="count.sessions?.length === 0" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)" data-testid="count-start-new-session-btn">
               <ion-label>
                 {{ translate("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
-              <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId">
-                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
+              <ion-item-group v-for="session in count.sessions" :key="session.inventoryCountImportId" :data-testid="'count-session-group-' + session.inventoryCountImportId">
+                <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)" :data-testid="'count-session-item-' + session.inventoryCountImportId">
+                  <ion-label data-testid="count-session-item-label">
+                    <span data-testid="count-session-name-text">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
+                    <p data-testid="count-session-user-text">{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
                   </ion-label>
-                  <ion-note slot="end">
+                  <ion-note slot="end" data-testid="count-session-status-note">
                     {{ getSessionStatusDescription(session.statusId) }}
                   </ion-note>
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username" :data-testid="'count-session-item-locked-' + session.inventoryCountImportId">
+                  <ion-label data-testid="count-session-locked-label">
+                    <span data-testid="count-session-locked-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
+                    <p data-testid="count-session-locked-msg">{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
                     {{ translate("Force Release") }}
                   </ion-button>
-                  <ion-note v-else color="warning" slot="end">{{ translate("Locked") }}</ion-note>
+                  <ion-note v-else color="warning" slot="end" data-testid="count-session-locked-note">{{ translate("Locked") }}</ion-note>
                 </ion-item>
 
               <!-- Locked by same user, same device -->
-              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`">
-                <ion-label>
-                  {{ session.countImportName }} {{ session.facilityAreaId }}
-                  <p>{{ translate("Session already active for this device") }}</p>
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`" :data-testid="'count-session-item-active-' + session.inventoryCountImportId">
+                <ion-label data-testid="count-session-active-label">
+                  <span data-testid="count-session-active-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
+                  <p data-testid="count-session-active-msg">{{ translate("Session already active for this device") }}</p>
                 </ion-label>
-                <ion-note slot="end">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
+                <ion-note slot="end" data-testid="count-session-active-status-note">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
               </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId">
-                  <ion-label>
-                    {{ session.countImportName }} {{ session.facilityAreaId }}
-                    <p>{{ translate("Session already active on another device") }}</p>
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId" :data-testid="'count-session-item-active-other-device-' + session.inventoryCountImportId">
+                  <ion-label data-testid="count-session-active-other-device-label">
+                    <span data-testid="count-session-active-other-device-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
+                    <p data-testid="count-session-active-other-device-msg">{{ translate("Session already active on another device") }}</p>
                   </ion-label>
-                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)">
+                  <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-other-device-btn-' + session.inventoryCountImportId">
                     {{ translate("Force Release") }}
                   </ion-button>
                 </ion-item>
@@ -122,48 +122,48 @@
           </ion-list>
         </ion-card>
       </template>
-      <div v-else class="empty-state">
-        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count" />
-        <h2>{{ translate("All caught up!") }}</h2>
-        <p>{{ translate("You have no cycle counts assigned to you right now.") }}</p>
+      <div v-else class="empty-state" data-testid="count-empty-state">
+        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count" data-testid="count-empty-state-img"/>
+        <h2 data-testid="count-empty-state-header">{{ translate("All caught up!") }}</h2>
+        <p data-testid="count-empty-state-msg">{{ translate("You have no cycle counts assigned to you right now.") }}</p>
       </div>
-      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false">
+      <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-new-session-modal">
           <ion-header>
             <ion-toolbar>
               <ion-buttons slot="start">
-                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close">
+                <ion-button @click="isAddSessionModalOpen = false" fill="clear" aria-label="Close" data-testid="count-new-session-close-btn">
                   <ion-icon :icon="closeOutline" slot="icon-only" />
                 </ion-button>
               </ion-buttons>
-              <ion-title>{{ translate("New session") }}</ion-title>
+              <ion-title data-testid="count-new-session-title">{{ translate("New session") }}</ion-title>
             </ion-toolbar>
           </ion-header>
           <ion-content>
-            <ion-item>
-              <ion-label position="stacked">{{ translate("Name") }}</ion-label>
-              <ion-input v-model="countName" placeholder="category, section, or person"></ion-input>
-              <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
+            <ion-item data-testid="count-new-session-name-item">
+              <ion-label position="stacked" data-testid="count-new-session-name-label">{{ translate("Name") }}</ion-label>
+              <ion-input v-model="countName" placeholder="category, section, or person" data-testid="count-new-session-name-input"></ion-input>
+              <ion-note slot="helper" data-testid="count-new-session-name-helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
             </ion-item>
 
-            <ion-list>
-              <ion-list-header>{{ translate("Area") }}</ion-list-header>
+            <ion-list data-testid="count-new-session-area-list">
+              <ion-list-header data-testid="count-new-session-area-header">{{ translate("Area") }}</ion-list-header>
 
-              <ion-radio-group v-model="selectedArea">
-                <ion-item v-for="area in areas" :key="area.value">
-                  <ion-radio label-placement="start" :value="area.label">{{ area.label }}</ion-radio>
+              <ion-radio-group v-model="selectedArea" data-testid="count-new-session-area-radio-group">
+                <ion-item v-for="area in areas" :key="area.value" :data-testid="'count-new-session-area-item-' + area.value">
+                  <ion-radio label-placement="start" :value="area.label" :data-testid="'count-new-session-area-radio-' + area.value">{{ area.label }}</ion-radio>
                 </ion-item>
               </ion-radio-group>
             </ion-list>
 
-            <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-              <ion-fab-button @click="addNewSession">
+            <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="count-new-session-fab">
+              <ion-fab-button @click="addNewSession" data-testid="count-new-session-save-btn">
                 <ion-icon :icon="checkmarkDoneOutline" />
               </ion-fab-button>
             </ion-fab>
           </ion-content>
         </ion-modal>
 
-      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)">
+      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)" data-testid="count-infinite-scroll">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
     </ion-content>
