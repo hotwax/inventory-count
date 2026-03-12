@@ -1,5 +1,5 @@
 <template>
-  <img :src="imageUrl" data-testid="image-component"/>
+  <img :src="imageUrl"/>
 </template>
 
 <script lang="ts">

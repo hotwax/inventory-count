@@ -13,7 +13,7 @@
     </ion-header>
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter" data-testid="assigned-content">
-      <div class="header searchbar" data-testid="assigned-filters-wrapper">
+      <div class="header searchbar">
         <ion-searchbar :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"
           data-testid="assigned-search-input"
         />
@@ -40,7 +40,7 @@
       <ion-list v-else data-testid="assigned-list">
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/assigned/${count.workEffortId}`)" :data-testid="'assigned-item-' + count.workEffortId">
           <ion-item lines="none">
-            <ion-icon :icon="storefrontOutline" slot="start" data-testid="assigned-item-icon"></ion-icon>
+            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="assigned-item-label">
               <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="assigned-item-type-badge">{{ translate("HARD COUNT") }}</p>
               <h2 data-testid="assigned-item-name">{{ count.workEffortName }}</h2>

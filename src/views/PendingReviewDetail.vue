@@ -494,7 +494,7 @@ import {
   addCircleOutline, checkmarkDoneOutline, closeOutline, removeCircleOutline, calendarClearOutline,
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
-import { ref, computed } from "vue";
+import { ref, computed, defineProps } from "vue";
 import { translate } from "@/i18n";
 import router from "@/router";
 import { DateTime } from "luxon";

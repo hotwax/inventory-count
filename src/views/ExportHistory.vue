@@ -15,7 +15,7 @@
         </ion-list-header>
         <div class="list-item" v-for="message in systemMessages" :key="message.systemMessageId" :data-testid="'export-history-item-' + message.systemMessageId">
           <ion-item lines="none" data-testid="export-history-item-header">
-            <ion-icon :icon="documentOutline" slot="start" data-testid="export-history-item-icon"></ion-icon>
+            <ion-icon :icon="documentOutline" slot="start"></ion-icon>
             <ion-label data-testid="export-history-item-label">
               <span data-testid="export-history-item-filename">{{ extractFilename(message) || '-' }}</span>
               <p data-testid="export-history-item-id">{{ message.systemMessageId }}</p>

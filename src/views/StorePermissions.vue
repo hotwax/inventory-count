@@ -7,17 +7,17 @@
     </ion-header>
 
     <ion-content>
-      <div class="permission-cards" data-testid="store-permissions-cards-container">
+      <div class="permission-cards">
         <ion-card data-testid="store-permissions-view-card">
           <ion-item button detail lines="full" :router-link="'/tabs/count'" data-testid="store-permissions-view-item">
-            <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end" data-testid="store-permissions-view-icon"></ion-icon>
+            <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end"></ion-icon>
             <ion-label data-testid="store-permissions-view-label">
               {{ translate("Store View") }}
             </ion-label>
           </ion-item>
         </ion-card>
       </div>
-      <div class="permission-cards" data-testid="store-permissions-dynamic-cards-container">
+      <div class="permission-cards">
         <ion-card v-for="permission in permissionCards" :key="permission.id" :data-testid="'store-permissions-card-' + permission.id">
           <ion-card-header :data-testid="'store-permissions-header-' + permission.id">
             <ion-card-title :data-testid="'store-permissions-title-' + permission.id">
@@ -42,7 +42,7 @@
 
             <ion-item button @click="openHistory(permission)" :data-testid="'store-permissions-history-item-' + permission.id">
               <ion-label :data-testid="'store-permissions-history-label-' + permission.id">{{ translate('View history') }}</ion-label>
-              <ion-icon slot="end" :icon="timeOutline" :data-testid="'store-permissions-history-icon-' + permission.id"></ion-icon>
+              <ion-icon slot="end" :icon="timeOutline"></ion-icon>
             </ion-item>
 
             <ion-item v-for="group in activeGroupsByPermission[permission.id]" :key="group.groupId" :data-testid="'store-permissions-active-group-item-' + permission.id + '-' + group.groupId">

@@ -41,7 +41,7 @@
     </ion-header>
 
     <ion-content data-testid="timezone-modal-content">
-      <div data-testid="timezone-modal-container">
+      <div>
         <ion-radio-group value="rd" v-model="timeZoneId" data-testid="timezone-radio-group">
           <ion-list v-if="showBrowserTimeZone" data-testid="timezone-browser-list">
             <ion-list-header data-testid="timezone-browser-list-header">{{ translate("Browser time zone") }}</ion-list-header>
@@ -116,7 +116,7 @@ import {
   IonToolbar
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
-import { computed, onBeforeMount, ref } from "vue";
+import { computed, onBeforeMount, ref, defineProps } from "vue";
 import { translate} from '../i18n'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';

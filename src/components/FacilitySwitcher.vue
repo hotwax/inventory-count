@@ -73,7 +73,7 @@
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonRadio, IonRadioGroup, IonSearchbar, IonSpinner, IonTitle, IonToolbar } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
-import { computed, ref } from 'vue';
+import { computed, ref, defineProps } from 'vue';
 import { translate } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 

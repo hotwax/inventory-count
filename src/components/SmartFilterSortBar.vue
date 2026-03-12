@@ -56,7 +56,7 @@
     <ion-item-divider color="light" class="sort-row" data-testid="smart-filter-sort-bar">
 
       <!-- SELECT ALL -->
-      <div class="select-left" v-if="showSelect" data-testid="smart-filter-select-all-wrapper">
+      <div class="select-left" v-if="showSelect">
         <ion-checkbox
           class="checkbox"
           :checked="isAllSelected"
@@ -144,7 +144,7 @@ import {
   IonButton, IonIcon, IonContent, IonInput, IonFab, IonFabButton
 } from "@ionic/vue";
 
-import { reactive, computed, onMounted, ref } from "vue";
+import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
 import { translate as t } from "@/i18n";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";

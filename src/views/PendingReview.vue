@@ -6,7 +6,7 @@
         <ion-title data-testid="pending-review-page-title">{{ translate("Pending review")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="pending-review-filter" data-testid="pending-review-filter-menu-btn">
-            <ion-icon :icon="filterOutline" data-testid="pending-review-filter-icon"/>
+            <ion-icon :icon="filterOutline"/>
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
@@ -33,7 +33,7 @@
       <ion-list data-testid="pending-review-list">
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/pending-review/${count.workEffortId}`)" :data-testid="'pending-review-item-' + count.workEffortId">
           <ion-item lines="none" data-testid="pending-review-item-header">
-            <ion-icon :icon="storefrontOutline" slot="start" data-testid="pending-review-item-icon"></ion-icon>
+            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="pending-review-item-main-label">
               <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="pending-review-item-hard-count-badge">{{ translate("HARD COUNT") }}</p>
               <span data-testid="pending-review-item-name">{{ count.workEffortName }}</span>

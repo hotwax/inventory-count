@@ -189,7 +189,7 @@ import {
   IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, defineProps } from 'vue'
 import router from '@/router'
 import { client } from '@/services/RemoteAPI'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'

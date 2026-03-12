@@ -13,7 +13,7 @@
     </ion-header>
         <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" data-testid="closed-content">      
       <ion-list data-testid="closed-list">
-        <div class="filters" data-testid="closed-filters-container">
+        <div class="filters">
           <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="closed-search-bar"/>
           <ion-item data-testid="closed-status-item">
             <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All" data-testid="closed-status-select">
@@ -44,7 +44,7 @@
         </p>
         <div v-else class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)" :data-testid="'closed-item-' + count.workEffortId">
           <ion-item lines="none" data-testid="closed-item-header">
-            <ion-icon :icon="storefrontOutline" slot="start" data-testid="closed-item-icon"></ion-icon>
+            <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="closed-item-label">
               <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="closed-item-type">{{ translate("HARD COUNT") }}</p>
               <h2 data-testid="closed-item-name">{{ count.workEffortName }}</h2>

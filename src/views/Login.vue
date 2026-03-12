@@ -1,6 +1,6 @@
 <template>
   <ion-content>
-    <div class="center-div" data-testid="login-container">
+    <div class="center-div">
       <ion-item lines="none" v-if='error.message.length' data-testid="login-error-item">
         <ion-icon slot="start" color="warning" :icon="warningOutline" />
         <h4 data-testid="login-error-header">{{ $t('Login failed') }}</h4>

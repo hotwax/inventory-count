@@ -123,7 +123,7 @@
         </ion-card>
       </template>
       <div v-else class="empty-state" data-testid="count-empty-state">
-        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count" data-testid="count-empty-state-img"/>
+        <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count"/>
         <h2 data-testid="count-empty-state-header">{{ translate("All caught up!") }}</h2>
         <p data-testid="count-empty-state-msg">{{ translate("You have no cycle counts assigned to you right now.") }}</p>
       </div>

@@ -64,7 +64,7 @@
               {{ translate("Current Stock:") }} {{ selectedProduct.quantityOnHand || 0 }}
             </ion-text>
           </ion-item>
-          <div class="impact" data-testid="variance-impact-container">
+          <div class="impact">
             <ion-radio-group v-model="selectedProduct.negate" data-testid="variance-impact-radio-group">
               <ion-radio value="false" data-testid="variance-impact-add-radio">
                 {{ translate("Add") }}
@@ -111,7 +111,7 @@
             </ion-text>
           </ion-item>
         </ion-card>
-        <div class="ion-text-center" data-testid="variance-log-btn-container">
+        <div class="ion-text-center">
           <ion-button :disabled="!selectedProduct.varianceReason || selectedProduct.varianceQuantity === 0 || selectedProduct.saved" v-if="selectedProduct" @click="logVariance(selectedProduct)" data-testid="variance-log-btn">
             {{ translate("Log Variance") }}
           </ion-button>
