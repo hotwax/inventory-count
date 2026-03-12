@@ -2,20 +2,20 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>{{ translate("Draft bulk") }}</ion-title>
+        <ion-title data-testid="bulk-upload-page-title">{{ translate("Draft bulk") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <div class="main">
-        <ion-item lines="full">
-          <ion-label>{{ translate("Cycle count") }}</ion-label>
-          <ion-label class="ion-text-right ion-padding-end">{{ uploadedFile.name }}</ion-label>
-          <input @change="parse" ref="file" class="ion-hide" type="file" id="inventoryCountInputFile"/>
-          <label for="inventoryCountInputFile">{{ translate("Upload") }}</label>
+        <ion-item lines="full" data-testid="bulk-upload-file-item">
+          <ion-label data-testid="bulk-upload-file-label">{{ translate("Cycle count") }}</ion-label>
+          <ion-label class="ion-text-right ion-padding-end" data-testid="bulk-upload-filename">{{ uploadedFile.name }}</ion-label>
+          <input @change="parse" ref="file" class="ion-hide" type="file" id="inventoryCountInputFile" data-testid="bulk-upload-input"/>
+          <label for="inventoryCountInputFile" data-testid="bulk-upload-label">{{ translate("Upload") }}</label>
         </ion-item>
 
-        <ion-button color="medium" expand="block" @click="downloadTemplate">
+        <ion-button color="medium" expand="block" @click="downloadTemplate" data-testid="bulk-upload-download-template-btn">
           {{ translate("Download template") }}
           <ion-icon slot="end" :icon="downloadOutline" />
         </ion-button>
@@ -23,56 +23,56 @@
 
 
         <ion-list class="field-mappings">
-          <ion-item-divider color="light">
+          <ion-item-divider color="light" data-testid="bulk-upload-required-divider">
             <ion-label>{{ translate("Required") }} </ion-label>
           </ion-item-divider>
-          <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]">
-              <ion-label slot="label" class="ion-text-wrap">
+          <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)" :data-testid="'bulk-upload-required-field-' + field">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-required-field-select-' + field">
+              <ion-label slot="label" class="ion-text-wrap" :data-testid="'bulk-upload-required-field-label-' + field">
                 {{ translate(fieldValues.label) }}
-                <p>{{ fieldValues.description }}</p>
+                <p :data-testid="'bulk-upload-required-field-desc-' + field">{{ fieldValues.description }}</p>
               </ion-label>
-              <ion-select-option v-if="field === 'productSku'" value="skip">{{ translate("Skip") }}</ion-select-option>
-              <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
+              <ion-select-option v-if="field === 'productSku'" value="skip" data-testid="bulk-upload-field-option-skip">{{ translate("Skip") }}</ion-select-option>
+              <ion-select-option :key="index" v-for="(prop, index) in fileColumns" :value="prop" :data-testid="'bulk-upload-required-field-option-' + field + '-' + index">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
 
-          <ion-item-divider color="light">
+          <ion-item-divider color="light" data-testid="bulk-upload-optional-divider">
             <ion-label>{{ translate("Optional") }} </ion-label>
           </ion-item-divider>
-          <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]">
-              <ion-label slot="label" class="ion-text-wrap">
+          <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)" :data-testid="'bulk-upload-optional-field-' + field">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-optional-field-select-' + field">
+              <ion-label slot="label" class="ion-text-wrap" :data-testid="'bulk-upload-optional-field-label-' + field">
                 {{ translate(fieldValues.label) }}
-                <p>{{ fieldValues.description }}</p>
+                <p :data-testid="'bulk-upload-optional-field-desc-' + field">{{ fieldValues.description }}</p>
               </ion-label>
-              <ion-select-option :key="index" v-for="(prop, index) in fileColumns">{{ prop }}</ion-select-option>
+              <ion-select-option :key="index" v-for="(prop, index) in fileColumns" :value="prop" :data-testid="'bulk-upload-optional-field-option-' + field + '-' + index">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-list>
 
-        <ion-button :disabled="!content.length" @click="save" expand="block">
+        <ion-button :disabled="!content.length" @click="save" expand="block" data-testid="bulk-upload-submit-btn">
           {{ translate("Submit") }}
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
 
-        <ion-list v-if="systemMessages.length" class="system-message-section">
-          <ion-list-header>
-            <ion-label>
+        <ion-list v-if="systemMessages.length" class="system-message-section" data-testid="bulk-upload-recent-list">
+          <ion-list-header data-testid="bulk-upload-recent-header">
+            <ion-label data-testid="bulk-upload-recent-title">
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
-              <ion-label class="ion-text-end">
+              <ion-label class="ion-text-end" data-testid="bulk-upload-next-run">
                 {{ nextExecutionRemaining.includes("ago") ? translate("Last run") : translate("Next run") }} {{ nextExecutionRemaining }}
               </ion-label>
           </ion-list-header>
-          <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId">
-            <ion-label>
-              <p class="overline">{{ systemMessage.systemMessageId }}</p>
-              {{ extractFilename(systemMessage.messageText) }}
+          <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId" :data-testid="'bulk-upload-recent-item-' + systemMessage.systemMessageId">
+            <ion-label data-testid="bulk-upload-recent-item-label">
+              <p class="overline" data-testid="bulk-upload-recent-item-id">{{ systemMessage.systemMessageId }}</p>
+              <h2 data-testid="bulk-upload-recent-item-filename">{{ extractFilename(systemMessage.messageText) }}</h2>
             </ion-label>
-            <div slot="end" class="system-message-action">
-              <ion-note>{{ getFileProcessingStatus(systemMessage) }}</ion-note>
-              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)">
+            <div slot="end" class="system-message-action" data-testid="bulk-upload-recent-item-actions">
+              <ion-note data-testid="bulk-upload-recent-item-status">{{ getFileProcessingStatus(systemMessage) }}</ion-note>
+              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, systemMessage)" :data-testid="'bulk-upload-recent-item-popover-btn-' + systemMessage.systemMessageId">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -83,47 +83,47 @@
 
 
 
-    <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false">
-      <ion-content>
-        <ion-list>
-          <ion-list-header>{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload">
+    <ion-popover :is-open="isUploadPopoverOpen" :event="popoverEvent" @did-dismiss="closeUploadPopover" show-backdrop="false" data-testid="bulk-upload-popover">
+      <ion-content data-testid="bulk-upload-popover-content">
+        <ion-list data-testid="bulk-upload-popover-list">
+          <ion-list-header data-testid="bulk-upload-popover-header">{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload" data-testid="bulk-upload-cancel-btn">
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal">
+          <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal" data-testid="bulk-upload-view-error-btn">
             <ion-icon slot="end" />
             {{ translate("View error") }}
           </ion-item>
-          <ion-item lines="none" button @click="viewFile">
+          <ion-item lines="none" button @click="viewFile" data-testid="bulk-upload-view-file-btn">
             <ion-icon slot="end" />
             {{ translate("View file") }}
           </ion-item>
         </ion-list>
 
-        <ion-modal :is-open="isErrorModalOpen" :keep-contents-mounted="true" @did-dismiss="closeErrorModal">
+        <ion-modal :is-open="isErrorModalOpen" :keep-contents-mounted="true" @did-dismiss="closeErrorModal" data-testid="bulk-upload-error-modal">
           <ion-header>
             <ion-toolbar>
               <ion-buttons slot="start">
-                <ion-button @click="closeErrorModal">
+                <ion-button @click="closeErrorModal" data-testid="bulk-upload-error-modal-close-btn">
                   <ion-icon :icon="close" />
                 </ion-button>
               </ion-buttons>
-              <ion-title>{{ translate("Import Error") }}</ion-title>
+              <ion-title data-testid="bulk-upload-error-modal-title">{{ translate("Import Error") }}</ion-title>
             </ion-toolbar>
           </ion-header>
-          <ion-content>
-            <ion-list>
-              <ion-item lines="full">
+          <ion-content data-testid="bulk-upload-error-modal-content">
+            <ion-list data-testid="bulk-upload-error-modal-list">
+              <ion-item lines="full" data-testid="bulk-upload-error-modal-guide-item">
                 <ion-icon :icon="bookOutline" slot="start" />
                 {{ translate("View upload guide") }}
-                <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide">
+                <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide" data-testid="bulk-upload-error-modal-guide-btn">
                   <ion-icon slot="icon-only" :icon="openOutline" />
                 </ion-button>
               </ion-item>
 
-              <ion-item lines="none">
-                <ion-label class="ion-text-wrap">
+              <ion-item lines="none" data-testid="bulk-upload-error-modal-msg-item">
+                <ion-label class="ion-text-wrap" data-testid="bulk-upload-error-modal-msg">
                   <template v-if="systemMessageError?.errorText">
                     {{ systemMessageError.errorText }}
                   </template>

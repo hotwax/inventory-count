@@ -2,87 +2,87 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
+        <ion-title slot="start" data-testid="variance-facility-title">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <main>
       <!-- Variance content goes here -->
-       <ion-card>
-          <ion-card-header>
-            <ion-card-title>
+       <ion-card data-testid="variance-search-card">
+          <ion-card-header data-testid="variance-search-header">
+            <ion-card-title data-testid="variance-search-title">
               {{ translate("Search and Log Variance for a Product") }}
             </ion-card-title>
           </ion-card-header>
-          <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
-          <ion-item lines="none">
-            <ion-label>
+          <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey" data-testid="variance-search-bar"></ion-searchbar>
+          <ion-item lines="none" data-testid="variance-search-info">
+            <ion-label data-testid="variance-search-label">
               {{ translate("Search for products by parent name, SKU or UPC") }}
             </ion-label>
           </ion-item>
           <!-- Skeleton loader during search -->
-          <ion-item v-if="isSearching" lines="none">
-            <ion-thumbnail slot="start">
-              <ion-skeleton-text :animated="true"></ion-skeleton-text>
+          <ion-item v-if="isSearching" lines="none" data-testid="variance-search-skeleton">
+            <ion-thumbnail slot="start" data-testid="variance-search-skeleton-thumbnail">
+              <ion-skeleton-text :animated="true" data-testid="variance-search-skeleton-img"></ion-skeleton-text>
             </ion-thumbnail>
-            <ion-label>
-              <h2><ion-skeleton-text :animated="true" style="width: 60%"></ion-skeleton-text></h2>
-              <p><ion-skeleton-text :animated="true" style="width: 40%"></ion-skeleton-text></p>
+            <ion-label data-testid="variance-search-skeleton-label">
+              <h2><ion-skeleton-text :animated="true" style="width: 60%" data-testid="variance-search-skeleton-title"></ion-skeleton-text></h2>
+              <p><ion-skeleton-text :animated="true" style="width: 40%" data-testid="variance-search-skeleton-subtitle"></ion-skeleton-text></p>
             </ion-label>
           </ion-item>
           <!-- Search result -->
-          <ion-item v-else-if="searchedProducts.length > 0" lines="none">
-            <ion-thumbnail slot="start">
-              <Image :src="searchedProducts[0].mainImageUrl"/>
+          <ion-item v-else-if="searchedProducts.length > 0" lines="none" data-testid="variance-search-result">
+            <ion-thumbnail slot="start" data-testid="variance-search-result-thumbnail">
+              <Image :src="searchedProducts[0].mainImageUrl" data-testid="variance-search-result-img"/>
             </ion-thumbnail>
-            <ion-label>
-              {{ useProductMaster().primaryId(searchedProducts[0]) }}
-              <p>{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
+            <ion-label data-testid="variance-search-result-label">
+              <span data-testid="variance-search-result-primary-id">{{ useProductMaster().primaryId(searchedProducts[0]) }}</span>
+              <p data-testid="variance-search-result-secondary-id">{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
             </ion-label>
-            <ion-button slot="end" fill="outline" @click="selectProduct(searchedProducts[0])">
+            <ion-button slot="end" fill="outline" @click="selectProduct(searchedProducts[0])" data-testid="variance-search-result-select-btn">
               <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
               {{ translate("Select") }}
             </ion-button>
           </ion-item>
-          <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
-            <ion-label>
+          <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal" data-testid="variance-view-more-btn">
+            <ion-label data-testid="variance-view-more-label">
               {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
             </ion-label>
           </ion-item>
         </ion-card>
 
-        <ion-card v-if="selectedProduct" class="variance-product-card" :disabled="selectedProduct.saved">
-          <ion-item lines="full">
-            <ion-thumbnail slot="start">
-              <Image :src="selectedProduct.mainImageUrl"/>
+        <ion-card v-if="selectedProduct" class="variance-product-card" :disabled="selectedProduct.saved" data-testid="variance-selected-product-card">
+          <ion-item lines="full" data-testid="variance-selected-product-info">
+            <ion-thumbnail slot="start" data-testid="variance-selected-product-thumbnail">
+              <Image :src="selectedProduct.mainImageUrl" data-testid="variance-selected-product-img"/>
             </ion-thumbnail>
-            <ion-label>
-              {{ useProductMaster().primaryId(selectedProduct) }}
-              <p>{{ useProductMaster().secondaryId(selectedProduct) }}</p>
+            <ion-label data-testid="variance-selected-product-label">
+              <span data-testid="variance-selected-product-primary-id">{{ useProductMaster().primaryId(selectedProduct) }}</span>
+              <p data-testid="variance-selected-product-secondary-id">{{ useProductMaster().secondaryId(selectedProduct) }}</p>
             </ion-label>
-            <ion-text slot="end">
+            <ion-text slot="end" data-testid="variance-selected-product-qoh">
               {{ translate("Current Stock:") }} {{ selectedProduct.quantityOnHand || 0 }}
             </ion-text>
           </ion-item>
           <div class="impact">
-            <ion-radio-group v-model="selectedProduct.negate">
-              <ion-radio value="false">
+            <ion-radio-group v-model="selectedProduct.negate" data-testid="variance-impact-radio-group">
+              <ion-radio value="false" data-testid="variance-impact-add-radio">
                 {{ translate("Add") }}
               </ion-radio>
-              <ion-radio value="true">
+              <ion-radio value="true" data-testid="variance-impact-remove-radio">
                 {{ translate("Remove") }}
               </ion-radio>
             </ion-radio-group>
           </div>
-          <ion-item lines="full">
-            <ion-select v-model="selectedProduct.varianceReason" label="Reason" label-placement="fixed" placeholder="Select" interface="popover">
-              <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
+          <ion-item lines="full" data-testid="variance-reason-item">
+            <ion-select v-model="selectedProduct.varianceReason" label="Reason" label-placement="fixed" placeholder="Select" interface="popover" data-testid="variance-reason-select">
+              <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value" :data-testid="'variance-reason-option-' + reason.value">
                 {{ reason.label }}
               </ion-select-option>
             </ion-select>
           </ion-item>
-          <div class="quantity">
-            <ion-button fill="clear" color="medium" aria-label="decrease" @click="selectedProduct.varianceQuantity = Math.max(0, (selectedProduct.varianceQuantity || 0) - 1)">
+          <div class="quantity" data-testid="variance-quantity-controls">
+            <ion-button fill="clear" color="medium" aria-label="decrease" @click="selectedProduct.varianceQuantity = Math.max(0, (selectedProduct.varianceQuantity || 0) - 1)" data-testid="variance-quantity-remove-btn">
               <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
             </ion-button>
               <ion-input
@@ -96,57 +96,58 @@
                 placeholder="0" 
                 v-model.number="selectedProduct.varianceQuantity"
                 :disabled="selectedProduct.saved"
+                data-testid="variance-quantity-input"
               ></ion-input>
-            <ion-button fill="clear" color="medium" aria-label="increase" @click="selectedProduct.varianceQuantity = (selectedProduct.varianceQuantity || 0) + 1">
+            <ion-button fill="clear" color="medium" aria-label="increase" @click="selectedProduct.varianceQuantity = (selectedProduct.varianceQuantity || 0) + 1" data-testid="variance-quantity-add-btn">
               <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
             </ion-button>
           </div>
-          <ion-item  v-if="!selectedProduct.saved">
-            <ion-text>
+          <ion-item v-if="!selectedProduct.saved" data-testid="variance-new-quantity-item">
+            <ion-text data-testid="variance-new-quantity-label">
               {{ translate("New Quantity:") }}
             </ion-text>
-            <ion-text slot="end">
+            <ion-text slot="end" data-testid="variance-new-quantity-val">
               {{ newQuantityOnHand }}
             </ion-text>
           </ion-item>
         </ion-card>
         <div class="ion-text-center">
-          <ion-button :disabled="!selectedProduct.varianceReason || selectedProduct.varianceQuantity === 0 || selectedProduct.saved" v-if="selectedProduct" @click="logVariance(selectedProduct)">
+          <ion-button :disabled="!selectedProduct.varianceReason || selectedProduct.varianceQuantity === 0 || selectedProduct.saved" v-if="selectedProduct" @click="logVariance(selectedProduct)" data-testid="variance-log-btn">
             {{ translate("Log Variance") }}
           </ion-button>
         </div>
       </main>
     </ion-content>
-    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
-      <ion-header>
-        <ion-toolbar>
+    <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal" data-testid="variance-search-results-modal">
+      <ion-header data-testid="variance-search-results-modal-header">
+        <ion-toolbar data-testid="variance-search-results-modal-toolbar">
           <ion-buttons slot="start">
-            <ion-button @click="closeSearchResultsModal">
+            <ion-button @click="closeSearchResultsModal" data-testid="variance-search-results-modal-close-btn">
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ translate("Search Results") }}</ion-title>
+          <ion-title data-testid="variance-search-results-modal-title">{{ translate("Search Results") }}</ion-title>
         </ion-toolbar>
       </ion-header>
-      <ion-content>
-        <ion-radio-group v-model="selectedProductFromModal">
-          <ion-item v-for="product in searchedProducts" :key="product.productId">
-            <ion-thumbnail slot="start">
-              <Image :src="product.mainImageUrl" />
+      <ion-content data-testid="variance-search-results-modal-content">
+        <ion-radio-group v-model="selectedProductFromModal" data-testid="variance-search-results-modal-radio-group">
+          <ion-item v-for="product in searchedProducts" :key="product.productId" :data-testid="'variance-search-results-modal-item-' + product.productId">
+            <ion-thumbnail slot="start" data-testid="variance-search-results-modal-thumbnail">
+              <Image :src="product.mainImageUrl" data-testid="variance-search-results-modal-img" />
             </ion-thumbnail>
-            <ion-radio :value="product.productId" :disabled="product.isUndirected">
-              <ion-label>
-                {{ useProductMaster().primaryId(product) }}
-                <p>{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text color="danger" v-if="product.isUndirected">{{ translate("Undirected") }}</ion-text>
+            <ion-radio :value="product.productId" :disabled="product.isUndirected" data-testid="variance-search-results-modal-radio">
+              <ion-label data-testid="variance-search-results-modal-label">
+                <span data-testid="variance-search-results-modal-primary-id">{{ useProductMaster().primaryId(product) }}</span>
+                <p data-testid="variance-search-results-modal-secondary-id">{{ useProductMaster().secondaryId(product) }}</p>
+                <ion-text color="danger" v-if="product.isUndirected" data-testid="variance-search-results-modal-undirected-badge">{{ translate("Undirected") }}</ion-text>
               </ion-label>
             </ion-radio>
           </ion-item>
         </ion-radio-group>
       </ion-content>
-      <ion-footer>
-        <ion-toolbar>
-          <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal">
+      <ion-footer data-testid="variance-search-results-modal-footer">
+        <ion-toolbar data-testid="variance-search-results-modal-footer-toolbar">
+          <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal" data-testid="variance-search-results-modal-select-btn">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
             {{ translate("Select") }}
           </ion-button>
@@ -405,7 +406,5 @@ main {
   border: 1px solid var(--ion-color-medium);
 }
 
-.impact ion-radio-group ion-radio:hover {
-}
 
 </style>

@@ -2,68 +2,67 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ translate("Closed")}}</ion-title>
+        <ion-title data-testid="closed-page-title">{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-button @click="router.push('/export-history')">
+          <ion-button @click="router.push('/export-history')" data-testid="closed-export-history-btn">
             <ion-icon slot="start" :icon="downloadOutline" />
             {{ translate("Export history") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()">      
-      <ion-list>
+        <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" data-testid="closed-content">      
+      <ion-list data-testid="closed-list">
         <div class="filters">
-          <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"/>
-          <ion-item>
-            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All">
+          <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="closed-search-bar"/>
+          <ion-item data-testid="closed-status-item">
+            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All" data-testid="closed-status-select">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item>
-            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover">
+          <ion-item data-testid="closed-type-item">
+            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover" data-testid="closed-type-select">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item>
-            <ion-label>{{ translate('Facility') }}</ion-label>
-            <ion-chip slot="end" outline @click="isFacilityModalOpen = true">
-              <ion-label>{{ facilityChipLabel }}</ion-label>
+          <ion-item data-testid="closed-facility-item">
+            <ion-label data-testid="closed-facility-label">{{ translate('Facility') }}</ion-label>
+            <ion-chip slot="end" outline @click="isFacilityModalOpen = true" data-testid="closed-facility-chip">
+              <ion-label data-testid="closed-facility-chip-label">{{ facilityChipLabel }}</ion-label>
             </ion-chip>
           </ion-item>
 
           
-          <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true">
+          <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true" data-testid="closed-more-filters-btn">
             {{ translate("More filters") }}
             <ion-icon slot="end" :icon="filterOutline" />
           </ion-button>
           
         </div>
-        <p v-if="!cycleCounts?.length" class="empty-state">
+        <p v-if="!cycleCounts?.length" class="empty-state" data-testid="closed-empty-state">
           {{ translate("No cycle counts found") }}
         </p>
-        <div v-else class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)">
-          <ion-item lines="none">
+        <div v-else class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)" :data-testid="'closed-item-' + count.workEffortId">
+          <ion-item lines="none" data-testid="closed-item-header">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-            <ion-label>
-              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'">{{ translate("HARD COUNT") }}</p>
-              {{ count.workEffortName }}
-              <p>{{ count.workEffortId }}</p>
+            <ion-label data-testid="closed-item-label">
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="closed-item-type">{{ translate("HARD COUNT") }}</p>
+              <h2 data-testid="closed-item-name">{{ count.workEffortName }}</h2>
+              <p data-testid="closed-item-id">{{ count.workEffortId }}</p>
             </ion-label>
           </ion-item>
 
-          <ion-chip outline>
-            <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
+          <ion-chip outline data-testid="closed-item-facility-chip">
+            <ion-label data-testid="closed-item-facility-name">{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
 
 
-          <ion-label>
+          <ion-label data-testid="closed-item-created-date">
             {{ getDateWithOrdinalSuffix(count.createdDate) }}
             <p>{{ translate("Created Date") }}</p>
           </ion-label>
      
-          <ion-label>
+          <ion-label data-testid="closed-item-closed-date">
             {{ getDateWithOrdinalSuffix(count.actualCompletionDate) }}
             <p>{{ translate("Closed Date") }}</p>
           </ion-label>
@@ -73,33 +72,33 @@
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
 
-      <ion-modal :is-open="isFilterModalOpen" @didDismiss="isFilterModalOpen = false">
+      <ion-modal :is-open="isFilterModalOpen" @didDismiss="isFilterModalOpen = false" data-testid="closed-filters-modal">
         <ion-header>
           <ion-toolbar>
-            <ion-title>{{ translate("Filters") }}</ion-title>
+            <ion-title data-testid="closed-filters-modal-title">{{ translate("Filters") }}</ion-title>
             <ion-buttons slot="end">
-              <ion-button @click="isFilterModalOpen = false">{{ translate("Close") }}</ion-button>
+              <ion-button @click="isFilterModalOpen = false" data-testid="closed-filters-modal-close-btn">{{ translate("Close") }}</ion-button>
             </ion-buttons>
           </ion-toolbar>
         </ion-header>
-        <ion-content class="ion-padding">
-          <ion-item>
+        <ion-content class="ion-padding" data-testid="closed-filters-modal-content">
+          <ion-item data-testid="closed-filter-start-item">
             <ion-label position="stacked">{{ translate("Created before") }}</ion-label>
-            <ion-input type="date" v-model="filters.createdDateTo" />
+            <ion-input type="date" v-model="filters.createdDateTo" data-testid="closed-filter-created-to-input"/>
           </ion-item>
-          <ion-item>
+          <ion-item data-testid="closed-filter-end-item">
             <ion-label position="stacked">{{ translate("Created after") }}</ion-label>
-            <ion-input type="date" v-model="filters.createdDateFrom" />
+            <ion-input type="date" v-model="filters.createdDateFrom" data-testid="closed-filter-created-from-input"/>
           </ion-item>
-          <ion-item>
+          <ion-item data-testid="closed-filter-closed-to-item">
             <ion-label position="stacked">{{ translate("Closed before") }}</ion-label>
-            <ion-input type="date" v-model="filters.closedDateTo" />
+            <ion-input type="date" v-model="filters.closedDateTo" data-testid="closed-filter-closed-to-input"/>
           </ion-item>
-          <ion-item>
+          <ion-item data-testid="closed-filter-closed-from-item">
             <ion-label position="stacked">{{ translate("Closed after") }}</ion-label>
-            <ion-input type="date" v-model="filters.closedDate" />
+            <ion-input type="date" v-model="filters.closedDate" data-testid="closed-filter-closed-from-input"/>
           </ion-item>
-          <ion-button expand="block" class="ion-margin-top" @click="applyFilters">
+          <ion-button expand="block" class="ion-margin-top" @click="applyFilters" data-testid="closed-filters-apply-btn">
             {{ translate("Apply") }}
           </ion-button>
         </ion-content>
@@ -112,8 +111,8 @@
         @update:is-open="isFacilityModalOpen = $event"
         @apply="applyFacilitySelection"
       />
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="exportCycleCounts">
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="closed-export-fab">
+          <ion-fab-button @click="exportCycleCounts" data-testid="closed-export-fab-btn">
             <ion-icon :icon="downloadOutline" />
           </ion-fab-button>
       </ion-fab>

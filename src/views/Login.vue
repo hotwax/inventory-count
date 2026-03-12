@@ -1,17 +1,17 @@
 <template>
   <ion-content>
     <div class="center-div">
-      <ion-item lines="none" v-if='error.message.length'>
+      <ion-item lines="none" v-if='error.message.length' data-testid="login-error-item">
         <ion-icon slot="start" color="warning" :icon="warningOutline" />
-        <h4>{{ $t('Login failed') }}</h4>
+        <h4 data-testid="login-error-header">{{ $t('Login failed') }}</h4>
       </ion-item>
-      <p v-if='error.responseMessage.length'>
+      <p v-if='error.responseMessage.length' data-testid="login-error-reason">
         {{ $t('Reason:') }} {{ $t(error.responseMessage) }}
       </p>
-      <p v-if='error.message.length'>
+      <p v-if='error.message.length' data-testid="login-error-message">
         {{ $t(error.message) }}
       </p>
-      <ion-button v-if='error.message.length && !authStore.isEmbedded' class="ion-margin-top" @click="goToLaunchpad()">
+      <ion-button v-if='error.message.length && !authStore.isEmbedded' class="ion-margin-top" @click="goToLaunchpad()" data-testid="login-back-to-launchpad-btn">
         <ion-icon slot="start" :icon="arrowBackOutline" />
         {{ $t("Back to Launchpad") }}
       </ion-button>
