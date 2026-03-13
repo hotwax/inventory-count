@@ -8,6 +8,10 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "test:e2e": "vue-cli-service test:e2e",
+    "test:playwright": "playwright test -c playwright/playwright.config.ts",
+    "test:playwright:headed": "playwright test -c playwright/playwright.config.ts --headed",
+    "test:playwright:ui": "playwright test -c playwright/playwright.config.ts --ui",
+    "test:playwright:debug": "playwright test -c playwright/playwright.config.ts --debug",
     "lint": "vue-cli-service lint",
     "i18n:report": "vue-cli-service i18n:report --src \"./src/**/*.?(js|vue)\" --locales \"./src/locales/**/*.json\""
   },
@@ -21,6 +25,8 @@
     "@ionic/core": "8.4.2",
     "@ionic/vue": "8.4.2",
     "@ionic/vue-router": "8.4.2",
+    "@shopify/app-bridge": "^3.7.10",
+    "@shopify/app-bridge-utils": "^3.5.1",
     "@types/node-json-transform": "^1.0.0",
     "@types/papaparse": "^5.3.1",
     "axios": "^0.21.1",
@@ -45,13 +51,12 @@
     "vue-router": "^4.0.12",
     "vue-virtual-scroll-list": "^2.3.5",
     "vue-virtual-scroller": "^2.0.0-beta.8",
-    "vue3-virtual-scroll-list": "^0.2.1",
-    "@shopify/app-bridge": "^3.7.10",
-    "@shopify/app-bridge-utils": "^3.5.1"
+    "vue3-virtual-scroll-list": "^0.2.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^2.4.7",
     "@intlify/vue-i18n-loader": "^2.1.0",
+    "@playwright/test": "^1.58.2",
     "@types/file-saver": "^2.0.5",
     "@types/luxon": "^3.7.1",
     "@types/papaparse": "5.3.1",

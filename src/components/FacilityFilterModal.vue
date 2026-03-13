@@ -21,7 +21,7 @@
         <div class="empty-state" v-if="!filteredFacilities.length" data-testid="facility-filter-empty-state">
           <p>{{ translate("No facilities found") }}</p>
         </div>
-        <div v-else>
+        <div v-else>git 
           <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'facility-filter-item-' + facility.facilityId">
             <ion-checkbox
               :checked="selectedIds.includes(facility.facilityId)"
