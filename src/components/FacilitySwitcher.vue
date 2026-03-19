@@ -1,5 +1,5 @@
 <template>
-  <ion-card>
+  <ion-card data-testid="facility-switcher-card">
     <ion-card-header>
       <ion-card-title>
         {{ translate('Facility') }}
@@ -13,43 +13,43 @@
         {{ currentFacility.facilityName }}
         <p>{{ currentFacility.facilityId }}</p>
       </ion-label>
-      <ion-button v-if="facilities?.length > 1" id="open-facility-modal" slot="end" fill="outline" color="dark">{{
+      <ion-button v-if="facilities?.length > 1 && !authStore.isEmbedded" id="open-facility-modal" slot="end" fill="outline" color="dark" data-testid="facility-switcher-change-btn">{{
         translate('Change')}}</ion-button>
     </ion-item>
   </ion-card>
   <!-- Using inline modal(as recommended by ionic), also using it inline as the component inside modal is not getting mounted when using modalController -->
-  <ion-modal ref="facilityModal" trigger="open-facility-modal" @didPresent="loadFacilities()"
-    @didDismiss="clearSearch()">
+  <ion-modal v-if="!authStore.isEmbedded" ref="facilityModal" trigger="open-facility-modal" @didPresent="loadFacilities()"
+    @didDismiss="clearSearch()" data-testid="facility-switcher-modal">
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="closeModal">
+          <ion-button @click="closeModal" data-testid="facility-switcher-close-btn">
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>{{ translate("Select Facility") }}</ion-title>
+        <ion-title data-testid="facility-switcher-title">{{ translate("Select Facility") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
         v-model="queryString" @ionInput="findFacility($event)"
-        @keydown="preventSpecialCharacters($event)" />
+        @keydown="preventSpecialCharacters($event)" data-testid="facility-switcher-search-input" />
       <ion-radio-group v-model="selectedFacilityId">
-        <ion-list>
+        <ion-list data-testid="facility-switcher-list">
           <!-- Loading state -->
-          <div class="empty-state" v-if="isLoading">
+          <div class="empty-state" v-if="isLoading" data-testid="facility-switcher-loading">
             <ion-item lines="none">
               <ion-spinner color="secondary" name="crescent" slot="start" />
               {{ translate("Fetching facilities") }}
             </ion-item>
           </div>
           <!-- Empty state -->
-          <div class="empty-state" v-else-if="!filteredFacilities.length">
+          <div class="empty-state" v-else-if="!filteredFacilities.length" data-testid="facility-switcher-empty-state">
             <p>{{ translate("No facilities found") }}</p>
           </div>
           <div v-else>
-            <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId">
-              <ion-radio label-placement="end" justify="start" :value="facility.facilityId">
+            <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'facility-switcher-item-' + facility.facilityId">
+              <ion-radio label-placement="end" justify="start" :value="facility.facilityId" :data-testid="'facility-switcher-radio-' + facility.facilityId">
                 <ion-label>
                   {{ facility.facilityName }}
                   <p>{{ facility.facilityId }}</p>
@@ -61,7 +61,7 @@
       </ion-radio-group>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button :disabled="selectedFacilityId === currentFacility.facilityId" @click="updateFacility">
+        <ion-fab-button :disabled="selectedFacilityId === currentFacility.facilityId" @click="updateFacility" data-testid="facility-switcher-save-btn">
           <ion-icon :icon="saveOutline" />
         </ion-fab-button>
       </ion-fab>
@@ -73,11 +73,12 @@
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonRadio, IonRadioGroup, IonSearchbar, IonSpinner, IonTitle, IonToolbar } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
-import { computed, ref } from 'vue';
+import { computed, ref, defineProps } from 'vue';
 import { translate } from '@/i18n';
-import { defineProps } from "vue";
+import { useAuthStore } from '@/stores/authStore';
 
 const productStore = useProductStore();
+const authStore = useAuthStore();
 
 const facilities = computed(() => productStore.getFacilities)
 const currentFacility = computed(() => productStore.getCurrentFacility)

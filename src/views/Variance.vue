@@ -1360,4 +1360,3 @@ main.count {
   --padding-end: 12px;
 }
 </style>
-

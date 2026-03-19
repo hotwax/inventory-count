@@ -2,8 +2,8 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" />
-        <ion-title>{{ translate("Settings") }}</ion-title>
+        <ion-menu-button slot="start" data-testid="settings-menu-btn" />
+        <ion-title data-testid="settings-page-title">{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     
@@ -17,20 +17,20 @@
             <!-- ion-no-padding to remove extra side/horizontal padding as additional padding 
             is added on sides from ion-item and ion-padding-vertical to compensate the removed
             vertical padding -->
-            <ion-card-header class="ion-no-padding ion-padding-vertical">
-              <ion-card-subtitle>{{ userProfile?.userId }}</ion-card-subtitle>
-              <ion-card-title>{{ userProfile?.userFullName }}</ion-card-title>
+            <ion-card-header class="ion-no-padding ion-padding-vertical" data-testid="settings-user-header">
+              <ion-card-subtitle data-testid="settings-user-id">{{ userProfile?.userId }}</ion-card-subtitle>
+              <ion-card-title data-testid="settings-user-full-name">{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!useAuthStore().isEmbedded" color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
-          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()">
+          <ion-button v-if="!useAuthStore().isEmbedded" :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- TODO: Replace route-based checks with a store/admin view flag when present in Pinia Stores -->
-          <ion-button fill="outline" v-if="hasPermission(Actions.APP_ASSIGNED_VIEW) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'">
+          <ion-button fill="outline" v-if="hasPermission(Actions.APP_ASSIGNED_VIEW) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
             <ion-icon size="medium" :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
             {{ translate("Admin View") }}
           </ion-button>
@@ -45,14 +45,14 @@
             <ion-card-subtitle>
               {{ translate('OMS instance') }}
             </ion-card-subtitle>
-            <ion-card-title>
+            <ion-card-title data-testid="settings-oms-instance">
               {{ oms }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear">
+          <ion-button v-if="!useAuthStore().isEmbedded" :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear" data-testid="settings-go-to-oms-btn">
             {{ $t('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -72,9 +72,9 @@
             {{ translate('A store represents a company or a unique catalog of products. If your OMS is connected to multiple eCommerce stores selling different collections of products, you may have multiple Product Stores set up in HotWax Commerce.') }}
           </ion-card-content>
 
-          <ion-item lines="none">
-            <ion-select :label="translate('Select store')" interface="popover" :placeholder="translate('store name')" :value="currentEComStore?.productStoreId" @ionChange="updateEComStore($event.target.value)">
-              <ion-select-option v-for="store in (eComStores ? eComStores : [])" :key="store.productStoreId" :value="store.productStoreId">{{ store.storeName }}</ion-select-option>
+          <ion-item lines="none" data-testid="settings-store-select-item">
+            <ion-select :label="translate('Select store')" interface="popover" :placeholder="translate('store name')" :value="currentEComStore?.productStoreId" @ionChange="updateEComStore($event.target.value)" data-testid="settings-store-select">
+              <ion-select-option v-for="store in (eComStores ? eComStores : [])" :key="store.productStoreId" :value="store.productStoreId" :data-testid="'settings-store-option-' + store.productStoreId">{{ store.storeName }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
@@ -83,13 +83,13 @@
       <div class="section-header">
         <h1>
           {{ translate("App") }}
-          <p class="overline">{{ translate("Version:") + appVersion }}</p>
+          <p class="overline" data-testid="settings-app-version">{{ translate("Version:") + appVersion }}</p>
         </h1>
-        <p class="overline">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
+        <p class="overline" data-testid="settings-app-built-time">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
       </div>
       <section>
         <TimeZoneSwitcher/>
-        <ion-card v-if="!router.currentRoute.value.fullPath.includes('/tabs/')">
+        <ion-card data-testid="settings-product-identifier-card">
           <ion-card-header>
             <ion-card-title>
               {{ 'Product Identifier' }}
@@ -100,89 +100,89 @@
             {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
           </ion-card-content>
 
-          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
-            <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')">
+          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-primary-id-item">
+            <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')" data-testid="settings-primary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)">
-            <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')">
+          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-secondary-id-item">
+            <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
               <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
             </ion-select>
           </ion-item>
         </ion-card>
-        <ion-card>
+        <ion-card data-testid="settings-force-scan-card">
           <ion-card-header>
             <ion-card-title>
               {{ translate('Force scan') }}
             </ion-card-title>
           </ion-card-header>
-          <ion-card-content v-html="barcodeContentMessage"></ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')">
-            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="useProductStore().getBarcodeIdentificationPref || translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)">
+          <ion-card-content v-html="barcodeContentMessage" data-testid="settings-force-scan-msg"></ion-card-content>
+          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')" data-testid="settings-barcode-id-item">
+            <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="useProductStore().getBarcodeIdentificationPref || translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)" data-testid="settings-barcode-id-select">
               <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
         </ion-card>
-        <ion-card>
+        <ion-card data-testid="settings-pairing-guide-card">
           <ion-card-header>
             <ion-card-title>
               {{ translate('Scanner pairing guide') }}
             </ion-card-title>
           </ion-card-header>
-          <ion-card-content>
+          <ion-card-content data-testid="settings-pairing-guide-msg">
             {{ translate('Quick steps to put Socket Mobile S7xx scanners in iOS Basic Keyboard (HID) mode and pair to your iPad.') }}
           </ion-card-content>
-          <ion-button id="pairing-guide-modal" fill="outline" expand="block">
+          <ion-button id="pairing-guide-modal" fill="outline" expand="block" data-testid="settings-pairing-guide-btn">
             <ion-icon slot="start" :icon="bluetoothOutline" />
             {{ translate('Pairing guide') }}
           </ion-button>
         </ion-card>
-        <ion-card>
+        <ion-card data-testid="settings-diagnostics-card">
           <ion-card-header>
             <ion-card-title>{{ translate("Diagnostics") }}</ion-card-title>
           </ion-card-header>
 
-          <ion-card-content>
+          <ion-card-content data-testid="settings-diagnostics-msg">
             <p>{{ translate("Run diagnostics to validate your device is correctly configured.") }}</p>
             <p>{{ translate("Clear local inventory data to remove cached products, identifications, count records, and scans from this device.") }}</p>
           </ion-card-content>
-          <ion-button expand="block" @click="openDiagnosisModal" fill="outline">
+          <ion-button expand="block" @click="openDiagnosisModal" fill="outline" data-testid="settings-run-diagnostics-btn">
             <ion-icon :icon="medicalOutline" slot="start"></ion-icon>
             <ion-label>{{ translate("Run diagnostics") }}</ion-label>
           </ion-button>
-          <ion-button expand="block" @click="confirmClearLocalInventoryData" fill="outline" color="danger">
+          <ion-button expand="block" @click="confirmClearLocalInventoryData" fill="outline" color="danger" data-testid="settings-clear-local-data-btn">
             <ion-icon :icon="trashOutline" slot="start"></ion-icon>
             <ion-label>{{ translate("Clear local inventory data") }}</ion-label>
           </ion-button>
         </ion-card>
       </section>
 
-      <ion-modal ref="pairingGuideModal" trigger="pairing-guide-modal">
+      <ion-modal ref="pairingGuideModal" trigger="pairing-guide-modal" data-testid="settings-pairing-guide-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
-              <ion-button @click="closePairingGuide">
+              <ion-button @click="closePairingGuide" data-testid="settings-pairing-guide-modal-close-btn">
                 <ion-icon :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title>{{ translate('Pair the scanner') }}</ion-title>
+            <ion-title data-testid="settings-pairing-guide-modal-title">{{ translate('Pair the scanner') }}</ion-title>
           </ion-toolbar>
         </ion-header>
-        <ion-content class="ion-padding">
-          <p class="overline">Socket Mobile S700 / S720 / S730 / S740</p>
+        <ion-content class="ion-padding" data-testid="settings-pairing-guide-modal-content">
+          <p class="overline" data-testid="settings-pairing-guide-modal-model">Socket Mobile S700 / S720 / S730 / S740</p>
           <p>{{ translate('Follow these steps to get Basic Keyboard (HID) mode and pair with your iPad.') }}</p>
-          <ol>
+          <ol data-testid="settings-pairing-guide-steps">
             <li class="guide-step">
               <h3>{{ translate('Reset/Unpair (if switching devices)') }}</h3>
               <p>{{ translate('Turn the scanner on, then scan this barcode to clear old pairing info. The scanner will turn off after the reset.') }}</p>
-              <ion-img class="barcode-img" :src="pairingResetBarcode" alt="Pairing reset barcode" />
+              <ion-img class="barcode-img" :src="pairingResetBarcode" alt="Pairing reset barcode" data-testid="settings-pairing-reset-barcode" />
             </li>
             <li class="guide-step">
               <h3>{{ translate('Set iOS Basic Keyboard Mode') }}</h3>
               <p>{{ translate('Power the scanner back on, make sure the blue light is blinking fast, then scan this barcode to put it in HID keyboard mode (acts like a keyboard).') }}</p>
-              <ion-img class="barcode-img" :src="iosKeyboardBarcode" alt="iOS Basic Keyboard Mode barcode" />
+              <ion-img class="barcode-img" :src="iosKeyboardBarcode" alt="iOS Basic Keyboard Mode barcode" data-testid="settings-pairing-keyboard-barcode" />
             </li>
             <li class="guide-step">
               <h3>{{ translate('Pair in iPad Bluetooth') }}</h3>
@@ -193,43 +193,43 @@
               <p>{{ translate('Place the cursor in any input field and scan a barcode. You should see the value appear like typed text.') }}</p>
             </li>
           </ol>
-          <ion-note color="medium">{{ translate('Tip: If you change devices or modes later, repeat the reset and keyboard steps first.') }}</ion-note>
+          <ion-note color="medium" data-testid="settings-pairing-guide-tip">{{ translate('Tip: If you change devices or modes later, repeat the reset and keyboard steps first.') }}</ion-note>
         </ion-content>
       </ion-modal>
     </ion-content>
-    <ion-modal :is-open="isDiagnosisOpen" @did-dismiss="isDiagnosisOpen = false">
+    <ion-modal :is-open="isDiagnosisOpen" @did-dismiss="isDiagnosisOpen = false" data-testid="settings-diagnosis-modal">
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="isDiagnosisOpen = false">
+          <ion-button @click="isDiagnosisOpen = false" data-testid="settings-diagnosis-modal-close-btn">
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title>Diagnosis</ion-title>
+        <ion-title data-testid="settings-diagnosis-modal-title">Diagnosis</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <ion-list>
-        <ion-item v-for="test in diagnosisResults" :key="test.name" lines="full">
-          <ion-label>
+    <ion-content data-testid="settings-diagnosis-modal-content">
+      <ion-list data-testid="settings-diagnosis-modal-list">
+        <ion-item v-for="test in diagnosisResults" :key="test.name" lines="full" :data-testid="'settings-diagnosis-item-' + test.name.toLowerCase().replace(/\s+/g, '-')">
+          <ion-label data-testid="settings-diagnosis-item-label">
             {{ test.name }}
             <p v-if="test.detail">{{ test.detail }}</p>
           </ion-label>
 
-          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
+          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end" data-testid="settings-diagnosis-item-status">
             {{ test.status }}
           </ion-badge>
         </ion-item>
-        <ion-item-divider color="light">
+        <ion-item-divider color="light" data-testid="settings-diagnosis-oms-divider">
           {{ translate('OMS diagnosis') }}
         </ion-item-divider>
-        <ion-item v-for="test in omsDiagnosticsResults" :key="test.name" lines="full">
-          <ion-label>
+        <ion-item v-for="test in omsDiagnosticsResults" :key="test.name" lines="full" :data-testid="'settings-diagnosis-oms-item-' + test.name.toLowerCase().replace(/\s+/g, '-')">
+          <ion-label data-testid="settings-diagnosis-oms-item-label">
             {{ test.name }}
             <p v-if="test.detail">{{ test.detail }}</p>
           </ion-label>
-          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end">
+          <ion-badge :color="test.status === 'passed' ? 'success' : test.status === 'failed' ? 'danger' : 'medium'" slot="end" data-testid="settings-diagnosis-oms-item-status">
             {{ test.status }}
           </ion-badge>
         </ion-item>

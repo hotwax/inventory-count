@@ -2,42 +2,42 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-back-button slot="start" default-href="/assigned"/>
-        <ion-title>{{ translate("Assigned count")}}</ion-title>
+        <ion-back-button slot="start" default-href="/assigned" data-testid="assigned-detail-back-btn"/>
+        <ion-title data-testid="assigned-detail-page-title">{{ translate("Assigned count")}}</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <div v-if="isLoading" class="loading-overlay">
+    <ion-content data-testid="assigned-detail-content">
+      <div v-if="isLoading" class="loading-overlay" data-testid="assigned-detail-loading">
         <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
       </div>
       <template v-else-if="workEffort">
-        <div class="header">
-          <ion-card>
+        <div class="header" data-testid="assigned-detail-header">
+          <ion-card data-testid="assigned-detail-info-card">
             <ion-item lines="none">
               <ion-label>
-                <p class="overline">{{ workEffort?.workEffortId }}</p>
-                <h1>{{ workEffort?.workEffortName }}</h1>
+                <p class="overline" data-testid="assigned-detail-work-effort-id">{{ workEffort?.workEffortId }}</p>
+                <h1 data-testid="assigned-detail-name">{{ workEffort?.workEffortName }}</h1>
               </ion-label>
-              <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert">
+              <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert" data-testid="assigned-detail-edit-name-btn">
                 {{ translate("Edit") }}
               </ion-button>
             </ion-item>
             <ion-item>
-              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
-              <ion-label>
+              <ion-icon :icon="businessOutline" slot="start" data-testid="assigned-detail-facility-icon"></ion-icon>
+              <ion-label data-testid="assigned-detail-facility-name">
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
             <!-- TODO: Need to Revisit the date-time-button css -->
-            <ion-item>
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>{{ translate("Start Date") }}</ion-label>
-              <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate"/>
-              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
+            <ion-item data-testid="assigned-detail-start-date-item">
+              <ion-icon :icon="calendarClearOutline" slot="start" data-testid="assigned-detail-start-date-icon"></ion-icon>
+              <ion-label data-testid="assigned-detail-start-date-label">{{ translate("Start Date") }}</ion-label>
+              <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate" data-testid="assigned-detail-start-date-btn"/>
+              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-start-date-btn">{{ translate("Add Date") }}</ion-button>
             </ion-item>
 
-            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted>
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted data-testid="assigned-detail-start-date-modal">
               <ion-datetime
                 id="estimatedStartDate"
                 :value="getInitialValue('estimatedStartDate')"
@@ -50,14 +50,14 @@
               </ion-datetime>
             </ion-modal>
 
-            <ion-item lines="none">
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
-              <ion-label>{{ translate("Due Date") }}</ion-label>
-              <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate"/>
-              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium">{{ translate("Add Date") }}</ion-button>
+            <ion-item lines="none" data-testid="assigned-detail-due-date-item">
+              <ion-icon :icon="calendarClearOutline" slot="start" data-testid="assigned-detail-due-date-icon"></ion-icon>
+              <ion-label data-testid="assigned-detail-due-date-label">{{ translate("Due Date") }}</ion-label>
+              <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate" data-testid="assigned-detail-due-date-btn"/>
+              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-due-date-btn">{{ translate("Add Date") }}</ion-button>
             </ion-item>
 
-            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted>
+            <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted data-testid="assigned-detail-due-date-modal">
               <ion-datetime
                 id="estimatedCompletionDate"
                 :value="getInitialValue('estimatedCompletionDate')"
@@ -70,14 +70,14 @@
               </ion-datetime>
             </ion-modal>
           </ion-card>
-          <ion-card>
-            <ion-item>
-              <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-label slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
+          <ion-card data-testid="assigned-detail-stats-card">
+            <ion-item data-testid="assigned-detail-first-counted-item">
+              <ion-label data-testid="assigned-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
+              <ion-label slot="end" data-testid="assigned-detail-first-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
             </ion-item>
-            <ion-item>
-              <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-label slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
+            <ion-item data-testid="assigned-detail-last-counted-item">
+              <ion-label data-testid="assigned-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
+              <ion-label slot="end" data-testid="assigned-detail-last-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -97,37 +97,38 @@
           ]"
           :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
+          data-testid="assigned-detail-filter-bar"
         />
 
-        <div class="results ion-margin-top" v-if="filteredSessionItems?.length">
+        <div class="results ion-margin-top" v-if="filteredSessionItems?.length" data-testid="assigned-detail-results">
           <ion-accordion-group>
-          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120">
+          <DynamicScroller :items="filteredSessionItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" data-testid="assigned-detail-scroller">
             <template #default="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
-                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
-                    <div class="list-item count-item-rollup" slot="header"> 
+                  <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)" :data-testid="'assigned-detail-product-accordion-' + item.productId">
+                    <div class="list-item count-item-rollup" slot="header" :data-testid="'assigned-detail-product-header-' + item.productId"> 
                       <div class="item-key">
                         <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.detailImageUrl"/>
+                          <ion-thumbnail slot="start" data-testid="assigned-detail-product-thumbnail">
+                            <Image :src="item.detailImageUrl" data-testid="assigned-detail-product-img"/>
                           </ion-thumbnail>
                           <ion-label>
-                            <h2>{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
-                            <p>{{ productMaster.secondaryId(item.product) }}</p>
+                            <h2 data-testid="assigned-detail-product-primary-id">{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
+                            <p data-testid="assigned-detail-product-secondary-id">{{ productMaster.secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                       </div>
-                      <ion-label class="stat">
-                        {{ item.quantity || '-' }}/{{ item.systemQuantityOnHand || '-' }}
-                        <p>{{ translate("counted/systemic") }}</p>
-                      </ion-label>
-                      <ion-label class="stat">
-                        {{ item.proposedVarianceQuantity }}
-                        <p>{{ translate("variance") }}</p>
-                      </ion-label>
+                        <ion-label class="stat" data-testid="assigned-detail-product-count-stat">
+                          <span data-testid="assigned-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="assigned-detail-product-system-qty">{{ item.systemQuantityOnHand || '-' }}</span>
+                          <p>{{ translate("counted/systemic") }}</p>
+                        </ion-label>
+                        <ion-label class="stat" data-testid="assigned-detail-product-variance-stat">
+                          <span data-testid="assigned-detail-product-variance-qty">{{ item.proposedVarianceQuantity }}</span>
+                          <p>{{ translate("variance") }}</p>
+                        </ion-label>
                     </div>
-                    <div slot="content" @click.stop="stopAccordianEventProp">
-                      <ion-list v-if="sessions === null">
+                    <div slot="content" @click.stop="stopAccordianEventProp" :data-testid="'assigned-detail-product-content-' + item.productId">
+                      <ion-list v-if="sessions === null" data-testid="assigned-detail-sessions-loading">
                         <ion-item v-for="number in item.numberOfSessions" :key="number">
                           <ion-avatar slot="start">
                             <ion-skeleton-text animated style="width: 100%; height: 40px;"></ion-skeleton-text>
@@ -152,31 +153,33 @@
                           </ion-label>
                         </ion-item>
                       </ion-list>
-                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                        <ion-item lines="none">
-                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                          <ion-label>
-                      {{ session.countImportName || "-" }}
-                      <p>
-                        {{ session.uploadedByUserLogin }}
-                      </p>
-                    </ion-label>
-                        </ion-item>
-                        <ion-label>
-                          {{ session.counted }}
-                          <p>{{ translate("counted") }}</p>
-                        </ion-label>
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
-                          <p>{{ translate("started") }}</p>
-                        </ion-label>
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
-                          <p>{{ translate("last updated") }}</p>
-                        </ion-label>
-                        <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)">
-                          <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                        </ion-button>
+                      <div v-else :data-testid="'assigned-detail-session-list-' + item.productId">
+                        <div v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp" :data-testid="'assigned-detail-session-item-' + session.inventoryCountImportId">
+                          <ion-item lines="none">
+                            <ion-icon :icon="personCircleOutline" slot="start" data-testid="assigned-detail-session-user-icon"></ion-icon>
+                            <ion-label data-testid="assigned-detail-session-user-label">
+                              <span data-testid="assigned-detail-session-name-text">{{ session.countImportName || "-" }}</span>
+                              <p data-testid="assigned-detail-session-user-login">
+                                {{ session.uploadedByUserLogin }}
+                              </p>
+                            </ion-label>
+                          </ion-item>
+                          <ion-label data-testid="assigned-detail-session-counted-stat">
+                            <span data-testid="assigned-detail-session-counted-qty">{{ session.counted }}</span>
+                            <p>{{ translate("counted") }}</p>
+                          </ion-label>
+                          <ion-label data-testid="assigned-detail-session-started-stat">
+                            <span data-testid="assigned-detail-session-started-date">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                            <p>{{ translate("started") }}</p>
+                          </ion-label>
+                          <ion-label data-testid="assigned-detail-session-updated-stat">
+                            <span data-testid="assigned-detail-session-updated-date">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                            <p>{{ translate("last updated") }}</p>
+                          </ion-label>
+                          <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)" :data-testid="'assigned-detail-session-popover-btn-' + session.inventoryCountImportId">
+                            <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                          </ion-button>
+                        </div>
                       </div>
                     </div>
                   </ion-accordion>
@@ -184,27 +187,29 @@
             </template>
           </DynamicScroller>
           </ion-accordion-group>
-          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false">
-              <ion-content>
-                <ion-list>
-                  <ion-list-header>{{ selectedProductCountReview?.internalName }}</ion-list-header>
-                  <ion-item size="small">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-item>
+          <ion-popover :is-open="isSessionPopoverOpen" :event="sessionPopoverEvent" @did-dismiss="closeSessionPopover" show-backdrop="false" data-testid="assigned-detail-session-popover">
+              <ion-content data-testid="assigned-detail-session-popover-content">
+                <ion-list data-testid="assigned-detail-session-popover-list">
+                  <ion-list-header data-testid="assigned-detail-session-popover-header">{{ selectedProductCountReview?.internalName }}</ion-list-header>
+                  <ion-item size="small" data-testid="assigned-detail-session-popover-item">
+                    <ion-label data-testid="assigned-detail-session-popover-last-counted-label">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
+                  </ion-item>
                 </ion-list>
               </ion-content>
             </ion-popover>
         </div>
-        <div v-else class="empty-state">
+        <div v-else class="empty-state" data-testid="assigned-detail-empty-results">
           <p>{{ translate("No Results") }}</p>
         </div>
       </template>
       <template v-else>
-        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
+        <p class="empty-state" data-testid="assigned-detail-not-found">{{ translate("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
-    <ion-footer>
+    <ion-footer data-testid="assigned-detail-footer">
       <ion-toolbar>
         <ion-buttons slot="end">
-          <ion-button color="danger" fill="outline" @click="isCloseCountAlertOpen = true">
+          <ion-button color="danger" fill="outline" @click="isCloseCountAlertOpen = true" data-testid="assigned-detail-close-btn">
             {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
@@ -218,13 +223,14 @@
     :buttons="[
       { text: translate('Cancel'), role: 'cancel' },
       { text: translate('Close'), handler: () => closeCycleCount() }
-    ]">
+    ]"
+    data-testid="assigned-detail-close-confirm-alert">
     </ion-alert>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref } from "vue";
+import { computed, ref, defineProps } from "vue";
 import { IonAlert, IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
 import { translate } from '@/i18n'

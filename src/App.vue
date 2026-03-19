@@ -1,15 +1,15 @@
 <template>
-  <ion-app v-if="showMenu">
+  <ion-app v-if="showMenu" data-testid="app-root">
     <IonSplitPane content-id="main-content" when="lg">
-      <ion-menu content-id="main-content" type="overlay">
+      <ion-menu content-id="main-content" type="overlay" data-testid="app-side-menu">
         <ion-header>
           <ion-toolbar>
-            <ion-title>{{ translate("Cycle Count") }}</ion-title>
+            <ion-title data-testid="app-title">{{ translate("Cycle Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
         <ion-content>
-          <ion-list id="receiving-list">
+          <ion-list id="receiving-list" data-testid="app-menu-list">
             <ion-menu-toggle
               auto-hide="false"
               v-for="(page, index) in visibleMenuItems"
@@ -20,6 +20,7 @@
                 router-direction="root"
                 :router-link="page.path"
                 :class="{ selected: selectedIndex === index }"
+                :data-testid="'app-menu-item-' + page.path.substring(1)"
               >
                 <ion-icon :ios="page.meta.iosIcon" :md="page.meta.mdIcon" slot="start" />
                 <ion-label>{{ translate(page.meta.title || page.name) }}</ion-label>
@@ -29,12 +30,12 @@
         </ion-content>
       </ion-menu>
 
-      <ion-router-outlet id="main-content"></ion-router-outlet>
+      <ion-router-outlet id="main-content" data-testid="app-router-outlet"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>
 
-  <ion-app v-else>
-    <ion-router-outlet id="main-content"></ion-router-outlet>
+  <ion-app v-else data-testid="app-root-no-menu">
+    <ion-router-outlet id="main-content" data-testid="app-router-outlet"></ion-router-outlet>
   </ion-app>
 </template>
 

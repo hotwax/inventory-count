@@ -39,6 +39,11 @@ const authGuard = async (to: any, from: any, next: any) => {
   const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
   if (!authStore.isAuthenticated) {
     await loader.present('Authenticating')
+    if (authStore.isEmbedded) {
+      loader.dismiss();
+      next('/login');
+      return;
+    }
     // TODO use authenticate() when support is there
     const redirectUrl = window.location.origin + '/login'
     window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
@@ -49,6 +54,9 @@ const authGuard = async (to: any, from: any, next: any) => {
 
 const loginGuard = (to: any, from: any, next: any) => {
   const authStore = useAuthStore();
+  if (to.query?.embedded === '1') {
+    authStore.$reset();
+  }
   if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
     next('/')
   }
@@ -85,13 +93,13 @@ const routes: Array<RouteRecordRaw> = [
         path: 'settings',
         component: () => import('@/views/Settings.vue')
       },
-      {
+      /*{
         path: 'variance',
         component: () => import('@/views/Variance.vue'),
         meta: {
           permissionId: "APP_VARIANCE_VIEW"
         }
-      }
+      }*/
     ],
     beforeEnter: authGuard,
   },
