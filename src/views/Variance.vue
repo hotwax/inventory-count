@@ -1057,6 +1057,7 @@ async function addProductInhandCountedItems(product: any) {
   isSearchResultsModalOpen.value = false  
 
   try {
+    product.countedQuantity = 0;
     await setProductQoh(product)
     handCountedProducts.value.push(product)
   } catch (err) {
