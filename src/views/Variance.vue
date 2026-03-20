@@ -16,206 +16,199 @@
     <ion-content>
       <main :class="mode">
         <template v-if="mode === 'scan'">
-        <!-- Left Panel -->
-        <div class="count-events">
-          <ion-item class="scan" lines="none">
-            <ion-label position="stacked">{{ translate(barcodeIdentifierDescription) }}</ion-label>
-            <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearSearchResults"
-              @ionFocus="handleScannerFocus" @ionBlur="handleScannerBlur"></ion-input>
-          </ion-item>
-          <ion-button expand="block" :color="isScannerActive ? 'success' : 'danger'" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus">
-            <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-            {{ isScannerActive ? translate("Scanner Ready") : translate("Focus Scanner") }}
-          </ion-button>
+          <!-- Left Panel -->
+          <div class="count-events">
+            <ion-item class="scan" lines="none">
+              <ion-label position="stacked">{{ translate(barcodeIdentifierDescription) }}</ion-label>
+              <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
+                @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
+            </ion-item>
+            <ion-button expand="block" :color="isScannerActive ? 'success' : 'danger'" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus">
+              <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
+              {{ isScannerActive ? translate("Scanner Ready") : translate("Focus Scanner") }}
+            </ion-button>
 
-          <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top ion-text-center">
-            <ion-label color="medium">
-              <p>{{ translate("Scanned items will appear here. Focus your scanner to start adding items to variance.") }}</p>
-            </ion-label>
-          </ion-item>
+            <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top ion-text-center">
+              <ion-label color="medium">
+                <p>{{ translate("Scanned items will appear here. Focus your scanner to start adding items to variance.") }}</p>
+              </ion-label>
+            </ion-item>
 
-          <div class="events">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
-            <template v-slot="{ item, index, active }">
-              <DynamicScrollerItem :item="item" :index="index" :active="active">
-                <ion-item>
-                  <div slot="start" class="img-preview">
-                    <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
-                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
-                    </ion-thumbnail>
-                      <ion-badge class="qty-badge" color="medium">
-                        {{ item.quantity }}
+            <div class="events">
+              <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true">
+                <template v-slot="{ item, index, active }">
+                  <DynamicScrollerItem :item="item" :index="index" :active="active">
+                    <ion-item>
+                      <div slot="start" class="img-preview">
+                        <ion-thumbnail @click="openImagePreview(item.product?.mainImageUrl)">
+                          <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-badge class="qty-badge" color="medium">
+                          {{ item.quantity }}
+                        </ion-badge>
+                      </div>
+                      <ion-label>
+                        {{ item.scannedValue }}
+                        <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
+                      </ion-label>
+                      <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
+                        {{ translate('unaggregated') }}
                       </ion-badge>
-                  </div>
-                  <ion-label>
-                    {{ item.scannedValue }}
-                    <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
-                  </ion-label>
-                  <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
-                    {{ translate('unaggregated') }}
-                  </ion-badge>
-                  <ion-button v-if="item.aggApplied === 1 && !negatedVarianceLogIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
-                    <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
-                  </ion-button>
-                </ion-item>
-              </DynamicScrollerItem>
-            </template>
-          </DynamicScroller>
-          <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
-            <ion-content>
-              <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
-                <ion-label color="danger">{{ translate("Remove") }}</ion-label>
-              </ion-item>
-            </ion-content>
-          </ion-popover>
-          </div>
-        </div>
-        <div class="count-dashboard">
-          <div class="dashboard-content-wrapper">
-            <div class="variance-config-section ion-margin-top ion-padding-horizontal">
-              <ion-item lines="none" class="reason-item">
-                <ion-select v-model="optedVarianceReason" :label="translate('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
-                  <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
-                    {{ translate(reason.label) }}
-                  </ion-select-option>
-                </ion-select>
-              </ion-item>
-              <div class="action-segment-wrapper">
-                <ion-segment :value="optedAction" @ionChange="optedAction = ($event.detail.value as any)" mode="ios">
-                  <ion-segment-button value="add">
-                    <ion-label>{{ translate("Add") }}</ion-label>
-                  </ion-segment-button>
-                  <ion-segment-button value="remove">
-                    <ion-label>{{ translate("Remove") }}</ion-label>
-                  </ion-segment-button>
-                </ion-segment>
-              </div>
+                      <ion-button v-if="item.aggApplied === 1 && !negatedVarianceLogIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
+                        <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
+                      </ion-button>
+                    </ion-item>
+                  </DynamicScrollerItem>
+                </template>
+              </DynamicScroller>
+              <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
+                <ion-content>
+                  <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
+                    <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+                  </ion-item>
+                </ion-content>
+              </ion-popover>
             </div>
+          </div>
+          <div class="count-dashboard">
+            <div class="dashboard-content-wrapper">
+              <div class="variance-config-section ion-margin-top ion-padding-horizontal">
+                <ion-item lines="none" class="reason-item">
+                  <ion-select v-model="optedVarianceReason" :label="translate('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
+                    <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
+                      {{ translate(reason.label) }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+                <div class="action-segment-wrapper">
+                  <ion-segment :value="optedAction" @ionChange="optedAction = ($event.detail.value as any)" mode="ios">
+                    <ion-segment-button value="add">
+                      <ion-label>{{ translate("Add") }}</ion-label>
+                    </ion-segment-button>
+                    <ion-segment-button value="remove">
+                      <ion-label>{{ translate("Remove") }}</ion-label>
+                    </ion-segment-button>
+                  </ion-segment>
+                </div>
+              </div>
 
-            <div class="variance-summary-header ion-margin-top ion-padding-horizontal" v-if="inventoryAdjustments.length">
-              <div>
+              <div class="variance-summary-header ion-margin-top ion-padding-horizontal" v-if="inventoryAdjustments.length">
                 <ion-text color="medium">
                   <p>{{ translate("Total:") }} {{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? translate("unit") : translate("units") }} {{ translate("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? translate("product") : translate("products") }}</p>
                 </ion-text>
+                <ion-button @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled || !inventoryAdjustments.length">
+                  {{ translate("Log Variance") }}
+                </ion-button>
               </div>
-              <ion-button @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled || inventoryAdjustments.length === 0">
-                {{ translate("Log Variance") }}
-              </ion-button>
-            </div>
 
-            <div class="segment-actions-container ion-margin-top ion-padding-horizontal">
-              <ion-segment v-model="selectedSegment" class="main-segment">
-                <ion-segment-button value="matched">
-                  <ion-label>{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="unmatched">
-                  <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
-                </ion-segment-button>
-              </ion-segment>
-              <ion-button fill="clear" color="primary" class="new-session" @click="confirmClearAll">
-                <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
-                {{ translate("New Session") }}
-              </ion-button>
-            </div>
+              <div class="segment-actions-container ion-margin-top ion-padding-horizontal">
+                <ion-segment v-model="selectedSegment" class="main-segment">
+                  <ion-segment-button value="matched">
+                    <ion-label>{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
+                  </ion-segment-button>
+                  <ion-segment-button value="unmatched">
+                    <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
+                  </ion-segment-button>
+                </ion-segment>
+                <ion-button fill="clear" color="primary" class="new-session" @click="confirmClearAll">
+                  <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
+                  {{ translate("New Session") }}
+                </ion-button>
+              </div>
 
-
-            <div class="segment-view ion-padding-horizontal">
-              <div v-if="selectedSegment === 'matched'">
-                <template v-if="inventoryAdjustments.length === 0">
-                  <div class="empty-state ion-padding ion-text-center">
-                    <ion-label>
+              <div class="segment-view ion-padding-horizontal">
+                <div v-if="selectedSegment === 'matched'">
+                  <template v-if="!inventoryAdjustments.length">
+                    <ion-label class="empty-state ion-padding ion-text-center">
                       <h2 class="ion-margin-bottom">{{ translate("No items scanned") }}</h2>
                       <p>{{ translate("Scan items to adjust their inventory. You can select reasons like 'Damage' to remove them from your sellable inventory.") }}</p>
                     </ion-label>
-                  </div>
-                </template>
-                <template v-else>
-                  <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
-                    <ion-item lines="full">
-                      <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(inventoryAdjustment.product?.mainImageUrl)">
-                        <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
-                      </ion-thumbnail>
-                      <ion-label>
-                        {{ useProductMaster().primaryId(inventoryAdjustment.product) }}
-                        <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
-                      </ion-label>
-                      <ion-text slot="end">
-                        {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
-                      </ion-text>
-                      <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveAdjustment(inventoryAdjustment)">
-                        <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
-                      </ion-button>
-                    </ion-item>
-                    <ion-item lines="none">
-                      <ion-label>
-                        {{ translate("Variance Qty") }}
-                      </ion-label>
-                      <ion-text slot="end">
-                        {{ optedAction === 'add' ? '+' : '-' }}{{ inventoryAdjustment.quantity }}
-                      </ion-text>
-                    </ion-item>
-                  </ion-card>
-                </template>
-              </div>
-              <div v-if="selectedSegment === 'unmatched'">
-                <template v-if="unmatchedItems.length === 0">
-                  <div class="empty-state ion-padding ion-text-center">
-                    <ion-label>
+                  </template>
+                  <template v-else>
+                    <ion-card v-for="inventoryAdjustment in inventoryAdjustments" :key="inventoryAdjustment.uuid" class="variance-product-card">
+                      <ion-item lines="full">
+                        <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(inventoryAdjustment.product?.mainImageUrl)">
+                          <Image :src="inventoryAdjustment.product?.mainImageUrl || defaultImage"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          {{ useProductMaster().primaryId(inventoryAdjustment.product) }}
+                          <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
+                        </ion-label>
+                        <ion-text slot="end">
+                          {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
+                        </ion-text>
+                        <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveAdjustment(inventoryAdjustment)">
+                          <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                      </ion-item>
+                      <ion-item lines="none">
+                        <ion-label>
+                          {{ translate("Variance Qty") }}
+                        </ion-label>
+                        <ion-text slot="end">
+                          {{ optedAction === 'add' ? '+' : '-' }}{{ inventoryAdjustment.quantity }}
+                        </ion-text>
+                      </ion-item>
+                    </ion-card>
+                  </template>
+                </div>
+                <div v-if="selectedSegment === 'unmatched'">
+                  <template v-if="!unmatchedItems.length">
+                    <ion-label class="empty-state ion-padding ion-text-center">
                       <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
                       <p>{{ translate("All scanned items have been matched to products in your catalog. If you scan an item that isn't found, it will appear here for matching.") }}</p>
                     </ion-label>
-                  </div>
-                </template>
+                  </template>
 
-                <template v-else>
-                  <ion-card v-for="item in unmatchedItems" :key="item.uuid">
-                    <ion-item>
-                      <ion-label>
-                        <h2>{{ item.scannedValue }}</h2>
-                        <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
-                        <p>{{ timeAgo(item.createdAt) }}</p>
-                      </ion-label>
-                      <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
-                        <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                        {{ translate("Match") }}
-                      </ion-button>
-                      <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveUnmatchedItem(item)">
-                        <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
-                      </ion-button>
-                    </ion-item>
+                  <template v-else>
+                    <ion-card v-for="item in unmatchedItems" :key="item.uuid">
+                      <ion-item>
+                        <ion-label>
+                          <h2>{{ item.scannedValue }}</h2>
+                          <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
+                          <p>{{ timeAgo(item.createdAt) }}</p>
+                        </ion-label>
+                        <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
+                          <ion-icon :icon="searchOutline" slot="start"></ion-icon>
+                          {{ translate("Match") }}
+                        </ion-button>
+                        <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveUnmatchedItem(item)">
+                          <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                      </ion-item>
 
-                    <!-- Previous good scan -->
-                    <ion-item v-if="getScanContext(item).previousGood">
-                      <ion-thumbnail slot="start">
-                        <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
-                      </ion-thumbnail>
-                      <ion-label>
-                        <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
-                        <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
-                        <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
-                        <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
-                      </ion-label>
-                      <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
-                    </ion-item>
-                    <!-- Next good scan -->
-                    <ion-item lines="none" v-if="getScanContext(item).nextGood">
-                      <ion-thumbnail slot="start">
-                        <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
-                      </ion-thumbnail>
-                      <ion-label>
-                        <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
-                        <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
-                        <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
-                        <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
-                      </ion-label>
-                      <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
-                    </ion-item>
-                  </ion-card>
-                </template>
+                      <!-- Previous good scan -->
+                      <ion-item v-if="getScanContext(item).previousGood">
+                        <ion-thumbnail slot="start">
+                          <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
+                          <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
+                          <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
+                          <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
+                        </ion-label>
+                        <ion-icon :icon="chevronUpCircleOutline"></ion-icon>
+                      </ion-item>
+                      <!-- Next good scan -->
+                      <ion-item lines="none" v-if="getScanContext(item).nextGood">
+                        <ion-thumbnail slot="start">
+                          <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
+                        </ion-thumbnail>
+                        <ion-label>
+                          <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
+                          <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
+                          <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
+                          <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
+                        </ion-label>
+                        <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
+                      </ion-item>
+                    </ion-card>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </template>
         <!-- Pre Counted Items -->
         <template v-else>
@@ -295,7 +288,7 @@
                 <p class="ion-no-margin">{{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? translate("unit") : translate("units") }} {{ translate("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? translate("product") : translate("products") }}</p>
               </ion-text>
             </div>
-            <ion-button :disabled="handCountedProducts?.length === 0 || hasProductWithZeroQuantity" fill="outline" color="primary" @click="logHandCountedItemVariances">
+            <ion-button :disabled="!handCountedProducts?.length || hasProductWithZeroQuantity" fill="outline" color="primary" @click="logHandCountedItemVariances">
               {{ translate("Log Variance") }}
             </ion-button>
           </div>
@@ -387,15 +380,12 @@
             </ion-item>
           </ion-radio-group>
         </template>
+        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+          <ion-fab-button fill="outline" @click="saveMatchProduct" :disabled="!selectedProductId">
+            <ion-icon :icon="saveOutline"/>
+          </ion-fab-button>
+        </ion-fab>
       </ion-content>
-      <ion-footer>
-        <ion-toolbar>
-          <ion-button slot="end" fill="outline" color="success" @click="saveMatchProduct" :disabled="!selectedProductId">
-            <ion-icon :icon="saveOutline" slot="start" />
-            {{ translate("Save") }}
-          </ion-button>
-        </ion-toolbar>
-      </ion-footer>
     </ion-modal>
 
     <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal">
@@ -425,10 +415,10 @@
       </ion-content>
     </ion-modal>
     <ion-modal :is-open="isImageModalOpen" @didDismiss="isImageModalOpen = false">
-        <ion-content class="ion-padding image-preview-modal">
-          <ion-img :src="largeImage" />
-        </ion-content>
-      </ion-modal>
+      <ion-content class="ion-padding image-preview-modal">
+        <ion-img :src="largeImage" />
+      </ion-content>
+    </ion-modal>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
@@ -437,10 +427,10 @@
 
 import { translate } from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
-import { IonContent, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline } from 'ionicons/icons';
+import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
-import { computed, ref } from 'vue';
+import { computed, ref, nextTick } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { showToast } from '@/services/uiUtils';
@@ -450,8 +440,6 @@ import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { useAuthStore } from '@/stores/authStore';
 import { Subscription, from } from 'rxjs';
-import { saveOutline } from 'ionicons/icons';
-import { nextTick } from 'vue';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 
 const mode = ref<'scan' | 'count'>('scan');
@@ -503,16 +491,13 @@ const showRemoveConfirmAlert = ref(false)
 const removeTargetScan = ref<any>(null)
 const removeConfirmMessage = ref('')
 
-/* Stub Methods for Count Events */
-
 const aggregationInterval = 5000;
 
 const handleScan = () => {
-  if (scannedValue.value.trim().length === 0) {
+  if (!scannedValue.value.trim().length) {
     showToast(translate("Please enter a barcode"));
     return;
   }
-  console.log('handleScan');
   useProductMaster().addVarianceLog(scannedValue.value.trim(), 1, currentFacility.value.facilityId);
   scannedValue.value = '';
   isLogVarianceDisabled.value = true;
@@ -523,13 +508,10 @@ const handleScan = () => {
 const handleStartOrFocus = () => { 
   barcodeInput.value.$el.setFocus();
 };
-const handleScannerFocus = () => { 
-  isScannerActive.value = true;
+const toggleScannerActive = () => { 
+  isScannerActive.value = !isScannerActive.value;
 };
-const handleScannerBlur = () => { 
-  isScannerActive.value = false;
-};
-const clearSearchResults = () => { console.log('clearSearchResults'); };
+const clearBarcodeInput = () => { scannedValue.value = ''; };
 
 const negatedVarianceLogIds = computed(() => {
   return new Set(
@@ -813,7 +795,7 @@ async function handCountedItemManualInputChange(event: any, item: any) {
 let searchTimeoutId: any;
 
 const handleLiveSearch = async () => {
-  if (searchedProductString.value.trim().length === 0) {
+  if (!searchedProductString.value.trim().length) {
     searchedProducts.value = [];
     isSearching.value = false;
     return;
@@ -1043,7 +1025,7 @@ async function handleEnterKey() {
   const term = searchedProductString.value.trim()
   if (!term) return
 
-  if (searchedProducts.value.length === 0) {
+  if (!searchedProducts.value.length) {
     searchedProducts.value = await searchProducts(term);
   }
   if (searchedProducts.value.length > 0) {
@@ -1168,7 +1150,7 @@ main.count {
 }
 
 .count-events {
-  border-right: 1px solid var(--ion-color-light);
+  border-right: 1px solid var(--ion-color-medium);
   contain: paint;
   height: 100%;
   display: grid;
