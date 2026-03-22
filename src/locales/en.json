@@ -316,7 +316,7 @@
   "Saved mappings": "Saved mappings",
   "Scan a barcode": "Scan a barcode",
   "Scan event parsing": "Scan event parsing",
-  "Scan items to adjust their inventory. You can select reasons like 'Damage' to remove them from your sellable inventory.": "Scan items to adjust their inventory. You can select reasons like 'Damage' to remove them from your sellable inventory.",
+  "Scan items to adjust their inventory.": "Scan items to adjust their inventory.",
   "Scanned items will appear here. Focus your scanner to start adding items to variance.": "Scanned items will appear here. Focus your scanner to start adding items to variance.",
   "Scan events exists": "Scan events exists",
   "Scan events missing": "Scan events missing",

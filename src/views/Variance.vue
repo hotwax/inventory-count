@@ -121,7 +121,7 @@
                   <template v-if="!inventoryAdjustments.length">
                     <ion-label class="empty-state ion-padding ion-text-center">
                       <h2 class="ion-margin-bottom">{{ translate("No items scanned") }}</h2>
-                      <p>{{ translate("Scan items to adjust their inventory. You can select reasons like 'Damage' to remove them from your sellable inventory.") }}</p>
+                      <p>{{ translate("Scan items to adjust their inventory.") }}</p>
                     </ion-label>
                   </template>
                   <template v-else>
