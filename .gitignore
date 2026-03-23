@@ -39,3 +39,6 @@ npm-debug.log*
 .history
 .firebase
 testidguideline.md
+
+/playwright-report/
+/test-results/

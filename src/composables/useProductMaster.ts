@@ -6,6 +6,8 @@ import workerApi from "@/services/workerApi";
 import { db } from '@/services/appInitializer';
 import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
+import { VarianceLogs } from '@/services/commonDatabase';
+import { DateTime } from 'luxon';
 
 // Product structure
 export interface Product {
@@ -549,6 +551,94 @@ const getProductQoh = async (
   return rec ? rec.quantityOnHandTotal : null
 }
 
+const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: string, productId?: string, negatedVarianceLogId?: number) => {
+  const varianceLog: VarianceLogs = {
+    scannedValue: scannedValue,
+    quantity: quantity,
+    productId: productId || null,
+    facilityId: facilityId,
+    aggApplied: 0,
+    createdAt: DateTime.now().toMillis()
+  }
+  if (negatedVarianceLogId) {
+    varianceLog.negatedVarianceLogId = negatedVarianceLogId;
+  }
+  await db.varianceLogs.add(varianceLog)
+}
+
+const getVarianceLogs = () =>
+  liveQuery(async () => {    
+    const varLogs = await db.varianceLogs
+      .reverse()
+      .sortBy('createdAt');
+
+    const enriched = await Promise.all(
+      varLogs.map(async event => {
+        if (event.productId) {
+          const product = await db.products.get(event.productId);
+          return { ...event, product };
+        }
+        return event;
+      })
+    );
+
+    return enriched || [];
+  });
+
+const getInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+
+    // Filter for items with productId (matched)
+    const matched = adjusments.filter(item => item.productId);
+
+    const enriched = await Promise.all(
+      matched.map(async adjustment => {
+        const product = await db.products.get(adjustment.productId!);
+        return { ...adjustment, product };
+      })
+    );
+    
+    return enriched || [];
+  });
+
+const getUnmatchedInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+
+    // Filter for items without productId (unmatched)
+    const unmatched = adjusments.filter(item => !item.productId);
+    
+    return unmatched || [];
+  });
+
+const clearVarianceLogsAndAdjustments = async () => {
+  await db.varianceLogs.clear();
+  await db.inventoryAdjustments.clear();
+}
+
+const removeInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
+  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
+    await db.inventoryAdjustments.delete([facilityId, uuid]);
+    if (scannedValue) {
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+    }
+  });
+}
+
+const removeUnmatchedInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
+  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
+    await db.inventoryAdjustments.delete([facilityId, uuid]);
+    if (scannedValue) {
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+    }
+  });
+}
+
 export function useProductMaster() {
 
   return {
@@ -573,6 +663,14 @@ export function useProductMaster() {
     upsertInventoryFromSessionItems,
     getProductInventory,
     getProductQoh,
-    setInventoryStaleMs
+    setInventoryStaleMs,
+    addVarianceLog,
+    getVarianceLogs,
+    getInventoryAdjustments,
+    getUnmatchedInventoryAdjustments,
+    clearVarianceLogsAndAdjustments,
+    removeInventoryAdjustment,
+    removeUnmatchedInventoryAdjustment
   }
 }
+
