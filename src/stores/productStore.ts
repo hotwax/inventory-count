@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
-import api from '@/services/RemoteAPI'
-import { hasError } from '@/stores/authStore'
+import { api, commonUtil } from '@common'
+import { useAuth } from '@/composables/useAuth'
 import logger from '@/logger'
-import { useAuthStore } from './authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import {
   fetchGoodIdentificationTypes,
@@ -17,7 +16,7 @@ import {
 } from '@/adapter'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n'
+import { translate } from '@common'
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -72,7 +71,7 @@ export const useProductStore = defineStore('productStore', {
           url: `inventory-cycle-count/facilities/${facilityId}/productStores`,
           method: 'GET'
         })
-        if (!hasError(resp)) this.productStores = resp?.data
+        if (!commonUtil.hasError(resp)) this.productStores = resp?.data
       } catch (err) {
         logger.error('Failed to load product stores', err)
       }
@@ -83,9 +82,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpEComStoresByFacility(facilityId?: any) {
-      const authStore = useAuthStore()
       try {
-        const response = await getEComStoresByFacility(authStore.token.value, authStore.getBaseUrl, 100, facilityId)
+        const response = await getEComStoresByFacility(useAuth().getToken.value, useAuth().getMaargUrl.value, 100, facilityId)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -94,9 +92,8 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getDxpEComStores() {
-      const authStore = useAuthStore()
       try {
-        const response = await getEComStores(authStore.token.value, authStore.getBaseUrl, 100)
+        const response = await getEComStores(useAuth().getToken.value, useAuth().getMaargUrl.value, 100)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -105,12 +102,11 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getEComStorePreference(userPrefTypeId: any, userId = "") {
-      const authStore = useAuthStore()
       if (!this.productStores.length) return
 
       let preferredStore = this.productStores[0]
       try {
-        const preferredStoreId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredStoreId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
         if (preferredStoreId) {
           const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
           if (store) preferredStore = store
@@ -204,7 +200,7 @@ export const useProductStore = defineStore('productStore', {
           }
         })
 
-        if (!hasError(resp) && resp?.data?.length) {
+        if (!commonUtil.hasError(resp) && resp?.data?.length) {
           const parsedSettings = resp.data.reduce((acc: any, setting: any) => {
             const keyMap: Record<string, string> = {
               INV_FORCE_SCAN: 'forceScan',
@@ -240,7 +236,7 @@ export const useProductStore = defineStore('productStore', {
             settingValue: value
           }
         })
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           if (key === 'forceScan') this.settings.forceScan = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
           showToast(translate('Store preference updated successfully.'))
@@ -263,7 +259,7 @@ export const useProductStore = defineStore('productStore', {
           params: { productStoreId, settingTypeEnumId: 'PRDT_IDEN_PREF' }
         })
 
-        if (!hasError(resp) && resp?.data?.length) {
+        if (!commonUtil.hasError(resp) && resp?.data?.length) {
           const settings = JSON.parse(resp.data[0].settingValue)
           const primaryId = settings?.primaryId || 'SKU'
           const secondaryId = settings?.secondaryId || 'productId'
@@ -314,16 +310,15 @@ export const useProductStore = defineStore('productStore', {
           url: `inventory-cycle-count/users/${partyId}/facilities`,
           method: 'GET'
         })
-        if (!hasError(resp)) this.facilities = resp?.data
+        if (!commonUtil.hasError(resp)) this.facilities = resp?.data
       } catch (err) {
         logger.error('Failed to load facilities', err)
       }
     },
 
     async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
-      const authStore = useAuthStore()
       try {
-        const response = await getUserFacilities(authStore.token.value, authStore.getBaseUrl, partyId, facilityGroupId, isAdminUser, payload)
+        const response = await getUserFacilities(useAuth().getToken.value, useAuth().getMaargUrl.value, partyId, facilityGroupId, isAdminUser, payload)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -336,12 +331,11 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getFacilityPreference(userPrefTypeId: string, userId = '') {
-      const authStore = useAuthStore()
       if (!this.facilities.length) return
 
       let preferredFacility = this.facilities[0]
       try {
-        const preferredFacilityId = await getUserPreference(authStore.token.value, authStore.getBaseUrl, userPrefTypeId, userId)
+        const preferredFacilityId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
         if (preferredFacilityId) {
           const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility
@@ -350,23 +344,23 @@ export const useProductStore = defineStore('productStore', {
         console.error('Failed to fetch facility preference', error)
       }
 
-      if(authStore.isEmbedded) {
-        const locationId = authStore.posContext.locationId as string
-        const facilityId = await fetchShopifyShopLocation({
-          shopifyLocationId: locationId,
-          pageSize: 1
-        });
-        if(facilityId) {
-          const facility = this.facilities.find((facility: any) => facility.facilityId === facilityId);
+      // if(authStore.isEmbedded) {
+      //   const locationId = authStore.posContext.locationId as string
+      //   const facilityId = await fetchShopifyShopLocation({
+      //     shopifyLocationId: locationId,
+      //     pageSize: 1
+      //   });
+      //   if(facilityId) {
+      //     const facility = this.facilities.find((facility: any) => facility.facilityId === facilityId);
 
-          if(!facility) {
-            throw "Unable to login. User is not associated with this location. Please contact the administrator."
-          }
-          preferredFacility = facility
-        } else {
-          throw "Failed to fetch location information. Please contact the administrator."
-        }
-      }
+      //     if(!facility) {
+      //       throw "Unable to login. User is not associated with this location. Please contact the administrator."
+      //     }
+      //     preferredFacility = facility
+      //   } else {
+      //     throw "Failed to fetch location information. Please contact the administrator."
+      //   }
+      // }
 
       this.currentFacility = preferredFacility
     },

@@ -1,4 +1,4 @@
-import { translate } from '@/i18n'
+import { translate } from '@common'
 import { loadingController } from '@ionic/vue'
 import { toastController } from '@ionic/vue';
 

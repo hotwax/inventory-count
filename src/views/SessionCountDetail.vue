@@ -514,7 +514,7 @@
       </ion-modal>
       <!-- Edit Session Modal -->
       <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false"
-        :presenting-element="pageRef?.$el" :keep-contents-mounted="true" data-testid="session-detail-edit-modal">
+        :presenting-element="(pageRef as any)?.$el" :keep-contents-mounted="true" data-testid="session-detail-edit-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
@@ -582,14 +582,14 @@ import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n';
+import { commonUtil, translate } from '@common';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
 import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuth } from '@/composables/useAuth';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
@@ -805,7 +805,7 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
+    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({
@@ -815,11 +815,11 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: useAuthStore().getOmsRedirectionUrl,
-          omsInstance: useAuthStore().getOMS,
+          omsUrl: commonUtil.getOmsURL(),
+          omsInstance: commonUtil.getOMSInstanceName(),
           userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: useAuthStore().getBaseUrl,
-          token: useAuthStore().token.value,
+          maargUrl: commonUtil.getMaargURL(),
+          token: commonUtil.getToken(),
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId,
           facilityId: useProductStore().getCurrentFacility.facilityId
@@ -1098,8 +1098,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken() || '',
         userId,
         deviceId: currentDeviceId
       };
@@ -1159,8 +1159,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken() || '',
         userId,
         deviceId: currentDeviceId
       };
@@ -1312,10 +1312,10 @@ async function saveMatchProduct() {
   const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
 
   const context = {
-    maargUrl: useAuthStore().getBaseUrl,
-    omsInstance: useAuthStore().getOMS,
-    token: useAuthStore().token.value,
-    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    maargUrl: commonUtil.getMaargURL(),
+    omsInstance: commonUtil.getOMSInstanceName(),
+    token: commonUtil.getToken(),
+    omsUrl: commonUtil.getOmsURL(),
     userLoginId: useUserProfile().getUserProfile?.username,
     facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
@@ -1349,11 +1349,11 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
-      omsUrl: useAuthStore().getOmsRedirectionUrl,
-      omsInstance: useAuthStore().getOMS,
+      omsUrl: commonUtil.getOmsURL(),
+      omsInstance: commonUtil.getOMSInstanceName(),
       userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: useAuthStore().getBaseUrl,
-      token: useAuthStore().token.value,
+      maargUrl: commonUtil.getMaargURL(),
+      token: commonUtil.getToken(),
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId,
       facilityId: useProductStore().getCurrentFacility.facilityId

@@ -1,200 +1,256 @@
 <template>
-  <ion-content>
-    <div class="center-div">
-      <ion-item lines="none" v-if='error.message.length' data-testid="login-error-item">
-        <ion-icon slot="start" color="warning" :icon="warningOutline" />
-        <h4 data-testid="login-error-header">{{ $t('Login failed') }}</h4>
-      </ion-item>
-      <p v-if='error.responseMessage.length' data-testid="login-error-reason">
-        {{ $t('Reason:') }} {{ $t(error.responseMessage) }}
-      </p>
-      <p v-if='error.message.length' data-testid="login-error-message">
-        {{ $t(error.message) }}
-      </p>
-      <ion-button v-if='error.message.length && !authStore.isEmbedded' class="ion-margin-top" @click="goToLaunchpad()" data-testid="login-back-to-launchpad-btn">
-        <ion-icon slot="start" :icon="arrowBackOutline" />
-        {{ $t("Back to Launchpad") }}
-      </ion-button>
-    </div>
-  </ion-content>
+  <ion-page>
+    <ion-content>
+      <div class="flex" v-if="!hideBackground && !isConfirmingForActiveSession">
+        <form class="login-container" @keyup.enter="handleSubmit()" @submit.prevent>
+          <Logo />
+          <section v-if="showOmsInput">
+            <ion-item lines="full">
+              <ion-input :label="translate('OMS')" label-placement="fixed" name="instanceUrl" v-model="instanceUrl" id="instanceUrl" type="text" required />
+            </ion-item>
+
+            <div class="ion-padding">
+              <!-- @keyup.enter.stop to stop the form from submitting on enter press as keyup.enter is already bound
+              through the form above, causing both the form and the button to submit. -->
+              <ion-button color="primary" expand="block" @click.prevent="isCheckingOms ? '' : setOms()" @keyup.enter.stop>
+                {{ translate("Next") }}
+                <ion-spinner v-if="isCheckingOms" name="crescent" slot="end" />
+                <ion-icon v-else slot="end" :icon="arrowForwardOutline" />
+              </ion-button>
+            </div>
+          </section>
+
+          <section v-else>
+            <div class="ion-text-center ion-margin-bottom">
+              <ion-chip :outline="true" @click="toggleOmsInput()">
+                {{ omsInstance }}
+              </ion-chip>
+            </div>
+
+            <ion-item lines="full">
+              <ion-input :label="translate('Username')" label-placement="fixed" name="username" v-model="username" id="username"  type="text" required />
+            </ion-item>
+            <ion-item lines="none">
+              <ion-input :label="translate('Password')" label-placement="fixed" name="password" v-model="password" id="password" type="password" required />
+            </ion-item>
+
+            <div class="ion-padding">
+              <ion-button color="primary" expand="block" @click="isLoggingIn ? '' : login()">
+                {{ translate("Login") }}
+                <ion-spinner v-if="isLoggingIn" slot="end" name="crescent" />
+                <ion-icon v-else slot="end" :icon="arrowForwardOutline" />
+              </ion-button>
+            </div>
+          </section>
+        </form>
+      </div>
+    
+      <ion-fab @click="router.push('/')" vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button color="medium">
+          <ion-icon :icon="gridOutline" /> 
+        </ion-fab-button>
+      </ion-fab>
+    </ion-content>
+  </ion-page>
 </template>
 
+
 <script setup lang="ts">
-import { IonButton, IonContent, IonIcon, IonItem, loadingController } from "@ionic/vue";
-import { arrowBackOutline, warningOutline } from 'ionicons/icons'
-import { ref, onUnmounted, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/authStore";
-import { translate } from "@/i18n";
-import { createShopifyAppBridge, getSessionTokenFromShopify } from "@/services/utils";
-import api from "@/services/RemoteAPI";
+import {
+  IonButton,
+  IonChip,
+  IonContent,
+  IonFab,
+  IonFabButton,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonPage,
+  IonSpinner,
+  loadingController,
+  onIonViewWillEnter
+} from "@ionic/vue";
+import { ref, computed } from "vue";
+import { commonUtil } from '@common';
+import { useAuth } from "@/composables/useAuth";
+import Logo from '@/components/Logo.vue';
+import { arrowForwardOutline, gridOutline } from 'ionicons/icons'
+import { translate } from "@common";
+import { showToast } from "@/services/uiUtils";
+import router from "@/router";
 
-const router = useRouter();
-const authStore = useAuthStore();
-const error = ref({
-  message: '',
-  responseMessage: ''
-})
-
+const route = router.currentRoute.value
+const username = ref("");
+const password = ref("");
+const instanceUrl = ref("");
+const baseURL = import.meta.env.VITE_VUE_APP_BASE_URL;
+const alias = import.meta.env.VITE_VUE_APP_ALIAS ? JSON.parse(import.meta.env.VITE_VUE_APP_ALIAS) : {};
+const defaultAlias = import.meta.env.VITE_VUE_APP_DEFAULT_ALIAS;
+const showOmsInput = ref(false);
+const hideBackground = ref(true);
+const isConfirmingForActiveSession = ref(false);
+const loader = ref<any>(null);
+const loginOption = ref<any>({});
+const isCheckingOms = ref(false);
 const isLoggingIn = ref(false);
-let loader: any = null;
-const route = router.currentRoute.value;
 
-onMounted(async () => {
-  let isEmbedded = authStore.isEmbedded;
-  // This will be false for when apps run in browser directly and when user first time comes from Shopify POS or Admin embedded app.
-  // Cases Handled: 
-  // If the app is not embedded and there are no query params, redirect to launchpad
-  // If the app is embedded, it will have query params from Shopify, even if the app is not marked as embedded in the auth store, we will mark it as embedded here.
-  // In case if the token expired and user is routed to login path, the app was already marked as embedded, so we should not redirect to launchpad in that case.
-  if (!isEmbedded && !Object.keys(route.query).length) {
-    window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
-    return
-  }
-
-  const { embedded, shop, host } = route.query
-  isEmbedded = isEmbedded || embedded === '1'
-
-  if (isEmbedded) {
-    await appBridgeLogin(shop as string, host as string);
-  } else {
-    login();
-  }
-})
+const omsInstance = computed(() => useAuth().getOMS.value);
 
 const presentLoader = async (message: string) => {
-  if (!loader) {
-    loader = await loadingController.create({
-      message: translate(message),
-      translucent: true,
-      backdropDismiss: false,
-    });
+  if (!loader.value) {
+    loader.value = await loadingController
+      .create({
+        message: translate(message),
+        translucent: true,
+        backdropDismiss: false
+      });
   }
-  await loader.present();
+  loader.value.present();
 };
 
-const dismissLoader = async () => {
-  if (loader) {
-    await loader.dismiss();
-    loader = null;
+const dismissLoader = () => {
+  if (loader.value) {
+    loader.value.dismiss();
+    loader.value = null;
+  }
+};
+
+const toggleOmsInput = () => {
+  showOmsInput.value = !showOmsInput.value;
+  if (showOmsInput.value) {
+    username.value = '';
+    password.value = '';
+  }
+};
+
+const fetchLoginOptions = async () => {
+  loginOption.value = {};
+  try {
+    const resp = await useAuth().checkLoginOptions();
+    if (!commonUtil.hasError(resp)) {
+      loginOption.value = resp.data;
+      if (resp.data.maargInstanceUrl) {
+        await useAuth().setMaarg(resp.data.maargInstanceUrl);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const setOms = async () => {
+  if (!instanceUrl.value) {
+    showToast(translate('Please fill in the OMS'));
+    return;
+  }
+
+  isCheckingOms.value = true;
+
+  const inputURL = instanceUrl.value.trim().toLowerCase();
+  if (!baseURL) {
+    useAuth().setOMS(alias[inputURL] ? alias[inputURL] : inputURL);
+  }
+
+  await fetchLoginOptions();
+
+  if (Object.keys(loginOption.value).length && loginOption.value.loginAuthType !== 'BASIC') {
+    window.location.href = `${loginOption.value.loginAuthUrl}?relaystate=${window.location.origin}/login`;
+  } else {
+    toggleOmsInput();
+  }
+  isCheckingOms.value = false;
+};
+
+const samlLogin = async () => {
+  try {
+    const { token, expirationTime } = route.query as any;
+    await useAuth().samlLogin(token, expirationTime);
+    router.push('/');
+  } catch (error) {
+    router.push('/');
+    console.error(error);
   }
 };
 
 const login = async () => {
-  const route = router.currentRoute.value;
-  const { oms, omsRedirectionUrl, token, expirationTime } = route.query;
+  if (!username.value || !password.value) {
+    showToast(translate('Please fill in the user details'));
+    return;
+  }
 
+  isLoggingIn.value = true;
   try {
-    isLoggingIn.value = true;
-    await presentLoader("Logging in...");
+    await useAuth().loginWithCredentials(username.value.trim(), password.value);
+    username.value = '';
+    password.value = '';
+    router.push('/');
+  } catch (error) {
+    console.error(error);
+  }
+  isLoggingIn.value = false;
+};
 
-    await authStore.login({
-      token: token,
-      oms: oms,
-      omsRedirectionUrl: omsRedirectionUrl,
-      expirationTime: expirationTime
-    });
-
-    router.replace("/");
-  } catch (err) {
-    console.error("[Login Error]", err);
-    error.value.message = 'Please contact the administrator.'
-    error.value.responseMessage = `${err}` || '';
-  } finally {
-    isLoggingIn.value = false;
-    await dismissLoader();
+const handleSubmit = () => {
+  if (instanceUrl.value.trim() && showOmsInput.value && (!username.value && !password.value)) {
+    setOms();
+  } else if (instanceUrl.value) {
+    login();
   }
 };
 
-async function appBridgeLogin(shop: string, host: string) {
-  // In case where token expired and user is routed login path, the query params will not have shop and host,
-  // So we get them from auth store before it is cleared.
-  if (!shop) {
-    shop = authStore.shop as any
-  }
-  if (!host) {
-    host = authStore.host as any
-  }
-  if (!shop || !host) {
-    console.error("Shop or host is missing, cannot proceed further.");
-    error.value.message = "Please contact the administrator.";
+const initialise = async () => {
+  hideBackground.value = true;
+  await presentLoader("Processing");
+
+  if (route.query?.token) {
+    await samlLogin();
+    dismissLoader();
     return;
   }
-  const loginPayload = {} as any;
-  let loginResponse;
-  const maargUrl = JSON.parse(process.env.VUE_APP_SHOPIFY_SHOP_CONFIG || '{}')[shop].maarg;
-  let shopifyAppBridge;
-  try {
-    shopifyAppBridge = await createShopifyAppBridge(shop, host);
-    const shopifySessionToken = await getSessionTokenFromShopify(shopifyAppBridge);
-    const appState: any = await shopifyAppBridge.getState();
 
-    if (!appState) {
-      throw new Error("Couldn't get Shopify App Bridge state, cannot proceed further.");
-    }
-    // Since the Shopify Admin doesn't provide location and user details,
-    // we are using the app state to get the POS location and user details in case of POS Embedded Apps.
-    loginPayload.sessionToken = shopifySessionToken;
-    if (appState.pos?.location?.id) {
-      loginPayload.locationId = appState.pos.location.id
-    }
-    if (appState.pos?.user?.firstName) {
-      loginPayload.firstName = appState.pos.user.firstName;
-    }
-    if (appState.pos?.user?.lastName) {
-      loginPayload.lastName = appState.pos.user.lastName;
-    }
-
-    loginResponse = await api({
-        url: `${maargUrl}/rest/s1/app-bridge/login`,
-        method: 'post',
-        data: loginPayload
-      }
-    );
-
-    if (!loginResponse?.data?.token) {
-      throw new Error("Login response doesn't have token, cannot proceed further.");
-    }
-
-    const posContext = {
-      locationId: loginPayload.locationId,
-      firstName: loginPayload.firstName,
-      lastName: loginPayload.lastName
-    }
-
-    await authStore.login({
-      token: loginResponse?.data.token,
-      oms: maargUrl,
-      omsRedirectionUrl: loginResponse?.data.omsInstanceUrl,
-      expirationTime: loginResponse?.data.expiresAt,
-      isEmbedded: true,
-      shop: shop,
-      host: host,
-      shopifyAppBridge: shopifyAppBridge,
-      posContext
-    });
-
-    router.replace("/");
-  } catch (e) {
-    console.error("Error ", e);
-    error.value.message = authStore.isEmbedded ? e as string : "Please contact the administrator.";
-    return;
+  if (useAuth().getOMS.value) {
+    await fetchLoginOptions();
   }
-}
 
-function goToLaunchpad() {
-  window.location.replace(process.env.VUE_APP_LOGIN_URL || "");
-}
+  if (loginOption.value.loginAuthType !== 'BASIC' || route.query?.oms || !useAuth().getOMS.value) {
+    showOmsInput.value = true;
+  }
 
-onUnmounted(() => {
+  if (route.query?.oms) {
+    instanceUrl.value = route.query.oms as string;
+  }
+
+  if (useAuth().isAuthenticated.value) {
+    router.push('/');
+  }
+
+  instanceUrl.value = useAuth().oms.value;
+  if (useAuth().oms.value) {
+    const currentInstanceUrlAlias = Object.keys(alias).find((key) => alias[key] === useAuth().oms.value);
+    currentInstanceUrlAlias && (instanceUrl.value = currentInstanceUrlAlias);
+  }
+
+  if (!instanceUrl.value && defaultAlias) {
+    instanceUrl.value = defaultAlias;
+  }
   dismissLoader();
+  hideBackground.value = false;
+};
+
+onIonViewWillEnter(() => {
+  initialise();
 });
 </script>
-<style>
-.center-div {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+<style scoped>
+.login-container {
+  width: 375px;
 }
+
+.flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
 </style>
