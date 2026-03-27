@@ -143,10 +143,9 @@
 <script setup>
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
-import { translate } from '@common';
+import { commonUtil, translate } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
-import { hasError } from '@common';
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -190,7 +189,7 @@ async function fetchJobExecutionTime() {
     "consume_AllReceivedSystemMessages_frequent"
   );
 
-  if (!hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
+  if (!commonUtil.hasError(jobResp) && jobResp.data?.jobDetail?.nextExecutionDateTime) {
     nextExecutionTimestamp.value = jobResp.data.jobDetail.nextExecutionDateTime;
   }
 }
@@ -263,13 +262,13 @@ function viewUploadGuide() {
 async function getCycleCountImportErrorsFromServer() {
   try {
     const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) systemMessageError.value = resp?.data[0];
+    if (!commonUtil.hasError(resp)) systemMessageError.value = resp?.data[0];
   } catch (err) { logger.error(err); }
 }
 async function viewFile() {
   try {
     const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ systemMessageId: selectedSystemMessage.value?.systemMessageId });
-    if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
+    if (!commonUtil.hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
     showToast(translate("Failed to download uploaded cycle count file."));
@@ -280,7 +279,7 @@ async function viewFile() {
 async function cancelUpload() {
   try {
     const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       showToast(translate("Cycle count cancelled successfully."));
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
@@ -371,7 +370,7 @@ async function save() {
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
     const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       resetDefaults();
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
       showToast(translate("The cycle counts file uploaded successfully."));

@@ -1,5 +1,5 @@
 import { api, client } from '@common';
-import { hasError } from '@common';
+import { commonUtil } from '@common';
 import { transform } from 'node-json-transform';
 
 interface Response {
@@ -512,7 +512,7 @@ async function getProfile(): Promise<User | Response> {
       method: "get",
     }) as any;
 
-    if (resp.status === 200 && !hasError(resp)) {
+    if (resp.status === 200 && !commonUtil.hasError(resp)) {
       const user: User = transform(resp.data, userProfileTransformRule)
 
       return Promise.resolve(user);
@@ -540,7 +540,7 @@ const setUserLocale = async (payload: any): Promise<any> => {
       data: payload
     })
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       return Promise.resolve(resp.data)
     } else {
       throw resp.data
@@ -579,7 +579,7 @@ const omsGetAvailableTimeZones = async (): Promise <any>  => {
       cache: true
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       return Promise.resolve(resp.data)
     } else {
       throw resp.data

@@ -125,14 +125,13 @@
 import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
-import { translate } from '@common';
+import { commonUtil, translate } from '@common';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
-import { hasError } from '@common';
 import logger from '@/logger';
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
@@ -351,7 +350,7 @@ async function exportCycleCounts() {
     const payload = buildExportPayload();
     const resp = await useInventoryCountRun().queueCycleCountsFileExport(payload);
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       showToast(translate("Your export has been queued. You can find it in Export history."), [{
         text: translate("View"),
         handler: () => {

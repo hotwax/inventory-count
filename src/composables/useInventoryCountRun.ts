@@ -1,5 +1,4 @@
-import { api } from '@common';
-import { hasError } from '@common';
+import { api, commonUtil } from '@common';
 import { DateTime } from 'luxon';
 import logger from '@/logger';
 import { useProductStore } from '@/stores/productStore';
@@ -195,7 +194,7 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         const fetched = resp?.data.cycleCounts;
         const totalCount = resp?.data.cycleCountsCount || 0;
 
@@ -234,7 +233,7 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!hasError(resp)) return resp?.data;
+      if (!commonUtil.hasError(resp)) return resp?.data;
       throw resp?.data;
     } catch (err) {
       logger.error('Error fetching system messages:', err);
@@ -255,7 +254,7 @@ export function useInventoryCountRun() {
         params
       });
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         cycleCounts = resp?.data.cycleCounts;
         total = resp?.data.cycleCountsCount || 0;
         isScrollable = cycleCounts.length < total;
@@ -289,7 +288,7 @@ export function useInventoryCountRun() {
         }
       })
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         return {
           data: resp?.data.cycleCounts,
           total: resp?.data.cycleCountsCount || 0

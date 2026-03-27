@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { api } from '@common'
-import { hasError } from '@common'
+import { api, commonUtil } from '@common'
 import { useAuth } from '@/composables/useAuth'
 import logger from '@/logger'
 import { useProductMaster } from '@/composables/useProductMaster'
@@ -71,7 +70,7 @@ export const useProductStore = defineStore('productStore', {
           url: `inventory-cycle-count/facilities/${facilityId}/productStores`,
           method: 'GET'
         })
-        if (!hasError(resp)) this.productStores = resp?.data
+        if (!commonUtil.hasError(resp)) this.productStores = resp?.data
       } catch (err) {
         logger.error('Failed to load product stores', err)
       }
@@ -200,7 +199,7 @@ export const useProductStore = defineStore('productStore', {
           }
         })
 
-        if (!hasError(resp) && resp?.data?.length) {
+        if (!commonUtil.hasError(resp) && resp?.data?.length) {
           const parsedSettings = resp.data.reduce((acc: any, setting: any) => {
             const keyMap: Record<string, string> = {
               INV_FORCE_SCAN: 'forceScan',
@@ -236,7 +235,7 @@ export const useProductStore = defineStore('productStore', {
             settingValue: value
           }
         })
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           if (key === 'forceScan') this.settings.forceScan = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
           showToast(translate('Store preference updated successfully.'))
@@ -259,7 +258,7 @@ export const useProductStore = defineStore('productStore', {
           params: { productStoreId, settingTypeEnumId: 'PRDT_IDEN_PREF' }
         })
 
-        if (!hasError(resp) && resp?.data?.length) {
+        if (!commonUtil.hasError(resp) && resp?.data?.length) {
           const settings = JSON.parse(resp.data[0].settingValue)
           const primaryId = settings?.primaryId || 'SKU'
           const secondaryId = settings?.secondaryId || 'productId'
@@ -310,7 +309,7 @@ export const useProductStore = defineStore('productStore', {
           url: `inventory-cycle-count/users/${partyId}/facilities`,
           method: 'GET'
         })
-        if (!hasError(resp)) this.facilities = resp?.data
+        if (!commonUtil.hasError(resp)) this.facilities = resp?.data
       } catch (err) {
         logger.error('Failed to load facilities', err)
       }

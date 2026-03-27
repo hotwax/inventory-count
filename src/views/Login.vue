@@ -71,11 +71,10 @@ import {
 } from "@ionic/vue";
 import { defineComponent } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { hasError } from '@common';
 import { useAuth } from "@/composables/useAuth";
 import Logo from '@/components/Logo.vue';
 import { arrowForwardOutline, gridOutline } from 'ionicons/icons'
-import { translate } from "@common";
+import { commonUtil, translate } from "@common";
 import { showToast } from "@/services/uiUtils";
 
 export default defineComponent({
@@ -221,7 +220,7 @@ export default defineComponent({
       this.loginOption = {}
       try {
         const resp = await useAuth().checkLoginOptions()
-        if (!hasError(resp)) {
+        if (!commonUtil.hasError(resp)) {
           this.loginOption = resp.data
           if(resp.data.maargInstanceUrl) {
              await useAuth().setMaarg(resp.data.maargInstanceUrl)

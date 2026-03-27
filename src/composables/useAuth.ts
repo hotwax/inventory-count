@@ -4,7 +4,7 @@ import { useUserProfile } from "@/stores/userProfileStore";
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from "@/authorization";
 import logger from "@/logger";
 import { showToast } from "@/services/uiUtils";
-import { api, translate, cookieHelper, hasError } from "@common";
+import { api, translate, cookieHelper, commonUtil } from "@common";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductStore } from "@/stores/productStore";
 import { initialize } from "@/services/appInitializer";
@@ -93,7 +93,7 @@ export const useAuth = () => {
         }
       });
 
-      if (hasError(resp)) {
+      if (commonUtil.hasError(resp)) {
         showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
         console.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
