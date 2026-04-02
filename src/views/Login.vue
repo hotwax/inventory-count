@@ -71,7 +71,7 @@ import {
   onIonViewWillEnter
 } from "@ionic/vue";
 import { ref, computed } from "vue";
-import { commonUtil } from '@common';
+import { api, commonUtil, cookieHelper } from '@common';
 import { useAuth } from "@/composables/useAuth";
 import Logo from '@/components/Logo.vue';
 import { arrowForwardOutline, gridOutline } from 'ionicons/icons'
@@ -190,6 +190,38 @@ const login = async () => {
   isLoggingIn.value = false;
 };
 
+const basicLogin = async () => {
+  try {
+    const { oms, token, expirationTime, omsRedirectionUrl } = route.query as any;
+    console.log("is this empty", omsRedirectionUrl)
+    // Clear the previously stored oms and token when having oms and token in the URL
+    cookieHelper().set("oms", omsRedirectionUrl)
+
+    // checking for login options as we need to get maarg instance URL for accessing specific apps
+    await fetchLoginOptions();
+
+    try {
+      await useAuth().login({
+        token,
+        oms,
+        expirationTime
+      });
+    } catch(error: any) {
+      showToast(translate("Failed to fetch user profile information"));
+      console.error("error", error);
+      useAuth().clearAuth();
+      return Promise.reject(new Error(error));
+    }
+
+
+    // await authStore.fetchPermissions();
+  } catch (error) {
+    showToast(translate('Failed to fetch user-profile, please try again'));
+    console.error("error: ", error);
+  }
+  router.replace('/');
+};
+
 const handleSubmit = () => {
   if (instanceUrl.value.trim() && showOmsInput.value && (!username.value && !password.value)) {
     setOms();
@@ -202,7 +234,12 @@ const initialise = async () => {
   hideBackground.value = true;
   await presentLoader("Processing");
 
-  if (route.query?.token) {
+  if (route.query?.oms && route.query?.token) {
+    await basicLogin();
+    dismissLoader();
+    return;
+  } else if (route.query?.token) {
+    // SAML login handling as only token will be returned in the query when login through SAML
     await samlLogin();
     dismissLoader();
     return;

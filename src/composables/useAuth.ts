@@ -21,10 +21,17 @@ const oms = ref(cookieHelper().get('oms') || '');
 const maarg = ref(cookieHelper().get('maarg') || '');
 const token = ref({
   value: cookieHelper().get('token') || '',
-  expiration: cookieHelper().get('tokenExpiration') ? parseInt(cookieHelper().get('tokenExpiration')!) : undefined
+  expiration: cookieHelper().get('expirationTime') ? parseInt(cookieHelper().get('expirationTime')!) : undefined
 });
 
 export const useAuth = () => {
+
+  const clearAuth = () => {
+    cookieHelper().remove('token');
+    cookieHelper().remove('expirationTime');
+    cookieHelper().remove('maarg');
+    cookieHelper().remove('oms');
+  }
 
   const isAuthenticated = computed(() => {
     let isTokenExpired = false;
@@ -36,18 +43,6 @@ export const useAuth = () => {
   });
 
   const getOMS = computed(() => oms.value);
-  
-  const getOmsUrl = computed(() => {
-    const baseURL = oms.value;
-    if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/api') ? baseURL : `${baseURL}/api/` : `https://${baseURL}.hotwax.io/api/`;
-    return "";
-  });
-
-  const getMaargUrl = computed(() => {
-    const baseURL = maarg.value;
-    if (baseURL) return baseURL.startsWith('http') ? baseURL.includes('/rest/s1') ? baseURL : `${baseURL}/rest/s1/` : `https://${baseURL}.hotwax.io/rest/s1/`;
-    return "";
-  });
 
   const getToken = computed(() => token.value.value);
 
@@ -68,9 +63,9 @@ export const useAuth = () => {
     };
     cookieHelper().set('token', newToken);
     if (expirationTime) {
-        cookieHelper().set('tokenExpiration', expirationTime.toString());
+        cookieHelper().set('expirationTime', expirationTime.toString());
     } else {
-        cookieHelper().remove('tokenExpiration');
+        cookieHelper().remove('expirationTime');
     }
   }
 
@@ -84,12 +79,12 @@ export const useAuth = () => {
   async function loginWithCredentials(username: string, password: string) {
     try {
       const resp = await api({
-        url: "login",
+        url: "amdin/login",
         method: "post",
-        baseURL: getOmsUrl.value,
+        baseURL: commonUtil.getMaargURL(),
         data: {
-          'USERNAME': username,
-          'PASSWORD': password
+          'username': username,
+          'password': password
         }
       });
 
@@ -141,7 +136,7 @@ export const useAuth = () => {
       setToken(payload.token, payload.expirationTime);
 
       const permissionId = import.meta.env.VITE_PERMISSION_ID;
-      const current = await useUserProfile().getProfile(token.value.value, getMaargUrl.value);
+      const current = await useUserProfile().getProfile(token.value.value, commonUtil.getOmsURL());
       Settings.defaultZone = current.timeZone;
 
       const serverPermissionsFromRules = getServerPermissionsFromRules();
@@ -149,7 +144,7 @@ export const useAuth = () => {
 
       const serverPermissions = await useUserProfile().loadUserPermissions(
         { permissionIds: [...new Set(serverPermissionsFromRules)] },
-        getOmsUrl.value || oms.value,
+        commonUtil.getOmsURL() || oms.value,
         token.value.value
       );
 
@@ -199,7 +194,7 @@ export const useAuth = () => {
     return api({
       url: "checkLoginOptions",
       method: "get",
-      baseURL: getOmsUrl.value
+      baseURL: commonUtil.getOmsURL()
     });
   }
 
@@ -213,7 +208,7 @@ export const useAuth = () => {
       resp = await api({
         url: "logout",
         method: "get",
-        baseURL: getOmsUrl.value
+        baseURL: commonUtil.getOmsURL()
       });
 
       if (resp.data) {
@@ -242,7 +237,7 @@ export const useAuth = () => {
     cookieHelper().remove('oms');
     cookieHelper().remove('maarg');
     cookieHelper().remove('token');
-    cookieHelper().remove('tokenExpiration');
+    cookieHelper().remove('expirationTime');
 
     if (redirectionUrl) {
       window.location.href = redirectionUrl;
@@ -255,13 +250,12 @@ export const useAuth = () => {
   }
   
   return {
+    clearAuth,
     oms,
     maarg,
     token,
     isAuthenticated,
     getOMS,
-    getOmsUrl,
-    getMaargUrl,
     getToken,
     setOMS,
     setMaarg,
