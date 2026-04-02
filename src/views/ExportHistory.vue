@@ -48,10 +48,9 @@
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
-import { translate } from '@/i18n';
+import { commonUtil, translate } from '@common';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { hasError } from '@/stores/authStore';
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger';
 import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
@@ -67,7 +66,7 @@ async function fetchExportHistory() {
   try {
     const resp = await useInventoryCountRun().getExportedCycleCountsSystemMessages({systemMessageTypeId: 'ExportInventoryCounts', orderByField: 'initDate DESC'});
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       const data = resp?.data || {};
       systemMessages.value = Array.isArray(data.systemMessages) ? data.systemMessages : Array.isArray(data) ? data : [];
     } else {
@@ -141,7 +140,7 @@ async function downloadExport(message: any) {
       systemMessageId: message.systemMessageId
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       const csvData = resp?.data?.csvData || resp.data;
       downloadCsv(csvData, extractFilename(message) || 'CycleCountsExport.csv');
     } else {

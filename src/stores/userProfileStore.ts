@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
-import { client } from '@/services/RemoteAPI';
-import { hasError } from '@/stores/authStore'
+import { client, commonUtil } from '@common';
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
-import i18n, { translate } from '@/i18n'
+import { i18n, translate } from '@common'
 import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime, Settings } from 'luxon';
@@ -12,7 +11,7 @@ export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     permissions: [] as any,
-    localeOptions: process.env.VUE_APP_LOCALES ? JSON.parse(process.env.VUE_APP_LOCALES) : { "en-US": "English" },
+    localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     currentTimeZoneId: '',
     timeZones: [],
@@ -155,7 +154,7 @@ export const useUserProfile = defineStore('userProfile', {
           params: { token },
           headers: { 'Content-Type': 'application/json' }
         })
-        if (!hasError(resp) && (resp.data.api_key || resp.data.token)) {
+        if (!commonUtil.hasError(resp) && (resp.data.api_key || resp.data.token)) {
           return resp.data.api_key || resp.data.token
         } else {
           throw 'Sorry, login failed. Please try again'
@@ -186,7 +185,7 @@ export const useUserProfile = defineStore('userProfile', {
             'Content-Type': 'application/json'
           }
         })
-        if (hasError(resp)) throw 'Error getting user profile'
+        if (commonUtil.hasError(resp)) throw 'Error getting user profile'
         this.current = resp.data
         return resp.data
       } catch (error) {
@@ -228,7 +227,7 @@ export const useUserProfile = defineStore('userProfile', {
           }
         })
 
-        if (resp.status === 200 && resp.data.docs?.length && !hasError(resp)) {
+        if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
           serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId)
 
           const total = resp.data.count
@@ -256,7 +255,7 @@ export const useUserProfile = defineStore('userProfile', {
               )
             )
             for (const response of responses) {
-              if (!hasError(response) && response.data.docs) {
+              if (!commonUtil.hasError(response) && response.data.docs) {
                 serverPermissions.push(
                   ...response.data.docs.map((permission: any) => permission.permissionId)
                 )

@@ -425,7 +425,7 @@
 
 <script setup lang="ts">
 
-import { translate } from '@/i18n';
+import { api, commonUtil, translate } from '@common';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
@@ -434,11 +434,9 @@ import { computed, ref, nextTick } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { showToast } from '@/services/uiUtils';
-import api from '@/services/RemoteAPI';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
-import { useAuthStore } from '@/stores/authStore';
 import { Subscription, from } from 'rxjs';
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 
@@ -663,11 +661,11 @@ onIonViewDidEnter(async () => {
     payload: {
       intervalMs: aggregationInterval,
       context: {
-        omsUrl: useAuthStore().getOmsRedirectionUrl,
-        omsInstance: useAuthStore().getOMS,
+        omsUrl: commonUtil.getOmsURL(),
+        omsInstance: commonUtil.getOMSInstanceName(),
         userLoginId: useUserProfile().getUserProfile?.username,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken(),
         barcodeIdentification: barcodeIdentification,
         facilityId: useProductStore().getCurrentFacility.facilityId
       }
@@ -865,11 +863,11 @@ async function saveMatchProduct() {
 
   try {
     const context = {
-        omsUrl: useAuthStore().getOmsRedirectionUrl,
-        omsInstance: useAuthStore().getOMS,
+        omsUrl: commonUtil.getOmsURL(),
+        omsInstance: commonUtil.getOMSInstanceName(),
         userLoginId: useUserProfile().getUserProfile?.username,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken(),
         barcodeIdentification: useProductStore().getBarcodeIdentificationPref,
         facilityId: useProductStore().getCurrentFacility.facilityId
     }
