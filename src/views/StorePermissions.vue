@@ -169,11 +169,10 @@
 import { IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonPopover, IonSearchbar, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { ref, computed } from "vue";
 import { DateTime } from "luxon";
-import { translate } from "@common";
+import { translate, logger } from "@common";
 import { useProductStore } from "@/stores/productStore";
 import { useSecurity } from "@/composables/useSecurity";
 import { showToast } from "@/services/uiUtils";
-import logger from "@/logger";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { commonUtil } from '@common';

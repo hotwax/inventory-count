@@ -1,15 +1,13 @@
 import { ref, computed } from "vue";
 import { DateTime, Settings } from "luxon";
 import { useUserProfile } from "@/stores/userProfileStore";
-import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from "@/authorization";
-import logger from "@/logger";
+
 import { showToast } from "@/services/uiUtils";
-import { api, translate, cookieHelper, commonUtil } from "@common";
+import { api, translate, cookieHelper, commonUtil, logger, emitter } from "@common";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductStore } from "@/stores/productStore";
 import { initialize } from "@/services/appInitializer";
 import router from "@/router";
-import emitter from "@/event-bus";
 
 export interface LoginPayload {
   token: any;
@@ -135,29 +133,15 @@ export const useAuth = () => {
       const current = await useUserProfile().getProfile(token.value.value, commonUtil.getMaargURL());
       Settings.defaultZone = current.timeZone;
 
-      const serverPermissionsFromRules = getServerPermissionsFromRules();
-      if (permissionId) serverPermissionsFromRules.push(permissionId);
-
-      const serverPermissions = await useUserProfile().loadUserPermissions(
-        { permissionIds: [...new Set(serverPermissionsFromRules)] },
-        commonUtil.getOmsURL() || oms.value,
-        token.value.value
-      );
-
-      const appPermissions = prepareAppPermissions(serverPermissions);
-
-      // Checking if the user has permission to access the app
-      if (permissionId) {
-        const hasPermission = appPermissions.some((appPermission: any) => appPermission.action === permissionId);
-        if (!hasPermission) {
-          const permissionError = 'You do not have permission to access the app.';
-          showToast(translate(permissionError));
-          logger.error("error", permissionError);
-          return Promise.reject(new Error(permissionError));
-        }
+      const serverPermissions = await useUserProfile().loadUserPermissions();
+      if (!serverPermissions.includes(permissionId)) {
+        const permissionError = 'You do not have permission to access the app.';
+        commonUtil.showToast(permissionError);
+        logger.error("error", permissionError)
+        return Promise.reject(new Error())
       }
 
-      const isAdminUser = appPermissions.some((appPermission: any) => appPermission?.action === "APP_DRAFT_VIEW");
+      const isAdminUser = useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
       const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
         parentTypeId: "VIRTUAL_FACILITY",
         parentTypeId_not: "Y",
@@ -171,7 +155,6 @@ export const useAuth = () => {
       isAdminUser ? await useProductStore().getDxpEComStores() : await useProductStore().getDxpEComStoresByFacility(currentFacility?.facilityId);
       await useProductStore().getEComStorePreference("SELECTED_BRAND", current?.userId);
 
-      setPermissions(appPermissions);
       // Fetch and set product identifier settings based on current product store
       await useProductStore().getProductIdentifierSettings();
       await useProductStore().getSettings(useProductStore().getCurrentProductStore?.productStoreId);

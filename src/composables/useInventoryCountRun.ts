@@ -1,6 +1,5 @@
-import { api, commonUtil } from '@common';
+import { api, commonUtil, logger } from '@common';
 import { DateTime } from 'luxon';
-import logger from '@/logger';
 import { useProductStore } from '@/stores/productStore';
 
 async function loadStatusDescription() {

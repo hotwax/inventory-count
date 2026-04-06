@@ -598,7 +598,6 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import { Actions, hasPermission } from '@/authorization';
 
 const props = defineProps<{
   workEffortId: string;
@@ -653,7 +652,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
+const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);

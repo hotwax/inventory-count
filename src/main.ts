@@ -29,13 +29,9 @@ import '@hotwax/apps-theme';
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import permissionPlugin from '@/authorization';
-import permissionRules from '@/authorization/Rules';
-import permissionActions from '@/authorization/Actions';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
-import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
 import { createDxpI18n, initialise } from '@common'
 import { loader } from '@/services/uiUtils'
@@ -52,12 +48,6 @@ const app = createApp(App)
   .use(pinia)
   .use(router)
   .use(i18n)
-  .use(permissionPlugin, {
-    rules: permissionRules,
-    actions: permissionActions
-  })
-
-setPermissions(useUserProfile().getPermissions());
 
 // Configure remote API client
 initialise({

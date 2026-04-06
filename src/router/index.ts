@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
 import { translate } from '@common'
 import 'vue-router'
@@ -53,8 +52,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
-      setPermissions(useUserProfile().getPermissions());
-      if (hasPermission("APP_ASSIGNED_VIEW")) {
+      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN")) {
         return "/assigned"
       }
       return "/tabs/count"
@@ -72,7 +70,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'count',
         component: () => import('@/views/Count.vue'),
         meta: {
-          permissionId: "APP_COUNT_VIEW"
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
         }
       },
       {
@@ -83,7 +81,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'variance',
         component: () => import('@/views/Variance.vue'),
         meta: {
-          permissionId: "APP_VARIANCE_VIEW"
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG"
         }
       }
     ],
@@ -95,7 +93,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Assigned",
       iosIcon: storefrontOutline,
@@ -108,7 +106,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Closed",
       iosIcon: receiptOutline,
@@ -122,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -131,7 +129,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Pending review",
       iosIcon: mailUnreadOutline,
@@ -145,7 +143,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
     }
   },
   {
@@ -154,7 +152,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PreCountedItems,
     props: true,
     meta: {
-      permissionId: "APP_COUNT_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
     }
   },
   {
@@ -162,7 +160,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CountProgressReview,
     props: true,
     meta: {
-      permissionId: "APP_COUNT_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
     }
   },
   {
@@ -171,7 +169,7 @@ const routes: Array<RouteRecordRaw> = [
     component: BulkUpload,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_DRAFT_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Bulk Upload",
       iosIcon: createOutline,
@@ -185,7 +183,7 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true
     }
   },
@@ -195,7 +193,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Pending review",
       iosIcon: mailUnreadOutline,
@@ -209,7 +207,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -218,7 +216,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Closed",
       iosIcon: receiptOutline,
@@ -232,7 +230,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -241,7 +239,7 @@ const routes: Array<RouteRecordRaw> = [
     component: ExportHistory,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -250,7 +248,7 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Store permissions",
       iosIcon: shieldCheckmarkOutline,
@@ -290,12 +288,11 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
-
-  if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+  if (to.meta.permissionId && !useUserProfile().hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
-      if (hasPermission("APP_DRAFT_VIEW"))
+      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN"))
         redirectToPath = "/settings";
       else
         redirectToPath = "/tabs/settings";

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, client, commonUtil } from '@common'
-import logger from '@/logger'
+import { api, client, commonUtil, logger } from '@common'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';

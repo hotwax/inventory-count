@@ -48,11 +48,10 @@
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
-import { commonUtil, translate } from '@common';
+import { commonUtil, translate, logger } from '@common';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { showToast } from '@/services/uiUtils';
-import logger from '@/logger';
 import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 import { saveAs } from 'file-saver';
 

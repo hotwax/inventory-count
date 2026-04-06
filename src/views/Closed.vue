@@ -124,14 +124,13 @@
 import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
-import { commonUtil, translate } from '@common';
+import { commonUtil, translate, logger } from '@common';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
 import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
-import logger from '@/logger';
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 

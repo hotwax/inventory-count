@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
-import { api, client, commonUtil } from '@common';
+import { api, client, commonUtil, logger } from '@common';
 import { showToast } from '@/services/uiUtils';
-import logger from '@/logger'
 import { i18n, translate } from '@common'
-import { prepareAppPermissions } from '@/authorization';
 import { DateTime, Settings } from 'luxon';
 
 export const useUserProfile = defineStore('userProfile', {
@@ -57,7 +55,27 @@ export const useUserProfile = defineStore('userProfile', {
     getListPageFilters: (state) => (segment: string) => {
       return state.uiFilters[segment] || {}
     },
-    getDetailPageFilters: (state) => state.uiFilters.reviewDetail
+    getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
+    hasPermission: (state: any) => (permissionId: string): boolean => {
+      const permissions = state.permissions;
+
+      if (!permissionId) {
+        return true;
+      }
+
+      // Handle OR/AND logic in permission string
+      if (permissionId.includes(' OR ')) {
+        const parts = permissionId.split(' OR ');
+        return parts.some((part: string) => useUserProfile().hasPermission(part.trim()));
+      }
+
+      if (permissionId.includes(' AND ')) {
+        const parts = permissionId.split(' AND ');
+        return parts.every((part: string) => useUserProfile().hasPermission(part.trim()));
+      }
+
+      return permissions.includes(permissionId);
+    }
   },
 
   actions: {
@@ -206,82 +224,53 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user-level permissions
      */
-    async loadUserPermissions(payload: any, url: string, token: string): Promise<any[]> {
-      const baseURL = url.startsWith('http')
-        ? url.includes('/api')
-          ? url
-          : `${url}/api/`
-        : `https://${url}.hotwax.io/api/`
+    async loadUserPermissions(): Promise<any[]> {
+      const permissionId = import.meta.env.VITE_PERMISSION_ID;
+      const serverPermissions = [] as any;
 
-      const viewSize = 200
-      let serverPermissions: string[] = []
+      // TODO Make it configurable from the environment variables.
+      // Though this might not be an server specific configuration, 
+      // we will be adding it to environment variable for easy configuration at app level
+      const viewSize = 50;
 
-      if (!payload.permissionIds?.length) return []
+      let viewIndex = 0;
 
       try {
-        const params = {
-          viewIndex: 0,
-          viewSize,
-          permissionIds: payload.permissionIds
-        }
+        let resp;
+        do {
+          resp = await api({
+            url: "getPermissions",
+            method: "post",
+            baseURL: commonUtil.getOmsURL(),
+            data: { viewIndex, viewSize }
+          }) as any
 
-        const resp = await client({
-          url: 'getPermissions',
-          method: 'POST',
-          baseURL,
-          data: params,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+          if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
+            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId));
+            viewIndex++;
+          } else {
+            resp = null;
           }
-        })
+        } while (resp);
 
-        if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
-          serverPermissions = resp.data.docs.map((permission: any) => permission.permissionId)
-
-          const total = resp.data.count
-          const remaining = total - serverPermissions.length
-
-          if (remaining > 0) {
-            const apiCallsNeeded =
-              Math.floor(remaining / viewSize) + (remaining % viewSize !== 0 ? 1 : 0)
-            const responses = await Promise.all(
-              [...Array(apiCallsNeeded).keys()].map(async (viewIndex) =>
-                client({
-                  url: 'getPermissions',
-                  method: 'POST',
-                  baseURL,
-                  data: {
-                    viewIndex: viewIndex + 1,
-                    viewSize,
-                    permissionIds: payload.permissionIds
-                  },
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  }
-                })
-              )
-            )
-            for (const response of responses) {
-              if (!commonUtil.hasError(response) && response.data.docs) {
-                serverPermissions.push(
-                  ...response.data.docs.map((permission: any) => permission.permissionId)
-                )
-              }
-            }
+        // Checking if the user has permission to access the app
+        // If there is no configuration, the permission check is not enabled
+        if (permissionId) {
+          const hasAppPermission = serverPermissions.includes(permissionId);
+          if (!hasAppPermission) {
+            const permissionError = "You do not have permission to access the app.";
+            commonUtil.showToast(translate(permissionError));
+            logger.error("error", permissionError);
+            return Promise.reject(new Error(permissionError));
           }
         }
 
-        const appPermissions = prepareAppPermissions(serverPermissions)
-
-        this.permissions = appPermissions
-
-        // Return the normalized list for use in login() and setPermissions()
-        return serverPermissions
-      } catch (err) {
-        logger.error('loadUserPermissions failed', err)
-        throw err
+        // Update the state with the fetched permissions
+        this.permissions = serverPermissions;
+        console.log("=-=-=-=-=- These are permissions: ", this.permissions)
+        return serverPermissions;
+      } catch (error: any) {
+        return Promise.reject(error);
       }
     },
 

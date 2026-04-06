@@ -25,12 +25,12 @@
           <ion-button color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
-          <ion-button :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
+          <ion-button :standalone-hidden="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- TODO: Replace route-based checks with a store/admin view flag when present in Pinia Stores -->
-          <ion-button fill="outline" v-if="hasPermission(Actions.APP_ASSIGNED_VIEW) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
+          <ion-button fill="outline" v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN') && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
             <ion-icon size="medium" :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
             {{ translate("Admin View") }}
           </ion-button>
@@ -52,13 +52,13 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
+          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !useUserProfile().hasPermission('COMMERCEUSER_VIEW')" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
-        <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
+        <FacilitySwitcher v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <ion-card v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN') && !router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-subtitle>
               {{ translate("Product Store") }}
@@ -100,12 +100,12 @@
             {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
           </ion-card-content>
 
-          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-primary-id-item">
+          <ion-item :disabled="!useUserProfile().hasPermission('COMMON_ADMIN')" data-testid="settings-primary-id-item">
             <ion-select :label="translate('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')" data-testid="settings-primary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-secondary-id-item">
+          <ion-item lines="none" :disabled="!useUserProfile().hasPermission('COMMON_ADMIN')" data-testid="settings-secondary-id-item">
             <ion-select :label="translate('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
               <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
@@ -119,7 +119,7 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage" data-testid="settings-force-scan-msg"></ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')" data-testid="settings-barcode-id-item">
+          <ion-item lines="none" :disabled="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" data-testid="settings-barcode-id-item">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="useProductStore().getBarcodeIdentificationPref || translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)" data-testid="settings-barcode-id-select">
               <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
@@ -245,7 +245,6 @@ import { computed, onMounted, ref } from "vue";
 import { commonUtil, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuth } from "@/composables/useAuth";
-import { Actions, hasPermission } from "@/authorization"
 import router from "@/router";
 import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";

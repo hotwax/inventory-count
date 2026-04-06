@@ -1,6 +1,5 @@
 import { Network } from '@capacitor/network';
-import emitter from '@/event-bus';
-
+import emitter from '../../../../common/core/emitter';
 const register = async () => {
     let networkStatus = await Network.getStatus();
 

@@ -143,9 +143,8 @@
 <script setup>
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
-import { commonUtil, translate } from '@common';
+import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
-import logger from "@/logger";
 import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';

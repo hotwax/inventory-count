@@ -1,6 +1,5 @@
 import { CommonDB } from './commonDatabase'
 import { v4 as uuidv4 } from 'uuid'
-import { useAuth } from '@/composables/useAuth'
 import { useUserProfile } from '@/stores/userProfileStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { createCommonDB } from '@/services/commonDatabase';

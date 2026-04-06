@@ -57,11 +57,8 @@ import {
   loadingController
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
-import emitter from "@/event-bus";
-import { commonUtil, translate } from "@common";
-import { Actions, hasPermission } from '@/authorization';
+import { commonUtil, translate, logger, emitter } from "@common";
 import { useProductStore } from '@/stores/productStore';
-import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
 import router from './router';
@@ -73,7 +70,7 @@ const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
-  return !isExcluded && hasPermission(Actions.APP_DRAFT_VIEW);
+  return !isExcluded && useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN');
 });
 
 const loader = ref(null) as any;
@@ -134,7 +131,7 @@ const visibleMenuItems = computed(() => {
     .filter(
       (route) =>
         route.meta?.showInMenu &&
-        (!route.meta.permissionId || hasPermission(route.meta.permissionId))
+        (!route.meta.permissionId || useUserProfile().hasPermission(route.meta.permissionId))
     );
 
   return allVisible.sort((a, b) => {
