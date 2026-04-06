@@ -6,6 +6,7 @@ import { useProductMaster } from '@/composables/useProductMaster'
 import { createCommonDB } from '@/services/commonDatabase';
 import { useAgentControl } from '@/composables/useAgentControl';
 import { useProductStore } from '@/stores/productStore'
+import { commonUtil } from '../../../../common/utils/commonUtil'
 
 export let db: CommonDB
 let currentOMS: string | null = null
@@ -18,7 +19,7 @@ let currentOMS: string | null = null
  *  - Initialize agent control system
  */
 export async function initialize() {
-  const oms = useAuth().getOMS.value
+  const oms = commonUtil.getOMSInstanceName();
 
   if (!oms) {
     console.warn("[AppInit] OMS instance not selected yet.")

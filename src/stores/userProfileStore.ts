@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia'
-import { client, commonUtil } from '@common';
+import { api, client, commonUtil } from '@common';
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
 import { i18n, translate } from '@common'
 import { prepareAppPermissions } from '@/authorization';
-import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime, Settings } from 'luxon';
 
 export const useUserProfile = defineStore('userProfile', {
@@ -93,7 +92,11 @@ export const useUserProfile = defineStore('userProfile', {
         // const appState = appContext.config.globalProperties.$store;
         const userProfile = useUserProfile().getUserProfile;
 
-        const resp = await setUserTimeZone({ userId: userProfile.userId, timeZone: tzId })
+        const resp = await api({
+          url: "admin/user/profile",
+          method: "POST",
+          data: { userId: userProfile.userId, timeZone: tzId },
+        }) as any;
 
         if (resp?.status === 200) {
           this.current.timeZone = tzId;
@@ -117,9 +120,14 @@ export const useUserProfile = defineStore('userProfile', {
       }
 
       try {
-        // const resp = await userContext.getAvailableTimeZones()
-        const resp = await getAvailableTimeZones();
-        this.timeZones = resp.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
+        const resp: any = await api({
+          url: "admin/user/getAvailableTimeZones",
+          method: "get",
+          cache: true
+        });
+        
+        const timeZoneList = resp.data?.timeZones || [];
+        this.timeZones = timeZoneList.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
       } catch(err) {
         console.error('Error', err)
       }
@@ -187,6 +195,7 @@ export const useUserProfile = defineStore('userProfile', {
         })
         if (commonUtil.hasError(resp)) throw 'Error getting user profile'
         this.current = resp.data
+        this.currentTimeZoneId = this.current.timeZone
         return resp.data
       } catch (error) {
         logger.error('getUserProfile failed', error)
@@ -284,6 +293,71 @@ export const useUserProfile = defineStore('userProfile', {
     /** For SmartFilterSortBar threshold updates */
     updateThreshold(newConfig: any) {
       this.uiFilters.reviewDetail.threshold = newConfig
+    },
+
+    async getUserPreference(payload: { token?: string, baseURL?: string, preferenceKey: string, userId: string }) {
+      try {
+        let params: any = {
+          url: "admin/user/preferences",
+          method: "GET",
+          params: {
+            pageSize: 1,
+            userId: payload.userId,
+            preferenceKey: payload.preferenceKey
+          }
+        }
+
+        let resp = {} as any;
+        if(payload.token && payload.baseURL) {
+          params = {
+            ...params,
+            baseURL: payload.baseURL,
+            headers: {
+              "Authorization": `Bearer ${payload.token}`,
+              "Content-Type": "application/json"
+            }
+          }
+          resp = await client(params);
+        } else {
+          resp = await api(params);
+        }
+
+        const preferenceValue = resp.data[0]?.preferenceValue ? resp.data[0]?.preferenceValue : "";
+        let parsedValue;
+        try {
+          parsedValue = JSON.parse(preferenceValue);
+        } catch (e) {
+          parsedValue = preferenceValue;
+        }
+        return Promise.resolve(parsedValue?.toString() || "");
+      } catch(error) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to get user preference",
+          serverResponse: error
+        })
+      }
+    },
+
+    async setUserPreference(payload: { userId: string, userPrefTypeId: string, userPrefValue: any }) {
+      try {
+        const resp = await api({
+          url: "admin/user/preferences",
+          method: "PUT",
+          data: {
+            userId: payload.userId,
+            preferenceKey: payload.userPrefTypeId,
+            preferenceValue: payload.userPrefValue,
+          },
+        }) as any;
+        return Promise.resolve(resp.data)
+      } catch(error: any) {
+        return Promise.reject({
+          code: "error",
+          message: "Failed to update user preference",
+          serverResponse: error
+        })
+      }
     }
   }
 })

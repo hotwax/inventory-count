@@ -46,13 +46,13 @@
               {{ translate('OMS instance') }}
             </ion-card-subtitle>
             <ion-card-title data-testid="settings-oms-instance">
-              {{ oms }}
+              {{ commonUtil.getOMSInstanceName() }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!getToken || !getOmsUrl || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(getToken, getOmsUrl)" fill="clear" data-testid="settings-go-to-oms-btn">
+          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -242,7 +242,7 @@
 <script setup lang="ts">
 import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, alertController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { translate } from "@common"
+import { commonUtil, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuth } from "@/composables/useAuth";
 import { Actions, hasPermission } from "@/authorization"
@@ -260,7 +260,6 @@ import { db } from "@/services/appInitializer";
 
 const appVersion = ref("")
 const appInfo = (import.meta.env.VITE_VERSION_INFO ? JSON.parse(import.meta.env.VITE_VERSION_INFO) : {}) as any
-const { oms, getOmsUrl, getToken } = useAuth();
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);

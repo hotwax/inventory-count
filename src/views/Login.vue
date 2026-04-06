@@ -94,7 +94,7 @@ const loginOption = ref<any>({});
 const isCheckingOms = ref(false);
 const isLoggingIn = ref(false);
 
-const omsInstance = computed(() => useAuth().getOMS.value);
+const omsInstance = computed(() => commonUtil.getOMSInstanceName());
 
 const presentLoader = async (message: string) => {
   if (!loader.value) {
@@ -245,11 +245,11 @@ const initialise = async () => {
     return;
   }
 
-  if (useAuth().getOMS.value) {
+  if (commonUtil.getOMSInstanceName()) {
     await fetchLoginOptions();
   }
 
-  if (loginOption.value.loginAuthType !== 'BASIC' || route.query?.oms || !useAuth().getOMS.value) {
+  if (loginOption.value.loginAuthType !== 'BASIC' || route.query?.oms || !commonUtil.getOMSInstanceName()) {
     showOmsInput.value = true;
   }
 

@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@common'
+import { commonUtil, translate } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -362,7 +362,7 @@ async function getProductBySearch(term: string) {
 }
 
 async function getProducts(query: any) {
-  const baseURL = useAuth().getMaargUrl.value;
+  const baseURL = commonUtil.getMaargURL();
 
   return client({
     url: 'inventory-cycle-count/runSolrQuery',
@@ -370,7 +370,7 @@ async function getProducts(query: any) {
     baseURL,
     data: query,
     headers: {
-      Authorization: `Bearer ${useAuth().getToken.value}`,
+      Authorization: `Bearer ${commonUtil.getToken()}`,
       'Content-Type': 'application/json',
     },
   })

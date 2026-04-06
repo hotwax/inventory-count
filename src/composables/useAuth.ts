@@ -42,10 +42,6 @@ export const useAuth = () => {
     return !!(token.value.value && !isTokenExpired);
   });
 
-  const getOMS = computed(() => oms.value);
-
-  const getToken = computed(() => token.value.value);
-
   function setOMS(newOms: string) {
     oms.value = newOms;
     cookieHelper().set('oms', newOms);
@@ -79,7 +75,7 @@ export const useAuth = () => {
   async function loginWithCredentials(username: string, password: string) {
     try {
       const resp = await api({
-        url: "amdin/login",
+        url: "admin/login",
         method: "post",
         baseURL: commonUtil.getMaargURL(),
         data: {
@@ -136,7 +132,7 @@ export const useAuth = () => {
       setToken(payload.token, payload.expirationTime);
 
       const permissionId = import.meta.env.VITE_PERMISSION_ID;
-      const current = await useUserProfile().getProfile(token.value.value, commonUtil.getOmsURL());
+      const current = await useUserProfile().getProfile(token.value.value, commonUtil.getMaargURL());
       Settings.defaultZone = current.timeZone;
 
       const serverPermissionsFromRules = getServerPermissionsFromRules();
@@ -186,6 +182,7 @@ export const useAuth = () => {
 
     } catch (err) {
       console.error("Error in Login: ", err);
+      clearAuth();
       throw `Login failed. Please try again`;
     }
   }
@@ -255,8 +252,6 @@ export const useAuth = () => {
     maarg,
     token,
     isAuthenticated,
-    getOMS,
-    getToken,
     setOMS,
     setMaarg,
     checkAuthenticated,

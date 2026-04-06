@@ -58,17 +58,16 @@ import {
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import emitter from "@/event-bus";
-import { translate } from "@common";
+import { commonUtil, translate } from "@common";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/productStore';
 import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
-import { useAuth } from '@/composables/useAuth';
 import router from './router';
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const userToken = useAuth().getToken;
+const userToken = commonUtil.getToken();
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {
@@ -107,7 +106,7 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (!!userToken.value && useProductStore()?.getCurrentProductStore?.productStoreId) {
+  if (!!userToken && useProductStore()?.getCurrentProductStore?.productStoreId) {
     await useProductStore()
       .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));

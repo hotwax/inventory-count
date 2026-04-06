@@ -171,7 +171,7 @@ import { ref, computed } from "vue";
 import { DateTime } from "luxon";
 import { translate } from "@common";
 import { useProductStore } from "@/stores/productStore";
-import { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } from "@/adapter/index";
+import { useSecurity } from "@/composables/useSecurity";
 import { showToast } from "@/services/uiUtils";
 import logger from "@/logger";
 
@@ -185,7 +185,7 @@ type PermissionMeta = {
 };
 
 const productStore = useProductStore();
-
+const { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } = useSecurity();
 /**
  * Permission cards configuration
  */

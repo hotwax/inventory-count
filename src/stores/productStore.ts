@@ -1,19 +1,7 @@
 import { defineStore } from 'pinia'
-import { api, commonUtil } from '@common'
-import { useAuth } from '@/composables/useAuth'
+import { api, client, commonUtil } from '@common'
 import logger from '@/logger'
 import { useProductMaster } from '@/composables/useProductMaster'
-import {
-  fetchGoodIdentificationTypes,
-  getEComStores,
-  getEComStoresByFacility,
-  getProductIdentificationPref,
-  getUserPreference,
-  setProductIdentificationPref,
-  setUserPreference,
-  getUserFacilities,
-  fetchShopifyShopLocation
-} from '@/adapter'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
 import { translate } from '@common'
@@ -64,6 +52,186 @@ export const useProductStore = defineStore('productStore', {
   },
 
   actions: {
+    /** ---------- Internal Helpers ---------- */
+    async fetchGoodIdentificationTypes(parentTypeId = "HC_GOOD_ID_TYPE"): Promise <any>  {
+      try {
+        const resp: any = await api({
+          url: "oms/goodIdentificationTypes",
+          method: "get",
+          params: { parentTypeId, pageSize: 50 }
+        });
+        return Promise.resolve(resp.data)
+      } catch(error) {
+        return Promise.reject({ code: 'error', message: 'Failed to fetch good identification types', serverResponse: error })
+      }
+    },
+
+    async getEComStores(token?: string, baseURL?: string, pageSize = 100): Promise <any> {
+      let params: any = { url: "oms/productStores", method: "GET", params: { pageSize } }
+      let resp = {} as any, stores: Array<any> = []
+      try {
+        if(token && baseURL) {
+          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
+          resp = await client(params);
+        } else {
+          resp = await api(params);
+        }
+        stores = resp.data
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to fetch product stores", serverResponse: error })
+      }
+      return Promise.resolve(stores)
+    },
+
+    async getEComStoresByFacility(token?: string, baseURL?: string, pageSize = 100, facilityId?: any): Promise <any> {
+      let params: any = { url: `oms/facilities/${facilityId}/productStores`, method: "GET", params: { pageSize, facilityId } }
+      let resp = {} as any, stores: Array<any> = []
+      try {
+        if(token && baseURL) {
+          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
+          resp = await client(params);
+        } else {
+          resp = await api(params);
+        }
+        stores = resp.data.filter((store: any) => !store.thruDate)
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to fetch facility associated product stores", serverResponse: error })
+      }
+      if(!stores.length) return Promise.resolve(stores)
+      const productStoresMap = {} as any;
+      try {
+        const productStores = await this.getEComStores(token, baseURL, 200);
+        productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
+      } catch(error) { console.error(error); }
+      stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
+      return Promise.resolve(stores)
+    },
+
+    async createProductIdentificationPref(productStoreId: string): Promise<any> {
+      const prefValue = { primaryId: "productId", secondaryId: "" }
+      try {
+        await api({
+          url: `oms/productStores/${productStoreId}/settings`,
+          method: "POST",
+          data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(prefValue) }
+        });
+      } catch(err) { console.error(err) }
+      return prefValue;
+    },
+
+    async fetchProductIdentificationPref(productStoreId: any): Promise<any> {
+      const productIdentifications = { primaryId: "productId", secondaryId: "" }
+      try {
+        const resp = await api({
+          url: `oms/productStores/${productStoreId}/settings`,
+          method: "GET",
+          params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" }
+        }) as any;
+        const settings = resp.data
+        if(settings[0]?.settingValue) {
+          const respValue = JSON.parse(settings[0].settingValue)
+          productIdentifications['primaryId'] = respValue['primaryId']
+          productIdentifications['secondaryId'] = respValue['secondaryId']
+        } else {
+          await this.createProductIdentificationPref(productStoreId)
+        }
+      } catch(error: any) {
+        return Promise.reject({ code: "error", message: "Failed to get product identification pref", serverResponse: error })
+      }
+      return productIdentifications;
+    },
+
+    async saveProductIdentificationPref(productStoreId: string, productIdentificationPref: any): Promise<any> {
+      let resp = {} as any, isSettingExists = false;
+      try {
+        resp = await api({ url: `oms/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
+        if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
+      } catch(err) { console.error(err) }
+      if(!isSettingExists) {
+        return Promise.reject({ code: "error", message: "product store setting is missing", serverResponse: resp.data })
+      }
+      try {
+        resp = await api({
+          url: `oms/productStores/${productStoreId}/settings`, method: "POST",
+          data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) }
+        });
+        return Promise.resolve(productIdentificationPref)
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to set product identification pref", serverResponse: error })
+      }
+    },
+
+    async fetchFacilitiesByGroup(facilityGroupId: string, baseURL?: string, token?: string, payload?: any): Promise <any> {
+      let params: any = { url: "oms/groupFacilities", method: "GET", params: { facilityGroupId, pageSize: 500, ...payload } }
+      let resp = {} as any;
+      try {
+        if(token && baseURL) {
+          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
+          resp = await client(params);
+        } else { resp = await api(params); }
+        return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to fetch facilities for group", serverResponse: error })
+      }
+    },
+
+    async fetchFacilitiesByParty(partyId: string, baseURL?: string, token?: string, payload?: any): Promise <any> {
+      let params: any = { url: `inventory-cycle-count/user/${partyId}/facilities`, method: "GET", params: { ...payload, pageSize: 500 } }
+      let resp = {} as any;
+      try {
+        if(token && baseURL) {
+          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
+          resp = await client(params);
+        } else { resp = await api(params); }
+        return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to fetch user associated facilities", serverResponse: error })
+      }
+    },
+
+    async fetchFacilities(token: string, baseURL: string, partyId: string, facilityGroupId: string, isAdminUser: boolean, payload: any): Promise <any> {
+      let facilityIds: Array<string> = [];
+      let filters: any = {};
+      let resp = {} as any
+      if(partyId) {
+        try {
+          resp = await this.fetchFacilitiesByParty(partyId, baseURL, token)
+          facilityIds = resp.map((facility: any) => facility.facilityId);
+          if (!facilityIds.length) return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: resp.data })
+        } catch(error) { return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: error }) }
+      }
+      if(facilityGroupId) {
+        try {
+          resp = await this.fetchFacilitiesByGroup(facilityGroupId, baseURL, token, filters)
+          facilityIds = resp.map((facility: any) => facility.facilityId);
+          if (!facilityIds.length) return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: resp.data })
+        } catch(error) { return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: error }) }
+      }
+      if(facilityIds.length) {
+        filters = { facilityId: facilityIds.join(","), facilityId_op: "in", pageSize: facilityIds.length }
+      }
+      let params: any = { url: "oms/facilities", method: "GET", params: { pageSize: 500, ...payload, ...filters } }
+      let facilities: Array<any> = []
+      try {
+        if(token && baseURL) {
+          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
+          resp = await client(params);
+        } else { resp = await api(params); }
+        facilities = resp.data
+      } catch(error) { return Promise.reject({ code: "error", message: "Failed to fetch facilities", serverResponse: error }) }
+      return Promise.resolve(facilities)
+    },
+
+    async fetchShopifyShopLocation(payload: { shopifyLocationId: string, pageSize: number }): Promise<any> {
+      try {
+        const resp = await api({ url: "oms/shopifyShops/locations", method: "GET", params: payload }) as any;
+        return Promise.resolve(resp.data[0]?.facilityId)
+      } catch(error) {
+        return Promise.reject({ code: "error", message: "Failed to fetch location information", serverResponse: error })
+      }
+    },
+
+
     /** ---------- Product Store Management ---------- */
     async loadStoresByFacility(facilityId: string) {
       try {
@@ -83,7 +251,7 @@ export const useProductStore = defineStore('productStore', {
 
     async getDxpEComStoresByFacility(facilityId?: any) {
       try {
-        const response = await getEComStoresByFacility(useAuth().getToken.value, useAuth().getMaargUrl.value, 100, facilityId)
+        const response = await this.getEComStoresByFacility(commonUtil.getToken() as string, commonUtil.getMaargURL(), 100, facilityId)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -93,7 +261,7 @@ export const useProductStore = defineStore('productStore', {
 
     async getDxpEComStores() {
       try {
-        const response = await getEComStores(useAuth().getToken.value, useAuth().getMaargUrl.value, 100)
+        const response = await this.getEComStores(commonUtil.getToken() as string, commonUtil.getMaargURL(), 100)
         this.productStores = response
       } catch (error) {
         console.error(error)
@@ -106,7 +274,13 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredStore = this.productStores[0]
       try {
-        const preferredStoreId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
+        const userProfileStore = useUserProfile()
+        const preferredStoreId = await userProfileStore.getUserPreference({
+          token: commonUtil.getToken() as string,
+          baseURL: commonUtil.getMaargURL(),
+          preferenceKey: userPrefTypeId,
+          userId
+        })
         if (preferredStoreId) {
           const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
           if (store) preferredStore = store
@@ -118,9 +292,10 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async setEComStorePreference(payload: any) {
-      const userProfile = useUserProfile().getUserProfile
+      const userProfileStore = useUserProfile()
+      const userProfile = userProfileStore.getUserProfile
       try {
-        await setUserPreference({
+        await userProfileStore.setUserPreference({
           userPrefTypeId: 'SELECTED_BRAND',
           userPrefValue: payload.productStoreId,
           userId: userProfile.userId
@@ -148,7 +323,7 @@ export const useProductStore = defineStore('productStore', {
 
       productIdentificationPref[id] = value
       try {
-        this.settings.productIdentifier.productIdentificationPref = await setProductIdentificationPref(
+        this.settings.productIdentifier.productIdentificationPref = await this.saveProductIdentificationPref(
           eComStoreId,
           productIdentificationPref
         )
@@ -165,7 +340,7 @@ export const useProductStore = defineStore('productStore', {
         }
         return
       }
-      this.settings.productIdentifier.productIdentificationPref = await getProductIdentificationPref(eComStoreId)
+      this.settings.productIdentifier.productIdentificationPref = await this.fetchProductIdentificationPref(eComStoreId)
     },
 
     async prepareProductIdentifierOptions() {
@@ -179,7 +354,7 @@ export const useProductStore = defineStore('productStore', {
         { goodIdentificationTypeId: 'title', description: 'Title' }
       ]
 
-      const fetchedGoodIdentificationTypes = await fetchGoodIdentificationTypes('HC_GOOD_ID_TYPE')
+      const fetchedGoodIdentificationTypes = await this.fetchGoodIdentificationTypes('HC_GOOD_ID_TYPE')
       const fetchedOptions = fetchedGoodIdentificationTypes || []
 
       this.settings.productIdentifier.productIdentificationOptions = Array.from(
@@ -318,7 +493,7 @@ export const useProductStore = defineStore('productStore', {
 
     async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
       try {
-        const response = await getUserFacilities(useAuth().getToken.value, useAuth().getMaargUrl.value, partyId, facilityGroupId, isAdminUser, payload)
+        const response = await this.fetchFacilities(commonUtil.getToken() as string, commonUtil.getMaargURL(), partyId, facilityGroupId, isAdminUser, payload)
         this.facilities = response
       } catch (error) {
         console.error('Failed to fetch user facilities:', error)
@@ -335,7 +510,13 @@ export const useProductStore = defineStore('productStore', {
 
       let preferredFacility = this.facilities[0]
       try {
-        const preferredFacilityId = await getUserPreference(useAuth().getToken.value, useAuth().getMaargUrl.value, userPrefTypeId, userId)
+        const userProfileStore = useUserProfile()
+        const preferredFacilityId = await userProfileStore.getUserPreference({
+          token: commonUtil.getToken() as string,
+          baseURL: commonUtil.getMaargURL(),
+          preferenceKey: userPrefTypeId,
+          userId
+        })
         if (preferredFacilityId) {
           const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
           if (facility) preferredFacility = facility
@@ -346,13 +527,13 @@ export const useProductStore = defineStore('productStore', {
 
       // if(authStore.isEmbedded) {
       //   const locationId = authStore.posContext.locationId as string
-      //   const facilityId = await fetchShopifyShopLocation({
+      //   const facilityId = await this.fetchShopifyShopLocation({
       //     shopifyLocationId: locationId,
       //     pageSize: 1
       //   });
       //   if(facilityId) {
       //     const facility = this.facilities.find((facility: any) => facility.facilityId === facilityId);
-
+      //
       //     if(!facility) {
       //       throw "Unable to login. User is not associated with this location. Please contact the administrator."
       //     }
@@ -366,9 +547,10 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async setFacilityPreference(payload: any) {
-      const userProfile = useUserProfile().getUserProfile
+      const userProfileStore = useUserProfile()
+      const userProfile = userProfileStore.getUserProfile
       try {
-        await setUserPreference({
+        await userProfileStore.setUserPreference({
           userPrefTypeId: 'SELECTED_FACILITY',
           userPrefValue: payload.facilityId,
           userId: userProfile.userId

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import { api, client } from '@common';
+import { api, client, commonUtil } from '@common';
 import workerApi from "@/services/workerApi";
 
 import { db } from '@/services/appInitializer';
@@ -44,7 +44,7 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const baseURL = useAuth().getMaargUrl.value;
+  const baseURL = commonUtil.getMaargURL();
 
   const batchSize = 250
   const results: Product[] = []
@@ -66,7 +66,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
       baseURL,
       data: query,
       headers: {
-        "Authorization": 'Bearer ' + useAuth().getToken.value,
+        "Authorization": 'Bearer ' + commonUtil.getToken(),
         'Content-Type': 'application/json'
       }
     })
@@ -292,8 +292,8 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = useAuth().getMaargUrl.value;
-  const token = useAuth().getToken.value;
+  const baseURL = commonUtil.getMaargURL();
+  const token = commonUtil.getToken();
 
   return await client({
     url: "poorti/getInventoryAvailableByFacility",
@@ -308,14 +308,14 @@ const getProductStock = async (query: any): Promise<any> => {
 }
 
 const loadProducts = async (query: any): Promise<any> => {
-  const baseURL = useAuth().getMaargUrl.value;
+  const baseURL = commonUtil.getMaargURL();
   return await client({
     url: "inventory-cycle-count/runSolrQuery",
     method: "POST",
     baseURL,
     data: query,
     headers: {
-      Authorization: "Bearer " + useAuth().getToken.value,
+      Authorization: "Bearer " + commonUtil.getToken(),
       "Content-Type": "application/json",
     },
   });
@@ -479,8 +479,8 @@ const getInventory = async (
 ): Promise<any | null> => {
   if (!productId || !facilityId) return null
 
-  const baseURL = useAuth().getMaargUrl.value
-  const token = useAuth().getToken.value
+  const baseURL = commonUtil.getMaargURL()
+  const token = commonUtil.getToken()
 
   const resp = await client({
     url: 'oms/dataDocumentView',
