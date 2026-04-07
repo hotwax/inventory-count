@@ -5,7 +5,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@common": ["../../common/index.ts"]
+      "@common": ["../../common/index.ts"],
+      "@common/*": ["../../common/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/env.d.ts", "src/boon-js.d.ts"],
