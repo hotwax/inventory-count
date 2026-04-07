@@ -582,10 +582,9 @@ import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
+import { WorkerFactory } from '@common/core/workerFactory';
 import Image from "@/components/Image.vue";
-import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
-import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import { useUserProfile } from '@/stores/userProfileStore';
@@ -597,6 +596,7 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
 
 const props = defineProps<{
   workEffortId: string;
@@ -678,6 +678,7 @@ const areas = [
 const selectedArea = ref(areas[0].value);
 
 let aggregationWorker: Worker | null = null
+let aggregationWorkerApi: Remote<InventorySyncWorker> | null = null
 
 const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
@@ -785,10 +786,9 @@ onIonViewDidEnter(async () => {
       filteredItems.value = []
     })
     // Start the background aggregation worker and schedule periodic aggregation
-    aggregationWorker = new Worker(
-      new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
-    )
-
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+    aggregationWorker = bgWorker.worker
+    aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
       const { type, count } = event.data
       if (type === 'aggregationComplete') {
@@ -1083,11 +1083,9 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        worker = new Worker(
-          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
-          { type: 'module' }
-        );
-        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        worker = workerConfig.worker
+        lockWorker = workerConfig.api;
       }
 
       const payload = {
@@ -1144,11 +1142,9 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        worker = new Worker(
-          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
-          { type: 'module' }
-        );
-        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        worker = workerConfig.worker
+        lockWorker = workerConfig.api;
       }
 
       const payload = {
@@ -1301,6 +1297,10 @@ async function getProducts() {
 }
 
 async function saveMatchProduct() {
+  if (!aggregationWorker || !aggregationWorkerApi) {
+    commonUtil.showToast("Aggregation worker not initialized.")
+    return
+  }
   if (!selectedProductId.value) {
     commonUtil.showToast("Please select a product to match");
     return;
@@ -1322,7 +1322,7 @@ async function saveMatchProduct() {
   const plainContext = JSON.parse(JSON.stringify(context));
 
   try {
-    const result = await inventorySyncWorker.matchProductLocallyAndSync(
+    const result = await aggregationWorkerApi.matchProductLocallyAndSync(
       props.inventoryCountImportId,
       plainItem,
       selectedProductId.value,
@@ -1379,6 +1379,7 @@ async function unscheduleWorker() {
       console.log('[Session] Terminating background aggregation worker...');
       aggregationWorker.terminate();
       aggregationWorker = null;
+      aggregationWorkerApi = null;
     }
   } catch (err) {
     console.error('[Session] Failed to terminate worker:', err);

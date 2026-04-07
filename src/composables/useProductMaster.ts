@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
 import { api, client, commonUtil } from '@common';
-import workerApi from "@/services/workerApi";
+import workerRemoteApi from '@common/core/workerRemoteApi';
 
 import { db } from '@/services/appInitializer';
 import { useAuth } from '@/composables/useAuth';
@@ -195,7 +195,7 @@ async function findProductByIdentification(idType: string, value: string, contex
     fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
   });
   try {
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: context.omsUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,

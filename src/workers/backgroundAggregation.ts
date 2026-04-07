@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import workerApi from "@/services/workerApi";
+import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
 
@@ -84,7 +84,7 @@ async function getById(productId: string, context: any) {
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
@@ -125,7 +125,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
@@ -163,7 +163,7 @@ function ensureProductStored(productId: string | null, context: any) {
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-      const resp = await workerApi({
+      const resp = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
@@ -236,7 +236,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 
 const getProductStock = async (productId: string, context: any): Promise<any> => {
   try {
-    return await workerApi({
+    return await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
@@ -491,13 +491,12 @@ async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string
 
 async function matchProductLocallyAndSync(inventoryCountImportId: string, item: any, productId: string, context: any) {
   if (!productId) throw new Error("Product ID is required");
-
   const now = Date.now();
   ensureDB(context);
 
   try {
     ensureProductStored(productId, context);
-    const inventory = await workerApi({
+    const inventory = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
@@ -627,7 +626,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     const payload = { items }
 
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: baseUrl,
       headers: {
         'Authorization': `Bearer ${token}`
@@ -687,7 +686,7 @@ async function resolveMissingSystemQOH(
 
   for (const record of records) {
     try {
-      const inventory = await workerApi({
+      const inventory = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,

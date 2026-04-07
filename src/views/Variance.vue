@@ -426,6 +426,7 @@
 <script setup lang="ts">
 
 import { api, commonUtil, translate } from '@common';
+import { WorkerFactory } from '@common/core/workerFactory';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
@@ -437,7 +438,8 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { Subscription, from } from 'rxjs';
-import { inventorySyncWorker } from "@/workers/workerInitiator";
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import type { Remote } from 'comlink';
 
 const mode = ref<'scan' | 'count'>('scan');
 
@@ -585,6 +587,7 @@ function openImagePreview(src: string) {
 
 const timeAgo = (date: number) => DateTime.fromMillis(Number(date)).toRelative();
 let aggregationWorker: Worker | null = null
+let aggregationWorkerApi: Remote<InventorySyncWorker> | null = null
 const subscriptions: Subscription[] = [];
 const isSearchResultsModalOpen = ref(false);
 const isMatchModalOpen = ref(false);
@@ -639,7 +642,9 @@ onIonViewDidEnter(async () => {
     from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
-  aggregationWorker = new Worker(new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' })
+  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+  aggregationWorker = bgWorker.worker
+  aggregationWorkerApi = bgWorker.api
 
   aggregationWorker.onmessage = (event) => {
     const { type, count } = event.data
@@ -687,6 +692,7 @@ async function unscheduleWorker() {
       console.log('[Session] Terminating background aggregation worker...');
       aggregationWorker.terminate();
       aggregationWorker = null;
+      aggregationWorkerApi = null;
     }
   } catch (err) {
     console.error('[Session] Failed to terminate worker:', err);
@@ -860,6 +866,11 @@ async function saveMatchProduct() {
     return;
   }
 
+  if (!aggregationWorker || !aggregationWorkerApi) {
+    commonUtil.showToast(translate("Background worker not available"))
+    return
+  }
+
   try {
     const context = {
         omsUrl: commonUtil.getOmsURL(),
@@ -871,13 +882,9 @@ async function saveMatchProduct() {
         facilityId: useProductStore().getCurrentFacility.facilityId
     }
 
-    if (inventorySyncWorker) {
-      await inventorySyncWorker.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
-      commonUtil.showToast(translate("Product matched successfully"));
-      closeMatchModal();
-    } else {
-      commonUtil.showToast(translate("Background worker not available"));
-    }
+    await aggregationWorkerApi.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
+    commonUtil.showToast(translate("Product matched successfully"));
+    closeMatchModal();
   } catch (err) {
     console.error(err);
     commonUtil.showToast(translate("Failed to match product"));

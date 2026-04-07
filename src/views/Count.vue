@@ -458,7 +458,7 @@ async function forceRelease(session) {
         text: translate("Force release"),
         handler: async () => {
           try {
-            await loader.present();
+            await loader.present("Releasing Session...");
             const payload = {
               inventoryCountImportId: session.inventoryCountImportId,
               fromDate: session.lock?.fromDate,
