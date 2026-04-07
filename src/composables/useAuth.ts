@@ -2,7 +2,6 @@ import { ref, computed } from "vue";
 import { DateTime, Settings } from "luxon";
 import { useUserProfile } from "@/stores/userProfileStore";
 
-import { showToast } from "@/services/uiUtils";
 import { api, translate, cookieHelper, commonUtil, logger, emitter } from "@common";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductStore } from "@/stores/productStore";
@@ -83,7 +82,7 @@ export const useAuth = () => {
       });
 
       if (commonUtil.hasError(resp)) {
-        showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
+        commonUtil.showToast(translate('Sorry, your username or password is incorrect. Please try again.'));
         console.error("error", resp.data._ERROR_MESSAGE_);
         return Promise.reject(new Error(resp.data._ERROR_MESSAGE_));
       }
@@ -100,11 +99,11 @@ export const useAuth = () => {
 
       // Handling case for warnings like password may expire in few days
       if (resp.data._EVENT_MESSAGE_ && resp.data._EVENT_MESSAGE_.startsWith("Alert:")) {
-        showToast(translate(resp.data._EVENT_MESSAGE_));
+        commonUtil.showToast(translate(resp.data._EVENT_MESSAGE_));
       }
 
     } catch (error: any) {
-      showToast(translate('Something went wrong while login. Please contact administrator.'));
+      commonUtil.showToast(translate('Something went wrong while login. Please contact administrator.'));
       console.error("error: ", error);
       return Promise.reject(new Error(error));
     }
@@ -118,7 +117,7 @@ export const useAuth = () => {
         expirationTime
       });
     } catch (error: any) {
-      showToast(translate('Something went wrong while login. Please contact administrator.'));
+      commonUtil.showToast(translate('Something went wrong while login. Please contact administrator.'));
       console.error("error: ", error);
       return Promise.reject(new Error(error));
     }

@@ -45,11 +45,11 @@
           <ion-card>
             <ion-item data-testid="closed-detail-first-counted-item">
               <ion-label data-testid="closed-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end" data-testid="closed-detail-first-counted-val">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
+              <ion-note slot="end" data-testid="closed-detail-first-counted-val">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item data-testid="closed-detail-last-counted-item">
               <ion-label data-testid="closed-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end" data-testid="closed-detail-last-counted-val">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
+              <ion-note slot="end" data-testid="closed-detail-last-counted-val">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
             </ion-item>
           </ion-card>
 
@@ -173,11 +173,11 @@
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
                         <ion-label data-testid="closed-detail-session-started-stat">
-                          <span data-testid="closed-detail-session-started-date">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                          <span data-testid="closed-detail-session-started-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                           <p>{{ translate("started") }}</p>
                         </ion-label>
                         <ion-label data-testid="closed-detail-session-updated-stat">
-                          <span data-testid="closed-detail-session-updated-date">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                          <span data-testid="closed-detail-session-updated-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
                       </div>
@@ -203,16 +203,14 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
-import { translate } from '@common'
+import { commonUtil, translate } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
-import { showToast } from "@/services/uiUtils"
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
-import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 
@@ -264,7 +262,7 @@ async function getWorkEffortDetails() {
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -287,7 +285,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
   }
 }
 
@@ -332,7 +330,7 @@ async function getInventoryCycleCount() {
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     aggregatedSessionItems.value = [];
   }
 }

@@ -145,7 +145,6 @@ import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, Ion
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
-import { showToast } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
@@ -270,7 +269,7 @@ async function viewFile() {
     if (!commonUtil.hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
-    showToast(translate("Failed to download uploaded cycle count file."));
+    commonUtil.showToast(translate("Failed to download uploaded cycle count file."));
     logger.error(err);
   }
   closeUploadPopover();
@@ -279,11 +278,11 @@ async function cancelUpload() {
   try {
     const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!commonUtil.hasError(resp)) {
-      showToast(translate("Cycle count cancelled successfully."));
+      commonUtil.showToast(translate("Cycle count cancelled successfully."));
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
   } catch (err) {
-    showToast(translate("Failed to cancel uploaded cycle count."));
+    commonUtil.showToast(translate("Failed to cancel uploaded cycle count."));
     logger.error(err);
   }
   closeUploadPopover();
@@ -337,18 +336,18 @@ async function parse(event) {
       fileName.value = file.name;
       content.value = await parseCsv(file);
       fileColumns.value = Object.keys(content.value[0]);
-      showToast(translate("File uploaded successfully"));
+      commonUtil.showToast(translate("File uploaded successfully"));
       resetFieldMapping();
     }
   } catch {
     content.value = [];
-    showToast(translate("Please upload a valid csv to continue"));
+    commonUtil.showToast(translate("Please upload a valid csv to continue"));
   }
 }
 async function save() {
   const required = Object.keys(getFilteredFields(fields, true));
   const selected = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key]);
-  if (!required.every(field => selected.includes(field))) return showToast(translate("Select all required fields to continue"));
+  if (!required.every(field => selected.includes(field))) return commonUtil.showToast(translate("Select all required fields to continue"));
   const uploadedData = content.value.map(row => ({
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
@@ -372,11 +371,11 @@ async function save() {
     if (!commonUtil.hasError(resp)) {
       resetDefaults();
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-      showToast(translate("The cycle counts file uploaded successfully."));
+      commonUtil.showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to upload the file, please try again"));
+    commonUtil.showToast(translate("Failed to upload the file, please try again"));
   }
 }
 

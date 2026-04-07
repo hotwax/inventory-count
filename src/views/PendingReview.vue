@@ -47,12 +47,12 @@
 
 
           <ion-label data-testid="pending-review-item-created-date">
-            {{ getDateWithOrdinalSuffix(count.createdDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.createdDate) }}
             <p>{{ translate("Created Date") }}</p>
           </ion-label>
 
           <ion-label data-testid="pending-review-item-due-date">
-            {{ getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
         </div>
@@ -76,12 +76,11 @@
 import { ref, computed } from "vue"
 import { IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { translate } from '@common'
+import { translate, commonUtil } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
-import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
+import { loader } from '@/services/uiUtils';
 import { useProductStore } from "@/stores/productStore";
-import { getDateWithOrdinalSuffix } from "@/services/utils";
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from "@/stores/userProfileStore";
 
@@ -103,7 +102,7 @@ const isFacilityModalOpen = ref(false);
 const productStore = useProductStore();
 const facilities = computed(() => productStore.getFacilities || []);
 
-const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
+const facilityChipLabel = computed(() => commonUtil.getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
 const filterOptions = {
   typeOptions : [
@@ -199,7 +198,7 @@ async function getPendingCycleCounts() {
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);
-    showToast("Failed to fetch Cycle Counts");
+    commonUtil.showToast("Failed to fetch Cycle Counts");
   }
 }
 

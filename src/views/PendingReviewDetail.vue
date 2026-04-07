@@ -32,7 +32,7 @@
               <ion-icon :icon="calendarClearOutline" slot="start" data-testid="pending-review-detail-start-date-icon"></ion-icon>
               <ion-label data-testid="pending-review-detail-start-date-label">
                 <p class="overline" data-testid="pending-review-detail-start-date-title">{{ translate("Start Date") }}</p>
-                <span data-testid="pending-review-detail-start-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}</span>
+                <span data-testid="pending-review-detail-start-date-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(workEffort.estimatedStartDate) }}</span>
               </ion-label>
             </ion-item>
 
@@ -40,7 +40,7 @@
               <ion-icon :icon="calendarClearOutline" slot="start" data-testid="pending-review-detail-due-date-icon"></ion-icon>
               <ion-label data-testid="pending-review-detail-due-date-label">
                 <p class="overline" data-testid="pending-review-detail-due-date-title">{{ translate("Due Date") }}</p>
-                <span data-testid="pending-review-detail-due-date-val">{{ workEffort.estimatedCompletionDate ? getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}</span>
+                <span data-testid="pending-review-detail-due-date-val">{{ workEffort.estimatedCompletionDate ? commonUtil.getDateTimeWithOrdinalSuffix(workEffort.estimatedCompletionDate) : translate("Not set") }}</span>
               </ion-label>
             </ion-item>
           </ion-card>
@@ -48,14 +48,14 @@
             <ion-item data-testid="pending-review-detail-first-counted-item">
               <ion-label data-testid="pending-review-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end" data-testid="pending-review-detail-first-counted-val">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
+                {{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}
                 <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedStartDate" data-testid="pending-review-detail-first-counted-diff">{{ getTimeDifference(firstCountedAt, workEffort.estimatedStartDate) }}</p>
               </ion-label>
             </ion-item>
             <ion-item data-testid="pending-review-detail-last-counted-item">
               <ion-label data-testid="pending-review-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
               <ion-label slot="end" class="ion-text-end" data-testid="pending-review-detail-last-counted-val">
-                {{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
+                {{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}
                 <p v-if="aggregatedSessionItems.length !== 0 && workEffort.estimatedCompletionDate" data-testid="pending-review-detail-last-counted-diff">{{ getTimeDifference(lastCountedAt, workEffort.estimatedCompletionDate) }}</p>
               </ion-label>
             </ion-item>
@@ -238,12 +238,12 @@
                         </ion-label>
 
                         <ion-label data-testid="pending-review-detail-session-started-stat">
-                          <span data-testid="pending-review-detail-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                          <span data-testid="pending-review-detail-session-started-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                           <p>{{ translate("started") }}</p>
                         </ion-label>
 
                         <ion-label data-testid="pending-review-detail-session-updated-stat">
-                          <span data-testid="pending-review-detail-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                          <span data-testid="pending-review-detail-session-updated-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
 
@@ -270,7 +270,7 @@
               <ion-list data-testid="pending-review-detail-session-popover-list">
                 <ion-list-header data-testid="pending-review-detail-session-popover-header">{{ selectedProductCountReview?.internalName }}</ion-list-header>
                 <ion-item size="small" data-testid="pending-review-detail-session-popover-last-counted">
-                  <ion-label>{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
+                  <ion-label>{{ translate('Last Counted') }}: {{ commonUtil.getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
                 </ion-item>
                 <ion-item v-if="!selectedProductCountReview?.decisionOutcomeEnumId" button @click="showEditImportItemsModal" size="small" data-testid="pending-review-detail-session-popover-edit-btn">
                   <ion-label>{{ translate('Edit Count') }}: {{ selectedSession?.counted }}</ion-label>
@@ -495,19 +495,18 @@ import {
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
 import { ref, computed, defineProps } from "vue";
-import { translate } from "@common";
+import { commonUtil, translate } from "@common";
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useProductStore } from "@/stores/productStore";
-import { loader, showToast } from "@/services/uiUtils";
+import { loader } from "@/services/uiUtils";
 import ProgressBar from "@/components/ProgressBar.vue";
 import Image from "@/components/Image.vue";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
-import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import { useUserProfile } from "@/stores/userProfileStore";
 
 /* props */
@@ -652,7 +651,7 @@ async function showEditImportItemsModal() {
       isEditImportItemModalOpen.value = true;
     }
   } catch {
-    showToast("Failed to load count details");
+    commonUtil.showToast("Failed to load count details");
   }
 }
 
@@ -716,7 +715,7 @@ async function saveEditImportItems() {
 
     closeEditImportItemModal();
   } catch {
-    showToast("Failed to update count");
+    commonUtil.showToast("Failed to update count");
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -786,7 +785,7 @@ async function removeProductFromSession() {
 
     closeSessionPopover();
   } catch {
-    showToast("Failed to remove item");
+    commonUtil.showToast("Failed to remove item");
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -936,7 +935,7 @@ async function submitSingleProductReview(
     item.decisionOutcomeEnumId = outcome;
     submittedItemsCount.value++;
   } catch {
-    showToast("Error submitting review");
+    commonUtil.showToast("Error submitting review");
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -979,9 +978,9 @@ async function submitSelectedProductReviews(outcome: any) {
 
     selectedProductsReview.value = [];
 
-    showToast("Submitted successfully");
+    commonUtil.showToast("Submitted successfully");
   } catch {
-    showToast("Some items failed");
+    commonUtil.showToast("Some items failed");
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
@@ -999,7 +998,7 @@ async function closeCycleCount() {
     });
     router.replace(`/closed/${props.workEffortId}`);
   } catch {
-    showToast("Failed to close cycle count");
+    commonUtil.showToast("Failed to close cycle count");
   }
   loader.dismiss();
 }
@@ -1022,7 +1021,7 @@ function closeBulkCloseModal() {
 }
 
 async function performBulkCloseAction() {
-  if (!bulkAction.value) return showToast("Please select an action");
+  if (!bulkAction.value) return commonUtil.showToast("Please select an action");
 
   closeBulkCloseModal();
   await loader.present("Closing cycle count...");
@@ -1059,7 +1058,7 @@ async function performBulkCloseAction() {
 
     await closeCycleCount();
   } catch (error: any) {
-    showToast("Bulk action failed");
+    commonUtil.showToast("Bulk action failed");
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();

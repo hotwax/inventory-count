@@ -193,9 +193,8 @@ import { ref, computed, onMounted, nextTick, defineProps } from 'vue'
 import router from '@/router'
 import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
-import { loader, showToast } from '@/services/uiUtils'
+import { loader } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuth } from '@/composables/useAuth'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
 import Image from '@/components/Image.vue'
@@ -293,7 +292,7 @@ async function getInventoryCycleCount() {
     inventoryCountImport.value = sessionResp.data
   } catch (error) {
     console.error(error)
-    showToast('Failed to fetch Count and Session details')
+    commonUtil.showToast('Failed to fetch Count and Session details')
   }
 }
 
@@ -352,10 +351,10 @@ async function getProductBySearch(term: string) {
     });
 
     searchedProducts.value = enrichedProducts
-    if (products.length === 0) showToast(`No products found for "${term}"`)
+    if (products.length === 0) commonUtil.showToast(`No products found for "${term}"`)
   } catch (err) {
     console.error('Failed to fetch products', err)
-    showToast('Something went wrong')
+    commonUtil.showToast('Something went wrong')
   } finally {
     isSearching.value = false
   }
@@ -391,7 +390,7 @@ async function addProductInPreCountedItems(product: any) {
       if (inventoryCountImportItem && (!inventoryCountImportItem.isRequested || inventoryCountImportItem.isRequested === 'Y')) {
         productEntry.isRequested = 'Y';
       } else {
-        showToast(translate("Undirected items cannot be added to count"));
+        commonUtil.showToast(translate("Undirected items cannot be added to count"));
         return;
       }
     }
@@ -451,7 +450,7 @@ async function addAllProductsToScanEvents() {
     for (const product of unsaved) {
       await addPreCountedItemInScanEvents(product)
     }
-    showToast(translate('Items Saved'))
+    commonUtil.showToast(translate('Items Saved'))
   } catch (err) {
     console.error('Error saving products:', err)
   }

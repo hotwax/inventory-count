@@ -49,7 +49,7 @@
                       </div>
                       <ion-label>
                         {{ item.scannedValue }}
-                        <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
+                        <p class="clickable-time" @click="commonUtil.showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
                       </ion-label>
                       <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                         {{ translate('unaggregated') }}
@@ -433,7 +433,6 @@ import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref, nextTick } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
-import { showToast } from '@/services/uiUtils';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
@@ -493,7 +492,7 @@ const aggregationInterval = 5000;
 
 const handleScan = () => {
   if (!scannedValue.value.trim().length) {
-    showToast(translate("Please enter a barcode"));
+    commonUtil.showToast(translate("Please enter a barcode"));
     return;
   }
   useProductMaster().addVarianceLog(scannedValue.value.trim(), 1, currentFacility.value.facilityId);
@@ -550,10 +549,10 @@ const negateSingleScan = async (item: any) => {
       item.productId,
       item.id
     )
-    showToast(translate('Scan removed'))
+    commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    commonUtil.showToast(translate('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -819,7 +818,7 @@ async function searchProducts(queryString: string): Promise<any> {
     return products;
   } catch (error) {
     console.error("Error searching products:", error);
-    showToast(translate("Failed to search products. Please try again."));
+    commonUtil.showToast(translate("Failed to search products. Please try again."));
   }
   isSearching.value = false;
   return [];
@@ -857,7 +856,7 @@ function focusMatchSearch() {
 
 async function saveMatchProduct() {
   if (!selectedProductId.value || !matchedItem.value) {
-    showToast(translate("Please select a product to match"));
+    commonUtil.showToast(translate("Please select a product to match"));
     return;
   }
 
@@ -874,24 +873,24 @@ async function saveMatchProduct() {
 
     if (inventorySyncWorker) {
       await inventorySyncWorker.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
-      showToast(translate("Product matched successfully"));
+      commonUtil.showToast(translate("Product matched successfully"));
       closeMatchModal();
     } else {
-      showToast(translate("Background worker not available"));
+      commonUtil.showToast(translate("Background worker not available"));
     }
   } catch (err) {
     console.error(err);
-    showToast(translate("Failed to match product"));
+    commonUtil.showToast(translate("Failed to match product"));
   }
 }
 
 async function logHandCountedItemVariances() {
   if (!optedActionForHandCounted.value) {
-    showToast(translate("Please select an action."));
+    commonUtil.showToast(translate("Please select an action."));
     return;
   }
   if (!optedVarianceReasonForHandCounted.value) {
-    showToast(translate("Please select a variance reason."));
+    commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
   try {
@@ -920,7 +919,7 @@ async function logHandCountedItemVariances() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      commonUtil.showToast(translate("Variance logged successfully."));
       handCountedProducts.value = []
       optedActionForHandCounted.value = 'add'
       optedVarianceReasonForHandCounted.value = null
@@ -928,18 +927,18 @@ async function logHandCountedItemVariances() {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    commonUtil.showToast(translate("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
 
 async function logVariance() {
   if (!optedAction.value) {
-    showToast(translate("Please select an action."));
+    commonUtil.showToast(translate("Please select an action."));
     return;
   }
   if (!optedVarianceReason.value) {
-    showToast(translate("Please select a variance reason."));
+    commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
   try {
@@ -968,14 +967,14 @@ async function logVariance() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      commonUtil.showToast(translate("Variance logged successfully."));
       // Clear the VarianceLogs table and the InventoryAdjustmentTables here
       useProductMaster().clearVarianceLogsAndAdjustments();
     } else {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    commonUtil.showToast(translate("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
@@ -1076,7 +1075,7 @@ async function confirmRemoveAdjustment(adjustment: any) {
         text: translate("Remove"),
         handler: async () => {
           await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid, adjustment.scannedValue);
-          showToast(translate("Record removed"));
+          commonUtil.showToast(translate("Record removed"));
         }
       }
     ]
@@ -1098,7 +1097,7 @@ async function confirmRemoveUnmatchedItem(item: any) {
         text: translate("Remove"),
         handler: async () => {
           await useProductMaster().removeUnmatchedInventoryAdjustment(item.facilityId, item.uuid, item.scannedValue);
-          showToast(translate("Record removed"));
+          commonUtil.showToast(translate("Record removed"));
         }
       }
     ]
@@ -1119,7 +1118,7 @@ async function confirmClearAll() {
         text: translate("Clear data"),
         handler: async () => {
           await useProductMaster().clearVarianceLogsAndAdjustments();
-          showToast(translate("All records cleared"));
+          commonUtil.showToast(translate("All records cleared"));
         }
       }
     ]

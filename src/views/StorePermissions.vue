@@ -172,7 +172,6 @@ import { DateTime } from "luxon";
 import { translate, logger } from "@common";
 import { useProductStore } from "@/stores/productStore";
 import { useSecurity } from "@/composables/useSecurity";
-import { showToast } from "@/services/uiUtils";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { commonUtil } from '@common';
@@ -476,7 +475,7 @@ async function saveSelectedSecurityGroups() {
       if (commonUtil.hasError(resp)) throw resp?.data;
     }
 
-    showToast(translate("Security groups updated successfully."));
+    commonUtil.showToast(translate("Security groups updated successfully."));
 
     // Refresh active groups for this permission
     await getActiveGroups(permissionId);
@@ -484,7 +483,7 @@ async function saveSelectedSecurityGroups() {
     isSelectGroupsModalOpen.value = false;
   } catch (error) {
     logger.error(error);
-    showToast(translate("Something went wrong."));
+    commonUtil.showToast(translate("Something went wrong."));
   }
 }
 
@@ -542,12 +541,12 @@ async function confirmRemoveGroupFromPermission() {
             const resp = await updateSecurityGroupPermission(payload);
             if (commonUtil.hasError(resp)) throw resp?.data;
 
-            showToast(translate("Security group removed successfully."));
+            commonUtil.showToast(translate("Security group removed successfully."));
 
             await getActiveGroups(permissionId);
           } catch (error) {
             logger.error(error);
-            showToast(translate("Something went wrong."));
+            commonUtil.showToast(translate("Something went wrong."));
           } finally {
             closeGroupActionsPopover();
           }

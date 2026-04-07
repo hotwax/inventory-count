@@ -254,7 +254,6 @@ import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
-import { showToast } from "@/services/uiUtils";
 import { db } from "@/services/appInitializer";
 
 const appVersion = ref("")
@@ -363,7 +362,7 @@ async function confirmClearLocalInventoryData() {
         text: translate("Clear data"),
         handler: async () => {
           if (!db) {
-            showToast(translate("Local database is not initialized."));
+            commonUtil.showToast(translate("Local database is not initialized."));
             return;
           }
 
@@ -379,10 +378,10 @@ async function confirmClearLocalInventoryData() {
             await db.transaction("rw", db.scanEvents, async () => {
               await db.scanEvents.clear();
             });
-            showToast(translate("Local inventory data cleared."));
+            commonUtil.showToast(translate("Local inventory data cleared."));
           } catch (error) {
             console.error("Failed to clear local inventory data:", error);
-            showToast(translate("Failed to clear local inventory data."));
+            commonUtil.showToast(translate("Failed to clear local inventory data."));
           }
         }
       }

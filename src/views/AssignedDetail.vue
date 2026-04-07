@@ -73,11 +73,11 @@
           <ion-card data-testid="assigned-detail-stats-card">
             <ion-item data-testid="assigned-detail-first-counted-item">
               <ion-label data-testid="assigned-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
-              <ion-label slot="end" data-testid="assigned-detail-first-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
+              <ion-label slot="end" data-testid="assigned-detail-first-counted-value">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
             </ion-item>
             <ion-item data-testid="assigned-detail-last-counted-item">
               <ion-label data-testid="assigned-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
-              <ion-label slot="end" data-testid="assigned-detail-last-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
+              <ion-label slot="end" data-testid="assigned-detail-last-counted-value">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
             </ion-item>
           </ion-card>
         </div>
@@ -169,11 +169,11 @@
                             <p>{{ translate("counted") }}</p>
                           </ion-label>
                           <ion-label data-testid="assigned-detail-session-started-stat">
-                            <span data-testid="assigned-detail-session-started-date">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                            <span data-testid="assigned-detail-session-started-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                             <p>{{ translate("started") }}</p>
                           </ion-label>
                           <ion-label data-testid="assigned-detail-session-updated-stat">
-                            <span data-testid="assigned-detail-session-updated-date">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                            <span data-testid="assigned-detail-session-updated-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
                           <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)" :data-testid="'assigned-detail-session-popover-btn-' + session.inventoryCountImportId">
@@ -192,7 +192,7 @@
                 <ion-list data-testid="assigned-detail-session-popover-list">
                   <ion-list-header data-testid="assigned-detail-session-popover-header">{{ selectedProductCountReview?.internalName }}</ion-list-header>
                   <ion-item size="small" data-testid="assigned-detail-session-popover-item">
-                    <ion-label data-testid="assigned-detail-session-popover-last-counted-label">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
+                    <ion-label data-testid="assigned-detail-session-popover-last-counted-label">{{ translate('Last Counted') }}: {{ commonUtil.getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-content>
@@ -233,16 +233,15 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAlert, IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { translate } from '@common'
+import { translate, commonUtil } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
-import { loader, showToast } from "@/services/uiUtils";
+import { loader } from "@/services/uiUtils";
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
-import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import router from "@/router";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -303,7 +302,7 @@ async function getWorkEffortDetails() {
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -339,13 +338,13 @@ async function handleChange(ev: any, currentField: string) {
 
     if (resp?.status === 200) {
       workEffort.value[currentField] = millis;
-      showToast(translate("Updated Successfully"))
+      commonUtil.showToast(translate("Updated Successfully"))
     } else {
       throw resp;
     }
   } catch (error) {
     console.error("Error Udpating Cycle Count: ", error);
-    showToast(`Failed to Update: ${currentField} on Cycle Count`);
+    commonUtil.showToast(`Failed to Update: ${currentField} on Cycle Count`);
   }
 }
 
@@ -391,12 +390,12 @@ async function openEditNameAlert() {
 
             if (resp?.status === 200) {
               workEffort.value.workEffortName = data.workEffortName;
-              showToast(translate("Count Name Updated Successfully"));
+              commonUtil.showToast(translate("Count Name Updated Successfully"));
             } else {
               throw resp;
             }
           } catch (error) {
-            showToast(translate("Failed to Update Cycle Count Name"));
+            commonUtil.showToast(translate("Failed to Update Cycle Count Name"));
             console.error("Failed to update cycle count name:", error);
           }
           loader.dismiss();
@@ -426,7 +425,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
   }
 }
 
@@ -470,7 +469,7 @@ async function getInventoryCycleCount() {
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     aggregatedSessionItems.value = [];
   }
 }
@@ -555,7 +554,7 @@ async function closeCycleCount() {
         statusId: "CYCLE_CNT_CNCL"
       });
       if (updateCountResp?.status === 200) {
-        showToast(translate("Cycle Count Closed Successfully"));
+        commonUtil.showToast(translate("Cycle Count Closed Successfully"));
         router.replace("/assigned");
       } else {
         throw updateCountResp;
@@ -565,7 +564,7 @@ async function closeCycleCount() {
     }
   } catch (error) {
     console.error("Error closing cycle count:", error);
-    showToast(translate("Failed to close cycle count"));
+    commonUtil.showToast(translate("Failed to close cycle count"));
   }
 }
 

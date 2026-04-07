@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger } from '@common'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useUserProfile } from './userProfileStore'
-import { showToast } from '@/services/uiUtils';
 import { translate } from '@common'
 
 export const useProductStore = defineStore('productStore', {
@@ -413,12 +412,12 @@ export const useProductStore = defineStore('productStore', {
         if (!commonUtil.hasError(resp)) {
           if (key === 'forceScan') this.settings.forceScan = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
-          showToast(translate('Store preference updated successfully.'))
+          commonUtil.showToast(translate('Store preference updated successfully.'))
         } else {
           throw resp
         }
       } catch (err) {
-        showToast(translate('Failed to update Store preference.'))
+        commonUtil.showToast(translate('Failed to update Store preference.'))
         logger.error(err)
       }
     },

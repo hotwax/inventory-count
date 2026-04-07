@@ -76,7 +76,6 @@ import { useAuth } from "@/composables/useAuth";
 import Logo from '@/components/Logo.vue';
 import { arrowForwardOutline, gridOutline } from 'ionicons/icons'
 import { translate } from "@common";
-import { showToast } from "@/services/uiUtils";
 import router from "@/router";
 
 const route = router.currentRoute.value
@@ -140,7 +139,7 @@ const fetchLoginOptions = async () => {
 
 const setOms = async () => {
   if (!instanceUrl.value) {
-    showToast(translate('Please fill in the OMS'));
+    commonUtil.showToast(translate('Please fill in the OMS'));
     return;
   }
 
@@ -174,7 +173,7 @@ const samlLogin = async () => {
 
 const login = async () => {
   if (!username.value || !password.value) {
-    showToast(translate('Please fill in the user details'));
+    commonUtil.showToast(translate('Please fill in the user details'));
     return;
   }
 
@@ -207,7 +206,7 @@ const basicLogin = async () => {
         expirationTime
       });
     } catch(error: any) {
-      showToast(translate("Failed to fetch user profile information"));
+      commonUtil.showToast(translate("Failed to fetch user profile information"));
       console.error("error", error);
       useAuth().clearAuth();
       return Promise.reject(new Error(error));
@@ -216,7 +215,7 @@ const basicLogin = async () => {
 
     // await authStore.fetchPermissions();
   } catch (error) {
-    showToast(translate('Failed to fetch user-profile, please try again'));
+    commonUtil.showToast(translate('Failed to fetch user-profile, please try again'));
     console.error("error: ", error);
   }
   router.replace('/');

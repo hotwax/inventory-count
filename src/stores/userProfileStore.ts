@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger } from '@common';
-import { showToast } from '@/services/uiUtils';
 import { i18n, translate } from '@common'
 import { DateTime, Settings } from 'luxon';
 
@@ -123,11 +122,11 @@ export const useUserProfile = defineStore('userProfile', {
         } else {
           throw resp;
         }
-        showToast(translate("Time zone updated successfully"));
+        commonUtil.showToast(translate("Time zone updated successfully"));
         return Promise.resolve(tzId)
       } catch(err) {
         console.error('Error', err)
-        showToast(translate("Failed to update time zone"));
+        commonUtil.showToast(translate("Failed to update time zone"));
         return Promise.reject('')
       }
     },
@@ -267,7 +266,6 @@ export const useUserProfile = defineStore('userProfile', {
 
         // Update the state with the fetched permissions
         this.permissions = serverPermissions;
-        console.log("=-=-=-=-=- These are permissions: ", this.permissions)
         return serverPermissions;
       } catch (error: any) {
         return Promise.reject(error);

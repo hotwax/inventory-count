@@ -581,7 +581,6 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOut
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast } from '@/services/uiUtils';
 import { commonUtil, translate } from '@common';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
@@ -826,7 +825,7 @@ onIonViewDidEnter(async () => {
     })
   } catch (error) {
     console.error(error);
-    showToast("Failed to load session details");
+    commonUtil.showToast("Failed to load session details");
   }
 });
 
@@ -903,9 +902,9 @@ async function updateSessionOnServer() {
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value.countImportName = newCountName.value;
       inventoryCountImport.value.facilityAreaId = selectedArea.value
-      showToast(translate("Session Updated Successfully"))
+      commonUtil.showToast(translate("Session Updated Successfully"))
     } else {
-      showToast(translate("Failed to Update Session Details"));
+      commonUtil.showToast(translate("Failed to Update Session Details"));
     }
   } catch (error) {
     console.error(error);
@@ -942,10 +941,10 @@ async function startSession() {
       useProductMaster().prefetch(productIds)
         .then(() => console.info(`Prefetch ${productIds.length} products hydrated`))
         .catch(err => console.warn('Prefetch Failed:', err))
-    }    showToast('Session ready to start counting');
+    }    commonUtil.showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
-    showToast('Failed to initialize session');
+    commonUtil.showToast('Failed to initialize session');
   }
 
   focusScanner();
@@ -985,7 +984,7 @@ async function loadInventoryItemsWithProgress() {
     }
   } catch (err) {
     console.error('Error loading items with progress', err)
-    showToast('Failed to load session items')
+    commonUtil.showToast('Failed to load session items')
   } finally {
     isLoadingItems.value = false
   }
@@ -1020,7 +1019,7 @@ function handleScan() {
     searchKeyword.value = '';
   } catch (err) {
     console.error(err);
-    showToast('Failed to record scan');
+    commonUtil.showToast('Failed to record scan');
   } finally {
     scannedValue.value = '';
   }
@@ -1036,7 +1035,7 @@ async function handleStartOrFocus() {
       inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     } catch (err) {
       console.error(err);
-      showToast('Failed to start session');
+      commonUtil.showToast('Failed to start session');
       return;
     }
   }
@@ -1073,13 +1072,13 @@ async function handleSessionLock() {
       if (existingLock.userId !== userId || existingLock.deviceId !== currentDeviceId) {
         // Different user → lock session
         sessionLocked.value = true;
-        showToast('This session is locked by another user.');
+        commonUtil.showToast('This session is locked by another user.');
         return;
       }
 
       // Same user + same device → continue, schedule worker
       sessionLocked.value = false;
-      showToast('Existing lock found. Resuming session.');
+      commonUtil.showToast('Existing lock found. Resuming session.');
 
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
@@ -1111,16 +1110,16 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
           } else if (type === 'lockForceReleased') {
-            showToast('Session lock was force-released by another user.');
+            commonUtil.showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
             if (lockWorker) await lockWorker.stopHeartbeat();
             router.push('/tabs/count');
           } else if (type === 'lockExpired') {
-            showToast('Session lock expired. Please reacquire the lock.');
+            commonUtil.showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
-            showToast('Reacquiring lock...');
+            commonUtil.showToast('Reacquiring lock...');
             await handleSessionLock();
           }
         };
@@ -1141,7 +1140,7 @@ async function handleSessionLock() {
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
-      showToast('Session lock acquired.');
+      commonUtil.showToast('Session lock acquired.');
 
       let worker: Worker | null = null;
       if (!lockWorker) {
@@ -1172,16 +1171,16 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
           } else if (type === 'lockForceReleased') {
-            showToast('Session lock was force-released by another user.');
+            commonUtil.showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
             if (lockWorker) await lockWorker.stopHeartbeat();
             router.push('/tabs/count');
           } else if (type === 'lockExpired') {
-            showToast('Session lock expired. Please reacquire the lock.');
+            commonUtil.showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
-            showToast('Reacquiring lock...');
+            commonUtil.showToast('Reacquiring lock...');
             await handleSessionLock();
           }
         };
@@ -1189,12 +1188,12 @@ async function handleSessionLock() {
       isNewLockAcquired.value = true;
     } else {
       sessionLocked.value = true;
-      showToast('Failed to acquire lock.');
+      commonUtil.showToast('Failed to acquire lock.');
     }
   } catch (err) {
     console.error('Error handling session lock:', err);
     sessionLocked.value = true;
-    showToast('Error while acquiring session lock.');
+    commonUtil.showToast('Error while acquiring session lock.');
   }
 }
 
@@ -1212,14 +1211,14 @@ async function releaseSessionLock() {
 
     const resp = await useInventoryCountImport().releaseSession(payload);
     if (resp?.status === 200) {
-      showToast('Session lock released.');
+      commonUtil.showToast('Session lock released.');
       currentLock.value = null;
     } else {
-      showToast('Failed to release session lock.');
+      commonUtil.showToast('Failed to release session lock.');
     }
   } catch (err) {
     console.error('Error releasing session lock:', err);
-    showToast('Error while releasing session lock.');
+    commonUtil.showToast('Error while releasing session lock.');
   }
 }
 
@@ -1303,7 +1302,7 @@ async function getProducts() {
 
 async function saveMatchProduct() {
   if (!selectedProductId.value) {
-    showToast("Please select a product to match");
+    commonUtil.showToast("Please select a product to match");
     return;
   }
 
@@ -1330,13 +1329,13 @@ async function saveMatchProduct() {
       plainContext
     );
     if (result.success) {
-      showToast("Product matched successfully");
+      commonUtil.showToast("Product matched successfully");
       closeMatchModal();
     } else {
-      showToast("Failed to match product");
+      commonUtil.showToast("Failed to match product");
     }
   } catch (err) {
-    showToast("An error occurred while matching product");
+    commonUtil.showToast("An error occurred while matching product");
   }
 }
 
@@ -1390,7 +1389,7 @@ async function confirmSubmit() {
   showSubmitAlert.value = false
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast(translate("Unmatched products should be resolved before submission"))
+      commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
       return
     }
     await finalizeAggregationAndSync()
@@ -1401,11 +1400,11 @@ async function confirmSubmit() {
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
-    showToast('Session submitted successfully')
+    commonUtil.showToast('Session submitted successfully')
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
-    showToast('Failed to submit session')
+    commonUtil.showToast('Failed to submit session')
   }
 }
 
@@ -1421,23 +1420,23 @@ async function confirmDiscard() {
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
-    showToast('Session discarded')
+    commonUtil.showToast('Session discarded')
     await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
-    showToast('Failed to discard session')
+    commonUtil.showToast('Failed to discard session')
   }
 }
 
 async function reopen() {
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    showToast('Session reopened');
+    commonUtil.showToast('Session reopened');
     await handleSessionLock();
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
-    showToast('Failed to reopen session');
+    commonUtil.showToast('Failed to reopen session');
   }
 }
 
@@ -1519,7 +1518,7 @@ function getScanContext(item: any) {
 }
 
 function showTime(date: number) {
-  showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
+  commonUtil.showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
 const isImageModalOpen = ref(false)
@@ -1592,10 +1591,10 @@ async function negateSingleScan(item: any) {
       quantity: -Math.abs(item.quantity || 1)
     })
 
-    showToast(translate('Scan removed'))
+    commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    commonUtil.showToast(translate('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -1622,10 +1621,10 @@ async function negateAllScansOfSku(item: any) {
         quantity: -Math.abs(scan.quantity || 1)
       })
     }
-    showToast(translate('Removed all scans for') + ` ${sku}`)
+    commonUtil.showToast(translate('Removed all scans for') + ` ${sku}`)
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scans'))
+    commonUtil.showToast(translate('Failed to remove scans'))
   } finally {
     resetRemoveConfirm()
   }

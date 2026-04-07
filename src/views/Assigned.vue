@@ -57,17 +57,17 @@
           </ion-button>
 
           <ion-label data-testid="assigned-item-created-date">
-            {{ getDateWithOrdinalSuffix(count.createdDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.createdDate) }}
             <p>{{ translate("Created Date") }}</p>
           </ion-label>
       
           <ion-label data-testid="assigned-item-due-date">
-            {{ getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
           
           <ion-item lines="none">
-            <ion-badge :color="getStatusColor(count.statusId)" class="status-badge" slot="end" data-testid="assigned-item-status-badge">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
+            <ion-badge :color="commonUtil.getStatusColor(count.statusId)" class="status-badge" slot="end" data-testid="assigned-item-status-badge">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
@@ -139,12 +139,11 @@
 import { computed, ref } from "vue";
 import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
-import { translate } from '@common'
+import { translate, commonUtil } from '@common'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { getStatusColor, loader, showToast, getFacilityChipLabel } from "@/services/uiUtils";
+import { loader } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
-import { getDateWithOrdinalSuffix } from "@/services/utils";
 // import Filters from "@/components/Filters.vue"
 
 // import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
@@ -203,7 +202,7 @@ onIonViewWillLeave(async () => {
 
 const facilities = computed(() => productStore.getFacilities || [])
 
-const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
+const facilityChipLabel = computed(() => commonUtil.getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
 const facilityModal = ref()
 const facilityQueryString = ref('')
@@ -268,13 +267,13 @@ async function updateFacilityOnCycleCount() {
 
     if (resp?.status === 200) {
       selectedCount.value.facilityId = selectedFacilityId.value;
-      showToast("Updated Cycle Count Successfully");
+      commonUtil.showToast("Updated Cycle Count Successfully");
     } else {
       throw resp;
     }
   } catch (error) {
     console.error("Error Updating Cycle Count: ", error);
-    showToast("Failed to Update Cycle Count");
+    commonUtil.showToast("Failed to Update Cycle Count");
   }
   loader.dismiss();
   closeModal();
@@ -349,7 +348,7 @@ async function getAssignedCycleCounts() {
     }
   } catch (error) {
     console.error("Failed to fetch Cycle Counts: ", error);
-    showToast("Failed to fetch Cycle Counts");
+    commonUtil.showToast("Failed to fetch Cycle Counts");
   }
 }
 
