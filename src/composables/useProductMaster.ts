@@ -4,7 +4,6 @@ import { api, client, commonUtil } from '@common';
 import workerRemoteApi from '@common/core/workerRemoteApi';
 
 import { db } from '@/services/appInitializer';
-import { useAuth } from '@/composables/useAuth';
 import { useProductStore } from '@/stores/productStore';
 import { VarianceLogs } from '@/services/commonDatabase';
 import { DateTime } from 'luxon';

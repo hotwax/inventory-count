@@ -38,7 +38,11 @@ export const useUserProfile = defineStore('userProfile', {
         sort: 'alphabetic',
         threshold: { unit: 'units', value: 2 }
       }
-    } as any
+    } as any,
+    pwaState: {
+      updateExists: false as boolean,
+      registration: null as any
+    },
   }),
 
   persist: true,
@@ -54,6 +58,7 @@ export const useUserProfile = defineStore('userProfile', {
     getListPageFilters: (state) => (segment: string) => {
       return state.uiFilters[segment] || {}
     },
+    getPwaState: (state) => state.pwaState,
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
       const permissions = state.permissions;
@@ -162,6 +167,10 @@ export const useUserProfile = defineStore('userProfile', {
 
     setDeviceId(deviceId: string) {
       this.deviceId = deviceId
+    },
+    updatePwaState(payload: any) {
+      this.pwaState.registration = payload.registration;
+      this.pwaState.updateExists = payload.updateExists;
     },
 
     async login(token: string, omsBaseUrl: string): Promise<string> {

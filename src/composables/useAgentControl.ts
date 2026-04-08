@@ -174,7 +174,7 @@ async function handleClearCache(): Promise<void> {
  */
 async function handleLogoutUser(): Promise<void> {
     try {
-        await useAuth().logout();
+        await useAuth().logout({ isUserUnauthorised: false });
         console.log('[AgentControl] User logged out');
     } catch (error) {
         console.error('[AgentControl] Error logging out user:', error);

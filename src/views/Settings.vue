@@ -80,13 +80,7 @@
         </ion-card>
       </section>
       <hr />
-      <div class="section-header">
-        <h1>
-          {{ translate("App") }}
-          <p class="overline" data-testid="settings-app-version">{{ translate("Version:") + appVersion }}</p>
-        </h1>
-        <p class="overline" data-testid="settings-app-built-time">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
-      </div>
+      <DxpAppVersionInfo/>
       <section>
         <TimeZoneSwitcher/>
         <ion-card data-testid="settings-product-identifier-card">
@@ -246,7 +240,6 @@ import { commonUtil, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuth } from "@/composables/useAuth";
 import router from "@/router";
-import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
@@ -255,9 +248,7 @@ import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
 import { db } from "@/services/appInitializer";
-
-const appVersion = ref("")
-const appInfo = (import.meta.env.VITE_VERSION_INFO ? JSON.parse(import.meta.env.VITE_VERSION_INFO) : {}) as any
+import DxpAppVersionInfo from '@/components/DxpAppVersionInfo.vue';
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
@@ -265,7 +256,6 @@ const productIdentificationPref = computed(() => useProductStore().getProductIde
 const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
 onMounted(async () => {
-  appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
   await useProductStore().prepareProductIdentifierOptions();
   await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
@@ -277,10 +267,6 @@ function logout() {
 
 function goToLaunchpad() {
   window.location.href = `${import.meta.env.VITE_LOGIN_URL}`
-}
-
-function getDateTime(time: any) {
-  return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
 }
 
 const goToOms = (token: string, oms: string) => {
