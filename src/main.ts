@@ -53,7 +53,7 @@ const app = createApp(App)
 initialise({
   cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
   events: {
-    unauthorised: () => useAuth().logout(),
+    unauthorised: useAuth().logout,
     responseError: () => {
       setTimeout(() => loader.dismiss(), 100);
     }

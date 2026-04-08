@@ -22,10 +22,10 @@
               <ion-card-title data-testid="settings-user-full-name">{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!commonUtil.isAppEmbedded()" color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
-          <ion-button :standalone-hidden="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
+          <ion-button :standalone-hidden="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" v-if="!commonUtil.isAppEmbedded()" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -52,7 +52,7 @@
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !useUserProfile().hasPermission('COMMERCEUSER_VIEW')" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
+          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !useUserProfile().hasPermission('COMMERCEUSER_VIEW')" v-if="!commonUtil.isAppEmbedded()" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
             {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
@@ -272,7 +272,7 @@ onMounted(async () => {
 })
 
 function logout() {
-  useAuth().logout();
+  useAuth().logout({ isUserUnauthorised: false });
 }
 
 function goToLaunchpad() {

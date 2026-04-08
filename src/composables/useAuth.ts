@@ -2,7 +2,7 @@ import { ref, computed } from "vue";
 import { DateTime, Settings } from "luxon";
 import { useUserProfile } from "@/stores/userProfileStore";
 
-import { api, translate, cookieHelper, commonUtil, logger, emitter } from "@common";
+import { api, translate, cookieHelper, commonUtil, logger, emitter, useEmbeddedAppStore } from "@common";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductStore } from "@/stores/productStore";
 import { initialize } from "@/services/appInitializer";
@@ -32,11 +32,12 @@ export const useAuth = () => {
 
   const isAuthenticated = computed(() => {
     let isTokenExpired = false;
-    if (token.value.expiration) {
+    const expirationTime = Number(commonUtil.getTokenExpiration());
+    if (expirationTime) {
       const currTime = DateTime.now().toMillis();
-      isTokenExpired = token.value.expiration < currTime;
+      isTokenExpired =  expirationTime < currTime;
     }
-    return !!(token.value.value && !isTokenExpired);
+    return !!(commonUtil.getToken() && !isTokenExpired);
   });
 
   function setOMS(newOms: string) {
@@ -128,17 +129,10 @@ export const useAuth = () => {
       setOMS(payload.oms);
       setToken(payload.token, payload.expirationTime);
 
-      const permissionId = import.meta.env.VITE_PERMISSION_ID;
       const current = await useUserProfile().getProfile(token.value.value, commonUtil.getMaargURL());
       Settings.defaultZone = current.timeZone;
 
-      const serverPermissions = await useUserProfile().loadUserPermissions();
-      if (!serverPermissions.includes(permissionId)) {
-        const permissionError = 'You do not have permission to access the app.';
-        commonUtil.showToast(permissionError);
-        logger.error("error", permissionError)
-        return Promise.reject(new Error())
-      }
+      await useUserProfile().loadUserPermissions();
 
       const isAdminUser = useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
       const facilities = await useProductStore().getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
@@ -177,32 +171,39 @@ export const useAuth = () => {
     });
   }
 
-  async function logout() {
+  async function logout(payload: any) {
     let redirectionUrl = "";
 
-    emitter.emit("presentLoader", { message: "Logging out...", backdropDismiss: false });
-    let resp: any;
+    if (!payload.isUserUnauthorised) {
+      let resp: any;
+      emitter.emit("presentLoader", { message: "Logging out...", backdropDismiss: false });
+      try {
+        resp = await api({
+          url: "logout",
+          method: "get",
+          baseURL: commonUtil.getOmsURL()
+        });
 
-    try {
-      resp = await api({
-        url: "logout",
-        method: "get",
-        baseURL: commonUtil.getOmsURL()
-      });
+        if (resp.data) {
+          resp = resp.data;
+        }
+        
+        if (typeof resp === 'string') {
+          resp = JSON.parse(resp.startsWith('//') ? resp.replace('//', '') : resp);
+        }
+      } catch (err) {
+        console.error('Error parsing data', err);
+      }
 
-      if (resp.data) {
-        resp = resp.data;
+      if (resp?.logoutAuthType == 'SAML2SSO') {
+        redirectionUrl = resp.logoutUrl;
       }
-      
-      if (typeof resp === 'string') {
-        resp = JSON.parse(resp.startsWith('//') ? resp.replace('//', '') : resp);
-      }
-    } catch (err) {
-      console.error('Error parsing data', err);
+      emitter.emit('dismissLoader');
     }
 
-    if (resp?.logoutAuthType == 'SAML2SSO') {
-      redirectionUrl = resp.logoutUrl;
+    if (commonUtil.isAppEmbedded()) {
+      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().shop}&host=${useEmbeddedAppStore().host}&embedded=1`;
+      useEmbeddedAppStore().$reset();
     }
 
     useProductStore().$reset();
@@ -224,7 +225,6 @@ export const useAuth = () => {
       router.push('/login');
     }
 
-    emitter.emit('dismissLoader');
     return redirectionUrl;
   }
   

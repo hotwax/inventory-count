@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, client, commonUtil, logger } from '@common'
+import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useUserProfile } from './userProfileStore'
 import { translate } from '@common'
@@ -217,6 +217,20 @@ export const useProductStore = defineStore('productStore', {
         } else { resp = await api(params); }
         facilities = resp.data
       } catch(error) { return Promise.reject({ code: "error", message: "Failed to fetch facilities", serverResponse: error }) }
+
+      const shopifyLocationId = useEmbeddedAppStore().posContext.locationId;
+      if (commonUtil.isAppEmbedded() && shopifyLocationId) {
+        const facilityId = await this.fetchShopifyShopLocation({
+          shopifyLocationId,
+          pageSize: 1
+        })
+        if (facilityId) {
+          facilities = facilities.filter((facility: any) => facility.facilityId === facilityId);
+        } else {
+          facilities = [];
+        }
+      }
+      this.currentFacility = facilities[0]
       return Promise.resolve(facilities)
     },
 
@@ -504,44 +518,44 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getFacilityPreference(userPrefTypeId: string, userId = '') {
-      if (!this.facilities.length) return
-
-      let preferredFacility = this.facilities[0]
+      if (!this.facilities.length) return;
+      let facilityId: string | undefined;
       try {
-        const userProfileStore = useUserProfile()
-        const preferredFacilityId = await userProfileStore.getUserPreference({
-          token: commonUtil.getToken() as string,
-          baseURL: commonUtil.getMaargURL(),
-          preferenceKey: userPrefTypeId,
-          userId
-        })
-        if (preferredFacilityId) {
-          const facility = this.facilities.find((facility: any) => facility.facilityId === preferredFacilityId)
-          if (facility) preferredFacility = facility
+        const locationId = useEmbeddedAppStore().posContext.locationId;
+        if (commonUtil.isAppEmbedded() && locationId) {
+          facilityId = await this.fetchShopifyShopLocation({
+            shopifyLocationId: locationId,
+            pageSize: 1,
+          });
+          if (!facilityId) {
+            throw new Error("Failed to fetch location information. Please contact the administrator.");
+          }
+        } else {
+          const userProfileStore = useUserProfile();
+          facilityId = await userProfileStore.getUserPreference({
+            token: commonUtil.getToken() as string,
+            baseURL: commonUtil.getMaargURL(),
+            preferenceKey: userPrefTypeId,
+            userId,
+          });
+        }
+        if (facilityId) {
+          const facility = this.facilities.find(f => f.facilityId === facilityId);
+          if (!facility && commonUtil.isAppEmbedded() && locationId) {
+            throw new Error(
+              "User is not associated with this location. Please contact the administrator."
+            );
+          }
+          if (facility) {
+            this.currentFacility = facility;
+            return;
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch facility preference', error)
+        console.error("Failed to resolve facility preference:", error);
       }
-
-      // if(authStore.isEmbedded) {
-      //   const locationId = authStore.posContext.locationId as string
-      //   const facilityId = await this.fetchShopifyShopLocation({
-      //     shopifyLocationId: locationId,
-      //     pageSize: 1
-      //   });
-      //   if(facilityId) {
-      //     const facility = this.facilities.find((facility: any) => facility.facilityId === facilityId);
-      //
-      //     if(!facility) {
-      //       throw "Unable to login. User is not associated with this location. Please contact the administrator."
-      //     }
-      //     preferredFacility = facility
-      //   } else {
-      //     throw "Failed to fetch location information. Please contact the administrator."
-      //   }
-      // }
-
-      this.currentFacility = preferredFacility
+      // In case app is not pos embedded and user has no facility preference on server
+      this.currentFacility = this.facilities[0];
     },
 
     async setFacilityPreference(payload: any) {

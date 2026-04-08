@@ -20,6 +20,8 @@ import { useAuth } from "@/composables/useAuth";
 import Login from "@/views/Login.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
+import ShopifyLogin from "@/views/ShopifyLogin.vue";
+import ShopifyAppInstall from "@/views/ShopifyAppInstall.vue";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -34,14 +36,15 @@ declare module 'vue-router' {
 
 const authGuard = (to: any, from: any, next: any) => {
   if (!useAuth().isAuthenticated.value) {
-    next('/login')
+    if (!commonUtil.isAppEmbedded()) next('/login')
+    else next('/shopify-login')
   } else {
     next()
   }
 };
 
 const loginGuard = (to: any, from: any, next: any) => {
-  if (useAuth().isAuthenticated.value) {
+  if (useAuth().isAuthenticated.value && !to.query?.token && !to.query?.oms) {
     next('/')
   }
   next();
@@ -278,6 +281,16 @@ const routes: Array<RouteRecordRaw> = [
     component: SessionCountDetail,
     beforeEnter: authGuard,
     props: true
+  },
+  {
+    path: '/shopify-app-install',
+    name: 'ShopifyAppInstall',
+    component: ShopifyAppInstall
+  },
+  {
+    path: '/shopify-login',
+    name: 'ShopifyLogin',
+    component: ShopifyLogin
   }
 ];
 
