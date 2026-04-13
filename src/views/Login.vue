@@ -202,7 +202,7 @@ const basicLogin = async () => {
     try {
       await useAuth().login({
         token,
-        oms,
+        oms: omsRedirectionUrl,
         expirationTime
       });
     } catch(error: any) {
