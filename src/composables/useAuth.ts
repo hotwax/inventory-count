@@ -202,7 +202,7 @@ export const useAuth = () => {
     }
 
     if (commonUtil.isAppEmbedded()) {
-      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().shop}&host=${useEmbeddedAppStore().host}&embedded=1`;
+      redirectionUrl = window.location.origin + `/shopify-login?shop=${useEmbeddedAppStore().getShop}&host=${useEmbeddedAppStore().getHost}&embedded=1`;
       useEmbeddedAppStore().$reset();
     }
 

@@ -218,7 +218,7 @@ export const useProductStore = defineStore('productStore', {
         facilities = resp.data
       } catch(error) { return Promise.reject({ code: "error", message: "Failed to fetch facilities", serverResponse: error }) }
 
-      const shopifyLocationId = useEmbeddedAppStore().posContext.locationId;
+      const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
       if (commonUtil.isAppEmbedded() && shopifyLocationId) {
         const facilityId = await this.fetchShopifyShopLocation({
           shopifyLocationId,
@@ -521,7 +521,7 @@ export const useProductStore = defineStore('productStore', {
       if (!this.facilities.length) return;
       let facilityId: string | undefined;
       try {
-        const locationId = useEmbeddedAppStore().posContext.locationId;
+        const locationId = useEmbeddedAppStore().getPosLocationId;
         if (commonUtil.isAppEmbedded() && locationId) {
           facilityId = await this.fetchShopifyShopLocation({
             shopifyLocationId: locationId,

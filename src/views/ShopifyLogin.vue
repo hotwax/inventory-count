@@ -40,9 +40,9 @@ onIonViewDidEnter(async () => {
     
     if (success) {
       await login({
-        token: embeddedAppStore.token.value,
-        oms: embeddedAppStore.oms,
-        expirationTime: embeddedAppStore.token.expiration
+        token: embeddedAppStore.getToken,
+        oms: embeddedAppStore.getOms,
+        expirationTime: embeddedAppStore.getTokenExpiration
       });
 
       router.push("/");
