@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import { api, client, commonUtil } from '@common';
+import { api, useSolrSearch } from '@common';
 import workerRemoteApi from '@common/core/workerRemoteApi';
 
 import { db } from '@/services/appInitializer';
@@ -43,8 +43,6 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const baseURL = commonUtil.getMaargURL();
-
   const batchSize = 250
   const results: Product[] = []
   let index = 0
@@ -59,16 +57,7 @@ const getByIds = async (productIds: string[]): Promise<Product[]> => {
       fieldsToSelect: `productId, productName, parentProductName, primaryProductCategoryName, title, internalName, mainImageUrl, goodIdentifications`
     });
 
-    const resp = await client({
-      url: "inventory-cycle-count/runSolrQuery",
-      method: "POST",
-      baseURL,
-      data: query,
-      headers: {
-        "Authorization": 'Bearer ' + commonUtil.getToken(),
-        'Content-Type': 'application/json'
-      }
-    })
+    const resp = await useSolrSearch().runSolrQuery(query)
 
     if (resp.data?.response?.docs?.length) {
       results.push(...resp.data.response.docs.map(mapApiDocToProduct))
@@ -200,7 +189,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -291,33 +280,15 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = commonUtil.getMaargURL();
-  const token = commonUtil.getToken();
-
-  return await client({
+  return await api({
     url: "poorti/getInventoryAvailableByFacility",
     method: "GET",
-    baseURL,
-    params: query,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
+    params: query
   });
 }
 
 const loadProducts = async (query: any): Promise<any> => {
-  const baseURL = commonUtil.getMaargURL();
-  return await client({
-    url: "inventory-cycle-count/runSolrQuery",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + commonUtil.getToken(),
-      "Content-Type": "application/json",
-    },
-  });
+  return await useSolrSearch().runSolrQuery(query);
 };
 
 const buildProductQuery = (params: any): Record<string, any> => {
@@ -477,22 +448,13 @@ const getInventory = async (
   facilityId: string
 ): Promise<any | null> => {
   if (!productId || !facilityId) return null
-
-  const baseURL = commonUtil.getMaargURL()
-  const token = commonUtil.getToken()
-
-  const resp = await client({
+  const resp = await api({
     url: 'oms/dataDocumentView',
     method: 'POST',
-    baseURL,
     data: {
       dataDocumentId: 'ProductFacilityAndInventoryItem',
       pageSize: 1,
       customParametersMap: { productId, facilityId }
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
     }
   })
 

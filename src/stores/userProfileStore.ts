@@ -9,7 +9,6 @@ export const useUserProfile = defineStore('userProfile', {
     permissions: [] as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
-    currentTimeZoneId: '',
     timeZones: [],
     deviceId: '',
     uiFilters: {
@@ -51,7 +50,7 @@ export const useUserProfile = defineStore('userProfile', {
     getLocale: (state) => state.locale,
     getLocaleOptions: (state) => state.localeOptions,
     getTimeZones: (state) => state.timeZones,
-    getCurrentTimeZone: (state) => state.currentTimeZoneId,
+    getCurrentTimeZone: (state) => state.current.timeZone,
     getUserProfile: (state) => state.current,
     getUserPermissions: (state) => state.permissions,
     getDeviceId: (state) => state.deviceId,
@@ -106,7 +105,7 @@ export const useUserProfile = defineStore('userProfile', {
     },
     async setDxpUserTimeZone(tzId: string) {
       // Do not make any api call if the user clicks the same timeZone again that is already selected
-      if(this.currentTimeZoneId === tzId) {
+      if(this.current.timeZone === tzId) {
         return;
       }
 
@@ -122,7 +121,6 @@ export const useUserProfile = defineStore('userProfile', {
 
         if (resp?.status === 200) {
           this.current.timeZone = tzId;
-          this.currentTimeZoneId = tzId
           Settings.defaultZone = tzId;
         } else {
           throw resp;
@@ -155,7 +153,7 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
     updateTimeZone(tzId: string) {
-      this.currentTimeZoneId = tzId
+      this.current.timeZone = tzId
     },
     getPermissions() {
       return this.permissions;
@@ -221,7 +219,6 @@ export const useUserProfile = defineStore('userProfile', {
         })
         if (commonUtil.hasError(resp)) throw 'Error getting user profile'
         this.current = resp.data
-        this.currentTimeZoneId = this.current.timeZone
         return resp.data
       } catch (error) {
         logger.error('getUserProfile failed', error)
@@ -304,19 +301,7 @@ export const useUserProfile = defineStore('userProfile', {
         }
 
         let resp = {} as any;
-        if(payload.token && payload.baseURL) {
-          params = {
-            ...params,
-            baseURL: payload.baseURL,
-            headers: {
-              "Authorization": `Bearer ${payload.token}`,
-              "Content-Type": "application/json"
-            }
-          }
-          resp = await client(params);
-        } else {
-          resp = await api(params);
-        }
+        resp = await api(params);
 
         const preferenceValue = resp.data[0]?.preferenceValue ? resp.data[0]?.preferenceValue : "";
         let parsedValue;

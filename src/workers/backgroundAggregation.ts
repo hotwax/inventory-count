@@ -90,7 +90,7 @@ async function getById(productId: string, context: any) {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -131,7 +131,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -169,7 +169,7 @@ function ensureProductStored(productId: string | null, context: any) {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'inventory-cycle-count/runSolrQuery',
+        url: 'admin/runSolrQuery',
         method: 'POST',
         data: query
       });

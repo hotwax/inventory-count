@@ -68,12 +68,7 @@ export const useProductStore = defineStore('productStore', {
       let params: any = { url: "oms/productStores", method: "GET", params: { pageSize } }
       let resp = {} as any, stores: Array<any> = []
       try {
-        if(token && baseURL) {
-          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
-          resp = await client(params);
-        } else {
-          resp = await api(params);
-        }
+        resp = await api(params);
         stores = resp.data
       } catch(error) {
         return Promise.reject({ code: "error", message: "Failed to fetch product stores", serverResponse: error })
@@ -85,12 +80,7 @@ export const useProductStore = defineStore('productStore', {
       let params: any = { url: `oms/facilities/${facilityId}/productStores`, method: "GET", params: { pageSize, facilityId } }
       let resp = {} as any, stores: Array<any> = []
       try {
-        if(token && baseURL) {
-          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
-          resp = await client(params);
-        } else {
-          resp = await api(params);
-        }
+        resp = await api(params);
         stores = resp.data.filter((store: any) => !store.thruDate)
       } catch(error) {
         return Promise.reject({ code: "error", message: "Failed to fetch facility associated product stores", serverResponse: error })
@@ -163,10 +153,7 @@ export const useProductStore = defineStore('productStore', {
       let params: any = { url: "oms/groupFacilities", method: "GET", params: { facilityGroupId, pageSize: 500, ...payload } }
       let resp = {} as any;
       try {
-        if(token && baseURL) {
-          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
-          resp = await client(params);
-        } else { resp = await api(params); }
+        resp = await api(params);
         return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
       } catch(error) {
         return Promise.reject({ code: "error", message: "Failed to fetch facilities for group", serverResponse: error })
@@ -177,10 +164,7 @@ export const useProductStore = defineStore('productStore', {
       let params: any = { url: `inventory-cycle-count/user/${partyId}/facilities`, method: "GET", params: { ...payload, pageSize: 500 } }
       let resp = {} as any;
       try {
-        if(token && baseURL) {
-          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
-          resp = await client(params);
-        } else { resp = await api(params); }
+        resp = await api(params);
         return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
       } catch(error) {
         return Promise.reject({ code: "error", message: "Failed to fetch user associated facilities", serverResponse: error })
@@ -211,10 +195,7 @@ export const useProductStore = defineStore('productStore', {
       let params: any = { url: "oms/facilities", method: "GET", params: { pageSize: 500, ...payload, ...filters } }
       let facilities: Array<any> = []
       try {
-        if(token && baseURL) {
-          params = { ...params, baseURL, headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" } }
-          resp = await client(params);
-        } else { resp = await api(params); }
+        resp = await api(params);
         facilities = resp.data
       } catch(error) { return Promise.reject({ code: "error", message: "Failed to fetch facilities", serverResponse: error }) }
 

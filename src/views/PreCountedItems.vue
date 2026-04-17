@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { commonUtil, translate } from '@common'
+import { commonUtil, translate, useSolrSearch } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -361,18 +361,7 @@ async function getProductBySearch(term: string) {
 }
 
 async function getProducts(query: any) {
-  const baseURL = commonUtil.getMaargURL();
-
-  return client({
-    url: 'inventory-cycle-count/runSolrQuery',
-    method: 'POST',
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: `Bearer ${commonUtil.getToken()}`,
-      'Content-Type': 'application/json',
-    },
-  })
+  return useSolrSearch().runSolrQuery(query);
 }
 
 async function addProductInPreCountedItems(product: any) {

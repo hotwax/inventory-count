@@ -2,7 +2,7 @@ import { ref, computed } from "vue";
 import { DateTime, Settings } from "luxon";
 import { useUserProfile } from "@/stores/userProfileStore";
 
-import { api, translate, cookieHelper, commonUtil, logger, emitter, useEmbeddedAppStore } from "@common";
+import { api, translate, cookieHelper, commonUtil, emitter, useEmbeddedAppStore } from "@common";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductStore } from "@/stores/productStore";
 import { initialize } from "@/services/appInitializer";
