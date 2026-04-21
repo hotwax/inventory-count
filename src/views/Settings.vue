@@ -238,7 +238,7 @@ import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, Io
 import { computed, onMounted, ref } from "vue";
 import { commonUtil, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
-import { useAuth } from "@/composables/useAuth";
+import { useAuth } from "@common";
 import router from "@/router";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";

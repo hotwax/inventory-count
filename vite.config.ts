@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => {
     test: {
       globals: true,
       environment: 'jsdom'
+    },
+      server: {
+      port: 8100
     }
   }
 })

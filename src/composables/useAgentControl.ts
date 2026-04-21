@@ -1,6 +1,5 @@
 import { ref } from 'vue';
-import { api, commonUtil } from '@common';
-import { useAuth } from '@/composables/useAuth';
+import { api, commonUtil, useAuth } from '@common';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { db } from '@/services/appInitializer';
 

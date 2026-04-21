@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger } from '@common';
-import { i18n, translate } from '@common'
+import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
+    oms: null as any,
     permissions: [] as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
@@ -82,6 +83,9 @@ export const useUserProfile = defineStore('userProfile', {
   },
 
   actions: {
+    async setOms(oms: any) {
+      this.oms = oms;
+    },
     async setLocale(locale: string) {
       let newLocale, matchingLocale
       newLocale = this.locale
@@ -171,59 +175,80 @@ export const useUserProfile = defineStore('userProfile', {
       this.pwaState.updateExists = payload.updateExists;
     },
 
-    async login(token: string, omsBaseUrl: string): Promise<string> {
-      const baseURL = omsBaseUrl.startsWith('http')
-        ? omsBaseUrl.includes('/rest/s1')
-          ? omsBaseUrl
-          : `${omsBaseUrl}/rest/s1/`
-        : `https://${omsBaseUrl}.hotwax.io/rest/s1/`
-
+    async fetchUserProfile(): Promise<any> {
       try {
-        const resp = await client({
-          url: 'admin/login',
-          method: 'POST',
-          baseURL,
-          params: { token },
-          headers: { 'Content-Type': 'application/json' }
-        })
-        if (!commonUtil.hasError(resp) && (resp.data.api_key || resp.data.token)) {
-          return resp.data.api_key || resp.data.token
+        const resp = await api({
+          url: "admin/user/profile",
+          method: "GET",
+          baseURL: commonUtil.getMaargURL(),
+        });
+        if(commonUtil.hasError(resp)) throw "Error getting user profile";
+
+        this.current = resp.data;
+
+        if (this.current.timeZone) {
+          Settings.defaultZone = this.current.timeZone;
         } else {
-          throw 'Sorry, login failed. Please try again'
+          Settings.defaultZone = 'America/New_York';
         }
-      } catch (err) {
-        logger.error('loginUser failed', err)
-        throw new Error('Sorry, login failed. Please try again')
+
+        useAuth().updateUserId(this.current.userId);
+
+        return Promise.resolve(resp.data)
+      } catch(error: any) {
+        return Promise.reject(error)
       }
     },
 
-    /**
-     * Get user profile with token as Maarg now supports token based auth
-     */
-    async getProfile(token: string, omsBaseUrl: string): Promise<any> {
-      const baseURL = omsBaseUrl.startsWith('http')
-        ? omsBaseUrl.includes('/rest/s1')
-          ? omsBaseUrl
-          : `${omsBaseUrl}/rest/s1/`
-        : `https://${omsBaseUrl}.hotwax.io/rest/s1/`
-
+    async postLogin() {
       try {
-        const resp = await client({
-          url: 'admin/user/profile',
-          method: 'GET',
-          baseURL,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const current = await this.fetchUserProfile()
+        await this.setOms(commonUtil.getOMSInstanceName())
+        
+        const { useProductStore } = await import('./productStore');
+        const productStore = useProductStore();
+        const { useInventoryCountRun } = await import('@/composables/useInventoryCountRun');
+        const { db, initialize } = await import('@/services/appInitializer');
+        
+        await this.loadUserPermissions();
+
+        const isAdminUser = this.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+        const facilities = await productStore.getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
+          parentTypeId: "VIRTUAL_FACILITY",
+          parentTypeId_not: "Y",
+          facilityTypeId: "VIRTUAL_FACILITY",
+          facilityTypeId_not: "Y"
+        });
+        
+        if (!facilities.length) throw new Error("Unable to login. User is not associated with any facility");
+
+        await productStore.getFacilityPreference("SELECTED_FACILITY", current?.userId);
+        const currentFacility: any = productStore.getCurrentFacility;
+        isAdminUser ? await productStore.getDxpEComStores() : await productStore.getDxpEComStoresByFacility(currentFacility?.facilityId);
+        await productStore.getEComStorePreference("SELECTED_BRAND", current?.userId);
+
+        await productStore.getProductIdentifierSettings();
+        await productStore.getSettings(productStore.getCurrentProductStore?.productStoreId);
+        await productStore.prepareProductIdentifierOptions();
+        await useInventoryCountRun().loadStatusDescription();
+
+        try {
+          if(!db) {
+            await initialize();
           }
-        })
-        if (commonUtil.hasError(resp)) throw 'Error getting user profile'
-        this.current = resp.data
-        return resp.data
-      } catch (error) {
-        logger.error('getUserProfile failed', error)
-        throw error
+        } catch(err) {
+          console.error(err)
+        }
+      } catch (error: any) {
+        return Promise.reject(new Error(error));
       }
+    },
+
+    async postLogout() {
+      const { useProductStore } = await import('./productStore');
+      useProductStore().$reset();
+
+      this.$reset();
     },
 
     /**

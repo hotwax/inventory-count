@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { translate, commonUtil } from '@common'
+import { translate, commonUtil, useAuth, ShopifyLogin, ShopifyAppInstall, Login } from '@common'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -16,12 +16,8 @@ import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuth } from "@/composables/useAuth";
-import Login from "@/views/Login.vue";
-import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
-import ShopifyLogin from "@/views/ShopifyLogin.vue";
-import ShopifyAppInstall from "@/views/ShopifyAppInstall.vue";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -41,13 +37,6 @@ const authGuard = (to: any, from: any, next: any) => {
   } else {
     next()
   }
-};
-
-const loginGuard = (to: any, from: any, next: any) => {
-  if (useAuth().isAuthenticated.value && !to.query?.token && !to.query?.oms) {
-    next('/')
-  }
-  next();
 };
 
 const routes: Array<RouteRecordRaw> = [
@@ -180,52 +169,6 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/store-permissions',
-    name: 'StorePermissions',
-    component: StorePermissions,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
-      showInMenu: true
-    }
-  },
-  {
-    path: '/pending-review',
-    name: 'PendingReview',
-    component: PendingReview,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
-      showInMenu: true,
-      title: "Pending review",
-      iosIcon: mailUnreadOutline,
-      mdIcon: mailUnreadOutline,
-    }
-  },
-  {
-    path: '/pending-review/:workEffortId',
-    name: 'PendingReviewDetail',
-    component: PendingReviewDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
-    }
-  },
-  {
-    path: '/closed',
-    name: 'Closed',
-    component: Closed,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
-      showInMenu: true,
-      title: "Closed",
-      iosIcon: receiptOutline,
-      mdIcon: receiptOutline,
-    }
-  },
-  {
     path: '/closed/:workEffortId',
     name: 'ClosedDetail',
     component: ClosedDetail,
@@ -273,7 +216,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: Login,
-    beforeEnter: loginGuard
   },
   {
     path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
@@ -295,7 +237,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 

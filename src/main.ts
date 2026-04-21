@@ -34,10 +34,9 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n, initialise } from '@common'
+import { createDxpI18n, initialiseConfig } from '@common'
 import { loader } from '@/services/uiUtils'
 import localeMessages from '@/locales'
-import { useAuth } from '@/composables/useAuth'
 
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
@@ -50,16 +49,26 @@ const app = createApp(App)
   .use(router)
   .use(i18n)
 
-// Configure remote API client
-initialise({
-  cacheMaxAge: import.meta.env.VITE_CACHE_MAX_AGE ? parseInt(import.meta.env.VITE_CACHE_MAX_AGE) : 0,
-  events: {
-    unauthorised: useAuth().logout,
-    responseError: () => {
-      setTimeout(() => loader.dismiss(), 100);
-    }
-  }
-})
+// Wait to mount app until config is initialized globally
+const userProfileStore = useUserProfile();
+
+initialiseConfig({
+  postLogin: userProfileStore.postLogin,
+  postLogout: userProfileStore.postLogout,
+  get current() {
+    return userProfileStore.getUserProfile;
+  },
+  set current(val) {
+    userProfileStore.setUserProfile(val);
+  },
+  get oms() {
+    return userProfileStore.oms;
+  },
+  set oms(val) {
+    userProfileStore.setOms(val);
+  },
+  router
+});
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {
