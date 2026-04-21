@@ -23,23 +23,22 @@ import '@ionic/vue/css/flex-utils.css';
 import '@ionic/vue/css/display.css';
 
 /* Theme variables */
+import "@common/css/settings.css"
+import "@common/css/theme.css"
 import './theme/variables.css';
-import '@hotwax/apps-theme';
 
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import i18n from './i18n'
-import permissionPlugin from '@/authorization';
-import permissionRules from '@/authorization/Rules';
-import permissionActions from '@/authorization/Actions';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
-import { setPermissions } from '@/authorization';
 import { db, initialize } from '@/services/appInitializer'
+import { createDxpI18n, initialiseConfig } from '@common'
+import { loader } from '@/services/uiUtils'
+import localeMessages from '@/locales'
 
-
+const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
 const app = createApp(App)
   .use(IonicVue, {
@@ -49,12 +48,27 @@ const app = createApp(App)
   .use(pinia)
   .use(router)
   .use(i18n)
-  .use(permissionPlugin, {
-    rules: permissionRules,
-    actions: permissionActions
-  })
 
-setPermissions(useUserProfile().getPermissions());
+// Wait to mount app until config is initialized globally
+const userProfileStore = useUserProfile();
+
+initialiseConfig({
+  postLogin: userProfileStore.postLogin,
+  postLogout: userProfileStore.postLogout,
+  get current() {
+    return userProfileStore.getUserProfile;
+  },
+  set current(val) {
+    userProfileStore.setUserProfile(val);
+  },
+  get oms() {
+    return userProfileStore.oms;
+  },
+  set oms(val) {
+    userProfileStore.setOms(val);
+  },
+  router
+});
 
 // Filters are removed in Vue 3 and global filter introduced https://v3.vuejs.org/guide/migration/filters.html#global-filters
 app.config.globalProperties.$filters = {

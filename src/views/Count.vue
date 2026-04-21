@@ -24,25 +24,25 @@
                 {{ count.workEffortName }}
               </ion-card-title>
               <ion-card-subtitle data-testid="count-card-subtitle">
-                {{ getDateTimeWithOrdinalSuffix(count.createdDate) }}
+                {{ commonUtil.getDateTimeWithOrdinalSuffix(count.createdDate) }}
               </ion-card-subtitle>
             </div>
           </ion-card-header>
           <ion-item lines="none" data-testid="count-due-date-item">
             <ion-label data-testid="count-due-date-label">{{ translate("Due date") }}</ion-label>
             <ion-label slot="end" data-testid="count-due-date-value">
-              <p v-if="count.estimatedCompletionDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
+              <p v-if="count.estimatedCompletionDate">{{ commonUtil.getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
           <ion-item lines="none" data-testid="count-start-date-item">
             <ion-label data-testid="count-start-date-label">{{ translate("Start date") }}</ion-label>
             <ion-label slot="end" data-testid="count-start-date-value">
-              <p v-if="count.estimatedStartDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
+              <p v-if="count.estimatedStartDate">{{ commonUtil.getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT'))" data-testid="count-start-counting-btn">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_PRE_START'))" data-testid="count-start-counting-btn">
             {{ translate("Start counting") }}
           </ion-button>
           <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)" data-testid="count-future-start-warning">
@@ -91,7 +91,7 @@
                     <span data-testid="count-session-locked-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
                     <p data-testid="count-session-locked-msg">{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
+                  <ion-button v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_LOCK_RLS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
                     {{ translate("Force Release") }}
                   </ion-button>
                   <ion-note v-else color="warning" slot="end" data-testid="count-session-locked-note">{{ translate("Locked") }}</ion-note>
@@ -173,17 +173,16 @@
 <script setup>
 import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import { translate, commonUtil } from '@common';
 import { computed, ref } from "vue";
 import router from '@/router';
-import { loader, showToast } from "@/services/uiUtils";
+import { loader } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { hasPermission } from '@/authorization';
+
 import { DateTime } from 'luxon';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { useProductStore } from '@/stores/productStore';
-import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 
 
 const cycleCounts = ref([]);
@@ -258,7 +257,7 @@ async function loadMoreCycleCount(event) {
 
 async function getCycleCounts(reset = false) {
   if (!currentFacility.value?.facilityId) {
-    showToast(translate('No facility is associated with this user'));
+    commonUtil.showToast(translate('No facility is associated with this user'));
     return;
   }
 
@@ -290,7 +289,7 @@ async function getCycleCounts(reset = false) {
     isScrollable.value = scrollable;
   } catch (err) {
     console.error('Error loading cycle counts:', err);
-    showToast(translate('Failed to load cycle counts.'));
+    commonUtil.showToast(translate('Failed to load cycle counts.'));
   } finally {
     isLoading.value = false;
   }
@@ -325,7 +324,7 @@ async function addNewSession() {
   try {
     const selectedCount = cycleCounts.value.find(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (!selectedCount) {
-      showToast("Unable to find selected count.")
+      commonUtil.showToast("Unable to find selected count.")
       return
     }
 
@@ -380,13 +379,13 @@ async function addNewSession() {
     }
 
     if (resp?.status !== 200) {
-      showToast("Something Went Wrong!")
+      commonUtil.showToast("Something Went Wrong!")
       console.error(resp)
       return
     }
 
     // --- Update UI ---
-    showToast("Session added Successfully")
+    commonUtil.showToast("Session added Successfully")
     const index = cycleCounts.value.findIndex(cycleCount => cycleCount.workEffortId === selectedWorkEffortId.value)
     if (index !== -1) {
       if (!cycleCounts.value[index].sessions) cycleCounts.value[index].sessions = []
@@ -408,7 +407,7 @@ async function addNewSession() {
     isAddSessionModalOpen.value = false
   } catch (err) {
     console.error("Error creating session:", err)
-    showToast("Something Went Wrong!")
+    commonUtil.showToast("Something Went Wrong!")
   }
 }
 
@@ -427,7 +426,7 @@ async function markInProgress(workEffortId) {
       actualStartDate: DateTime.now().toMillis()
     });
     if (response?.status === 200) {
-      showToast(translate('Cycle Count is Active'));
+      commonUtil.showToast(translate('Cycle Count is Active'));
       // Find the updated count and navigate to its first session if available
       const updatedCount = cycleCounts.value.find(c => c.workEffortId === workEffortId);
       if (updatedCount && updatedCount.sessions && updatedCount.sessions.length > 0) {
@@ -435,11 +434,11 @@ async function markInProgress(workEffortId) {
         router.push(`/session-count-detail/${workEffortId}/${updatedCount.workEffortPurposeTypeId}/${firstSession.inventoryCountImportId}`);
       }
     } else {
-      showToast(translate('Failed to activate cycle count'));
+      commonUtil.showToast(translate('Failed to activate cycle count'));
     }
   } catch (err) {
     console.error('Error starting count:', err);
-    showToast(translate('Failed to activate cycle count'));
+    commonUtil.showToast(translate('Failed to activate cycle count'));
   } finally {
     // Reset loading state
     loadingWorkEffortId.value = null;
@@ -459,7 +458,7 @@ async function forceRelease(session) {
         text: translate("Force release"),
         handler: async () => {
           try {
-            await loader.present();
+            await loader.present("Releasing Session...");
             const payload = {
               inventoryCountImportId: session.inventoryCountImportId,
               fromDate: session.lock?.fromDate,
@@ -469,16 +468,16 @@ async function forceRelease(session) {
 
             const resp = await useInventoryCountImport().releaseSession(payload)
             if (resp?.status === 200) {
-              showToast(translate('Session lock released successfully.'))
+              commonUtil.showToast(translate('Session lock released successfully.'))
 
               // Remove lock locally so UI refreshes
               session.lock = {}
             } else {
-              showToast(translate('Failed to release session lock.'))
+              commonUtil.showToast(translate('Failed to release session lock.'))
             }
           } catch (err) {
             console.error('Error releasing session lock:', err)
-            showToast(translate('Something went wrong while releasing session.'))
+            commonUtil.showToast(translate('Something went wrong while releasing session.'))
           } finally {
             loader.dismiss();
           }
@@ -503,20 +502,20 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
 
     // If another user is already working, block navigation
     if (activeLock && activeLock.userId && activeLock.userId !== userId) {
-      showToast(`This session is already active for ${activeLock.userId}.`);
+      commonUtil.showToast(`This session is already active for ${activeLock.userId}.`);
       return;
     }
 
     //If same user but different device
     if (activeLock && activeLock.userId === userId && activeLock.deviceId !== deviceId) {
-      showToast("This session is already active on another device.");
+      commonUtil.showToast("This session is already active on another device.");
       return;
     }
     //Safe to navigate
     router.push(`/session-count-detail/${session.workEffortId}/${workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
   } catch (err) {
     console.error('Error checking session lock before navigation:', err);
-    showToast("Failed to check session lock. Please try again.");
+    commonUtil.showToast("Failed to check session lock. Please try again.");
   }
 }
 

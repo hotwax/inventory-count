@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
-import { hasPermission, setPermissions } from '@/authorization';
-import { loader, showToast } from '@/services/uiUtils'
-import { translate } from '@/i18n'
+import { translate, commonUtil, useAuth, ShopifyLogin, ShopifyAppInstall, Login } from '@common'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -18,10 +16,8 @@ import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
 import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
-import { useAuthStore } from "@/stores/authStore";
-import Login from "@/views/Login.vue";
-import { useUserProfile } from "@/stores/userProfileStore";
 import CountProgressReview from "@/views/CountProgressReview.vue";
+import { useUserProfile } from "@/stores/userProfileStore";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -34,41 +30,20 @@ declare module 'vue-router' {
   }
 }
 
-const authGuard = async (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  const appLoginUrl = process.env.VUE_APP_LOGIN_URL;
-  if (!authStore.isAuthenticated) {
-    await loader.present('Authenticating')
-    if (authStore.isEmbedded) {
-      loader.dismiss();
-      next('/login');
-      return;
-    }
-    // TODO use authenticate() when support is there
-    const redirectUrl = window.location.origin + '/login'
-    window.location.href = `${appLoginUrl}?redirectUrl=${redirectUrl}`
-    loader.dismiss()
+const authGuard = (to: any, from: any, next: any) => {
+  if (!useAuth().isAuthenticated.value) {
+    if (!commonUtil.isAppEmbedded()) next('/login')
+    else next('/shopify-login')
+  } else {
+    next()
   }
-  next()
-};
-
-const loginGuard = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore();
-  if (to.query?.embedded === '1') {
-    authStore.$reset();
-  }
-  if (authStore.checkAuthenticated() && !to.query?.token && !to.query?.oms) {
-    next('/')
-  }
-  next();
 };
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
-      setPermissions(useUserProfile().getPermissions());
-      if (hasPermission("APP_ASSIGNED_VIEW")) {
+      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN")) {
         return "/assigned"
       }
       return "/tabs/count"
@@ -86,7 +61,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'count',
         component: () => import('@/views/Count.vue'),
         meta: {
-          permissionId: "APP_COUNT_VIEW"
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
         }
       },
       {
@@ -97,7 +72,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'variance',
         component: () => import('@/views/Variance.vue'),
         meta: {
-          permissionId: "APP_VARIANCE_VIEW"
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG"
         }
       }
     ],
@@ -109,7 +84,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Assigned",
       iosIcon: storefrontOutline,
@@ -122,7 +97,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Closed",
       iosIcon: receiptOutline,
@@ -136,7 +111,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_ASSIGNED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -145,7 +120,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Pending review",
       iosIcon: mailUnreadOutline,
@@ -159,7 +134,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
     }
   },
   {
@@ -168,7 +143,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PreCountedItems,
     props: true,
     meta: {
-      permissionId: "APP_COUNT_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
     }
   },
   {
@@ -176,7 +151,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CountProgressReview,
     props: true,
     meta: {
-      permissionId: "APP_COUNT_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
     }
   },
   {
@@ -185,58 +160,12 @@ const routes: Array<RouteRecordRaw> = [
     component: BulkUpload,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_DRAFT_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Bulk Upload",
       iosIcon: createOutline,
       mdIcon: createOutline
 
-    }
-  },
-  {
-    path: '/store-permissions',
-    name: 'StorePermissions',
-    component: StorePermissions,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW",
-      showInMenu: true
-    }
-  },
-  {
-    path: '/pending-review',
-    name: 'PendingReview',
-    component: PendingReview,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW",
-      showInMenu: true,
-      title: "Pending review",
-      iosIcon: mailUnreadOutline,
-      mdIcon: mailUnreadOutline,
-    }
-  },
-  {
-    path: '/pending-review/:workEffortId',
-    name: 'PendingReviewDetail',
-    component: PendingReviewDetail,
-    beforeEnter: authGuard,
-    props: true,
-    meta: {
-      permissionId: "APP_PENDING_REVIEW_VIEW"
-    }
-  },
-  {
-    path: '/closed',
-    name: 'Closed',
-    component: Closed,
-    beforeEnter: authGuard,
-    meta: {
-      permissionId: "APP_CLOSED_VIEW",
-      showInMenu: true,
-      title: "Closed",
-      iosIcon: receiptOutline,
-      mdIcon: receiptOutline,
     }
   },
   {
@@ -246,7 +175,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -255,7 +184,7 @@ const routes: Array<RouteRecordRaw> = [
     component: ExportHistory,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_CLOSED_VIEW"
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
     }
   },
   {
@@ -264,7 +193,7 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "APP_STORE_PERMISSIONS_VIEW",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
       showInMenu: true,
       title: "Store permissions",
       iosIcon: shieldCheckmarkOutline,
@@ -287,7 +216,6 @@ const routes: Array<RouteRecordRaw> = [
     path: '/login',
     name: 'Login',
     component: Login,
-    beforeEnter: loginGuard
   },
   {
     path: '/session-count-detail/:workEffortId/:inventoryCountTypeId/:inventoryCountImportId',
@@ -295,26 +223,35 @@ const routes: Array<RouteRecordRaw> = [
     component: SessionCountDetail,
     beforeEnter: authGuard,
     props: true
+  },
+  {
+    path: '/shopify-app-install',
+    name: 'ShopifyAppInstall',
+    component: ShopifyAppInstall
+  },
+  {
+    path: '/shopify-login',
+    name: 'ShopifyLogin',
+    component: ShopifyLogin
   }
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 
 router.beforeEach((to, from) => {
-
-  if (to.meta.permissionId && !hasPermission(to.meta.permissionId)) {
+  if (to.meta.permissionId && !useUserProfile().hasPermission(to.meta.permissionId)) {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
-      if (hasPermission("APP_DRAFT_VIEW"))
+      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN"))
         redirectToPath = "/settings";
       else
         redirectToPath = "/tabs/settings";
     } else {
-      showToast(translate('You do not have permission to access this page'));
+      commonUtil.showToast(translate('You do not have permission to access this page'));
     }
     return {
       path: redirectToPath,

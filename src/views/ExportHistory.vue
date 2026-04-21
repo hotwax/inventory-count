@@ -33,7 +33,7 @@
             <span data-testid="export-history-item-user-val">{{ getUserLogin(message) || '-' }}</span>
             <p data-testid="export-history-item-user-label">{{ translate("User Login") }}</p>
           </ion-label>
-          <ion-chip outline :color="getStatusColor(message.statusId)" data-testid="export-history-item-status-chip">
+          <ion-chip outline :color="commonUtil.getStatusColor(message.statusId)" data-testid="export-history-item-status-chip">
             <ion-label data-testid="export-history-item-status-label">{{ getStatusLabel(message.statusId) }}</ion-label>
           </ion-chip>
           <ion-button fill="clear" color="tertiary" :disabled="message.statusId !== 'SmsgSent' || !extractFilename(message)" @click.stop="downloadExport(message)" data-testid="export-history-item-download-btn">
@@ -48,13 +48,9 @@
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
-import { translate } from '@/i18n';
+import { commonUtil, translate, logger } from '@common';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { hasError } from '@/stores/authStore';
-import { showToast } from '@/services/uiUtils';
-import logger from '@/logger';
-import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 import { saveAs } from 'file-saver';
 
 const systemMessages = ref<any[]>([]);
@@ -67,7 +63,7 @@ async function fetchExportHistory() {
   try {
     const resp = await useInventoryCountRun().getExportedCycleCountsSystemMessages({systemMessageTypeId: 'ExportInventoryCounts', orderByField: 'initDate DESC'});
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       const data = resp?.data || {};
       systemMessages.value = Array.isArray(data.systemMessages) ? data.systemMessages : Array.isArray(data) ? data : [];
     } else {
@@ -77,12 +73,12 @@ async function fetchExportHistory() {
   } catch (err) {
     logger.error('Error fetching exported cycle counts system messages', err);
     systemMessages.value = [];
-    showToast(translate('Failed to load export history.'));
+    commonUtil.showToast(translate('Failed to load export history.'));
   }
 }
 
 function formatDate(value: any) {
-  return value ? getDateTimeWithOrdinalSuffix(value) : '-';
+  return value ? commonUtil.getDateTimeWithOrdinalSuffix(value) : '-';
 }
 
 function getUserLogin(message: any) {
@@ -128,12 +124,7 @@ function getStatusLabel(statusId: string) {
   return statusId || '';
 }
 
-function getStatusColor(statusId: string) {
-  if (statusId === 'SmsgSending') return 'medium';
-  if (statusId === 'SmsgSent') return 'success';
-  if (statusId === 'SmsgError') return 'danger';
-  return 'medium';
-}
+
 
 async function downloadExport(message: any) {
   try {
@@ -141,7 +132,7 @@ async function downloadExport(message: any) {
       systemMessageId: message.systemMessageId
     });
 
-    if (!hasError(resp)) {
+    if (!commonUtil.hasError(resp)) {
       const csvData = resp?.data?.csvData || resp.data;
       downloadCsv(csvData, extractFilename(message) || 'CycleCountsExport.csv');
     } else {
@@ -149,7 +140,7 @@ async function downloadExport(message: any) {
     }
   } catch (err) {
     logger.error('Failed to download exported cycle count file', err);
-    showToast(translate('Failed to download exported cycle count file.'));
+    commonUtil.showToast(translate('Failed to download exported cycle count file.'));
   }
 }
 

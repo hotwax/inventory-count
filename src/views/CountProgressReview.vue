@@ -27,17 +27,17 @@
                       {{ useProductStore().getStatusDescription(workEffort?.statusId) }}
                     </ion-badge>
                   </ion-item>
-                  <ion-card-subtitle data-testid="count-progress-created-date">{{ getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
+                  <ion-card-subtitle data-testid="count-progress-created-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(workEffort?.createdDate) || '-' }}</ion-card-subtitle>
                 </div>
               </ion-card-header>
 
               <ion-item lines="none" data-testid="count-progress-due-date-item">
                 <ion-label data-testid="count-progress-due-date-label">{{ translate("Due date") }}</ion-label>
-                <ion-note slot="end" data-testid="count-progress-due-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
+                <ion-note slot="end" data-testid="count-progress-due-date-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(workEffort?.estimatedCompletionDate) || '-' }}</ion-note>
               </ion-item>
               <ion-item lines="none" data-testid="count-progress-start-date-item">
                 <ion-label data-testid="count-progress-start-date-label">{{ translate("Start date") }}</ion-label>
-                <ion-note slot="end" data-testid="count-progress-start-date-val">{{ getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
+                <ion-note slot="end" data-testid="count-progress-start-date-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(workEffort?.estimatedStartDate) || '-' }}</ion-note>
               </ion-item>
 
               <ion-item lines="full" data-testid="count-progress-sessions-header">
@@ -210,7 +210,7 @@
                 <DynamicScroller :items="undirectedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                   <template #default="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                      <ion-accordion :value="item.productId" :key="item.productId" @click="getCountSessions(item.productId)">
                         <div class="list-item count-item-rollup" slot="header" data-testid="count-progress-undirected-header">
                           <ion-item lines="none" data-testid="count-progress-undirected-info-item">
                             <ion-thumbnail slot="start" data-testid="count-progress-undirected-thumbnail">
@@ -284,11 +284,11 @@
                             <p>{{ translate("counted") }}</p>
                           </ion-label>
                           <ion-label data-testid="count-progress-undirected-session-started-stat">
-                            <span data-testid="count-progress-undirected-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                            <span data-testid="count-progress-undirected-session-started-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                             <p>{{ translate("started") }}</p>
                           </ion-label>
                           <ion-label data-testid="count-progress-undirected-session-updated-stat">
-                            <span data-testid="count-progress-undirected-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                            <span data-testid="count-progress-undirected-session-updated-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
                         </div>
@@ -328,7 +328,7 @@
               <DynamicScroller :items="filteredCountedItems" key-field="productId" :buffer="200" class="virtual-list" :min-item-size="120" :emit-update="true">
                 <template #default="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-accordion :key="item.productId" @click="getCountSessions(item.productId)">
+                    <ion-accordion :value="item.productId" :key="item.productId" @click="getCountSessions(item.productId)">
                       <div class="list-item count-item-rollup" slot="header" data-testid="count-progress-counted-header">
                         <ion-item lines="none" data-testid="count-progress-counted-info-item">
                           <ion-thumbnail slot="start" data-testid="count-progress-counted-thumbnail">
@@ -389,11 +389,11 @@
                             <p>{{ translate("counted") }}</p>
                           </ion-label>
                           <ion-label data-testid="count-progress-counted-session-started-stat">
-                            <span data-testid="count-progress-counted-session-started-val">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
+                            <span data-testid="count-progress-counted-session-started-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                             <p>{{ translate("started") }}</p>
                           </ion-label>
                           <ion-label data-testid="count-progress-counted-session-updated-stat">
-                            <span data-testid="count-progress-counted-session-updated-val">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
+                            <span data-testid="count-progress-counted-session-updated-val">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                             <p>{{ translate("last updated") }}</p>
                           </ion-label>
                           <ion-button fill="clear" color="medium" :disabled="isSubmitted"
@@ -559,12 +559,11 @@ import { computed, ref, reactive, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
-import { loader, showToast } from '@/services/uiUtils';
+import { commonUtil, translate } from '@common';
+import { loader } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import defaultImage from "@/assets/images/defaultImage.png";
-import { getDateTimeWithOrdinalSuffix } from '@/services/utils';
 import { useProductMaster } from '@/composables/useProductMaster';
 import ProgressBar from '@/components/ProgressBar.vue';
 import { useProductStore } from '@/stores/productStore';
@@ -572,7 +571,7 @@ import { useUserProfile } from '@/stores/userProfileStore';
 import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { Actions, hasPermission } from '@/authorization';
+
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import router from '@/router'
 
@@ -613,10 +612,10 @@ const isCountStatusBeyondCreated = computed(() => {
 const isSubmitted = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CMPLTD');
 
 const canPreviewItems = computed(() => (
-  isCountStarted.value || isCountStatusBeyondCreated.value || hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
+  isCountStarted.value || isCountStatusBeyondCreated.value || useUserProfile().hasPermission('PREVIEW_COUNT_ITEM OR COMMON_ADMIN OR INV_COUNT_ADMIN')
 ));
 
-const canManageCountProgress = computed(() => hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
+const canManageCountProgress = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_SUBMIT'));
 
 const isMarkOutOfStockDisabled = computed(() => (
   !areSessionsSubmitted.value
@@ -690,7 +689,7 @@ const isSubmitDisabled = computed(() => (
   || !canSubmitForReview.value
 ));
 
-const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
+const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
 
 const isEditImportItemModalOpen = ref(false);
 const selectedProduct = ref<any | null>(null);
@@ -782,7 +781,7 @@ async function saveEditImportItems() {
     closeEditImportItemModal();
   } catch (err) {
     console.error(err);
-    showToast("Failed to update count");
+    commonUtil.showToast("Failed to update count");
   }
   loader.dismiss();
 }
@@ -813,7 +812,7 @@ async function getWorkEffortDetails() {
       console.error("Error fetching total items:", resp);
     }
   } else {
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -895,7 +894,7 @@ async function loadDirectedCount() {
 
   } catch (error) {
     console.error("Error fetching all cycle count records (directed):", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     countedItems.value = [];
     uncountedItems.value =[];
     undirectedItems.value = [];
@@ -924,12 +923,12 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
 
     if (resp?.status === 200) {
       item.decisionOutcomeEnumId = 'SKIPPED';
-      showToast(translate("Successfully skipped product count"))
+      commonUtil.showToast(translate("Successfully skipped product count"))
     } else {
       throw resp.data;
     }
   } catch (error) {
-    showToast(translate("Failed to skip product"));
+    commonUtil.showToast(translate("Failed to skip product"));
     console.error("Error Skipping Product: ", error);
   }
   loader.dismiss();
@@ -937,13 +936,13 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
 
 async function skipAllUndirectedItems() {
   if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to access this page'));
+    commonUtil.showToast(translate('You do not have permission to access this page'));
     return;
   }
   const unskippedItems = undirectedItems.value.filter((item: any) => !item.decisionOutcomeEnumId);
   
   if (unskippedItems.length === 0) {
-    showToast(translate("No undirected items to skip"));
+    commonUtil.showToast(translate("No undirected items to skip"));
     return;
   }
   
@@ -990,11 +989,11 @@ async function skipAllUndirectedItems() {
         isAnyFailed = true;
         console.error("Batch failed:", result);
       }
-      isAnyFailed ? showToast(translate("Something Went Wrong")) : showToast("Successfully skipped all products");
+      isAnyFailed ? commonUtil.showToast(translate("Something Went Wrong")) : commonUtil.showToast("Successfully skipped all products");
     }
   } catch (err) {
     console.error("Error while skipping all undirected items:", err);
-    showToast(translate("Failed to skip all undirected items"));
+    commonUtil.showToast(translate("Failed to skip all undirected items"));
   }
   loader.dismiss();
 }
@@ -1053,7 +1052,7 @@ async function loadHardCount() {
     getUncountedItems();
   } catch (error) {
     console.error("Error fetching all cycle count records (hard):", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     countedItems.value = [];
     uncountedItems.value = [];
   }
@@ -1113,7 +1112,7 @@ async function getUncountedItems() {
     }
   } catch (error) {
     console.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     isLoadingUncounted.value = false;
     uncountedItems.value = [];
   }
@@ -1141,7 +1140,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
   }
 }
 
@@ -1174,7 +1173,7 @@ function handleOutOfStockCheck(ev: any, item: any) {
 
 async function markSelectedItemsOutOfStock() {
   if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to perform this action'));
+    commonUtil.showToast(translate('You do not have permission to perform this action'));
     return;
   }
 
@@ -1183,7 +1182,7 @@ async function markSelectedItemsOutOfStock() {
   );
 
   if (!selectedItems.length) {
-    showToast(translate("No items selected"));
+    commonUtil.showToast(translate("No items selected"));
     return;
   }
 
@@ -1247,10 +1246,10 @@ async function markSelectedItemsOutOfStock() {
     for (const key in outOfStockSelections) {
       delete outOfStockSelections[key];
     }
-    showToast(translate("Marked selected items as out of stock"));
+    commonUtil.showToast(translate("Marked selected items as out of stock"));
   } catch (error) {
     console.error("Error marking selected items out of stock", error);
-    showToast(translate("Failed to update selected items"));
+    commonUtil.showToast(translate("Failed to update selected items"));
   }
 
   loader.dismiss();
@@ -1258,7 +1257,7 @@ async function markSelectedItemsOutOfStock() {
 
 async function markAsCompleted() {
   if (!canManageCountProgress.value) {
-    showToast(translate('You do not have permission to perform this action'));
+    commonUtil.showToast(translate('You do not have permission to perform this action'));
     return;
   }
   
@@ -1270,13 +1269,13 @@ async function markAsCompleted() {
     });
     if (response?.status === 200) {
       workEffort.value.statusId = 'CYCLE_CNT_CMPLTD';
-      showToast(translate('Count submitted for review successfully'));
+      commonUtil.showToast(translate('Count submitted for review successfully'));
     } else {
       throw response;
     }
   } catch (error) {
     console.error("Error Updating Cycle Count: ", error);
-      showToast(translate('Failed to send session for review'));
+      commonUtil.showToast(translate('Failed to send session for review'));
   }
   loader.dismiss();
 }
@@ -1374,7 +1373,7 @@ async function addNewSession() {
 
   } catch (err) {
     console.error(err)
-    showToast("Failed to create session")
+    commonUtil.showToast("Failed to create session")
   }
 }
 

@@ -514,7 +514,7 @@
       </ion-modal>
       <!-- Edit Session Modal -->
       <ion-modal :is-open="isEditNewSessionModalOpen" @did-dismiss="isEditNewSessionModalOpen = false"
-        :presenting-element="pageRef?.$el" :keep-contents-mounted="true" data-testid="session-detail-edit-modal">
+        :presenting-element="(pageRef as any)?.$el" :keep-contents-mounted="true" data-testid="session-detail-edit-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
@@ -581,15 +581,12 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOut
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n';
+import { commonUtil, translate } from '@common';
+import { WorkerFactory } from '@common/core/workerFactory';
 import Image from "@/components/Image.vue";
-import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
-import { wrap } from 'comlink'
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import { useAuthStore } from '@/stores/authStore';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
@@ -599,7 +596,7 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import { Actions, hasPermission } from '@/authorization';
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
 
 const props = defineProps<{
   workEffortId: string;
@@ -654,7 +651,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = computed(() => hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
+const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
@@ -681,6 +678,7 @@ const areas = [
 const selectedArea = ref(areas[0].value);
 
 let aggregationWorker: Worker | null = null
+let aggregationWorkerApi: Remote<InventorySyncWorker> | null = null
 
 const countTypeLabel = computed(() =>
   props.inventoryCountTypeId === 'HARD_COUNT' ? 'Hard Count' : 'Directed Count'
@@ -788,10 +786,9 @@ onIonViewDidEnter(async () => {
       filteredItems.value = []
     })
     // Start the background aggregation worker and schedule periodic aggregation
-    aggregationWorker = new Worker(
-      new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' }
-    )
-
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+    aggregationWorker = bgWorker.worker
+    aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
       const { type, count } = event.data
       if (type === 'aggregationComplete') {
@@ -805,7 +802,7 @@ onIonViewDidEnter(async () => {
       console.error('[Worker Message Error]', err);
     };
     // Run every 10 seconds
-    // const productIdentifications = process.env.VUE_APP_PRDT_IDENT ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT)) : []
+    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     aggregationWorker.postMessage({
@@ -815,11 +812,11 @@ onIonViewDidEnter(async () => {
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
         context: {
-          omsUrl: useAuthStore().getOmsRedirectionUrl,
-          omsInstance: useAuthStore().getOMS,
+          omsUrl: commonUtil.getOmsURL(),
+          omsInstance: commonUtil.getOMSInstanceName(),
           userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: useAuthStore().getBaseUrl,
-          token: useAuthStore().token.value,
+          maargUrl: commonUtil.getMaargURL(),
+          token: commonUtil.getToken(),
           barcodeIdentification: barcodeIdentification,
           inventoryCountTypeId: props.inventoryCountTypeId,
           facilityId: useProductStore().getCurrentFacility.facilityId
@@ -828,7 +825,7 @@ onIonViewDidEnter(async () => {
     })
   } catch (error) {
     console.error(error);
-    showToast("Failed to load session details");
+    commonUtil.showToast("Failed to load session details");
   }
 });
 
@@ -905,9 +902,9 @@ async function updateSessionOnServer() {
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value.countImportName = newCountName.value;
       inventoryCountImport.value.facilityAreaId = selectedArea.value
-      showToast(translate("Session Updated Successfully"))
+      commonUtil.showToast(translate("Session Updated Successfully"))
     } else {
-      showToast(translate("Failed to Update Session Details"));
+      commonUtil.showToast(translate("Failed to Update Session Details"));
     }
   } catch (error) {
     console.error(error);
@@ -944,10 +941,10 @@ async function startSession() {
       useProductMaster().prefetch(productIds)
         .then(() => console.info(`Prefetch ${productIds.length} products hydrated`))
         .catch(err => console.warn('Prefetch Failed:', err))
-    }    showToast('Session ready to start counting');
+    }    commonUtil.showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
-    showToast('Failed to initialize session');
+    commonUtil.showToast('Failed to initialize session');
   }
 
   focusScanner();
@@ -987,7 +984,7 @@ async function loadInventoryItemsWithProgress() {
     }
   } catch (err) {
     console.error('Error loading items with progress', err)
-    showToast('Failed to load session items')
+    commonUtil.showToast('Failed to load session items')
   } finally {
     isLoadingItems.value = false
   }
@@ -1022,7 +1019,7 @@ function handleScan() {
     searchKeyword.value = '';
   } catch (err) {
     console.error(err);
-    showToast('Failed to record scan');
+    commonUtil.showToast('Failed to record scan');
   } finally {
     scannedValue.value = '';
   }
@@ -1038,7 +1035,7 @@ async function handleStartOrFocus() {
       inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     } catch (err) {
       console.error(err);
-      showToast('Failed to start session');
+      commonUtil.showToast('Failed to start session');
       return;
     }
   }
@@ -1075,22 +1072,20 @@ async function handleSessionLock() {
       if (existingLock.userId !== userId || existingLock.deviceId !== currentDeviceId) {
         // Different user → lock session
         sessionLocked.value = true;
-        showToast('This session is locked by another user.');
+        commonUtil.showToast('This session is locked by another user.');
         return;
       }
 
       // Same user + same device → continue, schedule worker
       sessionLocked.value = false;
-      showToast('Existing lock found. Resuming session.');
+      commonUtil.showToast('Existing lock found. Resuming session.');
 
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        worker = new Worker(
-          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
-          { type: 'module' }
-        );
-        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        worker = workerConfig.worker
+        lockWorker = workerConfig.api;
       }
 
       const payload = {
@@ -1098,8 +1093,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken() || '',
         userId,
         deviceId: currentDeviceId
       };
@@ -1113,16 +1108,16 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
           } else if (type === 'lockForceReleased') {
-            showToast('Session lock was force-released by another user.');
+            commonUtil.showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
             if (lockWorker) await lockWorker.stopHeartbeat();
             router.push('/tabs/count');
           } else if (type === 'lockExpired') {
-            showToast('Session lock expired. Please reacquire the lock.');
+            commonUtil.showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
-            showToast('Reacquiring lock...');
+            commonUtil.showToast('Reacquiring lock...');
             await handleSessionLock();
           }
         };
@@ -1143,15 +1138,13 @@ async function handleSessionLock() {
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
-      showToast('Session lock acquired.');
+      commonUtil.showToast('Session lock acquired.');
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        worker = new Worker(
-          new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url),
-          { type: 'module' }
-        );
-        lockWorker = wrap<Remote<LockHeartbeatWorker>>(worker);
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        worker = workerConfig.worker
+        lockWorker = workerConfig.api;
       }
 
       const payload = {
@@ -1159,8 +1152,8 @@ async function handleSessionLock() {
         lock: JSON.parse(JSON.stringify(toRaw(currentLock.value))),
         leaseSeconds: lockLeaseSeconds,
         gracePeriod: lockGracePeriod,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken() || '',
         userId,
         deviceId: currentDeviceId
       };
@@ -1174,16 +1167,16 @@ async function handleSessionLock() {
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
           } else if (type === 'lockForceReleased') {
-            showToast('Session lock was force-released by another user.');
+            commonUtil.showToast('Session lock was force-released by another user.');
             await releaseSessionLock();
             if (lockWorker) await lockWorker.stopHeartbeat();
             router.push('/tabs/count');
           } else if (type === 'lockExpired') {
-            showToast('Session lock expired. Please reacquire the lock.');
+            commonUtil.showToast('Session lock expired. Please reacquire the lock.');
             await releaseSessionLock();
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
-            showToast('Reacquiring lock...');
+            commonUtil.showToast('Reacquiring lock...');
             await handleSessionLock();
           }
         };
@@ -1191,12 +1184,12 @@ async function handleSessionLock() {
       isNewLockAcquired.value = true;
     } else {
       sessionLocked.value = true;
-      showToast('Failed to acquire lock.');
+      commonUtil.showToast('Failed to acquire lock.');
     }
   } catch (err) {
     console.error('Error handling session lock:', err);
     sessionLocked.value = true;
-    showToast('Error while acquiring session lock.');
+    commonUtil.showToast('Error while acquiring session lock.');
   }
 }
 
@@ -1214,14 +1207,14 @@ async function releaseSessionLock() {
 
     const resp = await useInventoryCountImport().releaseSession(payload);
     if (resp?.status === 200) {
-      showToast('Session lock released.');
+      commonUtil.showToast('Session lock released.');
       currentLock.value = null;
     } else {
-      showToast('Failed to release session lock.');
+      commonUtil.showToast('Failed to release session lock.');
     }
   } catch (err) {
     console.error('Error releasing session lock:', err);
-    showToast('Error while releasing session lock.');
+    commonUtil.showToast('Error while releasing session lock.');
   }
 }
 
@@ -1304,18 +1297,22 @@ async function getProducts() {
 }
 
 async function saveMatchProduct() {
+  if (!aggregationWorker || !aggregationWorkerApi) {
+    commonUtil.showToast("Aggregation worker not initialized.")
+    return
+  }
   if (!selectedProductId.value) {
-    showToast("Please select a product to match");
+    commonUtil.showToast("Please select a product to match");
     return;
   }
 
   const existingUndirected = await useInventoryCountImport().getInventoryCountImportByProductId(props.inventoryCountImportId, selectedProductId.value);
 
   const context = {
-    maargUrl: useAuthStore().getBaseUrl,
-    omsInstance: useAuthStore().getOMS,
-    token: useAuthStore().token.value,
-    omsUrl: useAuthStore().getOmsRedirectionUrl,
+    maargUrl: commonUtil.getMaargURL(),
+    omsInstance: commonUtil.getOMSInstanceName(),
+    token: commonUtil.getToken(),
+    omsUrl: commonUtil.getOmsURL(),
     userLoginId: useUserProfile().getUserProfile?.username,
     facilityId: useProductStore().getCurrentFacility.facilityId,
     isRequested: existingUndirected ? existingUndirected.isRequested : props.inventoryCountTypeId === 'DIRECTED_COUNT' ? 'N' : 'Y',
@@ -1325,20 +1322,20 @@ async function saveMatchProduct() {
   const plainContext = JSON.parse(JSON.stringify(context));
 
   try {
-    const result = await inventorySyncWorker.matchProductLocallyAndSync(
+    const result = await aggregationWorkerApi.matchProductLocallyAndSync(
       props.inventoryCountImportId,
       plainItem,
       selectedProductId.value,
       plainContext
     );
     if (result.success) {
-      showToast("Product matched successfully");
+      commonUtil.showToast("Product matched successfully");
       closeMatchModal();
     } else {
-      showToast("Failed to match product");
+      commonUtil.showToast("Failed to match product");
     }
   } catch (err) {
-    showToast("An error occurred while matching product");
+    commonUtil.showToast("An error occurred while matching product");
   }
 }
 
@@ -1349,11 +1346,11 @@ async function finalizeAggregationAndSync() {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
     const context = {
-      omsUrl: useAuthStore().getOmsRedirectionUrl,
-      omsInstance: useAuthStore().getOMS,
+      omsUrl: commonUtil.getOmsURL(),
+      omsInstance: commonUtil.getOMSInstanceName(),
       userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: useAuthStore().getBaseUrl,
-      token: useAuthStore().token.value,
+      maargUrl: commonUtil.getMaargURL(),
+      token: commonUtil.getToken(),
       barcodeIdentification,
       inventoryCountTypeId: props.inventoryCountTypeId,
       facilityId: useProductStore().getCurrentFacility.facilityId
@@ -1382,6 +1379,7 @@ async function unscheduleWorker() {
       console.log('[Session] Terminating background aggregation worker...');
       aggregationWorker.terminate();
       aggregationWorker = null;
+      aggregationWorkerApi = null;
     }
   } catch (err) {
     console.error('[Session] Failed to terminate worker:', err);
@@ -1392,7 +1390,7 @@ async function confirmSubmit() {
   showSubmitAlert.value = false
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast(translate("Unmatched products should be resolved before submission"))
+      commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
       return
     }
     await finalizeAggregationAndSync()
@@ -1403,11 +1401,11 @@ async function confirmSubmit() {
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
-    showToast('Session submitted successfully')
+    commonUtil.showToast('Session submitted successfully')
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
-    showToast('Failed to submit session')
+    commonUtil.showToast('Failed to submit session')
   }
 }
 
@@ -1423,23 +1421,23 @@ async function confirmDiscard() {
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
     if (lockWorker) await lockWorker.stopHeartbeat()
-    showToast('Session discarded')
+    commonUtil.showToast('Session discarded')
     await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
-    showToast('Failed to discard session')
+    commonUtil.showToast('Failed to discard session')
   }
 }
 
 async function reopen() {
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
-    showToast('Session reopened');
+    commonUtil.showToast('Session reopened');
     await handleSessionLock();
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
-    showToast('Failed to reopen session');
+    commonUtil.showToast('Failed to reopen session');
   }
 }
 
@@ -1521,7 +1519,7 @@ function getScanContext(item: any) {
 }
 
 function showTime(date: number) {
-  showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
+  commonUtil.showToast(`Scanned at: ${DateTime.fromMillis(Number(date)).toFormat("dd LLL yyyy tt")}`);
 }
 
 const isImageModalOpen = ref(false)
@@ -1594,10 +1592,10 @@ async function negateSingleScan(item: any) {
       quantity: -Math.abs(item.quantity || 1)
     })
 
-    showToast(translate('Scan removed'))
+    commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    commonUtil.showToast(translate('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -1624,10 +1622,10 @@ async function negateAllScansOfSku(item: any) {
         quantity: -Math.abs(scan.quantity || 1)
       })
     }
-    showToast(translate('Removed all scans for') + ` ${sku}`)
+    commonUtil.showToast(translate('Removed all scans for') + ` ${sku}`)
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scans'))
+    commonUtil.showToast(translate('Failed to remove scans'))
   } finally {
     resetRemoveConfirm()
   }

@@ -1,11 +1,11 @@
 import { CommonDB } from './commonDatabase'
 import { v4 as uuidv4 } from 'uuid'
-import { useAuthStore } from '@/stores/authStore'
 import { useUserProfile } from '@/stores/userProfileStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { createCommonDB } from '@/services/commonDatabase';
 import { useAgentControl } from '@/composables/useAgentControl';
 import { useProductStore } from '@/stores/productStore'
+import { commonUtil } from '../../../../common/utils/commonUtil'
 
 export let db: CommonDB
 let currentOMS: string | null = null
@@ -18,8 +18,7 @@ let currentOMS: string | null = null
  *  - Initialize agent control system
  */
 export async function initialize() {
-  const auth = useAuthStore()
-  const oms = auth.getOMS
+  const oms = commonUtil.getOMSInstanceName();
 
   if (!oms) {
     console.warn("[AppInit] OMS instance not selected yet.")
