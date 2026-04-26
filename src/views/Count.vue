@@ -11,14 +11,14 @@
         <ion-refresher-content refreshing-spinner="circular" data-testid="count-refresher-content"></ion-refresher-content>
       </ion-refresher>
       <template v-if="isLoading">
-        <p class="empty-state" data-testid="count-loading">{{ translate("Fetching cycle counts...") }}</p>
+        <p class="empty-state" data-testid="count-loading">{{ $t("Fetching cycle counts...") }}</p>
       </template>
       <template v-else-if="cycleCounts.length > 0">
         <ion-card v-for="count in cycleCounts" :key="count.workEffortId" :data-testid="'count-card-' + count.workEffortId">
           <ion-card-header>
             <div>
               <ion-label v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" color="warning" class="overline" data-testid="count-badge-hard-count">
-                {{ translate("HARD COUNT") }}
+                {{ $t("HARD COUNT") }}
               </ion-label>
               <ion-card-title data-testid="count-card-title">
                 {{ count.workEffortName }}
@@ -29,48 +29,48 @@
             </div>
           </ion-card-header>
           <ion-item lines="none" data-testid="count-due-date-item">
-            <ion-label data-testid="count-due-date-label">{{ translate("Due date") }}</ion-label>
+            <ion-label data-testid="count-due-date-label">{{ $t("Due date") }}</ion-label>
             <ion-label slot="end" data-testid="count-due-date-value">
               <p v-if="count.estimatedCompletionDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedCompletionDate) }}</p>
-              <p v-else>{{ translate("Not set") }}</p>
+              <p v-else>{{ $t("Not set") }}</p>
             </ion-label>
           </ion-item>
           <ion-item lines="none" data-testid="count-start-date-item">
-            <ion-label data-testid="count-start-date-label">{{ translate("Start date") }}</ion-label>
+            <ion-label data-testid="count-start-date-label">{{ $t("Start date") }}</ion-label>
             <ion-label slot="end" data-testid="count-start-date-value">
               <p v-if="count.estimatedStartDate">{{ getDateTimeWithOrdinalSuffix(count.estimatedStartDate) }}</p>
-              <p v-else>{{ translate("Not set") }}</p>
+              <p v-else>{{ $t("Not set") }}</p>
             </ion-label>
           </ion-item>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !hasPermission('APP_START_FUTURE_COUNT'))" data-testid="count-start-counting-btn">
-            {{ translate("Start counting") }}
+            {{ $t("Start counting") }}
           </ion-button>
           <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)" data-testid="count-future-start-warning">
             <ion-note color="warning">
-              {{ translate("This count is scheduled to start") }} {{ getTimeUntil(count.estimatedStartDate) }}
+              {{ $t("This count is scheduled to start") }} {{ getTimeUntil(count.estimatedStartDate) }}
             </ion-note>
           </div>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-preview-btn">
-            {{ translate("Preview count") }}
+            {{ $t("Preview count") }}
           </ion-button>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-review-btn">
-            {{ translate("Review progress") }}
+            {{ $t("Review progress") }}
           </ion-button>
           
           <ion-list data-testid="count-session-list">
             <ion-list-header data-testid="count-session-header">
               <ion-label data-testid="count-session-header-label">
-                {{ translate("Sessions") }}
+                {{ $t("Sessions") }}
               </ion-label>
 
               <ion-button v-if="count.sessions?.length" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" fill="clear" size="small" @click="showAddNewSessionModal(count.workEffortId)" data-testid="count-new-session-header-btn">
                 <ion-icon slot="start" :icon="addCircleOutline"></ion-icon>
-                {{ translate("New session") }}
+                {{ $t("New session") }}
               </ion-button>
             </ion-list-header>
             <ion-button v-if="count.sessions?.length === 0" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" expand="block" class="ion-margin-horizontal" @click="showAddNewSessionModal(count.workEffortId)" data-testid="count-start-new-session-btn">
               <ion-label>
-                {{ translate("Start new session") }}
+                {{ $t("Start new session") }}
               </ion-label>
             </ion-button>
             <!-- TODO: Need to show the session on this device seperately from the other sessions -->
@@ -78,7 +78,7 @@
                 <ion-item v-if="Object.keys(session.lock || {}).length === 0" :detail="true" :button="true" :disabled="count.statusId !== 'CYCLE_CNT_IN_PRGS'" @click="checkAndNavigateToSession(session, count.workEffortPurposeTypeId)" :data-testid="'count-session-item-' + session.inventoryCountImportId">
                   <ion-label data-testid="count-session-item-label">
                     <span data-testid="count-session-name-text">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
-                    <p data-testid="count-session-user-text">{{ translate("created by") }} {{ session.uploadedByUserLogin }}</p>
+                    <p data-testid="count-session-user-text">{{ $t("created by") }} {{ session.uploadedByUserLogin }}</p>
                   </ion-label>
                   <ion-note slot="end" data-testid="count-session-status-note">
                     {{ getSessionStatusDescription(session.statusId) }}
@@ -89,19 +89,19 @@
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username" :data-testid="'count-session-item-locked-' + session.inventoryCountImportId">
                   <ion-label data-testid="count-session-locked-label">
                     <span data-testid="count-session-locked-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
-                    <p data-testid="count-session-locked-msg">{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
+                    <p data-testid="count-session-locked-msg">{{ $t("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
                   <ion-button v-if="hasPermission('APP_SESSION_LOCK_RELEASE')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
-                    {{ translate("Force Release") }}
+                    {{ $t("Force Release") }}
                   </ion-button>
-                  <ion-note v-else color="warning" slot="end" data-testid="count-session-locked-note">{{ translate("Locked") }}</ion-note>
+                  <ion-note v-else color="warning" slot="end" data-testid="count-session-locked-note">{{ $t("Locked") }}</ion-note>
                 </ion-item>
 
               <!-- Locked by same user, same device -->
               <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`" :data-testid="'count-session-item-active-' + session.inventoryCountImportId">
                 <ion-label data-testid="count-session-active-label">
                   <span data-testid="count-session-active-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
-                  <p data-testid="count-session-active-msg">{{ translate("Session already active for this device") }}</p>
+                  <p data-testid="count-session-active-msg">{{ $t("Session already active for this device") }}</p>
                 </ion-label>
                 <ion-note slot="end" data-testid="count-session-active-status-note">{{ getSessionStatusDescription(session.statusId) }}</ion-note>
               </ion-item>
@@ -110,10 +110,10 @@
                 <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId" :data-testid="'count-session-item-active-other-device-' + session.inventoryCountImportId">
                   <ion-label data-testid="count-session-active-other-device-label">
                     <span data-testid="count-session-active-other-device-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
-                    <p data-testid="count-session-active-other-device-msg">{{ translate("Session already active on another device") }}</p>
+                    <p data-testid="count-session-active-other-device-msg">{{ $t("Session already active on another device") }}</p>
                   </ion-label>
                   <ion-button color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-other-device-btn-' + session.inventoryCountImportId">
-                    {{ translate("Force Release") }}
+                    {{ $t("Force Release") }}
                   </ion-button>
                 </ion-item>
               </ion-item-group>
@@ -124,8 +124,8 @@
       </template>
       <div v-else class="empty-state" data-testid="count-empty-state">
         <img src="/img/empty-state/perform-cycle-count.png" alt="Performed cycle count"/>
-        <h2 data-testid="count-empty-state-header">{{ translate("All caught up!") }}</h2>
-        <p data-testid="count-empty-state-msg">{{ translate("You have no cycle counts assigned to you right now.") }}</p>
+        <h2 data-testid="count-empty-state-header">{{ $t("All caught up!") }}</h2>
+        <p data-testid="count-empty-state-msg">{{ $t("You have no cycle counts assigned to you right now.") }}</p>
       </div>
       <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :presenting-element="pageRef?.$el" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-new-session-modal">
           <ion-header>
@@ -135,18 +135,18 @@
                   <ion-icon :icon="closeOutline" slot="icon-only" />
                 </ion-button>
               </ion-buttons>
-              <ion-title data-testid="count-new-session-title">{{ translate("New session") }}</ion-title>
+              <ion-title data-testid="count-new-session-title">{{ $t("New session") }}</ion-title>
             </ion-toolbar>
           </ion-header>
           <ion-content>
             <ion-item data-testid="count-new-session-name-item">
-              <ion-label position="stacked" data-testid="count-new-session-name-label">{{ translate("Name") }}</ion-label>
+              <ion-label position="stacked" data-testid="count-new-session-name-label">{{ $t("Name") }}</ion-label>
               <ion-input v-model="countName" placeholder="category, section, or person" data-testid="count-new-session-name-input"></ion-input>
-              <ion-note slot="helper" data-testid="count-new-session-name-helper">{{ translate("Add a name to help identify what inventory is counted in this session") }}</ion-note>
+              <ion-note slot="helper" data-testid="count-new-session-name-helper">{{ $t("Add a name to help identify what inventory is counted in this session") }}</ion-note>
             </ion-item>
 
             <ion-list data-testid="count-new-session-area-list">
-              <ion-list-header data-testid="count-new-session-area-header">{{ translate("Area") }}</ion-list-header>
+              <ion-list-header data-testid="count-new-session-area-header">{{ $t("Area") }}</ion-list-header>
 
               <ion-radio-group v-model="selectedArea" data-testid="count-new-session-area-radio-group">
                 <ion-item v-for="area in areas" :key="area.value" :data-testid="'count-new-session-area-item-' + area.value">
@@ -164,7 +164,7 @@
         </ion-modal>
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCount($event)" data-testid="count-infinite-scroll">
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" />
       </ion-infinite-scroll>
     </ion-content>
   </ion-page>
@@ -173,7 +173,7 @@
 <script setup>
 import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { computed, ref } from "vue";
 import router from '@/router';
 import { loader, showToast } from "@/services/uiUtils";
@@ -258,7 +258,7 @@ async function loadMoreCycleCount(event) {
 
 async function getCycleCounts(reset = false) {
   if (!currentFacility.value?.facilityId) {
-    showToast(translate('No facility is associated with this user'));
+    showToast(i18n.global.t('No facility is associated with this user'));
     return;
   }
 
@@ -290,7 +290,7 @@ async function getCycleCounts(reset = false) {
     isScrollable.value = scrollable;
   } catch (err) {
     console.error('Error loading cycle counts:', err);
-    showToast(translate('Failed to load cycle counts.'));
+    showToast(i18n.global.t('Failed to load cycle counts.'));
   } finally {
     isLoading.value = false;
   }
@@ -427,7 +427,7 @@ async function markInProgress(workEffortId) {
       actualStartDate: DateTime.now().toMillis()
     });
     if (response?.status === 200) {
-      showToast(translate('Cycle Count is Active'));
+      showToast(i18n.global.t('Cycle Count is Active'));
       // Find the updated count and navigate to its first session if available
       const updatedCount = cycleCounts.value.find(c => c.workEffortId === workEffortId);
       if (updatedCount && updatedCount.sessions && updatedCount.sessions.length > 0) {
@@ -435,11 +435,11 @@ async function markInProgress(workEffortId) {
         router.push(`/session-count-detail/${workEffortId}/${updatedCount.workEffortPurposeTypeId}/${firstSession.inventoryCountImportId}`);
       }
     } else {
-      showToast(translate('Failed to activate cycle count'));
+      showToast(i18n.global.t('Failed to activate cycle count'));
     }
   } catch (err) {
     console.error('Error starting count:', err);
-    showToast(translate('Failed to activate cycle count'));
+    showToast(i18n.global.t('Failed to activate cycle count'));
   } finally {
     // Reset loading state
     loadingWorkEffortId.value = null;
@@ -448,15 +448,15 @@ async function markInProgress(workEffortId) {
 
 async function forceRelease(session) {
   const alert = await alertController.create({
-    header: translate("Force release session"),
-    message: translate("Make sure that this session is closed on all other devices before force releasing to avoid discrepancies in counts."),
+    header: $t("Force release session"),
+    message: $t("Make sure that this session is closed on all other devices before force releasing to avoid discrepancies in counts."),
     buttons: [
       {
-        text: translate("Cancel"),
+        text: $t("Cancel"),
         role: "cancel",
       },
       {
-        text: translate("Force release"),
+        text: $t("Force release"),
         handler: async () => {
           try {
             await loader.present();
@@ -469,16 +469,16 @@ async function forceRelease(session) {
 
             const resp = await useInventoryCountImport().releaseSession(payload)
             if (resp?.status === 200) {
-              showToast(translate('Session lock released successfully.'))
+              showToast(i18n.global.t('Session lock released successfully.'))
 
               // Remove lock locally so UI refreshes
               session.lock = {}
             } else {
-              showToast(translate('Failed to release session lock.'))
+              showToast(i18n.global.t('Failed to release session lock.'))
             }
           } catch (err) {
             console.error('Error releasing session lock:', err)
-            showToast(translate('Something went wrong while releasing session.'))
+            showToast(i18n.global.t('Something went wrong while releasing session.'))
           } finally {
             loader.dismiss();
           }

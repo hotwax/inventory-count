@@ -25,7 +25,7 @@ import { arrowBackOutline, warningOutline } from 'ionicons/icons'
 import { ref, onUnmounted, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
-import { translate } from "@/i18n";
+import i18n from "@/i18n";
 import { createShopifyAppBridge, getSessionTokenFromShopify } from "@/services/utils";
 import api from "@/services/RemoteAPI";
 
@@ -65,7 +65,7 @@ onMounted(async () => {
 const presentLoader = async (message: string) => {
   if (!loader) {
     loader = await loadingController.create({
-      message: translate(message),
+      message: $t(message),
       translucent: true,
       backdropDismiss: false,
     });

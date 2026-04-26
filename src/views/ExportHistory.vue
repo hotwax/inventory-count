@@ -5,13 +5,13 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/closed" data-testid="export-history-back-btn"></ion-back-button>
         </ion-buttons>
-        <ion-title data-testid="export-history-page-title">{{ translate("Export history") }}</ion-title>
+        <ion-title data-testid="export-history-page-title">{{ $t("Export history") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-list data-testid="export-history-list">
         <ion-list-header data-testid="export-history-header">
-          <ion-label data-testid="export-history-header-label">{{ translate("Latest exports are at the top") }}</ion-label>
+          <ion-label data-testid="export-history-header-label">{{ $t("Latest exports are at the top") }}</ion-label>
         </ion-list-header>
         <div class="list-item" v-for="message in systemMessages" :key="message.systemMessageId" :data-testid="'export-history-item-' + message.systemMessageId">
           <ion-item lines="none" data-testid="export-history-item-header">
@@ -23,15 +23,15 @@
           </ion-item>
           <ion-label data-testid="export-history-item-created-date">
             <span data-testid="export-history-item-created-date-val">{{ formatDate(message.initDate) }}</span>
-            <p data-testid="export-history-item-created-date-label">{{ translate("Created Date") }}</p>
+            <p data-testid="export-history-item-created-date-label">{{ $t("Created Date") }}</p>
           </ion-label>
           <ion-label data-testid="export-history-item-exported-date">
             <span data-testid="export-history-item-exported-date-val">{{ formatDate(message.processedDate) }}</span>
-            <p data-testid="export-history-item-exported-date-label">{{ translate("Exported Date") }}</p>
+            <p data-testid="export-history-item-exported-date-label">{{ $t("Exported Date") }}</p>
           </ion-label>
           <ion-label data-testid="export-history-item-user">
             <span data-testid="export-history-item-user-val">{{ getUserLogin(message) || '-' }}</span>
-            <p data-testid="export-history-item-user-label">{{ translate("User Login") }}</p>
+            <p data-testid="export-history-item-user-label">{{ $t("User Login") }}</p>
           </ion-label>
           <ion-chip outline :color="getStatusColor(message.statusId)" data-testid="export-history-item-status-chip">
             <ion-label data-testid="export-history-item-status-label">{{ getStatusLabel(message.statusId) }}</ion-label>
@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonButton, IonList, IonItem, IonLabel, IonIcon, IonChip, IonListHeader, onIonViewDidEnter } from '@ionic/vue';
 import { ref } from 'vue';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { documentOutline, downloadOutline } from 'ionicons/icons';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { hasError } from '@/stores/authStore';
@@ -77,7 +77,7 @@ async function fetchExportHistory() {
   } catch (err) {
     logger.error('Error fetching exported cycle counts system messages', err);
     systemMessages.value = [];
-    showToast(translate('Failed to load export history.'));
+    showToast(i18n.global.t('Failed to load export history.'));
   }
 }
 
@@ -122,9 +122,9 @@ function extractFilename(message: any) {
 }
 
 function getStatusLabel(statusId: string) {
-  if (statusId === 'SmsgSending' || statusId === 'SmsgProduced') return translate('Exporting');
-  if (statusId === 'SmsgSent') return translate('Generated');
-  if (statusId === 'SmsgError') return translate('Error');
+  if (statusId === 'SmsgSending' || statusId === 'SmsgProduced') return i18n.global.t('Exporting');
+  if (statusId === 'SmsgSent') return i18n.global.t('Generated');
+  if (statusId === 'SmsgError') return i18n.global.t('Error');
   return statusId || '';
 }
 
@@ -149,7 +149,7 @@ async function downloadExport(message: any) {
     }
   } catch (err) {
     logger.error('Failed to download exported cycle count file', err);
-    showToast(translate('Failed to download exported cycle count file.'));
+    showToast(i18n.global.t('Failed to download exported cycle count file.'));
   }
 }
 

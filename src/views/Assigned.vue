@@ -3,7 +3,7 @@
     <!-- <Filters menu-id="assigned-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
-        <ion-title data-testid="assigned-page-title">{{ translate("Assigned")}}</ion-title>
+        <ion-title data-testid="assigned-page-title">{{ $t("Assigned")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="assigned-filter" data-testid="assigned-filter-menu-btn">
             <ion-icon :icon="filterOutline" />
@@ -18,31 +18,31 @@
           data-testid="assigned-search-input"
         />
         <ion-item>
-          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All" data-testid="assigned-status-select">
-            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+          <ion-select :label="$t('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All" data-testid="assigned-status-select">
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ $t(option.label) }}</ion-select-option>
           </ion-select> 
         </ion-item>
         <ion-item>
-          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="assigned-type-select">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+          <ion-select :label="$t('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="assigned-type-select">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ $t(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
-          <ion-label>{{ translate('Facility') }}</ion-label>
+          <ion-label>{{ $t('Facility') }}</ion-label>
           <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true" data-testid="assigned-facility-modal-btn">
             <ion-label>{{ facilityChipLabel }}</ion-label>
           </ion-chip>
         </ion-item>
       </div>
       <p v-if="!cycleCounts?.length" class="empty-state" data-testid="assigned-empty-state">
-        {{ translate("No cycle counts found") }}
+        {{ $t("No cycle counts found") }}
       </p>
       <ion-list v-else data-testid="assigned-list">
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/assigned/${count.workEffortId}`)" :data-testid="'assigned-item-' + count.workEffortId">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="assigned-item-label">
-              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="assigned-item-type-badge">{{ translate("HARD COUNT") }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="assigned-item-type-badge">{{ $t("HARD COUNT") }}</p>
               <h2 data-testid="assigned-item-name">{{ count.workEffortName }}</h2>
               <p data-testid="assigned-item-id">{{ count.workEffortId }}</p>
             </ion-label>
@@ -53,17 +53,17 @@
           </ion-chip>
           <ion-button fill="outline" size="small" v-else @click="openFacilityModal(count, $event)" data-testid="assigned-item-assign-facility-btn">
             <ion-icon :icon="addOutline" slot="start"></ion-icon>
-            {{ translate("Assign Facility") }}
+            {{ $t("Assign Facility") }}
           </ion-button>
 
           <ion-label data-testid="assigned-item-created-date">
             {{ getDateWithOrdinalSuffix(count.createdDate) }}
-            <p>{{ translate("Created Date") }}</p>
+            <p>{{ $t("Created Date") }}</p>
           </ion-label>
       
           <ion-label data-testid="assigned-item-due-date">
             {{ getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
-            <p>{{ translate("due date") }}</p>
+            <p>{{ $t("due date") }}</p>
           </ion-label>
           
           <ion-item lines="none">
@@ -73,7 +73,7 @@
       </ion-list>
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)" data-testid="assigned-infinite-scroll">
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" />
       </ion-infinite-scroll>
       <FacilityFilterModal
         :is-open="isFacilityFilterModalOpen"
@@ -91,11 +91,11 @@
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title data-testid="assigned-facility-modal-title">{{ translate("Select Facility") }}</ion-title>
+            <ion-title data-testid="assigned-facility-modal-title">{{ $t("Select Facility") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
+          <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search facilities')"
             v-model="facilityQueryString" @ionInput="findFacility($event)"
             @keydown="preventSpecialCharacters($event)" data-testid="assigned-facility-modal-search-input" />
           <ion-radio-group v-model="selectedFacilityId">
@@ -104,12 +104,12 @@
               <div class="empty-state" v-if="isLoading" data-testid="assigned-facility-modal-loading">
                 <ion-item lines="none">
                   <ion-spinner color="secondary" name="crescent" slot="start" />
-                  {{ translate("Fetching facilities") }}
+                  {{ $t("Fetching facilities") }}
                 </ion-item>
               </div>
               <!-- Empty state -->
               <div class="empty-state" v-else-if="!filteredFacilities.length" data-testid="assigned-facility-modal-empty-state">
-                <p>{{ translate("No facilities found") }}</p>
+                <p>{{ $t("No facilities found") }}</p>
               </div>
               <div v-else>
                 <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'assigned-facility-modal-item-' + facility.facilityId">
@@ -139,7 +139,7 @@
 import { computed, ref } from "vue";
 import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { getStatusColor, loader, showToast, getFacilityChipLabel } from "@/services/uiUtils";

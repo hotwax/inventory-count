@@ -3,7 +3,7 @@ import { client } from '@/services/RemoteAPI';
 import { hasError } from '@/stores/authStore'
 import { showToast } from '@/services/uiUtils';
 import logger from '@/logger'
-import i18n, { translate } from '@/i18n'
+import i18n from '@/i18n'
 import { prepareAppPermissions } from '@/authorization';
 import { getAvailableTimeZones, setUserTimeZone } from '@/adapter';
 import { DateTime, Settings } from 'luxon';
@@ -103,11 +103,11 @@ export const useUserProfile = defineStore('userProfile', {
         } else {
           throw resp;
         }
-        showToast(translate("Time zone updated successfully"));
+        showToast(i18n.global.t("Time zone updated successfully"));
         return Promise.resolve(tzId)
       } catch(err) {
         console.error('Error', err)
-        showToast(translate("Failed to update time zone"));
+        showToast(i18n.global.t("Failed to update time zone"));
         return Promise.reject('')
       }
     },

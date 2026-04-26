@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title data-testid="store-permissions-page-title">{{ translate("Store permissions") }}</ion-title>
+        <ion-title data-testid="store-permissions-page-title">{{ $t("Store permissions") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -12,7 +12,7 @@
           <ion-item button detail lines="full" :router-link="'/tabs/count'" data-testid="store-permissions-view-item">
             <ion-icon size="medium" :icon="storefrontOutline" class="ion-margin-end"></ion-icon>
             <ion-label data-testid="store-permissions-view-label">
-              {{ translate("Store View") }}
+              {{ $t("Store View") }}
             </ion-label>
           </ion-item>
         </ion-card>
@@ -21,27 +21,27 @@
         <ion-card v-for="permission in permissionCards" :key="permission.id" :data-testid="'store-permissions-card-' + permission.id">
           <ion-card-header :data-testid="'store-permissions-header-' + permission.id">
             <ion-card-title :data-testid="'store-permissions-title-' + permission.id">
-              {{ translate(permission.title) }}
+              {{ $t(permission.title) }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content :data-testid="'store-permissions-content-' + permission.id">
-            <p :data-testid="'store-permissions-desc-' + permission.id">{{ translate(permission.description) }}</p>
+            <p :data-testid="'store-permissions-desc-' + permission.id">{{ $t(permission.description) }}</p>
           </ion-card-content>
           <ion-list :data-testid="'store-permissions-list-' + permission.id">
             <ion-item-divider color="light" :data-testid="'store-permissions-divider-' + permission.id">
-              <ion-label :data-testid="'store-permissions-divider-label-' + permission.id">{{ translate('Security groups') }}</ion-label>
+              <ion-label :data-testid="'store-permissions-divider-label-' + permission.id">{{ $t('Security groups') }}</ion-label>
               <ion-button v-if="(activeGroupsByPermission[permission.id] || []).length" slot="end" fill="clear" size="small" @click="openSelectGroupsModal(permission)" :data-testid="'store-permissions-add-btn-small-' + permission.id">
-                {{ translate('Add') }}
+                {{ $t('Add') }}
                 <ion-icon slot="end" :icon="addCircleOutline"></ion-icon>
               </ion-button>
             </ion-item-divider>
             <ion-button v-if="!(activeGroupsByPermission[permission.id] || []).length" fill="outline" expand="block" class="ion-margin" @click="openSelectGroupsModal(permission)" :data-testid="'store-permissions-add-group-btn-' + permission.id">
               <ion-icon slot="start" :icon="addOutline"></ion-icon>
-              {{ translate('Add security group') }}
+              {{ $t('Add security group') }}
             </ion-button>
 
             <ion-item button @click="openHistory(permission)" :data-testid="'store-permissions-history-item-' + permission.id">
-              <ion-label :data-testid="'store-permissions-history-label-' + permission.id">{{ translate('View history') }}</ion-label>
+              <ion-label :data-testid="'store-permissions-history-label-' + permission.id">{{ $t('View history') }}</ion-label>
               <ion-icon slot="end" :icon="timeOutline"></ion-icon>
             </ion-item>
 
@@ -68,7 +68,7 @@
               </ion-button>
             </ion-buttons>
             <ion-title data-testid="store-permissions-history-modal-title">
-              {{ translate("Security group history") }}
+              {{ $t("Security group history") }}
               <template v-if="historyPermissionTitle">
                 - {{ historyPermissionTitle }}
               </template>
@@ -87,13 +87,13 @@
                 {{ getDateTime(record.fromDate) }}
                 -
                 {{
-                  record.thruDate ? getDateTime(record.thruDate) : translate("Current")
+                  record.thruDate ? getDateTime(record.thruDate) : $t("Current")
                 }}
               </ion-note>
             </ion-item>
           </ion-list>
           <div v-else class="empty-state" data-testid="store-permissions-history-empty-state">
-            <p>{{ translate("No history found.") }}</p>
+            <p>{{ $t("No history found.") }}</p>
           </div>
         </ion-content>
       </ion-modal>
@@ -107,12 +107,12 @@
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title data-testid="store-permissions-select-groups-modal-title">{{ translate("Select security groups") }}</ion-title>
+            <ion-title data-testid="store-permissions-select-groups-modal-title">{{ $t("Select security groups") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
         <ion-content data-testid="store-permissions-select-groups-modal-content">
-          <ion-searchbar :placeholder="translate('Search security groups')" v-model="modalQuery" data-testid="store-permissions-select-groups-modal-searchbar"/>
+          <ion-searchbar :placeholder="$t('Search security groups')" v-model="modalQuery" data-testid="store-permissions-select-groups-modal-searchbar"/>
 
           <template v-if="filteredSecurityGroups.length">
             <ion-list data-testid="store-permissions-select-groups-modal-list">
@@ -128,7 +128,7 @@
           </template>
 
           <div v-else class="empty-state" data-testid="store-permissions-select-groups-modal-empty-state">
-            <p>{{ translate("No security groups found") }}</p>
+            <p>{{ $t("No security groups found") }}</p>
           </div>
 
           <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="store-permissions-select-groups-modal-fab">
@@ -152,11 +152,11 @@
             <ion-item data-testid="store-permissions-actions-popover-date-item">
               <ion-label data-testid="store-permissions-actions-popover-date-label">
                 {{ getDateTime(groupActionsPopoverState.group.fromDate) }}
-                <p>{{ translate("added to group") }}</p>
+                <p>{{ $t("added to group") }}</p>
               </ion-label>
             </ion-item>
             <ion-item button @click="confirmRemoveGroupFromPermission" lines="none" data-testid="store-permissions-actions-popover-remove-btn">
-              {{ translate("Remove") }}
+              {{ $t("Remove") }}
             </ion-item>
           </ion-list>
         </ion-content>
@@ -169,7 +169,7 @@
 import { IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonPopover, IonSearchbar, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { ref, computed } from "vue";
 import { DateTime } from "luxon";
-import { translate } from "@/i18n";
+import i18n from "@/i18n";
 import { useProductStore } from "@/stores/productStore";
 import { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } from "@/adapter/index";
 import { showToast } from "@/services/uiUtils";
@@ -288,7 +288,7 @@ function getDateTime(time: any) {
 }
 
 const historyPermissionTitle = computed(() =>
-  historyPermission.value ? translate(historyPermission.value.title) : ""
+  historyPermission.value ? $t(historyPermission.value.title) : ""
 );
 
 /**
@@ -477,7 +477,7 @@ async function saveSelectedSecurityGroups() {
       if (hasError(resp)) throw resp?.data;
     }
 
-    showToast(translate("Security groups updated successfully."));
+    showToast(i18n.global.t("Security groups updated successfully."));
 
     // Refresh active groups for this permission
     await getActiveGroups(permissionId);
@@ -485,7 +485,7 @@ async function saveSelectedSecurityGroups() {
     isSelectGroupsModalOpen.value = false;
   } catch (error) {
     logger.error(error);
-    showToast(translate("Something went wrong."));
+    showToast(i18n.global.t("Something went wrong."));
   }
 }
 
@@ -518,17 +518,17 @@ async function confirmRemoveGroupFromPermission() {
   const group = state.group;
 
   const alert = await alertController.create({
-    header: translate("Remove security group"),
-    message: translate(
+    header: $t("Remove security group"),
+    message: $t(
       "Removing this security group may limit access to certain features or data. Are you sure you want to continue?"
     ),
     buttons: [
       {
-        text: translate("Keep Group"),
+        text: $t("Keep Group"),
         role: "cancel",
       },
       {
-        text: translate("Remove"),
+        text: $t("Remove"),
         handler: async () => {
           try {
             const payload: any = {
@@ -543,12 +543,12 @@ async function confirmRemoveGroupFromPermission() {
             const resp = await updateSecurityGroupPermission(payload);
             if (hasError(resp)) throw resp?.data;
 
-            showToast(translate("Security group removed successfully."));
+            showToast(i18n.global.t("Security group removed successfully."));
 
             await getActiveGroups(permissionId);
           } catch (error) {
             logger.error(error);
-            showToast(translate("Something went wrong."));
+            showToast(i18n.global.t("Something went wrong."));
           } finally {
             closeGroupActionsPopover();
           }

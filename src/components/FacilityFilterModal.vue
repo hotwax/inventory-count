@@ -7,19 +7,19 @@
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title data-testid="facility-filter-title">{{ translate(title || 'Select Facilities') }}</ion-title>
+        <ion-title data-testid="facility-filter-title">{{ $t(title || 'Select Facilities') }}</ion-title>
         <ion-buttons slot="end">
-          <ion-button @click="clearAll" :disabled="selectedIds.length === 0" data-testid="facility-filter-clear-all-btn">{{ translate("Clear all") }}</ion-button>
+          <ion-button @click="clearAll" :disabled="selectedIds.length === 0" data-testid="facility-filter-clear-all-btn">{{ $t("Clear all") }}</ion-button>
         </ion-buttons>
       </ion-toolbar>
       <ion-toolbar>
-        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')" v-model="queryString" @ionInput="findFacility()" data-testid="facility-filter-search-input"/>
+        <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search facilities')" v-model="queryString" @ionInput="findFacility()" data-testid="facility-filter-search-input"/>
       </ion-toolbar>
     </ion-header>
     <ion-content>
       <ion-list data-testid="facility-filter-list">
         <div class="empty-state" v-if="!filteredFacilities.length" data-testid="facility-filter-empty-state">
-          <p>{{ translate("No facilities found") }}</p>
+          <p>{{ $t("No facilities found") }}</p>
         </div>
         <div v-else>
           <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'facility-filter-item-' + facility.facilityId">
@@ -50,7 +50,7 @@
 import { ref, defineProps, defineEmits } from 'vue';
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonSearchbar, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkOutline, closeOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 
 interface Facility {
   facilityId: string;

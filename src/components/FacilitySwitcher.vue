@@ -2,11 +2,11 @@
   <ion-card data-testid="facility-switcher-card">
     <ion-card-header>
       <ion-card-title>
-        {{ translate('Facility') }}
+        {{ $t('Facility') }}
       </ion-card-title>
     </ion-card-header>
     <ion-card-content>
-      {{ translate('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
+      {{ $t('Specify which facility you want to operate from. Order, inventory and other configuration data will be specific to the facility you select.') }}
     </ion-card-content>
     <ion-item lines="none">
       <ion-label>
@@ -14,7 +14,7 @@
         <p>{{ currentFacility.facilityId }}</p>
       </ion-label>
       <ion-button v-if="facilities?.length > 1 && !authStore.isEmbedded" id="open-facility-modal" slot="end" fill="outline" color="dark" data-testid="facility-switcher-change-btn">{{
-        translate('Change')}}</ion-button>
+        $t('Change')}}</ion-button>
     </ion-item>
   </ion-card>
   <!-- Using inline modal(as recommended by ionic), also using it inline as the component inside modal is not getting mounted when using modalController -->
@@ -27,11 +27,11 @@
             <ion-icon slot="icon-only" :icon="closeOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title data-testid="facility-switcher-title">{{ translate("Select Facility") }}</ion-title>
+        <ion-title data-testid="facility-switcher-title">{{ $t("Select Facility") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
+      <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="$t('Search facilities')"
         v-model="queryString" @ionInput="findFacility($event)"
         @keydown="preventSpecialCharacters($event)" data-testid="facility-switcher-search-input" />
       <ion-radio-group v-model="selectedFacilityId">
@@ -40,12 +40,12 @@
           <div class="empty-state" v-if="isLoading" data-testid="facility-switcher-loading">
             <ion-item lines="none">
               <ion-spinner color="secondary" name="crescent" slot="start" />
-              {{ translate("Fetching facilities") }}
+              {{ $t("Fetching facilities") }}
             </ion-item>
           </div>
           <!-- Empty state -->
           <div class="empty-state" v-else-if="!filteredFacilities.length" data-testid="facility-switcher-empty-state">
-            <p>{{ translate("No facilities found") }}</p>
+            <p>{{ $t("No facilities found") }}</p>
           </div>
           <div v-else>
             <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'facility-switcher-item-' + facility.facilityId">
@@ -74,7 +74,7 @@ import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardT
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
 import { computed, ref, defineProps } from 'vue';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 
 const productStore = useProductStore();

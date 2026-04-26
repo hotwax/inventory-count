@@ -1,6 +1,6 @@
 <template>
   <div class="progress-bar-wrapper ion-padding">
-    <ion-label data-testid="progress-bar-title">{{ translate("Loading session items...") }}</ion-label>
+    <ion-label data-testid="progress-bar-title">{{ $t("Loading session items...") }}</ion-label>
     <ion-progress-bar class="ion-margin-vertical bar-width" :value="progressValue" data-testid="progress-bar-indicator"></ion-progress-bar>
     <ion-note data-testid="progress-bar-status">{{ loadedItems }} / {{ totalItems }}</ion-note>
   </div>
@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { IonLabel, IonProgressBar, IonNote } from '@ionic/vue'
 import { computed, defineProps } from 'vue'
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 
 const props = defineProps({
   totalItems: {

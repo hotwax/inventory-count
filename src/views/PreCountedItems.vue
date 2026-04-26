@@ -7,7 +7,7 @@
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title data-testid="pre-counted-items-page-title">{{ translate("Add Hand Counted Items")}}</ion-title>
+        <ion-title data-testid="pre-counted-items-page-title">{{ $t("Add Hand Counted Items")}}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
@@ -15,13 +15,13 @@
         <ion-card data-testid="pre-counted-items-search-card">
           <ion-card-header data-testid="pre-counted-items-search-header">
             <ion-card-title data-testid="pre-counted-items-search-title">
-              {{ translate("Add Items") }}
+              {{ $t("Add Items") }}
             </ion-card-title>
           </ion-card-header>
           <ion-searchbar ref="searchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey" data-testid="pre-counted-items-search-bar"></ion-searchbar>
           <ion-item lines="none" data-testid="pre-counted-items-search-info">
             <ion-label data-testid="pre-counted-items-search-label">
-              {{ translate("Search for products by parent name, SKU or UPC") }}
+              {{ $t("Search for products by parent name, SKU or UPC") }}
             </ion-label>
           </ion-item>
           <!-- Skeleton loader during search -->
@@ -42,38 +42,38 @@
             <ion-label data-testid="pre-counted-items-search-result-label">
               <span data-testid="pre-counted-items-search-result-primary-id">{{ useProductMaster().primaryId(searchedProducts[0]) }}</span>
               <p data-testid="pre-counted-items-search-result-secondary-id">{{ useProductMaster().secondaryId(searchedProducts[0]) }}</p>
-              <ion-text color="danger" v-if="searchedProducts[0].isUndirected" data-testid="pre-counted-items-search-result-undirected-msg">{{ translate("Undirected items cannot be added to count") }}</ion-text>
+              <ion-text color="danger" v-if="searchedProducts[0].isUndirected" data-testid="pre-counted-items-search-result-undirected-msg">{{ $t("Undirected items cannot be added to count") }}</ion-text>
             </ion-label>
             <ion-button slot="end" fill="outline" :disabled="searchedProducts[0].isUndirected" @click="addProductInPreCountedItems(searchedProducts[0])" data-testid="pre-counted-items-search-result-add-btn">
               <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-              {{ translate("Add to count") }}
+              {{ $t("Add to count") }}
             </ion-button>
           </ion-item>
           <ion-item v-if="searchedProducts.length > 0" lines="none" data-testid="pre-counted-items-search-helper">
             <ion-label data-testid="pre-counted-items-search-helper-label">
               <p data-testid="pre-counted-items-search-helper-text">
-                {{ translate('Press enter to add helper') }}
+                {{ $t('Press enter to add helper') }}
               </p>
             </ion-label>
           </ion-item>
           <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal" data-testid="pre-counted-items-view-more-btn">
             <ion-label data-testid="pre-counted-items-view-more-label">
-              {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
+              {{ $t("View more results") }} ({{ searchedProducts.length - 1 }} more)
             </ion-label>
           </ion-item>
         </ion-card>
         <ion-card v-if="products.length === 0" class="hand-counted-empty-state" data-testid="pre-counted-items-empty-state">
           <ion-card-header data-testid="pre-counted-items-empty-state-header">
-            <ion-card-title data-testid="pre-counted-items-empty-state-title">{{ translate('What are Hand-counted items?') }}</ion-card-title>
+            <ion-card-title data-testid="pre-counted-items-empty-state-title">{{ $t('What are Hand-counted items?') }}</ion-card-title>
           </ion-card-header>
           <ion-card-content data-testid="pre-counted-items-empty-state-content">
-            <p data-testid="pre-counted-items-empty-state-desc-1">{{ translate('Hand-counted items description') }}</p>
-            <p data-testid="pre-counted-items-empty-state-desc-2">{{ translate('Hand-counted items stability note') }}</p>
-            <p data-testid="pre-counted-items-empty-state-desc-3">{{ translate('Hand-counted items movement note') }}</p>
-            <p data-testid="pre-counted-items-empty-state-desc-4">{{ translate('Hand-counted items benefit note') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-1">{{ $t('Hand-counted items description') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-2">{{ $t('Hand-counted items stability note') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-3">{{ $t('Hand-counted items movement note') }}</p>
+            <p data-testid="pre-counted-items-empty-state-desc-4">{{ $t('Hand-counted items benefit note') }}</p>
             <ion-text color="medium" data-testid="pre-counted-items-empty-state-prompt-text">
               <p class="ion-padding-top" data-testid="pre-counted-items-empty-state-prompt">
-                {{ translate('Begin typing hand-counted product prompt') }}
+                {{ $t('Begin typing hand-counted product prompt') }}
               </p>
             </ion-text>
           </ion-card-content>
@@ -81,10 +81,10 @@
 
         <div class="counted-items-header" v-if="products.length > 0" data-testid="pre-counted-items-results-header-container">
           <h2 data-testid="pre-counted-items-results-title">
-            {{ translate("Counted Items") }}
+            {{ $t("Counted Items") }}
           </h2>
           <ion-button :disabled="products?.length === 0 || !hasUnsavedProducts" fill="outline" color="primary" @click="addAllProductsToScanEvents" data-testid="pre-counted-items-save-progress-btn">
-            {{ translate("Save progress") }}
+            {{ $t("Save progress") }}
           </ion-button>
         </div>
         
@@ -99,7 +99,7 @@
                   <span data-testid="pre-counted-items-product-primary-id">{{ useProductMaster().primaryId(product) }}</span>
                   <p data-testid="pre-counted-items-product-secondary-id">{{ useProductMaster().secondaryId(product) }}</p>
                   <ion-text v-if="product.isRequested && product.isRequested === 'N'" color="danger" data-testid="pre-counted-items-undirected-badge">
-                    {{ translate("Undirected") }}
+                    {{ $t("Undirected") }}
                   </ion-text>
                 </ion-label>
               </ion-item>
@@ -150,7 +150,7 @@
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
-          <ion-title data-testid="pre-counted-items-results-modal-title">{{ translate("Search Results") }}</ion-title>
+          <ion-title data-testid="pre-counted-items-results-modal-title">{{ $t("Search Results") }}</ion-title>
         </ion-toolbar>
       </ion-header>
       <ion-content data-testid="pre-counted-items-results-modal-content">
@@ -163,7 +163,7 @@
               <ion-label data-testid="pre-counted-items-results-modal-label">
                 <span data-testid="pre-counted-items-results-modal-primary-id">{{ useProductMaster().primaryId(product) }}</span>
                 <p data-testid="pre-counted-items-results-modal-secondary-id">{{ useProductMaster().secondaryId(product) }}</p>
-                <ion-text color="danger" v-if="product.isUndirected" data-testid="pre-counted-items-results-modal-undirected-badge">{{ translate("Undirected") }}</ion-text>
+                <ion-text color="danger" v-if="product.isUndirected" data-testid="pre-counted-items-results-modal-undirected-badge">{{ $t("Undirected") }}</ion-text>
               </ion-label>
             </ion-radio>
           </ion-item>
@@ -173,7 +173,7 @@
         <ion-toolbar data-testid="pre-counted-items-results-modal-footer-toolbar">
           <ion-button slot="end" :disabled="!selectedProductFromModal" fill="outline" color="success" @click="addSelectedProductFromModal" data-testid="pre-counted-items-results-modal-add-btn">
             <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
-            {{ translate("Add to count") }}
+            {{ $t("Add to count") }}
           </ion-button>
         </ion-toolbar>
       </ion-footer>
@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -391,7 +391,7 @@ async function addProductInPreCountedItems(product: any) {
       if (inventoryCountImportItem && (!inventoryCountImportItem.isRequested || inventoryCountImportItem.isRequested === 'Y')) {
         productEntry.isRequested = 'Y';
       } else {
-        showToast(translate("Undirected items cannot be added to count"));
+        showToast(i18n.global.t("Undirected items cannot be added to count"));
         return;
       }
     }
@@ -451,7 +451,7 @@ async function addAllProductsToScanEvents() {
     for (const product of unsaved) {
       await addPreCountedItemInScanEvents(product)
     }
-    showToast(translate('Items Saved'))
+    showToast(i18n.global.t('Items Saved'))
   } catch (err) {
     console.error('Error saving products:', err)
   }
@@ -464,12 +464,12 @@ async function confirmGoBack() {
   }
 
   const alert = await alertController.create({
-    header: translate('Save hand-counted items'),
-    message: translate('Hand-counted items will be added to the scan events log.'),
+    header: $t('Save hand-counted items'),
+    message: $t('Hand-counted items will be added to the scan events log.'),
     buttons: [
-      { text: translate('Cancel'), role: 'cancel' },
+      { text: $t('Cancel'), role: 'cancel' },
       {
-        text: translate('Save'),
+        text: $t('Save'),
         handler: async () => {
           await addAllProductsToScanEvents()
           router.back()

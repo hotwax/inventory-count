@@ -25,13 +25,4 @@ const i18n = createI18n({
   messages: loadLocaleMessages() as Record<string, Record<string, string>>
 })
 
-// TODO Check if this is needed in updated versions
-// Currently this method is added to be used in ts files
-const translate = (key: string, named?: any) => {
-  if (!key) {
-    return '';
-  }
-  return i18n.global.t(key, named);
-};
-
-export { i18n as default, translate }
+export { i18n as default }
