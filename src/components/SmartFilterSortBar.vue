@@ -23,7 +23,7 @@
           interface="popover"
           data-testid="smart-filter-status-select"
         >
-          <ion-select-option value="all">{{ t("All") }}</ion-select-option>
+          <ion-select-option value="all">{{ $t("All") }}</ion-select-option>
           <ion-select-option
             v-for="opt in statusOptions"
             :key="opt.value"
@@ -44,10 +44,10 @@
           interface="popover"
           data-testid="smart-filter-compliance-select"
         >
-          <ion-select-option value="all">{{ t("All") }}</ion-select-option>
+          <ion-select-option value="all">{{ $t("All") }}</ion-select-option>
           <ion-select-option value="acceptable">{{ compliantLabel }}</ion-select-option>
           <ion-select-option value="rejectable">{{ nonCompliantLabel }}</ion-select-option>
-          <ion-select-option value="configure">{{ t("Configure threshold") }}</ion-select-option>
+          <ion-select-option value="configure">{{ $t("Configure threshold") }}</ion-select-option>
         </ion-select>
       </ion-item>
     </ion-list>
@@ -64,7 +64,7 @@
           data-testid="smart-filter-select-all-checkbox"
         />
         <span v-if="selectedItems?.length" class="selected-count">
-          {{ selectedItems.length }} {{ t("selected") }}
+          {{ selectedItems.length }} {{ $t("selected") }}
         </span>
       </div>
 
@@ -96,7 +96,7 @@
     <ion-modal :is-open="isThresholdModalOpen" @did-dismiss="closeThresholdModal" data-testid="smart-filter-threshold-modal">
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ t("Configure Threshold") }}</ion-title>
+          <ion-title>{{ $t("Configure Threshold") }}</ion-title>
           <ion-buttons slot="end">
             <ion-button @click="closeThresholdModal" data-testid="smart-filter-threshold-close-btn">
               <ion-icon slot="icon-only" :icon="closeOutline" />
@@ -109,8 +109,8 @@
         <ion-list>
           <ion-item>
             <ion-select v-model="tempThreshold.unit" label="Unit" interface="popover" data-testid="smart-filter-threshold-unit-select">
-              <ion-select-option value="units">{{ t("Units") }}</ion-select-option>
-              <ion-select-option value="percent">{{ t("Percent") }}</ion-select-option>
+              <ion-select-option value="units">{{ $t("Units") }}</ion-select-option>
+              <ion-select-option value="percent">{{ $t("Percent") }}</ion-select-option>
             </ion-select>
           </ion-item>
 
@@ -145,7 +145,7 @@ import {
 } from "@ionic/vue";
 
 import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
-import { translate as t } from "@/i18n";
+import i18n from "@/i18n";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductMaster } from "@/composables/useProductMaster";
@@ -163,9 +163,9 @@ const props = defineProps({
   showSort: Boolean,
   showSelect: Boolean,
 
-  placeholderSearch: { type: String, default: () => t("Search product name") },
-  statusLabel: { type: String, default: () => t("Status") },
-  sortByLabel: { type: String, default: () => t("Sort By") },
+  placeholderSearch: { type: String, default: () => i18n.global.t("Search product name") },
+  statusLabel: { type: String, default: () => i18n.global.t("Status") },
+  sortByLabel: { type: String, default: () => i18n.global.t("Sort By") },
 
   statusOptions: Array,
   sortOptions: Array,
@@ -198,17 +198,17 @@ const internalThreshold = reactive({
 
 const compliantLabel = computed(() => {
   const unit = internalThreshold.unit === "percent" ? "%" : " units";
-  return `${t("Compliant")} (≤ ${internalThreshold.value}${unit})`;
+  return `${$t("Compliant")} (≤ ${internalThreshold.value}${unit})`;
 });
 
 const nonCompliantLabel = computed(() => {
   const unit = internalThreshold.unit === "percent" ? "%" : " units";
-  return `${t("Uncompliant")} (> ${internalThreshold.value}${unit})`;
+  return `${$t("Uncompliant")} (> ${internalThreshold.value}${unit})`;
 });
 
 const computedComplianceLabel = computed(() => {
   const unit = internalThreshold.unit === "percent" ? "%" : " units";
-  return `${t("Compliance")} (${internalThreshold.value}${unit})`;
+  return `${$t("Compliance")} (${internalThreshold.value}${unit})`;
 });
 
 /* THRESHOLD MODAL */

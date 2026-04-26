@@ -1,4 +1,4 @@
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import { loadingController } from '@ionic/vue'
 import { toastController } from '@ionic/vue';
 
@@ -8,7 +8,7 @@ const loader = {
     if (!loader.value) {
       loader.value = await loadingController
         .create({
-          message: translate(message),
+          message: i18n.global.t(message),
           translucent: false,
           backdropDismiss: false
         });
@@ -52,12 +52,12 @@ const getStatusColor = (statusId: string): string => {
 
 const getFacilityChipLabel = (selectedFacilityIds: string[], facilities: any[]): string => {
   if (selectedFacilityIds.length === 0) {
-    return translate('All');
+    return i18n.global.t('All');
   } else if (selectedFacilityIds.length === 1) {
     const facility = facilities.find((f: any) => f.facilityId === selectedFacilityIds[0]);
     return facility?.facilityName || selectedFacilityIds[0];
   } else {
-    return `${selectedFacilityIds.length} ${translate('facilities')}`;
+    return `${selectedFacilityIds.length} ${i18n.global.t('facilities')}`;
   }
 };
 

@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 import { RouteRecordRaw } from "vue-router";
 import { hasPermission, setPermissions } from '@/authorization';
 import { loader, showToast } from '@/services/uiUtils'
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
@@ -314,7 +314,7 @@ router.beforeEach((to, from) => {
       else
         redirectToPath = "/tabs/settings";
     } else {
-      showToast(translate('You do not have permission to access this page'));
+      showToast(i18n.global.t('You do not have permission to access this page'));
     }
     return {
       path: redirectToPath,

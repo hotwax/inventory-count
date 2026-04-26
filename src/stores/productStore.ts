@@ -17,7 +17,7 @@ import {
 } from '@/adapter'
 import { useUserProfile } from './userProfileStore'
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -243,12 +243,12 @@ export const useProductStore = defineStore('productStore', {
         if (!hasError(resp)) {
           if (key === 'forceScan') this.settings.forceScan = value
           if (key === 'barcodeIdentificationPref') this.settings.productIdentifier.barcodeIdentificationPref = value
-          showToast(translate('Store preference updated successfully.'))
+          showToast(i18n.global.t('Store preference updated successfully.'))
         } else {
           throw resp
         }
       } catch (err) {
-        showToast(translate('Failed to update Store preference.'))
+        showToast(i18n.global.t('Failed to update Store preference.'))
         logger.error(err)
       }
     },

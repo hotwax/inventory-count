@@ -4,7 +4,7 @@
       <ion-menu content-id="main-content" type="overlay" data-testid="app-side-menu">
         <ion-header>
           <ion-toolbar>
-            <ion-title data-testid="app-title">{{ translate("Cycle Count") }}</ion-title>
+            <ion-title data-testid="app-title">{{ $t("Cycle Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
@@ -23,7 +23,7 @@
                 :data-testid="'app-menu-item-' + page.path.substring(1)"
               >
                 <ion-icon :ios="page.meta.iosIcon" :md="page.meta.mdIcon" slot="start" />
-                <ion-label>{{ translate(page.meta.title || page.name) }}</ion-label>
+                <ion-label>{{ $t(page.meta.title || page.name) }}</ion-label>
               </ion-item>
             </ion-menu-toggle>
           </ion-list>
@@ -59,7 +59,7 @@ import {
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import emitter from "@/event-bus";
-import { translate } from "@/i18n";
+import i18n from "@/i18n";
 import { Actions, hasPermission } from '@/authorization';
 import { useProductStore } from '@/stores/productStore';
 import logger from './logger';
@@ -84,7 +84,7 @@ async function presentLoader(options = { message: "Click the backdrop to dismiss
   if (options.message && loader.value) dismissLoader();
   if (!loader.value) {
     loader.value = await loadingController.create({
-      message: translate(options.message),
+      message: $t(options.message),
       translucent: true,
       backdropDismiss: options.backdropDismiss
     });

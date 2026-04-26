@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/closed" />
-        <ion-title>{{ translate("Closed count")}}</ion-title>
+        <ion-title>{{ $t("Closed count")}}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -31,7 +31,7 @@
             <ion-item class="due-date" data-testid="closed-detail-due-date-item">
               <ion-icon :icon="calendarClearOutline" slot="start" data-testid="closed-detail-due-date-icon"></ion-icon>
               <div>
-                <p class="overline" data-testid="closed-detail-due-date-label">{{ translate("Due Date") }}</p>
+                <p class="overline" data-testid="closed-detail-due-date-label">{{ $t("Due Date") }}</p>
                 <div v-if="workEffort.estimatedCompletionDate" data-testid="closed-detail-due-date-val-wrapper">
                   <ion-datetime-button datetime="datetime" :disabled="true" data-testid="closed-detail-due-date-btn"></ion-datetime-button>
                   <ion-modal keep-contents-mounted="true" data-testid="closed-detail-due-date-modal">
@@ -44,11 +44,11 @@
           </ion-card>
           <ion-card>
             <ion-item data-testid="closed-detail-first-counted-item">
-              <ion-label data-testid="closed-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
+              <ion-label data-testid="closed-detail-first-counted-label">{{ $t("First item counted") }}</ion-label>
               <ion-note slot="end" data-testid="closed-detail-first-counted-val">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
             </ion-item>
             <ion-item data-testid="closed-detail-last-counted-item">
-              <ion-label data-testid="closed-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
+              <ion-label data-testid="closed-detail-last-counted-label">{{ $t("Last item counted") }}</ion-label>
               <ion-note slot="end" data-testid="closed-detail-last-counted-val">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
             </ion-item>
           </ion-card>
@@ -57,8 +57,8 @@
             <ion-card data-testid="closed-detail-review-progress-card">
               <ion-item lines="none" data-testid="closed-detail-review-progress-item">
                 <ion-label data-testid="closed-detail-review-progress-label">
-                  {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
-                  <p data-testid="closed-detail-review-progress-stats">{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
+                  {{ $t("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
+                  <p data-testid="closed-detail-review-progress-stats">{{ $t("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
                 </ion-label>
               </ion-item>
               <ion-card-content data-testid="closed-detail-review-progress-content">
@@ -68,9 +68,9 @@
             <ion-card data-testid="closed-detail-overall-variance-card">
               <ion-item lines="full" data-testid="closed-detail-overall-variance-item">
                 <ion-label data-testid="closed-detail-overall-variance-label">
-                  <p class="overline" data-testid="closed-detail-overall-variance-title">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3 data-testid="closed-detail-overall-variance-qty">{{ translate("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
-                  <p data-testid="closed-detail-overall-variance-msg">{{ translate("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
+                  <p class="overline" data-testid="closed-detail-overall-variance-title">{{ $t("Overall variance (Filtered)") }}</p>
+                  <h3 data-testid="closed-detail-overall-variance-qty">{{ $t("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
+                  <p data-testid="closed-detail-overall-variance-msg">{{ $t("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -85,13 +85,13 @@
           :show-sort="true"
           :show-select="false"
           :status-options="[
-            { label: translate('Accepted'), value: 'accepted' },
-            { label: translate('Rejected'), value: 'rejected' }
+            { label: $t('Accepted'), value: 'accepted' },
+            { label: $t('Rejected'), value: 'rejected' }
           ]"
           :sort-options="[
-            { label: translate('Alphabetic'), value: 'alphabetic' },
-            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
-            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+            { label: $t('Alphabetic'), value: 'alphabetic' },
+            { label: $t('Variance (Low → High)'), value: 'variance-asc' },
+            { label: $t('Variance (High → Low)'), value: 'variance-desc' }
           ]"
           :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
@@ -116,11 +116,11 @@
                       </div>
                       <ion-label class="stat" data-testid="closed-detail-product-count-stat">
                         <span data-testid="closed-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="closed-detail-product-system-qty">{{ item.systemQuantity || '-' }}</span>
-                        <p>{{ translate("counted/systemic") }}</p>
+                        <p>{{ $t("counted/systemic") }}</p>
                       </ion-label>
                       <ion-label class="stat" data-testid="closed-detail-product-variance-stat">
                         <span data-testid="closed-detail-product-variance-qty">{{ item.varianceQuantity }}</span>
-                        <p>{{ translate("variance") }}</p>
+                        <p>{{ $t("variance") }}</p>
                       </ion-label>
                       <div v-if="item.decisionOutcomeEnumId" data-testid="closed-detail-product-badge-container">
                         <ion-badge
@@ -128,7 +128,7 @@
                         style="--color: white;"
                         data-testid="closed-detail-product-badge"
                       >
-                        {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
+                        {{ item.decisionOutcomeEnumId == "APPLIED" ? $t("Accepted") : $t("Rejected") }}
                       </ion-badge>
                       </div>
                     </div>
@@ -170,15 +170,15 @@
                         </ion-item>
                         <ion-label data-testid="closed-detail-session-counted-stat">
                           <span data-testid="closed-detail-session-counted-qty">{{ session.counted }}</span>
-                          <p>{{ translate("counted") }}</p>
+                          <p>{{ $t("counted") }}</p>
                         </ion-label>
                         <ion-label data-testid="closed-detail-session-started-stat">
                           <span data-testid="closed-detail-session-started-date">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
-                          <p>{{ translate("started") }}</p>
+                          <p>{{ $t("started") }}</p>
                         </ion-label>
                         <ion-label data-testid="closed-detail-session-updated-stat">
                           <span data-testid="closed-detail-session-updated-date">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
-                          <p>{{ translate("last updated") }}</p>
+                          <p>{{ $t("last updated") }}</p>
                         </ion-label>
                       </div>
                     </div>
@@ -189,11 +189,11 @@
           </ion-accordion-group>
         </div>
         <div v-else class="empty-state">
-          <p>{{ translate("No Results") }}</p>
+          <p>{{ $t("No Results") }}</p>
         </div>
       </template>
       <template v-else>
-        <p class="empty-state">{{ translate("Cycle Count Not Found") }}</p>
+        <p class="empty-state">{{ $t("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
   </ion-page>
@@ -203,7 +203,7 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { showToast } from "@/services/uiUtils"
@@ -264,7 +264,7 @@ async function getWorkEffortDetails() {
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -287,7 +287,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
   }
 }
 
@@ -332,7 +332,7 @@ async function getInventoryCycleCount() {
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
     aggregatedSessionItems.value = [];
   }
 }

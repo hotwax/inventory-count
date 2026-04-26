@@ -4,7 +4,7 @@ import { useUserProfile } from './userProfileStore';
 import { getServerPermissionsFromRules, prepareAppPermissions, setPermissions } from '@/authorization';
 import logger from '@/logger';
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from './productStore';
 import { Settings } from 'luxon';
@@ -138,7 +138,7 @@ export const useAuthStore = defineStore('authStore', {
           // If there are any errors or permission check fails do not allow user to login
           if (!hasPermission) {
             const permissionError = 'You do not have permission to access the app.';
-            showToast(translate(permissionError));
+            showToast(i18n.global.t(permissionError));
             logger.error("error", permissionError);
             return Promise.reject(new Error(permissionError));
           }

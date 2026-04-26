@@ -5,7 +5,7 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/tabs/count" data-testid="session-detail-back-btn"></ion-back-button>
         </ion-buttons>
-        <ion-title data-testid="session-detail-page-title">{{ translate("Session Count Detail") }}</ion-title>
+        <ion-title data-testid="session-detail-page-title">{{ $t("Session Count Detail") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -29,7 +29,7 @@
 
           <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top" data-testid="session-detail-empty-events">
             <ion-label>
-              {{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}
+              {{ $t("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}
             </ion-label>
           </ion-item>
 
@@ -51,7 +51,7 @@
                     <p class="clickable-time" @click="showTime(item.createdAt)" data-testid="session-detail-event-time">{{ timeAgo(item.createdAt) }}</p>
                   </ion-label>
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary" data-testid="session-detail-event-unagg-badge">
-                    {{ translate('unaggregated') }}
+                    {{ $t('unaggregated') }}
                   </ion-badge>
                   <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
@@ -63,7 +63,7 @@
           <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
             <ion-content>
               <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
-                <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+                <ion-label color="danger">{{ $t("Remove") }}</ion-label>
               </ion-item>
             </ion-content>
           </ion-popover>
@@ -72,7 +72,7 @@
           <ion-card class="add-hand-counted" :disabled="!isSessionMutable" button
             @click="router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`)" data-testid="session-detail-add-hand-counted-card">
             <ion-item lines="none">
-              <ion-label class="ion-text-nowrap" data-testid="session-detail-add-hand-counted-label">{{ translate("Add hand-counted items") }}</ion-label>
+              <ion-label class="ion-text-nowrap" data-testid="session-detail-add-hand-counted-label">{{ $t("Add hand-counted items") }}</ion-label>
               <ion-icon slot="end" :icon="addOutline"></ion-icon>
             </ion-item>
           </ion-card>
@@ -85,7 +85,7 @@
               <ion-label>
                 <p class="overline" data-testid="session-detail-count-type">{{ countTypeLabel }}</p>
                 <h1 data-testid="session-detail-session-name">{{ inventoryCountImport?.countImportName || 'Untitled session' }} {{ inventoryCountImport?.facilityAreaId }}</h1>
-                <p v-if="inventoryCountImport?.uploadedByUserLogin" data-testid="session-detail-created-by">{{ translate("Created by") }} {{ inventoryCountImport.uploadedByUserLogin }}</p>
+                <p v-if="inventoryCountImport?.uploadedByUserLogin" data-testid="session-detail-created-by">{{ $t("Created by") }} {{ inventoryCountImport.uploadedByUserLogin }}</p>
               </ion-label>
             </ion-item>
 
@@ -93,14 +93,14 @@
             <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
               <ion-button color="warning" fill="outline" @click="reopen" data-testid="session-detail-reopen-btn">
                 <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
-                {{ translate("Re-open session") }}
+                {{ $t("Re-open session") }}
               </ion-button>
             </template>
 
             <!-- When session is VOIDED: all buttons disabled -->
             <template v-else-if="inventoryCountImport?.statusId === 'SESSION_VOIDED'">
               <ion-badge color="warning" data-testid="session-detail-discarded-badge">
-                {{ translate("Session discarded") }}
+                {{ $t("Session discarded") }}
               </ion-badge>
             </template>
 
@@ -109,15 +109,15 @@
               <div class="actions" data-testid="session-detail-actions">
                 <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked" data-testid="session-detail-edit-btn">
                   <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
-                  {{ translate("Edit") }}
+                  {{ $t("Edit") }}
                 </ion-button>
                 <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked" data-testid="session-detail-discard-btn">
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
-                  {{ translate("Discard") }}
+                  {{ $t("Discard") }}
                 </ion-button>
                 <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
-                  {{ translate("Submit") }}
+                  {{ $t("Submit") }}
                 </ion-button>
                 <ion-item lines="none" v-if="timeLeft">
                   <ion-label slot="end" :color="timerColor" data-testid="session-detail-timer">
@@ -132,7 +132,7 @@
             <!-- Last Scanned Product Card -->
             <ion-card v-if="lastScannedEvent" data-testid="session-detail-last-scanned-card">
               <ion-item lines="none">
-                <ion-label class="overline">{{ translate("Current Product") }}</ion-label>
+                <ion-label class="overline">{{ $t("Current Product") }}</ion-label>
               </ion-item>
               <ion-item lines="none">
                 <ion-thumbnail slot="start">
@@ -145,37 +145,37 @@
                   </template>
                   <template v-else>
                     <h2 data-testid="session-detail-last-scanned-value">{{ lastScannedEvent.scannedValue }}</h2>
-                    <p>{{ translate("Identifying product...") }}</p>
+                    <p>{{ $t("Identifying product...") }}</p>
                   </template>
                 </ion-label>
               </ion-item>
               
               <ion-item lines="none">
                 <ion-label>
-                  <p data-testid="session-detail-last-updated">{{ translate("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
+                  <p data-testid="session-detail-last-updated">{{ $t("Last updated") }} {{ timeAgo(lastScannedEvent.createdAt) }}</p>
                 </ion-label>
               </ion-item>
 
               <ion-item lines="none">
-                <ion-label>{{ translate("Units") }}</ion-label>
+                <ion-label>{{ $t("Units") }}</ion-label>
                 <ion-label slot="end" data-testid="session-detail-last-scanned-units">{{ lastScannedProductTotal }}</ion-label>
               </ion-item>
             </ion-card>
 
             <ion-card data-testid="session-detail-stats-products-card">
               <ion-card-header>
-                <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
+                <ion-card-title class="overline">{{ $t("Products counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number" data-testid="session-detail-stats-products">{{ stats.productsCounted }}</p>
               </ion-card-content>
               <ion-list lines="none">
                 <ion-item>
-                  <ion-label>{{ translate("Pending match scans") }}</ion-label>
+                  <ion-label>{{ $t("Pending match scans") }}</ion-label>
                   <p slot="end" data-testid="session-detail-stats-pending-match">{{events.filter((event: any) => event.aggApplied === 0).length}}</p>
                 </ion-item>
                 <ion-item>
-                  <ion-label>{{ translate("Unmatched scans") }}</ion-label>
+                  <ion-label>{{ $t("Unmatched scans") }}</ion-label>
                   <p slot="end" data-testid="session-detail-stats-unmatched">{{ stats.unmatched }}</p>
                 </ion-item>
               </ion-list>
@@ -183,7 +183,7 @@
 
             <ion-card data-testid="session-detail-stats-units-card">
               <ion-card-header>
-                <ion-card-title class="overline">{{ translate("Units counted") }}</ion-card-title>
+                <ion-card-title class="overline">{{ $t("Units counted") }}</ion-card-title>
               </ion-card-header>
               <ion-card-content>
                 <p class="big-number" data-testid="session-detail-stats-units">{{ stats.totalUnits }}</p>
@@ -193,16 +193,16 @@
 
           <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
             <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
-              <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
+              <ion-label>{{ $t("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected" data-testid="session-detail-segment-undirected-btn">
-              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-label>{{ $t("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched" data-testid="session-detail-segment-unmatched-btn">
-              <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
+              <ion-label>{{ $t("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
             </ion-segment-button>
             <ion-segment-button value="counted" data-testid="session-detail-segment-counted-btn">
-              <ion-label>{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
+              <ion-label>{{ $t("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
             </ion-segment-button>
           </ion-segment>
 
@@ -223,7 +223,7 @@
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
                         <ion-note v-if="showQoh" slot="end" data-testid="session-detail-uncounted-filtered-item-qoh">
-                          {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
+                          {{ item.inventory?.quantityOnHandTotal }} {{ $t('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -233,7 +233,7 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>{{ translate("No products found") }}</ion-label>
+                  <ion-label>{{ $t("No products found") }}</ion-label>
                 </div>
               </template>
 
@@ -249,7 +249,7 @@
                           {{ useProductMaster().primaryId(item.product) }}
                           <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                         </ion-label>
-                        <ion-note slot="end" v-if="showQoh" data-testid="session-detail-uncounted-item-qoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
+                        <ion-note slot="end" v-if="showQoh" data-testid="session-detail-uncounted-item-qoh">{{ item.inventory?.quantityOnHandTotal }} {{ $t('Units') }}</ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
                   </template>
@@ -262,15 +262,15 @@
               <template v-if="undirectedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-undirected-empty">
                   <ion-label>
-                    <h2 class="ion-margin-bottom">{{ translate("No undirected items") }}</h2>
-                    <p>{{ translate("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
+                    <h2 class="ion-margin-bottom">{{ $t("No undirected items") }}</h2>
+                    <p>{{ $t("Undirected items are products you counted but were not instructed to count in this session. Don't worry about them during counting - you'll have a chance to discard them when reviewing and completing this count.") }}</p>
                   </ion-label>
                 </div>
               </template>
               <template v-else>
                 <ion-card class="info-card ion-margin-bottom" data-testid="session-detail-undirected-info">
                   <ion-card-content>
-                    <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
+                    <p class="ion-text-wrap">{{ $t("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
                   </ion-card-content>
                 </ion-card>
                 <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-undirected-search-input"/>
@@ -281,7 +281,7 @@
                       <ion-label data-testid="session-detail-undirected-filtered-item-label">
                         <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
+                        <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ $t('Units') }}</p>
                       </ion-label>
                     </ion-item>
                   </ion-card>
@@ -289,7 +289,7 @@
 
                 <template v-else-if="searchKeyword && !filteredItems.length">
                   <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-undirected-not-found">
-                    <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
+                    <ion-label>{{ $t("No products found for") }} {{ searchKeyword }}</ion-label>
                   </div>
                 </template>
 
@@ -300,7 +300,7 @@
                       <ion-label data-testid="session-detail-undirected-item-label">
                         <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
-                        <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
+                        <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ $t('Units') }}</p>
                       </ion-label>
                     </ion-item>
                   </ion-card>
@@ -314,8 +314,8 @@
                <template v-if="unmatchedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-unmatched-empty">
                   <ion-label>
-                    <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
-                    <p>{{ translate("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
+                    <h2 class="ion-margin-bottom">{{ $t("No unmatched items") }}</h2>
+                    <p>{{ $t("Unmatched items are products you counted but were not found in your product catalog. Please match them before submitting for review and completing this count.") }}</p>
                   </ion-label>
                 </div>
               </template>
@@ -324,12 +324,12 @@
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-filtered-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
-                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
+                      <p>{{ getScanContext(item).scansAgo }} {{ $t("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
                     <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)" data-testid="session-detail-unmatched-filtered-match-btn">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                      {{ translate("Match") }}
+                      {{ $t("Match") }}
                     </ion-button>
                   </ion-item>
                   <!-- Previous good scan -->
@@ -338,7 +338,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl" data-testid="session-detail-unmatched-filtered-prev-img"/>
                     </ion-thumbnail>
                     <ion-label data-testid="session-detail-unmatched-filtered-prev-label">
-                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ $t("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -351,7 +351,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl" data-testid="session-detail-unmatched-filtered-next-img"/>
                     </ion-thumbnail>
                     <ion-label data-testid="session-detail-unmatched-filtered-next-label">
-                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ $t("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -363,7 +363,7 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding ion-text-center">
-                  <ion-label>{{ translate("No products found for") }} {{ searchKeyword }}</ion-label>
+                  <ion-label>{{ $t("No products found for") }} {{ searchKeyword }}</ion-label>
                 </div>
               </template>
 
@@ -372,12 +372,12 @@
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
-                      <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
+                      <p>{{ getScanContext(item).scansAgo }} {{ $t("scans ago") }}</p>
                       <p>{{ timeAgo(item.createdAt) }}</p>
                     </ion-label>
                     <ion-button v-if="isSessionMutable" slot="end" fill="outline" @click="openMatchModal(item)" data-testid="session-detail-unmatched-match-btn">
                       <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                      {{ translate("Match") }}
+                      {{ $t("Match") }}
                     </ion-button>
                   </ion-item>
                   <!-- Previous good scan -->
@@ -386,7 +386,7 @@
                       <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
+                      <p class="overline">{{ getScanContext(item).previousDistance }} {{ $t("scans later") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                       <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -399,7 +399,7 @@
                       <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                     </ion-thumbnail>
                     <ion-label>
-                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
+                      <p class="overline">{{ getScanContext(item).nextDistance }} {{ $t("scans ago") }}</p>
                       <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                       <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -427,7 +427,7 @@
                           <p v-if="item.wasUnmatched" data-testid="session-detail-counted-filtered-item-original-scan">{{ item.scannedValue }}</p>
                         </ion-label>
                         <ion-note slot="end" data-testid="session-detail-counted-filtered-item-qty">
-                          {{ item.quantity }} {{ translate('Units') }}
+                          {{ item.quantity }} {{ $t('Units') }}
                         </ion-note>
                       </ion-item>
                     </DynamicScrollerItem>
@@ -437,7 +437,7 @@
 
               <template v-else-if="searchKeyword && !filteredItems.length">
                 <div class="empty-state ion-padding">
-                  <ion-label>{{ translate("No products found") }}</ion-label>
+                  <ion-label>{{ $t("No products found") }}</ion-label>
                 </div>
               </template>
               
@@ -453,7 +453,7 @@
                         {{ useProductMaster().primaryId(item.product) }}
                         <p>{{ useProductMaster().secondaryId(item.product) }}</p>
                       </ion-label>
-                      <ion-note slot="end" data-testid="session-detail-counted-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                      <ion-note slot="end" data-testid="session-detail-counted-item-qty">{{ item.quantity }} {{ $t('Units') }}</ion-note>
                     </ion-item>
                   </DynamicScrollerItem>
                 </template>
@@ -471,17 +471,17 @@
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title data-testid="session-detail-match-modal-title">{{ translate("Match Product") }}</ion-title>
+            <ion-title data-testid="session-detail-match-modal-title">{{ $t("Match Product") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content data-testid="session-detail-match-modal-content">
           <ion-searchbar ref="matchSearchbar" v-model="queryString" placeholder="Search product" @ion-input="handleLiveSearch" data-testid="session-detail-match-modal-search-input" />
           <div v-if="isLoading" class="empty-state ion-padding" data-testid="session-detail-match-modal-loading">
             <ion-spinner name="crescent" />
-            <ion-label>{{ translate("Searching for") }} "{{ queryString }}"</ion-label>
+            <ion-label>{{ $t("Searching for") }} "{{ queryString }}"</ion-label>
           </div>
           <div v-else-if="queryString && queryString.trim().length < 4" class="empty-state ion-padding" data-testid="session-detail-match-modal-min-chars-msg">
-            <p>{{ translate("Type at least 4 characters to search") }}</p>
+            <p>{{ $t("Type at least 4 characters to search") }}</p>
           </div>
           <template v-else-if="isSearching && products.length">
             <ion-radio-group v-model="selectedProductId" data-testid="session-detail-match-modal-radio-group">
@@ -499,11 +499,11 @@
             </ion-radio-group>
           </template>
           <div v-else-if="queryString.trim() && isSearching && !products.length" class="empty-state ion-padding">
-            <p>{{ translate("No results found") }}</p>
+            <p>{{ $t("No results found") }}</p>
           </div>
           <div v-else class="empty-state ion-padding">
             <img src="../assets/images/empty-state-add-product-modal.png" alt="empty-state" />
-            <p>{{ translate("Enter a SKU or product name to search a product") }}</p>
+            <p>{{ $t("Enter a SKU or product name to search a product") }}</p>
           </div>
           <ion-fab vertical="bottom" horizontal="end" slot="fixed" data-testid="session-detail-match-modal-fab">
             <ion-fab-button :disabled="!selectedProductId" @click="saveMatchProduct" data-testid="session-detail-match-modal-save-btn">
@@ -522,18 +522,18 @@
                 <ion-icon :icon="closeOutline" slot="icon-only" />
               </ion-button>
             </ion-buttons>
-            <ion-title data-testid="session-detail-edit-modal-title">{{ translate("Edit session") }}</ion-title>
+            <ion-title data-testid="session-detail-edit-modal-title">{{ $t("Edit session") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content data-testid="session-detail-edit-modal-content">
           <ion-item data-testid="session-detail-edit-modal-name-item">
-            <ion-label position="stacked">{{ translate("Name") }}</ion-label>
+            <ion-label position="stacked">{{ $t("Name") }}</ion-label>
             <ion-input v-model="newCountName" placeholder="category, section, or person" data-testid="session-detail-edit-modal-name-input"></ion-input>
-            <ion-note slot="helper">{{ translate("Add a name to help identify what inventory is counted in this session")}}</ion-note>
+            <ion-note slot="helper">{{ $t("Add a name to help identify what inventory is counted in this session")}}</ion-note>
           </ion-item>
 
           <ion-list data-testid="session-detail-edit-modal-area-list">
-            <ion-list-header>{{ translate("Area")}}</ion-list-header>
+            <ion-list-header>{{ $t("Area")}}</ion-list-header>
 
             <ion-radio-group v-model="selectedArea" data-testid="session-detail-edit-modal-area-radio-group">
               <ion-item v-for="area in areas" :key="area.value" :data-testid="'session-detail-edit-modal-area-item-' + area.value">
@@ -554,7 +554,7 @@
           <ion-img :src="largeImage" />
         </ion-content>
       </ion-modal>
-      <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
+      <ion-alert :is-open="showSubmitAlert" :header="$t('Complete session')" :message="$t('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
           { text: 'Submit', role: 'confirm', handler: confirmSubmit }
@@ -562,15 +562,15 @@
         @didDismiss="showSubmitAlert = false"
         data-testid="session-detail-submit-alert"/>
 
-      <ion-alert :is-open="showDiscardAlert" :header="translate('Discard session')" :message="translate('This session will be discarded and it won\'t be included for review when analyzing variances.')"
+      <ion-alert :is-open="showDiscardAlert" :header="$t('Discard session')" :message="$t('This session will be discarded and it won\'t be included for review when analyzing variances.')"
         :buttons="[
-          { text: translate('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
-          { text: translate('Discard'), role: 'confirm', handler: confirmDiscard }
+          { text: $t('Cancel'), role: 'cancel', handler: () => showDiscardAlert = false },
+          { text: $t('Discard'), role: 'confirm', handler: confirmDiscard }
         ]"
         @didDismiss="showDiscardAlert = false"
         data-testid="session-detail-discard-alert"/>
     </ion-content>
-    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm" data-testid="session-detail-remove-confirm-alert"/>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="$t('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm" data-testid="session-detail-remove-confirm-alert"/>
   </ion-page>
 </template>
 
@@ -582,7 +582,7 @@ import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { showToast } from '@/services/uiUtils';
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import Image from "@/components/Image.vue";
 import { inventorySyncWorker } from "@/workers/workerInitiator";
 import router from '@/router';
@@ -720,9 +720,9 @@ const scannerButtonColor = computed(() => {
 });
 
 const scannerButtonLabel = computed(() => {
-  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return translate('Start counting');
-  if (isScannerFocused.value) return translate('Scanner ready');
-  return translate('Resume counting');
+  if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') return i18n.global.t('Start counting');
+  if (isScannerFocused.value) return i18n.global.t('Scanner ready');
+  return i18n.global.t('Resume counting');
 });
 
 const scannerButtonDisabled = computed(() =>
@@ -866,7 +866,7 @@ function updateTimer() {
   const diff = due.diff(now, ['days', 'hours', 'minutes', 'seconds']);
   
   if (diff.as('milliseconds') < 0) {
-    timeLeft.value = translate("Overdue") + " " + due.toRelative();
+    timeLeft.value = i18n.global.t("Overdue") + " " + due.toRelative();
     timerColor.value = "danger";
     return;
   }
@@ -877,13 +877,13 @@ function updateTimer() {
   const seconds = Math.floor(diff.seconds);
 
   if (days > 0) {
-    timeLeft.value = translate("Due in") + ` ${days}d ${hours}h`;
+    timeLeft.value = i18n.global.t("Due in") + ` ${days}d ${hours}h`;
     timerColor.value = "medium";
   } else if (hours > 0) {
-    timeLeft.value = translate("Due in") + ` ${hours}h ${minutes}m ${seconds}s`;
+    timeLeft.value = i18n.global.t("Due in") + ` ${hours}h ${minutes}m ${seconds}s`;
     timerColor.value = hours < 4 ? "warning" : "medium";
   } else {
-    timeLeft.value = translate("Due in") + ` ${minutes}m ${seconds}s`;
+    timeLeft.value = i18n.global.t("Due in") + ` ${minutes}m ${seconds}s`;
     timerColor.value = "danger";
   }
 }
@@ -905,9 +905,9 @@ async function updateSessionOnServer() {
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value.countImportName = newCountName.value;
       inventoryCountImport.value.facilityAreaId = selectedArea.value
-      showToast(translate("Session Updated Successfully"))
+      showToast(i18n.global.t("Session Updated Successfully"))
     } else {
-      showToast(translate("Failed to Update Session Details"));
+      showToast(i18n.global.t("Failed to Update Session Details"));
     }
   } catch (error) {
     console.error(error);
@@ -1392,7 +1392,7 @@ async function confirmSubmit() {
   showSubmitAlert.value = false
   try {
     if (unmatchedItems.value.length > 0) {
-      showToast(translate("Unmatched products should be resolved before submission"))
+      showToast(i18n.global.t("Unmatched products should be resolved before submission"))
       return
     }
     await finalizeAggregationAndSync()
@@ -1557,9 +1557,9 @@ function confirmRemoveScan(item: any) {
   const qty = item.quantity
 
   removeConfirmMessage.value = `
-    ${translate('SKU')}: ${sku}<br/>
-    ${translate('Quantity')}: <b>${qty}</b><br/><br/>
-    ${translate('What would you like to remove?')}
+    ${$t('SKU')}: ${sku}<br/>
+    ${$t('Quantity')}: <b>${qty}</b><br/><br/>
+    ${$t('What would you like to remove?')}
   `
 
   showRemoveConfirmAlert.value = true
@@ -1567,17 +1567,17 @@ function confirmRemoveScan(item: any) {
 
 const removeConfirmButtons = [
   {
-    text: translate('Cancel'),
+    text: $t('Cancel'),
     role: 'cancel'
   },
   {
-    text: translate('Only this scan'),
+    text: $t('Only this scan'),
     handler: async () => {
       await negateSingleScan(removeTargetScan.value)
     }
   },
   {
-    text: translate('All scans of this SKU'),
+    text: $t('All scans of this SKU'),
     handler: async () => {
       await negateAllScansOfSku(removeTargetScan.value)
     }
@@ -1594,10 +1594,10 @@ async function negateSingleScan(item: any) {
       quantity: -Math.abs(item.quantity || 1)
     })
 
-    showToast(translate('Scan removed'))
+    showToast(i18n.global.t('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    showToast(i18n.global.t('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -1624,10 +1624,10 @@ async function negateAllScansOfSku(item: any) {
         quantity: -Math.abs(scan.quantity || 1)
       })
     }
-    showToast(translate('Removed all scans for') + ` ${sku}`)
+    showToast(i18n.global.t('Removed all scans for') + ` ${sku}`)
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scans'))
+    showToast(i18n.global.t('Failed to remove scans'))
   } finally {
     resetRemoveConfirm()
   }

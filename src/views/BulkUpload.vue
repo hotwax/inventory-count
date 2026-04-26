@@ -2,21 +2,21 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title data-testid="bulk-upload-page-title">{{ translate("Draft bulk") }}</ion-title>
+        <ion-title data-testid="bulk-upload-page-title">{{ $t("Draft bulk") }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content>
       <div class="main">
         <ion-item lines="full" data-testid="bulk-upload-file-item">
-          <ion-label data-testid="bulk-upload-file-label">{{ translate("Cycle count") }}</ion-label>
+          <ion-label data-testid="bulk-upload-file-label">{{ $t("Cycle count") }}</ion-label>
           <ion-label class="ion-text-right ion-padding-end" data-testid="bulk-upload-filename">{{ uploadedFile.name }}</ion-label>
           <input @change="parse" ref="file" class="ion-hide" type="file" id="inventoryCountInputFile" data-testid="bulk-upload-input"/>
-          <label for="inventoryCountInputFile" data-testid="bulk-upload-label">{{ translate("Upload") }}</label>
+          <label for="inventoryCountInputFile" data-testid="bulk-upload-label">{{ $t("Upload") }}</label>
         </ion-item>
 
         <ion-button color="medium" expand="block" @click="downloadTemplate" data-testid="bulk-upload-download-template-btn">
-          {{ translate("Download template") }}
+          {{ $t("Download template") }}
           <ion-icon slot="end" :icon="downloadOutline" />
         </ion-button>
 
@@ -24,26 +24,26 @@
 
         <ion-list class="field-mappings">
           <ion-item-divider color="light" data-testid="bulk-upload-required-divider">
-            <ion-label>{{ translate("Required") }} </ion-label>
+            <ion-label>{{ $t("Required") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, true)" :data-testid="'bulk-upload-required-field-' + field">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-required-field-select-' + field">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="$t('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-required-field-select-' + field">
               <ion-label slot="label" class="ion-text-wrap" :data-testid="'bulk-upload-required-field-label-' + field">
-                {{ translate(fieldValues.label) }}
+                {{ $t(fieldValues.label) }}
                 <p :data-testid="'bulk-upload-required-field-desc-' + field">{{ fieldValues.description }}</p>
               </ion-label>
-              <ion-select-option v-if="field === 'productSku'" value="skip" data-testid="bulk-upload-field-option-skip">{{ translate("Skip") }}</ion-select-option>
+              <ion-select-option v-if="field === 'productSku'" value="skip" data-testid="bulk-upload-field-option-skip">{{ $t("Skip") }}</ion-select-option>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns" :value="prop" :data-testid="'bulk-upload-required-field-option-' + field + '-' + index">{{ prop }}</ion-select-option>
             </ion-select>
           </ion-item>
 
           <ion-item-divider color="light" data-testid="bulk-upload-optional-divider">
-            <ion-label>{{ translate("Optional") }} </ion-label>
+            <ion-label>{{ $t("Optional") }} </ion-label>
           </ion-item-divider>
           <ion-item :key="field" v-for="(fieldValues, field) in getFilteredFields(fields, false)" :data-testid="'bulk-upload-optional-field-' + field">
-            <ion-select interface="popover" :disabled="!content.length" :placeholder="translate('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-optional-field-select-' + field">
+            <ion-select interface="popover" :disabled="!content.length" :placeholder="$t('Select')" v-model="fieldMapping[field]" :data-testid="'bulk-upload-optional-field-select-' + field">
               <ion-label slot="label" class="ion-text-wrap" :data-testid="'bulk-upload-optional-field-label-' + field">
-                {{ translate(fieldValues.label) }}
+                {{ $t(fieldValues.label) }}
                 <p :data-testid="'bulk-upload-optional-field-desc-' + field">{{ fieldValues.description }}</p>
               </ion-label>
               <ion-select-option :key="index" v-for="(prop, index) in fileColumns" :value="prop" :data-testid="'bulk-upload-optional-field-option-' + field + '-' + index">{{ prop }}</ion-select-option>
@@ -52,17 +52,17 @@
         </ion-list>
 
         <ion-button :disabled="!content.length" @click="save" expand="block" data-testid="bulk-upload-submit-btn">
-          {{ translate("Submit") }}
+          {{ $t("Submit") }}
           <ion-icon slot="end" :icon="cloudUploadOutline" />
         </ion-button>
 
         <ion-list v-if="systemMessages.length" class="system-message-section" data-testid="bulk-upload-recent-list">
           <ion-list-header data-testid="bulk-upload-recent-header">
             <ion-label data-testid="bulk-upload-recent-title">
-                {{ translate("Recently uploaded counts") }}
+                {{ $t("Recently uploaded counts") }}
               </ion-label>
               <ion-label class="ion-text-end" data-testid="bulk-upload-next-run">
-                {{ nextExecutionRemaining.includes("ago") ? translate("Last run") : translate("Next run") }} {{ nextExecutionRemaining }}
+                {{ nextExecutionRemaining.includes("ago") ? $t("Last run") : $t("Next run") }} {{ nextExecutionRemaining }}
               </ion-label>
           </ion-list-header>
           <ion-item v-for="systemMessage in systemMessages" :key="systemMessage.systemMessageId" :data-testid="'bulk-upload-recent-item-' + systemMessage.systemMessageId">
@@ -89,15 +89,15 @@
           <ion-list-header data-testid="bulk-upload-popover-header">{{ selectedSystemMessage?.systemMessageId }}</ion-list-header>
           <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgReceived'" button @click="cancelUpload" data-testid="bulk-upload-cancel-btn">
             <ion-icon slot="end" />
-            {{ translate("Cancel") }}
+            {{ $t("Cancel") }}
           </ion-item>
           <ion-item v-if="selectedSystemMessage?.statusId === 'SmsgError'" button @click="openErrorModal" data-testid="bulk-upload-view-error-btn">
             <ion-icon slot="end" />
-            {{ translate("View error") }}
+            {{ $t("View error") }}
           </ion-item>
           <ion-item lines="none" button @click="viewFile" data-testid="bulk-upload-view-file-btn">
             <ion-icon slot="end" />
-            {{ translate("View file") }}
+            {{ $t("View file") }}
           </ion-item>
         </ion-list>
 
@@ -109,14 +109,14 @@
                   <ion-icon :icon="close" />
                 </ion-button>
               </ion-buttons>
-              <ion-title data-testid="bulk-upload-error-modal-title">{{ translate("Import Error") }}</ion-title>
+              <ion-title data-testid="bulk-upload-error-modal-title">{{ $t("Import Error") }}</ion-title>
             </ion-toolbar>
           </ion-header>
           <ion-content data-testid="bulk-upload-error-modal-content">
             <ion-list data-testid="bulk-upload-error-modal-list">
               <ion-item lines="full" data-testid="bulk-upload-error-modal-guide-item">
                 <ion-icon :icon="bookOutline" slot="start" />
-                {{ translate("View upload guide") }}
+                {{ $t("View upload guide") }}
                 <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide" data-testid="bulk-upload-error-modal-guide-btn">
                   <ion-icon slot="icon-only" :icon="openOutline" />
                 </ion-button>
@@ -128,7 +128,7 @@
                     {{ systemMessageError.errorText }}
                   </template>
                   <template v-else>
-                    {{ translate("No data found") }}
+                    {{ $t("No data found") }}
                   </template>
                 </ion-label>
               </ion-item>
@@ -143,7 +143,7 @@
 <script setup>
 import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { onBeforeUnmount, ref } from "vue";
 import logger from "@/logger";
 import { hasError } from '@/stores/authStore';
@@ -272,7 +272,7 @@ async function viewFile() {
     if (!hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
-    showToast(translate("Failed to download uploaded cycle count file."));
+    showToast(i18n.global.t("Failed to download uploaded cycle count file."));
     logger.error(err);
   }
   closeUploadPopover();
@@ -281,11 +281,11 @@ async function cancelUpload() {
   try {
     const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ systemMessageId: selectedSystemMessage.value?.systemMessageId, statusId: "SmsgCancelled" });
     if (!hasError(resp)) {
-      showToast(translate("Cycle count cancelled successfully."));
+      showToast(i18n.global.t("Cycle count cancelled successfully."));
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
   } catch (err) {
-    showToast(translate("Failed to cancel uploaded cycle count."));
+    showToast(i18n.global.t("Failed to cancel uploaded cycle count."));
     logger.error(err);
   }
   closeUploadPopover();
@@ -339,18 +339,18 @@ async function parse(event) {
       fileName.value = file.name;
       content.value = await parseCsv(file);
       fileColumns.value = Object.keys(content.value[0]);
-      showToast(translate("File uploaded successfully"));
+      showToast(i18n.global.t("File uploaded successfully"));
       resetFieldMapping();
     }
   } catch {
     content.value = [];
-    showToast(translate("Please upload a valid csv to continue"));
+    showToast(i18n.global.t("Please upload a valid csv to continue"));
   }
 }
 async function save() {
   const required = Object.keys(getFilteredFields(fields, true));
   const selected = Object.keys(fieldMapping.value).filter(key => fieldMapping.value[key]);
-  if (!required.every(field => selected.includes(field))) return showToast(translate("Select all required fields to continue"));
+  if (!required.every(field => selected.includes(field))) return showToast(i18n.global.t("Select all required fields to continue"));
   const uploadedData = content.value.map(row => ({
     countImportName: row[fieldMapping.value.countImportName],
     purposeType: row[fieldMapping.value.purposeType] || "DIRECTED_COUNT",
@@ -374,11 +374,11 @@ async function save() {
     if (!hasError(resp)) {
       resetDefaults();
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
-      showToast(translate("The cycle counts file uploaded successfully."));
+      showToast(i18n.global.t("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {
     logger.error(err);
-    showToast(translate("Failed to upload the file, please try again"));
+    showToast(i18n.global.t("Failed to upload the file, please try again"));
   }
 }
 

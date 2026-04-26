@@ -2,11 +2,11 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title data-testid="closed-page-title">{{ translate("Closed")}}</ion-title>
+        <ion-title data-testid="closed-page-title">{{ $t("Closed")}}</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="router.push('/export-history')" data-testid="closed-export-history-btn">
             <ion-icon slot="start" :icon="downloadOutline" />
-            {{ translate("Export history") }}
+            {{ $t("Export history") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -14,19 +14,19 @@
         <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" data-testid="closed-content">      
       <ion-list data-testid="closed-list">
         <div class="filters">
-          <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="closed-search-bar"/>
+          <ion-searchbar :placeholder="$t('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="closed-search-bar"/>
           <ion-item data-testid="closed-status-item">
-            <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All" data-testid="closed-status-select">
-            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            <ion-select :label="$t('Status')" :value="filters.status" @ionChange="updateFilters('status', $event.target.value)" interface="popover" placeholder="All" data-testid="closed-status-select">
+            <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ $t(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item data-testid="closed-type-item">
-            <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover" data-testid="closed-type-select">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
+            <ion-select :label="$t('Type')" :value="filters.countType" @ionChange="updateFilters('countType', $event.target.value)" interface="popover" data-testid="closed-type-select">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ $t(option.label) }}</ion-select-option>
             </ion-select>
           </ion-item>
           <ion-item data-testid="closed-facility-item">
-            <ion-label data-testid="closed-facility-label">{{ translate('Facility') }}</ion-label>
+            <ion-label data-testid="closed-facility-label">{{ $t('Facility') }}</ion-label>
             <ion-chip slot="end" outline @click="isFacilityModalOpen = true" data-testid="closed-facility-chip">
               <ion-label data-testid="closed-facility-chip-label">{{ facilityChipLabel }}</ion-label>
             </ion-chip>
@@ -34,19 +34,19 @@
 
           
           <ion-button color="medium" fill="outline" @click="isFilterModalOpen = true" data-testid="closed-more-filters-btn">
-            {{ translate("More filters") }}
+            {{ $t("More filters") }}
             <ion-icon slot="end" :icon="filterOutline" />
           </ion-button>
           
         </div>
         <p v-if="!cycleCounts?.length" class="empty-state" data-testid="closed-empty-state">
-          {{ translate("No cycle counts found") }}
+          {{ $t("No cycle counts found") }}
         </p>
         <div v-else class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/closed/${count.workEffortId}`)" :data-testid="'closed-item-' + count.workEffortId">
           <ion-item lines="none" data-testid="closed-item-header">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="closed-item-label">
-              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="closed-item-type">{{ translate("HARD COUNT") }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="closed-item-type">{{ $t("HARD COUNT") }}</p>
               <h2 data-testid="closed-item-name">{{ count.workEffortName }}</h2>
               <p data-testid="closed-item-id">{{ count.workEffortId }}</p>
             </ion-label>
@@ -59,47 +59,47 @@
 
           <ion-label data-testid="closed-item-created-date">
             {{ getDateWithOrdinalSuffix(count.createdDate) }}
-            <p>{{ translate("Created Date") }}</p>
+            <p>{{ $t("Created Date") }}</p>
           </ion-label>
      
           <ion-label data-testid="closed-item-closed-date">
             {{ getDateWithOrdinalSuffix(count.actualCompletionDate) }}
-            <p>{{ translate("Closed Date") }}</p>
+            <p>{{ $t("Closed Date") }}</p>
           </ion-label>
         </div>
       </ion-list>
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)">
-          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
+          <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" />
       </ion-infinite-scroll>
 
       <ion-modal :is-open="isFilterModalOpen" @didDismiss="isFilterModalOpen = false" data-testid="closed-filters-modal">
         <ion-header>
           <ion-toolbar>
-            <ion-title data-testid="closed-filters-modal-title">{{ translate("Filters") }}</ion-title>
+            <ion-title data-testid="closed-filters-modal-title">{{ $t("Filters") }}</ion-title>
             <ion-buttons slot="end">
-              <ion-button @click="isFilterModalOpen = false" data-testid="closed-filters-modal-close-btn">{{ translate("Close") }}</ion-button>
+              <ion-button @click="isFilterModalOpen = false" data-testid="closed-filters-modal-close-btn">{{ $t("Close") }}</ion-button>
             </ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content class="ion-padding" data-testid="closed-filters-modal-content">
           <ion-item data-testid="closed-filter-start-item">
-            <ion-label position="stacked">{{ translate("Created before") }}</ion-label>
+            <ion-label position="stacked">{{ $t("Created before") }}</ion-label>
             <ion-input type="date" v-model="filters.createdDateTo" data-testid="closed-filter-created-to-input"/>
           </ion-item>
           <ion-item data-testid="closed-filter-end-item">
-            <ion-label position="stacked">{{ translate("Created after") }}</ion-label>
+            <ion-label position="stacked">{{ $t("Created after") }}</ion-label>
             <ion-input type="date" v-model="filters.createdDateFrom" data-testid="closed-filter-created-from-input"/>
           </ion-item>
           <ion-item data-testid="closed-filter-closed-to-item">
-            <ion-label position="stacked">{{ translate("Closed before") }}</ion-label>
+            <ion-label position="stacked">{{ $t("Closed before") }}</ion-label>
             <ion-input type="date" v-model="filters.closedDateTo" data-testid="closed-filter-closed-to-input"/>
           </ion-item>
           <ion-item data-testid="closed-filter-closed-from-item">
-            <ion-label position="stacked">{{ translate("Closed after") }}</ion-label>
+            <ion-label position="stacked">{{ $t("Closed after") }}</ion-label>
             <ion-input type="date" v-model="filters.closedDate" data-testid="closed-filter-closed-from-input"/>
           </ion-item>
           <ion-button expand="block" class="ion-margin-top" @click="applyFilters" data-testid="closed-filters-apply-btn">
-            {{ translate("Apply") }}
+            {{ $t("Apply") }}
           </ion-button>
         </ion-content>
       </ion-modal>
@@ -124,7 +124,7 @@
 import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
@@ -300,13 +300,13 @@ function validateDateFilters() {
   if (filters.value.createdDateFrom) {
     const createdFrom = DateTime.fromISO(filters.value.createdDateFrom);
     if (createdFrom > today) {
-      showToast(translate("Created after date cannot be in the future."));
+      showToast(i18n.global.t("Created after date cannot be in the future."));
       return false;
     }
     if (filters.value.createdDateTo) {
       const createdTo = DateTime.fromISO(filters.value.createdDateTo);
       if (createdFrom > createdTo) {
-        showToast(translate("Created after date cannot be later than created before date."));
+        showToast(i18n.global.t("Created after date cannot be later than created before date."));
         return false;
       }
     }
@@ -316,7 +316,7 @@ function validateDateFilters() {
     const closedFrom = DateTime.fromISO(filters.value.closedDate);
     const closedTo = DateTime.fromISO(filters.value.closedDateTo);
     if (closedFrom > closedTo) {
-      showToast(translate("Closed after date cannot be later than closed before date."));
+      showToast(i18n.global.t("Closed after date cannot be later than closed before date."));
       return false;
     }
   }
@@ -346,13 +346,13 @@ async function updateFilters(key: any, value: any) {
 
 async function exportCycleCounts() {
   try {
-    await loader.present(translate("Requesting export..."));
+    await loader.present(i18n.global.t("Requesting export..."));
     const payload = buildExportPayload();
     const resp = await useInventoryCountRun().queueCycleCountsFileExport(payload);
 
     if (!hasError(resp)) {
-      showToast(translate("Your export has been queued. You can find it in Export history."), [{
-        text: translate("View"),
+      showToast(i18n.global.t("Your export has been queued. You can find it in Export history."), [{
+        text: $t("View"),
         handler: () => {
           router.push('/export-history');
         }
@@ -362,7 +362,7 @@ async function exportCycleCounts() {
     }
   } catch (err) {
     logger.error('Failed to queue cycle counts export', err);
-    showToast(translate("Failed to request export. Please try again."));
+    showToast(i18n.global.t("Failed to request export. Please try again."));
   } finally {
     loader.dismiss();
   }

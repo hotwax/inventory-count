@@ -5,10 +5,10 @@
         <ion-title slot="start">{{ currentFacility?.facilityName || currentFacility?.facilityId }}</ion-title>
         <ion-segment slot="end" :value="mode" @ionChange="updateMode($event)" mode="ios">
           <ion-segment-button value="scan">
-            <ion-label>{{ translate("Scan") }}</ion-label>
+            <ion-label>{{ $t("Scan") }}</ion-label>
           </ion-segment-button>
           <ion-segment-button value="count">
-            <ion-label>{{ translate("Manual") }}</ion-label>
+            <ion-label>{{ $t("Manual") }}</ion-label>
           </ion-segment-button>
         </ion-segment>
       </ion-toolbar>
@@ -19,18 +19,18 @@
           <!-- Left Panel -->
           <div class="count-events">
             <ion-item class="scan" lines="none">
-              <ion-label position="stacked">{{ translate(barcodeIdentifierDescription) }}</ion-label>
-              <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
+              <ion-label position="stacked">{{ $t(barcodeIdentifierDescription) }}</ion-label>
+              <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="$t('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
                 @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
             </ion-item>
             <ion-button expand="block" :color="isScannerActive ? 'success' : 'danger'" class="focus ion-margin-top ion-margin-horizontal" @click="handleStartOrFocus">
               <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
-              {{ isScannerActive ? translate("Scanner Ready") : translate("Focus Scanner") }}
+              {{ isScannerActive ? $t("Scanner Ready") : $t("Focus Scanner") }}
             </ion-button>
 
             <ion-item v-if="!events.length" lines="none" class="empty ion-margin-top ion-text-center">
               <ion-label color="medium">
-                <p>{{ translate("Scanned items will appear here. Focus your scanner to start adding items to variance.") }}</p>
+                <p>{{ $t("Scanned items will appear here. Focus your scanner to start adding items to variance.") }}</p>
               </ion-label>
             </ion-item>
 
@@ -52,7 +52,7 @@
                         <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
                       </ion-label>
                       <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
-                        {{ translate('unaggregated') }}
+                        {{ $t('unaggregated') }}
                       </ion-badge>
                       <ion-button v-if="item.aggApplied === 1 && !negatedVarianceLogIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)">
                         <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
@@ -64,7 +64,7 @@
               <ion-popover :is-open="showScanAction" :trigger="popoverTrigger" @didDismiss="showScanAction = false" show-backdrop="false">
                 <ion-content>
                   <ion-item lines="none" button @click="confirmRemoveScan(selectedScan)">
-                    <ion-label color="danger">{{ translate("Remove") }}</ion-label>
+                    <ion-label color="danger">{{ $t("Remove") }}</ion-label>
                   </ion-item>
                 </ion-content>
               </ion-popover>
@@ -74,19 +74,19 @@
             <div class="dashboard-content-wrapper">
               <div class="variance-config-section ion-margin-top ion-padding-horizontal">
                 <ion-item lines="none" class="reason-item">
-                  <ion-select v-model="optedVarianceReason" :label="translate('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
+                  <ion-select v-model="optedVarianceReason" :label="$t('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
                     <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
-                      {{ translate(reason.label) }}
+                      {{ $t(reason.label) }}
                     </ion-select-option>
                   </ion-select>
                 </ion-item>
                 <div class="action-segment-wrapper">
                   <ion-segment :value="optedAction" @ionChange="optedAction = ($event.detail.value as any)" mode="ios">
                     <ion-segment-button value="add">
-                      <ion-label>{{ translate("Add") }}</ion-label>
+                      <ion-label>{{ $t("Add") }}</ion-label>
                     </ion-segment-button>
                     <ion-segment-button value="remove">
-                      <ion-label>{{ translate("Remove") }}</ion-label>
+                      <ion-label>{{ $t("Remove") }}</ion-label>
                     </ion-segment-button>
                   </ion-segment>
                 </div>
@@ -94,25 +94,25 @@
 
               <div class="variance-summary-header ion-margin-top ion-padding-horizontal" v-if="inventoryAdjustments.length">
                 <ion-text color="medium">
-                  <p>{{ translate("Total:") }} {{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? translate("unit") : translate("units") }} {{ translate("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? translate("product") : translate("products") }}</p>
+                  <p>{{ $t("Total:") }} {{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? $t("unit") : $t("units") }} {{ $t("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? $t("product") : $t("products") }}</p>
                 </ion-text>
                 <ion-button @click="logVariance()" :disabled="unmatchedItems.length > 0 || isLogVarianceDisabled || !inventoryAdjustments.length">
-                  {{ translate("Log Variance") }}
+                  {{ $t("Log Variance") }}
                 </ion-button>
               </div>
 
               <div class="segment-actions-container ion-margin-top ion-padding-horizontal">
                 <ion-segment v-model="selectedSegment" class="main-segment">
                   <ion-segment-button value="matched">
-                    <ion-label>{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
+                    <ion-label>{{ $t("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
                   </ion-segment-button>
                   <ion-segment-button value="unmatched">
-                    <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
+                    <ion-label>{{ $t("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
                   </ion-segment-button>
                 </ion-segment>
                 <ion-button fill="clear" color="primary" class="new-session" @click="confirmClearAll">
                   <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
-                  {{ translate("New Session") }}
+                  {{ $t("New Session") }}
                 </ion-button>
               </div>
 
@@ -120,8 +120,8 @@
                 <div v-if="selectedSegment === 'matched'">
                   <template v-if="!inventoryAdjustments.length">
                     <ion-label class="empty-state ion-padding ion-text-center">
-                      <h2 class="ion-margin-bottom">{{ translate("No items scanned") }}</h2>
-                      <p>{{ translate("Scan items to adjust their inventory.") }}</p>
+                      <h2 class="ion-margin-bottom">{{ $t("No items scanned") }}</h2>
+                      <p>{{ $t("Scan items to adjust their inventory.") }}</p>
                     </ion-label>
                   </template>
                   <template v-else>
@@ -135,7 +135,7 @@
                           <p>{{ useProductMaster().secondaryId(inventoryAdjustment.product) }}</p>
                         </ion-label>
                         <ion-text slot="end">
-                          {{ translate("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
+                          {{ $t("Current Stock:") }} {{ inventoryAdjustment.qoh || 0 }}
                         </ion-text>
                         <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveAdjustment(inventoryAdjustment)">
                           <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
@@ -143,7 +143,7 @@
                       </ion-item>
                       <ion-item lines="none">
                         <ion-label>
-                          {{ translate("Variance Qty") }}
+                          {{ $t("Variance Qty") }}
                         </ion-label>
                         <ion-text slot="end">
                           {{ optedAction === 'add' ? '+' : '-' }}{{ inventoryAdjustment.quantity }}
@@ -155,8 +155,8 @@
                 <div v-if="selectedSegment === 'unmatched'">
                   <template v-if="!unmatchedItems.length">
                     <ion-label class="empty-state ion-padding ion-text-center">
-                      <h2 class="ion-margin-bottom">{{ translate("No unmatched items") }}</h2>
-                      <p>{{ translate("All scanned items have been matched to products in your catalog. If you scan an item that isn't found, it will appear here for matching.") }}</p>
+                      <h2 class="ion-margin-bottom">{{ $t("No unmatched items") }}</h2>
+                      <p>{{ $t("All scanned items have been matched to products in your catalog. If you scan an item that isn't found, it will appear here for matching.") }}</p>
                     </ion-label>
                   </template>
 
@@ -165,12 +165,12 @@
                       <ion-item>
                         <ion-label>
                           <h2>{{ item.scannedValue }}</h2>
-                          <p>{{ getScanContext(item).scansAgo }} {{ translate("scans ago") }}</p>
+                          <p>{{ getScanContext(item).scansAgo }} {{ $t("scans ago") }}</p>
                           <p>{{ timeAgo(item.createdAt) }}</p>
                         </ion-label>
                         <ion-button slot="end" fill="outline" @click="openMatchModal(item)">
                           <ion-icon :icon="searchOutline" slot="start"></ion-icon>
-                          {{ translate("Match") }}
+                          {{ $t("Match") }}
                         </ion-button>
                         <ion-button slot="end" fill="clear" color="danger" @click="confirmRemoveUnmatchedItem(item)">
                           <ion-icon :icon="trashOutline" slot="icon-only"></ion-icon>
@@ -183,7 +183,7 @@
                           <Image :src="getScanContext(item).previousGood.product?.mainImageUrl" :key="getScanContext(item).previousGood.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
-                          <p class="overline">{{ getScanContext(item).previousDistance }} {{ translate("scans later") }}</p>
+                          <p class="overline">{{ getScanContext(item).previousDistance }} {{ $t("scans later") }}</p>
                           <p>{{ useProductMaster().primaryId(getScanContext(item).previousGood.product) }}</p>
                           <p>{{ useProductMaster().secondaryId(getScanContext(item).previousGood.product) }}</p>
                           <p>{{ getScanContext(item).previousGood.scannedValue }}</p>
@@ -196,7 +196,7 @@
                           <Image :src="getScanContext(item).nextGood.product?.mainImageUrl" :key="getScanContext(item).nextGood.product?.mainImageUrl"/>
                         </ion-thumbnail>
                         <ion-label>
-                          <p class="overline">{{ getScanContext(item).nextDistance }} {{ translate("scans ago") }}</p>
+                          <p class="overline">{{ getScanContext(item).nextDistance }} {{ $t("scans ago") }}</p>
                           <p>{{ useProductMaster().primaryId(getScanContext(item).nextGood.product) }}</p>
                           <p>{{ useProductMaster().secondaryId(getScanContext(item).nextGood.product) }}</p>
                           <p>{{ getScanContext(item).nextGood.scannedValue }}</p>
@@ -215,13 +215,13 @@
           <ion-card>
             <ion-card-header>
               <ion-card-title>
-                {{ translate("Add Items") }}
+                {{ $t("Add Items") }}
               </ion-card-title>
             </ion-card-header>
             <ion-searchbar ref="manualCountSearchBar" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleEnterKey"></ion-searchbar>
             <ion-item lines="none">
               <ion-label>
-                {{ translate("Search for products by parent name, SKU or UPC") }}
+                {{ $t("Search for products by parent name, SKU or UPC") }}
               </ion-label>
             </ion-item>
             <!-- Skeleton loader during search -->
@@ -251,31 +251,31 @@
             <ion-item v-if="searchedProducts.length > 0" lines="none">
               <ion-label>
                 <p>
-                  {{ translate('Press enter to add helper') }}
+                  {{ $t('Press enter to add helper') }}
                 </p>
               </ion-label>
             </ion-item>
             <ion-item v-if="searchedProducts.length > 1" lines="none" button detail @click="openSearchResultsModal">
               <ion-label>
-                {{ translate("View more results") }} ({{ searchedProducts.length - 1 }} more)
+                {{ $t("View more results") }} ({{ searchedProducts.length - 1 }} more)
               </ion-label>
             </ion-item>
           </ion-card>
           <div class="variance-config-section ion-margin-top ion-padding-horizontal">
             <ion-item lines="none" class="reason-item">
-              <ion-select v-model="optedVarianceReasonForHandCounted" :label="translate('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
+              <ion-select v-model="optedVarianceReasonForHandCounted" :label="$t('Reason')" label-placement="fixed" placeholder="Select" interface="popover">
                 <ion-select-option v-for="reason in varianceReasons" :key="reason.value" :value="reason.value">
-                  {{ translate(reason.label) }}
+                  {{ $t(reason.label) }}
                 </ion-select-option>
               </ion-select>
             </ion-item>
             <div class="action-segment-wrapper">
               <ion-segment :value="optedActionForHandCounted" @ionChange="optedActionForHandCounted = ($event.detail.value as any)" mode="ios">
                 <ion-segment-button value="add">
-                  <ion-label>{{ translate("Add") }}</ion-label>
+                  <ion-label>{{ $t("Add") }}</ion-label>
                 </ion-segment-button>
                 <ion-segment-button value="remove">
-                  <ion-label>{{ translate("Remove") }}</ion-label>
+                  <ion-label>{{ $t("Remove") }}</ion-label>
                 </ion-segment-button>
               </ion-segment>
             </div>
@@ -283,13 +283,13 @@
 
           <div class="variance-summary-header" v-if="handCountedProducts.length > 0">
             <div>
-              <h2>{{ translate("Counted Items") }}</h2>
+              <h2>{{ $t("Counted Items") }}</h2>
               <ion-text color="medium">
-                <p class="ion-no-margin">{{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? translate("unit") : translate("units") }} {{ translate("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? translate("product") : translate("products") }}</p>
+                <p class="ion-no-margin">{{ totalVarianceUnits }} {{ totalVarianceUnits === 1 ? $t("unit") : $t("units") }} {{ $t("across") }} {{ totalVarianceProducts }} {{ totalVarianceProducts === 1 ? $t("product") : $t("products") }}</p>
               </ion-text>
             </div>
             <ion-button :disabled="!handCountedProducts?.length || hasProductWithZeroQuantity" fill="outline" color="primary" @click="logHandCountedItemVariances">
-              {{ translate("Log Variance") }}
+              {{ $t("Log Variance") }}
             </ion-button>
           </div>
           
@@ -349,12 +349,12 @@
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ translate("Match Product") }}</ion-title>
+          <ion-title>{{ $t("Match Product") }}</ion-title>
         </ion-toolbar>
       </ion-header>
       <ion-content>
         <div class="search-bar">
-          <ion-searchbar ref="matchSearchbar" :placeholder="translate('Search products')" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleLiveSearch" />
+          <ion-searchbar ref="matchSearchbar" :placeholder="$t('Search products')" v-model="searchedProductString" @ionInput="handleLiveSearch" @keyup.enter="handleLiveSearch" />
         </div>
         
         <div class="ion-text-center ion-margin-top" v-if="isSearching">
@@ -362,7 +362,7 @@
         </div>
 
         <div class="ion-text-center ion-margin-top" v-else-if="!searchedProducts.length && searchedProductString.trim().length > 0">
-          <p>{{ translate("No products found") }}</p>
+          <p>{{ $t("No products found") }}</p>
         </div>
 
         <template v-else>
@@ -396,7 +396,7 @@
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
-          <ion-title>{{ translate("Select Product") }}</ion-title>
+          <ion-title>{{ $t("Select Product") }}</ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -419,13 +419,13 @@
         <ion-img :src="largeImage" />
       </ion-content>
     </ion-modal>
-    <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
+    <ion-alert :is-open="showRemoveConfirmAlert" :header="$t('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 
-import { translate } from '@/i18n';
+import i18n from '@/i18n';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
@@ -452,9 +452,9 @@ async function updateMode(event: any) {
 
   if (hasData) {
     const alert = await alertController.create({
-      header: translate("Log or clear variances"),
-      message: translate("You must log the variances or clear them to proceed to the selected mode"),
-      buttons: [translate("OK")]
+      header: $t("Log or clear variances"),
+      message: $t("You must log the variances or clear them to proceed to the selected mode"),
+      buttons: [$t("OK")]
     });
     await alert.present();
     // Reset segment value to current mode
@@ -495,7 +495,7 @@ const aggregationInterval = 5000;
 
 const handleScan = () => {
   if (!scannedValue.value.trim().length) {
-    showToast(translate("Please enter a barcode"));
+    showToast(i18n.global.t("Please enter a barcode"));
     return;
   }
   useProductMaster().addVarianceLog(scannedValue.value.trim(), 1, currentFacility.value.facilityId);
@@ -535,9 +535,9 @@ const confirmRemoveScan = (item: any) => {
   const qty = item.quantity
 
   removeConfirmMessage.value = `
-    ${translate('Scanned Barcode')}: ${scannedValue}<br/>
-    ${translate('Quantity')}: <b>${qty}</b><br/><br/>
-    ${translate('Would you like to remove this scan?')}
+    ${$t('Scanned Barcode')}: ${scannedValue}<br/>
+    ${$t('Quantity')}: <b>${qty}</b><br/><br/>
+    ${$t('Would you like to remove this scan?')}
   `
 
   showRemoveConfirmAlert.value = true
@@ -552,10 +552,10 @@ const negateSingleScan = async (item: any) => {
       item.productId,
       item.id
     )
-    showToast(translate('Scan removed'))
+    showToast(i18n.global.t('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    showToast(i18n.global.t('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -563,11 +563,11 @@ const negateSingleScan = async (item: any) => {
 
 const removeConfirmButtons = [
   {
-    text: translate('Cancel'),
+    text: $t('Cancel'),
     role: 'cancel'
   },
   {
-    text: translate('Remove'),
+    text: $t('Remove'),
     handler: async () => {
       await negateSingleScan(removeTargetScan.value)
     }
@@ -821,7 +821,7 @@ async function searchProducts(queryString: string): Promise<any> {
     return products;
   } catch (error) {
     console.error("Error searching products:", error);
-    showToast(translate("Failed to search products. Please try again."));
+    showToast(i18n.global.t("Failed to search products. Please try again."));
   }
   isSearching.value = false;
   return [];
@@ -859,7 +859,7 @@ function focusMatchSearch() {
 
 async function saveMatchProduct() {
   if (!selectedProductId.value || !matchedItem.value) {
-    showToast(translate("Please select a product to match"));
+    showToast(i18n.global.t("Please select a product to match"));
     return;
   }
 
@@ -876,24 +876,24 @@ async function saveMatchProduct() {
 
     if (inventorySyncWorker) {
       await inventorySyncWorker.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
-      showToast(translate("Product matched successfully"));
+      showToast(i18n.global.t("Product matched successfully"));
       closeMatchModal();
     } else {
-      showToast(translate("Background worker not available"));
+      showToast(i18n.global.t("Background worker not available"));
     }
   } catch (err) {
     console.error(err);
-    showToast(translate("Failed to match product"));
+    showToast(i18n.global.t("Failed to match product"));
   }
 }
 
 async function logHandCountedItemVariances() {
   if (!optedActionForHandCounted.value) {
-    showToast(translate("Please select an action."));
+    showToast(i18n.global.t("Please select an action."));
     return;
   }
   if (!optedVarianceReasonForHandCounted.value) {
-    showToast(translate("Please select a variance reason."));
+    showToast(i18n.global.t("Please select a variance reason."));
     return;
   }
   try {
@@ -922,7 +922,7 @@ async function logHandCountedItemVariances() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      showToast(i18n.global.t("Variance logged successfully."));
       handCountedProducts.value = []
       optedActionForHandCounted.value = 'add'
       optedVarianceReasonForHandCounted.value = null
@@ -930,18 +930,18 @@ async function logHandCountedItemVariances() {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    showToast(i18n.global.t("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
 
 async function logVariance() {
   if (!optedAction.value) {
-    showToast(translate("Please select an action."));
+    showToast(i18n.global.t("Please select an action."));
     return;
   }
   if (!optedVarianceReason.value) {
-    showToast(translate("Please select a variance reason."));
+    showToast(i18n.global.t("Please select a variance reason."));
     return;
   }
   try {
@@ -970,14 +970,14 @@ async function logVariance() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      showToast(i18n.global.t("Variance logged successfully."));
       // Clear the VarianceLogs table and the InventoryAdjustmentTables here
       useProductMaster().clearVarianceLogsAndAdjustments();
     } else {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    showToast(i18n.global.t("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
@@ -1066,19 +1066,19 @@ async function setProductQoh(product: any) {
 async function confirmRemoveAdjustment(adjustment: any) {
 
   const alert = await alertController.create({
-    header: translate("Remove record?"),
-    message: translate("This record will be removed from your scanning session and will no longer be included in the variance calculation. This action cannot be undone."),
+    header: $t("Remove record?"),
+    message: $t("This record will be removed from your scanning session and will no longer be included in the variance calculation. This action cannot be undone."),
     buttons: [
 
       {
-        text: translate("Cancel"),
+        text: $t("Cancel"),
         role: "cancel",
       },
       {
-        text: translate("Remove"),
+        text: $t("Remove"),
         handler: async () => {
           await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid, adjustment.scannedValue);
-          showToast(translate("Record removed"));
+          showToast(i18n.global.t("Record removed"));
         }
       }
     ]
@@ -1089,18 +1089,18 @@ async function confirmRemoveAdjustment(adjustment: any) {
 async function confirmRemoveUnmatchedItem(item: any) {
 
   const alert = await alertController.create({
-    header: translate("Remove scan"),
-    message: translate("Are you sure you want to remove this record?"),
+    header: $t("Remove scan"),
+    message: $t("Are you sure you want to remove this record?"),
     buttons: [
       {
-        text: translate("Cancel"),
+        text: $t("Cancel"),
         role: "cancel",
       },
       {
-        text: translate("Remove"),
+        text: $t("Remove"),
         handler: async () => {
           await useProductMaster().removeUnmatchedInventoryAdjustment(item.facilityId, item.uuid, item.scannedValue);
-          showToast(translate("Record removed"));
+          showToast(i18n.global.t("Record removed"));
         }
       }
     ]
@@ -1110,18 +1110,18 @@ async function confirmRemoveUnmatchedItem(item: any) {
 
 async function confirmClearAll() {
   const alert = await alertController.create({
-    header: translate("Clear all"),
-    message: translate("Are you sure you want to remove all records? This action cannot be undone."),
+    header: $t("Clear all"),
+    message: $t("Are you sure you want to remove all records? This action cannot be undone."),
     buttons: [
       {
-        text: translate("Cancel"),
+        text: $t("Cancel"),
         role: "cancel",
       },
       {
-        text: translate("Clear data"),
+        text: $t("Clear data"),
         handler: async () => {
           await useProductMaster().clearVarianceLogsAndAdjustments();
-          showToast(translate("All records cleared"));
+          showToast(i18n.global.t("All records cleared"));
         }
       }
     ]

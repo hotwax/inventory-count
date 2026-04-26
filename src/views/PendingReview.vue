@@ -3,7 +3,7 @@
     <!-- <Filters menu-id="pending-review-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
-        <ion-title data-testid="pending-review-page-title">{{ translate("Pending review")}}</ion-title>
+        <ion-title data-testid="pending-review-page-title">{{ $t("Pending review")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="pending-review-filter" data-testid="pending-review-filter-menu-btn">
             <ion-icon :icon="filterOutline"/>
@@ -14,28 +14,28 @@
 
     <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter">
       <div class="header searchbar" data-testid="pending-review-header-controls">
-        <ion-searchbar :placeholder="translate('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="pending-review-searchbar"/>
+        <ion-searchbar :placeholder="$t('Search')" :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch" data-testid="pending-review-searchbar"/>
         <ion-item data-testid="pending-review-type-item">
-          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="pending-review-type-select">
-            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value" :data-testid="'pending-review-type-option-' + option.value">{{ translate(option.label) }}</ion-select-option>
+          <ion-select :label="$t('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="pending-review-type-select">
+            <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value" :data-testid="'pending-review-type-option-' + option.value">{{ $t(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item data-testid="pending-review-facility-item">
-          <ion-label data-testid="pending-review-facility-label">{{ translate('Facility') }}</ion-label>
+          <ion-label data-testid="pending-review-facility-label">{{ $t('Facility') }}</ion-label>
           <ion-chip slot="end" outline @click="isFacilityModalOpen = true" data-testid="pending-review-facility-chip">
             <ion-label data-testid="pending-review-facility-chip-label">{{ facilityChipLabel }}</ion-label>
           </ion-chip>
         </ion-item>
       </div>
       <p v-if="!cycleCounts.length" class="empty-state" data-testid="pending-review-empty-state">
-        {{ translate("No cycle counts found") }}
+        {{ $t("No cycle counts found") }}
       </p>
       <ion-list data-testid="pending-review-list">
         <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" @click="router.push(`/pending-review/${count.workEffortId}`)" :data-testid="'pending-review-item-' + count.workEffortId">
           <ion-item lines="none" data-testid="pending-review-item-header">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
             <ion-label data-testid="pending-review-item-main-label">
-              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="pending-review-item-hard-count-badge">{{ translate("HARD COUNT") }}</p>
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="pending-review-item-hard-count-badge">{{ $t("HARD COUNT") }}</p>
               <span data-testid="pending-review-item-name">{{ count.workEffortName }}</span>
               <p data-testid="pending-review-item-id">{{ count.workEffortId }}</p>
             </ion-label>
@@ -48,18 +48,18 @@
 
           <ion-label data-testid="pending-review-item-created-date">
             {{ getDateWithOrdinalSuffix(count.createdDate) }}
-            <p>{{ translate("Created Date") }}</p>
+            <p>{{ $t("Created Date") }}</p>
           </ion-label>
 
           <ion-label data-testid="pending-review-item-due-date">
             {{ getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
-            <p>{{ translate("due date") }}</p>
+            <p>{{ $t("due date") }}</p>
           </ion-label>
         </div>
       </ion-list>
 
       <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)" data-testid="pending-review-infinite-scroll">
-        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" data-testid="pending-review-infinite-scroll-content"/>
+        <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="$t('Loading')" data-testid="pending-review-infinite-scroll-content"/>
       </ion-infinite-scroll>
       <FacilityFilterModal
         :is-open="isFacilityModalOpen"
@@ -76,7 +76,7 @@
 import { ref, computed } from "vue"
 import { IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
 import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';

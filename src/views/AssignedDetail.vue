@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/assigned" data-testid="assigned-detail-back-btn"/>
-        <ion-title data-testid="assigned-detail-page-title">{{ translate("Assigned count")}}</ion-title>
+        <ion-title data-testid="assigned-detail-page-title">{{ $t("Assigned count")}}</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -20,7 +20,7 @@
                 <h1 data-testid="assigned-detail-name">{{ workEffort?.workEffortName }}</h1>
               </ion-label>
               <ion-button id="present-edit-count-alert" slot="end" fill="outline" color="medium" @click="openEditNameAlert" data-testid="assigned-detail-edit-name-btn">
-                {{ translate("Edit") }}
+                {{ $t("Edit") }}
               </ion-button>
             </ion-item>
             <ion-item>
@@ -32,9 +32,9 @@
             <!-- TODO: Need to Revisit the date-time-button css -->
             <ion-item data-testid="assigned-detail-start-date-item">
               <ion-icon :icon="calendarClearOutline" slot="start" data-testid="assigned-detail-start-date-icon"></ion-icon>
-              <ion-label data-testid="assigned-detail-start-date-label">{{ translate("Start Date") }}</ion-label>
+              <ion-label data-testid="assigned-detail-start-date-label">{{ $t("Start Date") }}</ion-label>
               <ion-datetime-button v-if="workEffort?.estimatedStartDate" slot="end" datetime="estimatedStartDate" data-testid="assigned-detail-start-date-btn"/>
-              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-start-date-btn">{{ translate("Add Date") }}</ion-button>
+              <ion-button v-else id="open-start-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-start-date-btn">{{ $t("Add Date") }}</ion-button>
             </ion-item>
 
             <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-start-date-modal" keep-contents-mounted data-testid="assigned-detail-start-date-modal">
@@ -52,9 +52,9 @@
 
             <ion-item lines="none" data-testid="assigned-detail-due-date-item">
               <ion-icon :icon="calendarClearOutline" slot="start" data-testid="assigned-detail-due-date-icon"></ion-icon>
-              <ion-label data-testid="assigned-detail-due-date-label">{{ translate("Due Date") }}</ion-label>
+              <ion-label data-testid="assigned-detail-due-date-label">{{ $t("Due Date") }}</ion-label>
               <ion-datetime-button v-if="workEffort?.estimatedCompletionDate" slot="end" datetime="estimatedCompletionDate" data-testid="assigned-detail-due-date-btn"/>
-              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-due-date-btn">{{ translate("Add Date") }}</ion-button>
+              <ion-button v-else id="open-due-date-modal" slot="end" fill="outline" color="medium" data-testid="assigned-detail-add-due-date-btn">{{ $t("Add Date") }}</ion-button>
             </ion-item>
 
             <ion-modal class="ion-datetime-button-overlay date-time-modal" trigger="open-due-date-modal" keep-contents-mounted data-testid="assigned-detail-due-date-modal">
@@ -72,11 +72,11 @@
           </ion-card>
           <ion-card data-testid="assigned-detail-stats-card">
             <ion-item data-testid="assigned-detail-first-counted-item">
-              <ion-label data-testid="assigned-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
+              <ion-label data-testid="assigned-detail-first-counted-label">{{ $t("First item counted") }}</ion-label>
               <ion-label slot="end" data-testid="assigned-detail-first-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-label>
             </ion-item>
             <ion-item data-testid="assigned-detail-last-counted-item">
-              <ion-label data-testid="assigned-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
+              <ion-label data-testid="assigned-detail-last-counted-label">{{ $t("Last item counted") }}</ion-label>
               <ion-label slot="end" data-testid="assigned-detail-last-counted-value">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-label>
             </ion-item>
           </ion-card>
@@ -91,9 +91,9 @@
           :show-search="true"
           :show-sort="true"
           :sort-options="[
-            { label: translate('Alphabetic'), value: 'alphabetic' },
-            { label: translate('Variance (Low → High)'), value: 'variance-asc' },
-            { label: translate('Variance (High → Low)'), value: 'variance-desc' }
+            { label: $t('Alphabetic'), value: 'alphabetic' },
+            { label: $t('Variance (Low → High)'), value: 'variance-asc' },
+            { label: $t('Variance (High → Low)'), value: 'variance-desc' }
           ]"
           :threshold-config="userProfile.getDetailPageFilters.threshold"
           @update:filtered="filteredSessionItems = $event"
@@ -120,11 +120,11 @@
                       </div>
                         <ion-label class="stat" data-testid="assigned-detail-product-count-stat">
                           <span data-testid="assigned-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="assigned-detail-product-system-qty">{{ item.systemQuantityOnHand || '-' }}</span>
-                          <p>{{ translate("counted/systemic") }}</p>
+                          <p>{{ $t("counted/systemic") }}</p>
                         </ion-label>
                         <ion-label class="stat" data-testid="assigned-detail-product-variance-stat">
                           <span data-testid="assigned-detail-product-variance-qty">{{ item.proposedVarianceQuantity }}</span>
-                          <p>{{ translate("variance") }}</p>
+                          <p>{{ $t("variance") }}</p>
                         </ion-label>
                     </div>
                     <div slot="content" @click.stop="stopAccordianEventProp" :data-testid="'assigned-detail-product-content-' + item.productId">
@@ -166,15 +166,15 @@
                           </ion-item>
                           <ion-label data-testid="assigned-detail-session-counted-stat">
                             <span data-testid="assigned-detail-session-counted-qty">{{ session.counted }}</span>
-                            <p>{{ translate("counted") }}</p>
+                            <p>{{ $t("counted") }}</p>
                           </ion-label>
                           <ion-label data-testid="assigned-detail-session-started-stat">
                             <span data-testid="assigned-detail-session-started-date">{{ getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
-                            <p>{{ translate("started") }}</p>
+                            <p>{{ $t("started") }}</p>
                           </ion-label>
                           <ion-label data-testid="assigned-detail-session-updated-stat">
                             <span data-testid="assigned-detail-session-updated-date">{{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
-                            <p>{{ translate("last updated") }}</p>
+                            <p>{{ $t("last updated") }}</p>
                           </ion-label>
                           <ion-button fill="clear" color="medium" @click="openSessionPopover($event, session, item)" :data-testid="'assigned-detail-session-popover-btn-' + session.inventoryCountImportId">
                             <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
@@ -192,25 +192,25 @@
                 <ion-list data-testid="assigned-detail-session-popover-list">
                   <ion-list-header data-testid="assigned-detail-session-popover-header">{{ selectedProductCountReview?.internalName }}</ion-list-header>
                   <ion-item size="small" data-testid="assigned-detail-session-popover-item">
-                    <ion-label data-testid="assigned-detail-session-popover-last-counted-label">{{ translate('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
+                    <ion-label data-testid="assigned-detail-session-popover-last-counted-label">{{ $t('Last Counted') }}: {{ getDateTimeWithOrdinalSuffix(selectedSession?.lastUpdatedAt) }}</ion-label>
                   </ion-item>
                 </ion-list>
               </ion-content>
             </ion-popover>
         </div>
         <div v-else class="empty-state" data-testid="assigned-detail-empty-results">
-          <p>{{ translate("No Results") }}</p>
+          <p>{{ $t("No Results") }}</p>
         </div>
       </template>
       <template v-else>
-        <p class="empty-state" data-testid="assigned-detail-not-found">{{ translate("Cycle Count Not Found") }}</p>
+        <p class="empty-state" data-testid="assigned-detail-not-found">{{ $t("Cycle Count Not Found") }}</p>
       </template>
     </ion-content>
     <ion-footer data-testid="assigned-detail-footer">
       <ion-toolbar>
         <ion-buttons slot="end">
           <ion-button color="danger" fill="outline" @click="isCloseCountAlertOpen = true" data-testid="assigned-detail-close-btn">
-            {{ translate("Close") }}
+            {{ $t("Close") }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -218,11 +218,11 @@
     <ion-alert
     :is-open="isCloseCountAlertOpen"
     @did-dismiss="isCloseCountAlertOpen = false"
-    :header="translate('Confirm Close')"
-    :message="translate('Are you sure you want to close this cycle count? This action cannot be undone.')"
+    :header="$t('Confirm Close')"
+    :message="$t('Are you sure you want to close this cycle count? This action cannot be undone.')"
     :buttons="[
-      { text: translate('Cancel'), role: 'cancel' },
-      { text: translate('Close'), handler: () => closeCycleCount() }
+      { text: $t('Cancel'), role: 'cancel' },
+      { text: $t('Close'), handler: () => closeCycleCount() }
     ]"
     data-testid="assigned-detail-close-confirm-alert">
     </ion-alert>
@@ -233,7 +233,7 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAlert, IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import i18n from '@/i18n'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { loader, showToast } from "@/services/uiUtils";
@@ -303,7 +303,7 @@ async function getWorkEffortDetails() {
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -339,7 +339,7 @@ async function handleChange(ev: any, currentField: string) {
 
     if (resp?.status === 200) {
       workEffort.value[currentField] = millis;
-      showToast(translate("Updated Successfully"))
+      showToast(i18n.global.t("Updated Successfully"))
     } else {
       throw resp;
     }
@@ -391,12 +391,12 @@ async function openEditNameAlert() {
 
             if (resp?.status === 200) {
               workEffort.value.workEffortName = data.workEffortName;
-              showToast(translate("Count Name Updated Successfully"));
+              showToast(i18n.global.t("Count Name Updated Successfully"));
             } else {
               throw resp;
             }
           } catch (error) {
-            showToast(translate("Failed to Update Cycle Count Name"));
+            showToast(i18n.global.t("Failed to Update Cycle Count Name"));
             console.error("Failed to update cycle count name:", error);
           }
           loader.dismiss();
@@ -426,7 +426,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
   }
 }
 
@@ -470,7 +470,7 @@ async function getInventoryCycleCount() {
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
-    showToast(translate("Something Went Wrong"));
+    showToast(i18n.global.t("Something Went Wrong"));
     aggregatedSessionItems.value = [];
   }
 }
@@ -555,7 +555,7 @@ async function closeCycleCount() {
         statusId: "CYCLE_CNT_CNCL"
       });
       if (updateCountResp?.status === 200) {
-        showToast(translate("Cycle Count Closed Successfully"));
+        showToast(i18n.global.t("Cycle Count Closed Successfully"));
         router.replace("/assigned");
       } else {
         throw updateCountResp;
@@ -565,7 +565,7 @@ async function closeCycleCount() {
     }
   } catch (error) {
     console.error("Error closing cycle count:", error);
-    showToast(translate("Failed to close cycle count"));
+    showToast(i18n.global.t("Failed to close cycle count"));
   }
 }
 
