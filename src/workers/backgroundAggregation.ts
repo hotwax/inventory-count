@@ -639,17 +639,14 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (resp) {
       const now = Date.now()
-      await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
-        for (const item of syncable) {
-          await db.table('inventoryCountRecords')
-            .where('[inventoryCountImportId+uuid]')
-            .equals([inventoryCountImportId, item.uuid])
-            .modify({
-              lastSyncedAt: now,
-              lastSyncedBatchId: `batch-${now}`
-            })
-        }
-      })
+      const keys = syncable.map((item: any) => [inventoryCountImportId, item.uuid])
+      await db.table('inventoryCountRecords')
+        .where('[inventoryCountImportId+uuid]')
+        .anyOf(keys)
+        .modify({
+          lastSyncedAt: now,
+          lastSyncedBatchId: `batch-${now}`
+        })
       return pending.length
     }
 
