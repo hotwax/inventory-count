@@ -258,7 +258,7 @@ function closeErrorModal() {
   closeUploadPopover();
 }
 function viewUploadGuide() {
-  window.open("https://docs.hotwax.co/documents/retail-operations/inventory/introduction/draft-cycle-count", "_blank");
+  window.open("https://docs.hotwax.co/documents/retail-operations/inventory/cycle-count/bulk-upload", "_blank");
 }
 async function getCycleCountImportErrorsFromServer() {
   try {
