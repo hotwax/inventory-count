@@ -259,10 +259,10 @@ function currentMillis(): number {
     return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
   }
 
-  function getAlphabeticSortKey(item: any) {
+  function getAlphabeticSortKey(item: any, productMaster: ReturnType<typeof useProductMaster>) {
     return (
       item.primaryId ||
-      useProductMaster().primaryId(item.product) ||
+      productMaster.primaryId(item.product) ||
       item.internalName ||
       item.productIdentifier ||
       ''
@@ -271,11 +271,12 @@ function currentMillis(): number {
 
   function sortSessionItems(items: any[], sortMode: SessionSortMode) {
     const results = [...items]
+    const productMaster = useProductMaster()
 
     if (sortMode === 'assigned') {
       results.sort((predecessor, successor) => getAssignedOrderKey(predecessor) - getAssignedOrderKey(successor))
     } else if (sortMode === 'alphabetic') {
-      results.sort((predecessor, successor) => getAlphabeticSortKey(predecessor).localeCompare(getAlphabeticSortKey(successor)))
+      results.sort((predecessor, successor) => getAlphabeticSortKey(predecessor, productMaster).localeCompare(getAlphabeticSortKey(successor, productMaster)))
     } else if (sortMode === 'lastUpdated') {
       results.sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0))
     }
