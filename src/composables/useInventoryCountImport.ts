@@ -239,8 +239,8 @@ function currentMillis(): number {
       } else {
         const existing = map.get(key);
         existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
-        const existingSequence = existing.importItemSeqId != null ? Number(existing.importItemSeqId) : NaN;
-        const itemSequence = item.importItemSeqId != null ? Number(item.importItemSeqId) : NaN;
+        const existingSequence = Number(existing.importItemSeqId);
+        const itemSequence = Number(item.importItemSeqId);
         const existingSortSequence = Number.isFinite(existingSequence) ? existingSequence : Number.MAX_SAFE_INTEGER;
         const itemSortSequence = Number.isFinite(itemSequence) ? itemSequence : Number.MAX_SAFE_INTEGER;
         existing.importItemSeqId = String(Math.min(existingSortSequence, itemSortSequence));
@@ -255,7 +255,7 @@ function currentMillis(): number {
   }
 
   function getAssignedOrderKey(item: any) {
-    const sequence = item.importItemSeqId != null ? Number(item.importItemSeqId) : NaN
+    const sequence = Number(item.importItemSeqId)
     return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
   }
 
