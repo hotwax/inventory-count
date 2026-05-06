@@ -777,6 +777,8 @@ const scannerButtonDisabled = computed(() =>
 );
 
 const userProfile = useUserProfile()
+const productStore = useProductStore()
+const productMaster = useProductMaster()
 const sessionSort = computed({
   get: () => userProfile.getSessionDetailFilters?.sort || 'assigned',
   set: (value: string) => userProfile.updateUiFilter('sessionDetail', 'sort', value)
@@ -786,13 +788,26 @@ function updateSessionSort(value: string) {
   sessionSort.value = value
 }
 
-function getIdentifierOptionDescription(type: string) {
-  const option = [
-    ...useProductStore().getProductIdentificationOptions,
-    ...useProductStore().getGoodIdentificationOptions
-  ].find((identifierOption: any) => identifierOption.goodIdentificationTypeId === type)
+const identifierOptionDescriptions = computed(() => {
+  const descriptions = new Map<string, string>()
 
-  return option?.description || type || translate('Preferred identifier')
+  for (const identifierOption of [
+    ...productStore.getProductIdentificationOptions,
+    ...productStore.getGoodIdentificationOptions
+  ]) {
+    if (identifierOption?.goodIdentificationTypeId && identifierOption?.description) {
+      descriptions.set(identifierOption.goodIdentificationTypeId, identifierOption.description)
+    }
+  }
+
+  return descriptions
+})
+
+const preferredIdentifierType = computed(() => productStore.getPrimaryId)
+const preferredIdentifierDescription = computed(() => getIdentifierOptionDescription(preferredIdentifierType.value))
+
+function getIdentifierOptionDescription(type: string) {
+  return identifierOptionDescriptions.value.get(type) || type || translate('Preferred identifier')
 }
 
 function getResolvedProductIdentifierValue(product: any, type: string) {
@@ -825,14 +840,13 @@ function getResolvedProductIdentifierValue(product: any, type: string) {
 }
 
 function getSessionItemPrimaryDisplay(item: any) {
-  const preferredIdentifierType = useProductStore().getPrimaryId
-  const preferredValue = getResolvedProductIdentifierValue(item?.product, preferredIdentifierType)
+  const preferredValue = getResolvedProductIdentifierValue(item?.product, preferredIdentifierType.value)
 
   if (preferredValue) {
     return {
       value: preferredValue,
       isFallback: false,
-      preferredDescription: getIdentifierOptionDescription(preferredIdentifierType),
+      preferredDescription: preferredIdentifierDescription.value,
       fallbackDescription: ''
     }
   }
@@ -854,12 +868,12 @@ function getSessionItemPrimaryDisplay(item: any) {
       value: item?.productId || item?.product?.productId || '',
       description: getIdentifierOptionDescription('productId')
     }
-  ].find((candidate) => candidate.value && candidate.description !== getIdentifierOptionDescription(preferredIdentifierType))
+  ].find((candidate) => candidate.value && candidate.description !== preferredIdentifierDescription.value)
 
   return {
     value: fallbackCandidates?.value || '-',
     isFallback: Boolean(fallbackCandidates?.value),
-    preferredDescription: getIdentifierOptionDescription(preferredIdentifierType),
+    preferredDescription: preferredIdentifierDescription.value,
     fallbackDescription: fallbackCandidates?.description || ''
   }
 }
@@ -880,7 +894,7 @@ function getSessionItemFallbackMessage(item: any) {
 }
 
 function getSessionItemSecondaryLabel(item: any) {
-  const secondaryLabel = item?.secondaryId || useProductMaster().secondaryId(item?.product)
+  const secondaryLabel = item?.secondaryId || productMaster.secondaryId(item?.product)
   const primaryLabel = getSessionItemPrimaryLabel(item)
 
   if (!secondaryLabel || secondaryLabel === primaryLabel) return ''
@@ -1915,6 +1929,7 @@ ion-segment-view {
 
 .search {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   width: 100%;
 }
