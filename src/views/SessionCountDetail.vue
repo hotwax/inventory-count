@@ -191,6 +191,15 @@
             </ion-card>
           </div>
 
+          <ion-item lines="none">
+            <ion-label>{{ translate('Sort by') }}</ion-label>
+            <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+              <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+              <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+              <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
           <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
             <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
@@ -576,7 +585,7 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
@@ -610,6 +619,7 @@ const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
 const subscriptions: Subscription[] = [];
+const listSubscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const isScannerFocused = ref(false);
 const sessionLocked = ref(false);
@@ -728,6 +738,15 @@ const scannerButtonDisabled = computed(() =>
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
 );
+const userProfile = useUserProfile()
+const sessionSort = computed({
+  get: () => userProfile.getSessionDetailFilters?.sort || 'uploaded',
+  set: (value: string) => userProfile.updateUiFilter('sessionDetail', 'sort', value)
+})
+
+function updateSessionSort(value: string) {
+  sessionSort.value = value
+}
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -749,6 +768,38 @@ const debouncedMatchSearch = debounce(async () => {
   await getProducts()
 }, 1000)
 
+function clearListSubscriptions() {
+  listSubscriptions.forEach(subscription => subscription.unsubscribe())
+  listSubscriptions.length = 0
+}
+
+function initializeListSubscriptions() {
+  clearListSubscriptions()
+
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (unmatchedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (countedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (uncountedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (undirectedItems.value = items))
+  )
+}
+
+watch(sessionSort, () => {
+  if (!subscriptions.length) return
+  initializeListSubscriptions()
+})
+
+watch(selectedSegment, () => {
+  searchKeyword.value = ""
+  filteredItems.value = []
+})
+
 onIonViewDidEnter(async () => {
   try {
     await startSession();
@@ -759,19 +810,7 @@ onIonViewDidEnter(async () => {
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
-    // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    subscriptions.push(
-      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe((items: any) => (unmatchedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe((items: any) => (countedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe((items: any) => (uncountedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe((items: any) => (undirectedItems.value = items))
-    )
+    initializeListSubscriptions()
     subscriptions.push(
       from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe((scans: any) => { events.value = scans; })
     );
@@ -781,10 +820,6 @@ onIonViewDidEnter(async () => {
       })
     );
 
-    watch(selectedSegment, () => {
-      searchKeyword.value = ""
-      filteredItems.value = []
-    })
     // Start the background aggregation worker and schedule periodic aggregation
     const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
     aggregationWorker = bgWorker.worker
@@ -830,6 +865,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewDidLeave(async () => {
+  clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
 

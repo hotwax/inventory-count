@@ -37,6 +37,9 @@ export const useUserProfile = defineStore('userProfile', {
         compliance: 'all',
         sort: 'alphabetic',
         threshold: { unit: 'units', value: 2 }
+      },
+      sessionDetail: {
+        sort: 'uploaded'
       }
     } as any,
     pwaState: {
@@ -60,6 +63,7 @@ export const useUserProfile = defineStore('userProfile', {
     },
     getPwaState: (state) => state.pwaState,
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
+    getSessionDetailFilters: (state) => state.uiFilters.sessionDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
       const permissions = state.permissions;
 

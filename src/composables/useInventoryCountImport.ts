@@ -15,6 +15,8 @@ interface RecordScanParams {
   locationSeqId?: string | null;
 }
 
+type SessionSortMode = 'uploaded' | 'alphabetic' | 'lastUpdated';
+
 /**
  * Utility Functions
  */
@@ -48,6 +50,7 @@ function currentMillis(): number {
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
         uuid: item.uuid || uuidv4(),
+        importItemSeqId: item.importItemSeqId || null,
         isRequested: item.isRequested || 'Y',
         productIdentifier: item.productIdentifier || '',
         locationSeqId: item.locationSeqId || null,
@@ -236,6 +239,11 @@ function currentMillis(): number {
       } else {
         const existing = map.get(key);
         existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+        const existingSequence = Number(existing.importItemSeqId);
+        const itemSequence = Number(item.importItemSeqId);
+        const existingSortSequence = Number.isFinite(existingSequence) ? existingSequence : Number.MAX_SAFE_INTEGER;
+        const itemSortSequence = Number.isFinite(itemSequence) ? itemSequence : Number.MAX_SAFE_INTEGER;
+        existing.importItemSeqId = String(Math.min(existingSortSequence, itemSortSequence));
         existing.lastUpdatedAt = Math.max(
           Number(existing.lastUpdatedAt || 0),
           Number(item.lastUpdatedAt || 0)
@@ -245,7 +253,37 @@ function currentMillis(): number {
   
     return [...map.values()];
   }
-  const getUnmatchedItems = (inventoryCountImportId: string) =>
+
+  function getUploadedOrderKey(item: any) {
+    const sequence = Number(item.importItemSeqId)
+    return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
+  }
+
+  function getAlphabeticSortKey(item: any) {
+    return (
+      item.primaryId ||
+      useProductMaster().primaryId(item.product) ||
+      item.internalName ||
+      item.productIdentifier ||
+      ''
+    )
+  }
+
+  function sortSessionItems(items: any[], sortMode: SessionSortMode) {
+    const results = [...items]
+
+    if (sortMode === 'uploaded') {
+      results.sort((predecessor, successor) => getUploadedOrderKey(predecessor) - getUploadedOrderKey(successor))
+    } else if (sortMode === 'alphabetic') {
+      results.sort((predecessor, successor) => getAlphabeticSortKey(predecessor).localeCompare(getAlphabeticSortKey(successor)))
+    } else if (sortMode === 'lastUpdated') {
+      results.sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0))
+    }
+
+    return results
+  }
+
+  const getUnmatchedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -257,13 +295,13 @@ function currentMillis(): number {
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-      return items.map(item => ({
+      return sortSessionItems(items.map(item => ({
         ...item,
         product: productMap.get(item.productId || '')
-      }))
+      })), sortMode)
     });
 
-  const getCountedItems = (inventoryCountImportId: string) =>
+  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -272,19 +310,18 @@ function currentMillis(): number {
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) > 0)
-      .sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0));
+      .filter(item => (Number(item.quantity) || 0) > 0);
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId)
-      }))
+      })), sortMode)
     });
 
-  const getUncountedItems = (inventoryCountImportId: string) =>
+  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -307,14 +344,14 @@ function currentMillis(): number {
       const inventoryMap = new Map(
         inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
       )
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId),
         inventory: inventoryMap.get(`${item.productId}::${item.facilityId}`)
-      }))
+      })), sortMode)
     });
 
-  const getUndirectedItems = (inventoryCountImportId: string) =>
+  const getUndirectedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
     liveQuery(async () => {    
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
@@ -329,10 +366,10 @@ function currentMillis(): number {
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId)
-      }))
+      })), sortMode)
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
