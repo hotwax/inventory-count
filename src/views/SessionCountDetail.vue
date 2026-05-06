@@ -191,15 +191,6 @@
             </ion-card>
           </div>
 
-          <ion-item lines="none">
-            <ion-label>{{ translate('Sort by') }}</ion-label>
-            <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
-              <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
-              <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
-              <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-
           <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
             <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
               <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
@@ -218,6 +209,15 @@
           <ion-segment-view>
             <!-- Uncounted -->
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards" data-testid="session-detail-uncounted-content">
+              <ion-item lines="none" data-testid="session-detail-uncounted-sort-item">
+                <ion-icon slot="start" :icon="swapVerticalOutline" />
+                <ion-label>{{ translate('Sort by') }}</ion-label>
+                <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                  <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+                  <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                  <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                </ion-select>
+              </ion-item>
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-uncounted-search-input"/>
               <template v-if="filteredItems.length">
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-filtered-scroller">
@@ -284,6 +284,15 @@
                     <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
                   </ion-card-content>
                 </ion-card>
+                <ion-item lines="none" data-testid="session-detail-undirected-sort-item">
+                  <ion-icon slot="start" :icon="swapVerticalOutline" />
+                  <ion-label>{{ translate('Sort by') }}</ion-label>
+                  <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                    <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+                    <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                    <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
                 <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-undirected-search-input"/>
                 <template v-if="filteredItems.length">
                   <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-card-' + item.uuid">
@@ -323,6 +332,15 @@
 
             <!-- Unmatched -->
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards" data-testid="session-detail-unmatched-content">
+              <ion-item lines="none" data-testid="session-detail-unmatched-sort-item">
+                <ion-icon slot="start" :icon="swapVerticalOutline" />
+                <ion-label>{{ translate('Sort by') }}</ion-label>
+                <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                  <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+                  <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                  <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                </ion-select>
+              </ion-item>
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-unmatched-search-input"/>
                <template v-if="unmatchedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-unmatched-empty">
@@ -425,6 +443,15 @@
 
             <!-- Counted -->
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards" data-testid="session-detail-counted-content">
+              <ion-item lines="none" data-testid="session-detail-counted-sort-item">
+                <ion-icon slot="start" :icon="swapVerticalOutline" />
+                <ion-label>{{ translate('Sort by') }}</ion-label>
+                <ion-select :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                  <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+                  <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                  <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                </ion-select>
+              </ion-item>
               <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-counted-search-input"/>
               <template v-if="filteredItems.length">
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-filtered-scroller">
@@ -592,7 +619,7 @@
 
 <script setup lang="ts">
 import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, swapVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
