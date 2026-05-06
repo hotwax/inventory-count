@@ -228,8 +228,8 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-filtered-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-uncounted-filtered-item-label">
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         </ion-label>
                         <ion-note v-if="showQoh" slot="end" data-testid="session-detail-uncounted-filtered-item-qoh">
                           {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
@@ -255,8 +255,8 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-uncounted-item-label">
-                          {{ useProductMaster().primaryId(item.product) }}
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          {{ getSessionItemPrimaryLabel(item) }}
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         </ion-label>
                         <ion-note slot="end" v-if="showQoh" data-testid="session-detail-uncounted-item-qoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
                       </ion-item>
@@ -288,8 +288,8 @@
                     <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
                     <ion-item>
                       <ion-label data-testid="session-detail-undirected-filtered-item-label">
-                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
@@ -307,8 +307,8 @@
                     <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
                     <ion-item>
                       <ion-label data-testid="session-detail-undirected-item-label">
-                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
@@ -431,8 +431,8 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-filtered-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-counted-filtered-item-label">
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                           <p v-if="item.wasUnmatched" data-testid="session-detail-counted-filtered-item-original-scan">{{ item.scannedValue }}</p>
                         </ion-label>
                         <ion-note slot="end" data-testid="session-detail-counted-filtered-item-qty">
@@ -459,8 +459,8 @@
                         <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-item-img"/>
                       </ion-thumbnail>
                       <ion-label data-testid="session-detail-counted-item-label">
-                        {{ useProductMaster().primaryId(item.product) }}
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        {{ getSessionItemPrimaryLabel(item) }}
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                       </ion-label>
                       <ion-note slot="end" data-testid="session-detail-counted-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
                     </ion-item>
@@ -748,6 +748,27 @@ const sessionSort = computed({
 
 function updateSessionSort(value: string) {
   sessionSort.value = value
+}
+
+function getSessionItemPrimaryLabel(item: any) {
+  return (
+    item?.primaryId ||
+    useProductMaster().primaryId(item?.product) ||
+    item?.internalName ||
+    item?.product?.internalName ||
+    item?.productIdentifier ||
+    item?.productId ||
+    '-'
+  )
+}
+
+function getSessionItemSecondaryLabel(item: any) {
+  const secondaryLabel = item?.secondaryId || useProductMaster().secondaryId(item?.product)
+  const primaryLabel = getSessionItemPrimaryLabel(item)
+
+  if (!secondaryLabel || secondaryLabel === primaryLabel) return ''
+
+  return secondaryLabel
 }
   
 watchEffect(() => {
