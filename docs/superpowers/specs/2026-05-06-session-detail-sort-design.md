@@ -10,7 +10,7 @@ Today the session detail experience does not expose user-controlled sorting. Use
 
 The approved scope is intentionally narrow:
 
-- support `Uploaded order`
+- support `Assigned order`
 - support `Alphabetical`
 - support `Last updated`
 - persist the selected sort on the device
@@ -53,7 +53,7 @@ The underlying `InventoryCountImportItem` entity already includes:
 
 ### Why no backend work is required
 
-`Uploaded order` can be derived from existing `importItemSeqId` values, assuming the current create order remains stable, which is consistent with the upload service creating rows in CSV iteration order.
+`Assigned order` can be derived from existing `importItemSeqId` values, assuming the current create order remains stable, which is consistent with the upload service creating rows in CSV iteration order.
 
 `Alphabetical` can be derived client-side after product hydration, using the same identity logic already used by `SmartFilterSortBar`.
 
@@ -69,13 +69,13 @@ No backend field currently exposes a richer human-readable location label for so
 
 The session detail page will expose exactly three sort options:
 
-- `Uploaded order`
+- `Assigned order`
 - `Alphabetical`
 - `Last updated`
 
 ### Default behavior
 
-For users with no saved preference on the device, default to `Uploaded order`.
+For users with no saved preference on the device, default to `Assigned order`.
 
 ### Persistence behavior
 
@@ -96,17 +96,17 @@ The actual comparator can differ by data availability, but the selected sort mod
 
 ### Local record changes
 
-The local `inventoryCountRecords` normalization step should retain `importItemSeqId` so `Uploaded order` is explicit and durable in IndexedDB-backed views.
+The local `inventoryCountRecords` normalization step should retain `importItemSeqId` so `Assigned order` is explicit and durable in IndexedDB-backed views.
 
-Without this, upload order is only accidental and is easy to lose when records are grouped or re-sorted.
+Without this, assigned ordering is only accidental and is easy to lose when records are grouped or re-sorted.
 
 ### Sort keys
 
-#### Uploaded order
+#### Assigned order
 
 Use `importItemSeqId` ascending.
 
-For grouped rows, such as grouped counted or uncounted product rows, use the minimum `importItemSeqId` among the contributing records so the grouped item stays anchored to its earliest uploaded position.
+For grouped rows, such as grouped counted or uncounted product rows, use the minimum `importItemSeqId` among the contributing records so the grouped item stays anchored to its earliest assigned position.
 
 #### Alphabetical
 
@@ -142,17 +142,17 @@ Update the app documentation to describe:
 
 - the new session-detail sort options
 - the device-persisted preference behavior
-- the meaning of `Uploaded order`
+- the meaning of `Assigned order`
 
 ## Testing
 
 Validation should cover:
 
-- first load defaults to `Uploaded order`
+- first load defaults to `Assigned order`
 - changing sort persists across reloads on the same device
 - `Alphabetical` uses hydrated display identity correctly
 - `Last updated` surfaces most recently changed rows first
-- grouped rows remain stable and do not lose their upload-order anchor
+- grouped rows remain stable and do not lose their assigned-order anchor
 - behavior works in the actual browser runtime, not just by code inspection
 
 ## Out of Scope

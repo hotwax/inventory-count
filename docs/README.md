@@ -143,7 +143,7 @@ For example the count module at `src/store/modules/count/index.ts` defines the d
 
 The session detail page now supports three device-persisted sort modes for count items:
 
-- `Uploaded order` uses the import item sequence captured when the session items are created.
+- `Assigned order` uses the import item sequence captured when the session items are created.
 - `Alphabetical` uses the same user-facing identity pattern already used elsewhere in the app, preferring the hydrated primary product identifier and then falling back safely.
 - `Last updated` shows the most recently changed rows first.
 
