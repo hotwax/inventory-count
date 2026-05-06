@@ -209,7 +209,17 @@
           <ion-segment-view>
             <!-- Uncounted -->
             <ion-segment-content v-if="isDirected && selectedSegment === 'uncounted'" class="cards" data-testid="session-detail-uncounted-content">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-uncounted-search-input"/>
+              <div class="search">
+                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" data-testid="session-detail-uncounted-search-input"/>
+                <ion-item lines="none" data-testid="session-detail-uncounted-sort-item">
+                  <ion-icon slot="start" :icon="swapVerticalOutline" />
+                  <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                    <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
               <template v-if="filteredItems.length">
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
@@ -219,8 +229,9 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-filtered-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-uncounted-filtered-item-label">
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                          <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         </ion-label>
                         <ion-note v-if="showQoh" slot="end" data-testid="session-detail-uncounted-filtered-item-qoh">
                           {{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}
@@ -246,8 +257,9 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-uncounted-item-label">
-                          {{ useProductMaster().primaryId(item.product) }}
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                          <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         </ion-label>
                         <ion-note slot="end" v-if="showQoh" data-testid="session-detail-uncounted-item-qoh">{{ item.inventory?.quantityOnHandTotal }} {{ translate('Units') }}</ion-note>
                       </ion-item>
@@ -273,14 +285,25 @@
                     <p class="ion-text-wrap">{{ translate("If these items were not intended to be counted in this session, you can discard them on the review and complete page.") }}</p>
                   </ion-card-content>
                 </ion-card>
-                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-undirected-search-input"/>
+                <div class="search">
+                  <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" data-testid="session-detail-undirected-search-input"/>
+                  <ion-item lines="none" data-testid="session-detail-undirected-sort-item">
+                    <ion-icon slot="start" :icon="swapVerticalOutline" />
+                    <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                      <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
+                      <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                      <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                </div>
                 <template v-if="filteredItems.length">
                   <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-card-' + item.uuid">
                     <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
                     <ion-item>
                       <ion-label data-testid="session-detail-undirected-filtered-item-label">
-                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
@@ -298,8 +321,9 @@
                     <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
                     <ion-item>
                       <ion-label data-testid="session-detail-undirected-item-label">
-                        <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                         <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
                       </ion-label>
                     </ion-item>
@@ -310,7 +334,17 @@
 
             <!-- Unmatched -->
             <ion-segment-content v-if="selectedSegment === 'unmatched'" class="cards" data-testid="session-detail-unmatched-content">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-unmatched-search-input"/>
+              <div class="search">
+                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" data-testid="session-detail-unmatched-search-input"/>
+                <ion-item lines="none" data-testid="session-detail-unmatched-sort-item">
+                  <ion-icon slot="start" :icon="swapVerticalOutline" />
+                  <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                    <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
                <template v-if="unmatchedItems.length === 0">
                 <div class="empty-state ion-padding ion-text-center" data-testid="session-detail-unmatched-empty">
                   <ion-label>
@@ -412,7 +446,17 @@
 
             <!-- Counted -->
             <ion-segment-content v-if="selectedSegment === 'counted'" class="cards" data-testid="session-detail-counted-content">
-              <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" class="ion-margin-bottom" data-testid="session-detail-counted-search-input"/>
+              <div class="search">
+                <ion-searchbar v-model="searchKeyword" placeholder="Search product..." @ionInput="handleIndexedDBSearch" data-testid="session-detail-counted-search-input"/>
+                <ion-item lines="none" data-testid="session-detail-counted-sort-item">
+                  <ion-icon slot="start" :icon="swapVerticalOutline" />
+                  <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
+                    <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
               <template v-if="filteredItems.length">
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
@@ -422,8 +466,9 @@
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-filtered-item-img"/>
                         </ion-thumbnail>
                         <ion-label data-testid="session-detail-counted-filtered-item-label">
-                          <h2>{{ useProductMaster().primaryId(item.product) }}</h2>
-                          <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                          <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                          <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                          <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                           <p v-if="item.wasUnmatched" data-testid="session-detail-counted-filtered-item-original-scan">{{ item.scannedValue }}</p>
                         </ion-label>
                         <ion-note slot="end" data-testid="session-detail-counted-filtered-item-qty">
@@ -450,8 +495,9 @@
                         <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-item-img"/>
                       </ion-thumbnail>
                       <ion-label data-testid="session-detail-counted-item-label">
-                        {{ useProductMaster().primaryId(item.product) }}
-                        <p>{{ useProductMaster().secondaryId(item.product) }}</p>
+                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
                       </ion-label>
                       <ion-note slot="end" data-testid="session-detail-counted-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
                     </ion-item>
@@ -576,8 +622,8 @@
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, swapVerticalOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -610,6 +656,7 @@ const selectedSegment = ref('counted');
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
 const subscriptions: Subscription[] = [];
+const listSubscriptions: Subscription[] = [];
 const barcodeInput = ref();
 const isScannerFocused = ref(false);
 const sessionLocked = ref(false);
@@ -728,6 +775,132 @@ const scannerButtonDisabled = computed(() =>
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
 );
+
+const userProfile = useUserProfile()
+const productStore = useProductStore()
+const productMaster = useProductMaster()
+const sessionSort = computed({
+  get: () => userProfile.getSessionDetailFilters?.sort || 'assigned',
+  set: (value: string) => userProfile.updateUiFilter('sessionDetail', 'sort', value)
+})
+
+function updateSessionSort(value: string) {
+  sessionSort.value = value
+}
+
+const identifierOptionDescriptions = computed(() => {
+  const descriptions = new Map<string, string>()
+
+  for (const identifierOption of [
+    ...productStore.getProductIdentificationOptions,
+    ...productStore.getGoodIdentificationOptions
+  ]) {
+    if (identifierOption?.goodIdentificationTypeId && identifierOption?.description) {
+      descriptions.set(identifierOption.goodIdentificationTypeId, identifierOption.description)
+    }
+  }
+
+  return descriptions
+})
+
+const preferredIdentifierType = computed(() => productStore.getPrimaryId)
+const preferredIdentifierDescription = computed(() => getIdentifierOptionDescription(preferredIdentifierType.value))
+
+function getIdentifierOptionDescription(type: string) {
+  return identifierOptionDescriptions.value.get(type) || type || translate('Preferred identifier')
+}
+
+function getResolvedProductIdentifierValue(product: any, type: string) {
+  if (!product || !type) return ''
+
+  const parsedGoodIds = Array.isArray(product.goodIdentifications)
+    ? product.goodIdentifications.map((goodIdentification: any) => {
+        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+          const [identifierType, value] = goodIdentification.split('/', 2)
+          return { type: identifierType?.trim(), value: value?.trim() }
+        }
+        return goodIdentification
+      })
+    : []
+
+  const resolve = (identifierType: string) => {
+    if (!identifierType) return ''
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(identifierType)) {
+      return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
+    }
+    if (identifierType === 'internalName') return product.internalName || ''
+    if (identifierType === 'productId') return product.productId || ''
+    if (identifierType === 'parentProductName' || identifierType === 'groupName') return product.parentProductName || ''
+    if (identifierType === 'title') return product.title || ''
+    if (identifierType === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
+    return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === identifierType)?.value || ''
+  }
+
+  return resolve(type)
+}
+
+function getSessionItemPrimaryDisplay(item: any) {
+  const preferredValue = getResolvedProductIdentifierValue(item?.product, preferredIdentifierType.value)
+
+  if (preferredValue) {
+    return {
+      value: preferredValue,
+      isFallback: false,
+      preferredDescription: preferredIdentifierDescription.value,
+      fallbackDescription: ''
+    }
+  }
+
+  const fallbackCandidates = [
+    {
+      value: getResolvedProductIdentifierValue(item?.product, 'SKU'),
+      description: getIdentifierOptionDescription('SKU')
+    },
+    {
+      value: item?.internalName || item?.product?.internalName || '',
+      description: getIdentifierOptionDescription('internalName')
+    },
+    {
+      value: item?.productIdentifier || '',
+      description: translate('Imported identifier')
+    },
+    {
+      value: item?.productId || item?.product?.productId || '',
+      description: getIdentifierOptionDescription('productId')
+    }
+  ].find((candidate) => candidate.value && candidate.description !== preferredIdentifierDescription.value)
+
+  return {
+    value: fallbackCandidates?.value || '-',
+    isFallback: Boolean(fallbackCandidates?.value),
+    preferredDescription: preferredIdentifierDescription.value,
+    fallbackDescription: fallbackCandidates?.description || ''
+  }
+}
+
+function getSessionItemPrimaryLabel(item: any) {
+  return getSessionItemPrimaryDisplay(item).value
+}
+
+function getSessionItemFallbackMessage(item: any) {
+  const display = getSessionItemPrimaryDisplay(item)
+
+  if (!display.isFallback || !display.fallbackDescription) return ''
+
+  return translate('Preferred identifier {preferredIdentifier} is unavailable for this item. Showing {fallbackIdentifier} instead.', {
+    preferredIdentifier: display.preferredDescription,
+    fallbackIdentifier: display.fallbackDescription
+  })
+}
+
+function getSessionItemSecondaryLabel(item: any) {
+  const secondaryLabel = item?.secondaryId || productMaster.secondaryId(item?.product)
+  const primaryLabel = getSessionItemPrimaryLabel(item)
+
+  if (!secondaryLabel || secondaryLabel === primaryLabel) return ''
+
+  return secondaryLabel
+}
   
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
@@ -749,6 +922,38 @@ const debouncedMatchSearch = debounce(async () => {
   await getProducts()
 }, 1000)
 
+function clearListSubscriptions() {
+  listSubscriptions.forEach(subscription => subscription.unsubscribe())
+  listSubscriptions.length = 0
+}
+
+function initializeListSubscriptions() {
+  clearListSubscriptions()
+
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (unmatchedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (countedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (uncountedItems.value = items))
+  )
+  listSubscriptions.push(
+    from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (undirectedItems.value = items))
+  )
+}
+
+watch(sessionSort, () => {
+  if (!subscriptions.length) return
+  initializeListSubscriptions()
+})
+
+watch(selectedSegment, () => {
+  searchKeyword.value = ""
+  filteredItems.value = []
+})
+
 onIonViewDidEnter(async () => {
   try {
     await startSession();
@@ -759,19 +964,7 @@ onIonViewDidEnter(async () => {
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
     
-    // Fetch the items from IndexedDB via liveQuery to update the lists reactively
-    subscriptions.push(
-      from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId)).subscribe((items: any) => (unmatchedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId)).subscribe((items: any) => (countedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId)).subscribe((items: any) => (uncountedItems.value = items))
-    )
-    subscriptions.push(
-      from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId)).subscribe((items: any) => (undirectedItems.value = items))
-    )
+    initializeListSubscriptions()
     subscriptions.push(
       from(useInventoryCountImport().getScanEvents(props.inventoryCountImportId)).subscribe((scans: any) => { events.value = scans; })
     );
@@ -781,10 +974,6 @@ onIonViewDidEnter(async () => {
       })
     );
 
-    watch(selectedSegment, () => {
-      searchKeyword.value = ""
-      filteredItems.value = []
-    })
     // Start the background aggregation worker and schedule periodic aggregation
     const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
     aggregationWorker = bgWorker.worker
@@ -830,6 +1019,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewDidLeave(async () => {
+  clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
 
@@ -1641,13 +1831,6 @@ function resetRemoveConfirm() {
 
 <style scoped>
 
-/* main {
-  display: flex;
-  justify-content: center;
-  align-items: start;
-  height: 100%;
-} */
-
 main {
   display: grid;
   grid-template-columns: 25% auto;
@@ -1742,6 +1925,17 @@ ion-segment {
 
 ion-segment-view {
   height: unset;
+}
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
+}
+
+.search>* {
+  flex: 1 1 375px;
 }
 
 .big-number {
