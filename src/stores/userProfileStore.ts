@@ -39,7 +39,7 @@ export const useUserProfile = defineStore('userProfile', {
         threshold: { unit: 'units', value: 2 }
       },
       sessionDetail: {
-        sort: 'uploaded'
+        sort: 'assigned'
       }
     } as any,
     pwaState: {

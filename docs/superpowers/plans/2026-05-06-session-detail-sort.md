@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add session-detail sorting with device-persisted `Uploaded order`, `Alphabetical`, and `Last updated` modes without backend changes.
+**Goal:** Add session-detail sorting with device-persisted `Assigned order`, `Alphabetical`, and `Last updated` modes without backend changes.
 
 **Architecture:** Reuse the existing client-side sort and persistence patterns already present in `SmartFilterSortBar` and `userProfileStore`. Persist the session-detail sort choice in the existing Pinia store, retain `importItemSeqId` in local session records, and route all segment list ordering through a shared session-detail sort helper.
 
@@ -22,7 +22,7 @@ Update the `uiFilters` state so session detail has its own sort preference inste
 
 ```ts
 sessionDetail: {
-  sort: 'uploaded'
+  sort: 'assigned'
 }
 ```
 
@@ -109,7 +109,7 @@ Expected: lint completes or only reports unrelated repo warnings
 Add a local union type near the composable helpers:
 
 ```ts
-type SessionSortMode = 'uploaded' | 'alphabetic' | 'lastUpdated'
+type SessionSortMode = 'assigned' | 'alphabetic' | 'lastUpdated'
 ```
 
 - [ ] **Step 2: Add a display-key resolver**
@@ -136,7 +136,7 @@ Add a helper:
 function sortSessionItems(items: any[], sortMode: SessionSortMode) {
   const results = [...items]
 
-  if (sortMode === 'uploaded') {
+  if (sortMode === 'assigned') {
     results.sort((a, b) => Number(a.importItemSeqId || 0) - Number(b.importItemSeqId || 0))
   } else if (sortMode === 'alphabetic') {
     results.sort((a, b) => getAlphabeticSortKey(a).localeCompare(getAlphabeticSortKey(b)))
@@ -194,7 +194,7 @@ Add a computed or ref based on the user profile store:
 ```ts
 const userProfile = useUserProfile()
 const sessionSort = computed({
-  get: () => userProfile.getSessionDetailFilters?.sort || 'uploaded',
+  get: () => userProfile.getSessionDetailFilters?.sort || 'assigned',
   set: (value) => userProfile.updateUiFilter('sessionDetail', 'sort', value)
 })
 ```
@@ -207,7 +207,7 @@ In the session-detail template, add an Ionic control near the segment list area 
 <ion-item lines="none">
   <ion-label>{{ translate('Sort by') }}</ion-label>
   <ion-select :value="sessionSort" @ionChange="sessionSort = $event.detail.value">
-    <ion-select-option value="uploaded">{{ translate('Uploaded order') }}</ion-select-option>
+    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
     <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
     <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
   </ion-select>
@@ -264,14 +264,14 @@ Expected: lint completes or only reports unrelated repo warnings
 Add a short subsection to the app docs describing:
 
 - the three sort modes
-- the first-load default of `Uploaded order`
+- the first-load default of `Assigned order`
 - device persistence of the selected sort
 
 - [ ] **Step 2: Update the GitHub issue body**
 
 Expand `#1392` to include:
 
-- approved scope: `Uploaded order`, `Alphabetical`, `Last updated`
+- approved scope: `Assigned order`, `Alphabetical`, `Last updated`
 - reuse of SmartFilterSortBar sorting rules
 - no backend changes in this iteration
 - persistence on device via existing user profile store
@@ -301,9 +301,9 @@ Expected: session detail loads without errors
 
 - [ ] **Step 3: Verify default behavior**
 
-Check that a first-load session on a clean preference state shows `Uploaded order`.
+Check that a first-load session on a clean preference state shows `Assigned order`.
 
-Expected: the UI indicates `Uploaded order`, and rows align with import sequence behavior
+Expected: the UI indicates `Assigned order`, and rows align with import sequence behavior
 
 - [ ] **Step 4: Verify alphabetical sorting**
 

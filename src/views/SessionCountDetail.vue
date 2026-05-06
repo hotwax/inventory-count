@@ -214,7 +214,7 @@
                 <ion-item lines="none" data-testid="session-detail-uncounted-sort-item">
                   <ion-icon slot="start" :icon="swapVerticalOutline" />
                   <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
-                    <ion-select-option value="uploaded">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
                     <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
                     <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
                   </ion-select>
@@ -290,7 +290,7 @@
                   <ion-item lines="none" data-testid="session-detail-undirected-sort-item">
                     <ion-icon slot="start" :icon="swapVerticalOutline" />
                     <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
-                      <ion-select-option value="uploaded">{{ translate('Assigned order') }}</ion-select-option>
+                      <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
                       <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
                       <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
                     </ion-select>
@@ -339,7 +339,7 @@
                 <ion-item lines="none" data-testid="session-detail-unmatched-sort-item">
                   <ion-icon slot="start" :icon="swapVerticalOutline" />
                   <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
-                    <ion-select-option value="uploaded">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
                     <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
                     <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
                   </ion-select>
@@ -451,7 +451,7 @@
                 <ion-item lines="none" data-testid="session-detail-counted-sort-item">
                   <ion-icon slot="start" :icon="swapVerticalOutline" />
                   <ion-select :label="translate('Sort by')" label-placement="start" :value="sessionSort" interface="popover" @ionChange="updateSessionSort($event.detail.value)">
-                    <ion-select-option value="uploaded">{{ translate('Assigned order') }}</ion-select-option>
+                    <ion-select-option value="assigned">{{ translate('Assigned order') }}</ion-select-option>
                     <ion-select-option value="alphabetic">{{ translate('Alphabetical') }}</ion-select-option>
                     <ion-select-option value="lastUpdated">{{ translate('Last updated') }}</ion-select-option>
                   </ion-select>
@@ -775,9 +775,10 @@ const scannerButtonDisabled = computed(() =>
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
 );
+
 const userProfile = useUserProfile()
 const sessionSort = computed({
-  get: () => userProfile.getSessionDetailFilters?.sort || 'uploaded',
+  get: () => userProfile.getSessionDetailFilters?.sort || 'assigned',
   set: (value: string) => userProfile.updateUiFilter('sessionDetail', 'sort', value)
 })
 

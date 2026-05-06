@@ -15,7 +15,7 @@ interface RecordScanParams {
   locationSeqId?: string | null;
 }
 
-type SessionSortMode = 'uploaded' | 'alphabetic' | 'lastUpdated';
+type SessionSortMode = 'assigned' | 'alphabetic' | 'lastUpdated';
 
 /**
  * Utility Functions
@@ -254,7 +254,7 @@ function currentMillis(): number {
     return [...map.values()];
   }
 
-  function getUploadedOrderKey(item: any) {
+  function getAssignedOrderKey(item: any) {
     const sequence = Number(item.importItemSeqId)
     return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
   }
@@ -272,8 +272,8 @@ function currentMillis(): number {
   function sortSessionItems(items: any[], sortMode: SessionSortMode) {
     const results = [...items]
 
-    if (sortMode === 'uploaded') {
-      results.sort((predecessor, successor) => getUploadedOrderKey(predecessor) - getUploadedOrderKey(successor))
+    if (sortMode === 'assigned') {
+      results.sort((predecessor, successor) => getAssignedOrderKey(predecessor) - getAssignedOrderKey(successor))
     } else if (sortMode === 'alphabetic') {
       results.sort((predecessor, successor) => getAlphabeticSortKey(predecessor).localeCompare(getAlphabeticSortKey(successor)))
     } else if (sortMode === 'lastUpdated') {
@@ -283,7 +283,7 @@ function currentMillis(): number {
     return results
   }
 
-  const getUnmatchedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
+  const getUnmatchedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -301,7 +301,7 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
+  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -321,7 +321,7 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
+  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -351,7 +351,7 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getUndirectedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'uploaded') =>
+  const getUndirectedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {    
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
