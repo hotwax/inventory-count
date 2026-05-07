@@ -89,7 +89,7 @@ async function fetchFacilitiesByGroup(facilityGroupId: string, baseURL?: string,
 
 async function fetchFacilitiesByParty(partyId: string, baseURL?: string, token?: string, payload?: any): Promise <Array<any> | Response> {
   let params: RequestPayload = {
-    url: `inventory-cycle-count/user/${partyId}/facilities`,
+    url: `admin/user/${partyId}/facilities`,
     method: "GET",
     params: {
       ...payload,
