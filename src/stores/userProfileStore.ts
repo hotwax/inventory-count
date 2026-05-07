@@ -42,6 +42,9 @@ export const useUserProfile = defineStore('userProfile', {
         compliance: 'all',
         sort: 'alphabetic',
         threshold: { unit: 'units', value: 2 }
+      },
+      sessionDetail: {
+        sort: 'assigned'
       }
     } as any
   }),
@@ -59,7 +62,8 @@ export const useUserProfile = defineStore('userProfile', {
     getListPageFilters: (state) => (segment: string) => {
       return state.uiFilters[segment] || {}
     },
-    getDetailPageFilters: (state) => state.uiFilters.reviewDetail
+    getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
+    getSessionDetailFilters: (state) => state.uiFilters.sessionDetail
   },
 
   actions: {
