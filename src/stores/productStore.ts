@@ -66,18 +66,6 @@ export const useProductStore = defineStore('productStore', {
 
   actions: {
     /** ---------- Product Store Management ---------- */
-    async loadStoresByFacility(facilityId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/facilities/${facilityId}/productStores`,
-          method: 'GET'
-        })
-        if (!hasError(resp)) this.productStores = resp?.data
-      } catch (err) {
-        logger.error('Failed to load product stores', err)
-      }
-    },
-
     setCurrent(productStore: any) {
       this.currentProductStore = productStore
     },
@@ -195,7 +183,7 @@ export const useProductStore = defineStore('productStore', {
     async getSettings(productStoreId: string) {
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'GET',
           params: {
             settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
@@ -232,7 +220,7 @@ export const useProductStore = defineStore('productStore', {
 
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'POST',
           data: {
             productStoreId,
@@ -308,18 +296,6 @@ export const useProductStore = defineStore('productStore', {
     },
 
     /** Facility specific functions */
-    async loadUserFacilities(partyId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/users/${partyId}/facilities`,
-          method: 'GET'
-        })
-        if (!hasError(resp)) this.facilities = resp?.data
-      } catch (err) {
-        logger.error('Failed to load facilities', err)
-      }
-    },
-
     async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
       const authStore = useAuthStore()
       try {
