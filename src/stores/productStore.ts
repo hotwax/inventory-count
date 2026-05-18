@@ -65,7 +65,7 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async getEComStores(token?: string, baseURL?: string, pageSize = 100): Promise <any> {
-      let params: any = { url: "oms/productStores", method: "GET", params: { pageSize } }
+      let params: any = { url: "admin/productStores", method: "GET", params: { pageSize } }
       let resp = {} as any, stores: Array<any> = []
       try {
         resp = await api(params);
@@ -99,7 +99,7 @@ export const useProductStore = defineStore('productStore', {
       const prefValue = { primaryId: "productId", secondaryId: "" }
       try {
         await api({
-          url: `oms/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: "POST",
           data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(prefValue) }
         });
@@ -111,7 +111,7 @@ export const useProductStore = defineStore('productStore', {
       const productIdentifications = { primaryId: "productId", secondaryId: "" }
       try {
         const resp = await api({
-          url: `oms/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: "GET",
           params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" }
         }) as any;
@@ -132,7 +132,7 @@ export const useProductStore = defineStore('productStore', {
     async saveProductIdentificationPref(productStoreId: string, productIdentificationPref: any): Promise<any> {
       let resp = {} as any, isSettingExists = false;
       try {
-        resp = await api({ url: `oms/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
+        resp = await api({ url: `admin/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
         if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
       } catch(err) { console.error(err) }
       if(!isSettingExists) {
@@ -140,7 +140,7 @@ export const useProductStore = defineStore('productStore', {
       }
       try {
         resp = await api({
-          url: `oms/productStores/${productStoreId}/settings`, method: "POST",
+          url: `admin/productStores/${productStoreId}/settings`, method: "POST",
           data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) }
         });
         return Promise.resolve(productIdentificationPref)
@@ -359,7 +359,7 @@ export const useProductStore = defineStore('productStore', {
     async getSettings(productStoreId: string) {
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'GET',
           params: {
             settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
@@ -396,7 +396,7 @@ export const useProductStore = defineStore('productStore', {
 
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'POST',
           data: {
             productStoreId,
