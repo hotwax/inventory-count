@@ -9,8 +9,10 @@ on:
 
 jobs:
   call-workflow-in-another-repo:
-    uses: hotwax/dxp-components/.github/workflows/common-pull-request.yml@main
+    uses: hotwax/accxui/.github/workflows/common-pull-request.yml@main
     with:
       config-path: .github/labeler.yml
+      app: hotwax/inventory-count
+      appDir: inventory-count
     secrets:
       envPAT: ${{ secrets.envPAT }}
