@@ -11,7 +11,7 @@
         <ion-content>
           <ion-list id="receiving-list" data-testid="app-menu-list">
             <ion-menu-toggle
-              auto-hide="false"
+              :auto-hide="false"
               v-for="(page, index) in visibleMenuItems"
               :key="index"
             >
@@ -57,31 +57,25 @@ import {
   loadingController
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import emitter from "@/event-bus";
-import { translate } from "@/i18n";
-import { Actions, hasPermission } from '@/authorization';
+import { commonUtil, translate, logger, emitter } from "@common";
 import { useProductStore } from '@/stores/productStore';
-import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
-import { useAuthStore } from './stores/authStore';
+import router from './router';
 
-const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const userToken = computed(() => useAuthStore().token.value);
+const userToken = commonUtil.getToken();
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
-  return !isExcluded && hasPermission(Actions.APP_DRAFT_VIEW);
+  return !isExcluded && useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN');
 });
 
 const loader = ref(null) as any;
 
-async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
-  if (options.message && loader.value) dismissLoader();
+async function presentLoader(options: any = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
   if (!loader.value) {
     loader.value = await loadingController.create({
       message: translate(options.message),
@@ -109,7 +103,7 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (!!userToken.value && useProductStore()?.getCurrentProductStore?.productStoreId) {
+  if (!!userToken && useProductStore()?.getCurrentProductStore?.productStoreId) {
     await useProductStore()
       .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));
@@ -137,7 +131,7 @@ const visibleMenuItems = computed(() => {
     .filter(
       (route) =>
         route.meta?.showInMenu &&
-        (!route.meta.permissionId || hasPermission(route.meta.permissionId))
+        (!route.meta.permissionId || useUserProfile().hasPermission(route.meta.permissionId))
     );
 
   return allVisible.sort((a, b) => {

@@ -22,15 +22,15 @@
               <ion-card-title data-testid="settings-user-full-name">{{ userProfile?.userFullName }}</ion-card-title>
             </ion-card-header>
           </ion-item>
-          <ion-button v-if="!useAuthStore().isEmbedded" color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
+          <ion-button v-if="!commonUtil.isAppEmbedded()" color="danger" @click="logout()" data-testid="settings-logout-btn">{{ translate("Logout") }}</ion-button>
           <!-- Commenting this code as we currently do not have reset password functionality -->
           <!-- <ion-button fill="outline" color="medium">{{ "Reset password") }}</ion-button> -->
-          <ion-button v-if="!useAuthStore().isEmbedded" :standalone-hidden="!hasPermission(Actions.APP_PWA_STANDALONE_ACCESS)" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
+          <ion-button :standalone-hidden="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" v-if="!commonUtil.isAppEmbedded()" fill="outline" @click="goToLaunchpad()" data-testid="settings-launchpad-btn">
             {{ translate("Go to Launchpad") }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- TODO: Replace route-based checks with a store/admin view flag when present in Pinia Stores -->
-          <ion-button fill="outline" v-if="hasPermission(Actions.APP_ASSIGNED_VIEW) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
+          <ion-button fill="outline" v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN') && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
             <ion-icon size="medium" :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
             {{ translate("Admin View") }}
           </ion-button>
@@ -46,19 +46,19 @@
               {{ translate('OMS instance') }}
             </ion-card-subtitle>
             <ion-card-title data-testid="settings-oms-instance">
-              {{ oms }}
+              {{ commonUtil.getOMSInstanceName() }}
             </ion-card-title>
           </ion-card-header>
           <ion-card-content>
             {{ translate('This is the name of the OMS you are connected to right now. Make sure that you are connected to the right instance before proceeding.') }}
           </ion-card-content>
-          <ion-button v-if="!useAuthStore().isEmbedded" :disabled="!useAuthStore().token.value || !omsRedirectionLink || !hasPermission(Actions.APP_COMMERCE_VIEW)" @click="goToOms(useAuthStore().token.value, omsRedirectionLink)" fill="clear" data-testid="settings-go-to-oms-btn">
-            {{ $t('Go to OMS') }}
+          <ion-button :disabled="!commonUtil.getToken() || !commonUtil.getOmsURL() || !useUserProfile().hasPermission('COMMERCEUSER_VIEW')" v-if="!commonUtil.isAppEmbedded()" @click="goToOms(commonUtil.getToken() as string, commonUtil.getOmsURL())" fill="clear" data-testid="settings-go-to-oms-btn">
+            {{ translate('Go to OMS') }}
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
         </ion-card>
-        <FacilitySwitcher v-if="hasPermission('APP_COUNT_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
-        <ion-card v-if="hasPermission('APP_DRAFT_VIEW') && !router.currentRoute.value.fullPath.includes('/tabs/')">
+        <FacilitySwitcher v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW') && router.currentRoute.value.fullPath.includes('/tabs/')"/>
+        <ion-card v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN') && !router.currentRoute.value.fullPath.includes('/tabs/')">
           <ion-card-header>
             <ion-card-subtitle>
               {{ translate("Product Store") }}
@@ -80,13 +80,7 @@
         </ion-card>
       </section>
       <hr />
-      <div class="section-header">
-        <h1>
-          {{ translate("App") }}
-          <p class="overline" data-testid="settings-app-version">{{ translate("Version:") + appVersion }}</p>
-        </h1>
-        <p class="overline" data-testid="settings-app-built-time">{{ translate("Built:") + getDateTime(appInfo.builtTime) }}</p>
-      </div>
+      <DxpAppVersionInfo/>
       <section>
         <TimeZoneSwitcher/>
         <ion-card data-testid="settings-product-identifier-card">
@@ -100,13 +94,13 @@
             {{ 'Choosing a product identifier allows you to view products with your preferred identifiers.' }}
           </ion-card-content>
 
-          <ion-item :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-primary-id-item">
-            <ion-select :label="$t('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')" data-testid="settings-primary-id-select">
+          <ion-item :disabled="!useUserProfile().hasPermission('COMMON_ADMIN')" data-testid="settings-primary-id-item">
+            <ion-select :label="translate('Primary')" interface="popover" :placeholder="'primary identifier'" :value="productIdentificationPref.primaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'primaryId')" data-testid="settings-primary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId">{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <ion-item lines="none" :disabled="!hasPermission(Actions.APP_PRODUCT_IDENTIFIER_UPDATE)" data-testid="settings-secondary-id-item">
-            <ion-select :label="$t('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
+          <ion-item lines="none" :disabled="!useUserProfile().hasPermission('COMMON_ADMIN')" data-testid="settings-secondary-id-item">
+            <ion-select :label="translate('Secondary')" interface="popover" :placeholder="'secondary identifier'" :value="productIdentificationPref.secondaryId" @ionChange="setProductIdentificationPref($event.detail.value, 'secondaryId')" data-testid="settings-secondary-id-select">
               <ion-select-option v-for="identification in productIdentificationOptions" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
               <!-- <ion-select-option value="">{{ "None" }}</ion-select-option> -->
             </ion-select>
@@ -119,7 +113,7 @@
             </ion-card-title>
           </ion-card-header>
           <ion-card-content v-html="barcodeContentMessage" data-testid="settings-force-scan-msg"></ion-card-content>
-          <ion-item lines="none" :disabled="!hasPermission('APP_DRAFT_VIEW')" data-testid="settings-barcode-id-item">
+          <ion-item lines="none" :disabled="!useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN')" data-testid="settings-barcode-id-item">
             <ion-select :label="translate('Barcode Identifier')" interface="popover" :placeholder="useProductStore().getBarcodeIdentificationPref || translate('Select')" :value="useProductStore().getBarcodeIdentificationPref" @ionChange="setBarcodeIdentificationPref($event.detail.value)" data-testid="settings-barcode-id-select">
               <ion-select-option v-for="identification in productIdentifications" :key="identification.goodIdentificationTypeId" :value="identification.goodIdentificationTypeId" >{{ identification.description ? identification.description : identification.goodIdentificationTypeId }}</ion-select-option>
             </ion-select>
@@ -242,12 +236,10 @@
 <script setup lang="ts">
 import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, alertController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { translate } from "@/i18n"
+import { commonUtil, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
-import { useAuthStore } from "@/stores/authStore";
-import { Actions, hasPermission } from "@/authorization"
+import { useAuth } from "@common";
 import router from "@/router";
-import { DateTime } from "luxon";
 import FacilitySwitcher from "@/components/FacilitySwitcher.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductStore } from "@/stores/productStore";
@@ -255,37 +247,26 @@ import TimeZoneSwitcher from "@/components/TimeZoneSwitcher.vue"
 import pairingResetBarcode from "@/assets/images/pairing-reset.png"
 import iosKeyboardBarcode from "@/assets/images/ios-keyboard.png"
 import { useDiagnostics } from "@/composables/useDiagnostics";
-import { showToast } from "@/services/uiUtils";
 import { db } from "@/services/appInitializer";
-
-const appVersion = ref("")
-const appInfo = (process.env.VUE_APP_VERSION_INFO ? JSON.parse(process.env.VUE_APP_VERSION_INFO) : {}) as any
-
+import DxpAppVersionInfo from '@/components/DxpAppVersionInfo.vue';
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const oms = useAuthStore().oms
-const omsRedirectionLink = computed(() => useAuthStore().omsRedirectionUrl);
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
 const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
 onMounted(async () => {
-  appVersion.value = appInfo.branch ? (appInfo.branch + "-" + appInfo.revision) : appInfo.tag;
   await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
   await useProductStore().prepareProductIdentifierOptions();
   await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 
 function logout() {
-  useAuthStore().logout();
+  useAuth().logout({ isUserUnauthorised: false });
 }
 
 function goToLaunchpad() {
-  window.location.href = `${process.env.VUE_APP_LOGIN_URL}`
-}
-
-function getDateTime(time: any) {
-  return time ? DateTime.fromMillis(time).toLocaleString({ ...DateTime.DATETIME_MED, hourCycle: "h12" }) : "";
+  window.location.href = `${import.meta.env.VITE_LOGIN_URL}`
 }
 
 const goToOms = (token: string, oms: string) => {
@@ -367,7 +348,7 @@ async function confirmClearLocalInventoryData() {
         text: translate("Clear data"),
         handler: async () => {
           if (!db) {
-            showToast(translate("Local database is not initialized."));
+            commonUtil.showToast(translate("Local database is not initialized."));
             return;
           }
 
@@ -383,10 +364,10 @@ async function confirmClearLocalInventoryData() {
             await db.transaction("rw", db.scanEvents, async () => {
               await db.scanEvents.clear();
             });
-            showToast(translate("Local inventory data cleared."));
+            commonUtil.showToast(translate("Local inventory data cleared."));
           } catch (error) {
             console.error("Failed to clear local inventory data:", error);
-            showToast(translate("Failed to clear local inventory data."));
+            commonUtil.showToast(translate("Failed to clear local inventory data."));
           }
         }
       }

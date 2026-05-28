@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { translate } from '@/i18n'
+import { commonUtil, translate, useSolrSearch } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -191,11 +191,10 @@ import {
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, computed, onMounted, nextTick, defineProps } from 'vue'
 import router from '@/router'
-import { client } from '@/services/RemoteAPI'
+import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
-import { loader, showToast } from '@/services/uiUtils'
+import { loader } from '@/services/uiUtils'
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun'
-import { useAuthStore } from '@/stores/authStore'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useProductStore } from '@/stores/productStore'
 import Image from '@/components/Image.vue'
@@ -293,7 +292,7 @@ async function getInventoryCycleCount() {
     inventoryCountImport.value = sessionResp.data
   } catch (error) {
     console.error(error)
-    showToast('Failed to fetch Count and Session details')
+    commonUtil.showToast('Failed to fetch Count and Session details')
   }
 }
 
@@ -352,28 +351,17 @@ async function getProductBySearch(term: string) {
     });
 
     searchedProducts.value = enrichedProducts
-    if (products.length === 0) showToast(`No products found for "${term}"`)
+    if (products.length === 0) commonUtil.showToast(`No products found for "${term}"`)
   } catch (err) {
     console.error('Failed to fetch products', err)
-    showToast('Something went wrong')
+    commonUtil.showToast('Something went wrong')
   } finally {
     isSearching.value = false
   }
 }
 
 async function getProducts(query: any) {
-  const baseURL = useAuthStore().getBaseUrl;
-
-  return client({
-    url: 'inventory-cycle-count/runSolrQuery',
-    method: 'POST',
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: `Bearer ${useAuthStore().token.value}`,
-      'Content-Type': 'application/json',
-    },
-  })
+  return useSolrSearch().runSolrQuery(query);
 }
 
 async function addProductInPreCountedItems(product: any) {
@@ -391,7 +379,7 @@ async function addProductInPreCountedItems(product: any) {
       if (inventoryCountImportItem && (!inventoryCountImportItem.isRequested || inventoryCountImportItem.isRequested === 'Y')) {
         productEntry.isRequested = 'Y';
       } else {
-        showToast(translate("Undirected items cannot be added to count"));
+        commonUtil.showToast(translate("Undirected items cannot be added to count"));
         return;
       }
     }
@@ -451,7 +439,7 @@ async function addAllProductsToScanEvents() {
     for (const product of unsaved) {
       await addPreCountedItemInScanEvents(product)
     }
-    showToast(translate('Items Saved'))
+    commonUtil.showToast(translate('Items Saved'))
   } catch (err) {
     console.error('Error saving products:', err)
   }

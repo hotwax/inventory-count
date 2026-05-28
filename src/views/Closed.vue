@@ -58,12 +58,12 @@
 
 
           <ion-label data-testid="closed-item-created-date">
-            {{ getDateWithOrdinalSuffix(count.createdDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.createdDate) }}
             <p>{{ translate("Created Date") }}</p>
           </ion-label>
      
           <ion-label data-testid="closed-item-closed-date">
-            {{ getDateWithOrdinalSuffix(count.actualCompletionDate) }}
+            {{ commonUtil.getDateWithOrdinalSuffix(count.actualCompletionDate) }}
             <p>{{ translate("Closed Date") }}</p>
           </ion-label>
         </div>
@@ -124,15 +124,12 @@
 import { ref, computed } from 'vue';
 import { IonChip, IonIcon, IonFab, IonFabButton, IonPage, IonHeader, IonLabel, IonTitle, IonToolbar, IonButtons, IonButton, IonContent, IonInfiniteScroll, IonInfiniteScrollContent, IonList, IonItem, IonSearchbar, IonSelect, IonSelectOption, IonModal, IonInput, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import { filterOutline, storefrontOutline, downloadOutline } from "ionicons/icons";
-import { translate } from '@/i18n';
+import { commonUtil, translate, logger } from '@common';
 import router from '@/router';
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
-import { loader, showToast, getFacilityChipLabel } from '@/services/uiUtils';
+import { loader } from '@/services/uiUtils';
 import { useProductStore } from '@/stores/productStore';
-import { getDateWithOrdinalSuffix, formatDateTime } from '@/services/utils';
 import { DateTime } from 'luxon';
-import { hasError } from '@/stores/authStore';
-import logger from '@/logger';
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 
@@ -144,7 +141,7 @@ const cycleCounts = ref<any[]>([]);
 const isScrollable = ref(true)
 
 const pageIndex = ref(0);
-const pageSize = ref(Number(process.env.VUE_APP_VIEW_SIZE) || 20);
+const pageSize = ref(Number(import.meta.env.VITE_VIEW_SIZE) || 20);
 
 const isFilterModalOpen = ref(false);
 const isFacilityModalOpen = ref(false);
@@ -168,7 +165,7 @@ const filterOptions = {
 const productStore = useProductStore();
 const facilities = computed(() => productStore.getFacilities || []);
 
-const facilityChipLabel = computed(() => getFacilityChipLabel(filters.value.facilityIds, facilities.value));
+const facilityChipLabel = computed(() => commonUtil.getFacilityChipLabel(filters.value.facilityIds, facilities.value));
 
 const searchQuery = ref("") as any;
 
@@ -230,16 +227,16 @@ function buildFilterParams() {
   }
 
   if (filters.value.createdDateFrom) {
-    params.createdDateFrom = formatDateTime(filters.value.createdDateFrom, false);
+    params.createdDateFrom = commonUtil.formatDateTime(filters.value.createdDateFrom, null, false);
   }
   if (filters.value.createdDateTo) {
-    params.createdDateTo = formatDateTime(filters.value.createdDateTo, true);
+    params.createdDateTo = commonUtil.formatDateTime(filters.value.createdDateTo, null, true);
   }
   if (filters.value.closedDate) {
-    params.closedDate = formatDateTime(filters.value.closedDate, false);
+    params.closedDate = commonUtil.formatDateTime(filters.value.closedDate, null, false);
   }
   if (filters.value.closedDateTo) {
-    params.closedDateTo = formatDateTime(filters.value.closedDateTo, true);
+    params.closedDateTo = commonUtil.formatDateTime(filters.value.closedDateTo, null, true);
   }
   if (searchQuery.value?.trim()) {
     params.keyword = searchQuery.value.trim();
@@ -300,13 +297,13 @@ function validateDateFilters() {
   if (filters.value.createdDateFrom) {
     const createdFrom = DateTime.fromISO(filters.value.createdDateFrom);
     if (createdFrom > today) {
-      showToast(translate("Created after date cannot be in the future."));
+      commonUtil.showToast(translate("Created after date cannot be in the future."));
       return false;
     }
     if (filters.value.createdDateTo) {
       const createdTo = DateTime.fromISO(filters.value.createdDateTo);
       if (createdFrom > createdTo) {
-        showToast(translate("Created after date cannot be later than created before date."));
+        commonUtil.showToast(translate("Created after date cannot be later than created before date."));
         return false;
       }
     }
@@ -316,7 +313,7 @@ function validateDateFilters() {
     const closedFrom = DateTime.fromISO(filters.value.closedDate);
     const closedTo = DateTime.fromISO(filters.value.closedDateTo);
     if (closedFrom > closedTo) {
-      showToast(translate("Closed after date cannot be later than closed before date."));
+      commonUtil.showToast(translate("Closed after date cannot be later than closed before date."));
       return false;
     }
   }
@@ -350,19 +347,21 @@ async function exportCycleCounts() {
     const payload = buildExportPayload();
     const resp = await useInventoryCountRun().queueCycleCountsFileExport(payload);
 
-    if (!hasError(resp)) {
-      showToast(translate("Your export has been queued. You can find it in Export history."), [{
-        text: translate("View"),
-        handler: () => {
-          router.push('/export-history');
-        }
-      }]);
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Your export has been queued. You can find it in Export history."), {
+        buttons: [{
+          text: translate("View"),
+          handler: () => {
+            router.push('/export-history');
+          }
+        }]
+      });
     } else {
       throw resp.data;
     }
   } catch (err) {
     logger.error('Failed to queue cycle counts export', err);
-    showToast(translate("Failed to request export. Please try again."));
+    commonUtil.showToast(translate("Failed to request export. Please try again."));
   } finally {
     loader.dismiss();
   }

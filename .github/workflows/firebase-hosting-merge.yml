@@ -8,9 +8,11 @@ name: Deploy to Firebase Hosting on merge
       - main
 jobs:
   call-workflow-in-another-repo:
-    uses: hotwax/dxp-components/.github/workflows/common-firebase-hosting-merge.yml@main
+    uses: hotwax/accxui/.github/workflows/common-firebase-hosting-merge.yml@main
     with:
       config-path: .github/labeler.yml
+      app: hotwax/inventory-count
+      appDir: inventory-count
     secrets:
       envPAT: ${{ secrets.envPAT }}
       HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}

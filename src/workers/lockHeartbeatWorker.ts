@@ -1,5 +1,5 @@
 import { expose } from 'comlink'
-import workerApi from '@/services/workerApi'
+import workerRemoteApi from '@common/core/workerRemoteApi'
 
 export interface LockHeartbeatWorker {
   startHeartbeat: (payload: HeartbeatPayload) => void | Promise<void>
@@ -105,7 +105,7 @@ async function performHeartbeat() {
     // --- Check active lock from server before extending lease ---
     let activeLock: any = null
     try {
-      const resp = await workerApi({
+      const resp = await workerRemoteApi({
         baseURL: maargUrl,
         url: 'oms/dataDocumentView',
         method: 'POST',
@@ -163,7 +163,7 @@ async function performHeartbeat() {
     body.lastHeartbeatAt = newHeartbeatAt
 
 
-    await workerApi({
+    await workerRemoteApi({
       baseURL: maargUrl,
       url: `inventory-cycle-count/cycleCounts/sessions/${inventoryCountImportId}/lock`,
       method: 'PUT',
