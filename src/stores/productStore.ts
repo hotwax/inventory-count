@@ -161,7 +161,7 @@ export const useProductStore = defineStore('productStore', {
     },
 
     async fetchFacilitiesByParty(partyId: string, baseURL?: string, token?: string, payload?: any): Promise <any> {
-      let params: any = { url: `inventory-cycle-count/user/${partyId}/facilities`, method: "GET", params: { ...payload, pageSize: 500 } }
+      let params: any = { url: `admin/user/${partyId}/facilities`, method: "GET", params: { ...payload, pageSize: 500 } }
       let resp = {} as any;
       try {
         resp = await api(params);
@@ -229,7 +229,7 @@ export const useProductStore = defineStore('productStore', {
     async loadStoresByFacility(facilityId: string) {
       try {
         const resp = await api({
-          url: `inventory-cycle-count/facilities/${facilityId}/productStores`,
+          url: `admin/facilities/${facilityId}/productStores`,
           method: 'GET'
         })
         if (!commonUtil.hasError(resp)) this.productStores = resp?.data
@@ -468,19 +468,6 @@ export const useProductStore = defineStore('productStore', {
         }
       } catch (err) {
         console.error(`[useProductStore] Failed to get identification for ${productId}/${type}`, err)
-      }
-    },
-
-    /** Facility specific functions */
-    async loadUserFacilities(partyId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/users/${partyId}/facilities`,
-          method: 'GET'
-        })
-        if (!commonUtil.hasError(resp)) this.facilities = resp?.data
-      } catch (err) {
-        logger.error('Failed to load facilities', err)
       }
     },
 

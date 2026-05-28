@@ -224,7 +224,7 @@ export const useUserProfile = defineStore('userProfile', {
           facilityTypeId_not: "Y"
         });
         
-        if (!facilities.length) throw new Error("Unable to login. User is not associated with any facility");
+        if (!facilities.length) throw "Unable to login. User is not associated with any facility";
 
         await productStore.getFacilityPreference("SELECTED_FACILITY", current?.userId);
         const currentFacility: any = productStore.getCurrentFacility;
