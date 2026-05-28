@@ -1,6 +1,6 @@
 {
   "name": "cycle-count",
-  "version": "4.9.0",
+  "version": "4.10.0",
   "private": true,
   "type": "module",
   "description": "HotWax Commerce Cycle Count App",
