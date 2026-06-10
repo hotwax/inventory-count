@@ -172,6 +172,7 @@ import { DateTime } from "luxon";
 import { translate, logger } from "@common";
 import { useProductStore } from "@/stores/productStore";
 import { useSecurity } from "@/composables/useSecurity";
+import { inventoryCountPermissionCatalog } from "@/config/appPermissions";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
 import { commonUtil } from '@common';
@@ -184,59 +185,11 @@ type PermissionMeta = {
 
 const productStore = useProductStore();
 const { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } = useSecurity();
-/**
- * Permission cards configuration
- */
-const permissionCards: PermissionMeta[] = [
-  {
-    id: "INVCOUNT_APP_VIEW",
-    title: "Access inventory counts",
-    description:
-      "Select security groups that can access the inventory count app store view and create counts in sessions. This does not allow them to impact inventory.",
-  },
-  {
-    id: "INV_CNT_VIEW_QOH",
-    title: "View quantity on hand",
-    description:
-      "Select security groups that can view the current quantity on hand for products during counting.",
-  },
-  {
-    id: "PREVIEW_COUNT_ITEM",
-    title: "Preview count",
-    description:
-      "Select security groups that can preview products in a directed count before the start time.",
-  },
-  {
-    id: "INV_COUNT_PRE_START",
-    title: "Start count early",
-    description:
-      "Select security groups that can start a cycle count at a store before the designated start time.",
-  },
-  {
-    id: "INV_COUNT_SUBMIT",
-    title: "Submit cycle count for review",
-    description:
-      "Select security groups that can approve sessions and then submit proposed count variances for review. This will now allow them to apply variances to their inventory.",
-  },
-  {
-    id: "INV_COUNT_LOCK_RLS",
-    title: "Force release session",
-    description:
-      "Select security groups that can forcefully release sessions that are not their own. The force released device will be booted from their session within 30 seconds.",
-  },
-  {
-    id: "INV_COUNT_VAR_LOG",
-    title: "Log inventory variance",
-    description:
-      "Select security groups that can log inventory variances for products at a store. This allows users to manually adjust inventory levels by adding or removing stock with specific reason codes.",
-  },
-  {
-    id: "INV_COUNT_ADMIN",
-    title: "Inventory count admin",
-    description:
-      "Select security groups that can perform all cycle count functions without any restrictions including start counts early, submit cycle counts for review and accept and reject variances. This permission is required to access the cycle count admin pages.",
-  },
-];
+const permissionCards: PermissionMeta[] = inventoryCountPermissionCatalog.permissions.map((permission) => ({
+  id: permission.permissionId,
+  title: permission.title,
+  description: permission.description,
+}));
 
 const activeGroupsByPermission = ref<Record<string, any[]>>({});
 
