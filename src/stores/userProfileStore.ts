@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
+import { useProductStore } from "./productStore";
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -206,30 +207,18 @@ export const useUserProfile = defineStore('userProfile', {
 
     async postLogin() {
       try {
-        const current = await this.fetchUserProfile()
-        await this.setOms(commonUtil.getOMSInstanceName())
+        await this.fetchUserProfile()
+        await this.fetchPermissions();
         
-        const { useProductStore } = await import('./productStore');
         const productStore = useProductStore();
         const { useInventoryCountRun } = await import('@/composables/useInventoryCountRun');
         const { db, initialize } = await import('@/services/appInitializer');
         
-        await this.loadUserPermissions();
+        await productStore.fetchUserFacilities();
+        await productStore.fetchFacilityPreference();
 
-        const isAdminUser = this.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
-        const facilities = await productStore.getDxpUserFacilities(isAdminUser ? "" : current.partyId, "", isAdminUser, {
-          parentTypeId: "VIRTUAL_FACILITY",
-          parentTypeId_not: "Y",
-          facilityTypeId: "VIRTUAL_FACILITY",
-          facilityTypeId_not: "Y"
-        });
-        
-        if (!facilities.length) throw "Unable to login. User is not associated with any facility";
-
-        await productStore.getFacilityPreference("SELECTED_FACILITY", current?.userId);
-        const currentFacility: any = productStore.getCurrentFacility;
-        isAdminUser ? await productStore.getDxpEComStores() : await productStore.getDxpEComStoresByFacility(currentFacility?.facilityId);
-        await productStore.getEComStorePreference("SELECTED_BRAND", current?.userId);
+        await productStore.fetchProductStores();
+        await productStore.fetchProductStorePreference();
 
         await productStore.getProductIdentifierSettings();
         await productStore.getSettings(productStore.getCurrentProductStore?.productStoreId);
@@ -258,52 +247,43 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user-level permissions
      */
-    async loadUserPermissions(): Promise<any[]> {
-      const permissionId = import.meta.env.VITE_PERMISSION_ID;
-      const serverPermissions = [] as any;
-
-      // TODO Make it configurable from the environment variables.
-      // Though this might not be an server specific configuration, 
-      // we will be adding it to environment variable for easy configuration at app level
-      const viewSize = 50;
-
-      let viewIndex = 0;
+    async fetchPermissions() {
+      const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
+      const serverPermissions = [] as string[]
+      const viewSize = 50
+      let viewIndex = 0
 
       try {
-        let resp;
+        let resp
         do {
           resp = await api({
-            url: "getPermissions",
-            method: "post",
+            url: commonUtil.isMoqui() ? "admin/user/permissions" : "getPermissions",
+            method: "get",
             baseURL: commonUtil.getOmsURL(),
-            data: { viewIndex, viewSize }
+            params: { viewIndex, viewSize }
           }) as any
 
           if (resp.status === 200 && resp.data.docs?.length && !commonUtil.hasError(resp)) {
-            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId));
-            viewIndex++;
+            serverPermissions.push(...resp.data.docs.map((permission: any) => permission.permissionId))
+            viewIndex++
           } else {
-            resp = null;
+            resp = null
           }
-        } while (resp);
+        } while (resp)
 
-        // Checking if the user has permission to access the app
-        // If there is no configuration, the permission check is not enabled
-        if (permissionId) {
-          const hasAppPermission = serverPermissions.includes(permissionId);
-          if (!hasAppPermission) {
-            const permissionError = "You do not have permission to access the app.";
-            commonUtil.showToast(translate(permissionError));
-            logger.error("error", permissionError);
-            return Promise.reject(new Error(permissionError));
+        if(permissionId) {
+          const hasPermission = serverPermissions.includes(permissionId)
+          if(!hasPermission) {
+            const permissionError = "You do not have permission to access the app."
+            await commonUtil.showToast(translate(permissionError))
+            logger.error("error", permissionError)
+            return Promise.reject(new Error(permissionError))
           }
         }
 
-        // Update the state with the fetched permissions
-        this.permissions = serverPermissions;
-        return serverPermissions;
+        this.permissions = serverPermissions
       } catch (error: any) {
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
     },
 
