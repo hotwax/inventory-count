@@ -175,7 +175,7 @@ export const useProductStore = defineStore('productStore', {
       let facilityIds: Array<string> = [];
       let filters: any = {};
       let resp = {} as any
-      if(partyId) {
+      if(partyId && !isAdminUser) {
         try {
           resp = await this.fetchFacilitiesByParty(partyId, baseURL, token)
           facilityIds = resp.map((facility: any) => facility.facilityId);
