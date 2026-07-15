@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, client, commonUtil, logger } from '@common';
+import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 import { useProductStore } from "./productStore";
