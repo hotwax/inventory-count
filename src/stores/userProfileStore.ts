@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, client, commonUtil, logger } from '@common';
+import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 
@@ -207,7 +207,7 @@ export const useUserProfile = defineStore('userProfile', {
     async postLogin() {
       try {
         const current = await this.fetchUserProfile()
-        await this.setOms(commonUtil.getOMSInstanceName())
+        await this.setOms(cookieHelper().get("oms"))
         
         const { useProductStore } = await import('./productStore');
         const productStore = useProductStore();
