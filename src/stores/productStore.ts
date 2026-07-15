@@ -124,11 +124,6 @@ export const useProductStore = defineStore('productStore', {
       const isAdminUser = userStore.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
       const facilityGroupId = "" //Not used in cycle count, just kept the logic consistent with other apps, if needed in future
 
-      this.currentFacility = {
-        ...this.currentFacility,
-        productStores: []
-      };
-
       let facilityIds: Array<string> = [];
 
       try {
