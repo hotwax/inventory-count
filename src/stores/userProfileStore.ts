@@ -209,6 +209,8 @@ export const useUserProfile = defineStore('userProfile', {
       try {
         await this.fetchUserProfile()
         await this.fetchPermissions();
+
+        this.oms = cookieHelper().get("oms") || '';
         
         const productStore = useProductStore();
         const { useInventoryCountRun } = await import('@/composables/useInventoryCountRun');
