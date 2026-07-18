@@ -32,7 +32,8 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@common': path.resolve(__dirname, '../../common')
-      }
+      },
+      dedupe: ['vue', 'pinia', 'vue-router'],
     },
     test: {
       globals: true,
