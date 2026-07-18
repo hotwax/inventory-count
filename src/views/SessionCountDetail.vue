@@ -6,6 +6,11 @@
           <ion-back-button default-href="/tabs/count" data-testid="session-detail-back-btn"></ion-back-button>
         </ion-buttons>
         <ion-title data-testid="session-detail-page-title">{{ translate("Session Count Detail") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="router.push(`/count-progress-review/${props.workEffortId}`)" :aria-label="translate('Track progress')" data-testid="session-detail-track-progress-btn">
+            <ion-icon slot="icon-only" :icon="statsChartOutline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -79,7 +84,7 @@
         </div>
 
         <!-- Right Panel -->
-        <div class="count-dashboard">
+        <div ref="countDashboard" class="count-dashboard">
           <div class="header ion-padding" data-testid="session-detail-dashboard-header">
             <ion-item lines="none">
               <ion-label>
@@ -162,7 +167,7 @@
               </ion-item>
             </ion-card>
 
-            <ion-card data-testid="session-detail-stats-products-card">
+            <ion-card class="desktop-statistics-card" data-testid="session-detail-stats-products-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
               </ion-card-header>
@@ -181,7 +186,7 @@
               </ion-list>
             </ion-card>
 
-            <ion-card data-testid="session-detail-stats-units-card">
+            <ion-card class="desktop-statistics-card" data-testid="session-detail-stats-units-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Units counted") }}</ion-card-title>
               </ion-card-header>
@@ -189,20 +194,57 @@
                 <p class="big-number" data-testid="session-detail-stats-units">{{ stats.totalUnits }}</p>
               </ion-card-content>
             </ion-card>
+
+            <ion-card class="mobile-statistics-card" data-testid="session-detail-mobile-stats-card">
+              <ion-card-header>
+                <ion-card-subtitle>{{ translate("Units counted") }}</ion-card-subtitle>
+                <ion-card-title data-testid="session-detail-mobile-stats-units">{{ stats.totalUnits }}</ion-card-title>
+              </ion-card-header>
+              <ion-list lines="none">
+                <ion-item>
+                  <ion-label>{{ translate("Products counted") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-products">{{ stats.productsCounted }}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>{{ translate("Pending match scans") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-pending-match">{{events.filter((event: any) => event.aggApplied === 0).length}}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>{{ translate("Unmatched scans") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-unmatched">{{ stats.unmatched }}</ion-note>
+                </ion-item>
+              </ion-list>
+            </ion-card>
           </div>
 
-          <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
+          <ion-segment v-model="selectedSegment" @click="scrollToSegmentContent" data-testid="session-detail-segment">
             <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
-              <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="hourglassOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ uncountedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected" data-testid="session-detail-segment-undirected-btn">
-              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="gitBranchOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ undirectedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched" data-testid="session-detail-segment-unmatched-btn">
-              <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="helpCircleOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ unmatchedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button value="counted" data-testid="session-detail-segment-counted-btn">
-              <ion-label>{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="checkmarkCircleOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ countedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
           </ion-segment>
 
@@ -600,6 +642,55 @@
           <ion-img :src="largeImage" />
         </ion-content>
       </ion-modal>
+
+      <!-- Recent scans (mobile bottom sheet) -->
+      <ion-modal :is-open="isRecentScansOpen" :breakpoints="[0, 0.5, 0.9]" :initial-breakpoint="0.9" @didDismiss="isRecentScansOpen = false" data-testid="session-detail-recent-scans-modal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title data-testid="session-detail-recent-scans-title">{{ translate("Recent scans") }}</ion-title>
+            <ion-note slot="end">{{ events.length }} {{ translate("scans") }}</ion-note>
+            <ion-buttons slot="end">
+              <ion-button @click="isRecentScansOpen = false" :aria-label="translate('Close')" data-testid="session-detail-recent-scans-close-btn">
+                <ion-icon slot="icon-only" :icon="closeOutline" />
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content data-testid="session-detail-recent-scans-content">
+          <div v-if="!events.length" class="empty-state ion-padding">
+            <ion-label>{{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}</ion-label>
+          </div>
+          <DynamicScroller v-else :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :index="index" :active="active">
+                <ion-item :data-testid="'session-detail-recent-event-' + item.id">
+                  <div slot="start" class="img-preview">
+                    <ion-thumbnail>
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-badge class="qty-badge" color="medium">{{ item.quantity }}</ion-badge>
+                  </div>
+                  <ion-label>
+                    {{ item.scannedValue }}
+                    <p>{{ timeAgo(item.createdAt) }}</p>
+                  </ion-label>
+                  <ion-button v-if="isSessionMutable && item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" @click="confirmRemoveScan(item)" :aria-label="translate('Remove scan')" data-testid="session-detail-recent-event-remove-btn">
+                    <ion-icon slot="icon-only" :icon="trashOutline" />
+                  </ion-button>
+                </ion-item>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
+        </ion-content>
+        <ion-footer>
+          <ion-toolbar>
+            <ion-button expand="block" fill="outline" class="ion-margin-horizontal" :disabled="!isSessionMutable" @click="goHandCountedFromSheet" data-testid="session-detail-recent-add-hand-counted">
+              {{ translate("Add hand-counted items") }}
+              <ion-icon slot="end" :icon="addOutline" />
+            </ion-button>
+          </ion-toolbar>
+        </ion-footer>
+      </ion-modal>
       <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
@@ -617,14 +708,39 @@
         data-testid="session-detail-discard-alert"/>
     </ion-content>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm" data-testid="session-detail-remove-confirm-alert"/>
+
+    <!-- Mobile action bar -->
+    <ion-footer class="mobile-action-bar" data-testid="session-detail-mobile-action-bar">
+      <ion-toolbar>
+        <ion-item v-if="isKeyboardEntryOpen && canCountOnMobile" lines="none" data-testid="session-detail-mobile-scan-item">
+          <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
+          <ion-input ref="mobileScanInput" v-model="scannedValue" placeholder="Scan or type a barcode" @keyup.enter="handleScan" data-testid="session-detail-mobile-scan-input"></ion-input>
+        </ion-item>
+        <div class="mobile-actions">
+          <ion-button fill="outline" class="icon-action" @click="openRecentScans" :aria-label="translate('Recent scans')" data-testid="session-detail-recent-scans-btn">
+            <ion-icon slot="icon-only" :icon="listOutline" />
+            <ion-badge v-if="events.length" color="primary" class="action-badge">{{ events.length }}</ion-badge>
+          </ion-button>
+          <ion-button class="scan-action" :disabled="!canCountOnMobile" @click="openCamera" data-testid="session-detail-scan-barcode-btn">
+            <ion-icon slot="start" :icon="scanOutline" />
+            {{ translate("Scan barcode") }}
+          </ion-button>
+          <ion-button fill="outline" class="icon-action" :color="isKeyboardEntryOpen ? 'primary' : undefined" :disabled="!canCountOnMobile" @click="toggleKeyboardEntry" :aria-label="translate('Keyboard entry')" data-testid="session-detail-keyboard-toggle-btn">
+            <ion-icon slot="icon-only" :icon="keypadOutline" />
+          </ion-button>
+        </div>
+      </ion-toolbar>
+    </ion-footer>
+
+    <CameraScanner :is-open="isCameraOpen" :next-up="cameraNextUp" :resolve-product="resolveProductForConfirm" :record-scan="onCameraScan" @close="isCameraOpen = false" />
   </ion-page>
 </template>
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, swapVerticalOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkCircleOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, gitBranchOutline, helpCircleOutline, hourglassOutline, swapVerticalOutline, statsChartOutline, listOutline, scanOutline, keypadOutline, trashOutline } from 'ionicons/icons';
+import { ref, computed, defineProps, nextTick, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
@@ -634,8 +750,10 @@ import router from '@/router';
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import { useUserProfile } from '@/stores/userProfileStore';
+import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import CameraScanner from '@/components/CameraScanner.vue';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
@@ -653,6 +771,7 @@ const props = defineProps<{
 const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
+const countDashboard = ref<HTMLElement | null>(null);
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
 const subscriptions: Subscription[] = [];
@@ -714,6 +833,12 @@ const pageRef = ref(null);
 
 const isEditNewSessionModalOpen = ref(false);
 
+// Mobile scan surfaces
+const isCameraOpen = ref(false);
+const isRecentScansOpen = ref(false);
+const isKeyboardEntryOpen = ref(false);
+const mobileScanInput = ref();
+
 const areas = [
   { value: 'back_stock', label: 'Back stock' },
   { value: 'display', label: 'Display' },
@@ -733,6 +858,22 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
+// Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
+const canCountOnMobile = computed(() =>
+  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value
+);
+
+// First uncounted product surfaced as a "next up" hint in the camera scanner (directed counts only)
+const cameraNextUp = computed(() => {
+  if (!isDirected.value) return null;
+  const first = uncountedItems.value[0];
+  if (!first) return null;
+  return {
+    primary: getSessionItemPrimaryLabel(first),
+    secondary: getSessionItemSecondaryLabel(first),
+    imageUrl: first.product?.mainImageUrl,
+  };
+});
 
 const lastScannedEvent = computed(() => events.value[0]);
 
@@ -784,6 +925,25 @@ const sessionSort = computed({
 
 function updateSessionSort(value: string) {
   sessionSort.value = value
+}
+
+async function scrollToSegmentContent(event: MouseEvent) {
+  const dashboard = countDashboard.value
+  const segment = event.currentTarget as HTMLElement | null
+  if (!dashboard || !segment) return
+
+  await nextTick()
+
+  const dashboardBounds = dashboard.getBoundingClientRect()
+  const segmentBounds = segment.getBoundingClientRect()
+  const top = dashboard.scrollTop + segmentBounds.top - dashboardBounds.top - dashboard.clientTop
+  const reducedMotion = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  dashboard.scrollTo({
+    top: Math.max(0, top),
+    behavior: reducedMotion ? 'auto' : 'smooth'
+  })
 }
 
 function getIdentifierOptionDescription(type: string) {
@@ -1005,6 +1165,7 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewDidLeave(async () => {
+  isCameraOpen.value = false
   clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
@@ -1184,24 +1345,90 @@ async function focusScanner() {
   }, 0);
 }
 
-function handleScan() {
-  const value = scannedValue.value.trim();
-  if (!value) return;
+async function recordScannedCode(code: string, quantity = 1) {
+  const value = (code || '').trim();
+  if (!value) return false;
 
   try {
-    useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
-    events.value.unshift({ scannedValue: value, quantity: 1, createdAt: Date.now() });
+    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
     filteredItems.value = [];
     searchKeyword.value = '';
+    await playScanSuccessFeedback();
+    return true;
   } catch (err) {
     console.error(err);
     commonUtil.showToast('Failed to record scan');
-  } finally {
-    scannedValue.value = '';
+    return false;
   }
 }
 
-async function handleStartOrFocus() {
+async function handleScan() {
+  prepareScanSuccessFeedback();
+  const value = scannedValue.value.trim();
+  if (!value) return;
+  scannedValue.value = '';
+  await recordScannedCode(value, 1);
+}
+
+// Camera scanner (web / @zxing) funnels into the same offline-first scan pipeline as the hardware scanner.
+async function onCameraScan(code: string, quantity: number) {
+  return recordScannedCode(code, quantity);
+}
+
+// Resolve a scanned barcode to product details for the camera "confirm each" sheet (best-effort, local-first).
+async function resolveProductForConfirm(code: string) {
+  try {
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
+    const context = {
+      omsUrl: commonUtil.getOmsURL(),
+      token: commonUtil.getToken(),
+      barcodeIdentification,
+    };
+    const productId = await useProductMaster().findProductByIdentification(barcodeIdentification, code, context);
+    if (!productId) return null;
+    const { product } = await useProductMaster().getById(productId);
+    if (!product) return null;
+    const countedSoFar = [...countedItems.value, ...undirectedItems.value]
+      .filter((item: any) => item.productId === productId)
+      .reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0);
+    return {
+      primary: useProductMaster().primaryId(product) || product.productName || code,
+      secondary: useProductMaster().secondaryId(product),
+      imageUrl: product.mainImageUrl,
+      countedSoFar,
+    };
+  } catch (err) {
+    console.error('[SessionCountDetail] resolveProductForConfirm failed', err);
+    return null;
+  }
+}
+
+async function openCamera() {
+  prepareScanSuccessFeedback();
+  if (!(await ensureSessionStarted())) return;
+  isCameraOpen.value = true;
+}
+
+function openRecentScans() {
+  isRecentScansOpen.value = true;
+}
+
+async function toggleKeyboardEntry() {
+  if (!isKeyboardEntryOpen.value) prepareScanSuccessFeedback();
+  if (!isKeyboardEntryOpen.value && !(await ensureSessionStarted())) return;
+  isKeyboardEntryOpen.value = !isKeyboardEntryOpen.value;
+  if (isKeyboardEntryOpen.value) {
+    setTimeout(() => { mobileScanInput.value?.$el?.setFocus?.(); }, 0);
+  }
+}
+
+function goHandCountedFromSheet() {
+  isRecentScansOpen.value = false;
+  router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`);
+}
+
+// Transition a SESSION_CREATED session to SESSION_ASSIGNED so counting can begin. Returns false on failure.
+async function ensureSessionStarted() {
   if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') {
     try {
       await useInventoryCountImport().updateSession({
@@ -1212,15 +1439,22 @@ async function handleStartOrFocus() {
     } catch (err) {
       console.error(err);
       commonUtil.showToast('Failed to start session');
-      return;
+      return false;
     }
   }
+  return true;
+}
+
+async function handleStartOrFocus() {
+  prepareScanSuccessFeedback();
+  if (!(await ensureSessionStarted())) return;
   setTimeout(() => {
     focusScanner();
   }, 0);
 }
 
 function handleScannerFocus() {
+  prepareScanSuccessFeedback();
   isScannerFocused.value = true;
 }
 
@@ -1904,6 +2138,10 @@ ion-card ion-item {
   flex: 0 1 305px;
 }
 
+.mobile-statistics-card {
+  display: none;
+}
+
 ion-segment {
   justify-content: start;
   border-bottom: 1px solid var(--ion-color-medium);
@@ -1911,6 +2149,12 @@ ion-segment {
 
 ion-segment-view {
   height: unset;
+  min-height: 100%;
+}
+
+.segment-mobile-icon,
+.segment-mobile-count {
+  display: none;
 }
 
 .search {
@@ -1978,6 +2222,76 @@ ion-segment-view {
   right: -1px;
   position: absolute;
   font-size: 10px;
+}
+
+/* Mobile: single column, hide the desktop rail, stack the stat cards, show the action bar */
+@media (max-width: 991px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  .count-events {
+    display: none;
+  }
+
+  .statistics {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .statistics ion-card {
+    align-self: stretch;
+    flex: 0 0 auto;
+  }
+
+  .desktop-statistics-card {
+    display: none;
+  }
+
+  .mobile-statistics-card {
+    display: block;
+  }
+
+  .search {
+    flex-wrap: wrap;
+  }
+
+  .segment-desktop-label {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .segment-mobile-icon,
+  .segment-mobile-count {
+    display: block;
+  }
+}
+
+@media (min-width: 992px) {
+  .mobile-action-bar {
+    display: none;
+  }
+}
+
+.mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacer-xs);
+  padding: var(--spacer-2xs) var(--spacer-xs);
+}
+
+.mobile-actions .scan-action {
+  flex: 1;
+}
+
+.icon-action {
+  position: relative;
+}
+
+.action-badge {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
 }
 
 </style>

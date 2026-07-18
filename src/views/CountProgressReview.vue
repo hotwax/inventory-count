@@ -1455,4 +1455,15 @@ ion-segment-view {
   pointer-events: none;
   opacity: 0.5;
 }
+
+/* Mobile: stack the summary cards full width */
+@media (max-width: 991px) {
+  .header ion-card {
+    flex: 1 1 100%;
+  }
+
+  .submission-card {
+    margin-inline-start: 0;
+  }
+}
 </style>
