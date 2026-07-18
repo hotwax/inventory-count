@@ -171,7 +171,7 @@ const cooledName = ref('');
 const showDupFlag = ref(false);
 
 let controls: IScannerControls | null = null;
-let stopRequested = false;
+let cameraGeneration = 0;
 const cooldown = new Map<string, number>();
 const pendingCodes = new Set<string>();
 const COOLDOWN_MS = 2600;
@@ -203,30 +203,36 @@ function close() {
 }
 
 async function startCamera() {
+  const generation = ++cameraGeneration;
   cameraError.value = false;
-  stopRequested = false;
+  const video = videoEl.value;
+  if (!video) {
+    cameraError.value = true;
+    return;
+  }
   try {
     const activeReader = new BrowserMultiFormatReader(undefined, { delayBetweenScanSuccess: 600, delayBetweenScanAttempts: 120 });
     const activeControls = await activeReader.decodeFromConstraints(
       { video: { facingMode: { ideal: 'environment' } } },
-      videoEl.value as HTMLVideoElement,
+      video,
       (result: any) => { if (result) handleDecode(result.getText()); }
     );
     // The modal may have been dismissed while the camera was warming up; release it immediately if so.
-    if (stopRequested || !props.isOpen) {
+    if (generation !== cameraGeneration || !props.isOpen) {
       try { activeControls.stop(); } catch (e) { /* ignore */ }
       return;
     }
     controls = activeControls;
     detectTorch();
   } catch (err) {
+    if (generation !== cameraGeneration) return;
     console.error('[CameraScanner] Failed to start camera', err);
     cameraError.value = true;
   }
 }
 
 function stopCamera() {
-  stopRequested = true;
+  cameraGeneration += 1;
   try { controls?.stop(); } catch (e) { /* ignore */ }
   controls = null;
   torchOn.value = false;
@@ -239,20 +245,34 @@ function stopCamera() {
   resetConfirm();
 }
 
+function getVideoTrack() {
+  const stream = videoEl.value?.srcObject;
+  return stream instanceof MediaStream ? stream.getVideoTracks()[0] : undefined;
+}
+
 function detectTorch() {
   try {
-    const capabilities: any = controls?.streamVideoCapabilitiesGet?.((track: MediaStreamTrack) => [track]);
-    torchAvailable.value = Boolean(capabilities && 'torch' in capabilities && capabilities.torch);
+    const track = getVideoTrack();
+    if (!track || typeof track.getCapabilities !== 'function') {
+      torchAvailable.value = false;
+      return;
+    }
+    const capabilities = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+    torchAvailable.value = capabilities.torch === true;
   } catch (e) {
     torchAvailable.value = false;
   }
 }
 
 async function toggleTorch() {
-  if (!controls?.switchTorch) return;
-  torchOn.value = !torchOn.value;
+  const track = getVideoTrack();
+  if (!track || !torchAvailable.value) return;
+  const nextTorchState = !torchOn.value;
   try {
-    await controls.switchTorch(torchOn.value);
+    await track.applyConstraints({
+      advanced: [{ torch: nextTorchState }],
+    } as MediaTrackConstraints);
+    torchOn.value = nextTorchState;
   } catch (e) {
     torchOn.value = false;
     torchAvailable.value = false;
