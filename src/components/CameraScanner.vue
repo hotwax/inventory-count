@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonFooter, IonItem, IonLabel, IonText, IonThumbnail, IonChip, IonSegment, IonSegmentButton } from '@ionic/vue';
 import { closeOutline, flash, flashOutline, videocamOffOutline, checkmarkCircle, handLeftOutline, addOutline, removeOutline } from 'ionicons/icons';
-import { ref, computed, watch, onBeforeUnmount, withDefaults, defineProps, defineEmits } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { translate } from '@common';
 import Image from '@/components/Image.vue';
 import { BrowserMultiFormatReader } from '@zxing/browser';
