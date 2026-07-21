@@ -272,14 +272,47 @@ async function aggregateVarianceLogs(context: any) {
     }
     let processed = 0
     const now = Date.now()
+    const keys = Object.keys(grouped)
+
+    const [identifications, cachedProducts, existingAdjustments] = await Promise.all([
+      db.table('productIdentification')
+        .where('value').anyOf(keys)
+        .and((item: any) => item.identKey === context.barcodeIdentification)
+        .toArray(),
+      db.table('products').bulkGet(keys),
+      db.table('inventoryAdjustments')
+        .where({ facilityId: context.facilityId })
+        .toArray()
+    ])
+
+    const identMap = new Map()
+    identifications.forEach((ident: any) => identMap.set(ident.value.toLowerCase(), ident.productId))
+
+    const productMap = new Map()
+    cachedProducts.forEach((product: any) => {
+      if (product) productMap.set(product.productId, product)
+    })
+
+    const adjustmentsToUpdate: any[] = []
+    const productIdMap = new Map()
+
     for (const [key, quantity] of Object.entries(grouped)) {
-      let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
+      let productId = identMap.get(key.toLowerCase())
       if (!productId) {
-        const product = await getById(key, context)
+        const product = productMap.get(key)
         productId = product?.productId || null
       }
-      
-      let stock = null;
+
+      // If still not found, try the helper which might do a Solr lookup (N+1 but unavoidable without bulk API)
+      if (!productId) {
+        productId = await findProductByIdentification(context.barcodeIdentification, key, context)
+        if (!productId) {
+          const product = await getById(key, context)
+          productId = product?.productId || null
+        }
+      }
+
+      let stock = null
       if (productId) {
         try {
           stock = await getProductStock(productId, context)
@@ -288,14 +321,10 @@ async function aggregateVarianceLogs(context: any) {
         }
       }
 
-      // Upsert by productId and facilityId in the inventoryAdjustments table here
-      const inventoryAdjustment = await db.table('inventoryAdjustments')
-        .where({ facilityId: context.facilityId })
-        .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
-        .first()
+      const inventoryAdjustment = existingAdjustments.find((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
 
       if (inventoryAdjustment) {
-        productId = inventoryAdjustment.productId;
+        productId = inventoryAdjustment.productId
         if (productId && stock === null) {
           try {
             stock = await getProductStock(productId, context)
@@ -304,15 +333,17 @@ async function aggregateVarianceLogs(context: any) {
             console.error('Error fetching stock', error)
           }
         }
-        await db.table('inventoryAdjustments').put({
+        const updated = {
           ...inventoryAdjustment,
           quantity: inventoryAdjustment.quantity + quantity,
           atp: stock?.atp,
           qoh: stock?.qoh,
           lastUpdatedAt: now
-        })
+        }
+        adjustmentsToUpdate.push(updated)
+        Object.assign(inventoryAdjustment, updated)
       } else {
-        await db.table('inventoryAdjustments').add({
+        const newAdjustment = {
           uuid: uuidv4(),
           scannedValue: key,
           productId,
@@ -321,17 +352,27 @@ async function aggregateVarianceLogs(context: any) {
           atp: stock?.atp,
           qoh: stock?.qoh,
           lastUpdatedAt: now
-        })
+        }
+        adjustmentsToUpdate.push(newAdjustment)
+        existingAdjustments.push(newAdjustment)
       }
-      processed++;
+      processed++
       if (productId) {
-        await db.table('varianceLogs')
-        .where('scannedValue').equals(key)
-        .modify({ 
-          productId,
-          lastUpdatedAt: now
-        })
+        productIdMap.set(key, productId)
       }
+    }
+
+    if (adjustmentsToUpdate.length > 0) {
+      await db.table('inventoryAdjustments').bulkPut(adjustmentsToUpdate)
+    }
+
+    if (productIdMap.size > 0) {
+      await db.table('varianceLogs')
+        .where('scannedValue').anyOf(Array.from(productIdMap.keys()))
+        .modify((log: any) => {
+          log.productId = productIdMap.get(log.scannedValue)
+          log.lastUpdatedAt = now
+        })
     }
     await db.table('varianceLogs')
       .where('id')
@@ -370,44 +411,55 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     let processed = 0
     const now = Date.now()
 
+    const scannedValues = Object.keys(grouped)
+    const [identifications, products, sessionRecords] = await Promise.all([
+      db.table('productIdentification')
+        .where('value').anyOf(scannedValues)
+        .and((item: any) => item.identKey === context.barcodeIdentification)
+        .toArray(),
+      db.table('products').bulkGet(scannedValues),
+      db.table('inventoryCountRecords')
+        .where('inventoryCountImportId').equals(inventoryCountImportId)
+        .toArray()
+    ])
+
+    const identMap = new Map()
+    identifications.forEach((ident: any) => identMap.set(ident.value.toLowerCase(), ident.productId))
+
+    const productMap = new Map()
+    products.forEach((product: any) => {
+      if (product) productMap.set(product.productId, product)
+    })
+
+    const recordsToUpdate: any[] = []
+    const productIdMap = new Map()
+
     for (const [scannedValue, quantity] of Object.entries(grouped)) {
-      let productId: any = null
-      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
-      if (identification) {
-        productId = identification.productId
-      } else {
-        const product = await db.table('products').get(scannedValue)
+      let productId: any = identMap.get(scannedValue.toLowerCase())
+      if (!productId) {
+        const product = productMap.get(scannedValue)
         if (product) {
           productId = product.productId
         }
       }
-      // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
-      // if (!productId) {
-      //   const product = await getById(scannedValue, context)
-      //   productId = product?.productId || null
-      // }
 
-      const existing = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .and((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
-        .first()
-
-      // if (productId) ensureProductStored(productId, context);
+      const existing = sessionRecords.find((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
 
       if (existing) {
-        await db.table('inventoryCountRecords').put({
+        const updated = {
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
-        // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
-          lastUpdatedAt: now, // mark updated
+          lastUpdatedAt: now,
           productId: existing.productId || productId,
           facilityId: context.facilityId,
           isRequested: existing.isRequested ?? 'Y'
-        })
+        }
+        recordsToUpdate.push(updated)
+        // Update sessionRecords in memory for potential consecutive matches (though unlikely with grouped entries)
+        Object.assign(existing, updated)
       } else {
-        await db.table('inventoryCountRecords').add({
+        const newRecord = {
           inventoryCountImportId,
           uuid: uuidv4(),
           productIdentifier: scannedValue,
@@ -417,19 +469,29 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
           lastScanAt: now,
-          lastUpdatedAt: now // new record, so same as createdAt
-        })
+          lastUpdatedAt: now
+        }
+        recordsToUpdate.push(newRecord)
+        sessionRecords.push(newRecord)
       }
       if (productId) {
-        await db.table('scanEvents')
-          .where({ inventoryCountImportId })
-          .and((scanEvent: any) => scanEvent.scannedValue === scannedValue)
-          .modify({
-            productId,
-            lastUpdatedAt: now
-          });
+        productIdMap.set(scannedValue, productId)
       }
       processed++
+    }
+
+    if (recordsToUpdate.length > 0) {
+      await db.table('inventoryCountRecords').bulkPut(recordsToUpdate)
+    }
+
+    if (productIdMap.size > 0) {
+      await db.table('scanEvents')
+        .where('inventoryCountImportId').equals(inventoryCountImportId)
+        .and((scanEvent: any) => productIdMap.has(scanEvent.scannedValue))
+        .modify((scanEvent: any) => {
+          scanEvent.productId = productIdMap.get(scanEvent.scannedValue)
+          scanEvent.lastUpdatedAt = now
+        })
     }
 
     await db.table('scanEvents')
@@ -639,17 +701,12 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (resp) {
       const now = Date.now()
-      await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
-        for (const item of syncable) {
-          await db.table('inventoryCountRecords')
-            .where('[inventoryCountImportId+uuid]')
-            .equals([inventoryCountImportId, item.uuid])
-            .modify({
-              lastSyncedAt: now,
-              lastSyncedBatchId: `batch-${now}`
-            })
-        }
-      })
+      const syncUpdates = syncable.map((item: any) => ({
+        ...item,
+        lastSyncedAt: now,
+        lastSyncedBatchId: `batch-${now}`
+      }))
+      await db.table('inventoryCountRecords').bulkPut(syncUpdates)
       return pending.length
     }
 
@@ -684,6 +741,7 @@ async function resolveMissingSystemQOH(
 
   const now = Date.now()
   let enrichedCount = 0
+  const updates: any[] = []
 
   for (const record of records) {
     try {
@@ -696,21 +754,19 @@ async function resolveMissingSystemQOH(
         url: 'oms/dataDocumentView',
         method: 'POST',
         data: {
-        dataDocumentId: 'ProductFacilityAndInventoryItem',
-        pageSize: 1,
-        customParametersMap: { productId: record.productId, facilityId: record.facilityId }
-      }
+          dataDocumentId: 'ProductFacilityAndInventoryItem',
+          pageSize: 1,
+          customParametersMap: { productId: record.productId, facilityId: record.facilityId }
+        }
       })
 
       if (!inventory) throw new Error('No inventory response')
 
-      await db.table('inventoryCountRecords')
-        .where('[inventoryCountImportId+uuid]')
-        .equals([inventoryCountImportId, record.uuid])
-        .modify({
-          systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal ?? 0,
-          lastUpdatedAt: now
-        })
+      updates.push({
+        ...record,
+        systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal ?? 0,
+        lastUpdatedAt: now
+      })
 
       enrichedCount++
     } catch (err) {
@@ -719,6 +775,10 @@ async function resolveMissingSystemQOH(
         err
       )
     }
+  }
+
+  if (updates.length > 0) {
+    await db.table('inventoryCountRecords').bulkPut(updates)
   }
 
   return enrichedCount
