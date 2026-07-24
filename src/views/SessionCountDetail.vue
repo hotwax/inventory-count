@@ -339,17 +339,17 @@
                   </ion-item>
                 </div>
                 <template v-if="filteredItems.length">
-                  <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-card-' + item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
-                    <ion-item>
-                      <ion-label data-testid="session-detail-undirected-filtered-item-label">
-                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
-                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
-                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
-                        <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
-                      </ion-label>
-                    </ion-item>
-                  </ion-card>
+                  <ion-item class="flat-list-item" v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-item-' + item.uuid">
+                    <ion-thumbnail slot="start">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
+                    </ion-thumbnail>
+                    <ion-label data-testid="session-detail-undirected-filtered-item-label">
+                      <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                      <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                      <p>{{ getSessionItemSecondaryLabel(item) }}</p>
+                    </ion-label>
+                    <ion-note slot="end" data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                  </ion-item>
                 </template>
 
                 <template v-else-if="searchKeyword && !filteredItems.length">
@@ -359,17 +359,17 @@
                 </template>
 
                 <template v-else>
-                  <ion-card v-for="item in undirectedItems" :key="item.uuid" :data-testid="'session-detail-undirected-card-' + item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
-                    <ion-item>
-                      <ion-label data-testid="session-detail-undirected-item-label">
-                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
-                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
-                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
-                        <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
-                      </ion-label>
-                    </ion-item>
-                  </ion-card>
+                  <ion-item class="flat-list-item" v-for="item in undirectedItems" :key="item.uuid" :data-testid="'session-detail-undirected-item-' + item.uuid">
+                    <ion-thumbnail slot="start">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
+                    </ion-thumbnail>
+                    <ion-label data-testid="session-detail-undirected-item-label">
+                      <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                      <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                      <p>{{ getSessionItemSecondaryLabel(item) }}</p>
+                    </ion-label>
+                    <ion-note slot="end" data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                  </ion-item>
                 </template>
               </template>
             </ion-segment-content>
@@ -396,7 +396,7 @@
                 </div>
               </template>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-unmatched-filtered-card-' + item.uuid">
+                <ion-item-group class="unmatched-group" v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-unmatched-filtered-group-' + item.uuid">
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-filtered-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
@@ -434,7 +434,7 @@
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
-                </ion-card>
+                </ion-item-group>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -444,7 +444,7 @@
               </template>
 
               <template v-else>
-                <ion-card v-for="item in unmatchedItems" :key="item.uuid" :data-testid="'session-detail-unmatched-card-' + item.uuid">
+                <ion-item-group class="unmatched-group" v-for="item in unmatchedItems" :key="item.uuid" :data-testid="'session-detail-unmatched-group-' + item.uuid">
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
@@ -482,7 +482,7 @@
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
-                </ion-card>
+                </ion-item-group>
               </template>
             </ion-segment-content>
 
@@ -2182,9 +2182,21 @@ ion-segment-view {
   overflow-y: auto;
 }
 
-.virtual-list ion-item {
+.virtual-list ion-item,
+.flat-list-item,
+.unmatched-group {
   --min-height: 64px;
+  height: auto;
+  width: 100%;
   border-bottom: 1px solid var(--ion-color-light);
+}
+
+.virtual-list ion-item::part(native),
+.flat-list-item::part(native),
+.unmatched-group ion-item::part(native) {
+  align-items: flex-start;
+  padding-top: 8px;
+  height: auto;
 }
 
 .loading-overlay {
@@ -2222,6 +2234,12 @@ ion-segment-view {
   right: -1px;
   position: absolute;
   font-size: 10px;
+}
+
+.info-card,
+.empty-state {
+  width: 100%;
+  flex: 1 1 100%;
 }
 
 /* Mobile: single column, hide the desktop rail, stack the stat cards, show the action bar */

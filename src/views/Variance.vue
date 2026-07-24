@@ -19,7 +19,7 @@
           <!-- Left Panel -->
           <div class="count-events">
             <ion-item class="scan" lines="none">
-              <ion-label position="stacked">{{ translate(barcodeIdentifierDescription) }}</ion-label>
+              <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
               <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
                 @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
             </ion-item>
@@ -104,14 +104,22 @@
               <div class="segment-actions-container ion-margin-top ion-padding-horizontal">
                 <ion-segment v-model="selectedSegment" class="main-segment">
                   <ion-segment-button value="matched">
-                    <ion-label>{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
+                    <ion-icon class="segment-mobile-icon" :icon="checkmarkCircleOutline" aria-hidden="true" />
+                    <ion-label>
+                      <span class="segment-desktop-label">{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</span>
+                      <span class="segment-mobile-count" aria-hidden="true">{{ inventoryAdjustments.length }}</span>
+                    </ion-label>
                   </ion-segment-button>
                   <ion-segment-button value="unmatched">
-                    <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
+                    <ion-icon class="segment-mobile-icon" :icon="helpCircleOutline" aria-hidden="true" />
+                    <ion-label>
+                      <span class="segment-desktop-label">{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</span>
+                      <span class="segment-mobile-count" aria-hidden="true">{{ unmatchedCount }}</span>
+                    </ion-label>
                   </ion-segment-button>
                 </ion-segment>
                 <ion-button fill="clear" color="primary" class="new-session" @click="confirmClearAll">
-                  <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
+                  <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
                   {{ translate("New Session") }}
                 </ion-button>
               </div>
@@ -294,49 +302,41 @@
           </div>
           
           <ion-list v-if="handCountedProducts.length > 0" class="hand-counted-items">
-            <ion-card v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
-              <div class="item ion-padding-end">
-                <ion-item class="product" lines="none">
-                  <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(product.mainImageUrl)">
-                    <img :src="product.mainImageUrl"/>
-                  </ion-thumbnail>
-                  <ion-label>
-                    {{ useProductMaster().primaryId(product) }}
-                    <p>{{ useProductMaster().secondaryId(product) }}</p>
-                  </ion-label>
-                </ion-item>
-                <div class="quantity">
-                  <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                  <ion-item lines="full">
-                    <ion-input
-                      :ref="el => setQuantityInputRef(el, index)"
-                      @ionInput="handCountedItemManualInputChange($event, product)"
-                      @keyup.enter="focusSearchBar"
-                      label="Qty"
-                      label-placement="stacked" 
-                      type="number" 
-                      min="0" 
-                      inputmode="numeric" 
-                      placeholder="0" 
-                      v-model.number="product.countedQuantity"
-                    ></ion-input>
-                  </ion-item>
-                  <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
-                    <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-              <div class="progress ion-padding">
-                <ion-label>
-                  {{ 'Current Stock: ' + (product.quantityOnHand || 0) }}
-                </ion-label>
-                <ion-button fill="clear" color="danger" aria-label="remove-item" @click="removeProduct(product)">
+            <ion-item class="flat-list-item" v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
+              <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(product.mainImageUrl)">
+                <img :src="product.mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                <h2>{{ useProductMaster().primaryId(product) }}</h2>
+                <p>{{ useProductMaster().secondaryId(product) }}</p>
+                <p>{{ translate('Current Stock:') }} {{ product.quantityOnHand || 0 }}</p>
+              </ion-label>
+              
+              <div slot="end" class="quantity-controls">
+                <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-input
+                  class="quantity-input"
+                  :ref="el => setQuantityInputRef(el, index)"
+                  @ionInput="handCountedItemManualInputChange($event, product)"
+                  @keyup.enter="focusSearchBar"
+                  label="Qty"
+                  label-placement="stacked" 
+                  type="number" 
+                  min="0" 
+                  inputmode="numeric" 
+                  placeholder="0" 
+                  v-model.number="product.countedQuantity"
+                ></ion-input>
+                <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                  <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button class="remove-btn" fill="clear" color="danger" aria-label="remove-item" @click="removeProduct(product)">
                   <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
               </div>
-            </ion-card>
+            </ion-item>
           </ion-list>
         </template>
       </main>
@@ -420,6 +420,19 @@
       </ion-content>
     </ion-modal>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
+    <ion-footer v-if="mode === 'scan'" class="mobile-action-bar">
+      <ion-toolbar>
+        <ion-item class="scan" lines="none">
+          <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
+          <ion-input ref="mobileBarcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
+            @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
+        </ion-item>
+        <ion-button expand="block" :color="isScannerActive ? 'success' : 'danger'" class="focus ion-margin-top ion-margin-horizontal ion-margin-bottom" @click="handleStartOrFocus">
+          <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
+          {{ isScannerActive ? translate("Scanner Ready") : translate("Focus Scanner") }}
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -429,7 +442,7 @@ import { api, commonUtil, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline, checkmarkCircleOutline, helpCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref, nextTick } from 'vue';
 import Image from '@/components/Image.vue';
@@ -472,7 +485,8 @@ const searchedProductString = ref('');
 const searchedProducts = ref<Array<any>>([]);
 
 /* Count Events - Left Pane Refs */
-const barcodeInput = ref();
+const barcodeInput = ref<any>(null);
+const mobileBarcodeInput = ref<any>(null);
 const isScannerActive = ref(false);
 const scannedValue = ref('');
 const events = ref<any[]>([]);
@@ -505,7 +519,8 @@ const handleScan = () => {
   }, aggregationInterval);
  };
 const handleStartOrFocus = () => { 
-  barcodeInput.value.$el.setFocus();
+  barcodeInput.value?.$el?.setFocus();
+  mobileBarcodeInput.value?.$el?.setFocus();
 };
 const toggleScannerActive = () => { 
   isScannerActive.value = !isScannerActive.value;
@@ -1153,6 +1168,7 @@ main.count {
   width: 100%;
 }
 
+
 .count-events {
   border-right: 1px solid var(--ion-color-medium);
   contain: paint;
@@ -1292,28 +1308,30 @@ main.count {
   border: 1px solid var(--ion-color-medium);
 }
 
-.hand-counted-items {
-  .item {
-    flex: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .quantity {
-      display: flex;
-    }
-  }
+.hand-counted-items .flat-list-item {
+  --min-height: 64px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
 
-  .progress {
-    display: flex;
-    gap: var(--spacer-sm);
-    align-items: center;
-    border-top: 1px solid var(--ion-color-medium);
+.hand-counted-items .flat-list-item::part(native) {
+  align-items: flex-start;
+  padding-top: 8px;
+  height: auto;
+}
 
-    ion-label {
-      flex: 1 0 max-content;
-    }
-  }
+.hand-counted-items .quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hand-counted-items .quantity-input {
+  width: 50px;
+  text-align: center;
+}
+
+.hand-counted-items .remove-btn {
+  margin-left: 8px;
 }
 
 .variance-summary-header {
@@ -1345,5 +1363,32 @@ main.count {
 .clear-all {
   --padding-start: 12px;
   --padding-end: 12px;
+}
+
+.segment-mobile-icon,
+.segment-mobile-count {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  main.scan {
+    grid-template-columns: 1fr;
+  }
+  .count-events {
+    display: none !important;
+  }
+  .segment-desktop-label {
+    display: none;
+  }
+  .segment-mobile-icon,
+  .segment-mobile-count {
+    display: block;
+  }
+}
+
+@media (min-width: 992px) {
+  .mobile-action-bar {
+    display: none !important;
+  }
 }
 </style>
