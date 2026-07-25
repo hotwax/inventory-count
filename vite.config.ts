@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import legacy from '@vitejs/plugin-legacy'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
@@ -16,6 +17,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       legacy(),
+      basicSsl(),
       VitePWA({
         registerType: "autoUpdate",
         selfDestroying: true,
