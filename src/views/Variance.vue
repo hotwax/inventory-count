@@ -657,7 +657,7 @@ onIonViewDidEnter(async () => {
     from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
-  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('../workers/backgroundAggregation.ts', import.meta.url))
   aggregationWorker = bgWorker.worker
   aggregationWorkerApi = bgWorker.api
 
