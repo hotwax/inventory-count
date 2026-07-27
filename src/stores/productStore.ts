@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
-import { useProductMaster } from '@/composables/useProductMaster'
-import { useUserProfile } from './userProfileStore'
+
 import { translate } from '@common'
 
 export const useProductStore = defineStore('productStore', {
@@ -26,27 +25,25 @@ export const useProductStore = defineStore('productStore', {
   }),
 
   getters: {
-    getCurrentProductStore: (state) => state.currentProductStore,
-    getProductStores: (state) => state.productStores,
-    getStatusDescriptions: (state) => state.statusDesc,
-    getStatusDescription: (state) => (statusId: string) => {
-      const found = state.statusDesc.find((status: any) => status.statusId === statusId)
-      return found?.description || statusId
+    getCurrentProductStore(state): any { return state.currentProductStore; },
+    getProductStores(state): any[] { return state.productStores; },
+    getStatusDescriptions(state): any[] { return state.statusDesc; },
+    getStatusDescription(state): (statusId: string) => string {
+      return (statusId: string) => {
+        const found = state.statusDesc.find((status: any) => status.statusId === statusId)
+        return found?.description || statusId
+      }
     },
-
-    getFacilities: (state) => state.facilities,
-    getCurrentFacility: (state) => state.currentFacility,
-
-    getProductStoreSettings: (state) => state.settings,
-    getForceScan: (state) => state.settings.forceScan,
-    getBarcodeIdentificationPref: (state) => state.settings.productIdentifier.barcodeIdentificationPref,
-
-    // Shortcuts for productIdentifier nested object
-    getProductIdentificationPref: (state) => state.settings.productIdentifier.productIdentificationPref,
-    getProductIdentificationOptions: (state) => state.settings.productIdentifier.productIdentificationOptions,
-    getGoodIdentificationOptions: (state) => state.settings.productIdentifier.goodIdentificationOptions,
-    getPrimaryId: (state) => state.settings.productIdentifier.productIdentificationPref.primaryId || 'SKU',
-    getSecondaryId: (state) => state.settings.productIdentifier.productIdentificationPref.secondaryId || 'productId'
+    getFacilities(state): any[] { return state.facilities; },
+    getCurrentFacility(state): any { return state.currentFacility; },
+    getProductStoreSettings(state): any { return state.settings; },
+    getForceScan(state): boolean { return state.settings.forceScan; },
+    getBarcodeIdentificationPref(state): string { return state.settings.productIdentifier.barcodeIdentificationPref; },
+    getProductIdentificationPref(state): any { return state.settings.productIdentifier.productIdentificationPref; },
+    getProductIdentificationOptions(state): any[] { return state.settings.productIdentifier.productIdentificationOptions; },
+    getGoodIdentificationOptions(state): any[] { return state.settings.productIdentifier.goodIdentificationOptions; },
+    getPrimaryId(state): string { return state.settings.productIdentifier.productIdentificationPref.primaryId || 'SKU'; },
+    getSecondaryId(state): string { return state.settings.productIdentifier.productIdentificationPref.secondaryId || 'productId'; }
   },
 
   actions: {
@@ -118,7 +115,8 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async fetchUserFacilities() {
+    async fetchUserFacilities(): Promise<void> {
+      const { useUserProfile } = await import('./userProfileStore');
       const userStore = useUserProfile();
       const partyId = userStore.getUserProfile?.partyId;
       const isAdminUser = userStore.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
@@ -247,9 +245,10 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async fetchProductStores() {
+    async fetchProductStores(): Promise<void> {
       try {
-        const isAdminUser = useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+        const { useUserProfile } = await import('./userProfileStore');
+        const isAdminUser = (useUserProfile() as any).hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
         const pageSize = 200;
         let productStoreFilters: any = {};
 
@@ -306,11 +305,12 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    setCurrent(productStore: any) {
+    setCurrent(productStore: any): void {
       this.currentProductStore = productStore
     },
 
-    async fetchProductStorePreference() {
+    async fetchProductStorePreference(): Promise<void> {
+      const { useUserProfile } = await import('./userProfileStore');
       const userStore = useUserProfile();
       try {
         const preferredStoreResp = await api({
@@ -334,7 +334,8 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async setProductStorePreference(payload: any) {
+    async setProductStorePreference(payload: any): Promise<void> {
+      const { useUserProfile } = await import('./userProfileStore');
       const userStore = useUserProfile();
       try {
         await api({
@@ -353,12 +354,12 @@ export const useProductStore = defineStore('productStore', {
     },
 
     /** ---------- Status Descriptions ---------- */
-    setStatusDescriptions(statuses: any[]) {
+    setStatusDescriptions(statuses: any[]): void {
       this.statusDesc = statuses || []
     },
 
     /** ---------- Product Identification Pref ---------- */
-    async setDxpProductIdentificationPref(id: string, value: string, eComStoreId: string) {
+    async setDxpProductIdentificationPref(id: string, value: string, eComStoreId: string): Promise<void> {
       const productIdentificationPref = JSON.parse(
         JSON.stringify(this.getProductIdentificationPref)
       )
@@ -378,7 +379,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getDxpIdentificationPref(eComStoreId: string) {
+    async getDxpIdentificationPref(eComStoreId: string): Promise<void> {
       if (!eComStoreId) {
         this.settings.productIdentifier.productIdentificationPref = {
           primaryId: 'productId',
@@ -389,7 +390,7 @@ export const useProductStore = defineStore('productStore', {
       this.settings.productIdentifier.productIdentificationPref = await this.fetchProductIdentificationPref(eComStoreId)
     },
 
-    async prepareProductIdentifierOptions() {
+    async prepareProductIdentifierOptions(): Promise<void> {
       const staticOptions = [
         { goodIdentificationTypeId: 'productId', description: 'Product ID' },
         { goodIdentificationTypeId: 'groupId', description: 'Group ID' },
@@ -409,7 +410,7 @@ export const useProductStore = defineStore('productStore', {
       this.settings.productIdentifier.goodIdentificationOptions = fetchedOptions
     },
 
-    async getSettings(productStoreId: string) {
+    async getSettings(productStoreId: string): Promise<void> {
       try {
         const resp = await api({
           url: `admin/productStores/${productStoreId}/settings`,
@@ -439,7 +440,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async setProductStoreSetting(key: string, value: any, productStoreId: string) {
+    async setProductStoreSetting(key: string, value: any, productStoreId: string): Promise<void> {
       const keyToEnum: Record<string, string> = {
         forceScan: 'INV_FORCE_SCAN',
         barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
@@ -472,7 +473,7 @@ export const useProductStore = defineStore('productStore', {
 
 
     /** ---------- ProductStoreSettings Functions ---------- */
-    async getProductIdentifications(productStoreId: string) {
+    async getProductIdentifications(productStoreId: string): Promise<any> {
       try {
         const resp = await api({
           url: `admin/productStores/${productStoreId}/settings`,
@@ -495,7 +496,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getProductIdentifierSettings() {
+    async getProductIdentifierSettings(): Promise<void> {
       try {
         const productStoreId = this.currentProductStore?.productStoreId
         if (!productStoreId) throw new Error('No current product store selected')
@@ -510,6 +511,7 @@ export const useProductStore = defineStore('productStore', {
 
     async getProductIdentificationValue(productId: string, type: string): Promise<any> {
       if (!type || !productId) return undefined
+      const { useProductMaster } = await import('@/composables/useProductMaster')
       const productMaster = useProductMaster()
       try {
         const { product } = await productMaster.getById(productId)
@@ -524,11 +526,11 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    setCurrentFacility(facility: any) {
+    setCurrentFacility(facility: any): void {
       this.currentFacility = facility
     },
 
-    async fetchFacilityPreference() {
+    async fetchFacilityPreference(): Promise<void> {
       if (!this.facilities.length) return;
       let facilityId: string | undefined;
       try {
@@ -547,7 +549,10 @@ export const useProductStore = defineStore('productStore', {
             method: "GET",
             params: {
               pageSize: 1,
-              userId: useUserProfile().current.userId,
+              userId: (await (async () => {
+                const { useUserProfile } = await import('./userProfileStore');
+                return (useUserProfile() as any).current.userId;
+              })()),
               preferenceKey: "SELECTED_FACILITY"
             },
           }) as any;
@@ -572,8 +577,9 @@ export const useProductStore = defineStore('productStore', {
       this.currentFacility = this.facilities[0];
     },
 
-    async setFacilityPreference(payload: any) {
-      const userProfileStore = useUserProfile()
+    async setFacilityPreference(payload: any): Promise<void> {
+      const { useUserProfile } = await import('./userProfileStore');
+      const userProfileStore = useUserProfile() as any;
       const userProfile = userProfileStore.getUserProfile
       try {
         await userProfileStore.setUserPreference({

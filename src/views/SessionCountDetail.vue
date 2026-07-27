@@ -761,6 +761,8 @@ import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
 import { InventorySyncWorker } from '../workers/backgroundAggregation';
+import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
+import lockHeartbeatWorkerUrl from '../workers/lockHeartbeatWorker.ts?worker&url';
 
 const props = defineProps<{
   workEffortId: string;
@@ -1121,7 +1123,7 @@ onIonViewDidEnter(async () => {
     );
 
     // Start the background aggregation worker and schedule periodic aggregation
-    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('../workers/backgroundAggregation.ts', import.meta.url))
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(backgroundAggregationUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
@@ -1496,7 +1498,7 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('../workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(lockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1555,7 +1557,7 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('../workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(lockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }

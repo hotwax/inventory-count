@@ -452,6 +452,7 @@ import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { Subscription, from } from 'rxjs';
 import { InventorySyncWorker } from '../workers/backgroundAggregation';
+import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
 import type { Remote } from 'comlink';
 
 const mode = ref<'scan' | 'count'>('scan');
@@ -657,7 +658,7 @@ onIonViewDidEnter(async () => {
     from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
-  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('../workers/backgroundAggregation.ts', import.meta.url))
+  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(backgroundAggregationUrl, import.meta.url))
   aggregationWorker = bgWorker.worker
   aggregationWorkerApi = bgWorker.api
 
