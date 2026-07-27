@@ -12,7 +12,7 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "types": ["pinia"],
+    "types": ["pinia", "pinia-plugin-persistedstate"],
     "paths": {
       "@/*": [
         "src/*"

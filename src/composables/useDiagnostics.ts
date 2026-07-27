@@ -4,7 +4,7 @@ import { useProductStore } from "@/stores/productStore";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useInventoryCountRun } from "./useInventoryCountRun";
 import { WorkerFactory } from "../../../../common/core/workerFactory";
-import { InventorySyncWorker } from "@/workers/backgroundAggregation";
+import { InventorySyncWorker } from "../workers/backgroundAggregation";
 
 export function useDiagnostics() {
   const userProfile = useUserProfile();

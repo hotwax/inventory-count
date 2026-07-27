@@ -748,7 +748,7 @@ import { WorkerFactory } from '@common/core/workerFactory';
 import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
-import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import type { LockHeartbeatWorker } from '../workers/lockHeartbeatWorker';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -760,7 +760,7 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import { InventorySyncWorker } from '../workers/backgroundAggregation';
 
 const props = defineProps<{
   workEffortId: string;

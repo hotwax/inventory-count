@@ -1,0 +1,3 @@
+countImportName,purposeType,productSku,facility,estimatedCompletionDate,estimatedStartDate
+Weekly store audit,DIRECTED_COUNT,SKU-12345,FACILITY_100,02-20-2001 02:00:00,07-21-2003 08:20:00
+Distribution center spot check,HARD_COUNT,,FACILITY_DC_01,02-20-2001 02:00:00,07-21-2003 08:20:00

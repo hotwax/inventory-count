@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
-import { createCommonDB } from "@/services/commonDatabase";
+import { createCommonDB } from "../services/commonDatabase";
 
 // DB instance for worker (created once)
 let db: any = null;
