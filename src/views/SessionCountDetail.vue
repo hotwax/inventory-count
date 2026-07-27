@@ -1346,6 +1346,7 @@ async function focusScanner() {
 }
 
 async function recordScannedCode(code: string, quantity = 1) {
+  console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
   if (!value) return false;
 
@@ -1363,6 +1364,7 @@ async function recordScannedCode(code: string, quantity = 1) {
 }
 
 async function handleScan() {
+  console.log(`[PROCESS LOG] 0. handleScan triggered (Hardware/Keyboard scanner)`);
   prepareScanSuccessFeedback();
   const value = scannedValue.value.trim();
   if (!value) return;
@@ -1372,6 +1374,7 @@ async function handleScan() {
 
 // Camera scanner (web / @zxing) funnels into the same offline-first scan pipeline as the hardware scanner.
 async function onCameraScan(code: string, quantity: number) {
+  console.log(`[PROCESS LOG] 0. onCameraScan triggered (Camera) with code: ${code}`);
   return recordScannedCode(code, quantity);
 }
 
