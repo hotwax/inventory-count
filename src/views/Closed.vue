@@ -2,6 +2,9 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="closed-page-title">{{ translate("Closed")}}</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="router.push('/export-history')" data-testid="closed-export-history-btn">
