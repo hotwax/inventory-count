@@ -67,6 +67,12 @@ initialiseConfig({
   set oms(val) {
     userProfileStore.setOms(val);
   },
+  get appVersion() {
+    return userProfileStore.appVersion;
+  },
+  set appVersion(val) {
+    userProfileStore.setAppVersion(val);
+  },
   router
 });
 

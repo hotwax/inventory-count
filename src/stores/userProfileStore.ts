@@ -8,6 +8,9 @@ export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     oms: null as any,
+    // The app version this deployment is pinned to. undefined = not resolved yet, "" = no version
+    // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
+    appVersion: undefined as string | undefined,
     permissions: [] as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
@@ -57,6 +60,7 @@ export const useUserProfile = defineStore('userProfile', {
     getTimeZones: (state) => state.timeZones,
     getCurrentTimeZone: (state) => state.current.timeZone,
     getUserProfile: (state) => state.current,
+    getAppVersion: (state) => state.appVersion,
     getUserPermissions: (state) => state.permissions,
     getDeviceId: (state) => state.deviceId,
     getListPageFilters: (state) => (segment: string) => {
@@ -168,6 +172,9 @@ export const useUserProfile = defineStore('userProfile', {
       return this.permissions;
     },
     /** Initialize after login */
+    setAppVersion(appVersion: string | undefined) {
+      this.appVersion = appVersion
+    },
     async setUserProfile(profile: any) {
       this.current = profile
     },
@@ -243,6 +250,8 @@ export const useUserProfile = defineStore('userProfile', {
       const { useProductStore } = await import('./productStore');
       useProductStore().$reset();
 
+      // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
+      // session state), so a plain $reset() is fine here.
       this.$reset();
     },
 
