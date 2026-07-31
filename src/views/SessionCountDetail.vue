@@ -633,6 +633,7 @@ import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
@@ -643,6 +644,7 @@ import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
 
 const props = defineProps<{
   workEffortId: string;
@@ -961,7 +963,7 @@ onIonViewDidEnter(async () => {
     );
 
     // Start the background aggregation worker and schedule periodic aggregation
-    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
@@ -1259,7 +1261,7 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1318,7 +1320,7 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
