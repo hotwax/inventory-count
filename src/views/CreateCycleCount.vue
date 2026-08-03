@@ -90,17 +90,10 @@
       <div class="header searchbar">
         <ion-searchbar :value="keyword" :placeholder="translate('Search products')" :disabled="showSelectedOnly" @ionInput="handleKeywordInput($event)" @ionClear="handleKeywordInput($event)" data-testid="create-count-search-input" />
 
-        <ion-item>
-          <ion-label>{{ translate("Category") }}</ion-label>
-          <ion-chip slot="end" outline :disabled="showSelectedOnly" @click="openFacetModal('productCategoryNames')" data-testid="create-count-category-chip">
-            <ion-label>{{ getFacetChipLabel('productCategoryNames') }}</ion-label>
-          </ion-chip>
-        </ion-item>
-
-        <ion-item>
-          <ion-label>{{ translate("Feature") }}</ion-label>
-          <ion-chip slot="end" outline :disabled="showSelectedOnly" @click="openFacetModal('productFeatures')" data-testid="create-count-feature-chip">
-            <ion-label>{{ getFacetChipLabel('productFeatures') }}</ion-label>
+        <ion-item v-for="facet in PRODUCT_FACET_FILTERS" :key="facet.field">
+          <ion-label>{{ translate(facet.label) }}</ion-label>
+          <ion-chip slot="end" outline :disabled="showSelectedOnly" @click="openFacetModal(facet)" :data-testid="'create-count-facet-chip-' + facet.field">
+            <ion-label>{{ getFacetChipLabel(facet.field) }}</ion-label>
           </ion-chip>
         </ion-item>
       </div>
@@ -166,10 +159,10 @@
 
       <FacetFilterModal
         :is-open="isFacetModalOpen"
-        :title="activeFacet === 'productFeatures' ? 'Select features' : 'Select categories'"
-        :search-placeholder="activeFacet === 'productFeatures' ? 'Search features' : 'Search categories'"
-        :selected-values="activeFacet ? selectedFacetValues[activeFacet] : []"
-        :options="activeFacet ? facetOptions[activeFacet] : []"
+        :title="activeFacet?.modalTitle"
+        :search-placeholder="activeFacet?.searchPlaceholder"
+        :selected-values="activeFacet ? selectedFacetValues[activeFacet.field] : []"
+        :options="activeFacet ? facetOptions[activeFacet.field] : []"
         :is-loading="isFacetLoading"
         @update:is-open="isFacetModalOpen = $event"
         @apply="applyFacetSelection"
@@ -231,7 +224,7 @@ import Image from '@/components/Image.vue';
 import FacetFilterModal from '@/components/FacetFilterModal.vue';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
-import { useProductFacets, PRODUCT_FACETS, ProductFacetKey, FacetOption } from '@/composables/useProductFacets';
+import { useProductFacets, PRODUCT_FACET_FILTERS, FacetFilterConfig, FacetOption } from '@/composables/useProductFacets';
 import { useProductStore } from '@/stores/productStore';
 
 const SELECT_ALL_PAGE_SIZE = 250;
@@ -335,36 +328,35 @@ function updateStartDate(event: any) {
 /* ---------- Facet filters ---------- */
 const isFacetModalOpen = ref(false);
 const isFacetLoading = ref(false);
-const activeFacet = ref<ProductFacetKey | null>(null);
+const activeFacet = ref<FacetFilterConfig | null>(null);
 
-const facetOptions = reactive<Record<ProductFacetKey, FacetOption[]>>({
-  productCategoryNames: [],
-  productFeatures: []
-});
+// Keyed by Solr field, seeded from the config so a new filter needs no change here
+const facetOptions = reactive<Record<string, FacetOption[]>>(
+  Object.fromEntries(PRODUCT_FACET_FILTERS.map((facet: FacetFilterConfig) => [facet.field, []]))
+);
 
-const selectedFacetValues = reactive<Record<ProductFacetKey, string[]>>({
-  productCategoryNames: [],
-  productFeatures: []
-});
+const selectedFacetValues = reactive<Record<string, string[]>>(
+  Object.fromEntries(PRODUCT_FACET_FILTERS.map((facet: FacetFilterConfig) => [facet.field, []]))
+);
 
-function getFacetChipLabel(key: ProductFacetKey) {
-  const selected = selectedFacetValues[key];
-  if (!selected.length) return translate('All');
+function getFacetChipLabel(field: string) {
+  const selected = selectedFacetValues[field];
+  if (!selected?.length) return translate('All');
   if (selected.length === 1) {
-    const option = facetOptions[key].find((entry: FacetOption) => entry.value === selected[0]);
+    const option = facetOptions[field].find((entry: FacetOption) => entry.value === selected[0]);
     return option?.label || selected[0];
   }
   return `${selected.length} ${translate('selected')}`;
 }
 
-async function openFacetModal(key: ProductFacetKey) {
-  activeFacet.value = key;
+async function openFacetModal(facet: FacetFilterConfig) {
+  activeFacet.value = facet;
   isFacetModalOpen.value = true;
-  if (facetOptions[key].length) return;
+  if (facetOptions[facet.field].length) return;
   isFacetLoading.value = true;
   try {
-    facetOptions[key] = await fetchFacetOptions(key);
-    if (!facetOptions[key].length) {
+    facetOptions[facet.field] = await fetchFacetOptions(facet);
+    if (!facetOptions[facet.field].length) {
       commonUtil.showToast(translate('No options found'));
     }
   } catch (err) {
@@ -377,7 +369,7 @@ async function openFacetModal(key: ProductFacetKey) {
 
 async function applyFacetSelection(values: string[]) {
   if (!activeFacet.value) return;
-  selectedFacetValues[activeFacet.value] = values;
+  selectedFacetValues[activeFacet.value.field] = values;
   await refreshProducts();
 }
 
@@ -391,7 +383,7 @@ let searchToken = 0;
 
 /** Nothing is listed until the user narrows the catalog down with a keyword or a facet */
 const isFilterApplied = computed(() =>
-  !!(selectedFacetValues.productCategoryNames.length || selectedFacetValues.productFeatures.length || searchTerm.value)
+  !!searchTerm.value || Object.values(selectedFacetValues).some((values: string[]) => values.length)
 );
 
 /** Load the first page of the current filters, or empty the list when there are none */
@@ -412,10 +404,10 @@ async function refreshProducts() {
  */
 function buildFilters() {
   const filters: any = { isVariant: { value: 'true' } };
-  (Object.keys(selectedFacetValues) as ProductFacetKey[]).forEach((key: ProductFacetKey) => {
-    const values = selectedFacetValues[key];
+  Object.keys(selectedFacetValues).forEach((field: string) => {
+    const values = selectedFacetValues[field];
     if (!values.length) return;
-    filters[PRODUCT_FACETS[key].field] = { value: values.map(quoteFacetValue), op: 'OR' };
+    filters[field] = { value: values.map(quoteFacetValue), op: 'OR' };
   });
   return filters;
 }
@@ -699,7 +691,7 @@ function clearCreateCycleCount() {
   clearProducts();
 
   Object.keys(selectedProductsMap).forEach((key: string) => delete selectedProductsMap[key]);
-  (Object.keys(selectedFacetValues) as ProductFacetKey[]).forEach((key: ProductFacetKey) => (selectedFacetValues[key] = []));
+  Object.keys(selectedFacetValues).forEach((field: string) => (selectedFacetValues[field] = []));
 
   if (keywordDebounce) {
     clearTimeout(keywordDebounce);

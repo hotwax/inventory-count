@@ -1,34 +1,60 @@
 import { reactive } from 'vue';
-import { api, commonUtil, logger } from '@common';
+import { commonUtil, logger, useSolrSearch } from '@common';
 
 /**
- * PRODUCT facet options from the enterpriseSearch Solr collection.
- *
- * `facetToSelect` is the facet name defined in the OMS component's solr Facets.json and is only
- * valid for the admin/solrFacets endpoint. `field` is the queryable Solr field the selected
- * values have to be filtered on - filtering on the facet name returns an "undefined field" 400.
+ * PRODUCT facet options read straight off a Solr JSON terms facet, so any indexed field can be
+ * used as a filter without a matching named facet having to exist in the OMS component's
+ * Facets.json. Bucket counts come back too, which the admin/solrFacets endpoint discards.
  */
-export const PRODUCT_FACETS = {
-  productCategoryNames: {
-    facetToSelect: 'productCategoryNamesFacet',
-    field: 'productCategoryNames'
-  },
-  productFeatures: {
-    facetToSelect: 'productFeaturesFacet',
-    field: 'productFeatures'
-  }
-} as const;
 
-export type ProductFacetKey = keyof typeof PRODUCT_FACETS;
+export interface FacetFilterConfig {
+  /** Indexed Solr field, also the key the selections are held under */
+  field: string;
+  /** Row label and modal copy */
+  label: string;
+  modalTitle: string;
+  searchPlaceholder: string;
+  /**
+   * Values indexed as "{prefix}/{description}" (productFeatures) show the description with the
+   * prefix as secondary text. The raw value is always what the filter matches.
+   */
+  splitOnSlash?: boolean;
+}
+
+/** Add a row here to expose another facet field as a filter, nothing else has to change. */
+export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
+  {
+    field: 'productCategoryNames',
+    label: 'Category',
+    modalTitle: 'Select categories',
+    searchPlaceholder: 'Search categories'
+  },
+  {
+    field: 'productFeatures',
+    label: 'Feature',
+    modalTitle: 'Select features',
+    searchPlaceholder: 'Search features',
+    splitOnSlash: true
+  }
+];
+
+/**
+ * Base filters for the facet query. These mirror the product search so the offered options only
+ * come from products the list can actually return - searchProducts contributes docType and
+ * isVirtual, the view adds isVariant.
+ */
+export const PRODUCT_FACET_BASE_FILTERS = ['docType: PRODUCT', 'isVariant: true', 'isVirtual: false'];
 
 export interface FacetOption {
   id: string;
-  /** Value shown to the user. For features this is the description without the feature type. */
+  /** Shown to the user, the description alone for a split value */
   label: string;
-  /** Raw indexed value, this is what the Solr filter has to match. */
+  /** Raw indexed value, this is what the Solr filter has to match */
   value: string;
-  /** Secondary text, the productFeatureTypeId for features. Empty for categories. */
+  /** Secondary text, the prefix of a split value. Empty otherwise. */
   groupLabel: string;
+  /** Number of matching products */
+  count: number;
 }
 
 const FACET_PAGE_LIMIT = 1000;
@@ -36,81 +62,93 @@ const DEFAULT_MAX_FACETS = 5000;
 
 const optionsCache = reactive<Record<string, FacetOption[]>>({});
 
-/**
- * productFeatures values are indexed as "{productFeatureTypeId}/{description}". Split them for
- * display but keep the raw value intact, filters are matched against the raw value.
- */
-function toFacetOption(key: ProductFacetKey, entry: any): FacetOption {
-  const value = String(entry?.value ?? entry?.id ?? '');
-  if (key === 'productFeatures') {
+function toFacetOption(bucket: any, config: FacetFilterConfig): FacetOption {
+  const value = String(bucket?.val ?? '');
+  const count = Number(bucket?.count ?? 0);
+
+  if (config.splitOnSlash) {
     const separatorIndex = value.indexOf('/');
     if (separatorIndex !== -1) {
       return {
         id: value,
         label: value.substring(separatorIndex + 1).trim() || value,
         value,
-        groupLabel: value.substring(0, separatorIndex).trim()
+        groupLabel: value.substring(0, separatorIndex).trim(),
+        count
       };
     }
   }
-  return { id: value, label: String(entry?.label || value), value, groupLabel: '' };
+  return { id: value, label: value, value, groupLabel: '', count };
 }
 
 /**
- * Fetch every option of a PRODUCT facet, paginating until a page comes back empty or the
- * VITE_MAX_FACETS ceiling is reached. Results of an unfiltered fetch are cached for the session.
+ * Fetch every bucket of a terms facet, paging on offset until a short page comes back or the
+ * VITE_MAX_FACETS ceiling is reached. Results are cached for the session.
  */
-async function fetchFacetOptions(key: ProductFacetKey, term = ''): Promise<FacetOption[]> {
-  const facet = PRODUCT_FACETS[key];
-  const searchTerm = term.trim();
-
-  if (!searchTerm && optionsCache[key]?.length) return optionsCache[key];
+async function fetchFacetOptions(config: FacetFilterConfig): Promise<FacetOption[]> {
+  if (optionsCache[config.field]?.length) return optionsCache[config.field];
 
   const maxFacets = Number(import.meta.env.VITE_MAX_FACETS) || DEFAULT_MAX_FACETS;
-  let options: FacetOption[] = [];
+  const facetName = `${config.field}Facet`;
+  const options: FacetOption[] = [];
+  // Deduped as we go so the cap bounds distinct options, not raw buckets
+  const seen = new Set<string>();
   let offset = 0;
-  let page: any[] = [];
+  let pageLimit = 0;
+  let buckets: any[] = [];
 
   try {
     do {
-      const resp = await api({
-        url: 'admin/solrFacets',
-        method: 'GET',
-        params: {
-          facetToSelect: facet.facetToSelect,
-          docType: 'PRODUCT',
-          coreName: 'enterpriseSearch',
-          jsonQuery: '{"query":"*:*","filter":["docType:PRODUCT"]}',
-          noConditionFind: 'Y',
-          limit: FACET_PAGE_LIMIT,
-          offset,
-          searchfield: facet.field,
-          term: searchTerm,
-          q: searchTerm
+      // Never request more than the remaining room under the cap
+      pageLimit = Math.min(FACET_PAGE_LIMIT, maxFacets - options.length);
+      if (pageLimit <= 0) break;
+
+      const resp = await useSolrSearch().runSolrQuery({
+        json: {
+          params: { rows: 0 },
+          query: '*:*',
+          filter: [...PRODUCT_FACET_BASE_FILTERS],
+          facet: {
+            [facetName]: {
+              type: 'terms',
+              field: config.field,
+              mincount: 1,
+              limit: pageLimit,
+              offset,
+              // Alphabetical by term, which also keeps offset paging stable
+              sort: 'index'
+            }
+          }
         }
       }) as any;
 
       if (commonUtil.hasError(resp)) throw resp.data;
 
-      page = resp.data?.facetResponse ? resp.data.facetResponse.response : resp.data?.response;
-      page = Array.isArray(page) ? page : [];
-      options = options.concat(page.map((entry: any) => toFacetOption(key, entry)));
-      offset += FACET_PAGE_LIMIT;
-    } while (page.length && options.length < maxFacets);
+      buckets = resp?.data?.facets?.[facetName]?.buckets || [];
+      buckets = Array.isArray(buckets) ? buckets : [];
+
+      // Drop blanks, a multi valued field can also repeat a value across pages
+      buckets.forEach((bucket: any) => {
+        const option = toFacetOption(bucket, config);
+        if (!option.value || seen.has(option.value)) return;
+        seen.add(option.value);
+        options.push(option);
+      });
+
+      // Solr pages over buckets, so advance by what was asked for, not by what survived dedup
+      offset += pageLimit;
+    } while (buckets.length === pageLimit && options.length < maxFacets);
   } catch (err) {
-    logger.error(err);
-    return searchTerm ? [] : (optionsCache[key] || []);
+    logger.error(`Failed to fetch ${config.field} facet options`, err);
+    return [];
   }
 
-  // Drop blanks and duplicates, the same value can surface across pages of a multi valued field
-  const seen = new Set<string>();
-  options = options.filter((option: FacetOption) => {
-    if (!option.value || seen.has(option.value)) return false;
-    seen.add(option.value);
-    return true;
-  });
+  // A full last page means Solr had more to give, so the picker is showing a subset
+  if (buckets.length === pageLimit && options.length >= maxFacets) {
+    logger.warn(`Facet [${config.field}] truncated at the VITE_MAX_FACETS limit of ${maxFacets}, more options exist`);
+  }
 
-  if (!searchTerm) optionsCache[key] = options;
+  optionsCache[config.field] = options;
   return options;
 }
 
