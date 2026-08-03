@@ -118,6 +118,7 @@ onUnmounted(() => {
 
 const menuOrder = [
   "/bulkUpload",
+  "/create-cycle-count",
   "/assigned",
   "/pending-review",
   "/closed",
