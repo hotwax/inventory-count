@@ -24,7 +24,7 @@ export interface FacetFilterConfig {
 /** Add a row here to expose another facet field as a filter, nothing else has to change. */
 export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
   {
-    field: 'productCategoryNames',
+    field: 'primaryProductCategoryName',
     label: 'Category',
     modalTitle: 'Select categories',
     searchPlaceholder: 'Search categories'
