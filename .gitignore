@@ -32,6 +32,7 @@ android/.idea
 /test-results
 /playwright/playwright-report
 /playwright/test-results
+/playwright/screenshots
 /playwright/.auth
 /screenshots
 /platforms
