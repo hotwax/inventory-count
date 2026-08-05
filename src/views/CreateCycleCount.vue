@@ -219,7 +219,6 @@ import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonDa
 import { businessOutline, calendarClearOutline, calendarNumberOutline, clipboardOutline, closeOutline } from 'ionicons/icons';
 import { DateTime } from 'luxon';
 import { commonUtil, logger, translate, useSolrSearch } from '@common';
-import router from '@/router';
 import Image from '@/components/Image.vue';
 import FacetFilterModal from '@/components/FacetFilterModal.vue';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
