@@ -7,6 +7,10 @@
           <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
+        <ion-tab-button tab="create" @click="router.push('/tabs/create-cycle-count')" href="/tabs/create-cycle-count" data-testid="tabs-create-count-btn">
+          <ion-icon :icon="addCircleOutline" />
+          <ion-label>{{ translate("Create") }}</ion-label>
+        </ion-tab-button>
         <ion-tab-button v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG')" tab="audit" href="/tabs/variance">
           <ion-icon :icon="shirtOutline" />
           <ion-label>{{ translate("Variance") }}</ion-label>
@@ -23,6 +27,7 @@
 <script setup lang="ts">
 import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouterOutlet } from "@ionic/vue";
 import {
+  addCircleOutline,
   fileTrayFullOutline,
   settingsOutline,
   shirtOutline

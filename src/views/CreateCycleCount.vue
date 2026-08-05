@@ -659,11 +659,10 @@ async function submitCycleCount(name: string) {
     if (commonUtil.hasError(resp)) throw resp.data;
 
     clearCreateCycleCount();
-    commonUtil.showToast(translate('The cycle count file uploaded successfully. The count will be available once the file is processed.'));
-    router.push('/bulkUpload');
+    commonUtil.showToast(translate('The cycle count has been created successfully'));
   } catch (err) {
     logger.error(err);
-    commonUtil.showToast(translate('Failed to upload the file, please try again'));
+    commonUtil.showToast(translate('Failed to create count, please try again'));
   } finally {
     isSubmitting.value = false;
   }

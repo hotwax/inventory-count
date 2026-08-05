@@ -75,7 +75,14 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG"
         }
-      }
+      },
+      {
+        path: 'create-cycle-count',
+        component: () => import('@/views/CreateCycleCount.vue'),
+        meta: {
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
+        }
+      },
     ],
     beforeEnter: authGuard,
   },
