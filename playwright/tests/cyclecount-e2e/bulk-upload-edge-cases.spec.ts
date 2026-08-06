@@ -10,7 +10,7 @@ test.describe.serial('Bulk upload edge cases', () => {
   test.setTimeout(180_000);
 
   test('negative: handles missing mapping fields securely and blocks upload', async ({ page }, testInfo) => {
-    const fixture = createCycleCountUploadFixture(undefined, testInfo.project.name.replace('chromium-', ''));
+    const fixture = createCycleCountUploadFixture(testInfo.project.name.replace('chromium-', ''));
     const bulkUploadPage = new BulkUploadPage(page);
 
     try {
@@ -79,11 +79,11 @@ test.describe.serial('Bulk upload edge cases', () => {
   });
 
   test('negative: handles synchronous upload rejection from the backend', async ({ page }, testInfo) => {
-    const fixture = createCycleCountUploadFixture(undefined, testInfo.project.name.replace('chromium-', ''));
+    const fixture = createCycleCountUploadFixture(testInfo.project.name.replace('chromium-', ''));
     
     // Using valid headers but invalid facility IDs to trigger an immediate synchronous error
     const lines = fs.readFileSync(fixture.csvPath, 'utf8').split('\n');
-    lines[1] = lines[1].replace('YONKERS', 'INVALID_FACILITY').replace('STORE_14', 'INVALID_STORE');
+    lines[1] = lines[1].replace(fixture.facilityCandidates[0], 'INVALID_FACILITY');
     fs.writeFileSync(fixture.csvPath, lines.join('\n'));
 
     const bulkUploadPage = new BulkUploadPage(page);

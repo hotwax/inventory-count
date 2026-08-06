@@ -11,5 +11,5 @@ export const cycleCountEnv = {
 };
 
 export function buildCycleCountUrl(pathname: string) {
-  return new URL(pathname, cycleCountEnv.appUrl).toString();
+  return pathname;
 }

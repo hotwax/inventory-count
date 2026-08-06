@@ -14,7 +14,7 @@ test.describe('Session Count Detail - Functional Coverage', () => {
   let fixture: CycleCountUploadFixture;
 
   test.beforeEach(async ({}, testInfo) => {
-    fixture = createCycleCountUploadFixture(undefined, testInfo.project.name.replace('chromium-', ''));
+    fixture = createCycleCountUploadFixture(testInfo.project.name.replace('chromium-', ''));
   });
 
   test.afterEach(async () => {
@@ -76,9 +76,9 @@ test.describe('Session Count Detail - Functional Coverage', () => {
     await expect(page.getByTestId('session-detail-reopen-btn')).toBeVisible({ timeout: 20_000 });
   });
 
-  test('Hard Count: handles blind counting and session discard', async ({ page }) => {
+  test('Hard Count: handles blind counting and session discard', async ({ page }, testInfo) => {
     // Generate a fresh fixture name for Hard Count to avoid collision in this run
-    const hardCountFixture = createCycleCountUploadFixture(undefined, testInfo.project.name.replace('chromium-', ''));
+    const hardCountFixture = createCycleCountUploadFixture(testInfo.project.name.replace('chromium-', ''), true);
     const content = fs.readFileSync(hardCountFixture.csvPath, 'utf8');
     const updatedContent = content.replace(/DIRECTED_COUNT/g, 'HARD_COUNT');
     fs.writeFileSync(hardCountFixture.csvPath, updatedContent);
