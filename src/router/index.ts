@@ -18,6 +18,7 @@ import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, sh
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import CountProgressReview from "@/views/CountProgressReview.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
+import Actions from "@/authorization/actions";
 
 // Defining types for the meta values
 declare module 'vue-router' {
@@ -43,7 +44,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
-      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN")) {
+      if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN)) {
         return "/assigned"
       }
       return "/tabs/count"
@@ -61,7 +62,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'count',
         component: () => import('@/views/Count.vue'),
         meta: {
-          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
+          permissionId: Actions.APP_COUNT_VIEW
         }
       },
       {
@@ -72,7 +73,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'variance',
         component: () => import('@/views/Variance.vue'),
         meta: {
-          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG"
+          permissionId: Actions.APP_VARIANCE_VIEW
         }
       }
     ],
@@ -84,7 +85,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Assigned,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_ASSIGNED_VIEW,
       showInMenu: true,
       title: "Assigned",
       iosIcon: storefrontOutline,
@@ -97,7 +98,7 @@ const routes: Array<RouteRecordRaw> = [
     component: Closed,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_CLOSED_VIEW,
       showInMenu: true,
       title: "Closed",
       iosIcon: receiptOutline,
@@ -111,7 +112,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
+      permissionId: Actions.APP_ASSIGNED_VIEW
     }
   },
   {
@@ -120,7 +121,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PendingReview,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_PENDING_REVIEW_VIEW,
       showInMenu: true,
       title: "Pending review",
       iosIcon: mailUnreadOutline,
@@ -134,7 +135,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_PENDING_REVIEW_VIEW,
     }
   },
   {
@@ -143,7 +144,7 @@ const routes: Array<RouteRecordRaw> = [
     component: PreCountedItems,
     props: true,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
+      permissionId: Actions.APP_COUNT_VIEW
     }
   },
   {
@@ -151,7 +152,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CountProgressReview,
     props: true,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
+      permissionId: Actions.APP_COUNT_VIEW
     }
   },
   {
@@ -160,7 +161,7 @@ const routes: Array<RouteRecordRaw> = [
     component: BulkUpload,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_DRAFT_VIEW,
       showInMenu: true,
       title: "Bulk Upload",
       iosIcon: createOutline,
@@ -175,7 +176,7 @@ const routes: Array<RouteRecordRaw> = [
     beforeEnter: authGuard,
     props: true,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
+      permissionId: Actions.APP_CLOSED_VIEW
     }
   },
   {
@@ -184,7 +185,7 @@ const routes: Array<RouteRecordRaw> = [
     component: ExportHistory,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN"
+      permissionId: Actions.APP_EXPORT_HISTORY_VIEW
     }
   },
   {
@@ -193,7 +194,7 @@ const routes: Array<RouteRecordRaw> = [
     component: StorePermissions,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: Actions.APP_STORE_PERMISSIONS_VIEW,
       showInMenu: true,
       title: "Store permissions",
       iosIcon: shieldCheckmarkOutline,
@@ -250,7 +251,7 @@ router.beforeEach((to, from) => {
     let redirectToPath = from.path;
     // If the user has navigated from Login page or if it is page load, redirect user to settings page without showing any toast
     if (redirectToPath == "/login" || redirectToPath == "/") {
-      if (useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN"))
+      if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN))
         redirectToPath = "/settings";
       else
         redirectToPath = "/tabs/settings";

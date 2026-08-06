@@ -7,7 +7,7 @@
           <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
-        <ion-tab-button v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_VAR_LOG')" tab="audit" href="/tabs/variance">
+        <ion-tab-button v-if="useUserProfile().hasPermission(Actions.APP_VARIANCE_VIEW)" tab="audit" href="/tabs/variance">
           <ion-icon :icon="shirtOutline" />
           <ion-label>{{ translate("Variance") }}</ion-label>
         </ion-tab-button>
@@ -30,6 +30,7 @@ import {
 import { translate } from '@common'
 import router from "@/router";
 import { useUserProfile } from "@/stores/userProfileStore";
+import Actions from "@/authorization/actions";
 </script>
 
 <style scoped>

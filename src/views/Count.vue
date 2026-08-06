@@ -42,7 +42,7 @@
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_PRE_START'))" data-testid="count-start-counting-btn">
+          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !useUserProfile().hasPermission(Actions.APP_START_FUTURE_COUNT))" data-testid="count-start-counting-btn">
             {{ translate("Start counting") }}
           </ion-button>
           <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)" data-testid="count-future-start-warning">
@@ -91,7 +91,7 @@
                     <span data-testid="count-session-locked-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
                     <p data-testid="count-session-locked-msg">{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
                   </ion-label>
-                  <ion-button v-if="useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_LOCK_RLS')" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
+                  <ion-button v-if="useUserProfile().hasPermission(Actions.APP_SESSION_LOCK_RELEASE)" color="danger" fill="outline" slot="end" size="small" @click.stop="forceRelease(session)" :data-testid="'count-force-release-btn-' + session.inventoryCountImportId">
                     {{ translate("Force Release") }}
                   </ion-button>
                   <ion-note v-else color="warning" slot="end" data-testid="count-session-locked-note">{{ translate("Locked") }}</ion-note>
@@ -183,6 +183,7 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { DateTime } from 'luxon';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { useProductStore } from '@/stores/productStore';
+import Actions from "@/authorization/actions";
 
 
 const cycleCounts = ref([]);
