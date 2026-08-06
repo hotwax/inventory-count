@@ -48,3 +48,7 @@ android/.idea
 .history
 .firebase
 testidguideline.md
+
+/playwright-report/
+/test-results/
+/.agent

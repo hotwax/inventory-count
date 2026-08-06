@@ -169,14 +169,12 @@
 import { IonButtons, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonModal, IonNote, IonPage, IonPopover, IonSearchbar, IonTitle, IonToolbar, alertController, onIonViewWillEnter } from "@ionic/vue";
 import { ref, computed } from "vue";
 import { DateTime } from "luxon";
-import { translate } from "@/i18n";
+import { translate, logger } from "@common";
 import { useProductStore } from "@/stores/productStore";
-import { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } from "@/adapter/index";
-import { showToast } from "@/services/uiUtils";
-import logger from "@/logger";
+import { useSecurity } from "@/composables/useSecurity";
 
 import { storefrontOutline, addCircleOutline, addOutline, timeOutline, ellipsisVerticalOutline, closeOutline, saveOutline } from "ionicons/icons";
-import { hasError } from "@/stores/authStore";
+import { commonUtil } from '@common';
 
 type PermissionMeta = {
   id: string;
@@ -185,7 +183,7 @@ type PermissionMeta = {
 };
 
 const productStore = useProductStore();
-
+const { createSecurityGroupPermission, getSecurityGroupAndPermissions, updateSecurityGroupPermission } = useSecurity();
 /**
  * Permission cards configuration
  */
@@ -225,6 +223,12 @@ const permissionCards: PermissionMeta[] = [
     title: "Force release session",
     description:
       "Select security groups that can forcefully release sessions that are not their own. The force released device will be booted from their session within 30 seconds.",
+  },
+  {
+    id: "INV_COUNT_VAR_LOG",
+    title: "Log inventory variance",
+    description:
+      "Select security groups that can log inventory variances for products at a store. This allows users to manually adjust inventory levels by adding or removing stock with specific reason codes.",
   },
   {
     id: "INV_COUNT_ADMIN",
@@ -297,7 +301,7 @@ async function getActiveGroups(permissionId: string) {
       groupTypeEnumId_op: "equals",
       groupTypeEnumId_not: 'Y',
     });
-    if (hasError(resp)) throw resp?.data;
+    if (commonUtil.hasError(resp)) throw resp?.data;
     const docs = (resp?.data && (resp.data.entityValueList)) || [];
     activeGroupsByPermission.value[permissionId] = docs;
   } catch (error) {
@@ -321,7 +325,7 @@ async function openHistory(permission: PermissionMeta) {
       groupTypeEnumId_not: 'Y',
       pageSize: 250,
     });
-    if (hasError(resp)) throw resp?.data;
+    if (commonUtil.hasError(resp)) throw resp?.data;
     const docs = (resp?.data && (resp.data.entityValueList)) || [];
     historyRecords.value = docs;
   } catch (error) {
@@ -362,7 +366,7 @@ async function openSelectGroupsModal(permission: PermissionMeta) {
       distinct: "true",
       pageSize: 250,
     });
-    if (hasError(resp)) throw resp?.data;
+    if (commonUtil.hasError(resp)) throw resp?.data;
     const docs = (resp?.data && (resp.data.entityValueList)) || [];
 
     const seen = new Set<string>();
@@ -450,7 +454,7 @@ async function saveSelectedSecurityGroups() {
         fromDate: Date.now(),
       };
       const resp = await createSecurityGroupPermission(payload);
-      if (hasError(resp)) throw resp?.data;
+      if (commonUtil.hasError(resp)) throw resp?.data;
     }
 
     // Expire removed SecurityGroupPermission associations
@@ -468,10 +472,10 @@ async function saveSelectedSecurityGroups() {
       }
 
       const resp = await updateSecurityGroupPermission(payload);
-      if (hasError(resp)) throw resp?.data;
+      if (commonUtil.hasError(resp)) throw resp?.data;
     }
 
-    showToast(translate("Security groups updated successfully."));
+    commonUtil.showToast(translate("Security groups updated successfully."));
 
     // Refresh active groups for this permission
     await getActiveGroups(permissionId);
@@ -479,7 +483,7 @@ async function saveSelectedSecurityGroups() {
     isSelectGroupsModalOpen.value = false;
   } catch (error) {
     logger.error(error);
-    showToast(translate("Something went wrong."));
+    commonUtil.showToast(translate("Something went wrong."));
   }
 }
 
@@ -535,14 +539,14 @@ async function confirmRemoveGroupFromPermission() {
             }
 
             const resp = await updateSecurityGroupPermission(payload);
-            if (hasError(resp)) throw resp?.data;
+            if (commonUtil.hasError(resp)) throw resp?.data;
 
-            showToast(translate("Security group removed successfully."));
+            commonUtil.showToast(translate("Security group removed successfully."));
 
             await getActiveGroups(permissionId);
           } catch (error) {
             logger.error(error);
-            showToast(translate("Something went wrong."));
+            commonUtil.showToast(translate("Something went wrong."));
           } finally {
             closeGroupActionsPopover();
           }

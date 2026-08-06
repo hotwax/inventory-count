@@ -139,6 +139,16 @@ For example the count module at `src/store/modules/count/index.ts` defines the d
 8. Register the module in `src/store/index.ts` so it becomes available application wide.
 9. Extend `RootState.ts` with your new state type and, if needed, add its path to the persisted state plugin.
 
+### Session detail sorting
+
+The session detail page now supports three device-persisted sort modes for count items:
+
+- `Assigned order` uses the import item sequence captured when the session items are created.
+- `Alphabetical` uses the same user-facing identity pattern already used elsewhere in the app, preferring the hydrated primary product identifier and then falling back safely.
+- `Last updated` shows the most recently changed rows first.
+
+The selected sort is stored on the current device and reused on later session-detail visits until the user changes it or clears app data.
+
 ##### Adding a new page
 
 Adding a new route generally involves wiring together a service, Vuex state and

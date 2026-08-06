@@ -1,7 +1,5 @@
 import { ref } from 'vue';
-import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/authStore';
-import { useAuthStore } from '@/stores/authStore';
+import { api, commonUtil, useAuth } from '@common';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { db } from '@/services/appInitializer';
 
@@ -53,7 +51,7 @@ async function getOrCreateDeviceId(facilityId: string): Promise<string | null> {
             data: payload
         });
 
-        if (resp && !hasError(resp)) {
+        if (resp && !commonUtil.hasError(resp)) {
             const deviceId = resp.data.deviceId;
 
             // Store deviceId in IndexedDB appPreferences
@@ -87,7 +85,7 @@ async function fetchInstructions(deviceId: string, facilityId: string): Promise<
             params: payload
         });
 
-        if (resp && !hasError(resp)) {
+        if (resp && !commonUtil.hasError(resp)) {
             const instructions = resp.data.instructions || [];
             console.log(`[AgentControl] Fetched ${instructions.length} instructions`);
             return instructions;
@@ -117,7 +115,7 @@ async function acknowledgeInstruction(agentCtrlInstructionId: string, deviceId: 
             data: payload
         });
 
-        if (resp && !hasError(resp)) {
+        if (resp && !commonUtil.hasError(resp)) {
             console.log(`[AgentControl] Acknowledged instruction ${agentCtrlInstructionId}`);
             return resp.data.success;
         } else {
@@ -175,8 +173,7 @@ async function handleClearCache(): Promise<void> {
  */
 async function handleLogoutUser(): Promise<void> {
     try {
-        const authStore = useAuthStore();
-        await authStore.logout();
+        await useAuth().logout({ isUserUnauthorised: false });
         console.log('[AgentControl] User logged out');
     } catch (error) {
         console.error('[AgentControl] Error logging out user:', error);

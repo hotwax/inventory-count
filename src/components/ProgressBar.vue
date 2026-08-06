@@ -9,7 +9,7 @@
 <script setup lang="ts">
 import { IonLabel, IonProgressBar, IonNote } from '@ionic/vue'
 import { computed, defineProps } from 'vue'
-import { translate } from '@/i18n'
+import { translate } from '@common'
 
 const props = defineProps({
   totalItems: {

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import workerApi from "@/services/workerApi";
+import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
 
@@ -17,12 +17,16 @@ export interface InventorySyncWorker {
     productId: string,
     context: any
   ) => Promise<{ success: boolean; error?: any }>;
+  aggregateVarianceLogs: (context: any) => Promise<number>;
+  matchUnmatchedInventoryAdjustment: (uuid: string, productId: string, context: any) => Promise<void>;
 }
 
 expose({
   aggregate,
   syncToServer,
   matchProductLocallyAndSync,
+  aggregateVarianceLogs,
+  matchUnmatchedInventoryAdjustment
 });
 
 let isAggregating = false
@@ -31,7 +35,7 @@ let isSyncing = false
 // Product Lookup Helper
 
 const buildProductQuery = (params: any): Record<string, any> => {
-  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewSize = params.viewSize || import.meta.env.VITE_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
 
   const payload: any = {
@@ -80,13 +84,13 @@ async function getById(productId: string, context: any) {
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -121,13 +125,13 @@ async function findProductByIdentification(idType: string, value: string, contex
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -159,13 +163,13 @@ function ensureProductStored(productId: string | null, context: any) {
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-      const resp = await workerApi({
+      const resp = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'inventory-cycle-count/runSolrQuery',
+        url: 'admin/runSolrQuery',
         method: 'POST',
         data: query
       });
@@ -228,6 +232,118 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
       });
   }
   return;
+}
+
+const getProductStock = async (productId: string, context: any): Promise<any> => {
+  try {
+    return await workerRemoteApi({
+      baseURL: context.maargUrl,
+      headers: {
+        'Authorization': `Bearer ${context.token}`,
+        'Content-Type': 'application/json'
+      },
+      url: 'poorti/getInventoryAvailableByFacility',
+      method: 'GET',
+      params: { productId: productId, facilityId: context.facilityId }
+    })
+  } catch (error) {
+    console.error(`[Worker] Failed to get stock for ${productId}:`, error);
+    return null;
+  }
+}
+
+async function aggregateVarianceLogs(context: any) {
+  if (isAggregating) return 0
+  isAggregating = true
+  try {
+    const varianceLogs = await db.table('varianceLogs')
+      .where({ aggApplied: 0 })
+      .toArray()
+
+    if (!varianceLogs.length) {
+      return 0
+    }
+
+    const grouped: Record<string, number> = {}
+    for (const scan of varianceLogs) {
+      const key = scan.scannedValue?.trim()
+      if (!key) continue
+      grouped[key] = (grouped[key] || 0) + scan.quantity
+    }
+    let processed = 0
+    const now = Date.now()
+    for (const [key, quantity] of Object.entries(grouped)) {
+      let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
+      if (!productId) {
+        const product = await getById(key, context)
+        productId = product?.productId || null
+      }
+      
+      let stock = null;
+      if (productId) {
+        try {
+          stock = await getProductStock(productId, context)
+        } catch (error) {
+          console.error('Error fetching stock', error)
+        }
+      }
+
+      // Upsert by productId and facilityId in the inventoryAdjustments table here
+      const inventoryAdjustment = await db.table('inventoryAdjustments')
+        .where({ facilityId: context.facilityId })
+        .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
+        .first()
+
+      if (inventoryAdjustment) {
+        productId = inventoryAdjustment.productId;
+        if (productId && stock === null) {
+          try {
+            stock = await getProductStock(productId, context)
+            console.info("Refreshed stock for", productId)
+          } catch (error) {
+            console.error('Error fetching stock', error)
+          }
+        }
+        await db.table('inventoryAdjustments').put({
+          ...inventoryAdjustment,
+          quantity: inventoryAdjustment.quantity + quantity,
+          atp: stock?.atp,
+          qoh: stock?.qoh,
+          lastUpdatedAt: now
+        })
+      } else {
+        await db.table('inventoryAdjustments').add({
+          uuid: uuidv4(),
+          scannedValue: key,
+          productId,
+          facilityId: context.facilityId,
+          quantity,
+          atp: stock?.atp,
+          qoh: stock?.qoh,
+          lastUpdatedAt: now
+        })
+      }
+      processed++;
+      if (productId) {
+        await db.table('varianceLogs')
+        .where('scannedValue').equals(key)
+        .modify({ 
+          productId,
+          lastUpdatedAt: now
+        })
+      }
+    }
+    await db.table('varianceLogs')
+      .where('id')
+      .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
+      .modify({ aggApplied: 1 })
+    return processed;
+  } catch (error) {
+    console.error('Error aggregating variance logs:', error)
+    return 0;
+  } finally {
+    isAggregating = false
+  }
 }
 
 // Aggregation Logic
@@ -330,15 +446,57 @@ async function aggregate(inventoryCountImportId: string, context: any) {
   }
 }
 
+async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string, context: any) {
+  const now = Date.now();
+  await ensureDB(context);
+
+  try {
+    const facilityId = context.facilityId;
+    const adjustment = await db.table('inventoryAdjustments').get([facilityId, uuid]);
+
+    if (!adjustment) {
+      console.error(`[Worker] Inventory adjustment not found for uuid: ${uuid}`);
+      return;
+    }
+
+    ensureProductStored(productId, context);
+    const stock = await getProductStock(productId, context);
+
+    await db.transaction('rw', db.table('inventoryAdjustments'), db.table('varianceLogs'), async () => {
+      await db.table('inventoryAdjustments')
+        .where('[facilityId+uuid]')
+        .equals([facilityId, uuid])
+        .modify({
+          productId,
+          qoh: stock?.qoh || null,
+          atp: stock?.atp || null,
+          lastUpdatedAt: now
+        });
+
+      if (adjustment.scannedValue) {
+        await db.table('varianceLogs')
+        .where('scannedValue').equals(adjustment.scannedValue)
+        .modify({ 
+          productId,
+          aggApplied: 1,
+          lastUpdatedAt: now
+        })
+      }
+    });
+  } catch (err) {
+    console.error('[Worker] Error in matchUnmatchedInventoryAdjustment', err);
+    throw err;
+  }
+}
+
 async function matchProductLocallyAndSync(inventoryCountImportId: string, item: any, productId: string, context: any) {
   if (!productId) throw new Error("Product ID is required");
-
   const now = Date.now();
   ensureDB(context);
 
   try {
     ensureProductStored(productId, context);
-    const inventory = await workerApi({
+    const inventory = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
@@ -468,7 +626,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     const payload = { items }
 
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: baseUrl,
       headers: {
         'Authorization': `Bearer ${token}`
@@ -528,7 +686,7 @@ async function resolveMissingSystemQOH(
 
   for (const record of records) {
     try {
-      const inventory = await workerApi({
+      const inventory = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
@@ -600,6 +758,15 @@ self.onmessage = async (messageEvent: MessageEvent) => {
       await syncToServer(inventoryCountImportId, context)
 
       self.postMessage({ type: 'aggregationComplete', count })
+    }, intervalMs)
+  }
+
+  if (type === 'scheduleVarianceAggregation') {
+    const { context, intervalMs = 10000 } = payload;
+    await ensureDB(context);
+    setInterval(async () => {
+      const count = await aggregateVarianceLogs(context);
+      self.postMessage({ type: 'varianceAggregationComplete', count })
     }, intervalMs)
   }
 }
