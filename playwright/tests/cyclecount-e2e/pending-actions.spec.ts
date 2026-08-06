@@ -47,23 +47,8 @@ test.describe.serial('Pending Review Actions', () => {
     // Open pending review details
     await pendingReviewPage.open();
     await pendingReviewPage.openCount(fixture.countImportName);
-    
+
     return new PendingReviewDetailPage(page);
-  }
-
-  async function closeAndVerifyCount(page: Page, pendingReviewDetailPage: PendingReviewDetailPage, fixture: CycleCountUploadFixture) {
-    // Close Count
-    await pendingReviewDetailPage.closeCount({ action: 'accept_all' });
-
-    // Navigate to a page with the side menu
-    const assignedPage = new AssignedPage(page);
-    await assignedPage.open();
-
-    // Verify it moves to Closed
-    const closedPage = new ClosedPage(page);
-    await closedPage.open(true); // open via side menu
-    // Should exist in closed
-    await closedPage.openCount(fixture.countImportName);
   }
 
   test('positive: bulk accept then close and redirect to closed via side menu', async ({
@@ -82,7 +67,18 @@ test.describe.serial('Pending Review Actions', () => {
       await pendingReviewDetailPage.bulkAccept();
       await pendingReviewDetailPage.expectProductStatus(item1, 'Accepted');
 
-      await closeAndVerifyCount(page, pendingReviewDetailPage, fixture);
+      // Close Count
+      await pendingReviewDetailPage.closeCount({ action: 'accept_all' });
+
+      // Navigate to a page with the side menu
+      const assignedPage = new AssignedPage(page);
+      await assignedPage.open();
+
+      // Verify it moves to Closed
+      const closedPage = new ClosedPage(page);
+      await closedPage.open(true); // open via side menu
+      // Should exist in closed
+      await closedPage.openCount(fixture.countImportName);
 
     } finally {
       cleanupCycleCountUploadFixture(fixture);
@@ -105,7 +101,18 @@ test.describe.serial('Pending Review Actions', () => {
       await pendingReviewDetailPage.bulkReject();
       await pendingReviewDetailPage.expectProductStatus(item1, 'Rejected');
 
-      await closeAndVerifyCount(page, pendingReviewDetailPage, fixture);
+      // Close Count
+      await pendingReviewDetailPage.closeCount({ action: 'accept_all' });
+
+      // Navigate to a page with the side menu
+      const assignedPage = new AssignedPage(page);
+      await assignedPage.open();
+
+      // Verify it moves to Closed
+      const closedPage = new ClosedPage(page);
+      await closedPage.open(true); // open via side menu
+      // Should exist in closed
+      await closedPage.openCount(fixture.countImportName);
 
     } finally {
       cleanupCycleCountUploadFixture(fixture);
@@ -134,9 +141,21 @@ test.describe.serial('Pending Review Actions', () => {
         await pendingReviewDetailPage.expectProductStatus(item2, 'Rejected');
       }
 
+      // Close Count
       // All items are already accepted/rejected, so "Accept all" vs "Reject all" doesn't practically change existing statuses, 
       // but we test the modal flow.
-      await closeAndVerifyCount(page, pendingReviewDetailPage, fixture);
+      await pendingReviewDetailPage.closeCount({ action: 'accept_all' });
+
+      // Navigate to a page with the side menu
+      const assignedPage = new AssignedPage(page);
+      await assignedPage.open();
+
+      // Verify it moves to Closed
+      const closedPage = new ClosedPage(page);
+      await closedPage.open(true); // open via side menu
+
+      // Should exist in closed
+      await closedPage.openCount(fixture.countImportName);
 
     } finally {
       cleanupCycleCountUploadFixture(fixture);
