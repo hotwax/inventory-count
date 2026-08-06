@@ -1,6 +1,6 @@
-require("dotenv").config();
-const fs = require("fs");
-const path = require("path");
+import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 
 function getClientsEnvString() {
   // Read .env manually because dotenv truncates multiline strings without double quotes
@@ -29,7 +29,7 @@ function getClientsEnvString() {
 /**
  * Constructs a standard HotWax Cycle Count URL if not explicitly provided
  */
-const resolveUrl = (clientId, customUrl) => {
+const resolveUrl = (clientId: string, customUrl?: string) => {
   if (customUrl) return customUrl;
 
   // Use base URL from env if specified
@@ -37,8 +37,11 @@ const resolveUrl = (clientId, customUrl) => {
     return process.env.PLAYWRIGHT_BASE_URL;
   }
   
-  const port = Number(process.env.PLAYWRIGHT_PORT || 8080);
-  return `http://127.0.0.1:${port}`;
+  if (process.env.PLAYWRIGHT_CYCLECOUNT_APP_URL) {
+    return process.env.PLAYWRIGHT_CYCLECOUNT_APP_URL;
+  }
+  
+  return "https://inventorycount-dev.hotwax.io";
 };
 
 /**
@@ -128,7 +131,7 @@ const getAllClients = () => {
   return Array.from(discoveredIds).map((id) => getClientConfig(id));
 };
 
-module.exports = {
+export {
   getClientConfig,
   getAllClients,
 };

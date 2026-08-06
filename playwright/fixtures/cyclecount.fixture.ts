@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getClientConfig } from '../config/clients';
 
 export type CycleCountCsvRow = Record<string, string>;
 
@@ -11,6 +12,7 @@ export type CycleCountUploadFixture = {
   facilityCandidates: string[];
   requestedItemId: string;
   requestedItemIds: string[];
+  unselectedItemIds: string[];
 };
 
 function toCsvLine(values: string[]) {
@@ -29,7 +31,7 @@ export function createCycleCountUploadFixture(
   let activeFacilityId = '';
 
   try {
-    const getClientConfig = require('../config/clients').getClientConfig;
+
     const clientConfig = getClientConfig(clientId || 'krewe-uat');
     if (clientConfig.skus?.length) validProducts = clientConfig.skus;
     if (clientConfig.facilities?.length) validFacilities = clientConfig.facilities;
@@ -127,6 +129,7 @@ export function createCycleCountUploadFixture(
     facilityCandidates: [facility],
     requestedItemId: row.idValue,
     requestedItemIds: rows.map(r => r.idValue),
+    unselectedItemIds: validProducts.filter(sku => !rows.map(r => r.idValue).includes(sku)),
   };
 }
 

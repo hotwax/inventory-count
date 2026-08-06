@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import 'dotenv/config';
-const { getAllClients } = require('./config/clients');
+import { getAllClients } from './config/clients';
 
 const port = Number(process.env.PLAYWRIGHT_PORT || 8080);
 const localBaseURL = `http://127.0.0.1:${port}`;
@@ -35,7 +35,7 @@ const generateProjects = () => {
       use: {
         ...devices['Desktop Chrome'],
         storageState: `playwright/.auth/${clientId}.user.json`,
-        baseURL: config.baseUrl,
+        baseURL: config.baseUrl, /* injected */
       },
       dependencies: [`setup-${clientId}`],
     });

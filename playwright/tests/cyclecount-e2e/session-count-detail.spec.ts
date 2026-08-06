@@ -48,10 +48,10 @@ test.describe('Session Count Detail - Functional Coverage', () => {
     await sessionCountPage.expectItemInSegment('counted', fixture.requestedItemId);
 
     // 5. Scan undirected item (not in seed list) -> Check Undirected
-    const undirectedSku = 'MH02-XS-Black'; 
+    const undirectedSku = fixture.unselectedItemIds[0] || "UNKNOWN-SKU";
     await sessionCountPage.scanBarcode(undirectedSku);
     await sessionCountPage.switchSegment('undirected');
-    await sessionCountPage.expectItemInSegment('undirected', undirectedSku);
+    await sessionCountPage.expectItemInSegment("undirected", undirectedSku);
 
     // 6. Scan unmatched barcode -> Check Unmatched & Match it
     const fakeBarcode = 'FAKE_BARCODE_123';
