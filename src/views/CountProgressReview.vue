@@ -607,7 +607,8 @@ const isCountStarted = computed(() => {
 
 const isCountStatusBeyondCreated = computed(() => {
   const statusId = workEffort.value?.statusId;
-  return !!statusId && statusId !== 'CYCLE_CNT_CREATED';
+  // CYCLE_CNT_APPROVED is a pre-start status like CYCLE_CNT_CREATED, so it is not "beyond created"
+  return !!statusId && statusId !== 'CYCLE_CNT_CREATED' && statusId !== 'CYCLE_CNT_APPROVED';
 });
 
 const isSubmitted = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CMPLTD');
