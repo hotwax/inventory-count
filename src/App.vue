@@ -62,6 +62,7 @@ import { useProductStore } from '@/stores/productStore';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
 import router from './router';
+import Actions from "@/authorization/actions";
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = commonUtil.getToken();
@@ -70,7 +71,7 @@ const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
-  return !isExcluded && useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN');
+  return !isExcluded && useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
 });
 
 const loader = ref(null) as any;

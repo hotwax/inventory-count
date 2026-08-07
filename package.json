@@ -23,7 +23,6 @@
     "@types/node-json-transform": "catalog:",
     "axios": "catalog:",
     "axios-cache-adapter": "catalog:",
-    "boon-js": "^2.0.3",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
     "dexie": "^4.0.7",
