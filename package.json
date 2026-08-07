@@ -21,6 +21,8 @@
     "@ionic/vue": "catalog:",
     "@ionic/vue-router": "catalog:",
     "@types/node-json-transform": "catalog:",
+    "@zxing/browser": "^0.1.5",
+    "@zxing/library": "^0.21.0",
     "axios": "catalog:",
     "axios-cache-adapter": "catalog:",
     "comlink": "^4.4.1",
@@ -34,6 +36,7 @@
     "pinia-plugin-persistedstate": "catalog:",
     "register-service-worker": "^1.7.1",
     "rxjs": "^7.8.2",
+    "uuid": "^10.0.0",
     "vue": "catalog:",
     "vue-barcode-reader": "catalog:",
     "vue-i18n": "catalog:",
@@ -41,8 +44,7 @@
     "vue-router": "catalog:",
     "vue-virtual-scroll-list": "^2.3.5",
     "vue-virtual-scroller": "^2.0.0-beta.8",
-    "vue3-virtual-scroll-list": "^0.2.1",
-    "uuid": "^10.0.0"
+    "vue3-virtual-scroll-list": "^0.2.1"
   },
   "devDependencies": {
     "@capacitor/cli": "catalog:",
@@ -54,6 +56,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "~5.26.0",
     "@typescript-eslint/parser": "~5.26.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vue/compiler-sfc": "^3.0.0-0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "@vue/test-utils": "^2.0.0-0",

@@ -26,6 +26,7 @@ function currentMillis(): number {
 /* Stateless functions */
   /** Records a scan event */
   async function recordScan(params: RecordScanParams): Promise<void> {
+    console.log(`[PROCESS LOG] 2. useInventoryCountImport.recordScan saving to db.scanEvents:`, params);
     const event: ScanEvent = {
       inventoryCountImportId: params.inventoryCountImportId,
       productId: params.productId || null,

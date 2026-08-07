@@ -182,6 +182,8 @@ async function findProductByIdentification(idType: string, value: string, contex
     viewSize: 1,
     fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
   });
+
+
   try {
     const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
@@ -189,7 +191,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'admin/runSolrQuery',
+      url: context.omsUrl.includes('/api') ? 'solr-query' : 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -330,7 +332,7 @@ const buildProductQuery = (params: any): Record<string, any> => {
 // helper: pick primary/secondary id from enriched product.goodIdentifications
 const primaryId = (product?: any) => {
   if (!product) return ''
-  const pref = useProductStore().getPrimaryId
+  const pref = (useProductStore() as any).getPrimaryId
 
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
     if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
@@ -528,7 +530,7 @@ const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: st
 }
 
 const getVarianceLogs = () =>
-  liveQuery(async () => {    
+  liveQuery(async () => {
     const varLogs = await db.varianceLogs
       .reverse()
       .sortBy('createdAt');
@@ -546,7 +548,7 @@ const getVarianceLogs = () =>
     return enriched || [];
   });
 
-const getInventoryAdjustments = () => 
+const getInventoryAdjustments = () =>
   liveQuery(async () => {
     const adjusments = await db.inventoryAdjustments
       .reverse()
@@ -561,11 +563,11 @@ const getInventoryAdjustments = () =>
         return { ...adjustment, product };
       })
     );
-    
+
     return enriched || [];
   });
 
-const getUnmatchedInventoryAdjustments = () => 
+const getUnmatchedInventoryAdjustments = () =>
   liveQuery(async () => {
     const adjusments = await db.inventoryAdjustments
       .reverse()
@@ -573,7 +575,7 @@ const getUnmatchedInventoryAdjustments = () =>
 
     // Filter for items without productId (unmatched)
     const unmatched = adjusments.filter(item => !item.productId);
-    
+
     return unmatched || [];
   });
 

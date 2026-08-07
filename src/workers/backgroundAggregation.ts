@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
-import { createCommonDB } from "@/services/commonDatabase";
+import { createCommonDB } from "../services/commonDatabase";
 
 // DB instance for worker (created once)
 let db: any = null;
@@ -396,6 +396,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       // if (productId) ensureProductStored(productId, context);
 
       if (existing) {
+        console.log(`[PROCESS LOG] 3. Worker aggregating: Updating existing inventoryCountRecord for ${scannedValue}, new quantity: ${(existing.quantity || 0) + quantity}`);
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
@@ -407,6 +408,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           isRequested: existing.isRequested ?? 'Y'
         })
       } else {
+        console.log(`[PROCESS LOG] 3. Worker aggregating: Creating new inventoryCountRecord for ${scannedValue}, quantity: ${quantity}`);
         await db.table('inventoryCountRecords').add({
           inventoryCountImportId,
           uuid: uuidv4(),

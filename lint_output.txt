@@ -1,0 +1,18 @@
+
+Oops! Something went wrong! :(
+
+ESLint: 10.2.0
+
+TypeError: sourceCode.getTokenOrCommentBefore is not a function
+Occurred while linting /home/rakshit/sandbox/accxui/apps/inventory-count/src/views/Variance.vue:441
+Rule: "import/order"
+    at getTokensOrCommentsBefore (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:44:37)
+    at takeTokensBeforeWhile (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:67:16)
+    at findStartOfLineWithComments (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:127:27)
+    at fixOutOfOrder (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:303:21)
+    at /home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:388:5
+    at Array.forEach (<anonymous>)
+    at reportOutOfOrder (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:384:14)
+    at makeOutOfOrderReport (/home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:405:3)
+    at /home/rakshit/sandbox/accxui/node_modules/.pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.56.1_eslint@10.2.0_jiti@2.6.1_s_1cdcc3886a93f785f066b80d9d241160/node_modules/eslint-plugin-import/lib/rules/order.js:1334:15
+    at Map.forEach (<anonymous>)

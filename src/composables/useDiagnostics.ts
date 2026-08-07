@@ -64,6 +64,7 @@ export function useDiagnostics() {
 
     const scanTableExists = !!db.scanEvents;
     localResults.push({ name: "Scan event parsing", status: scanTableExists ? "passed" : "failed", detail: scanTableExists ? "Scan events exists" : "Scan events missing" });
+
     try {
       const inventorySyncWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url)).api
       await inventorySyncWorker.aggregate("diagnostic-test", {});
