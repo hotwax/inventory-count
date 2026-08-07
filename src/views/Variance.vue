@@ -451,8 +451,8 @@ import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { Subscription, from } from 'rxjs';
-import { InventorySyncWorker } from '../workers/backgroundAggregation';
-import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import backgroundAggregationUrl from '@/workers/backgroundAggregation?worker&url';
 import type { Remote } from 'comlink';
 
 const mode = ref<'scan' | 'count'>('scan');

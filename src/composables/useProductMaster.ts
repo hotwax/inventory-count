@@ -174,7 +174,7 @@ async function findProductByIdentification(idType: string, value: string, contex
     .first()
   if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
+  if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
   const query = useProductMaster().buildProductQuery({
@@ -186,7 +186,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   try {
     const resp = await workerRemoteApi({
-      baseURL: context.omsUrl,
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'

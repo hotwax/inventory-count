@@ -4,8 +4,8 @@ import { useProductStore } from "@/stores/productStore";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useInventoryCountRun } from "./useInventoryCountRun";
 import { WorkerFactory } from "../../../../common/core/workerFactory";
-import { InventorySyncWorker } from "../workers/backgroundAggregation";
-import inventorySyncWorkerUrl from '../workers/backgroundAggregation.ts?worker&url'
+import { InventorySyncWorker } from "@/workers/backgroundAggregation";
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
 
 export function useDiagnostics() {
   const userProfile = useUserProfile();
@@ -66,7 +66,7 @@ export function useDiagnostics() {
     localResults.push({ name: "Scan event parsing", status: scanTableExists ? "passed" : "failed", detail: scanTableExists ? "Scan events exists" : "Scan events missing" });
 
     try {
-      const inventorySyncWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(inventorySyncWorkerUrl, import.meta.url)).api
+      const inventorySyncWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url)).api
       await inventorySyncWorker.aggregate("diagnostic-test", {});
       localResults.push({ name: "Session lock heartbeat", status: "passed", detail: "Heartbeat worker initialized" });
     } catch (err) {

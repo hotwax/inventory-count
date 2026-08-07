@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
 
 import { translate } from '@common'
+import Actions from "@/authorization/actions"
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -119,7 +120,7 @@ export const useProductStore = defineStore('productStore', {
       const { useUserProfile } = await import('./userProfileStore');
       const userStore = useUserProfile();
       const partyId = userStore.getUserProfile?.partyId;
-      const isAdminUser = userStore.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+      const isAdminUser = userStore.hasPermission(Actions.APP_INV_COUNT_ADMIN);
       const facilityGroupId = "" //Not used in cycle count, just kept the logic consistent with other apps, if needed in future
 
       let facilityIds: Array<string> = [];
@@ -248,7 +249,7 @@ export const useProductStore = defineStore('productStore', {
     async fetchProductStores(): Promise<void> {
       try {
         const { useUserProfile } = await import('./userProfileStore');
-        const isAdminUser = (useUserProfile() as any).hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+        const isAdminUser = useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
         const pageSize = 200;
         let productStoreFilters: any = {};
 

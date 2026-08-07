@@ -1,6 +1,6 @@
 {
   "name": "cycle-count",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "private": true,
   "type": "module",
   "description": "HotWax Commerce Cycle Count App",
@@ -25,7 +25,6 @@
     "@zxing/library": "^0.21.0",
     "axios": "catalog:",
     "axios-cache-adapter": "catalog:",
-    "boon-js": "^2.0.3",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
     "dexie": "^4.0.7",

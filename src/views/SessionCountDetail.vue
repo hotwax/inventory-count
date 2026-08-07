@@ -748,7 +748,8 @@ import { WorkerFactory } from '@common/core/workerFactory';
 import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
-import type { LockHeartbeatWorker } from '../workers/lockHeartbeatWorker';
+import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import lockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -760,9 +761,9 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import { InventorySyncWorker } from '../workers/backgroundAggregation';
 import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
-import lockHeartbeatWorkerUrl from '../workers/lockHeartbeatWorker.ts?worker&url';
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import Actions from "@/authorization/actions";
 
 const props = defineProps<{
   workEffortId: string;
@@ -819,7 +820,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
+const showQoh = computed(() => useUserProfile().hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);

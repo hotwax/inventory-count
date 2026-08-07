@@ -17,6 +17,9 @@ export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     oms: null as any,
+    // The app version this deployment is pinned to. undefined = not resolved yet, "" = no version
+    // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
+    appVersion: undefined as string | undefined,
     permissions: [] as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
@@ -61,15 +64,16 @@ export const useUserProfile = defineStore('userProfile', {
   persist: true,
 
   getters: {
-    getLocale(state): string { return state.locale; },
-    getLocaleOptions(state): any { return state.localeOptions; },
-    getTimeZones(state): any[] { return state.timeZones; },
-    getCurrentTimeZone(state): string { return state.current?.timeZone || ''; },
-    getUserProfile(state): any { return state.current; },
-    getUserPermissions(state): any[] { return state.permissions; },
-    getDeviceId(state): string { return state.deviceId; },
-    getListPageFilters(state): (segment: string) => any {
-      return (segment: string) => state.uiFilters[segment] || {}
+    getLocale: (state) => state.locale,
+    getLocaleOptions: (state) => state.localeOptions,
+    getTimeZones: (state) => state.timeZones,
+    getCurrentTimeZone: (state) => state.current.timeZone,
+    getUserProfile: (state) => state.current,
+    getAppVersion: (state) => state.appVersion,
+    getUserPermissions: (state) => state.permissions,
+    getDeviceId: (state) => state.deviceId,
+    getListPageFilters: (state) => (segment: string) => {
+      return state.uiFilters[segment] || {}
     },
     getPwaState(state): any { return state.pwaState; },
     getDetailPageFilters(state): any { return state.uiFilters.reviewDetail; },
@@ -160,6 +164,9 @@ export const useUserProfile = defineStore('userProfile', {
       return this.permissions;
     },
     /** Initialize after login */
+    setAppVersion(appVersion: string | undefined) {
+      this.appVersion = appVersion
+    },
     async setUserProfile(profile: any): Promise<void> {
       this.current = profile
     },
@@ -236,6 +243,8 @@ export const useUserProfile = defineStore('userProfile', {
       const { useProductStore } = await import('./productStore');
       (useProductStore() as any).$reset();
 
+      // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
+      // session state), so a plain $reset() is fine here.
       this.$reset();
     },
 
