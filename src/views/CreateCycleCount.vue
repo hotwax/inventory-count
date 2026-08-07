@@ -219,7 +219,6 @@ import { IonButton, IonButtons, IonCard, IonCheckbox, IonChip, IonContent, IonDa
 import { businessOutline, calendarClearOutline, calendarNumberOutline, clipboardOutline, closeOutline } from 'ionicons/icons';
 import { DateTime } from 'luxon';
 import { commonUtil, logger, translate, useSolrSearch } from '@common';
-import router from '@/router';
 import Image from '@/components/Image.vue';
 import FacetFilterModal from '@/components/FacetFilterModal.vue';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
@@ -659,11 +658,10 @@ async function submitCycleCount(name: string) {
     if (commonUtil.hasError(resp)) throw resp.data;
 
     clearCreateCycleCount();
-    commonUtil.showToast(translate('The cycle count file uploaded successfully. The count will be available once the file is processed.'));
-    router.push('/bulkUpload');
+    commonUtil.showToast(translate('The cycle count has been created successfully'));
   } catch (err) {
     logger.error(err);
-    commonUtil.showToast(translate('Failed to upload the file, please try again'));
+    commonUtil.showToast(translate('Failed to create count, please try again'));
   } finally {
     isSubmitting.value = false;
   }

@@ -24,17 +24,10 @@ export interface FacetFilterConfig {
 /** Add a row here to expose another facet field as a filter, nothing else has to change. */
 export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
   {
-    field: 'productCategoryNames',
+    field: 'tags',
     label: 'Category',
     modalTitle: 'Select categories',
     searchPlaceholder: 'Search categories'
-  },
-  {
-    field: 'productFeatures',
-    label: 'Feature',
-    modalTitle: 'Select features',
-    searchPlaceholder: 'Search features',
-    splitOnSlash: true
   }
 ];
 
@@ -43,7 +36,7 @@ export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
  * come from products the list can actually return - searchProducts contributes docType and
  * isVirtual, the view adds isVariant.
  */
-export const PRODUCT_FACET_BASE_FILTERS = ['docType: PRODUCT', 'isVariant: true', 'isVirtual: false'];
+export const PRODUCT_FACET_BASE_FILTERS = ['docType: PRODUCT', 'isVariant: false', 'isVirtual: true'];
 
 export interface FacetOption {
   id: string;
