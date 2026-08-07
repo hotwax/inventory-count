@@ -25,9 +25,9 @@ export interface FacetFilterConfig {
 export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
   {
     field: 'tags',
-    label: 'Category',
-    modalTitle: 'Select categories',
-    searchPlaceholder: 'Search categories'
+    label: 'Tags',
+    modalTitle: 'Select tags',
+    searchPlaceholder: 'Search tags'
   }
 ];
 
