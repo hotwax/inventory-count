@@ -17,6 +17,11 @@ export const useUserProfile = defineStore('userProfile', {
     timeZones: [],
     deviceId: '',
     uiFilters: {
+      draft: {
+        status: '',
+        countType: '',
+        facilityIds: [] as string[]
+      },
       assigned: {
         status: '',
         countType: '',
@@ -64,7 +69,10 @@ export const useUserProfile = defineStore('userProfile', {
     getUserPermissions: (state) => state.permissions,
     getDeviceId: (state) => state.deviceId,
     getListPageFilters: (state) => (segment: string) => {
-      return state.uiFilters[segment] || {}
+      // Fall back to an empty filter shape rather than a bare object: persisted state is replaced
+      // wholesale on hydration, so a segment added after a user first ran the app is missing here
+      // and consumers would read `undefined` for facilityIds.
+      return state.uiFilters[segment] || { status: '', countType: '', facilityIds: [] }
     },
     getPwaState: (state) => state.pwaState,
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,

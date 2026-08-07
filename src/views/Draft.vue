@@ -1,78 +1,77 @@
 <template>
   <ion-page>
-    <!-- <Filters menu-id="assigned-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
-        <ion-title data-testid="assigned-page-title">{{ translate("Assigned")}}</ion-title>
+        <ion-title data-testid="draft-page-title">{{ translate("Draft")}}</ion-title>
         <ion-buttons slot="end">
-          <ion-menu-button menu="assigned-filter" data-testid="assigned-filter-menu-btn">
+          <ion-menu-button menu="draft-filter" data-testid="draft-filter-menu-btn">
             <ion-icon :icon="filterOutline" />
           </ion-menu-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter" data-testid="assigned-content">
+    <ion-content ref="contentRef" :scroll-events="true" @ionScroll="enableScrolling()" id="filter" data-testid="draft-content">
       <div class="header searchbar">
         <ion-searchbar :value="searchQuery" @ionInput="searchQuery = $event.target.value" @keyup.enter="applyLocalSearch" @ionClear="clearLocalSearch"
-          data-testid="assigned-search-input"
+          data-testid="draft-search-input"
         />
         <ion-item>
-          <ion-select :label="translate('Status')" :value="selectedStatus" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All" data-testid="assigned-status-select">
+          <ion-select :label="translate('Status')" :value="filters.status" @ionChange="updateQuery('status', $event.target.value)" interface="popover" placeholder="All" data-testid="draft-status-select">
             <ion-select-option v-for="option in filterOptions.statusOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
-          </ion-select> 
+          </ion-select>
         </ion-item>
         <ion-item>
-          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="assigned-type-select">
+          <ion-select :label="translate('Type')" :value="filters.countType" @ionChange="updateQuery('countType', $event.target.value)" interface="popover" data-testid="draft-type-select">
             <ion-select-option v-for="option in filterOptions.typeOptions" :key="option.label" :value="option.value">{{ translate(option.label) }}</ion-select-option>
           </ion-select>
         </ion-item>
         <ion-item>
           <ion-label>{{ translate('Facility') }}</ion-label>
-          <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true" data-testid="assigned-facility-modal-btn">
+          <ion-chip slot="end" outline @click="isFacilityFilterModalOpen = true" data-testid="draft-facility-modal-btn">
             <ion-label>{{ facilityChipLabel }}</ion-label>
           </ion-chip>
         </ion-item>
       </div>
-      <p v-if="!cycleCounts?.length" class="empty-state" data-testid="assigned-empty-state">
+      <p v-if="!cycleCounts?.length" class="empty-state" data-testid="draft-empty-state">
         {{ translate("No cycle counts found") }}
       </p>
-      <ion-list v-else data-testid="assigned-list">
-        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/assigned/${count.workEffortId}`)" :data-testid="'assigned-item-' + count.workEffortId">
+      <ion-list v-else data-testid="draft-list">
+        <div class="list-item" v-for="count in cycleCounts" :key="count.workEffortId" button @click="router.push(`/draft/${count.workEffortId}`)" :data-testid="'draft-item-' + count.workEffortId">
           <ion-item lines="none">
             <ion-icon :icon="storefrontOutline" slot="start"></ion-icon>
-            <ion-label data-testid="assigned-item-label">
-              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="assigned-item-type-badge">{{ translate("HARD COUNT") }}</p>
-              <h2 data-testid="assigned-item-name">{{ count.workEffortName }}</h2>
-              <p data-testid="assigned-item-id">{{ count.workEffortId }}</p>
+            <ion-label data-testid="draft-item-label">
+              <p class="overline" v-if="count.workEffortPurposeTypeId === 'HARD_COUNT'" data-testid="draft-item-type-badge">{{ translate("HARD COUNT") }}</p>
+              <h2 data-testid="draft-item-name">{{ count.workEffortName }}</h2>
+              <p data-testid="draft-item-id">{{ count.workEffortId }}</p>
             </ion-label>
           </ion-item>
-          
-          <ion-chip v-if="count?.facilityId" outline data-testid="assigned-item-facility-chip">
+
+          <ion-chip v-if="count?.facilityId" outline data-testid="draft-item-facility-chip">
             <ion-label>{{ getFacilityName(count?.facilityId) }}</ion-label>
           </ion-chip>
-          <ion-button fill="outline" size="small" v-else @click="openFacilityModal(count, $event)" data-testid="assigned-item-assign-facility-btn">
+          <ion-button fill="outline" size="small" v-else @click="openFacilityModal(count, $event)" data-testid="draft-item-assign-facility-btn">
             <ion-icon :icon="addOutline" slot="start"></ion-icon>
             {{ translate("Assign Facility") }}
           </ion-button>
 
-          <ion-label data-testid="assigned-item-created-date">
+          <ion-label data-testid="draft-item-created-date">
             {{ commonUtil.getDateWithOrdinalSuffix(count.createdDate) }}
             <p>{{ translate("Created Date") }}</p>
           </ion-label>
-      
-          <ion-label data-testid="assigned-item-due-date">
+
+          <ion-label data-testid="draft-item-due-date">
             {{ commonUtil.getDateWithOrdinalSuffix(count.estimatedCompletionDate) }}
             <p>{{ translate("due date") }}</p>
           </ion-label>
-          
+
           <ion-item lines="none">
-            <ion-badge :color="commonUtil.getStatusColor(count.statusId)" class="status-badge" slot="end" data-testid="assigned-item-status-badge">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
+            <ion-badge :color="commonUtil.getStatusColor(count.statusId)" class="status-badge" slot="end" data-testid="draft-item-status-badge">{{ useProductStore().getStatusDescription(count.statusId) }}</ion-badge>
           </ion-item>
         </div>
       </ion-list>
 
-      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)" data-testid="assigned-infinite-scroll">
+      <ion-infinite-scroll ref="infiniteScrollRef" v-show="isScrollable" threshold="100px" @ionInfinite="loadMoreCycleCounts($event)" data-testid="draft-infinite-scroll">
         <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading')" />
       </ion-infinite-scroll>
       <FacilityFilterModal
@@ -83,37 +82,37 @@
         @apply="applyFacilitySelection"
       />
       <ion-modal ref="facilityModal" @didPresent="loadFacilities()"
-        @didDismiss="closeModal" data-testid="assigned-facility-modal">
+        @didDismiss="closeModal" data-testid="draft-facility-modal">
         <ion-header>
           <ion-toolbar>
             <ion-buttons slot="start">
-              <ion-button @click="closeModal" data-testid="assigned-facility-modal-close-btn">
+              <ion-button @click="closeModal" data-testid="draft-facility-modal-close-btn">
                 <ion-icon slot="icon-only" :icon="closeOutline" />
               </ion-button>
             </ion-buttons>
-            <ion-title data-testid="assigned-facility-modal-title">{{ translate("Select Facility") }}</ion-title>
+            <ion-title data-testid="draft-facility-modal-title">{{ translate("Select Facility") }}</ion-title>
           </ion-toolbar>
         </ion-header>
         <ion-content>
           <ion-searchbar @ionFocus="selectSearchBarText($event)" :placeholder="translate('Search facilities')"
             v-model="facilityQueryString" @ionInput="findFacility($event)"
-            @keydown="preventSpecialCharacters($event)" data-testid="assigned-facility-modal-search-input" />
+            @keydown="preventSpecialCharacters($event)" data-testid="draft-facility-modal-search-input" />
           <ion-radio-group v-model="selectedFacilityId">
-            <ion-list data-testid="assigned-facility-modal-list">
+            <ion-list data-testid="draft-facility-modal-list">
               <!-- Loading state -->
-              <div class="empty-state" v-if="isLoading" data-testid="assigned-facility-modal-loading">
+              <div class="empty-state" v-if="isLoading" data-testid="draft-facility-modal-loading">
                 <ion-item lines="none">
                   <ion-spinner color="secondary" name="crescent" slot="start" />
                   {{ translate("Fetching facilities") }}
                 </ion-item>
               </div>
               <!-- Empty state -->
-              <div class="empty-state" v-else-if="!filteredFacilities.length" data-testid="assigned-facility-modal-empty-state">
+              <div class="empty-state" v-else-if="!filteredFacilities.length" data-testid="draft-facility-modal-empty-state">
                 <p>{{ translate("No facilities found") }}</p>
               </div>
               <div v-else>
-                <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'assigned-facility-modal-item-' + facility.facilityId">
-                  <ion-radio label-placement="end" justify="start" :value="facility.facilityId" :data-testid="'assigned-facility-modal-radio-' + facility.facilityId">
+                <ion-item v-for="facility in filteredFacilities" :key="facility.facilityId" :data-testid="'draft-facility-modal-item-' + facility.facilityId">
+                  <ion-radio label-placement="end" justify="start" :value="facility.facilityId" :data-testid="'draft-facility-modal-radio-' + facility.facilityId">
                     <ion-label>
                       {{ facility.facilityName }}
                       <p>{{ facility.facilityId }}</p>
@@ -125,7 +124,7 @@
           </ion-radio-group>
 
           <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button :disabled="!selectedFacilityId" @click="updateFacilityOnCycleCount" data-testid="assigned-facility-modal-save-btn">
+            <ion-fab-button :disabled="!selectedFacilityId" @click="updateFacilityOnCycleCount" data-testid="draft-facility-modal-save-btn">
               <ion-icon :icon="saveOutline" />
             </ion-fab-button>
           </ion-fab>
@@ -144,12 +143,9 @@ import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from "@/services/uiUtils";
 import { useProductStore } from "@/stores/productStore";
-// import Filters from "@/components/Filters.vue"
 
-// import SearchBarAndSortBy from "@/components/SearchBarAndSortBy.vue";
 import FacilityFilterModal from '@/components/FacilityFilterModal.vue';
 import { useUserProfile } from "@/stores/userProfileStore";
-import Actions from "@/authorization/actions";
 
 const cycleCounts = ref<any[]>([])
 const isScrollable = ref(true);
@@ -163,15 +159,7 @@ const pageSize = ref(Number(import.meta.env.VITE_VIEW_SIZE) || 20);
 
 const productStore = useProductStore();
 
-// With INV_COUNT_APPROVAL a count reaches Assigned only once approved, and CYCLE_CNT_CREATED counts
-// live on the Draft page instead. Without it, Assigned keeps covering created counts as before.
-const hasApprovalPermission = computed(() => useUserProfile().hasPermission(Actions.APP_INV_COUNT_APPROVAL));
-
-const assignedStatuses = computed(() => hasApprovalPermission.value
-  ? "CYCLE_CNT_APPROVED,CYCLE_CNT_IN_PRGS"
-  : "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS");
-
-const filterOptions = computed(() => ({
+const filterOptions = {
   typeOptions : [
     { label: "All Types",  value: "" },
     { label: "Hard Count", value: "HARD_COUNT" },
@@ -179,38 +167,28 @@ const filterOptions = computed(() => ({
   ],
   statusOptions: [
     { label: "All", value: "" },
-    hasApprovalPermission.value
-      ? { label: "Approved", value: "CYCLE_CNT_APPROVED" }
-      : { label: "Created", value: "CYCLE_CNT_CREATED" },
-    { label: "In Progress", value: "CYCLE_CNT_IN_PRGS" }
+    { label: "Created", value: "CYCLE_CNT_CREATED" }
   ]
-}));
+}
 
 async function updateQuery(key: any, value: any) {
   await loader.present("Loading...");
-  userProfile.updateUiFilter('assigned', key, value)
+  userProfile.updateUiFilter('draft', key, value)
   pageIndex.value = 0;
-  await getAssignedCycleCounts();
+  await getDraftCycleCounts();
   loader.dismiss();
 }
 
 const userProfile = useUserProfile();
 
-const filters = computed(() => userProfile.getListPageFilters('assigned'));
-
-// uiFilters are persisted, so a status stored before the permission changed could otherwise leak
-// e.g. CYCLE_CNT_CREATED counts into this list. Ignore anything outside the current status set.
-const selectedStatus = computed(() => {
-  const status = filters.value.status;
-  return status && assignedStatuses.value.split(',').includes(status) ? status : "";
-});
+const filters = computed(() => userProfile.getListPageFilters('draft'));
 
 const isFacilityFilterModalOpen = ref(false);
 
 onIonViewDidEnter(async () => {
   await loader.present("Loading...");
   pageIndex.value = 0;
-  await getAssignedCycleCounts();
+  await getDraftCycleCounts();
   loader.dismiss();
 });
 
@@ -298,13 +276,13 @@ async function updateFacilityOnCycleCount() {
 }
 function applyLocalSearch() {
   pageIndex.value = 0;
-  getAssignedCycleCounts();
+  getDraftCycleCounts();
 }
 
 function clearLocalSearch() {
   searchQuery.value = "";
   pageIndex.value = 0;
-  getAssignedCycleCounts();
+  getDraftCycleCounts();
 }
 
 function clearSearch() {
@@ -334,16 +312,16 @@ async function loadMoreCycleCounts(event: any) {
   }
 
   pageIndex.value++;
-  await getAssignedCycleCounts();
+  await getDraftCycleCounts();
   await event.target.complete();
 }
 
-async function getAssignedCycleCounts() {
+async function getDraftCycleCounts() {
   try {
     const params = {
       pageSize: pageSize.value,
       pageIndex: pageIndex.value,
-      statusId: selectedStatus.value || assignedStatuses.value,
+      statusId: filters.value.status || "CYCLE_CNT_CREATED",
       statusId_op: "in"
     } as any;
     if (filters.value.countType) params.countType = filters.value.countType;
@@ -371,10 +349,10 @@ async function getAssignedCycleCounts() {
 }
 
 async function applyFacilitySelection(selectedFacilityIds: string[]) {
-  userProfile.updateUiFilter("assigned", "facilityIds", selectedFacilityIds);
+  userProfile.updateUiFilter("draft", "facilityIds", selectedFacilityIds);
   pageIndex.value = 0;
   await loader.present("Loading...");
-  await getAssignedCycleCounts();
+  await getDraftCycleCounts();
   loader.dismiss();
 }
 

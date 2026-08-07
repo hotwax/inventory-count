@@ -30,7 +30,7 @@
             <ion-icon slot="end" :icon="openOutline" />
           </ion-button>
           <!-- TODO: Replace route-based checks with a store/admin view flag when present in Pinia Stores -->
-          <ion-button fill="outline" v-if="useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="'/assigned'" data-testid="settings-admin-view-btn">
+          <ion-button fill="outline" v-if="useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN) && router.currentRoute.value.fullPath.includes('/tabs/')" :router-link="adminViewPath" data-testid="settings-admin-view-btn">
             <ion-icon size="medium" :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
             {{ translate("Admin View") }}
           </ion-button>
@@ -251,6 +251,12 @@ import { db } from "@/services/appInitializer";
 import DxpAppVersionInfo from '@/components/DxpAppVersionInfo.vue';
 import Actions from "@/authorization/actions";
 const userProfile = computed(() => useUserProfile().getUserProfile);
+
+// Mirrors the admin branch of the root redirect in the router: approvers start on Draft, everyone
+// else on Assigned. Kept in step with that redirect if the landing rule changes.
+const adminViewPath = computed(() => useUserProfile().hasPermission(Actions.APP_INV_COUNT_APPROVAL)
+  ? "/draft"
+  : "/assigned");
 const eComStores = computed(() => useProductStore().getProductStores) as any;
 const currentEComStore = computed(() => useProductStore().getCurrentProductStore);
 const productIdentificationPref = computed(() => useProductStore().getProductIdentificationPref);
