@@ -40,7 +40,7 @@
     "vue-logger-plugin": "catalog:",
     "vue-router": "catalog:",
     "vue-virtual-scroll-list": "^2.3.5",
-    "vue-virtual-scroller": "^2.0.0-beta.8",
+    "vue-virtual-scroller": "catalog:",
     "vue3-virtual-scroll-list": "^0.2.1",
     "uuid": "^10.0.0"
   },
