@@ -35,7 +35,6 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
 import { createDxpI18n, initialiseConfig } from '@common'
-import { loader } from '@/services/uiUtils'
 import localeMessages from '@/locales'
 
 const i18n = createDxpI18n(localeMessages)
@@ -104,8 +103,14 @@ app.config.globalProperties.$filters = {
 
 router.isReady().then(async () => {
   try {
+    // Checking for oms and token in router, as when coming from launchpad with token and oms in url
+    // db intialize is called, but at the same time we are clearing the state and cookies to honor the data
+    // present in url, thus isAuthenticated checks fails in remoteApi for the device/id endpoint causing
+    // the login failure.
+    // TODO: The checks needs to be removed once we move launchpad to accxui cookies pattern
+    const routerQuery = router.currentRoute.value.query
     // Ensures the database is opened and schema initialized
-    if (!db) {
+    if (!db && !routerQuery.oms && !routerQuery.token) {
       await initialize();
     }
   } catch (error) {
