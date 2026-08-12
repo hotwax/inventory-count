@@ -107,6 +107,7 @@ router.isReady().then(async () => {
     // db intialize is called, but at the same time we are clearing the state and cookies to honor the data
     // present in url, thus isAuthenticated checks fails in remoteApi for the device/id endpoint causing
     // the login failure.
+    // TODO: The checks needs to be removed once we move launchpad to accxui cookies pattern
     const routerQuery = router.currentRoute.value.query
     // Ensures the database is opened and schema initialized
     if (!db && !routerQuery.oms && !routerQuery.token) {
