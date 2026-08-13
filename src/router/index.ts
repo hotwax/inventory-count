@@ -10,11 +10,12 @@ import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
 import SessionCountDetail from "@/views/SessionCountDetail.vue"
 import BulkUpload from "@/views/BulkUpload.vue";
+import CreateCycleCount from "@/views/CreateCycleCount.vue";
 import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
-import { createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
+import { addCircleOutline, createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import CountProgressReview from "@/views/CountProgressReview.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -75,7 +76,14 @@ const routes: Array<RouteRecordRaw> = [
         meta: {
           permissionId: Actions.APP_VARIANCE_VIEW
         }
-      }
+      },
+      {
+        path: 'create-cycle-count',
+        component: () => import('@/views/CreateCycleCount.vue'),
+        meta: {
+          permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW"
+        }
+      },
     ],
     beforeEnter: authGuard,
   },
@@ -153,6 +161,19 @@ const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       permissionId: Actions.APP_COUNT_VIEW
+    }
+  },
+  {
+    path: '/create-cycle-count',
+    name: 'CreateCycleCount',
+    component: CreateCycleCount,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      showInMenu: true,
+      title: "Create count",
+      iosIcon: addCircleOutline,
+      mdIcon: addCircleOutline
     }
   },
   {
