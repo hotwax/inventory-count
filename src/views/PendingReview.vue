@@ -174,8 +174,8 @@ async function getPendingCycleCounts() {
       pageIndex: pageIndex.value,
       statusId: "CYCLE_CNT_CMPLTD"
     } as any;
-    if (filters.value?.countQueryString) {
-      params.keyword = filters.value.countQueryString
+    if (searchQuery.value?.trim()) {
+      params.keyword = searchQuery.value.trim();
     }
     if (filters.value.countType) params.countType = filters.value.countType;
     if (filters.value.facilityIds?.length) {
