@@ -431,7 +431,7 @@ import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
-import { computed, ref, nextTick } from 'vue';
+import { computed, ref, nextTick, watch } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
@@ -467,6 +467,13 @@ async function updateMode(event: any) {
 }
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
+
+watch(() => currentFacility.value?.facilityId, (newId, oldId) => {
+  if (oldId && newId !== oldId) {
+    useProductMaster().clearVarianceLogsAndAdjustments();
+    handCountedProducts.value = [];
+  }
+});
 const isSearching = ref(false);
 const searchedProductString = ref('');
 const searchedProducts = ref<Array<any>>([]);
