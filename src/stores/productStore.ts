@@ -351,6 +351,9 @@ export const useProductStore = defineStore('productStore', {
         console.error('error', error)
       }
       this.currentProductStore = payload;
+      await this.getProductIdentifierSettings();
+      await this.getSettings(this.currentProductStore?.productStoreId);
+      await this.prepareProductIdentifierOptions();
     },
 
     /** ---------- Status Descriptions ---------- */
