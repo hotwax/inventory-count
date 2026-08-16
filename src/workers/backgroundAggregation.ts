@@ -412,9 +412,14 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     const now = Date.now()
 
     const scannedValues = Object.keys(grouped)
+    const queryVariants = Array.from(new Set([
+      ...scannedValues,
+      ...scannedValues.map(s => s.toLowerCase()),
+      ...scannedValues.map(s => s.toUpperCase())
+    ]))
     const [identifications, products, sessionRecords] = await Promise.all([
       db.table('productIdentification')
-        .where('value').anyOf(scannedValues)
+        .where('value').anyOf(queryVariants)
         .and((item: any) => item.identKey === context.barcodeIdentification)
         .toArray(),
       db.table('products').bulkGet(scannedValues),
@@ -701,12 +706,15 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (resp) {
       const now = Date.now()
-      const syncUpdates = syncable.map((item: any) => ({
-        ...item,
-        lastSyncedAt: now,
-        lastSyncedBatchId: `batch-${now}`
-      }))
-      await db.table('inventoryCountRecords').bulkPut(syncUpdates)
+      const batchId = `batch-${now}`
+      await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
+        for (const item of syncable) {
+          await db.table('inventoryCountRecords').update(item.id, {
+            lastSyncedAt: now,
+            lastSyncedBatchId: batchId
+          })
+        }
+      })
       return pending.length
     }
 
@@ -763,9 +771,8 @@ async function resolveMissingSystemQOH(
       if (!inventory) throw new Error('No inventory response')
 
       updates.push({
-        ...record,
-        systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal ?? 0,
-        lastUpdatedAt: now
+        id: record.id,
+        systemQuantityOnHand: inventory?.entityValueList?.[0]?.quantityOnHandTotal ?? 0
       })
 
       enrichedCount++
@@ -778,7 +785,13 @@ async function resolveMissingSystemQOH(
   }
 
   if (updates.length > 0) {
-    await db.table('inventoryCountRecords').bulkPut(updates)
+    await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
+      for (const update of updates) {
+        await db.table('inventoryCountRecords').update(update.id, {
+          systemQuantityOnHand: update.systemQuantityOnHand
+        })
+      }
+    })
   }
 
   return enrichedCount
