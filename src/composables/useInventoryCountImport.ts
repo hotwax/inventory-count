@@ -259,14 +259,37 @@ function currentMillis(): number {
     return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
   }
 
+  function getProductIdentifierValue(product: any, type: string) {
+    if (!product || !type) return ''
+    const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
+      if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+        const [idType, value] = goodIdentification.split('/', 2)
+        return { type: idType?.trim(), value: value?.trim() }
+      }
+      return goodIdentification
+    }) : []
+    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(type))
+      return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
+    if (type === 'internalName') return product.internalName || ''
+    if (type === 'productId') return product.productId || ''
+    if (type === 'parentProductName' || type === 'groupName') return product.parentProductName || ''
+    if (type === 'title') return product.title || ''
+    if (type === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
+    return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
+  }
+
   function getAlphabeticSortKey(item: any, productMaster: ReturnType<typeof useProductMaster>) {
-    return (
-      item.primaryId ||
-      productMaster.primaryId(item.product) ||
-      item.internalName ||
-      item.productIdentifier ||
-      ''
-    )
+    if (item.primaryId) return item.primaryId
+    const pref = useProductStore().getPrimaryId
+    const product = item?.product
+    const preferredVal = product ? getProductIdentifierValue(product, pref) : ''
+    if (preferredVal) return preferredVal
+    const skuVal = product ? getProductIdentifierValue(product, 'SKU') : ''
+    if (skuVal) return skuVal
+    if (item.internalName || product?.internalName) return item.internalName || product?.internalName
+    if (item.productIdentifier) return item.productIdentifier
+    if (item.productId || product?.productId) return item.productId || product?.productId
+    return ''
   }
 
   function sortSessionItems(items: any[], sortMode: SessionSortMode) {

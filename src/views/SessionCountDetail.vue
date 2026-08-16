@@ -839,43 +839,61 @@ function getResolvedProductIdentifierValue(product: any, type: string) {
   return resolve(type)
 }
 
+const primaryDisplayCache = new WeakMap<object, any>()
+
 function getSessionItemPrimaryDisplay(item: any) {
+  if (!item || typeof item !== 'object') {
+    return { value: '-', isFallback: false, preferredDescription: '', fallbackDescription: '' }
+  }
+
+  const cached = primaryDisplayCache.get(item)
+  if (cached && cached._prefType === preferredIdentifierType.value) {
+    return cached
+  }
+
+  const preferredDesc = preferredIdentifierDescription.value
   const preferredValue = getResolvedProductIdentifierValue(item?.product, preferredIdentifierType.value)
 
+  let result
   if (preferredValue) {
-    return {
+    result = {
       value: preferredValue,
       isFallback: false,
-      preferredDescription: preferredIdentifierDescription.value,
-      fallbackDescription: ''
+      preferredDescription: preferredDesc,
+      fallbackDescription: '',
+      _prefType: preferredIdentifierType.value
+    }
+  } else {
+    const fallbackCandidates = [
+      {
+        value: getResolvedProductIdentifierValue(item?.product, 'SKU'),
+        description: getIdentifierOptionDescription('SKU')
+      },
+      {
+        value: item?.internalName || item?.product?.internalName || '',
+        description: getIdentifierOptionDescription('internalName')
+      },
+      {
+        value: item?.productIdentifier || '',
+        description: translate('Imported identifier')
+      },
+      {
+        value: item?.productId || item?.product?.productId || '',
+        description: getIdentifierOptionDescription('productId')
+      }
+    ].find((candidate) => candidate.value && candidate.description !== preferredDesc)
+
+    result = {
+      value: fallbackCandidates?.value || '-',
+      isFallback: Boolean(fallbackCandidates?.value),
+      preferredDescription: preferredDesc,
+      fallbackDescription: fallbackCandidates?.description || '',
+      _prefType: preferredIdentifierType.value
     }
   }
 
-  const fallbackCandidates = [
-    {
-      value: getResolvedProductIdentifierValue(item?.product, 'SKU'),
-      description: getIdentifierOptionDescription('SKU')
-    },
-    {
-      value: item?.internalName || item?.product?.internalName || '',
-      description: getIdentifierOptionDescription('internalName')
-    },
-    {
-      value: item?.productIdentifier || '',
-      description: translate('Imported identifier')
-    },
-    {
-      value: item?.productId || item?.product?.productId || '',
-      description: getIdentifierOptionDescription('productId')
-    }
-  ].find((candidate) => candidate.value && candidate.description !== preferredIdentifierDescription.value)
-
-  return {
-    value: fallbackCandidates?.value || '-',
-    isFallback: Boolean(fallbackCandidates?.value),
-    preferredDescription: preferredIdentifierDescription.value,
-    fallbackDescription: fallbackCandidates?.description || ''
-  }
+  primaryDisplayCache.set(item, result)
+  return result
 }
 
 function getSessionItemPrimaryLabel(item: any) {
