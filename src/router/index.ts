@@ -169,7 +169,7 @@ const routes: Array<RouteRecordRaw> = [
     component: CreateCycleCount,
     beforeEnter: authGuard,
     meta: {
-      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN",
+      permissionId: "COMMON_ADMIN OR INV_COUNT_ADMIN OR INVCOUNT_APP_VIEW",
       showInMenu: true,
       title: "Create count",
       iosIcon: addCircleOutline,
