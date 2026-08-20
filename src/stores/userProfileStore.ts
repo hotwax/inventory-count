@@ -204,6 +204,18 @@ export const useUserProfile = defineStore('userProfile', {
           Settings.defaultZone = 'America/New_York';
         }
 
+        if(this.current.locale) {
+          const localeOptions = Object.keys(this.localeOptions)
+          // If exact locale is not found, try to match the first two characters i.e primary code
+          const matchingLocale = localeOptions.find((option: string) => option === this.current.locale) ||
+            localeOptions.find((option: string) => option.slice(0, 2) === this.current.locale.slice(0, 2))
+
+          if(matchingLocale) {
+            i18n.global.locale.value = matchingLocale
+            this.locale = matchingLocale
+          }
+        }
+
         useAuth().updateUserId(this.current.userId);
 
         return Promise.resolve(resp.data)

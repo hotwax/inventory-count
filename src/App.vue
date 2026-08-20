@@ -57,7 +57,7 @@ import {
   loadingController
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
-import { commonUtil, translate, logger, emitter } from "@common";
+import { commonUtil, translate, logger, emitter, i18n } from "@common";
 import { useProductStore } from '@/stores/productStore';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
@@ -102,6 +102,10 @@ onBeforeMount(() => {
 onMounted(async () => {
   if (userProfile?.value?.timeZone) {
     Settings.defaultZone = userProfile.value.timeZone;
+  }
+
+  if(userProfile.value?.userId) {
+    i18n.global.locale.value = useUserProfile().getLocale
   }
 
   if (!!userToken && useProductStore()?.getCurrentProductStore?.productStoreId) {
