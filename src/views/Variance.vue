@@ -475,7 +475,7 @@ onBeforeRouteLeave(async () => {
 
   let canLeave = false;
   const alert = await alertController.create({
-    header: translate("Leave page"),
+    header: translate("Leave this page"),
     message: translate("Any edits made on this page will be lost."),
     buttons: [
       {
