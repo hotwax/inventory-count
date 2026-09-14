@@ -137,7 +137,9 @@ function clearAll() {
 </script>
 
 <style scoped>
+/* Inset via padding, not margin: the ion-searchbar host is width:100%, so a 24px inline margin
+   pushes it 24px past each toolbar edge instead of insetting it. */
 ion-searchbar {
-  margin-inline: var(--spacer-base);
+  padding-inline: var(--spacer-base);
 }
 </style>
