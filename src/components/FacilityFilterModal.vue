@@ -126,6 +126,6 @@ function clearAll() {
 
 <style scoped>
 ion-searchbar {
-  margin-inline: var(--spacer-md);
+  margin-inline: var(--spacer-base);
 }
 </style>
