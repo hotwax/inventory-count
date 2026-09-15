@@ -56,7 +56,7 @@ describe('createCycleCountFromProducts', () => {
     const formData: FormData = request.data;
     expect(formData.get('fileName')).toBe('Weekly_store_audit');
 
-    const file = formData.get('uploadedFile') as File;
+    const file = formData.get('contentFile') as File;
     const csv = await readBlob(file);
     const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
 
@@ -99,7 +99,7 @@ describe('createCycleCountFromProducts', () => {
     });
 
     const formData: FormData = api.mock.calls[0][0].data;
-    const csv = await readBlob(formData.get('uploadedFile') as File);
+    const csv = await readBlob(formData.get('contentFile') as File);
     const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
 
     expect((parsed.data[0] as any).countImportName).toBe('Audit "A", aisle 3');
