@@ -491,7 +491,7 @@ const createCycleCountFromProducts = async (payload: {
   const fileName = `${(payload.countName || "CycleCount").trim().replace(/[^\w-]+/g, "_")}.csv`;
   const blob = new Blob([Papa.unparse(rows)], { type: "text/csv;charset=utf-8;" });
   const formData = new FormData();
-  formData.append("uploadedFile", blob, fileName);
+  formData.append("contentFile", blob, fileName);
   formData.append("fileName", fileName.replace(".csv", ""));
 
   return bulkUploadInventoryCounts({
