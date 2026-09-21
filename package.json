@@ -25,7 +25,7 @@
     "axios-cache-adapter": "catalog:",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
-    "dexie": "^4.0.7",
+    "dexie": "catalog:",
     "http-status-codes": "catalog:",
     "lodash-es": "^4.17.21",
     "luxon": "catalog:",
