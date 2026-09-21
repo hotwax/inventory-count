@@ -266,7 +266,7 @@
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item :data-testid="'session-detail-uncounted-filtered-item-' + item.uuid">
+                      <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-uncounted-filtered-item-' + item.uuid" @click="openPendingItemCountSheet(item)">
                         <ion-thumbnail slot="start">
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-filtered-item-img"/>
                         </ion-thumbnail>
@@ -294,7 +294,7 @@
                 <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item :data-testid="'session-detail-uncounted-item-' + item.uuid">
+                      <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-uncounted-item-' + item.uuid" @click="openPendingItemCountSheet(item)">
                         <ion-thumbnail slot="start">
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-item-img"/>
                         </ion-thumbnail>
@@ -657,6 +657,10 @@
           </ion-toolbar>
         </ion-header>
         <ion-content data-testid="session-detail-recent-scans-content">
+          <ion-button expand="block" fill="outline" class="ion-margin-horizontal ion-margin-top" :disabled="!isSessionMutable" @click="goHandCountedFromSheet" data-testid="session-detail-recent-add-hand-counted">
+            {{ translate("Add hand-counted items") }}
+            <ion-icon slot="end" :icon="addOutline" />
+          </ion-button>
           <div v-if="!events.length" class="empty-state ion-padding">
             <ion-label>{{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}</ion-label>
           </div>
@@ -682,15 +686,14 @@
             </template>
           </DynamicScroller>
         </ion-content>
-        <ion-footer>
-          <ion-toolbar>
-            <ion-button expand="block" fill="outline" class="ion-margin-horizontal" :disabled="!isSessionMutable" @click="goHandCountedFromSheet" data-testid="session-detail-recent-add-hand-counted">
-              {{ translate("Add hand-counted items") }}
-              <ion-icon slot="end" :icon="addOutline" />
-            </ion-button>
-          </ion-toolbar>
-        </ion-footer>
       </ion-modal>
+      <PendingItemCountSheet
+        :is-open="isPendingItemCountSheetOpen"
+        :item="pendingItemForCount"
+        :can-view-quantity-on-hand="showQoh"
+        :save-count="savePendingItemCount"
+        @close="isPendingItemCountSheetOpen = false"
+      />
       <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
@@ -732,7 +735,7 @@
       </ion-toolbar>
     </ion-footer>
 
-    <CameraScanner :is-open="isCameraOpen" :next-up="cameraNextUp" :resolve-product="resolveProductForConfirm" :record-scan="onCameraScan" @close="isCameraOpen = false" />
+    <CameraScanner :is-open="isCameraOpen" :pending-items="cameraPendingItems" :resolve-product="resolveProductForConfirm" :record-scan="onCameraScan" @close="isCameraOpen = false" />
   </ion-page>
 </template>
 
@@ -756,6 +759,7 @@ import { createCameraScanProductLookupContext } from '@/services/cameraScanProdu
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 import CameraScanner from '@/components/CameraScanner.vue';
+import PendingItemCountSheet, { type PendingItemCountSheetItem } from '@/components/PendingItemCountSheet.vue';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
@@ -765,6 +769,8 @@ import { from, Subscription } from 'rxjs';
 import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
 import Actions from "@/authorization/actions";
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
+import { db } from '@/services/appInitializer';
 
 const props = defineProps<{
   workEffortId: string;
@@ -842,6 +848,8 @@ const isCameraOpen = ref(false);
 const isRecentScansOpen = ref(false);
 const isKeyboardEntryOpen = ref(false);
 const mobileScanInput = ref();
+const isPendingItemCountSheetOpen = ref(false);
+const pendingItemForCount = ref<PendingItemCountSheetItem | null>(null);
 
 const areas = [
   { value: 'back_stock', label: 'Back stock' },
@@ -867,16 +875,13 @@ const canCountOnMobile = computed(() =>
   ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value
 );
 
-// First uncounted product surfaced as a "next up" hint in the camera scanner (directed counts only)
-const cameraNextUp = computed(() => {
-  if (!isDirected.value) return null;
-  const first = uncountedItems.value[0];
-  if (!first) return null;
-  return {
-    primary: getSessionItemPrimaryLabel(first),
-    secondary: getSessionItemSecondaryLabel(first),
-    imageUrl: first.product?.mainImageUrl,
-  };
+const cameraPendingItems = computed(() => {
+  if (!isDirected.value) return [];
+  return uncountedItems.value.map((item: any) => ({
+    primary: getSessionItemPrimaryLabel(item),
+    secondary: getSessionItemSecondaryLabel(item),
+    imageUrl: item.product?.mainImageUrl,
+  }));
 });
 
 const lastScannedEvent = computed(() => events.value[0]);
@@ -1367,6 +1372,31 @@ async function recordScannedCode(code: string, quantity = 1) {
   }
 }
 
+function openPendingItemCountSheet(item: any) {
+  if (!isSessionMutable.value) return;
+
+  const productIdentifier = getResolvedProductIdentifierValue(item.product, barcodeIdentifierPref.value)
+    || item.productIdentifier
+    || item.productId;
+  if (!productIdentifier) {
+    commonUtil.showToast(translate('Unable to identify this product for counting'));
+    return;
+  }
+
+  pendingItemForCount.value = {
+    primary: getSessionItemPrimaryLabel(item),
+    secondary: getSessionItemSecondaryLabel(item),
+    imageUrl: item.product?.mainImageUrl,
+    productIdentifier,
+    quantityOnHand: item.inventory?.quantityOnHandTotal ?? item.systemQuantityOnHand ?? null,
+  };
+  isPendingItemCountSheetOpen.value = true;
+}
+
+async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
+  return recordScannedCode(item.productIdentifier, quantity);
+}
+
 async function handleScan() {
   console.log(`[PROCESS LOG] 0. handleScan triggered (Hardware/Keyboard scanner)`);
   prepareScanSuccessFeedback();
@@ -1379,7 +1409,17 @@ async function handleScan() {
 // Camera scanner (web / @zxing) funnels into the same offline-first scan pipeline as the hardware scanner.
 async function onCameraScan(code: string, quantity: number) {
   console.log(`[PROCESS LOG] 0. onCameraScan triggered (Camera) with code: ${code}`);
-  return recordScannedCode(code, quantity);
+
+  const saved = await recordScannedCode(code, quantity);
+  if (!saved) return { saved: false, savedScanCount: 0 };
+
+  const savedScanCount = await db.scanEvents
+    .where('inventoryCountImportId')
+    .equals(props.inventoryCountImportId)
+    .and((event: any) => event.scannedValue === code && Number(event.quantity) > 0)
+    .count();
+
+  return { saved: true, savedScanCount };
 }
 
 // Resolve a scanned barcode to product details for the camera "confirm each" sheet (best-effort, local-first).
@@ -2157,6 +2197,11 @@ ion-segment {
 ion-segment-view {
   height: unset;
   min-height: 100%;
+}
+
+/* Ionic wraps the search and list into separate rows on narrow screens. Keep those rows packed at the top. */
+ion-segment-content.cards {
+  align-content: flex-start;
 }
 
 .segment-mobile-icon,
