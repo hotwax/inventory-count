@@ -3,6 +3,9 @@
     <!-- <Filters menu-id="assigned-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="assigned-page-title">{{ translate("Assigned")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="assigned-filter" data-testid="assigned-filter-menu-btn">

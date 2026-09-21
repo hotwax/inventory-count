@@ -2,7 +2,9 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" data-testid="settings-menu-btn" />
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="settings-page-title">{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
