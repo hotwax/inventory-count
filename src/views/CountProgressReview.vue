@@ -574,6 +574,7 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import router from '@/router'
+import Actions from "@/authorization/actions"
 
 const isLoadingUncounted = ref(false);
 const isLoadingUndirected = ref(false);
@@ -612,10 +613,10 @@ const isCountStatusBeyondCreated = computed(() => {
 const isSubmitted = computed(() => workEffort.value?.statusId === 'CYCLE_CNT_CMPLTD');
 
 const canPreviewItems = computed(() => (
-  isCountStarted.value || isCountStatusBeyondCreated.value || useUserProfile().hasPermission('PREVIEW_COUNT_ITEM OR COMMON_ADMIN OR INV_COUNT_ADMIN')
+  isCountStarted.value || isCountStatusBeyondCreated.value || useUserProfile().hasPermission(Actions.APP_PREVIEW_COUNT_ITEM)
 ));
 
-const canManageCountProgress = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_COUNT_SUBMIT'));
+const canManageCountProgress = computed(() => useUserProfile().hasPermission(Actions.APP_MANAGE_COUNT_PROGRESS));
 
 const isMarkOutOfStockDisabled = computed(() => (
   !areSessionsSubmitted.value
@@ -689,7 +690,7 @@ const isSubmitDisabled = computed(() => (
   || !canSubmitForReview.value
 ));
 
-const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
+const showQoh = computed(() => useUserProfile().hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 
 const isEditImportItemModalOpen = ref(false);
 const selectedProduct = ref<any | null>(null);

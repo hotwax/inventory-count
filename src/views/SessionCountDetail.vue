@@ -749,6 +749,7 @@ import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -761,6 +762,8 @@ import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import Actions from "@/authorization/actions";
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
 
 const props = defineProps<{
   workEffortId: string;
@@ -817,7 +820,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
+const showQoh = computed(() => useUserProfile().hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
@@ -1121,7 +1124,7 @@ onIonViewDidEnter(async () => {
     );
 
     // Start the background aggregation worker and schedule periodic aggregation
-    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
@@ -1493,7 +1496,7 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1552,7 +1555,7 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }

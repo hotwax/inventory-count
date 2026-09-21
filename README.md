@@ -57,30 +57,45 @@
 
 
 # Prerequisite
-Ionic CLI - If you don't have the ionic CLI installed, refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
+
+- Node `v22.12.0` or higher
+- `pnpm`
 
 For a high level overview of the project layout take a look at [docs/README.md](docs/README.md).
 
 
 # Build Notes (Users)
 
-1. Download the app from [release](https://github.com/hotwax/inventorycount/releases) page and extract it.
-2. Go to the app directory.
-3. Run following command to download dependencies  
-    `npm i`
-4. Create a `.env` file by taking reference from the `.env.example`.
-5. To run the app in browser use the command: `ionic serve`
+This app is developed and run from the [`accxui`](https://github.com/hotwax/accxui) pnpm workspace. It is not started by running commands inside this app folder directly.
+
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Download the app from the [release](https://github.com/hotwax/inventory-count/releases) page, extract it, and place it at `apps/inventory-count`.
+5. Create a `.env` file in `apps/inventory-count` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter cycle-count dev`
 
 
 # Build Notes (Contributors)
 
-1. Open a Terminal window
-2. Clone app using the command: `git clone https://github.com/hotwax/inventorycount.git <repository-name>`
-3. Go to the <repository-name> directory using command: `cd <repository-name>`
-4. Run following command to download dependencies
-    `npm i`
-5. Create a `.env` file by taking reference from the `.env.example`.
-6. To run the app in browser use the command: `ionic serve`
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Clone this app under `apps/` using the command:  
+    `git clone https://github.com/hotwax/inventory-count.git apps/inventory-count`
+5. Create a `.env` file in `apps/inventory-count` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter cycle-count dev`
+8. To build the app use the command from the `accxui` root:  
+    `pnpm --filter cycle-count build`
+
+Run `pnpm install` from the `accxui` root again whenever you add another app under `apps/`. See the [accxui README](https://github.com/hotwax/accxui/blob/main/README.md) for the full workspace guide.
+
 
 ## Firebase Hosting
 

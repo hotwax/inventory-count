@@ -1,6 +1,6 @@
 {
   "name": "cycle-count",
-  "version": "5.0.0",
+  "version": "5.2.0",
   "private": true,
   "type": "module",
   "description": "HotWax Commerce Cycle Count App",
@@ -25,7 +25,6 @@
     "@zxing/library": "^0.21.0",
     "axios": "catalog:",
     "axios-cache-adapter": "catalog:",
-    "boon-js": "^2.0.3",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
     "dexie": "^4.0.7",
@@ -43,7 +42,7 @@
     "vue-logger-plugin": "catalog:",
     "vue-router": "catalog:",
     "vue-virtual-scroll-list": "^2.3.5",
-    "vue-virtual-scroller": "^2.0.0-beta.8",
+    "vue-virtual-scroller": "catalog:",
     "vue3-virtual-scroll-list": "^0.2.1",
     "uuid": "^10.0.0"
   },
@@ -65,6 +64,7 @@
     "eslint-plugin-vue": "^8.0.3",
     "file-saver": "catalog:",
     "papaparse": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite-plugin-pwa": "catalog:"
   }
 }
