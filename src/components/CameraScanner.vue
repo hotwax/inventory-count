@@ -30,17 +30,35 @@
         </div>
 
         <template v-else>
-          <!-- Next up (directed counts) -->
-          <div v-if="nextUp && !confirmVisible" class="cam-nextup" data-testid="camera-scanner-nextup">
-            <ion-thumbnail v-if="nextUp.imageUrl">
-              <Image :src="nextUp.imageUrl" :key="nextUp.imageUrl" />
+          <!-- Pending items stay available without closing the camera. -->
+          <button v-if="pendingItems.length && !confirmVisible" type="button" class="cam-nextup" data-testid="camera-scanner-nextup" @click="pendingItemsVisible = true">
+            <ion-thumbnail v-if="pendingItems[0].imageUrl">
+              <Image :src="pendingItems[0].imageUrl" :key="pendingItems[0].imageUrl" />
             </ion-thumbnail>
             <ion-label>
-              <p class="overline"><ion-text color="light">{{ translate("Next up") }}</ion-text></p>
-              <ion-text color="light"><h2>{{ nextUp.primary }}</h2></ion-text>
-              <ion-text color="medium"><p v-if="nextUp.secondary">{{ nextUp.secondary }}</p></ion-text>
+              <p class="overline"><ion-text color="light">{{ translate("Pending items") }} ({{ pendingItems.length }})</ion-text></p>
+              <ion-text color="light"><h2>{{ pendingItems[0].primary }}</h2></ion-text>
+              <ion-text color="medium"><p v-if="pendingItems[0].secondary">{{ pendingItems[0].secondary }}</p></ion-text>
+              <ion-text color="primary"><p>{{ translate("View list") }}</p></ion-text>
             </ion-label>
-          </div>
+          </button>
+
+          <ion-popover :is-open="pendingItemsVisible && !confirmVisible" @didDismiss="pendingItemsVisible = false" class="cam-pending-popover" data-testid="camera-scanner-pending-list">
+            <ion-content>
+              <ion-list-header>{{ translate("Pending items") }} ({{ pendingItems.length }})</ion-list-header>
+              <ion-list>
+                <ion-item v-for="item in pendingItems" :key="item.primary" lines="full">
+                  <ion-thumbnail slot="start" v-if="item.imageUrl">
+                    <Image :src="item.imageUrl" :key="item.imageUrl" />
+                  </ion-thumbnail>
+                  <ion-label>
+                    <h2>{{ item.primary }}</h2>
+                    <p v-if="item.secondary">{{ item.secondary }}</p>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+            </ion-content>
+          </ion-popover>
 
           <!-- Reticle -->
           <div class="reticle" aria-hidden="true">
@@ -51,16 +69,24 @@
             <span class="laser"></span>
           </div>
 
-          <!-- Transient feedback -->
-          <div class="cam-feedback">
-            <ion-chip v-if="cooledName" color="success" data-testid="camera-scanner-cooldown">
-              <ion-icon :icon="checkmarkCircle" />
-              <ion-label>{{ cooledName }} {{ translate("counted") }}</ion-label>
-            </ion-chip>
-            <ion-chip v-if="showDupFlag" color="warning" data-testid="camera-scanner-duplicate">
-              <ion-icon :icon="handLeftOutline" />
-              <ion-label>{{ translate("Same barcode, not double counted") }}</ion-label>
-            </ion-chip>
+          <!-- Rapid-scan feedback keeps the last saved scan and the cooldown in one place. -->
+          <div v-if="rapidScanFeedback && !confirmVisible" class="cam-rapid-feedback" data-testid="camera-scanner-rapid-scan-result">
+            <ion-item lines="none" color="dark">
+              <ion-thumbnail slot="start" v-if="rapidScanFeedback.imageUrl">
+                <Image :src="rapidScanFeedback.imageUrl" :key="rapidScanFeedback.imageUrl" />
+              </ion-thumbnail>
+              <ion-label>
+                <p v-if="rapidScanFeedback.isDuplicate" data-testid="camera-scanner-duplicate">{{ translate("Already saved — move to the next item") }}</p>
+                <p v-else>{{ translate("Scan saved") }}</p>
+                <h2>{{ rapidScanFeedback.primary }}</h2>
+                <p>{{ rapidScanFeedback.savedScanCount }} {{ translate("saved") }}</p>
+              </ion-label>
+              <ion-badge slot="end" color="success">{{ rapidScanFeedback.savedScanCount }}</ion-badge>
+            </ion-item>
+            <ion-progress-bar :value="cooldownProgress" color="primary" data-testid="camera-scanner-cooldown-progress" />
+            <ion-text color="light" class="cam-cooldown-copy">
+              <p>{{ translate("Move to the next item — this barcode is ready again in") }} {{ cooldownSeconds }}s</p>
+            </ion-text>
           </div>
         </template>
       </div>
@@ -125,8 +151,8 @@
 </template>
 
 <script setup lang="ts">
-import { IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonFooter, IonItem, IonLabel, IonText, IonThumbnail, IonChip, IonSegment, IonSegmentButton } from '@ionic/vue';
-import { closeOutline, flash, flashOutline, videocamOffOutline, checkmarkCircle, handLeftOutline, addOutline, removeOutline } from 'ionicons/icons';
+import { IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonFooter, IonItem, IonLabel, IonText, IonThumbnail, IonSegment, IonSegmentButton, IonList, IonListHeader, IonBadge, IonProgressBar, IonPopover } from '@ionic/vue';
+import { closeOutline, flash, flashOutline, videocamOffOutline, addOutline, removeOutline } from 'ionicons/icons';
 import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { translate } from '@common';
 import Image from '@/components/Image.vue';
@@ -134,17 +160,19 @@ import { BrowserMultiFormatReader } from '@zxing/browser';
 import type { IScannerControls } from '@zxing/browser';
 
 interface ResolvedProduct { primary: string; secondary?: string; imageUrl?: string; countedSoFar?: number }
-interface NextUpProduct { primary: string; secondary?: string; imageUrl?: string }
+interface PendingItem { primary: string; secondary?: string; imageUrl?: string }
+interface ScanSaveResult { saved: boolean; savedScanCount?: number }
+interface RapidScanFeedback extends PendingItem { code: string; savedScanCount: number; isDuplicate: boolean }
 
 const props = withDefaults(defineProps<{
   isOpen: boolean;
   mode?: 'rapid' | 'confirm';
-  nextUp?: NextUpProduct | null;
+  pendingItems?: PendingItem[];
   resolveProduct?: ((code: string) => Promise<ResolvedProduct | null>) | null;
-  recordScan?: ((code: string, quantity: number) => Promise<boolean>) | null;
+  recordScan?: ((code: string, quantity: number) => Promise<boolean | ScanSaveResult>) | null;
 }>(), {
   mode: 'rapid',
-  nextUp: null,
+  pendingItems: () => [],
   resolveProduct: null,
   recordScan: null,
 });
@@ -166,17 +194,18 @@ const confirmQty = ref(1);
 const confirmProduct = ref<ResolvedProduct | null>(null);
 const isConfirmSaving = ref(false);
 
-// Transient feedback
-const cooledName = ref('');
-const showDupFlag = ref(false);
+const pendingItemsVisible = ref(false);
+const rapidScanFeedback = ref<RapidScanFeedback | null>(null);
+const cooldownProgress = ref(0);
+const cooldownSeconds = ref(0);
 
 let controls: IScannerControls | null = null;
 let cameraGeneration = 0;
 const cooldown = new Map<string, number>();
 const pendingCodes = new Set<string>();
 const COOLDOWN_MS = 2600;
-let cooledTimer: any = null;
-let dupTimer: any = null;
+let cooldownTimer: ReturnType<typeof setTimeout> | undefined;
+let cooldownProgressTimer: ReturnType<typeof setInterval> | undefined;
 
 const rapidModeHint = computed(() => translate("Each detection adds one unit. The same barcode is paused briefly so holding it in frame never double counts."));
 const confirmModeHint = computed(() => translate("Review the product and quantity after each scan before adding it."));
@@ -237,10 +266,8 @@ function stopCamera() {
   controls = null;
   torchOn.value = false;
   torchAvailable.value = false;
-  clearTimeout(cooledTimer);
-  clearTimeout(dupTimer);
-  cooledName.value = '';
-  showDupFlag.value = false;
+  clearCooldownFeedback();
+  pendingItemsVisible.value = false;
   cooldown.clear();
   resetConfirm();
 }
@@ -292,10 +319,13 @@ async function handleDecode(code: string) {
     }
     pendingCodes.add(code);
     try {
-      const recorded = await props.recordScan?.(code, 1);
-      if (recorded) {
-        cooldown.set(code, Date.now() + COOLDOWN_MS);
-        flashCooled(code);
+      const recordResult = await props.recordScan?.(code, 1);
+      const saved = typeof recordResult === 'boolean' ? recordResult : recordResult?.saved;
+      if (saved) {
+        const savedScanCount = typeof recordResult === 'object'
+          ? recordResult.savedScanCount
+          : undefined;
+        startCooldown(code, savedScanCount);
       }
     } finally {
       pendingCodes.delete(code);
@@ -333,7 +363,6 @@ async function confirmAdd() {
     const code = confirmCode.value;
     const recorded = await props.recordScan?.(code, confirmQty.value);
     if (recorded) {
-      flashCooled(code);
       resetConfirm();
     }
   } finally {
@@ -351,16 +380,65 @@ function resetConfirm() {
   confirmProduct.value = null;
 }
 
-function flashCooled(code: string) {
-  clearTimeout(cooledTimer);
-  cooledName.value = (confirmProduct.value?.primary) || code;
-  cooledTimer = setTimeout(() => { cooledName.value = ''; }, COOLDOWN_MS);
+function startCooldown(code: string, savedScanCount?: number) {
+  const until = Date.now() + COOLDOWN_MS;
+  const existingCount = rapidScanFeedback.value?.code === code
+    ? rapidScanFeedback.value.savedScanCount
+    : 0;
+  cooldown.set(code, until);
+  rapidScanFeedback.value = {
+    code,
+    primary: code,
+    savedScanCount: savedScanCount ?? existingCount + 1,
+    isDuplicate: false,
+  };
+  updateCooldownProgress(until);
+  clearTimeout(cooldownTimer);
+  clearInterval(cooldownProgressTimer);
+  cooldownProgressTimer = setInterval(() => updateCooldownProgress(until), 50);
+  cooldownTimer = setTimeout(() => {
+    clearCooldownFeedback();
+  }, COOLDOWN_MS);
+  void resolveRapidScanProduct(code);
+}
+
+function updateCooldownProgress(until: number) {
+  const remainingMs = Math.max(0, until - Date.now());
+  cooldownProgress.value = remainingMs / COOLDOWN_MS;
+  cooldownSeconds.value = Math.max(1, Math.ceil(remainingMs / 1000));
+}
+
+async function resolveRapidScanProduct(code: string) {
+  if (!props.resolveProduct) return;
+  try {
+    const product = await props.resolveProduct(code);
+    if (product && rapidScanFeedback.value?.code === code) {
+      rapidScanFeedback.value = {
+        ...rapidScanFeedback.value,
+        primary: product.primary,
+        secondary: product.secondary,
+        imageUrl: product.imageUrl,
+      };
+    }
+  } catch (e) {
+    // The barcode and saved count are still useful if product resolution is temporarily unavailable.
+  }
 }
 
 function flashDuplicate() {
-  clearTimeout(dupTimer);
-  showDupFlag.value = true;
-  dupTimer = setTimeout(() => { showDupFlag.value = false; }, 1100);
+  if (rapidScanFeedback.value) {
+    rapidScanFeedback.value = { ...rapidScanFeedback.value, isDuplicate: true };
+  }
+}
+
+function clearCooldownFeedback() {
+  clearTimeout(cooldownTimer);
+  clearInterval(cooldownProgressTimer);
+  cooldownTimer = undefined;
+  cooldownProgressTimer = undefined;
+  rapidScanFeedback.value = null;
+  cooldownProgress.value = 0;
+  cooldownSeconds.value = 0;
 }
 
 onBeforeUnmount(() => { stopCamera(); });
@@ -414,12 +492,16 @@ onBeforeUnmount(() => { stopCamera(); });
   position: absolute;
   top: var(--spacer-xs);
   inset-inline: var(--spacer-sm);
+  width: calc(100% - (2 * var(--spacer-sm)));
   display: flex;
   align-items: center;
   gap: var(--spacer-xs);
   padding: var(--spacer-xs);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.72);
+  border: 0;
+  text-align: start;
+  z-index: 2;
 }
 
 .cam-nextup ion-thumbnail {
@@ -489,14 +571,34 @@ onBeforeUnmount(() => { stopCamera(); });
   50% { top: 84%; }
 }
 
-.cam-feedback {
+.cam-pending-popover {
+  --width: min(360px, calc(100vw - (2 * var(--spacer-sm))));
+  --max-height: min(420px, 60vh);
+}
+
+.cam-rapid-feedback {
   position: absolute;
-  inset-inline: 0;
+  inset-inline: var(--spacer-sm);
   bottom: var(--spacer-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacer-2xs);
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.86);
+}
+
+.cam-rapid-feedback ion-item {
+  --background: transparent;
+  --color: var(--ion-color-light);
+}
+
+.cam-rapid-feedback ion-thumbnail {
+  --size: 40px;
+}
+
+.cam-cooldown-copy {
+  display: block;
+  padding: 0 var(--spacer-xs);
+  text-align: center;
 }
 
 .cam-confirm {
