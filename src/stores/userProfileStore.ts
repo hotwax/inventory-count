@@ -254,7 +254,7 @@ export const useUserProfile = defineStore('userProfile', {
     async fetchPermissions(): Promise<void> {
       const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
       const serverPermissions = [] as string[]
-      const viewSize = 50
+      const viewSize = 200
       let viewIndex = 0
 
       try {

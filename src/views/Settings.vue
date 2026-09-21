@@ -287,7 +287,7 @@ function setBarcodeIdentificationPref(value: any) {
 
 async function updateEComStore(eComStoreId: any) {
   const selectedProductStore = eComStores.value.find((store: any) => store.productStoreId == eComStoreId)
-  await useProductStore().setEComStorePreference(selectedProductStore)
+  await useProductStore().setProductStorePreference(selectedProductStore)
 }
 
 function setProductIdentificationPref(value: string | any, id: string) {
