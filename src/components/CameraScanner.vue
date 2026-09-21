@@ -226,7 +226,7 @@ async function startCamera() {
     detectTorch();
   } catch (err) {
     if (generation !== cameraGeneration) return;
-    console.error('[CameraScanner] Failed to start camera', err);
+    console.error('Camera [Component: CameraScanner] - Failed to start', err);
     cameraError.value = true;
   }
 }
