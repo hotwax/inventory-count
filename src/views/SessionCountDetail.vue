@@ -752,6 +752,7 @@ import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import lockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
+import { createCameraScanProductLookupContext } from '@/services/cameraScanProduct';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
 import CameraScanner from '@/components/CameraScanner.vue';
@@ -1385,11 +1386,11 @@ async function onCameraScan(code: string, quantity: number) {
 async function resolveProductForConfirm(code: string) {
   try {
     const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-    const context = {
-      omsUrl: commonUtil.getOmsURL(),
+    const context = createCameraScanProductLookupContext({
+      maargUrl: commonUtil.getMaargURL(),
       token: commonUtil.getToken(),
       barcodeIdentification,
-    };
+    });
     const productId = await useProductMaster().findProductByIdentification(barcodeIdentification, code, context);
     if (!productId) return null;
     const { product } = await useProductMaster().getById(productId);
@@ -1404,7 +1405,7 @@ async function resolveProductForConfirm(code: string) {
       countedSoFar,
     };
   } catch (err) {
-    console.error('[SessionCountDetail] resolveProductForConfirm failed', err);
+    console.error('Product [Component: SessionCountDetail] - Failed to resolve product for confirmation', err);
     return null;
   }
 }
