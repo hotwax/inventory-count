@@ -42,15 +42,15 @@
               <p v-else>{{ translate("Not set") }}</p>
             </ion-label>
           </ion-item>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !useUserProfile().hasPermission(Actions.APP_START_FUTURE_COUNT))" data-testid="count-start-counting-btn">
+          <ion-button v-if="isYetToStart(count)" expand="block" size="default" class="ion-margin" @click="markInProgress(count.workEffortId)" :loading="loadingWorkEffortId === count.workEffortId" :disabled="loadingWorkEffortId === count.workEffortId || (isPlannedForFuture(count) && !useUserProfile().hasPermission(Actions.APP_START_FUTURE_COUNT))" data-testid="count-start-counting-btn">
             {{ translate("Start counting") }}
           </ion-button>
-          <div class="ion-text-center" v-if="count.statusId === 'CYCLE_CNT_CREATED' && isPlannedForFuture(count)" data-testid="count-future-start-warning">
+          <div class="ion-text-center" v-if="isYetToStart(count) && isPlannedForFuture(count)" data-testid="count-future-start-warning">
             <ion-note color="warning">
               {{ translate("This count is scheduled to start") }} {{ getTimeUntil(count.estimatedStartDate) }}
             </ion-note>
           </div>
-          <ion-button v-if="count.statusId === 'CYCLE_CNT_CREATED'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-preview-btn">
+          <ion-button v-if="isYetToStart(count)" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-preview-btn">
             {{ translate("Preview count") }}
           </ion-button>
           <ion-button v-if="count.statusId === 'CYCLE_CNT_IN_PRGS'" expand="block" size="default" fill="outline" class="ion-margin" @click="goToCountProgressReview(count.workEffortId, $event)" :disabled="!count.sessions?.length" data-testid="count-review-btn">
@@ -192,6 +192,20 @@ let isLoading = ref(false);
 const pageIndex = ref(0);
 const pageSize = 250;
 
+// With INV_COUNT_APPROVAL a count only reaches the store once approved; without it, created counts
+// come straight through as before.
+const hasApprovalPermission = computed(() => useUserProfile().hasPermission(Actions.APP_INV_COUNT_APPROVAL));
+
+const storeCountStatuses = computed(() => hasApprovalPermission.value
+  ? "CYCLE_CNT_APPROVED,CYCLE_CNT_IN_PRGS"
+  : "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS");
+
+// A count that has not started yet: the status the store acts on before counting begins. The status
+// flow allows both CYCLE_CNT_CREATED and CYCLE_CNT_APPROVED to move to CYCLE_CNT_IN_PRGS.
+function isYetToStart(count) {
+  return count.statusId === 'CYCLE_CNT_CREATED' || count.statusId === 'CYCLE_CNT_APPROVED';
+}
+
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
 const isScrollingEnabled = ref(false);
 const infiniteScrollRef = ref({});
@@ -271,7 +285,7 @@ async function getCycleCounts(reset = false) {
     pageSize: pageSize,
     pageIndex: pageIndex.value,
     facilityId: currentFacility.value.facilityId,
-    statusId: "CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS",
+    statusId: storeCountStatuses.value,
     statusId_op: 'in',
     thruDate_op: 'empty'
   };

@@ -5,6 +5,8 @@ import 'vue-router'
 import Tabs from '@/views/Tabs.vue';
 import Assigned from "@/views/Assigned.vue";
 import AssignedDetail from "@/views/AssignedDetail.vue";
+import Draft from "@/views/Draft.vue";
+import DraftDetail from "@/views/DraftDetail.vue";
 import PendingReview from '@/views/PendingReview.vue';
 import PendingReviewDetail from '@/views/PendingReviewDetail.vue';
 import Settings from "@/views/Settings.vue";
@@ -15,7 +17,7 @@ import Closed from "@/views/Closed.vue";
 import StorePermissions from "@/views/StorePermissions.vue";
 import ClosedDetail from "@/views/ClosedDetail.vue";
 import ExportHistory from "@/views/ExportHistory.vue";
-import { addCircleOutline, createOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
+import { addCircleOutline, createOutline, documentTextOutline, storefrontOutline, mailUnreadOutline, receiptOutline, shieldCheckmarkOutline, settingsOutline } from "ionicons/icons";
 import PreCountedItems from "@/views/PreCountedItems.vue";
 import CountProgressReview from "@/views/CountProgressReview.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -45,6 +47,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
+      // Approvers start on Draft, since that is where a count begins its life for them
+      if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_APPROVAL)) {
+        return "/draft"
+      }
       if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN)) {
         return "/assigned"
       }
@@ -86,6 +92,29 @@ const routes: Array<RouteRecordRaw> = [
       },
     ],
     beforeEnter: authGuard,
+  },
+  {
+    path: '/draft',
+    name: 'Draft',
+    component: Draft,
+    beforeEnter: authGuard,
+    meta: {
+      permissionId: Actions.APP_INV_COUNT_APPROVAL,
+      showInMenu: true,
+      title: "Draft",
+      iosIcon: documentTextOutline,
+      mdIcon: documentTextOutline,
+    }
+  },
+  {
+    path: '/draft/:workEffortId',
+    name: 'DraftDetail',
+    component: DraftDetail,
+    beforeEnter: authGuard,
+    props: true,
+    meta: {
+      permissionId: Actions.APP_INV_COUNT_APPROVAL
+    }
   },
   {
     path: '/assigned',
