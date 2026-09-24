@@ -432,6 +432,7 @@ import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref, nextTick } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
@@ -468,6 +469,41 @@ async function updateMode(event: any) {
 }
 
 const currentFacility = computed(() => useProductStore().getCurrentFacility);
+
+onBeforeRouteLeave(async () => {
+  const hasUnsavedChanges = events.value.length > 0 || handCountedProducts.value.length > 0;
+  if (!hasUnsavedChanges) return true;
+
+  let canLeave = false;
+  const alert = await alertController.create({
+    header: translate("Leave this page"),
+    message: translate("Any edits made on this page will be lost."),
+    buttons: [
+      {
+        text: translate("STAY"),
+        handler: () => {
+          canLeave = false;
+        }
+      },
+      {
+        text: translate("LEAVE"),
+        handler: () => {
+          canLeave = true;
+        }
+      }
+    ]
+  });
+
+  await alert.present();
+  await alert.onDidDismiss();
+
+  if (canLeave) {
+    await useProductMaster().clearVarianceLogsAndAdjustments();
+    handCountedProducts.value = [];
+  }
+
+  return canLeave;
+});
 const isSearching = ref(false);
 const searchedProductString = ref('');
 const searchedProducts = ref<Array<any>>([]);
