@@ -18,6 +18,8 @@ log.txt
 npm-debug.log*
 
 /.idea
+android/.gradle
+android/.idea
 /.ionic
 /.sass-cache
 /.sourcemaps
@@ -26,6 +28,13 @@ npm-debug.log*
 /coverage
 /dist
 /node_modules
+/playwright-report
+/test-results
+/playwright/playwright-report
+/playwright/test-results
+/playwright/screenshots
+/playwright/.auth
+/screenshots
 /platforms
 /plugins
 /www
