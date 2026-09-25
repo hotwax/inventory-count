@@ -420,7 +420,7 @@
       </ion-content>
     </ion-modal>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
-    <ion-footer v-if="mode === 'scan'" class="mobile-action-bar">
+    <ion-footer v-if="mode === 'scan'" class="ion-display-lg-none">
       <ion-toolbar>
         <ion-item class="scan" lines="none">
           <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
@@ -452,7 +452,7 @@ import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
 import { Subscription, from } from 'rxjs';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
-import backgroundAggregationUrl from '@/workers/backgroundAggregation?worker&url';
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
 import type { Remote } from 'comlink';
 
 const mode = ref<'scan' | 'count'>('scan');
@@ -658,7 +658,7 @@ onIonViewDidEnter(async () => {
     from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
-  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(backgroundAggregationUrl, import.meta.url))
+  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
   aggregationWorker = bgWorker.worker
   aggregationWorkerApi = bgWorker.api
 
@@ -1387,9 +1387,4 @@ main.count {
   }
 }
 
-@media (min-width: 992px) {
-  .mobile-action-bar {
-    display: none !important;
-  }
-}
 </style>

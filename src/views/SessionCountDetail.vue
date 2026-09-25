@@ -752,7 +752,7 @@ import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
-import lockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
+import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { createCameraScanProductLookupContext } from '@/services/cameraScanProduct';
@@ -766,7 +766,6 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import backgroundAggregationUrl from '../workers/backgroundAggregation.ts?worker&url';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
 import Actions from "@/authorization/actions";
 import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
@@ -1130,7 +1129,7 @@ onIonViewDidEnter(async () => {
     );
 
     // Start the background aggregation worker and schedule periodic aggregation
-    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(backgroundAggregationUrl, import.meta.url))
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
@@ -1540,7 +1539,7 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(lockHeartbeatWorkerUrl, import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1599,7 +1598,7 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(lockHeartbeatWorkerUrl, import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }

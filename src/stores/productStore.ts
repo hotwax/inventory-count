@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
-
+import { useProductMaster } from '@/composables/useProductMaster'
+import { useUserProfile } from './userProfileStore'
 import { translate } from '@common'
 import Actions from "@/authorization/actions"
 
@@ -26,25 +27,27 @@ export const useProductStore = defineStore('productStore', {
   }),
 
   getters: {
-    getCurrentProductStore(state): any { return state.currentProductStore; },
-    getProductStores(state): any[] { return state.productStores; },
-    getStatusDescriptions(state): any[] { return state.statusDesc; },
-    getStatusDescription(state): (statusId: string) => string {
-      return (statusId: string) => {
-        const found = state.statusDesc.find((status: any) => status.statusId === statusId)
-        return found?.description || statusId
-      }
+    getCurrentProductStore: (state) => state.currentProductStore,
+    getProductStores: (state) => state.productStores,
+    getStatusDescriptions: (state) => state.statusDesc,
+    getStatusDescription: (state) => (statusId: string) => {
+      const found = state.statusDesc.find((status: any) => status.statusId === statusId)
+      return found?.description || statusId
     },
-    getFacilities(state): any[] { return state.facilities; },
-    getCurrentFacility(state): any { return state.currentFacility; },
-    getProductStoreSettings(state): any { return state.settings; },
-    getForceScan(state): boolean { return state.settings.forceScan; },
-    getBarcodeIdentificationPref(state): string { return state.settings.productIdentifier.barcodeIdentificationPref; },
-    getProductIdentificationPref(state): any { return state.settings.productIdentifier.productIdentificationPref; },
-    getProductIdentificationOptions(state): any[] { return state.settings.productIdentifier.productIdentificationOptions; },
-    getGoodIdentificationOptions(state): any[] { return state.settings.productIdentifier.goodIdentificationOptions; },
-    getPrimaryId(state): string { return state.settings.productIdentifier.productIdentificationPref.primaryId || 'SKU'; },
-    getSecondaryId(state): string { return state.settings.productIdentifier.productIdentificationPref.secondaryId || 'productId'; }
+
+    getFacilities: (state) => state.facilities,
+    getCurrentFacility: (state) => state.currentFacility,
+
+    getProductStoreSettings: (state) => state.settings,
+    getForceScan: (state) => state.settings.forceScan,
+    getBarcodeIdentificationPref: (state) => state.settings.productIdentifier.barcodeIdentificationPref,
+
+    // Shortcuts for productIdentifier nested object
+    getProductIdentificationPref: (state) => state.settings.productIdentifier.productIdentificationPref,
+    getProductIdentificationOptions: (state) => state.settings.productIdentifier.productIdentificationOptions,
+    getGoodIdentificationOptions: (state) => state.settings.productIdentifier.goodIdentificationOptions,
+    getPrimaryId: (state) => state.settings.productIdentifier.productIdentificationPref.primaryId || 'SKU',
+    getSecondaryId: (state) => state.settings.productIdentifier.productIdentificationPref.secondaryId || 'productId'
   },
 
   actions: {
@@ -116,8 +119,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async fetchUserFacilities(): Promise<void> {
-      const { useUserProfile } = await import('./userProfileStore');
+    async fetchUserFacilities() {
       const userStore = useUserProfile();
       const partyId = userStore.getUserProfile?.partyId;
       const isAdminUser = userStore.hasPermission(Actions.APP_INV_COUNT_ADMIN);
@@ -248,9 +250,8 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async fetchProductStores(): Promise<void> {
+    async fetchProductStores() {
       try {
-        const { useUserProfile } = await import('./userProfileStore');
         const isAdminUser = useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
         const pageSize = 200;
         let productStoreFilters: any = {};
@@ -308,12 +309,11 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    setCurrent(productStore: any): void {
+    setCurrent(productStore: any) {
       this.currentProductStore = productStore
     },
 
-    async fetchProductStorePreference(): Promise<void> {
-      const { useUserProfile } = await import('./userProfileStore');
+    async fetchProductStorePreference() {
       const userStore = useUserProfile();
       try {
         const preferredStoreResp = await api({
@@ -337,8 +337,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async setProductStorePreference(payload: any): Promise<void> {
-      const { useUserProfile } = await import('./userProfileStore');
+    async setProductStorePreference(payload: any) {
       const userStore = useUserProfile();
       try {
         await api({
@@ -360,12 +359,12 @@ export const useProductStore = defineStore('productStore', {
     },
 
     /** ---------- Status Descriptions ---------- */
-    setStatusDescriptions(statuses: any[]): void {
+    setStatusDescriptions(statuses: any[]) {
       this.statusDesc = statuses || []
     },
 
     /** ---------- Product Identification Pref ---------- */
-    async setDxpProductIdentificationPref(id: string, value: string, eComStoreId: string): Promise<void> {
+    async setDxpProductIdentificationPref(id: string, value: string, eComStoreId: string) {
       const productIdentificationPref = JSON.parse(
         JSON.stringify(this.getProductIdentificationPref)
       )
@@ -385,7 +384,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getDxpIdentificationPref(eComStoreId: string): Promise<void> {
+    async getDxpIdentificationPref(eComStoreId: string) {
       if (!eComStoreId) {
         this.settings.productIdentifier.productIdentificationPref = {
           primaryId: 'productId',
@@ -396,7 +395,7 @@ export const useProductStore = defineStore('productStore', {
       this.settings.productIdentifier.productIdentificationPref = await this.fetchProductIdentificationPref(eComStoreId)
     },
 
-    async prepareProductIdentifierOptions(): Promise<void> {
+    async prepareProductIdentifierOptions() {
       const staticOptions = [
         { goodIdentificationTypeId: 'productId', description: 'Product ID' },
         { goodIdentificationTypeId: 'groupId', description: 'Group ID' },
@@ -416,7 +415,7 @@ export const useProductStore = defineStore('productStore', {
       this.settings.productIdentifier.goodIdentificationOptions = fetchedOptions
     },
 
-    async getSettings(productStoreId: string): Promise<void> {
+    async getSettings(productStoreId: string) {
       try {
         const resp = await api({
           url: `admin/productStores/${productStoreId}/settings`,
@@ -446,7 +445,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async setProductStoreSetting(key: string, value: any, productStoreId: string): Promise<void> {
+    async setProductStoreSetting(key: string, value: any, productStoreId: string) {
       const keyToEnum: Record<string, string> = {
         forceScan: 'INV_FORCE_SCAN',
         barcodeIdentificationPref: 'BARCODE_IDEN_PREF'
@@ -479,7 +478,7 @@ export const useProductStore = defineStore('productStore', {
 
 
     /** ---------- ProductStoreSettings Functions ---------- */
-    async getProductIdentifications(productStoreId: string): Promise<any> {
+    async getProductIdentifications(productStoreId: string) {
       try {
         const resp = await api({
           url: `admin/productStores/${productStoreId}/settings`,
@@ -502,7 +501,7 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getProductIdentifierSettings(): Promise<void> {
+    async getProductIdentifierSettings() {
       try {
         const productStoreId = this.currentProductStore?.productStoreId
         if (!productStoreId) throw new Error('No current product store selected')
@@ -517,7 +516,6 @@ export const useProductStore = defineStore('productStore', {
 
     async getProductIdentificationValue(productId: string, type: string): Promise<any> {
       if (!type || !productId) return undefined
-      const { useProductMaster } = await import('@/composables/useProductMaster')
       const productMaster = useProductMaster()
       try {
         const { product } = await productMaster.getById(productId)
@@ -532,11 +530,11 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    setCurrentFacility(facility: any): void {
+    setCurrentFacility(facility: any) {
       this.currentFacility = facility
     },
 
-    async fetchFacilityPreference(): Promise<void> {
+    async fetchFacilityPreference() {
       if (!this.facilities.length) return;
       let facilityId: string | undefined;
       try {
@@ -555,10 +553,7 @@ export const useProductStore = defineStore('productStore', {
             method: "GET",
             params: {
               pageSize: 1,
-              userId: (await (async () => {
-                const { useUserProfile } = await import('./userProfileStore');
-                return (useUserProfile() as any).current.userId;
-              })()),
+              userId: useUserProfile().current.userId,
               preferenceKey: "SELECTED_FACILITY"
             },
           }) as any;
@@ -583,9 +578,8 @@ export const useProductStore = defineStore('productStore', {
       this.currentFacility = this.facilities[0];
     },
 
-    async setFacilityPreference(payload: any): Promise<void> {
-      const { useUserProfile } = await import('./userProfileStore');
-      const userProfileStore = useUserProfile() as any;
+    async setFacilityPreference(payload: any) {
+      const userProfileStore = useUserProfile()
       const userProfile = userProfileStore.getUserProfile
       try {
         await userProfileStore.setUserPreference({

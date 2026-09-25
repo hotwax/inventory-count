@@ -1,7 +1,6 @@
 /// <reference types="vitest" />
 
 import legacy from '@vitejs/plugin-legacy'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig, loadEnv } from 'vite'
@@ -23,7 +22,6 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       legacy(),
-      basicSsl(),
       VitePWA({
         registerType: "autoUpdate",
         selfDestroying: true,
@@ -47,7 +45,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom'
     },
-      server: {
+    server: {
       port: 8100
     }
   }

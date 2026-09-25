@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
+import { useProductStore } from "./productStore";
 const checkPermission = (permissions: any[], permissionId: string): boolean => {
   if (!permissionId) return true;
   if (permissionId.includes(' OR ')) {
@@ -75,19 +76,19 @@ export const useUserProfile = defineStore('userProfile', {
     getListPageFilters: (state) => (segment: string) => {
       return state.uiFilters[segment] || {}
     },
-    getPwaState(state): any { return state.pwaState; },
-    getDetailPageFilters(state): any { return state.uiFilters.reviewDetail; },
-    getSessionDetailFilters(state): any { return state.uiFilters.sessionDetail; },
+    getPwaState: (state) => state.pwaState,
+    getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
+    getSessionDetailFilters: (state) => state.uiFilters.sessionDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
       return checkPermission(state.permissions, permissionId);
     }
   },
 
   actions: {
-    async setOms(oms: any): Promise<void> {
+    async setOms(oms: any) {
       this.oms = oms;
     },
-    async setLocale(locale: string): Promise<void> {
+    async setLocale(locale: string) {
       let newLocale, matchingLocale
       newLocale = this.locale
       // handling if locale is not coming from userProfile
@@ -108,7 +109,7 @@ export const useUserProfile = defineStore('userProfile', {
         this.locale = newLocale
       }
     },
-    async setDxpUserTimeZone(tzId: string): Promise<any> {
+    async setDxpUserTimeZone(tzId: string) {
       // Do not make any api call if the user clicks the same timeZone again that is already selected
       if(this.current.timeZone === tzId) {
         return;
@@ -138,7 +139,7 @@ export const useUserProfile = defineStore('userProfile', {
         return Promise.reject('')
       }
     },
-    async getDxpAvailableTimeZones(): Promise<void> {
+    async getDxpAvailableTimeZones() {
       // Do not fetch timeZones information, if already available
       if(this.timeZones.length) {
         return;
@@ -157,24 +158,24 @@ export const useUserProfile = defineStore('userProfile', {
         console.error('Error', err)
       }
     },
-    updateTimeZone(tzId: string): void {
+    updateTimeZone(tzId: string) {
       this.current.timeZone = tzId
     },
-    getPermissions(): string[] {
+    getPermissions() {
       return this.permissions;
     },
     /** Initialize after login */
     setAppVersion(appVersion: string | undefined) {
       this.appVersion = appVersion
     },
-    async setUserProfile(profile: any): Promise<void> {
+    async setUserProfile(profile: any) {
       this.current = profile
     },
 
-    setDeviceId(deviceId: string): void {
+    setDeviceId(deviceId: string) {
       this.deviceId = deviceId
     },
-    updatePwaState(payload: any): void {
+    updatePwaState(payload: any) {
       this.pwaState.registration = payload.registration;
       this.pwaState.updateExists = payload.updateExists;
     },
@@ -204,15 +205,14 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
 
-    async postLogin(): Promise<void> {
+    async postLogin() {
       try {
         await this.fetchUserProfile()
         await this.fetchPermissions();
 
         this.oms = cookieHelper().get("oms") || '';
         
-        const { useProductStore } = await import('./productStore');
-        const productStore = useProductStore() as any;
+        const productStore = useProductStore();
         const { useInventoryCountRun } = await import('@/composables/useInventoryCountRun');
         const { db, initialize } = await import('@/services/appInitializer');
         
@@ -239,9 +239,9 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
 
-    async postLogout(): Promise<void> {
+    async postLogout() {
       const { useProductStore } = await import('./productStore');
-      (useProductStore() as any).$reset();
+      useProductStore().$reset();
 
       // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
       // session state), so a plain $reset() is fine here.
@@ -251,7 +251,7 @@ export const useUserProfile = defineStore('userProfile', {
     /**
      * Get user-level permissions
      */
-    async fetchPermissions(): Promise<void> {
+    async fetchPermissions() {
       const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
       const serverPermissions = [] as string[]
       const viewSize = 200
@@ -290,17 +290,17 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
 
-    updateUiFilter(page: string, key: string, value: any): void {
+    updateUiFilter(page: string, key: string, value: any) {
       if (!this.uiFilters[page]) this.uiFilters[page] = {}
       this.uiFilters[page][key] = value
     },
 
     /** For SmartFilterSortBar threshold updates */
-    updateThreshold(newConfig: any): void {
+    updateThreshold(newConfig: any) {
       this.uiFilters.reviewDetail.threshold = newConfig
     },
 
-    async getUserPreference(payload: { token?: string, baseURL?: string, preferenceKey: string, userId: string }): Promise<any> {
+    async getUserPreference(payload: { token?: string, baseURL?: string, preferenceKey: string, userId: string }) {
       try {
         let params: any = {
           url: "admin/user/preferences",
@@ -332,7 +332,7 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
 
-    async setUserPreference(payload: { userId: string, userPrefTypeId: string, userPrefValue: any }): Promise<any> {
+    async setUserPreference(payload: { userId: string, userPrefTypeId: string, userPrefValue: any }) {
       try {
         const resp = await api({
           url: "admin/user/preferences",
