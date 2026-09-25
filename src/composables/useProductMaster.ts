@@ -189,7 +189,7 @@ async function findProductByIdentification(idType: string, value: string, contex
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'admin/runSolrQuery',
+      url: context.omsUrl.includes('/api') ? 'solr-query' : 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -634,4 +634,3 @@ export function useProductMaster() {
     removeUnmatchedInventoryAdjustment
   }
 }
-
