@@ -3,7 +3,6 @@ import App from './App.vue'
 import router from './router';
 import { DateTime } from 'luxon';
 
-
 import { IonicVue } from '@ionic/vue';
 
 /* Core CSS required for Ionic components to work properly */
@@ -100,7 +99,6 @@ app.config.globalProperties.$filters = {
   }
 }
 
-
 router.isReady().then(async () => {
   try {
     // Checking for oms and token in router, as when coming from launchpad with token and oms in url
@@ -115,6 +113,10 @@ router.isReady().then(async () => {
     }
   } catch (error) {
     console.error('[IndexedDB] Failed to open CommonDB:', error)
+  }
+  if (import.meta.env.DEV) {
+    const { tryDevAutoLogin } = await import('@common/dev/autoLogin');
+    await tryDevAutoLogin();
   }
   app.mount('#app');
 });
