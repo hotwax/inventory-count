@@ -93,18 +93,10 @@ const createSessionOnServer = async (payload: any): Promise<any> => {
   });
 };
 
-/** System message–level operations (imports, errors, uploads) */
-const getCycleCountImportSystemMessages = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages`,
-    method: "get",
-    params: payload
-  });
-};
-
+/** Data Manager log–level operations (imports, errors, uploads), served by maarg-util's admin APIs */
 const cancelCycleCountFileProcessing = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/dataManagerLogs/${payload.logId}`,
+    url: `admin/dataManager/logs/${payload.logId}`,
     method: "put",
     data: payload
   });
@@ -112,7 +104,7 @@ const cancelCycleCountFileProcessing = async (payload: any): Promise<any> => {
 
 const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/dataManagerLogs/${payload.dataManagerLogId}/downloadFile`,
+    url: `admin/dataManager/downloadDataManagerFile`,
     method: "get",
     params: payload
   });
@@ -209,12 +201,12 @@ export function useInventoryCountRun() {
     return { workEfforts, total, isScrollable };
   }
 
-  /** Fetch cycle count import system messages (24h window) */
+  /** Fetch cycle count import Data Manager logs (24h window) */
   async function getCycleCntImportDataManagerLogs(params?: any): Promise<any[]> {
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/dataManagerLogs',
+        url: 'admin/dataManager/details',
         method: 'get',
         params: {
           ...params,
@@ -224,10 +216,10 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!commonUtil.hasError(resp)) return resp?.data;
+      if (!commonUtil.hasError(resp)) return resp?.data?.dataManagerLogs ?? [];
       throw resp?.data;
     } catch (err) {
-      logger.error('Error fetching system messages:', err);
+      logger.error('Error fetching data manager logs:', err);
       return [];
     }
   }
@@ -325,7 +317,6 @@ export function useInventoryCountRun() {
     getSessionsCount,
     updateWorkEffort,
     createSessionOnServer,
-    getCycleCountImportSystemMessages,
     cancelCycleCountFileProcessing,
     getCycleCountUploadedFileData,
     getExportedCycleCountsFileData,

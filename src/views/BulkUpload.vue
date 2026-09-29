@@ -6,6 +6,11 @@
           <ion-menu-button data-testid="settings-menu-btn" />
         </ion-buttons>
         <ion-title data-testid="bulk-upload-page-title">{{ translate("Draft bulk") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="viewUploadGuide" data-testid="bulk-upload-guide-btn">
+            <ion-icon slot="icon-only" :icon="bookOutline" />
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -65,14 +70,14 @@
                 {{ translate("Recently uploaded counts") }}
               </ion-label>
           </ion-list-header>
-          <ion-item v-for="dataManagerLog in dataManagerLogs" :key="systemMessage.systemMessageId" :data-testid="'bulk-upload-recent-item-' + dataManagerLog.logId">
+          <ion-item v-for="dataManagerLog in dataManagerLogs" :key="dataManagerLog.logId" :data-testid="'bulk-upload-recent-item-' + dataManagerLog.logId">
             <ion-label data-testid="bulk-upload-recent-item-label">
               <p class="overline" data-testid="bulk-upload-recent-item-id">{{ dataManagerLog.logId }}</p>
-              <h2 data-testid="bulk-upload-recent-item-filename">{{ extractFilename(dataManagerLog?.contents.filter(content => content.logContentTypeEnumId === 'DmcntImported')[0].fileName ) }}</h2>
+              <h2 data-testid="bulk-upload-recent-item-filename">{{ dataManagerLog.fileName }}</h2>
             </ion-label>
             <div slot="end" class="system-message-action" data-testid="bulk-upload-recent-item-actions">
               <ion-note data-testid="bulk-upload-recent-item-status">{{ getFileProcessingStatus(dataManagerLog) }}</ion-note>
-              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, dataManagerLog)" :data-testid="'bulk-upload-recent-item-popover-btn-' + systemMessage.systemMessageId">
+              <ion-button size="default" fill="clear" color="medium" @click="openUploadActionPopover($event, dataManagerLog)" :data-testid="'bulk-upload-recent-item-popover-btn-' + dataManagerLog.logId">
                 <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
               </ion-button>
             </div>
@@ -91,7 +96,7 @@
             <ion-icon slot="end" />
             {{ translate("Cancel") }}
           </ion-item>
-          <ion-item v-if="selectedDataManagerLog?.statusId === 'DmlsCrashed' || selectedDataManagerLog?.statusId === 'DmlsFailed' || selectedDataManagerLog.failedRecordCount > 0" button @click="viewFile(true)" data-testid="bulk-upload-view-error-btn">
+          <ion-item v-if="selectedDataManagerLog?.statusId === 'DmlsCrashed' || selectedDataManagerLog?.statusId === 'DmlsFailed' || selectedDataManagerLog?.failedRecordCount > 0" button @click="viewFile(true)" data-testid="bulk-upload-view-error-btn">
             <ion-icon slot="end" />
             {{ translate("View error records") }}
           </ion-item>
@@ -100,49 +105,14 @@
             {{ translate("View file") }}
           </ion-item>
         </ion-list>
-
-        <ion-modal :is-open="isErrorModalOpen" :keep-contents-mounted="true" @did-dismiss="closeErrorModal" data-testid="bulk-upload-error-modal">
-          <ion-header>
-            <ion-toolbar>
-              <ion-buttons slot="start">
-                <ion-button @click="closeErrorModal" data-testid="bulk-upload-error-modal-close-btn">
-                  <ion-icon :icon="close" />
-                </ion-button>
-              </ion-buttons>
-              <ion-title data-testid="bulk-upload-error-modal-title">{{ translate("Import Error") }}</ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <ion-content data-testid="bulk-upload-error-modal-content">
-            <ion-list data-testid="bulk-upload-error-modal-list">
-              <ion-item lines="full" data-testid="bulk-upload-error-modal-guide-item">
-                <ion-icon :icon="bookOutline" slot="start" />
-                {{ translate("View upload guide") }}
-                <ion-button size="default" color="medium" fill="clear" slot="end" @click="viewUploadGuide" data-testid="bulk-upload-error-modal-guide-btn">
-                  <ion-icon slot="icon-only" :icon="openOutline" />
-                </ion-button>
-              </ion-item>
-
-              <ion-item lines="none" data-testid="bulk-upload-error-modal-msg-item">
-                <ion-label class="ion-text-wrap" data-testid="bulk-upload-error-modal-msg">
-                  <template v-if="dataManagerError?.errorText">
-                    {{ dataManagerError.errorText }}
-                  </template>
-                  <template v-else>
-                    {{ translate("No data found") }}
-                  </template>
-                </ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-content>
-        </ion-modal>
       </ion-content>
     </ion-popover>
   </ion-page>
 </template>
 
 <script setup>
-import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonMenuButton } from '@ionic/vue';
-import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonPopover, IonButtons, IonMenuButton } from '@ionic/vue';
+import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, downloadOutline } from "ionicons/icons";
 import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -207,8 +177,6 @@ const templateRows = [
 const isUploadPopoverOpen = ref(false);
 const popoverEvent = ref(null);
 const selectedDataManagerLog = ref(null);
-const isErrorModalOpen = ref(false);
-const dataManagerError = ref({});
 
 function openUploadActionPopover(event, dataManagerLog) {
   isUploadPopoverOpen.value = true;
@@ -218,22 +186,17 @@ function openUploadActionPopover(event, dataManagerLog) {
 function closeUploadPopover() {
   isUploadPopoverOpen.value = false;
 }
-
-function closeErrorModal() {
-  isErrorModalOpen.value = false;
-  closeUploadPopover();
-}
 function viewUploadGuide() {
   window.open("https://docs.hotwax.co/documents/retail-operations/inventory/cycle-count/bulk-upload", "_blank", "noreferrer");
 }
 
 async function viewFile(isError) {
-  try {    
-    const { logContentId, fileName } = isError ? selectedDataManagerLog.value.contents.filter(content => content.logContentTypeEnumId === 'DmcntError')[0]
-      : selectedDataManagerLog.value.contents.filter(content => content.logContentTypeEnumId === 'DmcntImported')[0];
+  try {
+    const logContentId = isError ? selectedDataManagerLog.value?.errorLogContentId : selectedDataManagerLog.value?.logContentId;
+    const fileName = isError ? selectedDataManagerLog.value?.errorFileName : selectedDataManagerLog.value?.fileName;
 
-    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ logContentId: logContentId });
-    if (!hasError(resp)) downloadCsv(resp.data, fileName);
+    const resp = await useInventoryCountRun().getCycleCountUploadedFileData({ logContentId, configId: selectedDataManagerLog.value?.configId });
+    if (!commonUtil.hasError(resp)) downloadCsv(resp.data.csvData, fileName);
     else throw resp.data;
   } catch (err) {
     commonUtil.showToast(translate("Failed to download uploaded cycle count file."));
@@ -243,16 +206,14 @@ async function viewFile(isError) {
 }
 async function cancelUpload() {
   try {
-    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ logId: selectedDataManagerLog.value?.logId, statusId: "DmlsCancelled" });
-    if (resp?.status === 200) {
-      if (resp.data?.statusChanged === true) {
-        showToast(translate("Cycle count cancelled successfully."));
-      } else {
-        console.error("Failed to cancel import", resp.data);
-        showToast(translate("Failed to cancel import, file might be processed already."));
-      }
+    // Cancellation is cooperative: the running import job periodically checks for the
+    // DmlsCancelRequested status and stops itself, so this only requests the cancel;
+    // the next poll of prepareCycleCountDataManagerLogs() reflects the actual outcome.
+    const resp = await useInventoryCountRun().cancelCycleCountFileProcessing({ logId: selectedDataManagerLog.value?.logId, statusId: "DmlsCancelRequested" });
+    if (!commonUtil.hasError(resp)) {
+      commonUtil.showToast(translate("Cycle count cancellation requested."));
     } else {
-      throw resp;
+      throw resp.data;
     }
     await prepareCycleCountDataManagerLogs();
   } catch (err) {
@@ -269,11 +230,6 @@ async function prepareCycleCountDataManagerLogs() {
 /* ---------- Bulk Upload Logic ---------- */
 function getFilteredFields(fields, required = true) {
   return Object.keys(fields).reduce((row, key) => { if (fields[key].required === required) row[key] = fields[key]; return row; }, {});
-}
-function extractFilename(path) {
-  if (!path) return;
-  const fn = path.substring(path.lastIndexOf("/") + 1);
-  return fn.replace(/_\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}-\d{3}\.csv$/, ".csv");
 }
 function getFileProcessingStatus(dataManagerLog) {
   if (dataManagerLog.statusId === "DmlsFailed" || dataManagerLog.statusId === "DmlsCrashed" || (dataManagerLog.failedRecordCount > 0)) return "error";
@@ -343,7 +299,6 @@ async function save() {
     name: fileName.value
   });
   const fd = new FormData();
-  fd.append("contentFile", data, fileName.value);
   fd.append("contentFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
