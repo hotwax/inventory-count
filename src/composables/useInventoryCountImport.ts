@@ -496,7 +496,8 @@ const createCycleCountFromProducts = async (payload: {
 
   return bulkUploadInventoryCounts({
     data: formData,
-    headers: { "Content-Type": "multipart/form-data;" }
+    headers: { "Content-Type": "multipart/form-data;" },
+    params: { configId: "INV_COUNT_IMPORT" }
   });
 }
 
