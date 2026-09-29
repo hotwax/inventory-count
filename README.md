@@ -1,31 +1,101 @@
+# Inventory Count
+
+## 1. Repository Overview
+- **Logical Name**: Inventory Count (cycle-count)
+- **Business Purpose**: This repository delivers HotWax Commerce’s Inventory/Cycle Count mobile + web application used by store and warehouse teams to execute physical counts. It focuses on creating, running, and reviewing cycle counts, capturing scan events offline, and synchronizing results back to the HotWax OMS for inventory accuracy and variance review. It also supports bulk count imports, session management, and exporting completed count data for operations teams.
+
+## 2. Core Responsibilities & Business Logic
+- **Primary domains / business rules**:
+  - Inventory/Cycle Count execution (Directed vs. Hard Count workflows).
+  - Session lifecycle management (create, lock, release, submit, void).
+  - Scan event capture and aggregation (counted, uncounted, undirected, unmatched).
+  - Bulk upload of count sessions and error reporting.
+  - Product identification and lookup (SKU/UPC/internal identifiers) with cached product/inventory data.
+  - Permissions-driven access to count actions and admin features.
+
+- **Core business logic & workflows**:
+  - **Authentication & permission gating**: users authenticate via token + OMS endpoint, load permissions, and are blocked if they lack the configured app permission. Facility and product store context is loaded on login to scope counts. The app configures product identifier preferences and status descriptions before initializing local storage for offline use.【F:src/stores/authStore.ts†L1-L176】
+  - **Cycle Count work effort lifecycle**: the app lists cycle count work efforts, starts counts, and updates work effort status through the `inventory-cycle-count/cycleCounts/workEfforts` APIs. It also supports navigating into sessions tied to a work effort and initiating new sessions (including cloning sessions for directed counts).【F:src/composables/useInventoryCountRun.ts†L29-L285】【F:src/views/Count.vue†L280-L406】
+  - **Session operations**: sessions can be created, locked/released, submitted, or voided. The app manages session items and supports update/delete flows per item while tracking session locks in OMS data documents.【F:src/composables/useInventoryCountImport.ts†L370-L535】
+  - **Scan event and item aggregation**: scanning produces `scanEvents` that are written to IndexedDB and aggregated into counted/uncounted/undirected/unmatched views. Local storage allows offline counting and later synchronization.【F:src/composables/useInventoryCountImport.ts†L20-L292】
+  - **Bulk upload workflow**: users upload CSV files to create cycle count sessions, review processing errors, and download processed files, all via system message APIs.【F:src/views/BulkUpload.vue†L151-L377】【F:src/composables/useInventoryCountRun.ts†L72-L168】
+  - **Product lookup and inventory snapshot**: product data is cached in IndexedDB and refreshed using Solr queries and OMS inventory data views to support scanning, search, and QOH/ATP visibility while counting.【F:src/composables/useProductMaster.ts†L1-L338】【F:src/composables/useProductMaster.ts†L433-L551】
+
+## 3. Dependencies & Architecture
+- **Tech Stack**:
+  - Vue 3 + Ionic Vue (mobile/web UI) with Capacitor for native builds.
+  - Pinia for state management.
+  - Axios + axios-cache-adapter for API access.
+  - Dexie (IndexedDB) for offline storage and scan event persistence.
+  - Luxon for date/time handling.
+  - CASL for permission evaluation.
+
+- **Dependency Map (App repo)**:
+  - **HotWax OMS API** (primary backend):
+    - `inventory-cycle-count/*` endpoints for work efforts, sessions, uploads, exports, reviews, and diagnostics.【F:src/composables/useInventoryCountRun.ts†L29-L285】【F:src/composables/useInventoryCountImport.ts†L300-L506】
+    - `oms/dataDocumentView` for session locks and inventory snapshots.【F:src/composables/useInventoryCountImport.ts†L455-L469】【F:src/composables/useProductMaster.ts†L474-L511】
+    - `oms/statuses` for cycle count status descriptions.【F:src/composables/useInventoryCountRun.ts†L150-L170】
+    - `admin/serviceJobs/*` for upload job status details.【F:src/composables/useInventoryCountImport.ts†L507-L516】
+  - **Search/Index services**: Solr-backed product queries via `inventory-cycle-count/runSolrQuery` to resolve product identifiers and lists.【F:src/composables/useProductMaster.ts†L43-L178】【F:src/composables/useProductMaster.ts†L255-L368】
+  - **Auth/Launchpad integration**: app login redirects through Launchpad and uses tokenized OMS endpoints defined in environment settings.【F:.env.example†L9-L10】【F:src/stores/authStore.ts†L55-L176】
+
+## 4. Technical Context
+- **Run locally**:
+  1. Install dependencies: `npm install`.
+  2. Copy `.env.example` to `.env` and fill in the required values.
+  3. Start the dev server: `ionic serve` (or `npm run serve`).
+
+- **Environment variables**:
+  - `VUE_APP_PERMISSION_ID` controls the permission required to access the app.
+  - `VUE_APP_LOGIN_URL` and `VUE_APP_EMBEDDED_LAUNCHPAD_URL` configure login and embedded Launchpad URLs.
+  - `VUE_APP_VIEW_SIZE`, `VUE_APP_CACHE_MAX_AGE`, and `VUE_APP_MAPPING_INVCOUNT` control pagination, caching, and CSV import mappings.
+  - See `.env.example` for the full set of supported variables and their defaults.【F:.env.example†L1-L10】
+
+---
+
 ![Inventory Count app](https://user-images.githubusercontent.com/15027245/150728116-1677a5d6-223f-4d65-9c45-2582ed7056dd.png)
 
 
 # Prerequisite
-Ionic CLI - If you don't have the ionic CLI installed, refer [official documentation](https://ionicframework.com/docs/intro/cli) for the installation instructions.
+
+- Node `v22.12.0` or higher
+- `pnpm`
 
 For a high level overview of the project layout take a look at [docs/README.md](docs/README.md).
 
 
 # Build Notes (Users)
 
-1. Download the app from [release](https://github.com/hotwax/inventorycount/releases) page and extract it.
-2. Go to the app directory.
-3. Run following command to download dependencies  
-    `npm i`
-4. Create a `.env` file by taking reference from the `.env.example`.
-5. To run the app in browser use the command: `ionic serve`
+This app is developed and run from the [`accxui`](https://github.com/hotwax/accxui) pnpm workspace. It is not started by running commands inside this app folder directly.
+
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Download the app from the [release](https://github.com/hotwax/inventory-count/releases) page, extract it, and place it at `apps/inventory-count`.
+5. Create a `.env` file in `apps/inventory-count` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter cycle-count dev`
 
 
 # Build Notes (Contributors)
 
-1. Open a Terminal window
-2. Clone app using the command: `git clone https://github.com/hotwax/inventorycount.git <repository-name>`
-3. Go to the <repository-name> directory using command: `cd <repository-name>`
-4. Run following command to download dependencies
-    `npm i`
-5. Create a `.env` file by taking reference from the `.env.example`.
-6. To run the app in browser use the command: `ionic serve`
+1. Open a Terminal window.
+2. Clone the workspace using the command: `git clone https://github.com/hotwax/accxui.git`
+3. Go to the workspace root using command: `cd accxui`
+4. Clone this app under `apps/` using the command:  
+    `git clone https://github.com/hotwax/inventory-count.git apps/inventory-count`
+5. Create a `.env` file in `apps/inventory-count` by taking reference from its `.env.example`.
+6. Run following command from the `accxui` root to download dependencies  
+    `pnpm install`
+7. To run the app in browser use the command from the `accxui` root:  
+    `pnpm --filter cycle-count dev`
+8. To build the app use the command from the `accxui` root:  
+    `pnpm --filter cycle-count build`
+
+Run `pnpm install` from the `accxui` root again whenever you add another app under `apps/`. See the [accxui README](https://github.com/hotwax/accxui/blob/main/README.md) for the full workspace guide.
+
 
 ## Firebase Hosting
 

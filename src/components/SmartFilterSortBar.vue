@@ -1,7 +1,7 @@
 <template>
-  <div class="smart-controls">
+  <div class="smart-controls" data-testid="smart-filter-controls">
     <!-- FILTER ROW -->
-    <ion-list lines="full" class="filters ion-margin">
+    <ion-list lines="full" class="filters ion-margin" data-testid="smart-filter-list">
 
       <!-- SEARCH -->
       <ion-searchbar
@@ -10,6 +10,7 @@
           :value="search"
           @ionInput="handleSearch($event.target.value)"
           :placeholder="placeholderSearch"
+          data-testid="smart-filter-search-input"
       />
 
       <!-- STATUS FILTER -->
@@ -20,6 +21,7 @@
           :label="statusLabel"
           placeholder="All"
           interface="popover"
+          data-testid="smart-filter-status-select"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
           <ion-select-option
@@ -40,6 +42,7 @@
           :label="computedComplianceLabel"
           placeholder="All"
           interface="popover"
+          data-testid="smart-filter-compliance-select"
         >
           <ion-select-option value="all">{{ t("All") }}</ion-select-option>
           <ion-select-option value="acceptable">{{ compliantLabel }}</ion-select-option>
@@ -50,7 +53,7 @@
     </ion-list>
 
     <!-- SORT BAR -->
-    <ion-item-divider color="light" class="sort-row">
+    <ion-item-divider color="light" class="sort-row" data-testid="smart-filter-sort-bar">
 
       <!-- SELECT ALL -->
       <div class="select-left" v-if="showSelect">
@@ -58,6 +61,7 @@
           class="checkbox"
           :checked="isAllSelected"
           @ionChange="toggleSelectAll"
+          data-testid="smart-filter-select-all-checkbox"
         />
         <span v-if="selectedItems?.length" class="selected-count">
           {{ selectedItems.length }} {{ t("selected") }}
@@ -75,6 +79,7 @@
         slot="end"
         :label="sortByLabel"
         interface="popover"
+        data-testid="smart-filter-sort-select"
       >
         <ion-select-option
           v-for="opt in sortOptions"
@@ -88,12 +93,12 @@
     </ion-item-divider>
 
     <!-- INTERNAL THRESHOLD CONFIG MODAL -->
-    <ion-modal :is-open="isThresholdModalOpen" @did-dismiss="closeThresholdModal">
+    <ion-modal :is-open="isThresholdModalOpen" @did-dismiss="closeThresholdModal" data-testid="smart-filter-threshold-modal">
       <ion-header>
         <ion-toolbar>
           <ion-title>{{ t("Configure Threshold") }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button @click="closeThresholdModal">
+            <ion-button @click="closeThresholdModal" data-testid="smart-filter-threshold-close-btn">
               <ion-icon slot="icon-only" :icon="closeOutline" />
             </ion-button>
           </ion-buttons>
@@ -103,7 +108,7 @@
       <ion-content>
         <ion-list>
           <ion-item>
-            <ion-select v-model="tempThreshold.unit" label="Unit" interface="popover">
+            <ion-select v-model="tempThreshold.unit" label="Unit" interface="popover" data-testid="smart-filter-threshold-unit-select">
               <ion-select-option value="units">{{ t("Units") }}</ion-select-option>
               <ion-select-option value="percent">{{ t("Percent") }}</ion-select-option>
             </ion-select>
@@ -116,12 +121,13 @@
               min="0"
               label="Threshold"
               label-placement="floating"
+              data-testid="smart-filter-threshold-value-input"
             />
           </ion-item>
         </ion-list>
 
         <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button @click="saveThreshold">
+          <ion-fab-button @click="saveThreshold" data-testid="smart-filter-threshold-save-btn">
             <ion-icon :icon="checkmarkDoneOutline" />
           </ion-fab-button>
         </ion-fab>
@@ -139,11 +145,13 @@ import {
 } from "@ionic/vue";
 
 import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
-import { translate as t } from "@/i18n";
+import { translate as t } from "@common";
 import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
+import { useProductMaster } from "@/composables/useProductMaster";
 
 const userProfile = useUserProfile();
+const productMaster = useProductMaster();
 
 /* PROPS */
 const props = defineProps({
@@ -256,9 +264,13 @@ function applyFilters() {
   // Search
   const key = search.value.trim().toLowerCase();
   if (props.showSearch && key) {
+    const getPrimary = (item) => item.primaryId || productMaster.primaryId(item.product);
+    const getSecondary = (item) => item.secondaryId || productMaster.secondaryId(item.product);
     results = results.filter(item =>
       item.internalName?.toLowerCase().includes(key) ||
-      item.productIdentifier?.toLowerCase().includes(key)
+      item.productIdentifier?.toLowerCase().includes(key) ||
+      getPrimary(item)?.toLowerCase().includes(key) ||
+      getSecondary(item)?.toLowerCase().includes(key)
     );
   }
 
@@ -283,7 +295,10 @@ function applyFilters() {
   if (props.showSort) {
     const sort = filters.value.sort;
 
-    if (sort === "alphabetic") results.sort((predecessor, successor) => (predecessor.internalName || "").localeCompare(successor.internalName || ""));
+    if (sort === "alphabetic") {
+      const getSortKey = (item) => (item.primaryId || productMaster.primaryId(item.product) || item.internalName || "");
+      results.sort((predecessor, successor) => getSortKey(predecessor).localeCompare(getSortKey(successor)));
+    }
     if (sort === "variance-asc") results.sort((predecessor, successor) => Math.abs(predecessor.proposedVarianceQuantity) - Math.abs(successor.proposedVarianceQuantity));
     if (sort === "variance-desc") results.sort((predecessor, successor) => Math.abs(successor.proposedVarianceQuantity) - Math.abs(predecessor.proposedVarianceQuantity));
   }

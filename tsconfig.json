@@ -12,12 +12,16 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "types": [
-      "webpack-env"
-    ],
+    "types": ["pinia"],
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@common": [
+        "../../common/index.ts"
+      ],
+      "@common/*": [
+        "../../common/*"
       ]
     },
     "lib": [

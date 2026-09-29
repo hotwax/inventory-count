@@ -1,7 +1,5 @@
-import api from '@/services/RemoteAPI';
-import { hasError } from '@/stores/authStore';
+import { api, commonUtil, logger } from '@common';
 import { DateTime } from 'luxon';
-import logger from '@/logger';
 import { useProductStore } from '@/stores/productStore';
 
 async function loadStatusDescription() {
@@ -179,7 +177,7 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || process.env.VUE_APP_VIEW_SIZE,
+          pageSize: params.pageSize || import.meta.env.VITE_VIEW_SIZE,
           pageIndex: params.pageIndex || 0,
           facilityId: params.facilityId,
           statusId: params.statusId,
@@ -187,7 +185,7 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         const fetched = resp?.data.cycleCounts;
         const totalCount = resp?.data.cycleCountsCount || 0;
 
@@ -226,7 +224,7 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!hasError(resp)) return resp?.data;
+      if (!commonUtil.hasError(resp)) return resp?.data;
       throw resp?.data;
     } catch (err) {
       logger.error('Error fetching system messages:', err);
@@ -247,7 +245,7 @@ export function useInventoryCountRun() {
         params
       });
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         cycleCounts = resp?.data.cycleCounts;
         total = resp?.data.cycleCountsCount || 0;
         isScrollable = cycleCounts.length < total;
@@ -270,7 +268,7 @@ export function useInventoryCountRun() {
         url: 'inventory-cycle-count/cycleCounts/workEfforts',
         method: 'get',
         params: {
-          pageSize: params.pageSize || Number(process.env.VUE_APP_VIEW_SIZE) || 20,
+          pageSize: params.pageSize || Number(import.meta.env.VITE_VIEW_SIZE) || 20,
           pageIndex: params.pageIndex || 0,
           statusId: params.statusId || 'CYCLE_CNT_CREATED,CYCLE_CNT_IN_PRGS',
           statusId_op: params.statusId_op || 'in',
@@ -281,7 +279,7 @@ export function useInventoryCountRun() {
         }
       })
 
-      if (!hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
         return {
           data: resp?.data.cycleCounts,
           total: resp?.data.cycleCountsCount || 0

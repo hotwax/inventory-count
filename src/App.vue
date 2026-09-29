@@ -1,17 +1,17 @@
 <template>
-  <ion-app v-if="showMenu">
+  <ion-app v-if="showMenu" data-testid="app-root">
     <IonSplitPane content-id="main-content" when="lg">
-      <ion-menu content-id="main-content" type="overlay">
+      <ion-menu content-id="main-content" type="overlay" data-testid="app-side-menu">
         <ion-header>
           <ion-toolbar>
-            <ion-title>{{ translate("Cycle Count") }}</ion-title>
+            <ion-title data-testid="app-title">{{ translate("Cycle Count") }}</ion-title>
           </ion-toolbar>
         </ion-header>
 
         <ion-content>
-          <ion-list id="receiving-list">
+          <ion-list id="receiving-list" data-testid="app-menu-list">
             <ion-menu-toggle
-              auto-hide="false"
+              :auto-hide="false"
               v-for="(page, index) in visibleMenuItems"
               :key="index"
             >
@@ -20,6 +20,7 @@
                 router-direction="root"
                 :router-link="page.path"
                 :class="{ selected: selectedIndex === index }"
+                :data-testid="'app-menu-item-' + page.path.substring(1)"
               >
                 <ion-icon :ios="page.meta.iosIcon" :md="page.meta.mdIcon" slot="start" />
                 <ion-label>{{ translate(page.meta.title || page.name) }}</ion-label>
@@ -29,12 +30,12 @@
         </ion-content>
       </ion-menu>
 
-      <ion-router-outlet id="main-content"></ion-router-outlet>
+      <ion-router-outlet id="main-content" data-testid="app-router-outlet"></ion-router-outlet>
     </IonSplitPane>
   </ion-app>
 
-  <ion-app v-else>
-    <ion-router-outlet id="main-content"></ion-router-outlet>
+  <ion-app v-else data-testid="app-root-no-menu">
+    <ion-router-outlet id="main-content" data-testid="app-router-outlet"></ion-router-outlet>
   </ion-app>
 </template>
 
@@ -56,31 +57,26 @@ import {
   loadingController
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import emitter from "@/event-bus";
-import { translate } from "@/i18n";
-import { Actions, hasPermission } from '@/authorization';
+import { commonUtil, translate, logger, emitter } from "@common";
 import { useProductStore } from '@/stores/productStore';
-import logger from './logger';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
-import { useAuthStore } from './stores/authStore';
+import router from './router';
+import Actions from "@/authorization/actions";
 
-const router = useRouter();
 const userProfile = computed(() => useUserProfile().getUserProfile);
-const userToken = computed(() => useAuthStore().token.value);
+const userToken = commonUtil.getToken();
 
 const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-counted', '/count-progress-review/'];
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
-  return !isExcluded && hasPermission(Actions.APP_DRAFT_VIEW);
+  return !isExcluded && useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
 });
 
 const loader = ref(null) as any;
 
-async function presentLoader(options = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
-  if (options.message && loader.value) dismissLoader();
+async function presentLoader(options: any = { message: "Click the backdrop to dismiss.", backdropDismiss: true }) {
   if (!loader.value) {
     loader.value = await loadingController.create({
       message: translate(options.message),
@@ -108,7 +104,7 @@ onMounted(async () => {
     Settings.defaultZone = userProfile.value.timeZone;
   }
 
-  if (!!userToken.value && useProductStore()?.getCurrentProductStore?.productStoreId) {
+  if (!!userToken && useProductStore()?.getCurrentProductStore?.productStoreId) {
     await useProductStore()
       .getDxpIdentificationPref(useProductStore().getCurrentProductStore.productStoreId)
       .catch((error: any) => logger.error(error));
@@ -123,6 +119,7 @@ onUnmounted(() => {
 
 const menuOrder = [
   "/bulkUpload",
+  "/create-cycle-count",
   "/assigned",
   "/pending-review",
   "/closed",
@@ -136,7 +133,7 @@ const visibleMenuItems = computed(() => {
     .filter(
       (route) =>
         route.meta?.showInMenu &&
-        (!route.meta.permissionId || hasPermission(route.meta.permissionId))
+        (!route.meta.permissionId || useUserProfile().hasPermission(route.meta.permissionId))
     );
 
   return allVisible.sort((a, b) => {

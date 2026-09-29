@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie';
+import Papa from 'papaparse';
 import { useProductMaster } from './useProductMaster';
-import api from '@/services/RemoteAPI';
+import { api } from '@common';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
@@ -8,11 +9,14 @@ import { useProductStore } from '@/stores/productStore';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
+  negatedScanEventId?: number | null;
   productId?: string;
   productIdentifier: string;
   quantity: number;
   locationSeqId?: string | null;
 }
+
+type SessionSortMode = 'assigned' | 'alphabetic' | 'lastUpdated';
 
 /**
  * Utility Functions
@@ -28,6 +32,7 @@ function currentMillis(): number {
       productId: params.productId || null,
       locationSeqId: params.locationSeqId || null,
       scannedValue: params.productIdentifier,
+      negatedScanEventId: params.negatedScanEventId || null,
       quantity: params.quantity,
       createdAt: currentMillis(),
       aggApplied: 0
@@ -46,6 +51,7 @@ function currentMillis(): number {
         inventoryCountImportId: item.inventoryCountImportId,
         productId: item.productId || null,
         uuid: item.uuid || uuidv4(),
+        importItemSeqId: item.importItemSeqId || null,
         isRequested: item.isRequested || 'Y',
         productIdentifier: item.productIdentifier || '',
         locationSeqId: item.locationSeqId || null,
@@ -234,6 +240,11 @@ function currentMillis(): number {
       } else {
         const existing = map.get(key);
         existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+        const existingSequence = Number(existing.importItemSeqId);
+        const itemSequence = Number(item.importItemSeqId);
+        const existingSortSequence = Number.isFinite(existingSequence) ? existingSequence : Number.MAX_SAFE_INTEGER;
+        const itemSortSequence = Number.isFinite(itemSequence) ? itemSequence : Number.MAX_SAFE_INTEGER;
+        existing.importItemSeqId = String(Math.min(existingSortSequence, itemSortSequence));
         existing.lastUpdatedAt = Math.max(
           Number(existing.lastUpdatedAt || 0),
           Number(item.lastUpdatedAt || 0)
@@ -243,46 +254,76 @@ function currentMillis(): number {
   
     return [...map.values()];
   }
-  const getUnmatchedItems = (inventoryCountImportId: string) =>
+
+  function getAssignedOrderKey(item: any) {
+    const sequence = Number(item.importItemSeqId)
+    return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER
+  }
+
+  function getAlphabeticSortKey(item: any, productMaster: ReturnType<typeof useProductMaster>) {
+    return (
+      item.primaryId ||
+      productMaster.primaryId(item.product) ||
+      item.internalName ||
+      item.productIdentifier ||
+      ''
+    )
+  }
+
+  function sortSessionItems(items: any[], sortMode: SessionSortMode) {
+    const results = [...items]
+    const productMaster = useProductMaster()
+
+    if (sortMode === 'assigned') {
+      results.sort((predecessor, successor) => getAssignedOrderKey(predecessor) - getAssignedOrderKey(successor))
+    } else if (sortMode === 'alphabetic') {
+      results.sort((predecessor, successor) => getAlphabeticSortKey(predecessor, productMaster).localeCompare(getAlphabeticSortKey(successor, productMaster)))
+    } else if (sortMode === 'lastUpdated') {
+      results.sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0))
+    }
+
+    return results
+  }
+
+  const getUnmatchedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => !item.productId)
+        .filter(item => !item.productId && Number(item.quantity) > 0)
         .toArray()
 
       const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as any;
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-      return items.map(item => ({
+      return sortSessionItems(items.map(item => ({
         ...item,
         product: productMap.get(item.productId || '')
-      }))
+      })), sortMode)
     });
 
-  const getCountedItems = (inventoryCountImportId: string) =>
+  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
+        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId) && Number(item.quantity) > 0))
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) > 0)
-      .sort((predecessor, successor) => Number(successor.lastUpdatedAt || 0) - Number(predecessor.lastUpdatedAt || 0));
+      .filter(item => (Number(item.quantity) || 0) > 0);
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId)
-      }))
+      })), sortMode)
     });
 
-  const getUncountedItems = (inventoryCountImportId: string) =>
+  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -305,19 +346,19 @@ function currentMillis(): number {
       const inventoryMap = new Map(
         inventoryRecords.map((item: any) => [`${item.productId}::${item.facilityId}`, item])
       )
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId),
         inventory: inventoryMap.get(`${item.productId}::${item.facilityId}`)
-      }))
+      })), sortMode)
     });
 
-  const getUndirectedItems = (inventoryCountImportId: string) =>
+  const getUndirectedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {    
       const items = await db.table('inventoryCountRecords')
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => item.isRequested === 'N' && Boolean(item.productId))
+        .filter(item => item.isRequested === 'N' && Boolean(item.productId) && Number(item.quantity) > 0)
         .toArray();
 
       const grouped = groupByProductAndSum(items)
@@ -327,10 +368,10 @@ function currentMillis(): number {
       const products = await db.products.bulkGet(productIds)
       const productMap = new Map(products.filter(Boolean).map((product: any) => [product.productId, product]))
 
-      return grouped.map(item => ({
+      return sortSessionItems(grouped.map(item => ({
         ...item,
         product: productMap.get(item.productId)
-      }))
+      })), sortMode)
     });
 
   const getScanEvents = (inventoryCountImportId: string) =>
@@ -415,6 +456,47 @@ const bulkUploadInventoryCounts = async (payload: any): Promise <any> => {
     url: `admin/uploadDataManagerFile`,
     method: "post",
     ...payload
+  });
+}
+
+/**
+ * Build the cycle count import CSV from the selected products and hand it to the bulk upload
+ * endpoint. Columns are the in-parameters of
+ * co.hotwax.cycleCount.InventoryCountServices.import#InventoryCount. productId is sent so the
+ * importer uses it directly instead of resolving the product through a GoodIdentification lookup,
+ * idType/idValue are kept alongside it so the stored file stays readable.
+ *
+ * The dates must already be formatted as MM-dd-yyyy HH:mm:ss in the facility time zone, that is
+ * how the importer parses them.
+ */
+const createCycleCountFromProducts = async (payload: {
+  countName: string;
+  purposeType: string;
+  facilityId: string;
+  startDate: string;
+  dueDate: string;
+  products: any[];
+}): Promise <any> => {
+  const rows = payload.products.map((product: any) => ({
+    countImportName: payload.countName,
+    purposeType: payload.purposeType,
+    facilityId: payload.facilityId,
+    productId: product.productId,
+    idType: "SKU",
+    idValue: product.internalName || product.sku || "",
+    estimatedStartDate: payload.startDate,
+    estimatedCompletionDate: payload.dueDate
+  }));
+
+  const fileName = `${(payload.countName || "CycleCount").trim().replace(/[^\w-]+/g, "_")}.csv`;
+  const blob = new Blob([Papa.unparse(rows)], { type: "text/csv;charset=utf-8;" });
+  const formData = new FormData();
+  formData.append("contentFile", blob, fileName);
+  formData.append("fileName", fileName.replace(".csv", ""));
+
+  return bulkUploadInventoryCounts({
+    data: formData,
+    headers: { "Content-Type": "multipart/form-data;" }
   });
 }
 
@@ -504,6 +586,7 @@ export function useInventoryCountImport() {
   return {
     bulkUploadInventoryCounts,
     cloneSession,
+    createCycleCountFromProducts,
     discardSession,
     getCountedItems,
     getInventoryCountImportByProductId,

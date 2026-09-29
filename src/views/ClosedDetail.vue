@@ -18,24 +18,24 @@
           <ion-card>
             <ion-item lines="none">
               <ion-label>
-                <p class="overline">{{ workEffort?.workEffortId }}</p>
-                <h1>{{ workEffort?.workEffortName }}</h1>
+                <p class="overline" data-testid="closed-detail-work-effort-id">{{ workEffort?.workEffortId }}</p>
+                <h1 data-testid="closed-detail-name">{{ workEffort?.workEffortName }}</h1>
               </ion-label>
             </ion-item>
             <ion-item>
-              <ion-icon :icon="businessOutline" slot="start"></ion-icon>
-              <ion-label>
+              <ion-icon :icon="businessOutline" slot="start" data-testid="closed-detail-facility-icon"></ion-icon>
+              <ion-label data-testid="closed-detail-facility-name">
                 {{ getFacilityName(workEffort?.facilityId) }}
               </ion-label>
             </ion-item>
-            <ion-item class="due-date">
-              <ion-icon :icon="calendarClearOutline" slot="start"></ion-icon>
+            <ion-item class="due-date" data-testid="closed-detail-due-date-item">
+              <ion-icon :icon="calendarClearOutline" slot="start" data-testid="closed-detail-due-date-icon"></ion-icon>
               <div>
-                <p class="overline">{{ translate("Due Date") }}</p>
-                <div v-if="workEffort.estimatedCompletionDate">
-                  <ion-datetime-button datetime="datetime" :disabled="true"></ion-datetime-button>
-                  <ion-modal keep-contents-mounted="true">
-                    <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true">
+                <p class="overline" data-testid="closed-detail-due-date-label">{{ translate("Due Date") }}</p>
+                <div v-if="workEffort.estimatedCompletionDate" data-testid="closed-detail-due-date-val-wrapper">
+                  <ion-datetime-button datetime="datetime" :disabled="true" data-testid="closed-detail-due-date-btn"></ion-datetime-button>
+                  <ion-modal keep-contents-mounted="true" data-testid="closed-detail-due-date-modal">
+                    <ion-datetime id="datetime" :value="getDateTime(workEffort.estimatedCompletionDate)" :disabled="true" data-testid="closed-detail-due-date-picker">
                     </ion-datetime>
                   </ion-modal>
                 </div>
@@ -43,34 +43,34 @@
             </ion-item>
           </ion-card>
           <ion-card>
-            <ion-item>
-              <ion-label>{{ translate("First item counted") }}</ion-label>
-              <ion-note slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
+            <ion-item data-testid="closed-detail-first-counted-item">
+              <ion-label data-testid="closed-detail-first-counted-label">{{ translate("First item counted") }}</ion-label>
+              <ion-note slot="end" data-testid="closed-detail-first-counted-val">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(firstCountedAt) : '-' }}</ion-note>
             </ion-item>
-            <ion-item>
-              <ion-label>{{ translate("Last item counted") }}</ion-label>
-              <ion-note slot="end">{{ aggregatedSessionItems.length !== 0 ? getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
+            <ion-item data-testid="closed-detail-last-counted-item">
+              <ion-label data-testid="closed-detail-last-counted-label">{{ translate("Last item counted") }}</ion-label>
+              <ion-note slot="end" data-testid="closed-detail-last-counted-val">{{ aggregatedSessionItems.length !== 0 ? commonUtil.getDateTimeWithOrdinalSuffix(lastCountedAt) : '-' }}</ion-note>
             </ion-item>
           </ion-card>
 
           <div class="statistics">
-            <ion-card>
-              <ion-item lines="none">
-                <ion-label>
+            <ion-card data-testid="closed-detail-review-progress-card">
+              <ion-item lines="none" data-testid="closed-detail-review-progress-item">
+                <ion-label data-testid="closed-detail-review-progress-label">
                   {{ translate("Review progress", { progressRate: Math.floor((submittedItemsCount / totalItems) * 100)}) }}
-                  <p>{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
+                  <p data-testid="closed-detail-review-progress-stats">{{ translate("submitted counts", { submittedItemsCount: submittedItemsCount, totalItems: totalItems }) }}</p>
                 </ion-label>
               </ion-item>
-              <ion-card-content>
-                <ion-progress-bar :value="submittedItemsCount / totalItems"></ion-progress-bar>
+              <ion-card-content data-testid="closed-detail-review-progress-content">
+                <ion-progress-bar :value="submittedItemsCount / totalItems" data-testid="closed-detail-review-progress-bar"></ion-progress-bar>
               </ion-card-content>
             </ion-card>
-            <ion-card>
-              <ion-item lines="full">
-                <ion-label>
-                  <p class="overline">{{ translate("Overall variance (Filtered)") }}</p>
-                  <h3>{{ translate("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
-                  <p>{{ translate("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
+            <ion-card data-testid="closed-detail-overall-variance-card">
+              <ion-item lines="full" data-testid="closed-detail-overall-variance-item">
+                <ion-label data-testid="closed-detail-overall-variance-label">
+                  <p class="overline" data-testid="closed-detail-overall-variance-title">{{ translate("Overall variance (Filtered)") }}</p>
+                  <h3 data-testid="closed-detail-overall-variance-qty">{{ translate("filtered variance", { overallFilteredVarianceQtyProposed: overallFilteredVarianceQtyProposed }) }}</h3>
+                  <p data-testid="closed-detail-overall-variance-msg">{{ translate("filtered variance based", { filteredSessionItemsCount: filteredSessionItems.length }) }}</p>
                 </ion-label>
               </ion-item>
             </ion-card>
@@ -105,27 +105,28 @@
                     <div class="list-item count-item-rollup" slot="header"> 
                       <div class="item-key">
                         <ion-item lines="none">
-                          <ion-thumbnail slot="start">
-                            <Image :src="item.detailImageUrl"/>
+                          <ion-thumbnail slot="start" data-testid="closed-detail-product-thumbnail">
+                            <Image :src="item.detailImageUrl" data-testid="closed-detail-product-img"/>
                           </ion-thumbnail>
-                          <ion-label>
-                              {{ item.internalName }}
-                              <!-- <p>Secondary Id</p> -->
+                          <ion-label data-testid="closed-detail-product-label">
+                            <h2 data-testid="closed-detail-product-primary-id">{{ productMaster.primaryId(item.product) || item.internalName }}</h2>
+                            <p data-testid="closed-detail-product-secondary-id">{{ productMaster.secondaryId(item.product) }}</p>
                           </ion-label>
                         </ion-item>
                       </div>
-                      <ion-label class="stat">
-                        {{ item.quantity || '-' }}/{{ item.systemQuantity || '-' }}
+                      <ion-label class="stat" data-testid="closed-detail-product-count-stat">
+                        <span data-testid="closed-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="closed-detail-product-system-qty">{{ item.systemQuantity || '-' }}</span>
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
-                      <ion-label class="stat">
-                        {{ item.varianceQuantity }}
+                      <ion-label class="stat" data-testid="closed-detail-product-variance-stat">
+                        <span data-testid="closed-detail-product-variance-qty">{{ item.varianceQuantity }}</span>
                         <p>{{ translate("variance") }}</p>
                       </ion-label>
-                      <div v-if="item.decisionOutcomeEnumId">
+                      <div v-if="item.decisionOutcomeEnumId" data-testid="closed-detail-product-badge-container">
                         <ion-badge
                         :color="item.decisionOutcomeEnumId === 'APPLIED' ? 'primary' : 'danger'"
                         style="--color: white;"
+                        data-testid="closed-detail-product-badge"
                       >
                         {{ item.decisionOutcomeEnumId == "APPLIED" ? translate("Accepted") : translate("Rejected") }}
                       </ion-badge>
@@ -157,26 +158,26 @@
                           </ion-label>
                         </ion-item>
                       </ion-list>
-                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp">
-                        <ion-item lines="none">
-                          <ion-icon :icon="personCircleOutline" slot="start"></ion-icon>
-                          <ion-label>
-                            {{ session.countImportName || "-" }}
-                            <p>
+                      <div v-else v-for="session in sessions" :key="session.inventoryCountImportId" class="list-item count-item" @click.stop="stopAccordianEventProp" :data-testid="'closed-detail-session-item-' + session.inventoryCountImportId">
+                        <ion-item lines="none" data-testid="closed-detail-session-header">
+                          <ion-icon :icon="personCircleOutline" slot="start" data-testid="closed-detail-session-user-icon"></ion-icon>
+                          <ion-label data-testid="closed-detail-session-label">
+                            <span data-testid="closed-detail-session-name">{{ session.countImportName || "-" }}</span>
+                            <p data-testid="closed-detail-session-user-login">
                               {{ session.uploadedByUserLogin }}
                             </p>
                           </ion-label>
                         </ion-item>
-                        <ion-label>
-                          {{ session.counted }}
+                        <ion-label data-testid="closed-detail-session-counted-stat">
+                          <span data-testid="closed-detail-session-counted-qty">{{ session.counted }}</span>
                           <p>{{ translate("counted") }}</p>
                         </ion-label>
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.createdDate) }}
+                        <ion-label data-testid="closed-detail-session-started-stat">
+                          <span data-testid="closed-detail-session-started-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.createdDate) }}</span>
                           <p>{{ translate("started") }}</p>
                         </ion-label>
-                        <ion-label>
-                          {{ getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}
+                        <ion-label data-testid="closed-detail-session-updated-stat">
+                          <span data-testid="closed-detail-session-updated-date">{{ commonUtil.getDateTimeWithOrdinalSuffix(session.lastUpdatedAt) }}</span>
                           <p>{{ translate("last updated") }}</p>
                         </ion-label>
                       </div>
@@ -199,18 +200,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref } from "vue";
+import { computed, ref, defineProps } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
-import { translate } from '@/i18n'
+import { commonUtil, translate } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { showToast } from "@/services/uiUtils"
+import { useProductMaster } from "@/composables/useProductMaster";
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ProgressBar from '@/components/ProgressBar.vue'
 import Image from "@/components/Image.vue";
-import { getDateTimeWithOrdinalSuffix } from "@/services/utils";
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import { useUserProfile } from "@/stores/userProfileStore";
 
@@ -253,13 +253,16 @@ const firstCountedAt = ref();
 const lastCountedAt = ref();
 
 const userProfile = useUserProfile();
+const productMaster = useProductMaster();
+
+const hydratedProductIds = new Set<string>();
 
 async function getWorkEffortDetails() {
   const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
   if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
     workEffort.value = workEffortResp.data;
   } else {
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     console.error("Error getting the Cycle Count Details", workEffortResp);
   }
 }
@@ -282,7 +285,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     console.error("Error getting sessions for this product: ", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
   }
 }
 
@@ -324,10 +327,56 @@ async function getInventoryCycleCount() {
     filteredSessionItems.value = [...aggregatedSessionItems.value].sort((a, b) =>
       (a.internalName || '').localeCompare(b.internalName || '')
     );
+    scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     console.error("Error fetching all cycle count records:", error);
-    showToast(translate("Something Went Wrong"));
+    commonUtil.showToast(translate("Something Went Wrong"));
     aggregatedSessionItems.value = [];
+  }
+}
+
+function scheduleProductHydration(items: any[]) {
+  if (!items?.length) return;
+  hydrateProductsForItems(items);
+}
+
+async function hydrateProductsForItems(items: any[]) {
+  const productIds = [...new Set(
+    items
+      .filter((item: any) => item.productId && !item.product)
+      .map((item: any) => item.productId)
+  )].filter((id) => !hydratedProductIds.has(id));
+
+  if (!productIds.length) return;
+
+  productIds.forEach((id) => hydratedProductIds.add(id));
+  try {
+    try {
+      await productMaster.prefetch(productIds as any);
+    } catch (error) {
+      console.warn("Prefetch failed in ClosedDetail", error);
+    }
+    const results = await Promise.all(productIds.map((id) => productMaster.getById(id)));
+    const productsById = new Map<string, any>();
+    results.forEach((result, index) => {
+      if (result.product) productsById.set(productIds[index], result.product);
+    });
+
+    if (!productsById.size) return;
+    items.forEach((item: any) => {
+      const product = productsById.get(item.productId);
+      if (product) {
+        item.product = product;
+        item.primaryId = productMaster.primaryId(product);
+        item.secondaryId = productMaster.secondaryId(product);
+      }
+    });
+    productIds.forEach((id) => {
+      if (!productsById.has(id)) hydratedProductIds.delete(id);
+    });
+  } catch (error) {
+    console.warn("Failed to hydrate products in ClosedDetail", error);
+    productIds.forEach((id) => hydratedProductIds.delete(id));
   }
 }
 

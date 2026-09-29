@@ -1,17 +1,20 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import api, { client } from '@/services/RemoteAPI';
-import workerApi from "@/services/workerApi";
+import { api, useSolrSearch } from '@common';
+import workerRemoteApi from '@common/core/workerRemoteApi';
 
 import { db } from '@/services/appInitializer';
-import { useAuthStore } from '@/stores/authStore';
 import { useProductStore } from '@/stores/productStore';
+import { VarianceLogs } from '@/services/commonDatabase';
+import { DateTime } from 'luxon';
 
 // Product structure
 export interface Product {
   productId: string
   productName?: string
   parentProductName?: string
+  title?: string
+  primaryProductCategoryName?: string
   internalName?: string
   mainImageUrl?: string
   goodIdentifications?: { type: string, value: string }[]
@@ -40,32 +43,21 @@ const init = ({ staleMs: ttl, duplicateIdentifiers: dup = false, retentionPolicy
 const makeIdentKey = (type: string) => type
 
 const getByIds = async (productIds: string[]): Promise<Product[]> => {
-  const baseURL = useAuthStore().getBaseUrl;
-
   const batchSize = 250
   const results: Product[] = []
   let index = 0
 
   do {
     const batch = productIds.slice(index, index + batchSize)
-    const filter = `productId: (${batch.join(' OR ')})`
+    const filter = `productId: (${batch.join(' OR ')}),isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`
 
     const query = useProductMaster().buildProductQuery({
       filter: filter,
       viewSize: batch.length,
-      fieldsToSelect: `productId, productName, parentProductName, internalName, mainImageUrl, goodIdentifications`
+      fieldsToSelect: `productId, productName, parentProductName, primaryProductCategoryName, title, internalName, mainImageUrl, goodIdentifications`
     });
 
-    const resp = await client({
-      url: "inventory-cycle-count/runSolrQuery",
-      method: "POST",
-      baseURL,
-      data: query,
-      headers: {
-        "Authorization": 'Bearer ' + useAuthStore().token.value,
-        'Content-Type': 'application/json'
-      }
-    })
+    const resp = await useSolrSearch().runSolrQuery(query)
 
     if (resp.data?.response?.docs?.length) {
       results.push(...resp.data.response.docs.map(mapApiDocToProduct))
@@ -119,50 +111,6 @@ const findByIdentification = async (idValue: string) => {
   return { product: matchedProduct, identificationValue: idValue }
 }
 
-const getByIdentificationFromSolr = async (idValue: string) => {
-  const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-  const productIdentifications = process.env.VUE_APP_PRDT_IDENT
-    ? JSON.parse(JSON.stringify(process.env.VUE_APP_PRDT_IDENT))
-    : [];
-
-  const baseURL = useAuthStore().getBaseUrl;
-
-  // Build Solr filter dynamically
-  const filter = productIdentifications.includes(barcodeIdentification)
-    ? `${barcodeIdentification}: ${idValue}`
-    : `goodIdentifications: ${barcodeIdentification}/${idValue}`;
-
-    const query = useProductMaster().buildProductQuery({
-      filter: filter,
-      viewSize: 1,
-      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-    });
-
-  try {
-    const resp = await client({
-      url: 'inventory-cycle-count/runSolrQuery',
-      method: 'POST',
-      baseURL,
-      data: query,
-      headers: {
-        'Authorization': 'Bearer ' + useAuthStore().token.value,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const products = resp.data?.response?.docs || [];
-    if (products.length) {
-      const mapped = mapApiDocToProduct(products[0]);
-      await upsertFromApi([mapped]);
-      return { product: mapped, status: 'fresh' as const };
-    }
-  } catch (err) {
-    console.error('Failed to fetch product by identification from Solr:', err);
-  }
-
-  return { product: undefined, status: 'miss' as const };
-};
-
 const prefetch = async (productIds: string[]) => {
   if (!cacheReady.value) throw new Error("ProductMaster not initialized")
 
@@ -171,8 +119,8 @@ const prefetch = async (productIds: string[]) => {
   const idsToFetch = productIds.filter(id => !existingIds.has(id))
 
   if (idsToFetch.length === 0) return
-  for (let i=0; i<idsToFetch.length; i+=750) {
-    const docs = await getByIds(idsToFetch.slice(i, i+750))
+  for (let i = 0; i < idsToFetch.length; i += 750) {
+    const docs = await getByIds(idsToFetch.slice(i, i + 750))
     if (docs.length) {
       upsertFromApi(docs).catch(err => console.error("upsert failed", err))
     }
@@ -226,22 +174,22 @@ async function findProductByIdentification(idType: string, value: string, contex
     .first()
   if (ident) return ident.productId
 
-  if (!context?.token || !context?.omsUrl) return null
+  if (!context?.token || !context?.maargUrl) return null
   if (!idType) idType = context.barcodeIdentification
 
   const query = useProductMaster().buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      });
+    filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
+    viewSize: 1,
+    fieldsToSelect: `productId,productName,parentProductName,title,primaryProductCategoryName,internalName,mainImageUrl,goodIdentifications`
+  });
   try {
-    const resp = await workerApi({
-      baseURL: context.omsUrl,
+    const resp = await workerRemoteApi({
+      baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -270,8 +218,8 @@ async function searchProducts(value: string) {
     .startsWithIgnoreCase(value)
     .limit(250)
     .toArray()
-    if (products) return products.map((product: any) => product.productId)
-    return null
+  if (products) return products.map((product: any) => product.productId)
+  return null
 }
 
 const clearCache = async () => {
@@ -322,6 +270,8 @@ const mapApiDocToProduct = (doc: any): Product => {
     productId: doc.productId,
     productName: doc.productName || '',
     parentProductName: doc.parentProductName || '',
+    title: doc.title || '',
+    primaryProductCategoryName: doc.primaryProductCategoryName || '',
     internalName: doc.internalName || '',
     mainImageUrl: doc.mainImageUrl || '',
     goodIdentifications: normalizedIdents,
@@ -330,37 +280,19 @@ const mapApiDocToProduct = (doc: any): Product => {
 };
 
 const getProductStock = async (query: any): Promise<any> => {
-  const baseURL = useAuthStore().getBaseUrl;
-  const token = useAuthStore().token.value;
-
-  return await client({
+  return await api({
     url: "poorti/getInventoryAvailableByFacility",
     method: "GET",
-    baseURL,
-    params: query,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
+    params: query
   });
 }
 
 const loadProducts = async (query: any): Promise<any> => {
-  const baseURL = useAuthStore().getBaseUrl;
-  return await client({
-    url: "inventory-cycle-count/runSolrQuery",
-    method: "POST",
-    baseURL,
-    data: query,
-    headers: {
-      Authorization: "Bearer " + useAuthStore().token.value,
-      "Content-Type": "application/json",
-    },
-  });
+  return await useSolrSearch().runSolrQuery(query);
 };
 
 const buildProductQuery = (params: any): Record<string, any> => {
-  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewSize = params.viewSize || import.meta.env.VITE_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
 
   const payload: any = {
@@ -401,12 +333,12 @@ const primaryId = (product?: any) => {
   const pref = useProductStore().getPrimaryId
 
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
-        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
-          const [type, value] = goodIdentification.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return goodIdentification
-      }) : []
+    if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+      const [type, value] = goodIdentification.split('/', 2)
+      return { type: type?.trim(), value: value?.trim() }
+    }
+    return goodIdentification
+  }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
@@ -414,6 +346,9 @@ const primaryId = (product?: any) => {
       return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
+    if (type === 'parentProductName' || type === 'groupName') return product.parentProductName || ''
+    if (type === 'title') return product.title || ''
+    if (type === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
     return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
@@ -427,12 +362,12 @@ const secondaryId = (product: any) => {
 
   // Parse any flat "TYPE/VALUE" strings (from Solr)
   const parsedGoodIds = Array.isArray(product.goodIdentifications) ? product.goodIdentifications.map((goodIdentification: any) => {
-        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
-          const [type, value] = goodIdentification.split('/', 2)
-          return { type: type?.trim(), value: value?.trim() }
-        }
-        return goodIdentification
-      }) : []
+    if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
+      const [type, value] = goodIdentification.split('/', 2)
+      return { type: type?.trim(), value: value?.trim() }
+    }
+    return goodIdentification
+  }) : []
 
   const resolve = (type: string) => {
     if (!type) return ''
@@ -440,6 +375,9 @@ const secondaryId = (product: any) => {
       return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
     if (type === 'internalName') return product.internalName || ''
     if (type === 'productId') return product.productId || ''
+    if (type === 'parentProductName' || type === 'groupName') return product.parentProductName || ''
+    if (type === 'title') return product.title || ''
+    if (type === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
     return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === type)?.value || ''
   }
 
@@ -447,7 +385,7 @@ const secondaryId = (product: any) => {
   return resolve(pref) || product.productId || ''
 }
 
-async function getProductsOnFacility (payload: any): Promise<any> {
+async function getProductsOnFacility(payload: any): Promise<any> {
   const resp = await api({
     url: `oms/dataDocumentView`,
     method: "post",
@@ -510,22 +448,13 @@ const getInventory = async (
   facilityId: string
 ): Promise<any | null> => {
   if (!productId || !facilityId) return null
-
-  const baseURL = useAuthStore().getBaseUrl
-  const token = useAuthStore().token.value
-
-  const resp = await client({
+  const resp = await api({
     url: 'oms/dataDocumentView',
     method: 'POST',
-    baseURL,
     data: {
       dataDocumentId: 'ProductFacilityAndInventoryItem',
       pageSize: 1,
       customParametersMap: { productId, facilityId }
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
     }
   })
 
@@ -583,6 +512,94 @@ const getProductQoh = async (
   return rec ? rec.quantityOnHandTotal : null
 }
 
+const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: string, productId?: string, negatedVarianceLogId?: number) => {
+  const varianceLog: VarianceLogs = {
+    scannedValue: scannedValue,
+    quantity: quantity,
+    productId: productId || null,
+    facilityId: facilityId,
+    aggApplied: 0,
+    createdAt: DateTime.now().toMillis()
+  }
+  if (negatedVarianceLogId) {
+    varianceLog.negatedVarianceLogId = negatedVarianceLogId;
+  }
+  await db.varianceLogs.add(varianceLog)
+}
+
+const getVarianceLogs = () =>
+  liveQuery(async () => {    
+    const varLogs = await db.varianceLogs
+      .reverse()
+      .sortBy('createdAt');
+
+    const enriched = await Promise.all(
+      varLogs.map(async event => {
+        if (event.productId) {
+          const product = await db.products.get(event.productId);
+          return { ...event, product };
+        }
+        return event;
+      })
+    );
+
+    return enriched || [];
+  });
+
+const getInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+
+    // Filter for items with productId (matched)
+    const matched = adjusments.filter(item => item.productId);
+
+    const enriched = await Promise.all(
+      matched.map(async adjustment => {
+        const product = await db.products.get(adjustment.productId!);
+        return { ...adjustment, product };
+      })
+    );
+    
+    return enriched || [];
+  });
+
+const getUnmatchedInventoryAdjustments = () => 
+  liveQuery(async () => {
+    const adjusments = await db.inventoryAdjustments
+      .reverse()
+      .sortBy('createdAt');
+
+    // Filter for items without productId (unmatched)
+    const unmatched = adjusments.filter(item => !item.productId);
+    
+    return unmatched || [];
+  });
+
+const clearVarianceLogsAndAdjustments = async () => {
+  await db.varianceLogs.clear();
+  await db.inventoryAdjustments.clear();
+}
+
+const removeInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
+  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
+    await db.inventoryAdjustments.delete([facilityId, uuid]);
+    if (scannedValue) {
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+    }
+  });
+}
+
+const removeUnmatchedInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
+  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
+    await db.inventoryAdjustments.delete([facilityId, uuid]);
+    if (scannedValue) {
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+    }
+  });
+}
+
 export function useProductMaster() {
 
   return {
@@ -594,7 +611,6 @@ export function useProductMaster() {
     findByIdentification,
     findProductByIdentification,
     searchProducts,
-    getByIdentificationFromSolr,
     prefetch,
     upsertFromApi,
     clearCache,
@@ -608,6 +624,14 @@ export function useProductMaster() {
     upsertInventoryFromSessionItems,
     getProductInventory,
     getProductQoh,
-    setInventoryStaleMs
+    setInventoryStaleMs,
+    addVarianceLog,
+    getVarianceLogs,
+    getInventoryAdjustments,
+    getUnmatchedInventoryAdjustments,
+    clearVarianceLogsAndAdjustments,
+    removeInventoryAdjustment,
+    removeUnmatchedInventoryAdjustment
   }
 }
+
