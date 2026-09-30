@@ -1,7 +1,7 @@
 <template>
   <div class="smart-controls" data-testid="smart-filter-controls">
     <!-- FILTER ROW -->
-    <ion-list lines="full" class="filters ion-margin" data-testid="smart-filter-list">
+    <ion-list lines="full" class="filters" data-testid="smart-filter-list">
 
       <!-- SEARCH -->
       <ion-searchbar
@@ -68,27 +68,26 @@
         </span>
       </div>
 
-      <!-- Placeholder for alignment -->
-      <div v-else></div>
-
       <!-- SORT -->
-      <ion-select
-        v-if="showSort"
-        :value="filters.sort"
-        @ionChange="updateFilter('sort', $event.detail.value)"
-        slot="end"
-        :label="sortByLabel"
-        interface="popover"
-        data-testid="smart-filter-sort-select"
-      >
-        <ion-select-option
-          v-for="opt in sortOptions"
-          :value="opt.value"
-          :key="opt.value"
+      <ion-item lines="none" v-if="showSort" class="sort-item">
+        <ion-icon slot="start" :icon="swapVerticalOutline" />
+        <ion-select
+          :value="filters.sort"
+          @ionChange="updateFilter('sort', $event.detail.value)"
+          :label="sortByLabel"
+          label-placement="start"
+          interface="popover"
+          data-testid="smart-filter-sort-select"
         >
-          {{ opt.label }}
-        </ion-select-option>
-      </ion-select>
+          <ion-select-option
+            v-for="opt in sortOptions"
+            :value="opt.value"
+            :key="opt.value"
+          >
+            {{ opt.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
 
     </ion-item-divider>
 
@@ -146,7 +145,7 @@ import {
 
 import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
 import { translate as t } from "@common";
-import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
+import { closeOutline, checkmarkDoneOutline, swapVerticalOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductMaster } from "@/composables/useProductMaster";
 
@@ -165,7 +164,7 @@ const props = defineProps({
 
   placeholderSearch: { type: String, default: () => t("Search product name") },
   statusLabel: { type: String, default: () => t("Status") },
-  sortByLabel: { type: String, default: () => t("Sort By") },
+  sortByLabel: { type: String, default: () => t("Sort by") },
 
   statusOptions: Array,
   sortOptions: Array,
@@ -341,17 +340,67 @@ const isAllSelected = computed(() =>
 .filters {
   display: flex;
   gap: var(--spacer-sm);
-  align-items: end;
+  align-items: center;
+  padding-inline: var(--spacer-sm);
+  padding-block: var(--spacer-xs);
 }
 
 .filters > * {
   flex: 1;
 }
 
+.filters ion-searchbar {
+  padding-inline: 0;
+  padding-block: 0;
+}
+
+.filters ion-item {
+  --inner-padding-end: 0;
+  --padding-start: 0;
+  --min-height: 40px;
+}
+
+@media (max-width: 991px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacer-xs);
+    padding-inline: var(--spacer-sm);
+    padding-block: var(--spacer-xs);
+  }
+
+  .filters ion-searchbar {
+    width: 100%;
+    padding-inline: 0;
+    padding-block: 0;
+  }
+
+  .filters ion-item {
+    width: 100%;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+  }
+}
+
 .sort-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-inline: var(--spacer-sm);
+}
+
+.sort-item {
+  --background: transparent;
+  --min-height: unset;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  flex: 1;
+  width: 100%;
+}
+
+.sort-item ion-select {
+  width: 100%;
+  justify-content: space-between;
 }
 
 .select-left {
@@ -363,6 +412,5 @@ const isAllSelected = computed(() =>
 .selected-count {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
-  font-size: .9rem;
 }
 </style>

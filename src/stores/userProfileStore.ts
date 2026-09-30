@@ -3,6 +3,16 @@ import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 import { useProductStore } from "./productStore";
+const checkPermission = (permissions: any[], permissionId: string): boolean => {
+  if (!permissionId) return true;
+  if (permissionId.includes(' OR ')) {
+    return permissionId.split(' OR ').some(p => checkPermission(permissions, p.trim()));
+  }
+  if (permissionId.includes(' AND ')) {
+    return permissionId.split(' AND ').every(p => checkPermission(permissions, p.trim()));
+  }
+  return permissions.includes(permissionId);
+};
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -70,24 +80,7 @@ export const useUserProfile = defineStore('userProfile', {
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
     getSessionDetailFilters: (state) => state.uiFilters.sessionDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
-      const permissions = state.permissions;
-
-      if (!permissionId) {
-        return true;
-      }
-
-      // Handle OR/AND logic in permission string
-      if (permissionId.includes(' OR ')) {
-        const parts = permissionId.split(' OR ');
-        return parts.some((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      if (permissionId.includes(' AND ')) {
-        const parts = permissionId.split(' AND ');
-        return parts.every((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      return permissions.includes(permissionId);
+      return checkPermission(state.permissions, permissionId);
     }
   },
 
@@ -124,7 +117,7 @@ export const useUserProfile = defineStore('userProfile', {
 
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfile().getUserProfile;
+        const userProfile = this.getUserProfile;
 
         const resp = await api({
           url: "admin/user/profile",
