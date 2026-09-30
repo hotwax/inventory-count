@@ -54,6 +54,8 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "~5.26.0",
     "@typescript-eslint/parser": "~5.26.0",
+    "@vitejs/plugin-legacy": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "@vue/compiler-sfc": "^3.0.0-0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "@vue/test-utils": "^2.0.0-0",
@@ -63,6 +65,8 @@
     "file-saver": "catalog:",
     "papaparse": "catalog:",
     "typescript": "catalog:",
-    "vite-plugin-pwa": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
+    "vitest": "catalog:"
   }
 }
