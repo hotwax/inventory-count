@@ -1,3 +1,5 @@
+import { logger } from '@common';
+
 let audioContext: AudioContext | null = null;
 
 const SUCCESS_BEEP_FREQUENCY_HZ = 1200;
@@ -32,7 +34,7 @@ export function prepareScanSuccessFeedback(): void {
     source.addEventListener('ended', () => source.disconnect(), { once: true });
     source.start();
   } catch (err) {
-    // Audio feedback is optional and must never interrupt counting.
+    logger.error('Failed to prepare scan audio feedback', err);
   }
 }
 
@@ -64,6 +66,6 @@ export async function playScanSuccessFeedback(): Promise<void> {
     oscillator.start(startAt);
     oscillator.stop(stopAt);
   } catch (err) {
-    // Scanning remains successful when sound is unavailable or blocked.
+    logger.error('Failed to play scan audio feedback', err);
   }
 }
