@@ -368,6 +368,7 @@ async function save() {
   });
   const fd = new FormData();
   fd.append("contentFile", data, fileName.value);
+  fd.append("uploadedFile", data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
     const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
