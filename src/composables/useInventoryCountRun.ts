@@ -93,36 +93,20 @@ const createSessionOnServer = async (payload: any): Promise<any> => {
   });
 };
 
-/** System message–level operations (imports, errors, uploads) */
-const getCycleCountImportSystemMessages = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages`,
-    method: "get",
-    params: payload
-  });
-};
-
+/** Data Manager log–level operations (imports, errors, uploads), served by maarg-util's admin APIs */
 const cancelCycleCountFileProcessing = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}`,
-    method: "post",
+    url: `admin/dataManager/logs/${payload.logId}`,
+    method: "put",
     data: payload
   });
 };
 
 const getCycleCountUploadedFileData = async (payload: any): Promise<any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/downloadFile`,
+    url: `admin/dataManager/downloadDataManagerFile`,
     method: "get",
     params: payload
-  });
-};
-
-const getCycleCountImportErrors = async (payload: any): Promise<any> => {
-  return api({
-    url: `inventory-cycle-count/cycleCounts/systemMessages/${payload.systemMessageId}/errors`,
-    method: "get",
-    data: payload
   });
 };
 
@@ -217,25 +201,25 @@ export function useInventoryCountRun() {
     return { workEfforts, total, isScrollable };
   }
 
-  /** Fetch cycle count import system messages (24h window) */
-  async function getCycleCntImportSystemMessages() {
+  /** Fetch cycle count import Data Manager logs (24h window) */
+  async function getCycleCntImportDataManagerLogs(params?: any): Promise<any[]> {
     try {
       const twentyFourHoursEarlier = DateTime.now().minus({ hours: 24 });
       const resp = await api({
-        url: 'inventory-cycle-count/cycleCounts/systemMessages',
+        url: 'admin/dataManager/details',
         method: 'get',
         params: {
-          systemMessageTypeId: 'ImportInventoryCounts',
-          initDate_from: twentyFourHoursEarlier.toMillis(),
-          orderByField: 'initDate desc, processedDate desc',
+          ...params,
+          createdDate_from: twentyFourHoursEarlier.toMillis(),
+          orderByField: 'createdDate desc,finishDateTime desc',
           pageSize: 100
         }
       });
 
-      if (!commonUtil.hasError(resp)) return resp?.data;
+      if (!commonUtil.hasError(resp)) return resp?.data?.dataManagerLogs ?? [];
       throw resp?.data;
     } catch (err) {
-      logger.error('Error fetching system messages:', err);
+      logger.error('Error fetching data manager logs:', err);
       return [];
     }
   }
@@ -333,15 +317,13 @@ export function useInventoryCountRun() {
     getSessionsCount,
     updateWorkEffort,
     createSessionOnServer,
-    getCycleCountImportSystemMessages,
     cancelCycleCountFileProcessing,
     getCycleCountUploadedFileData,
-    getCycleCountImportErrors,
     getExportedCycleCountsFileData,
     getExportedCycleCountsSystemMessages,
     submitProductReview,
     getCreatedAndAssignedWorkEfforts,
-    getCycleCntImportSystemMessages,
+    getCycleCntImportDataManagerLogs,
     getAssignedCycleCounts,
     getCycleCounts,
     clearCycleCountList,

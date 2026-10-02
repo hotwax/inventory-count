@@ -453,7 +453,7 @@ const updateSession = async (payload: any): Promise <any> => {
 
 const bulkUploadInventoryCounts = async (payload: any): Promise <any> => {
   return api({
-    url: `inventory-cycle-count/cycleCounts/upload`,
+    url: `admin/uploadDataManagerFile`,
     method: "post",
     ...payload
   });
@@ -496,7 +496,8 @@ const createCycleCountFromProducts = async (payload: {
 
   return bulkUploadInventoryCounts({
     data: formData,
-    headers: { "Content-Type": "multipart/form-data;" }
+    headers: { "Content-Type": "multipart/form-data;" },
+    params: { configId: "INV_COUNT_IMPORT" }
   });
 }
 
