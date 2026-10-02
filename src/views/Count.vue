@@ -171,10 +171,10 @@
 </template>
 
 <script setup>
-import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController, onIonViewWillLeave } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate, commonUtil } from '@common';
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import router from '@/router';
 import { loader } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -201,11 +201,32 @@ const pageRef = ref(null);
 const currentDeviceId = useUserProfile().getDeviceId;
 const loadingWorkEffortId = ref(null);
 
-onIonViewDidEnter(async () => {
+// Bumped by every reload of the list and when the page is left, so a response for an earlier
+// facility, or a further page of the previous list, is dropped instead of replacing or extending
+// the list on screen.
+let loadSequence = 0;
+let isViewActive = false;
+
+async function reloadCycleCounts() {
   isLoading.value = true;
-  pageIndex.value = 0;
   await getCycleCounts(true);
-  isLoading.value = false;
+}
+
+onIonViewDidEnter(async () => {
+  isViewActive = true;
+  await reloadCycleCounts();
+});
+
+onIonViewWillLeave(() => {
+  isViewActive = false;
+  loadSequence++;
+});
+
+// The facility can be switched while this page is open; show that facility's counts.
+watch(() => currentFacility.value?.facilityId, async (facilityId, previousFacilityId) => {
+  if (isViewActive && facilityId && facilityId !== previousFacilityId) {
+    await reloadCycleCounts();
+  }
 });
 
 function getSessionStatusDescription(statusId) {
@@ -257,8 +278,12 @@ async function loadMoreCycleCount(event) {
 }
 
 async function getCycleCounts(reset = false) {
+  if (reset) loadSequence++;
+  const sequence = loadSequence;
+
   if (!currentFacility.value?.facilityId) {
     commonUtil.showToast(translate('No facility is associated with this user'));
+    isLoading.value = false;
     return;
   }
 
@@ -278,6 +303,7 @@ async function getCycleCounts(reset = false) {
 
   try {
     const { workEfforts, isScrollable: scrollable } = await useInventoryCountRun().getCreatedAndAssignedWorkEfforts(params);
+    if (sequence !== loadSequence) return;
 
     let combined = [];
     if (pageIndex.value === 0) {
@@ -289,10 +315,11 @@ async function getCycleCounts(reset = false) {
 
     isScrollable.value = scrollable;
   } catch (err) {
+    if (sequence !== loadSequence) return;
     console.error('Error loading cycle counts:', err);
     commonUtil.showToast(translate('Failed to load cycle counts.'));
   } finally {
-    isLoading.value = false;
+    if (sequence === loadSequence) isLoading.value = false;
   }
 }
 
