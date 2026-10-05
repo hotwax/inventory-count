@@ -71,7 +71,7 @@ const excludedPaths = ['/login', '/tabs/', '/session-count-detail/', '/add-hand-
 const showMenu = computed(() => {
   const fullPath = router.currentRoute.value.fullPath;
   const isExcluded = excludedPaths.some(path => fullPath.includes(path));
-  return !isExcluded && useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
+  return !isExcluded && (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN) && !useUserProfile().hasPermission(Actions.APP_STORE_VIEW));
 });
 
 const loader = ref(null) as any;
