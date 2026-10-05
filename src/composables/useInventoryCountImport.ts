@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
+import { getUploadFileParamName } from '@/services/utils';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -491,8 +492,7 @@ const createCycleCountFromProducts = async (payload: {
   const fileName = `${(payload.countName || "CycleCount").trim().replace(/[^\w-]+/g, "_")}.csv`;
   const blob = new Blob([Papa.unparse(rows)], { type: "text/csv;charset=utf-8;" });
   const formData = new FormData();
-  formData.append("contentFile", blob, fileName);
-  formData.append("uploadedFile", blob, fileName);
+  formData.append(getUploadFileParamName(), blob, fileName);
   formData.append("fileName", fileName.replace(".csv", ""));
 
   return bulkUploadInventoryCounts({
