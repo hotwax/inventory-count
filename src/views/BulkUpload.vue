@@ -150,6 +150,7 @@ import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { getUploadFileParamName } from '@/services/utils';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
@@ -367,7 +368,7 @@ async function save() {
     name: fileName.value
   });
   const fd = new FormData();
-  fd.append("contentFile", data, fileName.value);
+  fd.append(getUploadFileParamName(), data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
     const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });
