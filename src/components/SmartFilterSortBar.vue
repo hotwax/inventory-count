@@ -68,26 +68,27 @@
         </span>
       </div>
 
+      <!-- Placeholder for alignment -->
+      <div v-else></div>
+
       <!-- SORT -->
-      <ion-item lines="none" v-if="showSort" class="sort-item">
-        <ion-icon slot="start" :icon="swapVerticalOutline" />
-        <ion-select
-          :value="filters.sort"
-          @ionChange="updateFilter('sort', $event.detail.value)"
-          :label="sortByLabel"
-          label-placement="start"
-          interface="popover"
-          data-testid="smart-filter-sort-select"
+      <ion-select
+        v-if="showSort"
+        :value="filters.sort"
+        @ionChange="updateFilter('sort', $event.detail.value)"
+        slot="end"
+        :label="sortByLabel"
+        interface="popover"
+        data-testid="smart-filter-sort-select"
+      >
+        <ion-select-option
+          v-for="opt in sortOptions"
+          :value="opt.value"
+          :key="opt.value"
         >
-          <ion-select-option
-            v-for="opt in sortOptions"
-            :value="opt.value"
-            :key="opt.value"
-          >
-            {{ opt.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
+          {{ opt.label }}
+        </ion-select-option>
+      </ion-select>
 
     </ion-item-divider>
 
@@ -145,7 +146,7 @@ import {
 
 import { reactive, computed, defineProps, defineEmits, onMounted, ref } from "vue";
 import { translate as t } from "@common";
-import { closeOutline, checkmarkDoneOutline, swapVerticalOutline } from "ionicons/icons";
+import { closeOutline, checkmarkDoneOutline } from "ionicons/icons";
 import { useUserProfile } from "@/stores/userProfileStore";
 import { useProductMaster } from "@/composables/useProductMaster";
 
@@ -164,7 +165,7 @@ const props = defineProps({
 
   placeholderSearch: { type: String, default: () => t("Search product name") },
   statusLabel: { type: String, default: () => t("Status") },
-  sortByLabel: { type: String, default: () => t("Sort by") },
+  sortByLabel: { type: String, default: () => t("Sort By") },
 
   statusOptions: Array,
   sortOptions: Array,
@@ -387,20 +388,6 @@ const isAllSelected = computed(() =>
   justify-content: space-between;
   align-items: center;
   padding-inline: var(--spacer-sm);
-}
-
-.sort-item {
-  --background: transparent;
-  --min-height: unset;
-  --padding-start: 0;
-  --inner-padding-end: 0;
-  flex: 1;
-  width: 100%;
-}
-
-.sort-item ion-select {
-  width: 100%;
-  justify-content: space-between;
 }
 
 .select-left {
