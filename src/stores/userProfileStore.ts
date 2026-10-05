@@ -12,6 +12,7 @@ export const useUserProfile = defineStore('userProfile', {
     // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
     appVersion: undefined as string | undefined,
     permissions: [] as any,
+    systemInformation: {} as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     timeZones: [],
@@ -216,6 +217,7 @@ export const useUserProfile = defineStore('userProfile', {
       try {
         await this.fetchUserProfile()
         await this.fetchPermissions();
+        await this.fetchSystemInformation();
 
         this.oms = cookieHelper().get("oms") || '';
         
@@ -243,6 +245,20 @@ export const useUserProfile = defineStore('userProfile', {
         }
       } catch (error: any) {
         return Promise.reject(new Error(error));
+      }
+    },
+
+    async fetchSystemInformation() {
+      try {
+        const resp = await api({
+          url: "admin/maarg",
+          method: "GET",
+          baseURL: commonUtil.getMaargURL(),
+        });
+        if(commonUtil.hasError(resp)) throw resp.data;
+        this.systemInformation = resp.data
+      } catch(error: any) {
+        logger.error("Failed to fetch system information", error);
       }
     },
 
