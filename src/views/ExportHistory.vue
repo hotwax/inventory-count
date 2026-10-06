@@ -181,17 +181,19 @@ async function openErrorModal(message: any) {
   isErrorModalOpen.value = true;
   try {
     const resp = await useInventoryCountRun().getCycleCountImportErrors({ systemMessageId: message.systemMessageId });
+    // Another row was opened while this request was in flight
+    if (selectedMessageId.value !== message.systemMessageId) return;
     if (!commonUtil.hasError(resp)) {
       const errors = Array.isArray(resp?.data) ? resp.data : [];
-      // Show the most recent attempt's error
-      exportError.value = errors.sort((a: any, b: any) => (b.errorDate || 0) - (a.errorDate || 0))[0] || null;
+      // Show the most recent attempt's error; errorDate may arrive as epoch millis or a date string
+      exportError.value = errors.sort((a: any, b: any) => (new Date(b.errorDate).getTime() || 0) - (new Date(a.errorDate).getTime() || 0))[0] || null;
     } else {
       throw resp.data;
     }
   } catch (err) {
     logger.error('Failed to fetch export errors', err);
   } finally {
-    isErrorLoading.value = false;
+    if (selectedMessageId.value === message.systemMessageId) isErrorLoading.value = false;
   }
 }
 
