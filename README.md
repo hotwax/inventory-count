@@ -76,7 +76,7 @@ This app is developed and run from the [`accxui`](https://github.com/hotwax/accx
 6. Run following command from the `accxui` root to download dependencies  
     `pnpm install`
 7. To run the app in browser use the command from the `accxui` root:  
-    `pnpm --filter cycle-count dev`
+    `pnpm --filter inventory-count dev`
 
 
 # Build Notes (Contributors)
@@ -90,9 +90,9 @@ This app is developed and run from the [`accxui`](https://github.com/hotwax/accx
 6. Run following command from the `accxui` root to download dependencies  
     `pnpm install`
 7. To run the app in browser use the command from the `accxui` root:  
-    `pnpm --filter cycle-count dev`
+    `pnpm --filter inventory-count dev`
 8. To build the app use the command from the `accxui` root:  
-    `pnpm --filter cycle-count build`
+    `pnpm --filter inventory-count build`
 
 Run `pnpm install` from the `accxui` root again whenever you add another app under `apps/`. See the [accxui README](https://github.com/hotwax/accxui/blob/main/README.md) for the full workspace guide.
 
