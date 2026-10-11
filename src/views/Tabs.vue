@@ -3,11 +3,15 @@
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom" data-testid="tabs-bar">
-        <ion-tab-button tab="orders" @click="$router.push('/tabs/count')" href="/tabs/count" data-testid="tabs-count-btn">
+        <ion-tab-button tab="orders" @click="router.push('/tabs/count')" href="/tabs/count" data-testid="tabs-count-btn">
           <ion-icon :icon="fileTrayFullOutline" />
           <ion-label>{{ translate("Counts") }}</ion-label>
         </ion-tab-button>
-        <ion-tab-button v-if="hasPermission(Actions.APP_VARIANCE_VIEW)" tab="audit" href="/tabs/variance">
+        <ion-tab-button tab="create" @click="router.push('/tabs/create-cycle-count')" href="/tabs/create-cycle-count" data-testid="tabs-create-count-btn">
+          <ion-icon :icon="addCircleOutline" />
+          <ion-label>{{ translate("Create") }}</ion-label>
+        </ion-tab-button>
+        <ion-tab-button v-if="useUserProfile().hasPermission(Actions.APP_VARIANCE_VIEW)" tab="audit" href="/tabs/variance">
           <ion-icon :icon="shirtOutline" />
           <ion-label>{{ translate("Variance") }}</ion-label>
         </ion-tab-button>
@@ -23,12 +27,15 @@
 <script setup lang="ts">
 import { IonIcon, IonLabel, IonPage, IonTabBar, IonTabButton, IonTabs, IonRouterOutlet } from "@ionic/vue";
 import {
+  addCircleOutline,
   fileTrayFullOutline,
   settingsOutline,
   shirtOutline
 } from "ionicons/icons";
-import { translate } from '@/i18n'
-import { Actions, hasPermission } from "@/authorization"
+import { translate } from '@common'
+import router from "@/router";
+import { useUserProfile } from "@/stores/userProfileStore";
+import Actions from "@/authorization/actions";
 </script>
 
 <style scoped>

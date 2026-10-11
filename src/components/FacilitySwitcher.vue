@@ -13,12 +13,12 @@
         {{ currentFacility.facilityName }}
         <p>{{ currentFacility.facilityId }}</p>
       </ion-label>
-      <ion-button v-if="facilities?.length > 1 && !authStore.isEmbedded" id="open-facility-modal" slot="end" fill="outline" color="dark" data-testid="facility-switcher-change-btn">{{
+      <ion-button v-if="facilities?.length > 1" id="open-facility-modal" slot="end" fill="outline" color="dark" data-testid="facility-switcher-change-btn">{{
         translate('Change')}}</ion-button>
     </ion-item>
   </ion-card>
   <!-- Using inline modal(as recommended by ionic), also using it inline as the component inside modal is not getting mounted when using modalController -->
-  <ion-modal v-if="!authStore.isEmbedded" ref="facilityModal" trigger="open-facility-modal" @didPresent="loadFacilities()"
+  <ion-modal v-if="facilities?.length > 1" ref="facilityModal" trigger="open-facility-modal" @didPresent="loadFacilities()"
     @didDismiss="clearSearch()" data-testid="facility-switcher-modal">
     <ion-header>
       <ion-toolbar>
@@ -73,12 +73,11 @@
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonRadio, IonRadioGroup, IonSearchbar, IonSpinner, IonTitle, IonToolbar } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { useProductStore } from '@/stores/productStore';
-import { computed, ref, defineProps } from 'vue';
-import { translate } from '@/i18n';
-import { useAuthStore } from '@/stores/authStore';
+import { computed, ref } from 'vue';
+import { translate } from '@common';
+import { defineProps } from "vue";
 
 const productStore = useProductStore();
-const authStore = useAuthStore();
 
 const facilities = computed(() => productStore.getFacilities)
 const currentFacility = computed(() => productStore.getCurrentFacility)

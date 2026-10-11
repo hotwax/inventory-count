@@ -22,6 +22,7 @@ export interface InventoryCountImportItem {
   inventoryCountImportId: string
   productId: string | null
   uuid: string
+  importItemSeqId?: string | null
   productIdentifier: string
   locationSeqId?: string | null
   quantity: number

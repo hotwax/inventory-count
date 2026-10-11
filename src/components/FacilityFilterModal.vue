@@ -50,7 +50,7 @@
 import { ref, defineProps, defineEmits } from 'vue';
 import { IonButton, IonButtons, IonCheckbox, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonSearchbar, IonTitle, IonToolbar } from '@ionic/vue';
 import { checkmarkOutline, closeOutline } from 'ionicons/icons';
-import { translate } from '@/i18n';
+import { translate } from '@common';
 
 interface Facility {
   facilityId: string;
@@ -125,7 +125,9 @@ function clearAll() {
 </script>
 
 <style scoped>
+/* Inset via padding, not margin: the ion-searchbar host is width:100%, so a 24px inline margin
+   pushes it 24px past each toolbar edge instead of insetting it. */
 ion-searchbar {
-  margin-inline: var(--spacer-md);
+  padding-inline: var(--spacer-base);
 }
 </style>

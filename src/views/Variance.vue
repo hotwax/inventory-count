@@ -19,7 +19,7 @@
           <!-- Left Panel -->
           <div class="count-events">
             <ion-item class="scan" lines="none">
-              <ion-label position="stacked">{{ translate(barcodeIdentifierDescription) }}</ion-label>
+              <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
               <ion-input ref="barcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
                 @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
             </ion-item>
@@ -49,7 +49,7 @@
                       </div>
                       <ion-label>
                         {{ item.scannedValue }}
-                        <p class="clickable-time" @click="showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
+                        <p class="clickable-time" @click="commonUtil.showToast(`Scanned at: ${DateTime.fromMillis(Number(item.createdAt)).toFormat('dd LLL yyyy tt')}`)">{{ timeAgo(item.createdAt) }}</p>
                       </ion-label>
                       <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary">
                         {{ translate('unaggregated') }}
@@ -104,14 +104,22 @@
               <div class="segment-actions-container ion-margin-top ion-padding-horizontal">
                 <ion-segment v-model="selectedSegment" class="main-segment">
                   <ion-segment-button value="matched">
-                    <ion-label>{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</ion-label>
+                    <ion-icon class="segment-mobile-icon" :icon="checkmarkCircleOutline" aria-hidden="true" />
+                    <ion-label>
+                      <span class="segment-desktop-label">{{ translate("Matched", { matchedCount: inventoryAdjustments.length }) }}</span>
+                      <span class="segment-mobile-count" aria-hidden="true">{{ inventoryAdjustments.length }}</span>
+                    </ion-label>
                   </ion-segment-button>
                   <ion-segment-button value="unmatched">
-                    <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</ion-label>
+                    <ion-icon class="segment-mobile-icon" :icon="helpCircleOutline" aria-hidden="true" />
+                    <ion-label>
+                      <span class="segment-desktop-label">{{ translate("Unmatched", { unmatchedItemsLength: unmatchedCount }) }}</span>
+                      <span class="segment-mobile-count" aria-hidden="true">{{ unmatchedCount }}</span>
+                    </ion-label>
                   </ion-segment-button>
                 </ion-segment>
                 <ion-button fill="clear" color="primary" class="new-session" @click="confirmClearAll">
-                  <ion-icon :icon="refreshOutline" slot="start"></ion-icon>
+                  <ion-icon :icon="addCircleOutline" slot="start"></ion-icon>
                   {{ translate("New Session") }}
                 </ion-button>
               </div>
@@ -294,49 +302,41 @@
           </div>
           
           <ion-list v-if="handCountedProducts.length > 0" class="hand-counted-items">
-            <ion-card v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
-              <div class="item ion-padding-end">
-                <ion-item class="product" lines="none">
-                  <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(product.mainImageUrl)">
-                    <img :src="product.mainImageUrl"/>
-                  </ion-thumbnail>
-                  <ion-label>
-                    {{ useProductMaster().primaryId(product) }}
-                    <p>{{ useProductMaster().secondaryId(product) }}</p>
-                  </ion-label>
-                </ion-item>
-                <div class="quantity">
-                  <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
-                    <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                  <ion-item lines="full">
-                    <ion-input
-                      :ref="el => setQuantityInputRef(el, index)"
-                      @ionInput="handCountedItemManualInputChange($event, product)"
-                      @keyup.enter="focusSearchBar"
-                      label="Qty"
-                      label-placement="stacked" 
-                      type="number" 
-                      min="0" 
-                      inputmode="numeric" 
-                      placeholder="0" 
-                      v-model.number="product.countedQuantity"
-                    ></ion-input>
-                  </ion-item>
-                  <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
-                    <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                </div>
-              </div>
-              <div class="progress ion-padding">
-                <ion-label>
-                  {{ 'Current Stock: ' + (product.quantityOnHand || 0) }}
-                </ion-label>
-                <ion-button fill="clear" color="danger" aria-label="remove-item" @click="removeProduct(product)">
+            <ion-item class="flat-list-item" v-for="(product, index) in handCountedProducts" :key="product.productId + '-' + index">
+              <ion-thumbnail class="img-preview" slot="start" @click="openImagePreview(product.mainImageUrl)">
+                <img :src="product.mainImageUrl"/>
+              </ion-thumbnail>
+              <ion-label>
+                <h2>{{ useProductMaster().primaryId(product) }}</h2>
+                <p>{{ useProductMaster().secondaryId(product) }}</p>
+                <p>{{ translate('Current Stock:') }} {{ product.quantityOnHand || 0 }}</p>
+              </ion-label>
+              
+              <div slot="end" class="quantity-controls">
+                <ion-button fill="clear" color="medium" aria-label="decrease" @click="decrementProductQuantity(product)">
+                  <ion-icon :icon="removeCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-input
+                  class="quantity-input"
+                  :ref="el => setQuantityInputRef(el, index)"
+                  @ionInput="handCountedItemManualInputChange($event, product)"
+                  @keyup.enter="focusSearchBar"
+                  label="Qty"
+                  label-placement="stacked" 
+                  type="number" 
+                  min="0" 
+                  inputmode="numeric" 
+                  placeholder="0" 
+                  v-model.number="product.countedQuantity"
+                ></ion-input>
+                <ion-button fill="clear" color="medium" aria-label="increase" @click="incrementProductQuantity(product)">
+                  <ion-icon :icon="addCircleOutline" slot="icon-only"></ion-icon>
+                </ion-button>
+                <ion-button class="remove-btn" fill="clear" color="danger" aria-label="remove-item" @click="removeProduct(product)">
                   <ion-icon :icon="closeCircleOutline" slot="icon-only"></ion-icon>
                 </ion-button>
               </div>
-            </ion-card>
+            </ion-item>
           </ion-list>
         </template>
       </main>
@@ -420,27 +420,40 @@
       </ion-content>
     </ion-modal>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm"/>
+    <ion-footer v-if="mode === 'scan'" class="ion-display-lg-none">
+      <ion-toolbar>
+        <ion-item class="scan" lines="none">
+          <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
+          <ion-input ref="mobileBarcodeInput" v-model="scannedValue" :placeholder="translate('Scan a barcode')" @keyup.enter="handleScan" @click="clearBarcodeInput"
+            @ionFocus="toggleScannerActive" @ionBlur="toggleScannerActive"></ion-input>
+        </ion-item>
+        <ion-button expand="block" :color="isScannerActive ? 'success' : 'danger'" class="focus ion-margin-top ion-margin-horizontal ion-margin-bottom" @click="handleStartOrFocus">
+          <ion-icon slot="start" :icon="barcodeOutline"></ion-icon>
+          {{ isScannerActive ? translate("Scanner Ready") : translate("Focus Scanner") }}
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 
-import { translate } from '@/i18n';
+import { api, commonUtil, translate } from '@common';
+import { WorkerFactory } from '@common/core/workerFactory';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
-import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline } from 'ionicons/icons';
+import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline, checkmarkCircleOutline, helpCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { computed, ref, nextTick } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
-import { showToast } from '@/services/uiUtils';
-import api from '@/services/RemoteAPI';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import { DateTime } from 'luxon';
 import defaultImage from "@/assets/images/defaultImage.png";
-import { useAuthStore } from '@/stores/authStore';
 import { Subscription, from } from 'rxjs';
-import { inventorySyncWorker } from "@/workers/workerInitiator";
+import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
+import type { Remote } from 'comlink';
 
 const mode = ref<'scan' | 'count'>('scan');
 
@@ -473,7 +486,8 @@ const searchedProductString = ref('');
 const searchedProducts = ref<Array<any>>([]);
 
 /* Count Events - Left Pane Refs */
-const barcodeInput = ref();
+const barcodeInput = ref<any>(null);
+const mobileBarcodeInput = ref<any>(null);
 const isScannerActive = ref(false);
 const scannedValue = ref('');
 const events = ref<any[]>([]);
@@ -495,7 +509,7 @@ const aggregationInterval = 5000;
 
 const handleScan = () => {
   if (!scannedValue.value.trim().length) {
-    showToast(translate("Please enter a barcode"));
+    commonUtil.showToast(translate("Please enter a barcode"));
     return;
   }
   useProductMaster().addVarianceLog(scannedValue.value.trim(), 1, currentFacility.value.facilityId);
@@ -506,7 +520,8 @@ const handleScan = () => {
   }, aggregationInterval);
  };
 const handleStartOrFocus = () => { 
-  barcodeInput.value.$el.setFocus();
+  barcodeInput.value?.$el?.setFocus();
+  mobileBarcodeInput.value?.$el?.setFocus();
 };
 const toggleScannerActive = () => { 
   isScannerActive.value = !isScannerActive.value;
@@ -552,10 +567,10 @@ const negateSingleScan = async (item: any) => {
       item.productId,
       item.id
     )
-    showToast(translate('Scan removed'))
+    commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     console.error(err)
-    showToast(translate('Failed to remove scan'))
+    commonUtil.showToast(translate('Failed to remove scan'))
   } finally {
     resetRemoveConfirm()
   }
@@ -588,6 +603,7 @@ function openImagePreview(src: string) {
 
 const timeAgo = (date: number) => DateTime.fromMillis(Number(date)).toRelative();
 let aggregationWorker: Worker | null = null
+let aggregationWorkerApi: Remote<InventorySyncWorker> | null = null
 const subscriptions: Subscription[] = [];
 const isSearchResultsModalOpen = ref(false);
 const isMatchModalOpen = ref(false);
@@ -642,7 +658,9 @@ onIonViewDidEnter(async () => {
     from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
-  aggregationWorker = new Worker(new URL('@/workers/backgroundAggregation.ts', import.meta.url), { type: 'module' })
+  const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
+  aggregationWorker = bgWorker.worker
+  aggregationWorkerApi = bgWorker.api
 
   aggregationWorker.onmessage = (event) => {
     const { type, count } = event.data
@@ -663,11 +681,11 @@ onIonViewDidEnter(async () => {
     payload: {
       intervalMs: aggregationInterval,
       context: {
-        omsUrl: useAuthStore().getOmsRedirectionUrl,
-        omsInstance: useAuthStore().getOMS,
+        omsUrl: commonUtil.getOmsURL(),
+        omsInstance: commonUtil.getOMSInstanceName(),
         userLoginId: useUserProfile().getUserProfile?.username,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken(),
         barcodeIdentification: barcodeIdentification,
         facilityId: useProductStore().getCurrentFacility.facilityId
       }
@@ -690,6 +708,7 @@ async function unscheduleWorker() {
       console.log('[Session] Terminating background aggregation worker...');
       aggregationWorker.terminate();
       aggregationWorker = null;
+      aggregationWorkerApi = null;
     }
   } catch (err) {
     console.error('[Session] Failed to terminate worker:', err);
@@ -821,7 +840,7 @@ async function searchProducts(queryString: string): Promise<any> {
     return products;
   } catch (error) {
     console.error("Error searching products:", error);
-    showToast(translate("Failed to search products. Please try again."));
+    commonUtil.showToast(translate("Failed to search products. Please try again."));
   }
   isSearching.value = false;
   return [];
@@ -859,41 +878,42 @@ function focusMatchSearch() {
 
 async function saveMatchProduct() {
   if (!selectedProductId.value || !matchedItem.value) {
-    showToast(translate("Please select a product to match"));
+    commonUtil.showToast(translate("Please select a product to match"));
     return;
+  }
+
+  if (!aggregationWorker || !aggregationWorkerApi) {
+    commonUtil.showToast(translate("Background worker not available"))
+    return
   }
 
   try {
     const context = {
-        omsUrl: useAuthStore().getOmsRedirectionUrl,
-        omsInstance: useAuthStore().getOMS,
+        omsUrl: commonUtil.getOmsURL(),
+        omsInstance: commonUtil.getOMSInstanceName(),
         userLoginId: useUserProfile().getUserProfile?.username,
-        maargUrl: useAuthStore().getBaseUrl,
-        token: useAuthStore().token.value,
+        maargUrl: commonUtil.getMaargURL(),
+        token: commonUtil.getToken(),
         barcodeIdentification: useProductStore().getBarcodeIdentificationPref,
         facilityId: useProductStore().getCurrentFacility.facilityId
     }
 
-    if (inventorySyncWorker) {
-      await inventorySyncWorker.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
-      showToast(translate("Product matched successfully"));
-      closeMatchModal();
-    } else {
-      showToast(translate("Background worker not available"));
-    }
+    await aggregationWorkerApi.matchUnmatchedInventoryAdjustment(matchedItem.value.uuid, selectedProductId.value, context);
+    commonUtil.showToast(translate("Product matched successfully"));
+    closeMatchModal();
   } catch (err) {
     console.error(err);
-    showToast(translate("Failed to match product"));
+    commonUtil.showToast(translate("Failed to match product"));
   }
 }
 
 async function logHandCountedItemVariances() {
   if (!optedActionForHandCounted.value) {
-    showToast(translate("Please select an action."));
+    commonUtil.showToast(translate("Please select an action."));
     return;
   }
   if (!optedVarianceReasonForHandCounted.value) {
-    showToast(translate("Please select a variance reason."));
+    commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
   try {
@@ -922,7 +942,7 @@ async function logHandCountedItemVariances() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      commonUtil.showToast(translate("Variance logged successfully."));
       handCountedProducts.value = []
       optedActionForHandCounted.value = 'add'
       optedVarianceReasonForHandCounted.value = null
@@ -930,18 +950,18 @@ async function logHandCountedItemVariances() {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    commonUtil.showToast(translate("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
 
 async function logVariance() {
   if (!optedAction.value) {
-    showToast(translate("Please select an action."));
+    commonUtil.showToast(translate("Please select an action."));
     return;
   }
   if (!optedVarianceReason.value) {
-    showToast(translate("Please select a variance reason."));
+    commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
   try {
@@ -970,14 +990,14 @@ async function logVariance() {
     })
     
     if (resp?.status === 200) {
-      showToast(translate("Variance logged successfully."));
+      commonUtil.showToast(translate("Variance logged successfully."));
       // Clear the VarianceLogs table and the InventoryAdjustmentTables here
       useProductMaster().clearVarianceLogsAndAdjustments();
     } else {
       throw resp;
     }
   } catch (error) {
-    showToast(translate("Failed to log variance. Please try again."));
+    commonUtil.showToast(translate("Failed to log variance. Please try again."));
     console.error("Error logging variance:", error);
   }
 }
@@ -1078,7 +1098,7 @@ async function confirmRemoveAdjustment(adjustment: any) {
         text: translate("Remove"),
         handler: async () => {
           await useProductMaster().removeInventoryAdjustment(adjustment.facilityId, adjustment.uuid, adjustment.scannedValue);
-          showToast(translate("Record removed"));
+          commonUtil.showToast(translate("Record removed"));
         }
       }
     ]
@@ -1100,7 +1120,7 @@ async function confirmRemoveUnmatchedItem(item: any) {
         text: translate("Remove"),
         handler: async () => {
           await useProductMaster().removeUnmatchedInventoryAdjustment(item.facilityId, item.uuid, item.scannedValue);
-          showToast(translate("Record removed"));
+          commonUtil.showToast(translate("Record removed"));
         }
       }
     ]
@@ -1121,7 +1141,7 @@ async function confirmClearAll() {
         text: translate("Clear data"),
         handler: async () => {
           await useProductMaster().clearVarianceLogsAndAdjustments();
-          showToast(translate("All records cleared"));
+          commonUtil.showToast(translate("All records cleared"));
         }
       }
     ]
@@ -1148,6 +1168,7 @@ main.count {
   margin: 0 auto;
   width: 100%;
 }
+
 
 .count-events {
   border-right: 1px solid var(--ion-color-medium);
@@ -1288,28 +1309,30 @@ main.count {
   border: 1px solid var(--ion-color-medium);
 }
 
-.hand-counted-items {
-  .item {
-    flex: 1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .quantity {
-      display: flex;
-    }
-  }
+.hand-counted-items .flat-list-item {
+  --min-height: 64px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
 
-  .progress {
-    display: flex;
-    gap: var(--spacer-sm);
-    align-items: center;
-    border-top: 1px solid var(--ion-color-medium);
+.hand-counted-items .flat-list-item::part(native) {
+  align-items: flex-start;
+  padding-top: 8px;
+  height: auto;
+}
 
-    ion-label {
-      flex: 1 0 max-content;
-    }
-  }
+.hand-counted-items .quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hand-counted-items .quantity-input {
+  width: 50px;
+  text-align: center;
+}
+
+.hand-counted-items .remove-btn {
+  margin-left: 8px;
 }
 
 .variance-summary-header {
@@ -1342,4 +1365,26 @@ main.count {
   --padding-start: 12px;
   --padding-end: 12px;
 }
+
+.segment-mobile-icon,
+.segment-mobile-count {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  main.scan {
+    grid-template-columns: 1fr;
+  }
+  .count-events {
+    display: none !important;
+  }
+  .segment-desktop-label {
+    display: none;
+  }
+  .segment-mobile-icon,
+  .segment-mobile-count {
+    display: block;
+  }
+}
+
 </style>

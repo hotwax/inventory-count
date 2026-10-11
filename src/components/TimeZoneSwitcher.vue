@@ -117,7 +117,7 @@ import {
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { computed, onBeforeMount, ref, defineProps } from "vue";
-import { translate} from '../i18n'
+import { translate} from '@common'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';
 
@@ -159,7 +159,11 @@ const closeModal = () => {
 onBeforeMount(async () => {
   isLoading.value = true;
   await useUserProfile().getDxpAvailableTimeZones();
-    timeZoneId.value = userProfile.value.timeZone
+  if (!userProfile.value) {
+    isLoading.value = false;
+    return;
+  }
+  timeZoneId.value = currentTimeZoneId.value;
   if(props.showBrowserTimeZone) {
     browserTimeZone.value.label = ((timeZones.value as any[])?.find((timeZone: any) => (timeZone?.id || '').toLowerCase().includes(browserTimeZone.value.id.toLowerCase()))?.label) || ''
   }

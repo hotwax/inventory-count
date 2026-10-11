@@ -13,11 +13,18 @@
     "sourceMap": true,
     "baseUrl": ".",
     "types": [
-      "webpack-env"
+      "pinia",
+      "pinia-plugin-persistedstate"
     ],
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@common": [
+        "../../common/index.ts"
+      ],
+      "@common/*": [
+        "../../common/*"
       ]
     },
     "lib": [

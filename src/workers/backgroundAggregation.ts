@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import workerApi from "@/services/workerApi";
+import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
 
@@ -35,7 +35,7 @@ let isSyncing = false
 // Product Lookup Helper
 
 const buildProductQuery = (params: any): Record<string, any> => {
-  const viewSize = params.viewSize || process.env.VUE_APP_VIEW_SIZE || 100
+  const viewSize = params.viewSize || import.meta.env.VITE_VIEW_SIZE || 100
   const viewIndex = params.viewIndex || 0
 
   const payload: any = {
@@ -80,17 +80,17 @@ async function getById(productId: string, context: any) {
 
   try {
     const query = buildProductQuery({
-        filter: `productId: ${productId}`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      });
-    const resp = await workerApi({
+      filter: `productId: ${productId}`,
+      viewSize: 1,
+      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+    });
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -121,17 +121,17 @@ async function findProductByIdentification(idType: string, value: string, contex
 
   try {
     const query = buildProductQuery({
-        filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
-        viewSize: 1,
-        fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
-      });
-    const resp = await workerApi({
+      filter: `goodIdentifications:${idType}/${value},isVirtual:false,productTypeId:FINISHED_GOOD,-prodCatalogCategoryTypeIds:PCCT_DISCONTINUED`,
+      viewSize: 1,
+      fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
+    });
+    const resp = await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
         'Content-Type': 'application/json'
       },
-      url: 'inventory-cycle-count/runSolrQuery',
+      url: 'admin/runSolrQuery',
       method: 'POST',
       data: query
     })
@@ -163,13 +163,13 @@ function ensureProductStored(productId: string | null, context: any) {
         viewSize: 1,
         fieldsToSelect: `productId,productName,parentProductName,internalName,mainImageUrl,goodIdentifications`
       });
-      const resp = await workerApi({
+      const resp = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
           'Content-Type': 'application/json'
         },
-        url: 'inventory-cycle-count/runSolrQuery',
+        url: 'admin/runSolrQuery',
         method: 'POST',
         data: query
       });
@@ -208,7 +208,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
     if (!productId) {
       continue
     }
- 
+
     const item = await db.table('inventoryCountRecords')
       .where('inventoryCountImportId').equals(inventoryCountImportId)
       .and((item: any) => item.productId == productId)
@@ -236,7 +236,7 @@ async function resolveMissingProducts(inventoryCountImportId: string, context: a
 
 const getProductStock = async (productId: string, context: any): Promise<any> => {
   try {
-    return await workerApi({
+    return await workerRemoteApi({
       baseURL: context.maargUrl,
       headers: {
         'Authorization': `Bearer ${context.token}`,
@@ -312,7 +312,7 @@ async function aggregateVarianceLogs(context: any) {
         }
       }
 
-      let stock = null
+      let stock = null;
       if (productId) {
         try {
           stock = await getProductStock(productId, context)
@@ -454,6 +454,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         const updated = {
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
+          // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now,
           productId: existing.productId || productId,
@@ -542,12 +543,12 @@ async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string
 
       if (adjustment.scannedValue) {
         await db.table('varianceLogs')
-        .where('scannedValue').equals(adjustment.scannedValue)
-        .modify({ 
-          productId,
-          aggApplied: 1,
-          lastUpdatedAt: now
-        })
+          .where('scannedValue').equals(adjustment.scannedValue)
+          .modify({
+            productId,
+            aggApplied: 1,
+            lastUpdatedAt: now
+          })
       }
     });
   } catch (err) {
@@ -558,26 +559,25 @@ async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string
 
 async function matchProductLocallyAndSync(inventoryCountImportId: string, item: any, productId: string, context: any) {
   if (!productId) throw new Error("Product ID is required");
-
   const now = Date.now();
   ensureDB(context);
 
   try {
     ensureProductStored(productId, context);
-    const inventory = await workerApi({
-        baseURL: context.maargUrl,
-        headers: {
-          'Authorization': `Bearer ${context.token}`,
-          'Content-Type': 'application/json'
-        },
-        url: 'oms/dataDocumentView',
-        method: 'POST',
-        data: {
+    const inventory = await workerRemoteApi({
+      baseURL: context.maargUrl,
+      headers: {
+        'Authorization': `Bearer ${context.token}`,
+        'Content-Type': 'application/json'
+      },
+      url: 'oms/dataDocumentView',
+      method: 'POST',
+      data: {
         dataDocumentId: 'ProductFacilityAndInventoryItem',
         pageSize: 1,
         customParametersMap: { productId: productId, facilityId: context.facilityId }
       }
-      })
+    })
 
     await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
       const table = db.table('inventoryCountRecords');
@@ -688,13 +688,13 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       countedByUserLoginId: context.userLoginId,
       ...(item.systemQuantityOnHand !== undefined &&
         item.systemQuantityOnHand !== null && {
-          systemQuantityOnHand: item.systemQuantityOnHand
-        })
+        systemQuantityOnHand: item.systemQuantityOnHand
+      })
     }))
 
     const payload = { items }
 
-    const resp = await workerApi({
+    const resp = await workerRemoteApi({
       baseURL: baseUrl,
       headers: {
         'Authorization': `Bearer ${token}`
@@ -706,15 +706,14 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     if (resp) {
       const now = Date.now()
-      const batchId = `batch-${now}`
-      await db.transaction('rw', db.table('inventoryCountRecords'), async () => {
-        for (const item of syncable) {
-          await db.table('inventoryCountRecords').update(item.id, {
-            lastSyncedAt: now,
-            lastSyncedBatchId: batchId
-          })
-        }
-      })
+      const keys = syncable.map((item: any) => [inventoryCountImportId, item.uuid])
+      await db.table('inventoryCountRecords')
+        .where('[inventoryCountImportId+uuid]')
+        .anyOf(keys)
+        .modify({
+          lastSyncedAt: now,
+          lastSyncedBatchId: `batch-${now}`
+        })
       return pending.length
     }
 
@@ -732,7 +731,7 @@ async function resolveMissingSystemQOH(
   context: any
 ) {
   // fetch only items that have productId but no QOH yet, and are going to be synced
-    const records = await db.table('inventoryCountRecords')
+  const records = await db.table('inventoryCountRecords')
     .where({ inventoryCountImportId })
     .and((item: any) =>
       item.productId &&
@@ -753,7 +752,7 @@ async function resolveMissingSystemQOH(
 
   for (const record of records) {
     try {
-      const inventory = await workerApi({
+      const inventory = await workerRemoteApi({
         baseURL: context.maargUrl,
         headers: {
           'Authorization': `Bearer ${context.token}`,
