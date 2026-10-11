@@ -3,6 +3,7 @@ import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useUserProfile } from './userProfileStore'
 import { translate } from '@common'
+import Actions from "@/authorization/actions"
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -64,42 +65,11 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async getEComStores(token?: string, baseURL?: string, pageSize = 100): Promise <any> {
-      let params: any = { url: "oms/productStores", method: "GET", params: { pageSize } }
-      let resp = {} as any, stores: Array<any> = []
-      try {
-        resp = await api(params);
-        stores = resp.data
-      } catch(error) {
-        return Promise.reject({ code: "error", message: "Failed to fetch product stores", serverResponse: error })
-      }
-      return Promise.resolve(stores)
-    },
-
-    async getEComStoresByFacility(token?: string, baseURL?: string, pageSize = 100, facilityId?: any): Promise <any> {
-      let params: any = { url: `oms/facilities/${facilityId}/productStores`, method: "GET", params: { pageSize, facilityId } }
-      let resp = {} as any, stores: Array<any> = []
-      try {
-        resp = await api(params);
-        stores = resp.data.filter((store: any) => !store.thruDate)
-      } catch(error) {
-        return Promise.reject({ code: "error", message: "Failed to fetch facility associated product stores", serverResponse: error })
-      }
-      if(!stores.length) return Promise.resolve(stores)
-      const productStoresMap = {} as any;
-      try {
-        const productStores = await this.getEComStores(token, baseURL, 200);
-        productStores.map((store: any) => productStoresMap[store.productStoreId] = store.storeName)
-      } catch(error) { console.error(error); }
-      stores.map((store: any) => store.storeName = productStoresMap[store.productStoreId])
-      return Promise.resolve(stores)
-    },
-
     async createProductIdentificationPref(productStoreId: string): Promise<any> {
       const prefValue = { primaryId: "productId", secondaryId: "" }
       try {
         await api({
-          url: `oms/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: "POST",
           data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(prefValue) }
         });
@@ -111,7 +81,7 @@ export const useProductStore = defineStore('productStore', {
       const productIdentifications = { primaryId: "productId", secondaryId: "" }
       try {
         const resp = await api({
-          url: `oms/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: "GET",
           params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" }
         }) as any;
@@ -132,7 +102,7 @@ export const useProductStore = defineStore('productStore', {
     async saveProductIdentificationPref(productStoreId: string, productIdentificationPref: any): Promise<any> {
       let resp = {} as any, isSettingExists = false;
       try {
-        resp = await api({ url: `oms/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
+        resp = await api({ url: `admin/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
         if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
       } catch(err) { console.error(err) }
       if(!isSettingExists) {
@@ -140,7 +110,7 @@ export const useProductStore = defineStore('productStore', {
       }
       try {
         resp = await api({
-          url: `oms/productStores/${productStoreId}/settings`, method: "POST",
+          url: `admin/productStores/${productStoreId}/settings`, method: "POST",
           data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(productIdentificationPref) }
         });
         return Promise.resolve(productIdentificationPref)
@@ -149,70 +119,185 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    async fetchFacilitiesByGroup(facilityGroupId: string, baseURL?: string, token?: string, payload?: any): Promise <any> {
-      let params: any = { url: "oms/groupFacilities", method: "GET", params: { facilityGroupId, pageSize: 500, ...payload } }
-      let resp = {} as any;
-      try {
-        resp = await api(params);
-        return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
-      } catch(error) {
-        return Promise.reject({ code: "error", message: "Failed to fetch facilities for group", serverResponse: error })
-      }
-    },
+    async fetchUserFacilities() {
+      const userStore = useUserProfile();
+      const partyId = userStore.getUserProfile?.partyId;
+      const isAdminUser = userStore.hasPermission(Actions.APP_INV_COUNT_ADMIN);
+      const facilityGroupId = "" //Not used in cycle count, just kept the logic consistent with other apps, if needed in future
 
-    async fetchFacilitiesByParty(partyId: string, baseURL?: string, token?: string, payload?: any): Promise <any> {
-      let params: any = { url: `inventory-cycle-count/user/${partyId}/facilities`, method: "GET", params: { ...payload, pageSize: 500 } }
-      let resp = {} as any;
-      try {
-        resp = await api(params);
-        return Promise.resolve(resp.data.filter((facility: any) => !facility.thruDate))
-      } catch(error) {
-        return Promise.reject({ code: "error", message: "Failed to fetch user associated facilities", serverResponse: error })
-      }
-    },
-
-    async fetchFacilities(token: string, baseURL: string, partyId: string, facilityGroupId: string, isAdminUser: boolean, payload: any): Promise <any> {
       let facilityIds: Array<string> = [];
-      let filters: any = {};
-      let resp = {} as any
-      if(partyId) {
-        try {
-          resp = await this.fetchFacilitiesByParty(partyId, baseURL, token)
-          facilityIds = resp.map((facility: any) => facility.facilityId);
-          if (!facilityIds.length) return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: resp.data })
-        } catch(error) { return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: error }) }
-      }
-      if(facilityGroupId) {
-        try {
-          resp = await this.fetchFacilitiesByGroup(facilityGroupId, baseURL, token, filters)
-          facilityIds = resp.map((facility: any) => facility.facilityId);
-          if (!facilityIds.length) return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: resp.data })
-        } catch(error) { return Promise.reject({ code: 'error', message: 'Failed to fetch user facilities', serverResponse: error }) }
-      }
-      if(facilityIds.length) {
-        filters = { facilityId: facilityIds.join(","), facilityId_op: "in", pageSize: facilityIds.length }
-      }
-      let params: any = { url: "oms/facilities", method: "GET", params: { pageSize: 500, ...payload, ...filters } }
-      let facilities: Array<any> = []
-      try {
-        resp = await api(params);
-        facilities = resp.data
-      } catch(error) { return Promise.reject({ code: "error", message: "Failed to fetch facilities", serverResponse: error }) }
 
-      const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
-      if (commonUtil.isAppEmbedded() && shopifyLocationId) {
-        const facilityId = await this.fetchShopifyShopLocation({
-          shopifyLocationId,
-          pageSize: 1
-        })
-        if (facilityId) {
-          facilities = facilities.filter((facility: any) => facility.facilityId === facilityId);
-        } else {
-          facilities = [];
+      try {
+        // 1. Fetch party-associated facilities for regular users
+        if (partyId && !isAdminUser) {
+          let partyResp: any;
+          try {
+            partyResp = await api({
+              url: `admin/user/${partyId}/facilities`,
+              method: "GET",
+              params: { pageSize: 500 }
+            } as any);
+          } catch (error) {
+            logger.error(error);
+            throw new Error(translate("Failed to fetch user facilities."));
+          }
+
+          // Filter out expired associations
+          const activePartyFacilities = partyResp.data.filter((facility: any) => !facility.thruDate);
+          facilityIds = activePartyFacilities.map((facility: any) => facility.facilityId);
+
+          if (!facilityIds.length) {
+            throw new Error(translate("User is not associated with any facility."));
+          }
         }
+
+        // 2. Filter or Fetch Group-associated facilities (Fulfillment Group)
+        if (facilityGroupId) {
+          let groupFilters: any = {};
+          if (facilityIds.length) {
+            groupFilters = {
+              facilityId: facilityIds.join(","),
+              facilityId_op: "in",
+              pageSize: facilityIds.length
+            };
+          }
+
+          let groupResp: any;
+          try {
+            groupResp = await api({
+              url: "oms/groupFacilities",
+              method: "GET",
+              params: {
+                facilityGroupId,
+                pageSize: 500,
+                ...groupFilters
+              }
+            } as any);
+          } catch (error) {
+            logger.error(error);
+            throw new Error(translate("Failed to fetch fulfillment group facilities."));
+          }
+
+          const activeGroupFacilities = groupResp.data.filter((facility: any) => !facility.thruDate);
+          facilityIds = activeGroupFacilities.map((facility: any) => facility.facilityId);
+
+          if (!facilityIds.length) {
+            throw new Error(translate("No active facilities found in the fulfillment group."));
+          }
+        }
+
+        // 3. Fetch the final details for resolved facilities
+        let finalFilters: any = {};
+        if (facilityIds.length) {
+          finalFilters = {
+            facilityId: facilityIds.join(","),
+            facilityId_op: "in",
+            pageSize: facilityIds.length
+          };
+        }
+
+        let finalResp: any;
+        try {
+          finalResp = await api({
+            url: "oms/facilities",
+            method: "GET",
+            params: {
+              pageSize: 500,
+              facilityTypeId: "VIRTUAL_FACILITY",
+              facilityTypeId_not: "Y",
+              parentTypeId: "VIRTUAL_FACILITY",
+              parentTypeId_not: "Y",
+              ...finalFilters
+            }
+          });
+        } catch (error) {
+          logger.error(error);
+          throw new Error(translate("Failed to fetch user facilities."));
+        }
+
+        this.facilities = finalResp.data;
+        let selectedFacility = this.facilities[0];
+
+        // 3. Shopify POS Location filtering (if embedded in POS)
+        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
+        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
+          let locationFacilityId: string | null = null;
+          try {
+            locationFacilityId = await this.fetchShopifyShopLocation({
+              shopifyLocationId,
+              pageSize: 1
+            });
+          } catch (error) {
+            logger.error(error);
+            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
+          }
+
+          if (locationFacilityId) {
+            selectedFacility = this.facilities.find((facility: any) => facility.facilityId === locationFacilityId);
+          } else {
+            selectedFacility = {};
+          }
+
+          if (!selectedFacility?.facilityId) {
+            throw new Error(translate("Unable to login. User is not associated with this location. Please contact the administrator."));
+          }
+        }
+
+        this.setCurrentFacility(selectedFacility);
+
+      } catch (error: any) {
+        return Promise.reject(error);
       }
-      this.currentFacility = facilities[0]
-      return Promise.resolve(facilities)
+    },
+
+    async fetchProductStores() {
+      try {
+        const isAdminUser = useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
+        const pageSize = 200;
+        let productStoreFilters: any = {};
+
+        if (!isAdminUser) {
+          const facilityId = this.currentFacility.facilityId;
+
+          const resp = await api({
+            url: `oms/facilities/${facilityId}/productStores`,
+            method: "GET",
+            params: {
+              pageSize,
+              facilityId
+            }
+          }) as any;
+
+          const facilityProductStoreIds = resp.data
+            .filter((store: any) => !store.thruDate)
+            .map((store: any) => store.productStoreId);
+
+          if (facilityProductStoreIds?.length) {
+              productStoreFilters = {
+                productStoreId: facilityProductStoreIds.join(","),
+                productStoreId_op: "in"
+              };
+          }
+        }
+
+        const productStoresResp = await api({
+          url: "oms/productStores",
+          method: "GET",
+          params: {
+            pageSize,
+            ...productStoreFilters
+          }
+        }) as any;
+
+        const stores = productStoresResp.data;
+        this.productStores = stores;
+        if (stores?.length) {
+          this.currentProductStore = stores[0]
+        }
+      } catch (error: any) {
+        logger.error("error", error);
+        return Promise.reject(new Error(error));
+      }
     },
 
     async fetchShopifyShopLocation(payload: { shopifyLocationId: string, pageSize: number }): Promise<any> {
@@ -224,79 +309,53 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-
-    /** ---------- Product Store Management ---------- */
-    async loadStoresByFacility(facilityId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/facilities/${facilityId}/productStores`,
-          method: 'GET'
-        })
-        if (!commonUtil.hasError(resp)) this.productStores = resp?.data
-      } catch (err) {
-        logger.error('Failed to load product stores', err)
-      }
-    },
-
     setCurrent(productStore: any) {
       this.currentProductStore = productStore
     },
 
-    async getDxpEComStoresByFacility(facilityId?: any) {
+    async fetchProductStorePreference() {
+      const userStore = useUserProfile();
       try {
-        const response = await this.getEComStoresByFacility(commonUtil.getToken() as string, commonUtil.getMaargURL(), 100, facilityId)
-        this.productStores = response
-      } catch (error) {
-        console.error(error)
-      }
-      return this.productStores
-    },
-
-    async getDxpEComStores() {
-      try {
-        const response = await this.getEComStores(commonUtil.getToken() as string, commonUtil.getMaargURL(), 100)
-        this.productStores = response
-      } catch (error) {
-        console.error(error)
-      }
-      return this.productStores
-    },
-
-    async getEComStorePreference(userPrefTypeId: any, userId = "") {
-      if (!this.productStores.length) return
-
-      let preferredStore = this.productStores[0]
-      try {
-        const userProfileStore = useUserProfile()
-        const preferredStoreId = await userProfileStore.getUserPreference({
-          token: commonUtil.getToken() as string,
-          baseURL: commonUtil.getMaargURL(),
-          preferenceKey: userPrefTypeId,
-          userId
-        })
+        const preferredStoreResp = await api({
+          url: "admin/user/preferences",
+          method: "GET",
+          params: {
+            pageSize: 1,
+            userId: userStore.current.userId,
+            preferenceKey: "SELECTED_BRAND"
+          },
+        }) as any;
+        const preferredStoreId = preferredStoreResp.data?.[0]?.preferenceValue
         if (preferredStoreId) {
-          const store = this.productStores.find((store: any) => store.productStoreId === preferredStoreId)
-          if (store) preferredStore = store
+          const store = this.currentFacility.productStores?.find((store: any) => store.productStoreId === preferredStoreId);
+          if (store) {
+            this.currentProductStore = store;
+          }
         }
-      } catch (error) {
-        console.error(error)
+      } catch (err) {
+        logger.error('Favourite product store not found', err)
       }
-      this.currentProductStore = preferredStore
     },
 
-    async setEComStorePreference(payload: any) {
-      const userProfileStore = useUserProfile()
-      const userProfile = userProfileStore.getUserProfile
+    async setProductStorePreference(payload: any) {
+      const userStore = useUserProfile();
       try {
-        await userProfileStore.setUserPreference({
-          userPrefTypeId: 'SELECTED_BRAND',
-          userPrefValue: payload.productStoreId,
-          userId: userProfile.userId
-        })
+        await api({
+          url: "admin/user/preferences",
+          method: "PUT",
+          data: {
+            userId: userStore.current.userId,
+            preferenceKey: 'SELECTED_BRAND',
+            preferenceValue: payload.productStoreId,
+          }
+        });
       } catch (error) {
         console.error('error', error)
       }
-      this.currentProductStore = payload
+      this.currentProductStore = payload;
+      await this.getDxpIdentificationPref(this.currentProductStore?.productStoreId);
+      await this.getSettings(this.currentProductStore?.productStoreId);
+      await this.prepareProductIdentifierOptions();
     },
 
     /** ---------- Status Descriptions ---------- */
@@ -359,7 +418,7 @@ export const useProductStore = defineStore('productStore', {
     async getSettings(productStoreId: string) {
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'GET',
           params: {
             settingTypeEnumId: ['INV_FORCE_SCAN', 'BARCODE_IDEN_PREF'],
@@ -396,7 +455,7 @@ export const useProductStore = defineStore('productStore', {
 
       try {
         const resp = await api({
-          url: `inventory-cycle-count/productStores/${productStoreId}/settings`,
+          url: `admin/productStores/${productStoreId}/settings`,
           method: 'POST',
           data: {
             productStoreId,
@@ -471,34 +530,11 @@ export const useProductStore = defineStore('productStore', {
       }
     },
 
-    /** Facility specific functions */
-    async loadUserFacilities(partyId: string) {
-      try {
-        const resp = await api({
-          url: `inventory-cycle-count/users/${partyId}/facilities`,
-          method: 'GET'
-        })
-        if (!commonUtil.hasError(resp)) this.facilities = resp?.data
-      } catch (err) {
-        logger.error('Failed to load facilities', err)
-      }
-    },
-
-    async getDxpUserFacilities(partyId: string, facilityGroupId: string, isAdminUser: boolean, payload = {}) {
-      try {
-        const response = await this.fetchFacilities(commonUtil.getToken() as string, commonUtil.getMaargURL(), partyId, facilityGroupId, isAdminUser, payload)
-        this.facilities = response
-      } catch (error) {
-        console.error('Failed to fetch user facilities:', error)
-      }
-      return this.facilities
-    },
-
     setCurrentFacility(facility: any) {
       this.currentFacility = facility
     },
 
-    async getFacilityPreference(userPrefTypeId: string, userId = '') {
+    async fetchFacilityPreference() {
       if (!this.facilities.length) return;
       let facilityId: string | undefined;
       try {
@@ -512,30 +548,33 @@ export const useProductStore = defineStore('productStore', {
             throw new Error("Failed to fetch location information. Please contact the administrator.");
           }
         } else {
-          const userProfileStore = useUserProfile();
-          facilityId = await userProfileStore.getUserPreference({
-            token: commonUtil.getToken() as string,
-            baseURL: commonUtil.getMaargURL(),
-            preferenceKey: userPrefTypeId,
-            userId,
-          });
+          const preferredFacilityResp = await api({
+            url: "admin/user/preferences",
+            method: "GET",
+            params: {
+              pageSize: 1,
+              userId: useUserProfile().current.userId,
+              preferenceKey: "SELECTED_FACILITY"
+            },
+          }) as any;
+          facilityId = preferredFacilityResp.data?.[0]?.preferenceValue;
         }
         if (facilityId) {
-          const facility = this.facilities.find(f => f.facilityId === facilityId);
+          const facility = this.facilities.find((f: any) => f.facilityId === facilityId);
           if (!facility && commonUtil.isAppEmbedded() && locationId) {
             throw new Error(
               "User is not associated with this location. Please contact the administrator."
             );
           }
           if (facility) {
-            this.currentFacility = facility;
+            this.setCurrentFacility(facility)
             return;
           }
         }
       } catch (error) {
         console.error("Failed to resolve facility preference:", error);
       }
-      // In case app is not pos embedded and user has no facility preference on server
+      // In case app is not embedded and user has no facility preference on server
       this.currentFacility = this.facilities[0];
     },
 

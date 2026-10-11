@@ -2,6 +2,9 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="bulk-upload-page-title">{{ translate("Draft bulk") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -141,12 +144,13 @@
 </template>
 
 <script setup>
-import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons } from '@ionic/vue';
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonMenuButton } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { getUploadFileParamName } from '@/services/utils';
 
 import { saveAs } from 'file-saver';
 import Papa from 'papaparse'
@@ -364,7 +368,7 @@ async function save() {
     name: fileName.value
   });
   const fd = new FormData();
-  fd.append("uploadedFile", data, fileName.value);
+  fd.append(getUploadFileParamName(), data, fileName.value);
   fd.append("fileName", fileName.value.replace(".csv", ""));
   try {
     const resp = await useInventoryCountImport().bulkUploadInventoryCounts({ data: fd, headers: { "Content-Type": "multipart/form-data;" } });

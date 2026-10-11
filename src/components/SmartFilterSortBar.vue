@@ -1,7 +1,7 @@
 <template>
   <div class="smart-controls" data-testid="smart-filter-controls">
     <!-- FILTER ROW -->
-    <ion-list lines="full" class="filters ion-margin" data-testid="smart-filter-list">
+    <ion-list lines="full" class="filters" data-testid="smart-filter-list">
 
       <!-- SEARCH -->
       <ion-searchbar
@@ -341,17 +341,53 @@ const isAllSelected = computed(() =>
 .filters {
   display: flex;
   gap: var(--spacer-sm);
-  align-items: end;
+  align-items: center;
+  padding-inline: var(--spacer-sm);
+  padding-block: var(--spacer-xs);
 }
 
 .filters > * {
   flex: 1;
 }
 
+.filters ion-searchbar {
+  padding-inline: 0;
+  padding-block: 0;
+}
+
+.filters ion-item {
+  --inner-padding-end: 0;
+  --padding-start: 0;
+  --min-height: 40px;
+}
+
+@media (max-width: 991px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacer-xs);
+    padding-inline: var(--spacer-sm);
+    padding-block: var(--spacer-xs);
+  }
+
+  .filters ion-searchbar {
+    width: 100%;
+    padding-inline: 0;
+    padding-block: 0;
+  }
+
+  .filters ion-item {
+    width: 100%;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+  }
+}
+
 .sort-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-inline: var(--spacer-sm);
 }
 
 .select-left {
@@ -363,6 +399,5 @@ const isAllSelected = computed(() =>
 .selected-count {
   font-size: 0.9rem;
   color: var(--ion-color-medium);
-  font-size: .9rem;
 }
 </style>

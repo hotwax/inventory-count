@@ -3,6 +3,9 @@
     <!-- <Filters menu-id="pending-review-filter" content-id="filter"/> -->
     <ion-header>
       <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="pending-review-page-title">{{ translate("Pending review")}}</ion-title>
         <ion-buttons slot="end">
           <ion-menu-button menu="pending-review-filter" data-testid="pending-review-filter-menu-btn">
@@ -174,8 +177,8 @@ async function getPendingCycleCounts() {
       pageIndex: pageIndex.value,
       statusId: "CYCLE_CNT_CMPLTD"
     } as any;
-    if (filters.value?.countQueryString) {
-      params.keyword = filters.value.countQueryString
+    if (searchQuery.value?.trim()) {
+      params.keyword = searchQuery.value.trim();
     }
     if (filters.value.countType) params.countType = filters.value.countType;
     if (filters.value.facilityIds?.length) {

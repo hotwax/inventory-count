@@ -311,6 +311,7 @@ ion-icon.standalone-icon {
   display: flex;
   flex-wrap: wrap;
   align-items: start;
+  align-content: flex-start;
 }
 
 @media (prefers-color-scheme: light) {
