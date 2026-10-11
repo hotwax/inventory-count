@@ -174,7 +174,7 @@
 import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController, onIonViewWillLeave } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
 import { translate, commonUtil } from '@common';
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import router from '@/router';
 import { loader } from "@/services/uiUtils";
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -222,12 +222,6 @@ onIonViewWillLeave(() => {
   loadSequence++;
 });
 
-// The facility can be switched while this page is open; show that facility's counts.
-watch(() => currentFacility.value?.facilityId, async (facilityId, previousFacilityId) => {
-  if (isViewActive && facilityId && facilityId !== previousFacilityId) {
-    await reloadCycleCounts();
-  }
-});
 
 function getSessionStatusDescription(statusId) {
   if (!statusId) return "";
