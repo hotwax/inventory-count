@@ -259,8 +259,11 @@ const productIdentificationPref = computed(() => useProductStore().getProductIde
 const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
 onMounted(async () => {
-  await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
+  if (!currentEComStore.value?.productStoreId) return;
+  await useProductStore().getSettings(currentEComStore.value.productStoreId)
+  if (!currentEComStore.value?.productStoreId) return;
   await useProductStore().prepareProductIdentifierOptions();
+  if (!currentEComStore.value?.productStoreId) return;
   await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 
