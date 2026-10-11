@@ -1,5 +1,5 @@
 {
-  "name": "cycle-count",
+  "name": "inventory-count",
   "version": "5.2.0",
   "private": true,
   "type": "module",
@@ -21,13 +21,13 @@
     "@ionic/vue": "catalog:",
     "@ionic/vue-router": "catalog:",
     "@types/node-json-transform": "catalog:",
-    "@zxing/browser": "^0.1.5",
-    "@zxing/library": "^0.21.0",
+    "@zxing/browser": "0.2.1",
+    "@zxing/library": "0.23.0",
     "axios": "catalog:",
     "axios-cache-adapter": "catalog:",
     "comlink": "^4.4.1",
     "core-js": "^3.6.5",
-    "dexie": "^4.0.7",
+    "dexie": "catalog:",
     "http-status-codes": "catalog:",
     "lodash-es": "^4.17.21",
     "luxon": "catalog:",
@@ -56,6 +56,8 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "~5.26.0",
     "@typescript-eslint/parser": "~5.26.0",
+    "@vitejs/plugin-legacy": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "@vue/compiler-sfc": "^3.0.0-0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "@vue/test-utils": "^2.0.0-0",
@@ -65,6 +67,8 @@
     "file-saver": "catalog:",
     "papaparse": "catalog:",
     "typescript": "catalog:",
-    "vite-plugin-pwa": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
+    "vitest": "catalog:"
   }
 }

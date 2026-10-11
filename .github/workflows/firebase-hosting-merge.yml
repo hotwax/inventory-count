@@ -16,3 +16,4 @@ jobs:
     secrets:
       envPAT: ${{ secrets.envPAT }}
       HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
+      SHOPIFY_SHOP_CONFIG: ${{ secrets.SHOPIFY_SHOP_CONFIG }}

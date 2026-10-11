@@ -2,7 +2,9 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-menu-button slot="start" data-testid="settings-menu-btn" />
+        <ion-buttons slot="start">
+          <ion-menu-button data-testid="settings-menu-btn" />
+        </ion-buttons>
         <ion-title data-testid="settings-page-title">{{ translate("Settings") }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -257,8 +259,11 @@ const productIdentificationPref = computed(() => useProductStore().getProductIde
 const productIdentificationOptions = computed(() => useProductStore().getProductIdentificationOptions);
 
 onMounted(async () => {
-  await useProductStore().getSettings(useProductStore().getCurrentProductStore.productStoreId)
+  if (!currentEComStore.value?.productStoreId) return;
+  await useProductStore().getSettings(currentEComStore.value.productStoreId)
+  if (!currentEComStore.value?.productStoreId) return;
   await useProductStore().prepareProductIdentifierOptions();
+  if (!currentEComStore.value?.productStoreId) return;
   await useProductStore().getDxpIdentificationPref(currentEComStore.value.productStoreId);
 })
 

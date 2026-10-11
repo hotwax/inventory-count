@@ -45,7 +45,9 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     redirect: () => {
-      if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN)) {
+      if (useUserProfile().hasPermission(Actions.APP_STORE_VIEW)) {
+        return "/tabs/count"
+      } else if (useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN)) {
         return "/assigned"
       }
       return "/tabs/count"

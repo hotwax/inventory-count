@@ -3,6 +3,16 @@ import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 import { useProductStore } from "./productStore";
+const checkPermission = (permissions: any[], permissionId: string): boolean => {
+  if (!permissionId) return true;
+  if (permissionId.includes(' OR ')) {
+    return permissionId.split(' OR ').some(p => checkPermission(permissions, p.trim()));
+  }
+  if (permissionId.includes(' AND ')) {
+    return permissionId.split(' AND ').every(p => checkPermission(permissions, p.trim()));
+  }
+  return permissions.includes(permissionId);
+};
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
@@ -12,6 +22,7 @@ export const useUserProfile = defineStore('userProfile', {
     // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
     appVersion: undefined as string | undefined,
     permissions: [] as any,
+    systemInformation: {} as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     timeZones: [],
@@ -70,24 +81,7 @@ export const useUserProfile = defineStore('userProfile', {
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
     getSessionDetailFilters: (state) => state.uiFilters.sessionDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
-      const permissions = state.permissions;
-
-      if (!permissionId) {
-        return true;
-      }
-
-      // Handle OR/AND logic in permission string
-      if (permissionId.includes(' OR ')) {
-        const parts = permissionId.split(' OR ');
-        return parts.some((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      if (permissionId.includes(' AND ')) {
-        const parts = permissionId.split(' AND ');
-        return parts.every((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      return permissions.includes(permissionId);
+      return checkPermission(state.permissions, permissionId);
     }
   },
 
@@ -124,7 +118,7 @@ export const useUserProfile = defineStore('userProfile', {
 
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfile().getUserProfile;
+        const userProfile = this.getUserProfile;
 
         const resp = await api({
           url: "admin/user/profile",
@@ -216,6 +210,7 @@ export const useUserProfile = defineStore('userProfile', {
       try {
         await this.fetchUserProfile()
         await this.fetchPermissions();
+        await this.fetchSystemInformation();
 
         this.oms = cookieHelper().get("oms") || '';
         
@@ -243,6 +238,20 @@ export const useUserProfile = defineStore('userProfile', {
         }
       } catch (error: any) {
         return Promise.reject(new Error(error));
+      }
+    },
+
+    async fetchSystemInformation() {
+      try {
+        const resp = await api({
+          url: "admin/maarg",
+          method: "GET",
+          baseURL: commonUtil.getMaargURL(),
+        });
+        if(commonUtil.hasError(resp)) throw resp.data;
+        this.systemInformation = resp.data
+      } catch(error: any) {
+        logger.error("Failed to fetch system information", error);
       }
     },
 

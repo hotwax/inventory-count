@@ -15,6 +15,9 @@ vi.mock('./useProductMaster', () => ({ useProductMaster: () => ({}) }));
 vi.mock('@/stores/productStore', () => ({ useProductStore: () => ({ getCurrentFacility: {} }) }));
 vi.mock('dexie', () => ({ liveQuery: vi.fn() }));
 
+const userProfile = { systemInformation: {} as any };
+vi.mock('@/stores/userProfileStore', () => ({ useUserProfile: () => userProfile }));
+
 import { useInventoryCountImport } from './useInventoryCountImport';
 
 async function readBlob(blob: Blob): Promise<string> {
@@ -30,6 +33,10 @@ async function readBlob(blob: Blob): Promise<string> {
 describe('createCycleCountFromProducts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    // Compatible oms version, the upload api expects the file in contentFile
+    vi.stubEnv('VITE_MAARG_COMPATIBLE_VERSION', '5.2.0');
+    userProfile.systemInformation = { instanceInfo: { componentRelease: 'v5.2.0' } };
     api.mockResolvedValue({ status: 200, data: {} });
   });
 
@@ -105,5 +112,22 @@ describe('createCycleCountFromProducts', () => {
     expect((parsed.data[0] as any).countImportName).toBe('Audit "A", aisle 3');
     // The filename is sanitised, the value inside the file is not
     expect(formData.get('fileName')).toBe('Audit_A_aisle_3');
+  });
+
+  it('sends the file as uploadedFile when the oms version is below the compatible version', async () => {
+    userProfile.systemInformation = { instanceInfo: { componentRelease: '5.1.9' } };
+
+    await useInventoryCountImport().createCycleCountFromProducts({
+      countName: 'Audit',
+      purposeType: 'DIRECTED_COUNT',
+      facilityId: 'STORE_1',
+      startDate: '',
+      dueDate: '',
+      products: [{ productId: 'P1', internalName: 'SKU-1' }]
+    });
+
+    const formData: FormData = api.mock.calls[0][0].data;
+    expect(formData.get('uploadedFile')).toBeInstanceOf(File);
+    expect(formData.get('contentFile')).toBeNull();
   });
 });

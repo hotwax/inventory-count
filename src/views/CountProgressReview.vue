@@ -115,13 +115,25 @@
         <div class="segments-container" data-testid="count-progress-segments-container">
           <ion-segment v-model="activeSegment" data-testid="count-progress-segment">
             <ion-segment-button value="uncounted" data-testid="count-progress-segment-uncounted">
-              <ion-label>{{ uncountedItems.length }} UNCOUNTED</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="hourglassOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ uncountedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="(isCountStarted || isCountStatusBeyondCreated) && workEffort?.workEffortPurposeTypeId === 'DIRECTED_COUNT'" value="undirected" data-testid="count-progress-segment-undirected">
-              <ion-label>{{ undirectedItems.length }} UNDIRECTED</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="gitBranchOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ undirectedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isCountStarted || isCountStatusBeyondCreated" value="counted" data-testid="count-progress-segment-counted">
-              <ion-label>{{ countedItems.length }} COUNTED</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="checkmarkCircleOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ countedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
           </ion-segment>
         </div>
@@ -558,7 +570,7 @@
 import { computed, ref, reactive, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline } from 'ionicons/icons';
+import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline, hourglassOutline, gitBranchOutline } from 'ionicons/icons';
 import { commonUtil, translate } from '@common';
 import { loader } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -1457,7 +1469,12 @@ ion-segment-view {
   opacity: 0.5;
 }
 
-/* Mobile: stack the summary cards full width */
+.segment-mobile-icon,
+.segment-mobile-count {
+  display: none;
+}
+
+/* Mobile: stack the summary cards full width and show icons on segment buttons */
 @media (max-width: 991px) {
   .header ion-card {
     flex: 1 1 100%;
@@ -1465,6 +1482,16 @@ ion-segment-view {
 
   .submission-card {
     margin-inline-start: 0;
+  }
+
+  .segment-desktop-label {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .segment-mobile-icon,
+  .segment-mobile-count {
+    display: block;
   }
 }
 </style>

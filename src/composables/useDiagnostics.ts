@@ -21,15 +21,15 @@ export function useDiagnostics() {
     "Barcode identifier",
     "Product display identifier",
     "User permissions"
-    ];
-   const omsDiagnosticsList = [
+  ];
+  const omsDiagnosticsList = [
     "Cycle count statuses",
     "Cycle count status transitions",
     "User permissions",
     "Product and facility inventory stream",
     "Cycle count variance statuses",
     "Cycle count and session database relations",
-    ];
+  ];
 
   async function runDiagnostics() {
     const localResults: any[] = [];
@@ -40,7 +40,7 @@ export function useDiagnostics() {
       localResults.push({ name: "Local database", status: "failed", detail: "Database connection failed" });
     }
 
-   const deviceId = userProfile.getDeviceId;
+    const deviceId = userProfile.getDeviceId;
     localResults.push({ name: "Unique device id", status: deviceId ? "passed" : "failed", detail: deviceId });
     try {
       const count = await db.products.count();
@@ -104,14 +104,14 @@ export function useDiagnostics() {
     try {
       const resp = await useInventoryCountRun().getDiagnostics();
       omsDiagnostics = resp.data;
-} catch (err) {
+    } catch (err) {
       console.warn("OMS diagnostics check failed:", err);
       omsDiagnostics = null;
     }
 
     if (!omsDiagnostics) {
       omsDiagnosticsResults.push({ name: "Unable to fetch OMS diagnostics", status: "failed" });
-      return {localResults, omsDiagnosticsResults};
+      return { localResults, omsDiagnosticsResults };
     }
 
     omsDiagnosticsResults.push({ name: "Cycle count statuses", status: omsDiagnostics.isStatusConfigured ? "passed" : "failed", detail: omsDiagnostics.isStatusConfigured ? "All configured" : "Missing" });
@@ -121,7 +121,7 @@ export function useDiagnostics() {
     omsDiagnosticsResults.push({ name: "Cycle count variance statuses", status: omsDiagnostics.areDecisionReasonsConfigured ? "passed" : "failed", detail: omsDiagnostics.areDecisionReasonsConfigured ? "All configured" : "Missing" });
     omsDiagnosticsResults.push({ name: "Cycle count and session database relations", status: omsDiagnostics.isWorkEffortRelatedToInventoryCountImport ? "passed" : "failed", detail: omsDiagnostics.isWorkEffortRelatedToInventoryCountImport ? "Related" : "Not related" });
 
-    return {localResults, omsDiagnosticsResults};
+    return { localResults, omsDiagnosticsResults };
   }
 
   return { baseDiagnosticsList, omsDiagnosticsList, runDiagnostics };
