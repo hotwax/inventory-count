@@ -7,7 +7,17 @@ import { createCommonDB } from "@/services/commonDatabase";
 let db: any = null;
 let dbInitialized = false;
 
+export interface SessionSyncResult {
+  aggregated: number;
+  synced: number;
+  pendingScans: number;
+  pendingRecords: number;
+  unmatchedRecords: number;
+}
+
 export interface InventorySyncWorker {
+  flushSession: (inventoryCountImportId: string, context: any) => Promise<SessionSyncResult>;
+  stopScheduling: () => void;
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
   syncToServer: (inventoryCountImportId: string, context: any) => Promise<number>;
   resolveUnmatched: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -21,12 +31,42 @@ export interface InventorySyncWorker {
   matchUnmatchedInventoryAdjustment: (uuid: string, productId: string, context: any) => Promise<void>;
 }
 
+// Every entry point shares the same queue, including scheduled aggregation and
+// manual matching. A final flush waits for existing work instead of skipping it.
+let workQueue: Promise<unknown> = Promise.resolve();
+const schedules = new Set<ReturnType<typeof setInterval>>();
+let scheduledWorkPending = false;
+
+function enqueue<T>(work: () => Promise<T>): Promise<T> {
+  const result = workQueue.then(work);
+  workQueue = result.catch(() => undefined);
+
+  return result;
+}
+
+function withDB<T>(context: any, work: () => Promise<T>): Promise<T> {
+  return enqueue(async () => {
+    await ensureDB(context);
+
+    return work();
+  });
+}
+
+function stopScheduling() {
+  schedules.forEach(clearInterval);
+  schedules.clear();
+}
+
 expose({
-  aggregate,
-  syncToServer,
-  matchProductLocallyAndSync,
-  aggregateVarianceLogs,
-  matchUnmatchedInventoryAdjustment
+  flushSession,
+  stopScheduling,
+  aggregate: (id: string, context: any) => withDB(context, () => aggregate(id, context)),
+  syncToServer: (id: string, context: any) => withDB(context, () => syncToServer(id, context)),
+  matchProductLocallyAndSync: (id: string, item: any, productId: string, context: any) =>
+    withDB(context, () => matchProductLocallyAndSync(id, item, productId, context)),
+  aggregateVarianceLogs: (context: any) => withDB(context, () => aggregateVarianceLogs(context)),
+  matchUnmatchedInventoryAdjustment: (uuid: string, productId: string, context: any) =>
+    withDB(context, () => matchUnmatchedInventoryAdjustment(uuid, productId, context))
 });
 
 let isAggregating = false
@@ -597,7 +637,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
     const syncable: any = [];
     const blocked: any = [];
     for (const item of pending) {
-      if (needsQoh(item)) {
+      if (!item.productId || needsQoh(item)) {
         blocked.push(item);
       } else {
         syncable.push(item);
@@ -626,7 +666,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     const payload = { items }
 
-    const resp = await workerRemoteApi({
+    await workerRemoteApi({
       baseURL: baseUrl,
       headers: {
         'Authorization': `Bearer ${token}`
@@ -636,23 +676,23 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       data: payload
     })
 
-    if (resp) {
-      const now = Date.now()
-      const keys = syncable.map((item: any) => [inventoryCountImportId, item.uuid])
-      await db.table('inventoryCountRecords')
-        .where('[inventoryCountImportId+uuid]')
-        .anyOf(keys)
-        .modify({
-          lastSyncedAt: now,
-          lastSyncedBatchId: `batch-${now}`
-        })
-      return pending.length
-    }
+    // A successful empty HTTP body is still an acknowledgment. Do not mark a
+    // newer edit synced using the older snapshot that was sent in this request.
+    const sent = new Map(syncable.map((item: any) => [item.uuid, item]));
+    await db.table("inventoryCountRecords")
+      .where("[inventoryCountImportId+uuid]")
+      .anyOf(syncable.map((item: any) => [inventoryCountImportId, item.uuid]))
+      .and((item: any) => {
+        const snapshot: any = sent.get(item.uuid);
 
-    return 0
-  } catch (err) {
-    console.error('sync error', err)
-    return 0
+        return item.lastUpdatedAt === snapshot.lastUpdatedAt &&
+          item.quantity === snapshot.quantity &&
+          item.productId === snapshot.productId &&
+          item.systemQuantityOnHand === snapshot.systemQuantityOnHand;
+      })
+      .modify({ lastSyncedAt: Date.now(), lastSyncedBatchId: `batch-${Date.now()}` });
+
+    return syncable.length;
   } finally {
     isSyncing = false
   }
@@ -732,38 +772,59 @@ async function ensureDB(context: any) {
   return db;
 }
 
-// Worker Listener
-self.onmessage = async (messageEvent: MessageEvent) => {
-  const { type, payload } = messageEvent.data
-
-  if (type === 'aggregate') {
-    const { inventoryCountImportId, context } = payload
-    await ensureDB(context);
-    const count = await aggregate(inventoryCountImportId, context)
-    await resolveMissingProducts(inventoryCountImportId, context)
-    await syncToServer(inventoryCountImportId, context)
-
-    self.postMessage({ type: 'aggregationComplete', count })
-  }
-
-  if (type === 'schedule') {
-    const { inventoryCountImportId, context, intervalMs = 10000 } = payload
-    await ensureDB(context);
-    setInterval(async () => {
-      const count = await aggregate(inventoryCountImportId, context)
-      await resolveMissingProducts(inventoryCountImportId, context)
-      await syncToServer(inventoryCountImportId, context)
-
-      self.postMessage({ type: 'aggregationComplete', count })
-    }, intervalMs)
-  }
-
-  if (type === 'scheduleVarianceAggregation') {
-    const { context, intervalMs = 10000 } = payload;
-    await ensureDB(context);
-    setInterval(async () => {
-      const count = await aggregateVarianceLogs(context);
-      self.postMessage({ type: 'varianceAggregationComplete', count })
-    }, intervalMs)
-  }
+function needsSync(item: any): boolean {
+  return !item.lastSyncedAt || (item.lastUpdatedAt && item.lastUpdatedAt > item.lastSyncedAt);
 }
+
+function flushSession(inventoryCountImportId: string, context: any): Promise<SessionSyncResult> {
+  return withDB(context, async () => {
+    const aggregated = await aggregate(inventoryCountImportId, context);
+    await resolveMissingProducts(inventoryCountImportId, context);
+    const synced = await syncToServer(inventoryCountImportId, context);
+    const records = await db.table("inventoryCountRecords").where({ inventoryCountImportId }).toArray();
+    const pendingScans = await db.table("scanEvents").where({ inventoryCountImportId })
+      .and((scan: any) => scan.aggApplied === 0).count();
+    const result: SessionSyncResult = {
+      aggregated,
+      synced,
+      pendingScans,
+      pendingRecords: records.filter((item: any) => needsSync(item) && (item.productId || item.quantity > 0)).length,
+      unmatchedRecords: records.filter((item: any) => !item.productId && item.quantity > 0).length
+    };
+    self.postMessage({ type: "aggregationComplete", inventoryCountImportId, count: aggregated, ...result });
+
+    return result;
+  });
+}
+
+function schedule(work: () => Promise<unknown>, intervalMs: number) {
+  stopScheduling();
+  schedules.add(setInterval(() => {
+    // Do not build an unbounded queue when a request takes longer than a tick.
+    if(scheduledWorkPending) {return;}
+    scheduledWorkPending = true;
+    void work().catch(error => console.error("[Worker] Scheduled sync failed", error))
+      .finally(() => { scheduledWorkPending = false; });
+  }, intervalMs));
+}
+
+// Legacy message entry points use the same queue as the awaitable Comlink API.
+self.onmessage = async (messageEvent: MessageEvent) => {
+  const { type, payload } = messageEvent.data;
+  if(type === "aggregate") {
+    try {
+      await flushSession(payload.inventoryCountImportId, payload.context);
+    } catch (error) {
+      console.error("[Worker] Sync failed", error);
+    }
+  }
+  if (type === 'schedule') {
+    schedule(() => flushSession(payload.inventoryCountImportId, payload.context), payload.intervalMs ?? 10000);
+  }
+  if (type === 'scheduleVarianceAggregation') {
+    schedule(() => withDB(payload.context, async () => {
+      const count = await aggregateVarianceLogs(payload.context);
+      self.postMessage({ type: "varianceAggregationComplete", count });
+    }), payload.intervalMs ?? 10000);
+  }
+};

@@ -4,6 +4,11 @@
       <ion-toolbar>
         <ion-back-button slot="start" default-href="/tabs/count" data-testid="count-progress-back-btn" />
         <ion-title data-testid="count-progress-page-title">{{ translate("Track progress") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button :disabled="isLoading" :aria-label="translate('Refresh count progress')" data-testid="count-progress-refresh-btn" @click="refreshCountProgress">
+            <ion-icon slot="icon-only" :icon="refreshOutline" />
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -567,11 +572,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, defineProps } from 'vue';
-import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter } from '@ionic/vue';
+import { computed, ref, reactive, defineProps, watch, onBeforeUnmount } from 'vue';
+import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter, onIonViewWillLeave } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
-import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline, hourglassOutline, gitBranchOutline } from 'ionicons/icons';
-import { commonUtil, translate } from '@common';
+import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline, hourglassOutline, gitBranchOutline, refreshOutline } from 'ionicons/icons';
+import { commonUtil, translate, emitter } from '@common';
 import { loader } from '@/services/uiUtils';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
@@ -594,6 +599,9 @@ const totalItems = ref(0);
 const loadedItems = ref(0);
 const workEffort = ref() as any;
 const isLoading = ref(false);
+const hasFreshReview = ref(false);
+let isViewActive = false;
+let reviewLoadId = 0;
 
 const allProducts = ref<any[]>([]);
 
@@ -632,6 +640,8 @@ const canManageCountProgress = computed(() => useUserProfile().hasPermission(Act
 
 const isMarkOutOfStockDisabled = computed(() => (
   !areSessionsSubmitted.value
+  || !hasFreshReview.value
+  || isLoading.value
   || isLoadingUncounted.value
 ));
 
@@ -657,10 +667,18 @@ const areSessionsSubmitted = computed(() => {
 const areRequestedItemsCounted = computed(() => uncountedItems.value.length === 0);
 
 const canSubmitForReview = computed(() => (
-  canManageCountProgress.value && isWorkEffortInProgress.value && areSessionsSubmitted.value && areRequestedItemsCounted.value
+  hasFreshReview.value && !isLoading.value && canManageCountProgress.value && isWorkEffortInProgress.value && areSessionsSubmitted.value && areRequestedItemsCounted.value
 ));
 
 const submissionRequirements = computed(() => [
+  {
+    id: "progress-loaded",
+    met: hasFreshReview.value,
+    title: translate("Count progress is up to date"),
+    helpText: hasFreshReview.value
+      ? translate("The latest count progress has been loaded.")
+      : translate("Refresh count progress before submitting for review.")
+  },
   {
     id: 'permission',
     met: canManageCountProgress.value,
@@ -803,117 +821,136 @@ const props = defineProps<{
   workEffortId: string;
 }>();
 
-onIonViewDidEnter (async () => {
-  isLoading.value = true;
-  await getWorkEffortDetails();
-  await getInventoryCycleCount();
-  isLoading.value = false;
+onIonViewDidEnter(async () => {
+  isViewActive = true;
+  emitter.off("inventory-count:session-synced", onSessionSynced);
+  emitter.on("inventory-count:session-synced", onSessionSynced);
+  await refreshCountProgress();
 });
 
-async function getWorkEffortDetails() {
-  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-  if (workEffortResp?.status === 200 && workEffortResp.data) {
-    workEffort.value = workEffortResp.data;
-    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId, pageNoLimit: true });
-    if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
-      workEffort.value.sessions = sessionsResp.data;
-    }
-    const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId});
-    if (resp?.status === 200 && resp.data) {
-      totalItems.value = resp.data.count || 0;
-    } else {
-      console.error("Error fetching total items:", resp);
-    }
-  } else {
-    commonUtil.showToast(translate("Something Went Wrong"));
-    console.error("Error getting the Cycle Count Details", workEffortResp);
+function stopReviewRefresh() {
+  isViewActive = false;
+  reviewLoadId++;
+  hasFreshReview.value = false;
+  emitter.off("inventory-count:session-synced", onSessionSynced);
+}
+onIonViewWillLeave(stopReviewRefresh);
+onBeforeUnmount(stopReviewRefresh);
+watch(() => props.workEffortId, () => {
+  if(isViewActive) {void refreshCountProgress();}
+});
+
+function onSessionSynced(event: unknown) {
+  if((event as { workEffortId?: string })?.workEffortId === props.workEffortId && isViewActive) {
+    return refreshCountProgress();
   }
 }
 
-async function getInventoryCycleCount() {
-  try {
-    if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
-      await loadDirectedCount();
-    } else {
-      await loadHardCount();
-    }
-  } catch (error) {
-    console.error("Error fetching inventory cycle count:", error);
-  }
-}
-
-async function loadDirectedCount() {
+async function refreshCountProgress() {
+  if(!isViewActive) {return;}
+  const loadId = ++reviewLoadId;
+  const workEffortId = props.workEffortId;
+  const isCurrent = () => isViewActive && loadId === reviewLoadId;
+  isLoading.value = true;
+  hasFreshReview.value = false;
   isLoadingUncounted.value = true;
   isLoadingUndirected.value = true;
-  let pageIndex = 0;
-  let pageSize = 250;
-  if (totalItems.value > 5000) {
-    pageSize = 500;
-  }
-  let hasMore = true;
+  loadedItems.value = 0;
   try {
-    while (hasMore) {
-      const resp = await useInventoryCountRun().getCycleCount({
-        workEffortId: props.workEffortId,
-        pageSize,
-        pageIndex,
-      });
-      if (resp?.status === 200 && resp.data?.length) {
-        // Filter out undirected items (isRequested === 'N') from counted and uncounted lists
-        // Only include directed items (isRequested === 'Y' or null/undefined)
-
-        try {
-          const productsIds = [...new Set(resp.data
-            .filter((item: any) => item?.productId)
-            .map((item: any) => item.productId)
-          )];
-
-          await useProductMaster().prefetch(productsIds as any);
-          for (const productId of productsIds) {
-            const { product } = await useProductMaster().getById(productId as any);
-            if (!product) continue;
-            resp.data
-            .filter((item: any) => item.productId === productId)
-            .forEach((item: any) => {
-              item.product = product;
-            });
-          }
-        } catch (error) {
-          console.error("Error in Prefetch: ", error);
-        }
-
-        const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
-        const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
-        undirectedItems.value.push(...undirected);
-        directedItems.forEach((item: any) => {
-          if (item.quantity >= 0) countedItems.value.push(item);
-          else uncountedItems.value.push(item);
-        })
-        if (resp.data.length < pageSize) {
-          hasMore = false;
-        } else {
-          pageIndex++;
-        }
-      } else {
-        hasMore = false;
-      }
-      loadedItems.value = countedItems.value.length + uncountedItems.value.length + undirectedItems.value.length;
-    }
-
-    uncountedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
-    countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
-    filteredCountedItems.value = [...countedItems.value];
-    undirectedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
-
+    const details = await getWorkEffortDetails(workEffortId, isCurrent);
+    if(!details || !isCurrent()) {return;}
+    totalItems.value = details.totalItems;
+    const snapshot = await getInventoryCycleCount(details, workEffortId, isCurrent);
+    if(!snapshot || !isCurrent()) {return;}
+    workEffort.value = details.workEffort;
+    totalItems.value = details.totalItems;
+    countedItems.value = snapshot.counted;
+    filteredCountedItems.value = [...snapshot.counted];
+    uncountedItems.value = snapshot.uncounted;
+    undirectedItems.value = snapshot.undirected;
+    allProducts.value = snapshot.allProducts;
+    loadedItems.value = snapshot.counted.length + snapshot.uncounted.length + snapshot.undirected.length;
+    hasFreshReview.value = true;
   } catch (error) {
-    console.error("Error fetching all cycle count records (directed):", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    if(!isCurrent()) {return;}
     countedItems.value = [];
-    uncountedItems.value =[];
+    filteredCountedItems.value = [];
+    uncountedItems.value = [];
     undirectedItems.value = [];
+    allProducts.value = [];
+    console.error("Failed to refresh count progress", error);
+    commonUtil.showToast(translate("Could not refresh count progress. Please try again."));
+  } finally {
+    if(isCurrent()) {
+      isLoading.value = false;
+      isLoadingUncounted.value = false;
+      isLoadingUndirected.value = false;
+    }
   }
-  isLoadingUncounted.value = false;
-  isLoadingUndirected.value = false;
+}
+
+async function getWorkEffortDetails(workEffortId: string, isCurrent: () => boolean) {
+  const api = useInventoryCountRun();
+  const work = await api.getWorkEffort({ workEffortId });
+  if(!isCurrent()) {return;}
+  if(work?.status !== 200 || !work.data) {throw new Error("Count details unavailable");}
+  const sessions = await api.getCycleCountSessions({ workEffortId, pageNoLimit: true });
+  if(!isCurrent()) {return;}
+  if(sessions?.status !== 200 || !Array.isArray(sessions.data)) {throw new Error("Count sessions unavailable");}
+  const total = await api.getProductReviewDetailCount({ workEffortId });
+  if(total?.status !== 200 || total.data?.count == null) {throw new Error("Count total unavailable");}
+
+  return { workEffort: { ...work.data, sessions: sessions.data }, totalItems: Number(total.data.count) };
+}
+
+async function hydrateReviewProducts(items: any[]) {
+  try {
+    const master = useProductMaster();
+    const ids = [...new Set(items.map(item => item.productId).filter(Boolean))];
+    await master.prefetch(ids);
+    for(const productId of ids) {
+      const { product } = await master.getById(productId);
+      if(product) {items.filter(item => item.productId === productId).forEach(item => { item.product = product; });}
+    }
+  } catch (error) {
+    // Product images/names are optional; their cache must not hide saved quantities.
+    console.warn("Could not hydrate count products", error);
+  }
+}
+
+async function getInventoryCycleCount(details: any, workEffortId: string, isCurrent: () => boolean) {
+  const pageSize = details.totalItems > 5000 ? 500 : 250;
+  const reviews: any[] = [];
+  for(let pageIndex = 0; isCurrent(); pageIndex++) {
+    const response = await useInventoryCountRun().getCycleCount({ workEffortId, pageSize, pageIndex });
+    if(!isCurrent()) {return;}
+    if(response?.status !== 200) {throw new Error("Count review unavailable");}
+    const data = response.data == null || response.data === "" ? [] : response.data;
+    if(!Array.isArray(data)) {throw new Error("Invalid count review response");}
+    const page = data.map(item => ({ ...item }));
+    await hydrateReviewProducts(page);
+    if(!isCurrent()) {return;}
+    reviews.push(...page);
+    loadedItems.value = reviews.length;
+    if(page.length < pageSize) {break;}
+  }
+  if(!isCurrent()) {return;}
+  const snapshot = { counted: [] as any[], uncounted: [] as any[], undirected: [] as any[], allProducts: [] as any[] };
+  if(details.workEffort.workEffortPurposeTypeId === "DIRECTED_COUNT") {
+    reviews.forEach(item => {
+      if(item.isRequested === "N") {snapshot.undirected.push(item);} else if(item.quantity >= 0) {snapshot.counted.push(item);} else {snapshot.uncounted.push(item);}
+    });
+  } else {
+    snapshot.counted = reviews;
+    const facilityProducts = await getUncountedItems(details.workEffort.facilityId, reviews, isCurrent);
+    if(!facilityProducts || !isCurrent()) {return;}
+    snapshot.uncounted = facilityProducts.uncounted;
+    snapshot.allProducts = facilityProducts.allProducts;
+  }
+  [snapshot.counted, snapshot.uncounted, snapshot.undirected].forEach(items =>
+    items.sort((a, b) => (a.maxLastUpdatedAt ?? 0) - (b.maxLastUpdatedAt ?? 0)));
+
+  return snapshot;
 }
 
 async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, systemQuantity: any, countedQuantity: any, item: any, event:  Event) {
@@ -1011,125 +1048,25 @@ async function skipAllUndirectedItems() {
   loader.dismiss();
 }
 
-async function loadHardCount() {
-  let pageIndex = 0;
-  let pageSize = 250;
-  if (totalItems.value > 5000) {
-    pageSize = 500;
+async function getUncountedItems(facilityId: string, counted: any[], isCurrent: () => boolean) {
+  const countedSet = new Set(counted.map(item => item.productId));
+  const allProducts: any[] = [];
+  const uncounted: any[] = [];
+  const pageSize = 500;
+  for(let pageIndex = 0; isCurrent(); pageIndex++) {
+    const response = await useProductMaster().getProductsOnFacility({ facilityId, pageSize, pageIndex });
+    if(!isCurrent()) {return;}
+    const list = response?.data?.entityValueList;
+    if(response?.status !== 200 || !Array.isArray(list)) {throw new Error("Facility count products unavailable");}
+    allProducts.push(...list);
+    const page = list.filter((item: any) => !countedSet.has(item.productId)).map((item: any) => ({ ...item }));
+    await hydrateReviewProducts(page);
+    if(!isCurrent()) {return;}
+    uncounted.push(...page);
+    if(list.length < pageSize) {break;}
   }
-  let hasMore = true;
-  try {
-    while (hasMore) {
-      const resp = await useInventoryCountRun().getCycleCount({
-        workEffortId: props.workEffortId,
-        pageSize,
-        pageIndex,
-      });
-      if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data);
-        if (resp.data.length < pageSize) {
-          hasMore = false;
-        } else {
-          pageIndex++;
-        }
-        try {
-          const productIds = [...new Set(
-            resp.data
-              .filter((item: any) => item?.productId)
-              .map((item: any) => item.productId)
-          )];
 
-          if (productIds.length) {
-            await useProductMaster().prefetch(productIds as any);
-            for (const productId of productIds) {
-              const { product } = await useProductMaster().getById(productId as any);
-              if (!product) continue;
-
-              countedItems.value
-              .filter(item => item.productId === productId)
-              .forEach(item => {
-                item.product = product;
-              });
-            }
-          }
-        } catch (error) {
-          console.warn("Error in Prefetch: ", error);
-        }
-      } else {
-        hasMore = false;
-      }
-      loadedItems.value = countedItems.value.length;
-    }
-    countedItems.value.sort((a, b) => a.maxLastUpdatedAt - b.maxLastUpdatedAt);
-    filteredCountedItems.value = [...countedItems.value];
-    getUncountedItems();
-  } catch (error) {
-    console.error("Error fetching all cycle count records (hard):", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
-    countedItems.value = [];
-    uncountedItems.value = [];
-  }
-}
-
-async function getUncountedItems() {
-  isLoadingUncounted.value = true;
-  try {
-    let pageIndex = 0;
-    const pageSize = 500;
-    let hasMore = true;
-    const countedSet = new Set(countedItems.value.map(item => item.productId));
-    allProducts.value = [];
-
-    while (hasMore) {
-      const resp = await useProductMaster().getProductsOnFacility({
-        facilityId: workEffort.value?.facilityId,
-        pageSize,
-        pageIndex
-      });
-
-      if (resp?.status === 200 && resp?.data?.entityValueList && resp?.data?.entityValueList.length > 0) {
-      const list = resp.data.entityValueList;
-        allProducts.value.push(...list);
-
-        if (list.length < pageSize) {
-          hasMore = false;
-        } else {
-          pageIndex++;
-        }
-        const rawUncounted = list.filter((product: any) => !countedSet.has(product.productId));
-        uncountedItems.value.push(...rawUncounted);
-        try {
-          const productIds = [...new Set(
-            rawUncounted.map((product: any) => product.productId).filter(Boolean)
-          )];
-
-          if (productIds.length) {
-            await useProductMaster().prefetch(productIds as any);
-            for (const productId of productIds) {
-              const { product } = await useProductMaster().getById(productId as any);
-              if (!product) continue;
-
-              uncountedItems.value
-              .filter(item => item.productId === productId)
-              .forEach(item => {
-                item.product = product;
-              });
-            }
-          }
-        } catch (error) {
-          console.warn("Error in Prefetch: ", error);
-        }
-      } else {
-        hasMore = false;
-      }
-    }
-  } catch (error) {
-    console.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
-    commonUtil.showToast(translate("Something Went Wrong"));
-    isLoadingUncounted.value = false;
-    uncountedItems.value = [];
-  }
-  isLoadingUncounted.value = false;
+  return { uncounted, allProducts };
 }
 
 function stopAccordianEventProp(event: Event) {
@@ -1185,6 +1122,7 @@ function handleOutOfStockCheck(ev: any, item: any) {
 }
 
 async function markSelectedItemsOutOfStock() {
+  if(!hasFreshReview.value || isLoading.value) {return;}
   if (!canManageCountProgress.value) {
     commonUtil.showToast(translate('You do not have permission to perform this action'));
     return;
@@ -1269,6 +1207,7 @@ async function markSelectedItemsOutOfStock() {
 }
 
 async function markAsCompleted() {
+  if(!canSubmitForReview.value) {return;}
   if (!canManageCountProgress.value) {
     commonUtil.showToast(translate('You do not have permission to perform this action'));
     return;

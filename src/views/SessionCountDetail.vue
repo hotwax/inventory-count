@@ -112,15 +112,15 @@
             <!-- Default: show Edit / Discard / Submit -->
             <template v-else>
               <div class="actions" data-testid="session-detail-actions">
-                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked" data-testid="session-detail-edit-btn">
+                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-edit-btn">
                   <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                   {{ translate("Edit") }}
                 </ion-button>
-                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked" data-testid="session-detail-discard-btn">
+                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-discard-btn">
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked" data-testid="session-detail-submit-btn">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
@@ -746,7 +746,8 @@ import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOut
 import { ref, computed, defineProps, nextTick, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { commonUtil, translate } from '@common';
+import { commonUtil, translate, emitter } from '@common';
+import { loader } from '@/services/uiUtils';
 import { WorkerFactory } from '@common/core/workerFactory';
 import Image from "@/components/Image.vue";
 import router from '@/router';
@@ -766,7 +767,7 @@ import { debounce } from "lodash-es";
 import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
-import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import type { InventorySyncWorker } from "@/workers/backgroundAggregation";
 import Actions from "@/authorization/actions";
 import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
 import { db } from '@/services/appInitializer';
@@ -806,6 +807,9 @@ const searchKeyword = ref('')
 const filteredItems = ref<any[]>([])
 const currentLock = ref<any>(null);
 const isNewLockAcquired = ref(false);
+const isSubmitting = ref(false);
+let isLeaving = false;
+let sessionViewId = 0;
 const showSubmitAlert = ref(false)
 const showDiscardAlert = ref(false)
 const workEffort = ref<any>(null);
@@ -868,10 +872,10 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
-const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
+const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
 // Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
 const canCountOnMobile = computed(() =>
-  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value
+  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value && !isSubmitting.value
 );
 
 const cameraPendingItems = computed(() => {
@@ -1109,6 +1113,8 @@ watch(selectedSegment, () => {
 })
 
 onIonViewDidEnter(async () => {
+  isLeaving = false;
+  sessionViewId++;
   try {
     await startSession();
     await fetchWorkEffort();
@@ -1132,10 +1138,14 @@ onIonViewDidEnter(async () => {
     const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
+    const syncedWorkEffortId = props.workEffortId;
     aggregationWorker.onmessage = (event) => {
-      const { type, count } = event.data
+      const { type, count, synced } = event.data
       if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
+        if(synced > 0) {
+          emitter.emit("inventory-count:session-synced", { workEffortId: syncedWorkEffortId });
+        }
       }
     }
     aggregationWorker.onerror = (err) => {
@@ -1144,28 +1154,7 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessageerror = (err) => {
       console.error('[Worker Message Error]', err);
     };
-    // Run every 10 seconds
-    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-
-    aggregationWorker.postMessage({
-      type: 'schedule',
-      payload: {
-        workEffortId: props.workEffortId,
-        inventoryCountImportId: props.inventoryCountImportId,
-        intervalMs: 8000,
-        context: {
-          omsUrl: commonUtil.getOmsURL(),
-          omsInstance: commonUtil.getOMSInstanceName(),
-          userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: commonUtil.getMaargURL(),
-          token: commonUtil.getToken(),
-          barcodeIdentification: barcodeIdentification,
-          inventoryCountTypeId: props.inventoryCountTypeId,
-          facilityId: useProductStore().getCurrentFacility.facilityId
-        }
-      }
-    })
+    startAggregationSchedule();
   } catch (error) {
     console.error(error);
     commonUtil.showToast("Failed to load session details");
@@ -1173,19 +1162,31 @@ onIonViewDidEnter(async () => {
 });
 
 onIonViewDidLeave(async () => {
-  isCameraOpen.value = false
-  clearListSubscriptions()
+  isLeaving = true;
+  sessionViewId++;
+  const worker = aggregationWorker;
+  const api = aggregationWorkerApi;
+  const heartbeat = lockWorker;
+  const timer = timerInterval;
+  isCameraOpen.value = false;
+  clearListSubscriptions();
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
-
-  await finalizeAggregationAndSync();
-  await unscheduleWorker();
-  if (lockWorker) {
-    await lockWorker.stopHeartbeat()
-    lockWorker = null
+  try {
+    if(api) await finalizeAggregationAndSync(api);
+  } catch(error) {
+    // Device records stay pending for retry. Wait for the attempted flush to
+    // settle before terminating its worker, even if the page is re-entered.
+    console.warn("[Session] Final sync could not complete", error);
+  } finally {
+    await unscheduleWorker(worker);
+    if(heartbeat) {
+      await heartbeat.stopHeartbeat();
+      if(lockWorker === heartbeat) lockWorker = null;
+    }
+    if(timer) clearInterval(timer);
   }
-  if (timerInterval) clearInterval(timerInterval);
-})
+});
 
 async function fetchWorkEffort() {
   try {
@@ -1356,7 +1357,7 @@ async function focusScanner() {
 async function recordScannedCode(code: string, quantity = 1) {
   console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
-  if (!value) return false;
+  if (!value || !isSessionMutable.value) return false;
 
   try {
     await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
@@ -1795,73 +1796,87 @@ async function saveMatchProduct() {
   }
 }
 
-async function finalizeAggregationAndSync() {
-  try {
-    if (!aggregationWorker) return;
+function getAggregationContext() {
+  return {
+    omsUrl: commonUtil.getOmsURL(),
+    omsInstance: commonUtil.getOMSInstanceName(),
+    userLoginId: useUserProfile().getUserProfile?.username,
+    maargUrl: commonUtil.getMaargURL(),
+    token: commonUtil.getToken(),
+    barcodeIdentification: useProductStore().getBarcodeIdentificationPref,
+    inventoryCountTypeId: props.inventoryCountTypeId,
+    facilityId: useProductStore().getCurrentFacility.facilityId
+  };
+}
 
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
+function startAggregationSchedule() {
+  aggregationWorker?.postMessage({
+    type: "schedule",
+    payload: {
+      inventoryCountImportId: props.inventoryCountImportId,
+      intervalMs: 8000,
+      context: getAggregationContext()
+    }
+  });
+}
 
-    const context = {
-      omsUrl: commonUtil.getOmsURL(),
-      omsInstance: commonUtil.getOMSInstanceName(),
-      userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: commonUtil.getMaargURL(),
-      token: commonUtil.getToken(),
-      barcodeIdentification,
-      inventoryCountTypeId: props.inventoryCountTypeId,
-      facilityId: useProductStore().getCurrentFacility.facilityId
-    };
+async function finalizeAggregationAndSync(api = aggregationWorkerApi) {
+  if(!api) {throw new Error("Count sync is not ready");}
+  const sessionId = props.inventoryCountImportId;
+  const context = getAggregationContext();
+  await api.stopScheduling();
 
-    aggregationWorker.postMessage({
-      type: 'aggregate',
-      payload: {
-        workEffortId: props.workEffortId,
-        inventoryCountImportId: props.inventoryCountImportId,
-        context
-      }
-    });
-
-    return;
-  } catch (err) {
-    console.error('[Session] Error during final aggregation:', err);
-    return 0;
-  }
+  return api.flushSession(sessionId, context);
 }
 
 /** Stop background worker schedule and terminate */
-async function unscheduleWorker() {
-  try {
-    if (aggregationWorker) {
-      console.log('[Session] Terminating background aggregation worker...');
-      aggregationWorker.terminate();
+function unscheduleWorker(worker = aggregationWorker) {
+  if(worker) {
+    worker.terminate();
+    if(aggregationWorker === worker) {
       aggregationWorker = null;
       aggregationWorkerApi = null;
     }
-  } catch (err) {
-    console.error('[Session] Failed to terminate worker:', err);
   }
 }
 
 async function confirmSubmit() {
-  showSubmitAlert.value = false
+  showSubmitAlert.value = false;
+  if(isSubmitting.value) {return;}
+  isSubmitting.value = true;
+  const viewId = sessionViewId;
+  isCameraOpen.value = false;
   try {
-    if (unmatchedItems.value.length > 0) {
-      commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
-      return
+    await loader.present(translate("Syncing count..."));
+    const result = await finalizeAggregationAndSync();
+    if(isLeaving || viewId !== sessionViewId) {return;}
+    if(result.unmatchedRecords > 0) {
+      commonUtil.showToast(translate("Resolve unmatched products before submitting this session"));
+
+      return;
     }
-    await finalizeAggregationAndSync()
-    await useInventoryCountImport().updateSession({
+    if(result.pendingScans > 0 || result.pendingRecords > 0) {
+      commonUtil.showToast(translate("Some counts have not synced. Check your connection and try again."));
+
+      return;
+    }
+    const response = await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_SUBMITTED'
-    })
-    inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
-    await releaseSessionLock()
-    if (lockWorker) await lockWorker.stopHeartbeat()
-    commonUtil.showToast('Session submitted successfully')
-    router.replace(`/count-progress-review/${props.workEffortId}`)
-  } catch (err) {
-    console.error(err)
-    commonUtil.showToast('Failed to submit session')
+    });
+    if(response?.status !== 200 || response.data?.errors) {throw new Error("Session status was not saved");}
+    inventoryCountImport.value.statusId = "SESSION_SUBMITTED";
+    await releaseSessionLock();
+    if(lockWorker) {await lockWorker.stopHeartbeat();}
+    commonUtil.showToast("Session submitted successfully");
+    if(!isLeaving && viewId === sessionViewId) {await router.replace(`/count-progress-review/${props.workEffortId}`);}
+  } catch (error) {
+    console.error("[Session] Submission failed", error);
+    commonUtil.showToast(translate("Could not sync and submit this session. Your counts are saved on this device. Please try again."));
+  } finally {
+    isSubmitting.value = false;
+    await loader.dismiss();
+    if(!isLeaving && isSessionInProgress.value && aggregationWorker) {startAggregationSchedule();}
   }
 }
 
@@ -1882,6 +1897,8 @@ async function confirmDiscard() {
   } catch (err) {
     console.error(err)
     commonUtil.showToast('Failed to discard session')
+  } finally {
+    if(!isLeaving && isSessionInProgress.value && aggregationWorker) {startAggregationSchedule();}
   }
 }
 
