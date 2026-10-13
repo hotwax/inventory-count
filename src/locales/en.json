@@ -561,14 +561,7 @@
   "Recent scans": "Recent scans",
   "scans": "scans",
   "Keyboard entry": "Keyboard entry",
-  "Refresh count progress": "Refresh count progress",
-  "Count progress is up to date": "Count progress is up to date",
-  "The latest count progress has been loaded.": "The latest count progress has been loaded.",
-  "Refresh count progress before submitting for review.": "Refresh count progress before submitting for review.",
-  "Could not refresh count progress. Please try again.": "Could not refresh count progress. Please try again.",
   "Syncing count...": "Syncing count...",
-  "Reopening session...": "Reopening session...",
-  "Resolve unmatched products before submitting this session": "Resolve unmatched products before submitting this session",
   "Some counts have not synced. Check your connection and try again.": "Some counts have not synced. Check your connection and try again.",
   "Could not sync and submit this session. Your counts are saved on this device. Please try again.": "Could not sync and submit this session. Your counts are saved on this device. Please try again."
 }

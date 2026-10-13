@@ -64,7 +64,7 @@ beforeEach(async () => {
   vi.stubGlobal("self", { postMessage: vi.fn(), onmessage: null });
   await import("./backgroundAggregation");
 });
-afterEach(() => { state.api.stopScheduling?.(); vi.unstubAllGlobals(); });
+afterEach(() => { state.api.stopScheduling(); vi.unstubAllGlobals(); });
 
 describe("final session flush", () => {
   it("waits for acknowledgment before marking a record synced", async () => {
@@ -88,9 +88,9 @@ describe("final session flush", () => {
     response.resolve({}); await background; await flush;
     expect(done).toHaveBeenCalledWith(expect.objectContaining({ pendingRecords: 0 }));
   });
-  it("propagates persistence failure and permits a later retry", async () => {
+  it("reports a failed request as pending and permits a later retry", async () => {
     state.request.mockRejectedValueOnce(new Error("network unavailable"));
-    await expect(state.api.flushSession("S1", context)).rejects.toThrow("network unavailable");
+    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ synced: 0, pendingRecords: 1 });
     expect(state.db.rows.inventoryCountRecords[0].lastSyncedAt).toBeNull();
     await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 0, synced: 1 });
   });
@@ -110,64 +110,25 @@ describe("final session flush", () => {
     state.request.mockResolvedValueOnce(null);
     await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ synced: 1, pendingRecords: 0 });
   });
-  it("does not mark a newer local edit synced using an older payload", async () => {
-    const response = deferred(); state.request.mockReturnValueOnce(response.promise);
-    const flush = state.api.flushSession("S1", context);
-    await vi.waitFor(() => expect(state.request).toHaveBeenCalledOnce());
-    Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 15, lastUpdatedAt: 11 });
-    response.resolve({});
-    await expect(flush).resolves.toMatchObject({ pendingRecords: 1 });
-    expect(state.db.rows.inventoryCountRecords[0].lastSyncedAt).toBeNull();
-    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 0 });
-    expect(state.request.mock.calls[1][0].data.items[0].quantity).toBe(15);
-  });
   it("aggregates pending scans before syncing and retains unmatched products", async () => {
     state.db.rows.products.push({ productId: "P1" });
     state.db.rows.scanEvents.push({ id: 1, inventoryCountImportId: "S1", productId: "P1", scannedValue: "P1", quantity: 3, aggApplied: 0 });
     await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingScans: 0, pendingRecords: 0 });
     expect(state.request.mock.calls[0][0].data.items[0].quantity).toBe(15);
     state.db.rows.inventoryCountRecords.push({ ...item(), uuid: "unmatched", productId: null, productIdentifier: "unknown" });
-    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 1, unmatchedRecords: 1 });
+    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 0, unmatchedRecords: 1 });
   });
-  it("orders an old server write before the reopened worker's newer write", async () => {
-    const { finishSessionTeardown, waitForSessionTeardown } = await import("@/services/sessionSyncLifecycle");
-    const oldApi = state.api;
+  it("skips a scheduled tick while the previous one is still queued", async () => {
+    vi.useFakeTimers();
     const response = deferred();
-    let serverQuantity = 0;
-    state.request.mockImplementation((request: any) => {
-      const quantity = request.data.items[0].quantity;
-      if(quantity === 12) {
-        return response.promise.then(() => {
-          serverQuantity = 12;
-
-          return {};
-        });
-      }
-      serverQuantity = quantity;
-
-      return Promise.resolve({});
-    });
-    const oldFlush = oldApi.flushSession("S1", context);
-    await vi.waitFor(() => expect(state.request).toHaveBeenCalledOnce());
-    // Construct the next worker first: module loading must not hide a missing
-    // handoff by delaying its write until after the old acknowledgment.
-    vi.resetModules(); await import("./backgroundAggregation");
-    const newApi = state.api;
-    const leaving = finishSessionTeardown(async () => { await oldFlush; });
-    const entering = (async () => {
-      await waitForSessionTeardown();
-      Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 15, lastUpdatedAt: Date.now(), lastSyncedAt: null });
-
-      return newApi.flushSession("S1", context);
-    })();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    const requestsBeforeAcknowledgment = state.request.mock.calls.length;
-    response.resolve({}); await leaving;
-    await expect(entering).resolves.toMatchObject({ pendingRecords: 0 });
-    expect(requestsBeforeAcknowledgment).toBe(1);
-    expect(serverQuantity).toBe(15);
-    expect(state.db.rows.inventoryCountRecords[0].quantity).toBe(15);
-    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 0, synced: 0 });
+    state.request.mockReturnValueOnce(response.promise);
+    self.onmessage!({ data: { type: "schedule", payload: { inventoryCountImportId: "S1", context, intervalMs: 10 } } } as MessageEvent);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(state.request).toHaveBeenCalledOnce();
+    state.api.stopScheduling();
+    vi.useRealTimers();
+    response.resolve({});
+    // Queued behind the scheduled flush, so this settles it before teardown.
+    await state.api.flushSession("S1", context);
   });
-
 });

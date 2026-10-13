@@ -1,20 +1,17 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { finishSessionTeardown } from "@/services/sessionSyncLifecycle";
 
-const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, handlers: new Map(), review: vi.fn(), sessions: vi.fn(), work: vi.fn(), facility: vi.fn(), toast: vi.fn() }));
-const emitter = vi.hoisted(() => ({
-  on: (event: string, handler: any) => state.handlers.set(event, handler),
-  off: (event: string) => state.handlers.delete(event),
-  emit: (event: string, payload: any) => state.handlers.get(event)?.(payload),
-}));
+// Unit doubles at the API boundary; this is load-ordering coverage, not HotWax backend validation.
+const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, review: vi.fn(), sessions: vi.fn(), work: vi.fn(), facility: vi.fn(), toast: vi.fn() }));
 vi.mock("@common", () => ({
-  translate: (value: string) => value, emitter,
+  translate: (value: string) => value,
   commonUtil: { showToast: (...args: any[]) => state.toast(...args), getDateTimeWithOrdinalSuffix: () => "", getProductIdentificationValue: () => "" },
 }));
 vi.mock("@ionic/vue", async () => ({
   ...await vi.importActual<any>("@ionic/vue"),
   onIonViewDidEnter: (fn: any) => { state.enter = fn; },
-  onIonViewWillLeave: (fn: any) => { state.leave = fn; },
+  onIonViewDidLeave: (fn: any) => { state.leave = fn; },
 }));
 vi.mock("@/router", () => ({ default: { push: vi.fn() } }));
 vi.mock("@/services/uiUtils", () => ({ loader: { present: vi.fn(), dismiss: vi.fn() } }));
@@ -30,10 +27,16 @@ vi.mock("@/components/Image.vue", () => ({ default: { template: "<div />" } }));
 import CountProgressReview from "./CountProgressReview.vue";
 
 let wrapper: any;
-const items = (counted: number) => Array.from({ length: 30 }, (_, i) => ({ productId: `P${i}`, isRequested: "Y", ...(i < counted ? { quantity: 1 } : {}) }));
+const items = (counted: number) => Array.from({ length: 30 }, (_, i) => ({ productId: `P${i}`, isRequested: "Y", quantity: i < counted ? 1 : -1 }));
 const response = (counted: number) => ({ status: 200, data: items(counted) });
+function deferred() {
+  let resolve!: (value: any) => void;
+  const promise = new Promise<any>(done => { resolve = done; });
+
+  return { promise, resolve };
+}
 beforeEach(() => {
-  vi.clearAllMocks(); state.handlers.clear();
+  vi.clearAllMocks();
   [state.review, state.sessions, state.work, state.facility].forEach(mock => mock.mockReset());
   state.work.mockResolvedValue({ status: 200, data: { workEffortId: "W1", facilityId: "F1", workEffortPurposeTypeId: "DIRECTED_COUNT", statusId: "CYCLE_CNT_IN_PRGS" } });
   state.sessions.mockResolvedValue({ status: 200, data: [{ inventoryCountImportId: "S1", statusId: "SESSION_SUBMITTED" }] });
@@ -43,59 +46,53 @@ beforeEach(() => {
 });
 afterEach(() => wrapper.unmount());
 
-describe("Track progress server refresh", () => {
-  it("replaces 14/16 with 30/0 after this count syncs", async () => {
-    await state.enter(); expect(wrapper.vm.countedItems).toHaveLength(14);
+describe("Track progress loading", () => {
+  it("replaces results on re-entry instead of appending duplicates", async () => {
+    await state.enter();
+    expect(wrapper.vm.countedItems).toHaveLength(14);
     state.review.mockResolvedValue(response(30));
-    await emitter.emit("inventory-count:session-synced", { workEffortId: "W1" }); await flushPromises();
+    await state.enter();
     expect(wrapper.vm.countedItems).toHaveLength(30);
     expect(wrapper.vm.uncountedItems).toHaveLength(0);
   });
-  it("does not append duplicates on re-entry", async () => {
-    await state.enter(); await state.enter();
-    expect(wrapper.vm.countedItems).toHaveLength(14);
-    expect(wrapper.vm.uncountedItems).toHaveLength(16);
-  });
-  it("ignores another count sync", async () => {
-    await state.enter();
-    await emitter.emit("inventory-count:session-synced", { workEffortId: "other" });
+
+  it("loads only after the session page that was just left finishes syncing", async () => {
+    const sync = deferred();
+    void finishSessionTeardown(() => sync.promise);
+    const load = state.enter();
+    await flushPromises();
+    expect(state.work).not.toHaveBeenCalled();
+    sync.resolve(undefined); await load;
     expect(state.review).toHaveBeenCalledOnce();
   });
-  it("ignores an older response that finishes after a newer refresh", async () => {
-    let finish!: (value: any) => void;
-    state.review.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
-    const first = state.enter();
+
+  it("ignores a response that arrives after the view leaves", async () => {
+    const page = deferred();
+    state.review.mockReturnValueOnce(page.promise);
+    const load = state.enter();
     await vi.waitFor(() => expect(state.review).toHaveBeenCalledOnce());
-    state.review.mockResolvedValue(response(30));
-    await emitter.emit("inventory-count:session-synced", { workEffortId: "W1" }); await flushPromises();
-    finish(response(14)); await first;
-    expect(wrapper.vm.countedItems).toHaveLength(30);
-    expect(wrapper.vm.uncountedItems).toHaveLength(0);
-  });
-  it("discards responses and unsubscribes when the view leaves", async () => {
-    let finish!: (value: any) => void;
-    state.review.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
-    const first = state.enter();
-    await vi.waitFor(() => expect(state.review).toHaveBeenCalledOnce());
-    state.leave(); finish(response(30)); await first;
+    state.leave(); page.resolve(response(30)); await load;
     expect(wrapper.vm.countedItems).toHaveLength(0);
-    expect(state.handlers.has("inventory-count:session-synced")).toBe(false);
   });
-  it("does not enable submission after a failed refresh clears the lists", async () => {
+
+  it("does not enable submission after a failed load clears the lists", async () => {
     state.review.mockRejectedValue(new Error("network unavailable"));
     await state.enter();
+    expect(wrapper.vm.uncountedItems).toHaveLength(0);
     expect(wrapper.vm.canSubmitForReview).toBe(false);
     expect(state.toast).toHaveBeenCalled();
   });
-  it("awaits the hard-count facility list before allowing submission", async () => {
+
+  it("waits for the hard-count facility list before allowing submission", async () => {
     state.work.mockResolvedValue({ status: 200, data: { facilityId: "F1", workEffortPurposeTypeId: "HARD_COUNT", statusId: "CYCLE_CNT_IN_PRGS" } });
     state.review.mockResolvedValue(response(30));
-    let finish!: (value: any) => void;
-    state.facility.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    const facility = deferred();
+    state.facility.mockReturnValueOnce(facility.promise);
     const load = state.enter();
     await vi.waitFor(() => expect(state.facility).toHaveBeenCalledOnce());
     expect(wrapper.vm.canSubmitForReview).toBe(false);
-    finish({ status: 200, data: { entityValueList: [{ productId: "not-counted" }] } }); await load; await flushPromises();
+    facility.resolve({ status: 200, data: { entityValueList: [{ productId: "not-counted" }] } }); await load;
     expect(wrapper.vm.uncountedItems).toHaveLength(1);
+    expect(wrapper.vm.canSubmitForReview).toBe(false);
   });
 });

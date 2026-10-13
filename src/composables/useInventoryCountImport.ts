@@ -71,11 +71,11 @@ function currentMillis(): number {
       // Dexie table name for inventory count items
       const table = db.table('inventoryCountRecords');
 
-      // A failed final sync can leave newer device quantities behind. Read and
-      // hydrate atomically so server data cannot overwrite those pending edits.
+      // A failed sync can leave newer device quantities behind. Read and hydrate
+      // in one transaction so server data cannot overwrite those pending edits.
       await db.transaction('rw', table, async () => {
-        const existing = await table.bulkGet(normalized.map(item => [item.inventoryCountImportId, item.uuid]));
-        const acknowledged = normalized.filter((_, index) => !needsInventoryCountSync(existing[index]));
+        const existing = await table.bulkGet(normalized.map((item: any) => [item.inventoryCountImportId, item.uuid]));
+        const acknowledged = normalized.filter((_: any, index: number) => !needsInventoryCountSync(existing[index]));
         if (acknowledged.length) await table.bulkPut(acknowledged);
       });
 
