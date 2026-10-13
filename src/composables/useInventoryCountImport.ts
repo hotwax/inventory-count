@@ -7,6 +7,7 @@ import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
 import { getUploadFileParamName } from '@/services/utils';
+import { needsInventoryCountSync } from '@/services/inventoryCountRecord';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -70,8 +71,13 @@ function currentMillis(): number {
       // Dexie table name for inventory count items
       const table = db.table('inventoryCountRecords');
 
-      // Insert or update efficiently
-      await table.bulkPut(normalized);
+      // A failed final sync can leave newer device quantities behind. Read and
+      // hydrate atomically so server data cannot overwrite those pending edits.
+      await db.transaction('rw', table, async () => {
+        const existing = await table.bulkGet(normalized.map(item => [item.inventoryCountImportId, item.uuid]));
+        const acknowledged = normalized.filter((_, index) => !needsInventoryCountSync(existing[index]));
+        if (acknowledged.length) await table.bulkPut(acknowledged);
+      });
 
     } catch (err) {
       console.error('[IndexedDB] Failed to store batch', err);

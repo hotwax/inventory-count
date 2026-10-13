@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
+import { needsInventoryCountSync } from "@/services/inventoryCountRecord";
 
 // DB instance for worker (created once)
 let db: any = null;
@@ -610,10 +611,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
 
     let pending = await db.table('inventoryCountRecords')
       .where({ inventoryCountImportId })
-      .and((item: any) =>
-        !item.lastSyncedAt ||  // never synced
-        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt) // modified after last sync
-      )
+      .and(needsInventoryCountSync)
       .toArray()
 
     if (!pending.length) return 0
@@ -627,10 +625,7 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       await resolveMissingSystemQOH(inventoryCountImportId, context)
       pending = await db.table('inventoryCountRecords')
         .where({ inventoryCountImportId })
-        .and((item: any) =>
-          !item.lastSyncedAt ||  // never synced
-          (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
-        )
+        .and(needsInventoryCountSync)
         .toArray()
     }
 
@@ -709,10 +704,7 @@ async function resolveMissingSystemQOH(
       item.productId &&
       item.facilityId &&
       (item.systemQuantityOnHand === undefined || item.systemQuantityOnHand === null) &&
-      (
-        !item.lastSyncedAt ||  // never synced
-        (item.lastUpdatedAt && item.lastSyncedAt && item.lastUpdatedAt > item.lastSyncedAt)
-      )
+      needsInventoryCountSync(item)
     )
     .toArray()
 
@@ -772,10 +764,6 @@ async function ensureDB(context: any) {
   return db;
 }
 
-function needsSync(item: any): boolean {
-  return !item.lastSyncedAt || (item.lastUpdatedAt && item.lastUpdatedAt > item.lastSyncedAt);
-}
-
 function flushSession(inventoryCountImportId: string, context: any): Promise<SessionSyncResult> {
   return withDB(context, async () => {
     const aggregated = await aggregate(inventoryCountImportId, context);
@@ -788,7 +776,7 @@ function flushSession(inventoryCountImportId: string, context: any): Promise<Ses
       aggregated,
       synced,
       pendingScans,
-      pendingRecords: records.filter((item: any) => needsSync(item) && (item.productId || item.quantity > 0)).length,
+      pendingRecords: records.filter((item: any) => needsInventoryCountSync(item) && (item.productId || item.quantity > 0)).length,
       unmatchedRecords: records.filter((item: any) => !item.productId && item.quantity > 0).length
     };
     self.postMessage({ type: "aggregationComplete", inventoryCountImportId, count: aggregated, ...result });

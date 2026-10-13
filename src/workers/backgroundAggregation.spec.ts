@@ -129,4 +129,45 @@ describe("final session flush", () => {
     state.db.rows.inventoryCountRecords.push({ ...item(), uuid: "unmatched", productId: null, productIdentifier: "unknown" });
     await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 1, unmatchedRecords: 1 });
   });
+  it("orders an old server write before the reopened worker's newer write", async () => {
+    const { finishSessionTeardown, waitForSessionTeardown } = await import("@/services/sessionSyncLifecycle");
+    const oldApi = state.api;
+    const response = deferred();
+    let serverQuantity = 0;
+    state.request.mockImplementation((request: any) => {
+      const quantity = request.data.items[0].quantity;
+      if(quantity === 12) {
+        return response.promise.then(() => {
+          serverQuantity = 12;
+
+          return {};
+        });
+      }
+      serverQuantity = quantity;
+
+      return Promise.resolve({});
+    });
+    const oldFlush = oldApi.flushSession("S1", context);
+    await vi.waitFor(() => expect(state.request).toHaveBeenCalledOnce());
+    // Construct the next worker first: module loading must not hide a missing
+    // handoff by delaying its write until after the old acknowledgment.
+    vi.resetModules(); await import("./backgroundAggregation");
+    const newApi = state.api;
+    const leaving = finishSessionTeardown(async () => { await oldFlush; });
+    const entering = (async () => {
+      await waitForSessionTeardown();
+      Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 15, lastUpdatedAt: Date.now(), lastSyncedAt: null });
+
+      return newApi.flushSession("S1", context);
+    })();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const requestsBeforeAcknowledgment = state.request.mock.calls.length;
+    response.resolve({}); await leaving;
+    await expect(entering).resolves.toMatchObject({ pendingRecords: 0 });
+    expect(requestsBeforeAcknowledgment).toBe(1);
+    expect(serverQuantity).toBe(15);
+    expect(state.db.rows.inventoryCountRecords[0].quantity).toBe(15);
+    await expect(state.api.flushSession("S1", context)).resolves.toMatchObject({ pendingRecords: 0, synced: 0 });
+  });
+
 });
