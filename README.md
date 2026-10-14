@@ -165,3 +165,8 @@ If you have any questions or ideas feel free to join our <a href="https://discor
 
 Inventory Count app is completely free and released under the Apache v2.0 License. Check <a href="https://github.com/hotwax/inventorycount/blob/main/LICENSE" target="_blank">LICENSE</a> for more details.
 
+
+
+### Release regression tests
+
+Count-creation and facet regressions are maintained in [hotwax/oms-test](https://github.com/hotwax/oms-test/tree/main/scripts/qa/inventory-count), alongside native review/API regressions. Run its Vue suite against this checkout as well as `test:unit`; see the companion repository README for dependency and environment setup. The migrated suites exercise the current Tags UI, selection/paging/validation and the matching variant catalog population.
