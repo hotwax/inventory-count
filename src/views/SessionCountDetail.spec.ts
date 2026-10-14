@@ -4,21 +4,20 @@ import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 
 // Unit doubles at the worker/API boundary; this is submit and teardown ordering
 // coverage, not HotWax backend validation.
-const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, create: vi.fn(), aggs: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), replace: vi.fn(), toast: vi.fn() }));
+const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, session: vi.fn(), create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn() }));
 vi.mock("@common", () => ({
   translate: (value: string) => value,
   commonUtil: { showToast: state.toast, getOmsURL: () => "", getOMSInstanceName: () => "unit-only", getMaargURL: () => "", getToken: () => "", getProductIdentificationValue: () => "" },
 }));
 vi.mock("@ionic/vue", async () => ({ ...await vi.importActual<any>("@ionic/vue"), onIonViewDidEnter: (fn: any) => { state.enter = fn; }, onIonViewDidLeave: (fn: any) => { state.leave = fn; } }));
 vi.mock("@common/core/workerFactory", () => ({ WorkerFactory: { createWorker: (...args: any[]) => state.create(...args) } }));
-vi.mock("@/router", () => ({ default: { replace: state.replace, push: vi.fn() } }));
+vi.mock("@/router", () => ({ default: { replace: state.replace, push: state.push } }));
 vi.mock("@/services/uiUtils", () => ({ loader: { present: vi.fn(), dismiss: vi.fn() } }));
 vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getProductIdentificationPref: {}, getGoodIdentificationOptions: [], getBarcodeIdentificationPref: "SKU" }) }));
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ hasPermission: () => true, getUserProfile: { username: "unit-only" }, getDeviceId: "unit-device" }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({
-  updateSession: state.update, releaseSession: () => Promise.resolve({ status: 200 }),
-  getSessionLock: () => Promise.resolve({ status: 200, data: { entityValueList: [{ userId: "unit-only", deviceId: "unit-device", fromDate: 5 }] } }),
-  getInventoryCountImportSession: () => Promise.resolve({ status: 200, data: { statusId: "SESSION_ASSIGNED" } }),
+  updateSession: state.update, releaseSession: state.release, getSessionLock: state.lock,
+  getInventoryCountImportSession: state.session,
   getInventoryCountImportItemCount: () => Promise.resolve({ status: 200, data: { count: 1 } }), getInventoryCountImportItemsCount: () => Promise.resolve(1),
   getSessionProductIds: () => Promise.resolve([]), getUnmatchedItems: () => Promise.resolve([]), getCountedItems: () => Promise.resolve([]), getUncountedItems: () => Promise.resolve([]),
   getUndirectedItems: () => Promise.resolve([]), getScanEvents: () => Promise.resolve([]), getTotalCountedUnits: () => Promise.resolve(0), recordScan: vi.fn()
@@ -35,6 +34,7 @@ import SessionCountDetail from "@/views/SessionCountDetail.vue";
 
 let wrapper: any;
 const complete = { aggregated: 1, synced: 1, pendingScans: 0, pendingRecords: 0, unmatchedRecords: 0 };
+const ownLock = { status: 200, data: { entityValueList: [{ userId: "unit-only", deviceId: "unit-device", fromDate: 5 }] } };
 function deferred() {
   let resolve!: (value: any) => void;
   const promise = new Promise<any>(done => { resolve = done; });
@@ -44,12 +44,17 @@ function deferred() {
 beforeEach(async () => {
   vi.useFakeTimers();
   vi.clearAllMocks();
-  [state.flush, state.stop, state.update].forEach(mock => mock.mockReset());
+  [state.flush, state.stop, state.update, state.lock, state.release, state.session].forEach(mock => mock.mockReset());
+  state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_ASSIGNED" } });
   state.flush.mockResolvedValue(complete); state.stop.mockResolvedValue(undefined); state.update.mockResolvedValue({ status: 200 });
-  state.aggs.length = 0; state.order.length = 0;
+  state.lock.mockResolvedValue(ownLock); state.release.mockResolvedValue({ status: 200 });
+  state.aggs.length = 0; state.heartbeats.length = 0; state.order.length = 0;
   state.create.mockImplementation((url: URL) => {
     if(String(url).includes("lockHeartbeatWorker")) {
-      return { worker: { postMessage: vi.fn(), terminate: vi.fn() }, api: { startHeartbeat: vi.fn(() => Promise.resolve()), stopHeartbeat: vi.fn(() => Promise.resolve()) } };
+      const handle = { worker: { postMessage: vi.fn(), terminate: vi.fn(), onmessage: null as any }, api: { startHeartbeat: vi.fn(() => Promise.resolve()), stopHeartbeat: vi.fn(() => Promise.resolve()) } };
+      state.heartbeats.push(handle);
+
+      return handle;
     }
     const id = state.aggs.length;
     const worker = { postMessage: vi.fn(), terminate: vi.fn(() => { state.order.push(`worker-stop:${id}`); }) };
@@ -123,5 +128,69 @@ describe("session teardown", () => {
     await state.enter();
     expect(state.aggs[0].worker.terminate).toHaveBeenCalledOnce();
     expect(state.aggs).toHaveLength(2);
+  });
+});
+
+describe("async work that finishes after the user leaves", () => {
+  async function reenter() {
+    state.leave();
+    await state.enter();
+  }
+
+  it("does not start sync or heartbeat workers when the user leaves while the session loads", async () => {
+    state.leave(); await waitForSessionTeardown();
+    const lock = deferred();
+    state.lock.mockReturnValueOnce(lock.promise);
+    const entering = state.enter();
+    for(let i = 0; i < 5 && !state.lock.mock.calls.length; i++) {await flushPromises();}
+    expect(state.lock).toHaveBeenCalledOnce();
+    state.leave();
+    lock.resolve(ownLock); await entering;
+    expect(state.aggs).toHaveLength(1);
+    expect(state.heartbeats).toHaveLength(1);
+  });
+
+  it("does not submit when the user leaves while the final sync runs", async () => {
+    const sync = deferred();
+    state.flush.mockReturnValueOnce(sync.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    state.leave();
+    sync.resolve(complete); await submit;
+    expect(state.update).not.toHaveBeenCalled();
+    expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it("reloads the later visit's status after a late submit response without touching its lock", async () => {
+    const response = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    expect(state.update).toHaveBeenCalledOnce();
+    // The re-entered visit loads the session before the submit commits.
+    await reenter();
+    state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
+    response.resolve({ status: 200 }); await submit;
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+    expect(state.release).not.toHaveBeenCalled();
+    expect(state.heartbeats[1].api.stopHeartbeat).not.toHaveBeenCalled();
+    expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it("does not start a heartbeat for a reopen that completes after leaving", async () => {
+    const response = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const reopening = wrapper.vm.reopen(); await flushPromises();
+    state.leave();
+    response.resolve({ status: 200 }); await reopening;
+    expect(state.lock).not.toHaveBeenCalled();
+    expect(state.heartbeats).toHaveLength(1);
+  });
+
+  it("ignores heartbeat messages from an earlier visit", async () => {
+    const earlier = state.heartbeats[0].worker;
+    await reenter();
+    await earlier.onmessage({ data: { type: "lockExpired" } });
+    expect(state.release).not.toHaveBeenCalled();
+    expect(state.push).not.toHaveBeenCalled();
   });
 });

@@ -871,6 +871,10 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSubmitting = ref(false);
+// Each visit gets a new id. Async work started by a visit stops once the id
+// changes, so a late response cannot start workers, change the page or navigate.
+let viewId = 0;
+const isCurrentView = (id: number) => id === viewId;
 const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
 // Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
 const canCountOnMobile = computed(() =>
@@ -1113,14 +1117,20 @@ watch(selectedSegment, () => {
 })
 
 onIonViewDidEnter(async () => {
+  const id = ++viewId;
   try {
     // A previous visit's worker may still be flushing; two workers must not
     // aggregate the same scans.
     await waitForSessionTeardown();
+    if (!isCurrentView(id)) return;
     await startSession();
-    await fetchWorkEffort();
+    if (!isCurrentView(id)) return;
+    await fetchWorkEffort(id);
+    if (!isCurrentView(id)) return;
     if (!['SESSION_SUBMITTED', 'SESSION_VOIDED'].includes(inventoryCountImport.value?.statusId)) {
-      await handleSessionLock();
+      await handleSessionLock(id);
+      // Leaving during the lock request must not start the sync worker below.
+      if (!isCurrentView(id)) return;
     }
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
@@ -1162,11 +1172,12 @@ onIonViewDidEnter(async () => {
     })
   } catch (error) {
     console.error(error);
-    commonUtil.showToast("Failed to load session details");
+    if (isCurrentView(id)) commonUtil.showToast("Failed to load session details");
   }
 });
 
 onIonViewDidLeave(() => {
+  viewId++
   isCameraOpen.value = false
   clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
@@ -1199,10 +1210,10 @@ onIonViewDidLeave(() => {
   })
 })
 
-async function fetchWorkEffort() {
+async function fetchWorkEffort(id = viewId) {
   try {
     const resp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-    if (resp?.status === 200) {
+    if (resp?.status === 200 && isCurrentView(id)) {
       workEffort.value = resp.data;
       updateTimer();
       timerInterval = setInterval(updateTimer, 1000);
@@ -1520,7 +1531,7 @@ function handleScannerBlur() {
   isScannerFocused.value = false;
 }
 
-async function handleSessionLock() {
+async function handleSessionLock(id = viewId) {
   try {
     const userId = useUserProfile().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
@@ -1532,6 +1543,7 @@ async function handleSessionLock() {
       deviceId: currentDeviceId,
       userId,
     });
+    if (!isCurrentView(id)) return;
     const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
 
@@ -1572,6 +1584,8 @@ async function handleSessionLock() {
       // Message listener
       if (worker) {
         worker.onmessage = async (event: any) => {
+          // A heartbeat message from an earlier visit must not navigate this page.
+          if (!isCurrentView(id)) return;
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
@@ -1586,7 +1600,7 @@ async function handleSessionLock() {
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
             commonUtil.showToast('Reacquiring lock...');
-            await handleSessionLock();
+            await handleSessionLock(id);
           }
         };
       }
@@ -1603,6 +1617,7 @@ async function handleSessionLock() {
       fromDate,
       thruDate: fromDate + (lockLeaseSeconds * 1000)
     });
+    if (!isCurrentView(id)) return;
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
@@ -1631,6 +1646,8 @@ async function handleSessionLock() {
       // Listen for messages
       if (worker) {
         worker.onmessage = async (event: any) => {
+          // A heartbeat message from an earlier visit must not navigate this page.
+          if (!isCurrentView(id)) return;
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
@@ -1645,7 +1662,7 @@ async function handleSessionLock() {
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
             commonUtil.showToast('Reacquiring lock...');
-            await handleSessionLock();
+            await handleSessionLock(id);
           }
         };
       }
@@ -1656,6 +1673,7 @@ async function handleSessionLock() {
     }
   } catch (err) {
     console.error('Error handling session lock:', err);
+    if (!isCurrentView(id)) return;
     sessionLocked.value = true;
     commonUtil.showToast('Error while acquiring session lock.');
   }
@@ -1826,6 +1844,20 @@ async function finalizeAggregationAndSync() {
   return aggregationWorkerApi.flushSession(props.inventoryCountImportId, getAggregationContext());
 }
 
+/**
+ * A status change from an earlier visit can land after a later visit loaded the
+ * session, so reload the status for whichever visit is current now.
+ */
+async function refreshSessionStatus() {
+  const id = viewId
+  try {
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
+    if (isCurrentView(id) && resp?.status === 200 && resp.data) inventoryCountImport.value = resp.data
+  } catch (err) {
+    console.error('Failed to refresh session status', err)
+  }
+}
+
 async function confirmSubmit() {
   showSubmitAlert.value = false
   if (isSubmitting.value) return
@@ -1835,10 +1867,13 @@ async function confirmSubmit() {
   }
   isSubmitting.value = true
   isCameraOpen.value = false
+  const id = viewId
   try {
     await loader.present('Syncing count...')
     // Submit only after every scan and changed count has reached the server.
     const result = await finalizeAggregationAndSync()
+    // The user left while syncing: do not submit on their behalf.
+    if (!isCurrentView(id)) return
     if (result.unmatchedRecords > 0) {
       commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
       return
@@ -1851,14 +1886,17 @@ async function confirmSubmit() {
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_SUBMITTED'
     })
+    // Once the user has left, the lock and heartbeat may belong to a later visit.
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
+    if (!isCurrentView(id)) return
     if (lockWorker) await lockWorker.stopHeartbeat()
     commonUtil.showToast('Session submitted successfully')
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
-    commonUtil.showToast(translate("Could not sync and submit this session. Your counts are saved on this device. Please try again."))
+    if (isCurrentView(id)) commonUtil.showToast(translate("Could not sync and submit this session. Your counts are saved on this device. Please try again."))
   } finally {
     loader.dismiss()
     isSubmitting.value = false
@@ -1867,34 +1905,42 @@ async function confirmSubmit() {
 
 async function confirmDiscard() {
   showDiscardAlert.value = false
+  const id = viewId
   try {
     // Best effort, as before: a failed sync must not prevent discarding.
     await finalizeAggregationAndSync().catch((err) => console.warn('[Session] Sync before discard failed', err))
+    if (!isCurrentView(id)) return
     await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_VOIDED',
       fromDate: currentLock.value.fromDate
     })
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
+    if (!isCurrentView(id)) return
     if (lockWorker) await lockWorker.stopHeartbeat()
     commonUtil.showToast('Session discarded')
     await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
-    commonUtil.showToast('Failed to discard session')
+    if (isCurrentView(id)) commonUtil.showToast('Failed to discard session')
   }
 }
 
 async function reopen() {
+  const id = viewId
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    // Starting a heartbeat after the user left would hold the lock with no page to release it.
+    if (!isCurrentView(id)) return refreshSessionStatus()
     commonUtil.showToast('Session reopened');
-    await handleSessionLock();
+    await handleSessionLock(id);
+    if (!isCurrentView(id)) return
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
-    commonUtil.showToast('Failed to reopen session');
+    if (isCurrentView(id)) commonUtil.showToast('Failed to reopen session');
   }
 }
 
