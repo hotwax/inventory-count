@@ -4,7 +4,7 @@ import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 
 // Unit doubles at the worker/API boundary; this is submit and teardown ordering
 // coverage, not HotWax backend validation.
-const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn() }));
+const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, session: vi.fn(), create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn() }));
 vi.mock("@common", () => ({
   translate: (value: string) => value,
   commonUtil: { showToast: state.toast, getOmsURL: () => "", getOMSInstanceName: () => "unit-only", getMaargURL: () => "", getToken: () => "", getProductIdentificationValue: () => "" },
@@ -17,7 +17,7 @@ vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFa
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ hasPermission: () => true, getUserProfile: { username: "unit-only" }, getDeviceId: "unit-device" }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({
   updateSession: state.update, releaseSession: state.release, getSessionLock: state.lock,
-  getInventoryCountImportSession: () => Promise.resolve({ status: 200, data: { statusId: "SESSION_ASSIGNED" } }),
+  getInventoryCountImportSession: state.session,
   getInventoryCountImportItemCount: () => Promise.resolve({ status: 200, data: { count: 1 } }), getInventoryCountImportItemsCount: () => Promise.resolve(1),
   getSessionProductIds: () => Promise.resolve([]), getUnmatchedItems: () => Promise.resolve([]), getCountedItems: () => Promise.resolve([]), getUncountedItems: () => Promise.resolve([]),
   getUndirectedItems: () => Promise.resolve([]), getScanEvents: () => Promise.resolve([]), getTotalCountedUnits: () => Promise.resolve(0), recordScan: vi.fn()
@@ -44,7 +44,8 @@ function deferred() {
 beforeEach(async () => {
   vi.useFakeTimers();
   vi.clearAllMocks();
-  [state.flush, state.stop, state.update, state.lock, state.release].forEach(mock => mock.mockReset());
+  [state.flush, state.stop, state.update, state.lock, state.release, state.session].forEach(mock => mock.mockReset());
+  state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_ASSIGNED" } });
   state.flush.mockResolvedValue(complete); state.stop.mockResolvedValue(undefined); state.update.mockResolvedValue({ status: 200 });
   state.lock.mockResolvedValue(ownLock); state.release.mockResolvedValue({ status: 200 });
   state.aggs.length = 0; state.heartbeats.length = 0; state.order.length = 0;
@@ -159,17 +160,20 @@ describe("async work that finishes after the user leaves", () => {
     expect(state.replace).not.toHaveBeenCalled();
   });
 
-  it("does not release, stop or navigate a later visit after a late submit response", async () => {
+  it("reloads the later visit's status after a late submit response without touching its lock", async () => {
     const response = deferred();
     state.update.mockReturnValueOnce(response.promise);
     const submit = wrapper.vm.confirmSubmit(); await flushPromises();
     expect(state.update).toHaveBeenCalledOnce();
+    // The re-entered visit loads the session before the submit commits.
     await reenter();
+    state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
     response.resolve({ status: 200 }); await submit;
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
+    expect(wrapper.vm.isSessionMutable).toBe(false);
     expect(state.release).not.toHaveBeenCalled();
     expect(state.heartbeats[1].api.stopHeartbeat).not.toHaveBeenCalled();
     expect(state.replace).not.toHaveBeenCalled();
-    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_ASSIGNED");
   });
 
   it("does not start a heartbeat for a reopen that completes after leaving", async () => {

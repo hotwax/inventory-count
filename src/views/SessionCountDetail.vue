@@ -1844,6 +1844,20 @@ async function finalizeAggregationAndSync() {
   return aggregationWorkerApi.flushSession(props.inventoryCountImportId, getAggregationContext());
 }
 
+/**
+ * A status change from an earlier visit can land after a later visit loaded the
+ * session, so reload the status for whichever visit is current now.
+ */
+async function refreshSessionStatus() {
+  const id = viewId
+  try {
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
+    if (isCurrentView(id) && resp?.status === 200 && resp.data) inventoryCountImport.value = resp.data
+  } catch (err) {
+    console.error('Failed to refresh session status', err)
+  }
+}
+
 async function confirmSubmit() {
   showSubmitAlert.value = false
   if (isSubmitting.value) return
@@ -1873,7 +1887,7 @@ async function confirmSubmit() {
       statusId: 'SESSION_SUBMITTED'
     })
     // Once the user has left, the lock and heartbeat may belong to a later visit.
-    if (!isCurrentView(id)) return
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
     if (!isCurrentView(id)) return
@@ -1901,7 +1915,7 @@ async function confirmDiscard() {
       statusId: 'SESSION_VOIDED',
       fromDate: currentLock.value.fromDate
     })
-    if (!isCurrentView(id)) return
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
     if (!isCurrentView(id)) return
@@ -1919,7 +1933,7 @@ async function reopen() {
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
     // Starting a heartbeat after the user left would hold the lock with no page to release it.
-    if (!isCurrentView(id)) return
+    if (!isCurrentView(id)) return refreshSessionStatus()
     commonUtil.showToast('Session reopened');
     await handleSessionLock(id);
     if (!isCurrentView(id)) return
