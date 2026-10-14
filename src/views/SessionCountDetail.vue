@@ -96,7 +96,7 @@
 
             <!-- When session is SUBMITTED: show only Re-open button -->
             <template v-if="inventoryCountImport?.statusId === 'SESSION_SUBMITTED'">
-              <ion-button color="warning" fill="outline" @click="reopen" data-testid="session-detail-reopen-btn">
+              <ion-button color="warning" fill="outline" @click="reopen" :disabled="!isSessionReady" data-testid="session-detail-reopen-btn">
                 <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                 {{ translate("Re-open session") }}
               </ion-button>
@@ -112,15 +112,15 @@
             <!-- Default: show Edit / Discard / Submit -->
             <template v-else>
               <div class="actions" data-testid="session-detail-actions">
-                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="sessionLocked" data-testid="session-detail-edit-btn">
+                <ion-button color="medium" fill="outline" @click="openEditSessionModal" :disabled="!isSessionReady || sessionLocked" data-testid="session-detail-edit-btn">
                   <ion-icon slot="start" :icon="pencilOutline"></ion-icon>
                   {{ translate("Edit") }}
                 </ion-button>
-                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="sessionLocked" data-testid="session-detail-discard-btn">
+                <ion-button color="warning" fill="outline" @click="showDiscardAlert = true" :disabled="!isSessionReady || sessionLocked" data-testid="session-detail-discard-btn">
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-submit-btn">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="!isSessionReady || sessionLocked || isSubmitting" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
@@ -749,7 +749,7 @@ import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
 import { loader } from '@/services/uiUtils';
-import { finishSessionTeardown, waitForSessionTeardown } from '@/services/sessionSyncLifecycle';
+import { finishSessionTeardown, waitForSessionTeardown, trackSessionStatusChange, waitForSessionStatusChanges } from '@/services/sessionSyncLifecycle';
 import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
@@ -871,14 +871,15 @@ const countTypeLabel = computed(() =>
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSubmitting = ref(false);
+const isSessionReady = ref(false);
 // Each visit gets a new id. Async work started by a visit stops once the id
 // changes, so a late response cannot start workers, change the page or navigate.
 let viewId = 0;
 const isCurrentView = (id: number) => id === viewId;
-const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
+const isSessionMutable = computed(() => isSessionReady.value && isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
 // Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
 const canCountOnMobile = computed(() =>
-  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value && !isSubmitting.value
+  isSessionReady.value && ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value && !isSubmitting.value
 );
 
 const cameraPendingItems = computed(() => {
@@ -927,7 +928,8 @@ const scannerButtonLabel = computed(() => {
 });
 
 const scannerButtonDisabled = computed(() =>
-  sessionLocked.value
+  !isSessionReady.value
+  || sessionLocked.value
   || isSubmitting.value
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
@@ -1118,12 +1120,15 @@ watch(selectedSegment, () => {
 
 onIonViewDidEnter(async () => {
   const id = ++viewId;
+  isSessionReady.value = false;
   try {
     // A previous visit's worker may still be flushing; two workers must not
     // aggregate the same scans.
     await waitForSessionTeardown();
     if (!isCurrentView(id)) return;
-    await startSession();
+    await waitForSessionStatusChanges(props.inventoryCountImportId);
+    if (!isCurrentView(id)) return;
+    await startSession(id);
     if (!isCurrentView(id)) return;
     await fetchWorkEffort(id);
     if (!isCurrentView(id)) return;
@@ -1170,6 +1175,7 @@ onIonViewDidEnter(async () => {
         context: getAggregationContext()
       }
     })
+    if (isCurrentView(id)) isSessionReady.value = true;
   } catch (error) {
     console.error(error);
     if (isCurrentView(id)) commonUtil.showToast("Failed to load session details");
@@ -1178,6 +1184,7 @@ onIonViewDidEnter(async () => {
 
 onIonViewDidLeave(() => {
   viewId++
+  isSessionReady.value = false
   isCameraOpen.value = false
   clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
@@ -1260,12 +1267,12 @@ function openEditSessionModal() {
 
 async function updateSessionOnServer() {
   try {
-    const resp = await useInventoryCountImport().updateSession({
+    const resp = await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,
       facilityAreaId: selectedArea.value,
       fromDate: currentLock.value.fromDate
-    });
+    }));
 
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value.countImportName = newCountName.value;
@@ -1280,9 +1287,10 @@ async function updateSessionOnServer() {
   isEditNewSessionModalOpen.value = false;
 }
 
-async function startSession() {
+async function startSession(id = viewId) {
   try {
     const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
+    if (!isCurrentView(id)) return;
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value = resp.data;
     } else {
@@ -1312,10 +1320,11 @@ async function startSession() {
     }    commonUtil.showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
-    commonUtil.showToast('Failed to initialize session');
+    if (isCurrentView(id)) commonUtil.showToast('Failed to initialize session');
+    throw err;
   }
 
-  focusScanner();
+  if (isCurrentView(id)) focusScanner();
 }
 
 async function loadInventoryItemsWithProgress() {
@@ -1379,7 +1388,7 @@ async function focusScanner() {
 async function recordScannedCode(code: string, quantity = 1) {
   console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
-  if (!value || isSubmitting.value) return false;
+  if (!value || !isSessionMutable.value) return false;
 
   try {
     await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
@@ -1500,10 +1509,10 @@ function goHandCountedFromSheet() {
 async function ensureSessionStarted() {
   if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') {
     try {
-      await useInventoryCountImport().updateSession({
+      await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({
         inventoryCountImportId: props.inventoryCountImportId,
         statusId: 'SESSION_ASSIGNED'
-      });
+      }));
       inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     } catch (err) {
       console.error(err);
@@ -1844,23 +1853,9 @@ async function finalizeAggregationAndSync() {
   return aggregationWorkerApi.flushSession(props.inventoryCountImportId, getAggregationContext());
 }
 
-/**
- * A status change from an earlier visit can land after a later visit loaded the
- * session, so reload the status for whichever visit is current now.
- */
-async function refreshSessionStatus() {
-  const id = viewId
-  try {
-    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
-    if (isCurrentView(id) && resp?.status === 200 && resp.data) inventoryCountImport.value = resp.data
-  } catch (err) {
-    console.error('Failed to refresh session status', err)
-  }
-}
-
 async function confirmSubmit() {
   showSubmitAlert.value = false
-  if (isSubmitting.value) return
+  if (!isSessionReady.value || isSubmitting.value) return
   if (unmatchedItems.value.length > 0) {
     commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
     return
@@ -1882,12 +1877,12 @@ async function confirmSubmit() {
       commonUtil.showToast(translate("Some counts have not synced. Check your connection and try again."))
       return
     }
-    await useInventoryCountImport().updateSession({
+    await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_SUBMITTED'
-    })
+    }))
     // Once the user has left, the lock and heartbeat may belong to a later visit.
-    if (!isCurrentView(id)) return refreshSessionStatus()
+    if (!isCurrentView(id)) return
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
     if (!isCurrentView(id)) return
@@ -1904,18 +1899,19 @@ async function confirmSubmit() {
 }
 
 async function confirmDiscard() {
+  if (!isSessionReady.value) return
   showDiscardAlert.value = false
   const id = viewId
   try {
     // Best effort, as before: a failed sync must not prevent discarding.
     await finalizeAggregationAndSync().catch((err) => console.warn('[Session] Sync before discard failed', err))
     if (!isCurrentView(id)) return
-    await useInventoryCountImport().updateSession({
+    await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_VOIDED',
       fromDate: currentLock.value.fromDate
-    })
-    if (!isCurrentView(id)) return refreshSessionStatus()
+    }))
+    if (!isCurrentView(id)) return
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
     if (!isCurrentView(id)) return
@@ -1929,11 +1925,12 @@ async function confirmDiscard() {
 }
 
 async function reopen() {
+  if (!isSessionReady.value) return
   const id = viewId
   try {
-    await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' }));
     // Starting a heartbeat after the user left would hold the lock with no page to release it.
-    if (!isCurrentView(id)) return refreshSessionStatus()
+    if (!isCurrentView(id)) return
     commonUtil.showToast('Session reopened');
     await handleSessionLock(id);
     if (!isCurrentView(id)) return
