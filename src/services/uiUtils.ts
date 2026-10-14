@@ -12,12 +12,13 @@ const loader = {
           backdropDismiss: false
         });
     }
-    loader.value.present();
+    await loader.value.present();
   },
-  dismiss: () => {
+  dismiss: async () => {
     if (loader.value) {
-      loader.value.dismiss();
+      const overlay = loader.value;
       loader.value = null as any;
+      await overlay.dismiss();
     }
   }
 }
