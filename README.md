@@ -169,4 +169,4 @@ Inventory Count app is completely free and released under the Apache v2.0 Licens
 
 ### Release regression tests
 
-Count-creation and facet regressions are maintained in [hotwax/oms-test](https://github.com/hotwax/oms-test/tree/main/scripts/qa/inventory-count), alongside native review/API regressions. Run its Vue suite against this checkout as well as `test:unit`; see the companion repository README for dependency and environment setup. The migrated suites exercise the current Tags UI, selection/paging/validation and the matching variant catalog population.
+Frontend count-creation and facet regressions live in `tests/unit/views` and `tests/unit/composables` and run with the app's normal `test:unit` command. Backend service/database/API regressions live in [hotwax/oms-test](https://github.com/hotwax/oms-test/tree/main/scripts/qa/inventory-count).
