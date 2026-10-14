@@ -165,8 +165,3 @@ If you have any questions or ideas feel free to join our <a href="https://discor
 
 Inventory Count app is completely free and released under the Apache v2.0 License. Check <a href="https://github.com/hotwax/inventorycount/blob/main/LICENSE" target="_blank">LICENSE</a> for more details.
 
-
-
-### Release regression tests
-
-Frontend count-creation and facet regressions live in `tests/unit/views` and `tests/unit/composables` and run with the app's normal `test:unit` command. Backend service/database/API regressions live in [hotwax/oms-test](https://github.com/hotwax/oms-test/tree/main/scripts/qa/inventory-count).

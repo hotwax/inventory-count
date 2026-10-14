@@ -1267,12 +1267,12 @@ function openEditSessionModal() {
 
 async function updateSessionOnServer() {
   try {
-    const resp = await trackSessionStatusChange(props.inventoryCountImportId, () => useInventoryCountImport().updateSession({
+    const resp = await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       countImportName: newCountName.value,
       facilityAreaId: selectedArea.value,
       fromDate: currentLock.value.fromDate
-    }));
+    });
 
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value.countImportName = newCountName.value;
@@ -1320,7 +1320,7 @@ async function startSession(id = viewId) {
     }    commonUtil.showToast('Session ready to start counting');
   } catch (err) {
     console.error(err);
-    if (isCurrentView(id)) commonUtil.showToast('Failed to initialize session');
+    // The entry handler reports the failure; a second toast here would repeat it.
     throw err;
   }
 

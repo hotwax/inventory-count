@@ -32,8 +32,25 @@ export function trackSessionStatusChange<T>(sessionId: string, work: () => Promi
   return task;
 }
 
-export async function waitForSessionStatusChanges(sessionId: string): Promise<void> {
-  while (pendingStatusChanges.has(sessionId)) {
-    await Promise.allSettled([...pendingStatusChanges.get(sessionId)!]);
+// The API client has no request timeout, so a hung status write must not keep a
+// re-entered page read-only forever. After this long the page reads server status anyway.
+export const STATUS_CHANGE_WAIT_MS = 15000;
+
+export async function waitForSessionStatusChanges(sessionId: string, timeoutMs = STATUS_CHANGE_WAIT_MS): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let expired = false;
+  const deadline = new Promise<void>(resolve => {
+    timer = setTimeout(() => {
+      expired = true;
+      resolve();
+    }, timeoutMs);
+  });
+
+  try {
+    while(!expired && pendingStatusChanges.has(sessionId)) {
+      await Promise.race([Promise.allSettled([...pendingStatusChanges.get(sessionId)!]), deadline]);
+    }
+  } finally {
+    clearTimeout(timer);
   }
 }

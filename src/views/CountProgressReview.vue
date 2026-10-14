@@ -514,7 +514,7 @@
         { text: translate('Cancel'), role: 'cancel' },
         { text: translate('Confirm'), role: 'confirm' }
       ]"
-      @didDismiss="onBulkOutOfStockDismiss"
+      @did-dismiss="onBulkOutOfStockDismiss"
     />
     <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-progress-add-session-modal">
           <ion-header data-testid="count-progress-add-session-header">
