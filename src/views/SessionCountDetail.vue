@@ -120,7 +120,7 @@
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked" data-testid="session-detail-submit-btn">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
@@ -748,6 +748,8 @@ import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
+import { loader } from '@/services/uiUtils';
+import { finishSessionTeardown, waitForSessionTeardown } from '@/services/sessionSyncLifecycle';
 import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
@@ -868,10 +870,11 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
-const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
+const isSubmitting = ref(false);
+const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
 // Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
 const canCountOnMobile = computed(() =>
-  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value
+  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value && !isSubmitting.value
 );
 
 const cameraPendingItems = computed(() => {
@@ -921,6 +924,7 @@ const scannerButtonLabel = computed(() => {
 
 const scannerButtonDisabled = computed(() =>
   sessionLocked.value
+  || isSubmitting.value
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
 );
@@ -1110,6 +1114,9 @@ watch(selectedSegment, () => {
 
 onIonViewDidEnter(async () => {
   try {
+    // A previous visit's worker may still be flushing; two workers must not
+    // aggregate the same scans.
+    await waitForSessionTeardown();
     await startSession();
     await fetchWorkEffort();
     if (!['SESSION_SUBMITTED', 'SESSION_VOIDED'].includes(inventoryCountImport.value?.statusId)) {
@@ -1144,26 +1151,13 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessageerror = (err) => {
       console.error('[Worker Message Error]', err);
     };
-    // Run every 10 seconds
-    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-
     aggregationWorker.postMessage({
       type: 'schedule',
       payload: {
         workEffortId: props.workEffortId,
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
-        context: {
-          omsUrl: commonUtil.getOmsURL(),
-          omsInstance: commonUtil.getOMSInstanceName(),
-          userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: commonUtil.getMaargURL(),
-          token: commonUtil.getToken(),
-          barcodeIdentification: barcodeIdentification,
-          inventoryCountTypeId: props.inventoryCountTypeId,
-          facilityId: useProductStore().getCurrentFacility.facilityId
-        }
+        context: getAggregationContext()
       }
     })
   } catch (error) {
@@ -1172,19 +1166,37 @@ onIonViewDidEnter(async () => {
   }
 });
 
-onIonViewDidLeave(async () => {
+onIonViewDidLeave(() => {
   isCameraOpen.value = false
   clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
-
-  await finalizeAggregationAndSync();
-  await unscheduleWorker();
-  if (lockWorker) {
-    await lockWorker.stopHeartbeat()
-    lockWorker = null
-  }
   if (timerInterval) clearInterval(timerInterval);
+
+  // Ionic does not await leave hooks, so register the final flush synchronously;
+  // the next session entry and Track progress wait for it.
+  const worker = aggregationWorker
+  const workerApi = aggregationWorkerApi
+  const heartbeat = lockWorker
+  const inventoryCountImportId = props.inventoryCountImportId
+  const context = getAggregationContext()
+  aggregationWorker = null
+  aggregationWorkerApi = null
+  lockWorker = null
+
+  finishSessionTeardown(async () => {
+    try {
+      if (workerApi) {
+        await workerApi.stopScheduling()
+        await workerApi.flushSession(inventoryCountImportId, context)
+      }
+    } catch (err) {
+      console.warn('[Session] Final sync did not complete; counts remain pending on this device', err)
+    } finally {
+      worker?.terminate()
+      if (heartbeat) await heartbeat.stopHeartbeat()
+    }
+  })
 })
 
 async function fetchWorkEffort() {
@@ -1356,7 +1368,7 @@ async function focusScanner() {
 async function recordScannedCode(code: string, quantity = 1) {
   console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
-  if (!value) return false;
+  if (!value || isSubmitting.value) return false;
 
   try {
     await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
@@ -1795,61 +1807,46 @@ async function saveMatchProduct() {
   }
 }
 
-async function finalizeAggregationAndSync() {
-  try {
-    if (!aggregationWorker) return;
-
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-
-    const context = {
-      omsUrl: commonUtil.getOmsURL(),
-      omsInstance: commonUtil.getOMSInstanceName(),
-      userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: commonUtil.getMaargURL(),
-      token: commonUtil.getToken(),
-      barcodeIdentification,
-      inventoryCountTypeId: props.inventoryCountTypeId,
-      facilityId: useProductStore().getCurrentFacility.facilityId
-    };
-
-    aggregationWorker.postMessage({
-      type: 'aggregate',
-      payload: {
-        workEffortId: props.workEffortId,
-        inventoryCountImportId: props.inventoryCountImportId,
-        context
-      }
-    });
-
-    return;
-  } catch (err) {
-    console.error('[Session] Error during final aggregation:', err);
-    return 0;
-  }
+function getAggregationContext() {
+  return {
+    omsUrl: commonUtil.getOmsURL(),
+    omsInstance: commonUtil.getOMSInstanceName(),
+    userLoginId: useUserProfile().getUserProfile?.username,
+    maargUrl: commonUtil.getMaargURL(),
+    token: commonUtil.getToken(),
+    barcodeIdentification: useProductStore().getBarcodeIdentificationPref,
+    inventoryCountTypeId: props.inventoryCountTypeId,
+    facilityId: useProductStore().getCurrentFacility.facilityId
+  };
 }
 
-/** Stop background worker schedule and terminate */
-async function unscheduleWorker() {
-  try {
-    if (aggregationWorker) {
-      console.log('[Session] Terminating background aggregation worker...');
-      aggregationWorker.terminate();
-      aggregationWorker = null;
-      aggregationWorkerApi = null;
-    }
-  } catch (err) {
-    console.error('[Session] Failed to terminate worker:', err);
-  }
+/** Resolves once the worker has aggregated and synced everything it can for this session. */
+async function finalizeAggregationAndSync() {
+  if (!aggregationWorkerApi) throw new Error('Count sync is not ready');
+  return aggregationWorkerApi.flushSession(props.inventoryCountImportId, getAggregationContext());
 }
 
 async function confirmSubmit() {
   showSubmitAlert.value = false
+  if (isSubmitting.value) return
+  if (unmatchedItems.value.length > 0) {
+    commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
+    return
+  }
+  isSubmitting.value = true
+  isCameraOpen.value = false
   try {
-    if (unmatchedItems.value.length > 0) {
+    await loader.present('Syncing count...')
+    // Submit only after every scan and changed count has reached the server.
+    const result = await finalizeAggregationAndSync()
+    if (result.unmatchedRecords > 0) {
       commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
       return
     }
-    await finalizeAggregationAndSync()
+    if (result.pendingScans > 0 || result.pendingRecords > 0) {
+      commonUtil.showToast(translate("Some counts have not synced. Check your connection and try again."))
+      return
+    }
     await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_SUBMITTED'
@@ -1861,14 +1858,18 @@ async function confirmSubmit() {
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
-    commonUtil.showToast('Failed to submit session')
+    commonUtil.showToast(translate("Could not sync and submit this session. Your counts are saved on this device. Please try again."))
+  } finally {
+    loader.dismiss()
+    isSubmitting.value = false
   }
 }
 
 async function confirmDiscard() {
   showDiscardAlert.value = false
   try {
-    await finalizeAggregationAndSync()
+    // Best effort, as before: a failed sync must not prevent discarding.
+    await finalizeAggregationAndSync().catch((err) => console.warn('[Session] Sync before discard failed', err))
     await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_VOIDED',

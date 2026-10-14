@@ -560,5 +560,8 @@
   "Review the product and quantity after each scan before adding it.": "Review the product and quantity after each scan before adding it.",
   "Recent scans": "Recent scans",
   "scans": "scans",
-  "Keyboard entry": "Keyboard entry"
+  "Keyboard entry": "Keyboard entry",
+  "Syncing count...": "Syncing count...",
+  "Some counts have not synced. Check your connection and try again.": "Some counts have not synced. Check your connection and try again.",
+  "Could not sync and submit this session. Your counts are saved on this device. Please try again.": "Could not sync and submit this session. Your counts are saved on this device. Please try again."
 }

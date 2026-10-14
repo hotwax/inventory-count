@@ -2,12 +2,23 @@ import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
+import { needsInventoryCountSync } from "@/services/inventoryCountRecord";
 
 // DB instance for worker (created once)
 let db: any = null;
 let dbInitialized = false;
 
+export interface SessionSyncResult {
+  aggregated: number;
+  synced: number;
+  pendingScans: number;
+  pendingRecords: number;
+  unmatchedRecords: number;
+}
+
 export interface InventorySyncWorker {
+  flushSession: (inventoryCountImportId: string, context: any) => Promise<SessionSyncResult>;
+  stopScheduling: () => void;
   aggregate: (inventoryCountImportId: string, context: any) => Promise<number>;
   syncToServer: (inventoryCountImportId: string, context: any) => Promise<number>;
   resolveUnmatched: (inventoryCountImportId: string, context: any) => Promise<number>;
@@ -22,6 +33,8 @@ export interface InventorySyncWorker {
 }
 
 expose({
+  flushSession,
+  stopScheduling,
   aggregate,
   syncToServer,
   matchProductLocallyAndSync,
@@ -31,6 +44,12 @@ expose({
 
 let isAggregating = false
 let isSyncing = false
+
+// Scheduled and final session flushes share one queue. The busy flags above make
+// an overlapping call return 0, so a final flush must wait instead of skipping.
+let flushQueue: Promise<unknown> = Promise.resolve()
+let syncSchedule: ReturnType<typeof setInterval> | null = null
+let isScheduledFlushQueued = false
 
 // Product Lookup Helper
 
@@ -636,20 +655,18 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       data: payload
     })
 
-    if (resp) {
-      const now = Date.now()
-      const keys = syncable.map((item: any) => [inventoryCountImportId, item.uuid])
-      await db.table('inventoryCountRecords')
-        .where('[inventoryCountImportId+uuid]')
-        .anyOf(keys)
-        .modify({
-          lastSyncedAt: now,
-          lastSyncedBatchId: `batch-${now}`
-        })
-      return pending.length
-    }
-
-    return 0
+    // workerRemoteApi throws on a failed request and returns null for an empty
+    // 200 body, so reaching here is the acknowledgment.
+    const now = Date.now()
+    const keys = syncable.map((item: any) => [inventoryCountImportId, item.uuid])
+    await db.table('inventoryCountRecords')
+      .where('[inventoryCountImportId+uuid]')
+      .anyOf(keys)
+      .modify({
+        lastSyncedAt: now,
+        lastSyncedBatchId: `batch-${now}`
+      })
+    return syncable.length
   } catch (err) {
     console.error('sync error', err)
     return 0
@@ -732,29 +749,58 @@ async function ensureDB(context: any) {
   return db;
 }
 
+/** Aggregates and syncs a session, then reports what is still only on this device. */
+function flushSession(inventoryCountImportId: string, context: any): Promise<SessionSyncResult> {
+  const run = flushQueue.then(async () => {
+    await ensureDB(context);
+    const aggregated = await aggregate(inventoryCountImportId, context)
+    await resolveMissingProducts(inventoryCountImportId, context)
+    const synced = await syncToServer(inventoryCountImportId, context)
+
+    const records = await db.table('inventoryCountRecords').where({ inventoryCountImportId }).toArray()
+    const pendingScans = await db.table('scanEvents')
+      .where({ inventoryCountImportId })
+      .and((scanEvent: any) => scanEvent.aggApplied === 0)
+      .count()
+
+    self.postMessage({ type: 'aggregationComplete', count: aggregated })
+
+    return {
+      aggregated,
+      synced,
+      pendingScans,
+      pendingRecords: records.filter(needsInventoryCountSync).length,
+      unmatchedRecords: records.filter((item: any) => !item.productId && item.quantity > 0).length
+    }
+  })
+  flushQueue = run.catch(() => undefined)
+  return run
+}
+
+function stopScheduling() {
+  if (syncSchedule) clearInterval(syncSchedule)
+  syncSchedule = null
+}
+
 // Worker Listener
 self.onmessage = async (messageEvent: MessageEvent) => {
   const { type, payload } = messageEvent.data
 
   if (type === 'aggregate') {
     const { inventoryCountImportId, context } = payload
-    await ensureDB(context);
-    const count = await aggregate(inventoryCountImportId, context)
-    await resolveMissingProducts(inventoryCountImportId, context)
-    await syncToServer(inventoryCountImportId, context)
-
-    self.postMessage({ type: 'aggregationComplete', count })
+    await flushSession(inventoryCountImportId, context).catch((err) => console.error('[Worker] Sync failed', err))
   }
 
   if (type === 'schedule') {
     const { inventoryCountImportId, context, intervalMs = 10000 } = payload
-    await ensureDB(context);
-    setInterval(async () => {
-      const count = await aggregate(inventoryCountImportId, context)
-      await resolveMissingProducts(inventoryCountImportId, context)
-      await syncToServer(inventoryCountImportId, context)
-
-      self.postMessage({ type: 'aggregationComplete', count })
+    stopScheduling()
+    syncSchedule = setInterval(() => {
+      // Skip a tick while one is still queued rather than piling up flushes.
+      if (isScheduledFlushQueued) return
+      isScheduledFlushQueued = true
+      flushSession(inventoryCountImportId, context)
+        .catch((err) => console.error('[Worker] Scheduled sync failed', err))
+        .finally(() => { isScheduledFlushQueued = false })
     }, intervalMs)
   }
 
