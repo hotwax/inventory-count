@@ -55,11 +55,14 @@ vi.mock('@/stores/productStore', () => ({
 
 vi.mock('@/components/Image.vue', () => ({ default: { template: '<img />' } }));
 
-import CreateCycleCount from '@/views/CreateCycleCount.vue';
+import CreateCycleCount from './CreateCycleCount.vue';
 import { PRODUCT_FACET_FILTERS, FacetFilterConfig } from '@/composables/useProductFacets';
 
 // Derived from the real config so the tests break if a field is renamed there
-const TAG_FACET = PRODUCT_FACET_FILTERS.find((facet: FacetFilterConfig) => facet.field === 'tags') as FacetFilterConfig;
+const CATEGORY_FACET = PRODUCT_FACET_FILTERS
+  .find((facet: FacetFilterConfig) => facet.field === 'productCategoryNames') as FacetFilterConfig;
+const FEATURE_FACET = PRODUCT_FACET_FILTERS
+  .find((facet: FacetFilterConfig) => facet.field === 'productFeatures') as FacetFilterConfig;
 
 function makeProducts(count: number, offset = 0) {
   return Array.from({ length: count }, (unused, index) => ({
@@ -89,8 +92,8 @@ describe('CreateCycleCount', () => {
     vi.clearAllMocks();
     searchProducts.mockResolvedValue({ products: [], total: 0 });
     fetchFacetOptions.mockResolvedValue([
-      { id: 'COLOR/Red', label: 'COLOR/Red', value: 'COLOR/Red', groupLabel: '', count: 12 },
-      { id: 'COLOR/Blue', label: 'COLOR/Blue', value: 'COLOR/Blue', groupLabel: '', count: 7 }
+      { id: 'COLOR/Red', label: 'Red', value: 'COLOR/Red', groupLabel: 'COLOR', count: 12 },
+      { id: 'COLOR/Blue', label: 'Blue', value: 'COLOR/Blue', groupLabel: 'COLOR', count: 7 }
     ]);
     createCycleCountFromProducts.mockResolvedValue({ status: 200, data: {} });
     getWorkEfforts.mockResolvedValue({ status: 200, data: { cycleCounts: [] } });
@@ -108,14 +111,14 @@ describe('CreateCycleCount', () => {
     await flushPromises();
 
     // openFacetModal is what sets activeFacet in the app
-    await (wrapper.vm as any).openFacetModal(TAG_FACET);
+    await (wrapper.vm as any).openFacetModal(CATEGORY_FACET);
     await (wrapper.vm as any).applyFacetSelection(['Shirts']);
     await flushPromises();
 
     expect(searchProducts).toHaveBeenCalledTimes(1);
     expect(searchProducts.mock.calls[0][0]).toMatchObject({
       viewIndex: 0,
-      filters: { tags: { value: ['"Shirts"'], op: 'OR' } }
+      filters: { productCategoryNames: { value: ['"Shirts"'], op: 'OR' } }
     });
     expect((wrapper.vm as any).products).toHaveLength(20);
     expect((wrapper.vm as any).totalProducts).toBe(500);
@@ -141,13 +144,13 @@ describe('CreateCycleCount', () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    (wrapper.vm as any).activeFacet = TAG_FACET;
+    (wrapper.vm as any).activeFacet = FEATURE_FACET;
     await (wrapper.vm as any).applyFacetSelection(['COLOR/Red', 'SIZE/Extra Large']);
     await flushPromises();
 
     expect(searchProducts.mock.calls[0][0].filters).toEqual({
       isVariant: { value: 'true' },
-      tags: { value: ['"COLOR/Red"', '"SIZE/Extra Large"'], op: 'OR' }
+      productFeatures: { value: ['"COLOR/Red"', '"SIZE/Extra Large"'], op: 'OR' }
     });
   });
 
@@ -157,7 +160,7 @@ describe('CreateCycleCount', () => {
     await flushPromises();
     const vm = wrapper.vm as any;
 
-    await vm.openFacetModal(TAG_FACET);
+    await vm.openFacetModal(FEATURE_FACET);
     await vm.applyFacetSelection(['COLOR/Red']);
     await flushPromises();
 
@@ -179,7 +182,7 @@ describe('CreateCycleCount', () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    (wrapper.vm as any).activeFacet = TAG_FACET;
+    (wrapper.vm as any).activeFacet = FEATURE_FACET;
     await (wrapper.vm as any).applyFacetSelection(['COLOR/Red']);
     await flushPromises();
 
@@ -197,7 +200,7 @@ describe('CreateCycleCount', () => {
     searchProducts.mockResolvedValueOnce({ products: makeProducts(20), total: 30 });
     const wrapper = mountPage();
     await flushPromises();
-    (wrapper.vm as any).activeFacet = TAG_FACET;
+    (wrapper.vm as any).activeFacet = FEATURE_FACET;
     await (wrapper.vm as any).applyFacetSelection(['COLOR/Red']);
     await flushPromises();
     expect((wrapper.vm as any).hasMoreProducts).toBe(true);
@@ -215,7 +218,7 @@ describe('CreateCycleCount', () => {
     searchProducts.mockResolvedValue({ products: makeProducts(5), total: 5 });
     const wrapper = mountPage();
     await flushPromises();
-    (wrapper.vm as any).activeFacet = TAG_FACET;
+    (wrapper.vm as any).activeFacet = FEATURE_FACET;
     await (wrapper.vm as any).applyFacetSelection(['COLOR/Red']);
     await flushPromises();
     expect((wrapper.vm as any).products).toHaveLength(5);
@@ -288,33 +291,33 @@ describe('CreateCycleCount', () => {
     await flushPromises();
     const vm = wrapper.vm as any;
 
-    await vm.openFacetModal(TAG_FACET);
+    await vm.openFacetModal(FEATURE_FACET);
     await flushPromises();
 
-    expect(fetchFacetOptions).toHaveBeenCalledWith(TAG_FACET);
-    expect(vm.facetOptions.tags).toHaveLength(2);
+    expect(fetchFacetOptions).toHaveBeenCalledWith(FEATURE_FACET);
+    expect(vm.facetOptions.productFeatures).toHaveLength(2);
     // The modal reads options through this prop, an empty array here is the bug that hid them
     const modal = wrapper.findComponent({ name: 'FacetFilterModal' });
     expect(modal.props('options')).toHaveLength(2);
 
     // Reopening must not refetch, the options are cached for the session
-    await vm.openFacetModal(TAG_FACET);
+    await vm.openFacetModal(FEATURE_FACET);
     await flushPromises();
     expect(fetchFacetOptions).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps tag labels and raw values for filtering', async () => {
+  it('shows the feature description and keeps the raw value for filtering', async () => {
     const wrapper = mountPage();
     await flushPromises();
     const vm = wrapper.vm as any;
 
-    await vm.openFacetModal(TAG_FACET);
+    await vm.openFacetModal(FEATURE_FACET);
     await flushPromises();
     await vm.applyFacetSelection(['COLOR/Red']);
     await flushPromises();
 
-    expect(vm.getFacetChipLabel('tags')).toBe('COLOR/Red');
-    expect(searchProducts.mock.calls[0][0].filters.tags.value).toEqual(['"COLOR/Red"']);
+    expect(vm.getFacetChipLabel('productFeatures')).toBe('Red');
+    expect(searchProducts.mock.calls[0][0].filters.productFeatures.value).toEqual(['"COLOR/Red"']);
   });
 
   it('selects every loaded row and switches to the selected only view', async () => {
@@ -323,7 +326,7 @@ describe('CreateCycleCount', () => {
     await flushPromises();
     const vm = wrapper.vm as any;
 
-    await vm.openFacetModal(TAG_FACET);
+    await vm.openFacetModal(FEATURE_FACET);
     await vm.applyFacetSelection(['COLOR/Red']);
     await flushPromises();
 
@@ -347,7 +350,7 @@ describe('CreateCycleCount', () => {
     const vm = wrapper.vm as any;
 
     searchProducts.mockResolvedValue({ products: makeProducts(20), total: 999999 });
-    vm.activeFacet = TAG_FACET;
+    vm.activeFacet = FEATURE_FACET;
     await vm.applyFacetSelection(['COLOR/Red']);
     await flushPromises();
 

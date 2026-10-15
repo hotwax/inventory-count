@@ -10,7 +10,7 @@ vi.mock('@common', () => ({
   useSolrSearch: () => ({ runSolrQuery })
 }));
 
-import { useProductFacets, PRODUCT_FACET_FILTERS, PRODUCT_FACET_BASE_FILTERS, FacetFilterConfig } from '@/composables/useProductFacets';
+import { useProductFacets, PRODUCT_FACET_FILTERS, PRODUCT_FACET_BASE_FILTERS, FacetFilterConfig } from './useProductFacets';
 
 const { fetchFacetOptions, quoteFacetValue } = useProductFacets();
 
@@ -187,10 +187,11 @@ describe('fetchFacetOptions', () => {
     expect(options).toEqual([]);
   });
 
-  it('configures tags as the count creation filter', () => {
+  it('configures category and feature filters out of the box', () => {
     expect(PRODUCT_FACET_FILTERS.map((facet: FacetFilterConfig) => facet.field))
-      .toEqual(['tags']);
-    expect(PRODUCT_FACET_FILTERS[0].label).toBe('Tags');
+      .toEqual(['productCategoryNames', 'productFeatures']);
+    expect(PRODUCT_FACET_FILTERS.find((facet: FacetFilterConfig) => facet.field === 'productFeatures')?.splitOnSlash)
+      .toBe(true);
   });
 });
 

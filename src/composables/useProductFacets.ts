@@ -36,7 +36,7 @@ export const PRODUCT_FACET_FILTERS: FacetFilterConfig[] = [
  * come from products the list can actually return - searchProducts contributes docType and
  * isVirtual, the view adds isVariant.
  */
-export const PRODUCT_FACET_BASE_FILTERS = ['docType: PRODUCT', 'isVariant: true', 'isVirtual: false'];
+export const PRODUCT_FACET_BASE_FILTERS = ['docType: PRODUCT', 'isVariant: false', 'isVirtual: true'];
 
 export interface FacetOption {
   id: string;
