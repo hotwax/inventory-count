@@ -37,9 +37,10 @@ const complete = { aggregated: 1, synced: 1, pendingScans: 0, pendingRecords: 0,
 const ownLock = { status: 200, data: { entityValueList: [{ userId: "unit-only", deviceId: "unit-device", fromDate: 5 }] } };
 function deferred() {
   let resolve!: (value: any) => void;
-  const promise = new Promise<any>(done => { resolve = done; });
+  let reject!: (error: any) => void;
+  const promise = new Promise<any>((done, fail) => { resolve = done; reject = fail; });
 
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 beforeEach(async () => {
   vi.useFakeTimers();
@@ -166,14 +167,82 @@ describe("async work that finishes after the user leaves", () => {
     const submit = wrapper.vm.confirmSubmit(); await flushPromises();
     expect(state.update).toHaveBeenCalledOnce();
     // The re-entered visit loads the session before the submit commits.
-    await reenter();
+    state.leave();
+    const entering = state.enter(); await flushPromises();
     state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
-    response.resolve({ status: 200 }); await submit;
+    response.resolve({ status: 200 }); await submit; await entering;
     expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
     expect(wrapper.vm.isSessionMutable).toBe(false);
     expect(state.release).not.toHaveBeenCalled();
-    expect(state.heartbeats[1].api.stopHeartbeat).not.toHaveBeenCalled();
+    expect(state.heartbeats).toHaveLength(1);
     expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it("keeps a fresh page instance read-only when the previous instance's submit completes late", async () => {
+    const response = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    state.leave(); await waitForSessionTeardown();
+    const previous = wrapper;
+    previous.unmount();
+    wrapper = mount(SessionCountDetail, { props: { workEffortId: "W1", inventoryCountImportId: "S1", inventoryCountTypeId: "DIRECTED_COUNT" }, shallow: true });
+    const entering = state.enter(); await flushPromises();
+    state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
+    response.resolve({ status: 200 }); await submit; await entering;
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+    expect(state.release).not.toHaveBeenCalled();
+    expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it("ignores an earlier entry's session response after a later visit loads submitted status", async () => {
+    state.leave(); await waitForSessionTeardown();
+    const stale = deferred();
+    state.session.mockReturnValueOnce(stale.promise);
+    const earlierEntry = state.enter(); await flushPromises();
+    state.leave(); await waitForSessionTeardown();
+    state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
+    await state.enter();
+    stale.resolve({ status: 200, data: { statusId: "SESSION_ASSIGNED" } }); await earlierEntry;
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+  });
+
+  it("blocks cached controls while re-entry reloads status after the pending submit settles", async () => {
+    const response = deferred();
+    const loading = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    state.leave();
+    state.session.mockReturnValueOnce(loading.promise);
+    const entering = state.enter(); await flushPromises();
+    response.resolve({ status: 200 }); await submit; await flushPromises();
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+    await expect(wrapper.vm.recordScannedCode("SKU-1")).resolves.toBe(false);
+    await wrapper.vm.confirmSubmit();
+    expect(state.update).toHaveBeenCalledOnce();
+    expect(state.toast).not.toHaveBeenCalledWith(expect.stringContaining("Could not sync and submit"));
+    loading.resolve({ status: 200, data: { statusId: "SESSION_SUBMITTED" } }); await entering;
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+  });
+
+  it("allows retry on re-entry when the previous status request fails", async () => {
+    const response = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    state.leave();
+    const entering = state.enter(); await flushPromises();
+    response.reject(new Error("status unavailable")); await submit; await entering;
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_ASSIGNED");
+    expect(wrapper.vm.isSessionMutable).toBe(true);
+    expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it("does not enable cached controls when re-entry cannot load current server status", async () => {
+    state.leave(); await waitForSessionTeardown();
+    state.session.mockRejectedValueOnce(new Error("status read unavailable"));
+    await state.enter();
+    expect(wrapper.vm.isSessionMutable).toBe(false);
   });
 
   it("does not start a heartbeat for a reopen that completes after leaving", async () => {
@@ -192,5 +261,38 @@ describe("async work that finishes after the user leaves", () => {
     await earlier.onmessage({ data: { type: "lockExpired" } });
     expect(state.release).not.toHaveBeenCalled();
     expect(state.push).not.toHaveBeenCalled();
+  });
+});
+
+describe("retrying a failed session load", () => {
+  it("offers a retry after a failed load and recovers when retried", async () => {
+    state.leave(); await waitForSessionTeardown();
+    state.session.mockRejectedValueOnce(new Error("status read unavailable"));
+    await state.enter(); await flushPromises();
+    expect(wrapper.vm.sessionLoadFailed).toBe(true);
+    expect(wrapper.vm.isLoadingItems).toBe(false);
+    await wrapper.vm.retrySessionLoad(); await flushPromises();
+    expect(wrapper.vm.sessionLoadFailed).toBe(false);
+    expect(wrapper.vm.isSessionMutable).toBe(true);
+  });
+
+  it("stops what the failed attempt started before retrying", async () => {
+    state.leave(); await waitForSessionTeardown();
+    const createWorker = state.create.getMockImplementation()!;
+    state.create.mockImplementation((url: URL) => {
+      if(!String(url).includes("lockHeartbeatWorker")) {
+        throw new Error("worker unavailable");
+      }
+
+      return createWorker(url);
+    });
+    await state.enter();
+    expect(wrapper.vm.sessionLoadFailed).toBe(true);
+    const failedHeartbeat = state.heartbeats[state.heartbeats.length - 1];
+    state.create.mockImplementation(createWorker);
+    await wrapper.vm.retrySessionLoad(); await flushPromises();
+    expect(failedHeartbeat.api.stopHeartbeat).toHaveBeenCalledOnce();
+    expect(state.heartbeats[state.heartbeats.length - 1]).not.toBe(failedHeartbeat);
+    expect(wrapper.vm.isSessionMutable).toBe(true);
   });
 });

@@ -511,22 +511,10 @@
       :header="translate('Mark selected items as Out of Stock')"
       :message="translate('This will set the counted quantity to 0 for all selected items. Do you want to continue?')"
       :buttons="[
-        {
-          text: translate('Cancel'),
-          role: 'cancel',
-          handler: () => {
-            isBulkOutOfStockConfirmOpen = false;
-          }
-        },
-        {
-          text: translate('Confirm'),
-          role: 'confirm',
-          handler: async () => {
-            await markSelectedItemsOutOfStock();
-            isBulkOutOfStockConfirmOpen = false;
-          }
-        }
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Confirm'), role: 'confirm' }
       ]"
+      @did-dismiss="onBulkOutOfStockDismiss"
     />
     <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-progress-add-session-modal">
           <ion-header data-testid="count-progress-add-session-header">
@@ -1213,6 +1201,12 @@ function openBulkOutOfStockConfirm() {
   isBulkOutOfStockConfirmOpen.value = true;
 }
 
+async function onBulkOutOfStockDismiss(event: CustomEvent) {
+  isBulkOutOfStockConfirmOpen.value = false;
+  // Finish the alert's focus/ARIA cleanup before presenting another overlay.
+  if (event.detail.role === 'confirm') await markSelectedItemsOutOfStock();
+}
+
 function handleOutOfStockCheck(ev: any, item: any) {
   const checked = ev.detail.checked;
 
@@ -1302,9 +1296,9 @@ async function markSelectedItemsOutOfStock() {
   } catch (error) {
     console.error("Error marking selected items out of stock", error);
     commonUtil.showToast(translate("Failed to update selected items"));
+  } finally {
+    await loader.dismiss();
   }
-
-  loader.dismiss();
 }
 
 async function markAsCompleted() {
