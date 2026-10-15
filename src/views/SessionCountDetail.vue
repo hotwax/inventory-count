@@ -15,6 +15,12 @@
     </ion-header>
 
     <ion-content ref="pageRef" data-testid="session-detail-content">
+      <ion-item v-if="sessionLoadFailed" lines="full" data-testid="session-detail-load-error">
+        <ion-label>{{ translate("This session could not be loaded.") }}</ion-label>
+        <ion-button slot="end" fill="outline" data-testid="session-detail-retry-btn" @click="retrySessionLoad">
+          {{ translate("Retry") }}
+        </ion-button>
+      </ion-item>
         <div v-if="isLoadingItems" class="loading-overlay" data-testid="session-detail-loading">
           <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" data-testid="session-detail-progress-bar" />
         </div>
@@ -872,6 +878,8 @@ const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
 const isSubmitting = ref(false);
 const isSessionReady = ref(false);
+// Set when the latest entry failed to load, so the page can offer a retry.
+const sessionLoadFailed = ref(false);
 // Each visit gets a new id. Async work started by a visit stops once the id
 // changes, so a late response cannot start workers, change the page or navigate.
 let viewId = 0;
@@ -1118,9 +1126,13 @@ watch(selectedSegment, () => {
   filteredItems.value = []
 })
 
-onIonViewDidEnter(async () => {
+onIonViewDidEnter(enterSession);
+onIonViewDidLeave(leaveSession);
+
+async function enterSession() {
   const id = ++viewId;
   isSessionReady.value = false;
+  sessionLoadFailed.value = false;
   try {
     // A previous visit's worker may still be flushing; two workers must not
     // aggregate the same scans.
@@ -1178,11 +1190,23 @@ onIonViewDidEnter(async () => {
     if (isCurrentView(id)) isSessionReady.value = true;
   } catch (error) {
     console.error(error);
-    if (isCurrentView(id)) commonUtil.showToast("Failed to load session details");
+    if(isCurrentView(id)) {
+      // A failure before items load would otherwise leave the progress overlay up.
+      isLoadingItems.value = false;
+      sessionLoadFailed.value = true;
+      commonUtil.showToast("Failed to load session details");
+    }
   }
-});
+}
 
-onIonViewDidLeave(() => {
+// Retrying runs the same teardown and entry as leaving and coming back, so
+// anything the failed attempt started is stopped before a new attempt begins.
+async function retrySessionLoad() {
+  leaveSession();
+  await enterSession();
+}
+
+function leaveSession() {
   viewId++
   isSessionReady.value = false
   isCameraOpen.value = false
@@ -1215,7 +1239,7 @@ onIonViewDidLeave(() => {
       if (heartbeat) await heartbeat.stopHeartbeat()
     }
   })
-})
+}
 
 async function fetchWorkEffort(id = viewId) {
   try {

@@ -263,3 +263,36 @@ describe("async work that finishes after the user leaves", () => {
     expect(state.push).not.toHaveBeenCalled();
   });
 });
+
+describe("retrying a failed session load", () => {
+  it("offers a retry after a failed load and recovers when retried", async () => {
+    state.leave(); await waitForSessionTeardown();
+    state.session.mockRejectedValueOnce(new Error("status read unavailable"));
+    await state.enter(); await flushPromises();
+    expect(wrapper.vm.sessionLoadFailed).toBe(true);
+    expect(wrapper.vm.isLoadingItems).toBe(false);
+    await wrapper.vm.retrySessionLoad(); await flushPromises();
+    expect(wrapper.vm.sessionLoadFailed).toBe(false);
+    expect(wrapper.vm.isSessionMutable).toBe(true);
+  });
+
+  it("stops what the failed attempt started before retrying", async () => {
+    state.leave(); await waitForSessionTeardown();
+    const createWorker = state.create.getMockImplementation()!;
+    state.create.mockImplementation((url: URL) => {
+      if(!String(url).includes("lockHeartbeatWorker")) {
+        throw new Error("worker unavailable");
+      }
+
+      return createWorker(url);
+    });
+    await state.enter();
+    expect(wrapper.vm.sessionLoadFailed).toBe(true);
+    const failedHeartbeat = state.heartbeats[state.heartbeats.length - 1];
+    state.create.mockImplementation(createWorker);
+    await wrapper.vm.retrySessionLoad(); await flushPromises();
+    expect(failedHeartbeat.api.stopHeartbeat).toHaveBeenCalledOnce();
+    expect(state.heartbeats[state.heartbeats.length - 1]).not.toBe(failedHeartbeat);
+    expect(wrapper.vm.isSessionMutable).toBe(true);
+  });
+});
