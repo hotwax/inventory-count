@@ -109,9 +109,10 @@ async function fetchExportHistory() {
       throw resp.data;
     }
   } catch (err) {
-    logger.error('Error fetching exported cycle counts system messages', err);
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Error fetching exported cycle counts system messages', serverError);
     systemMessages.value = [];
-    commonUtil.showToast(translate('Failed to load export history.'));
+    commonUtil.showToast(`${translate('Failed to load export history.')} ${serverError}`);
   }
 }
 
@@ -215,8 +216,9 @@ async function downloadExport(message: any) {
       throw resp.data;
     }
   } catch (err) {
-    logger.error('Failed to download exported cycle count file', err);
-    commonUtil.showToast(translate('Failed to download exported cycle count file.'));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Failed to download exported cycle count file', serverError);
+    commonUtil.showToast(`${translate('Failed to download exported cycle count file.')} ${serverError}`);
   }
 }
 

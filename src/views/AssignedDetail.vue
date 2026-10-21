@@ -233,7 +233,7 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAlert, IonPopover, IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonButton, IonButtons, IonCard, IonContent, IonDatetime, IonDatetimeButton, IonFooter, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonModal, IonPage, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText, alertController } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline, ellipsisVerticalOutline } from "ionicons/icons";
-import { translate, commonUtil } from '@common'
+import { translate, commonUtil, logger } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { loader } from "@/services/uiUtils";
@@ -298,12 +298,17 @@ const selectedSession = ref<any | null>(null)
 const selectedProductCountReview = ref<any | null>(null)
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-  if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
-    workEffort.value = workEffortResp.data;
-  } else {
-    commonUtil.showToast(translate("Something Went Wrong"));
-    console.error("Error getting the Cycle Count Details", workEffortResp);
+  try {
+    const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
+      workEffort.value = workEffortResp.data;
+    } else {
+      throw workEffortResp;
+    }
+  } catch (error) {
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle count details", serverError);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count details.")} ${serverError}`);
   }
 }
 
@@ -343,8 +348,9 @@ async function handleChange(ev: any, currentField: string) {
       throw resp;
     }
   } catch (error) {
-    console.error("Error Udpating Cycle Count: ", error);
-    commonUtil.showToast(`Failed to Update: ${currentField} on Cycle Count`);
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error(`Failed to update ${currentField} on cycle count`, serverError);
+    commonUtil.showToast(`${translate("Failed to update cycle count.")} ${serverError}`);
   }
 }
 
@@ -395,8 +401,9 @@ async function openEditNameAlert() {
               throw resp;
             }
           } catch (error) {
-            commonUtil.showToast(translate("Failed to Update Cycle Count Name"));
-            console.error("Failed to update cycle count name:", error);
+            const serverError = commonUtil.getErrorMessage(error);
+            logger.error("Failed to update cycle count name", serverError);
+            commonUtil.showToast(`${translate("Failed to update cycle count name.")} ${serverError}`);
           }
           loader.dismiss();
         },
@@ -424,8 +431,9 @@ async function getCountSessions(productId: any) {
     }
   } catch (error) {
     sessions.value = [];
-    console.error("Error getting sessions for this product: ", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch count sessions", serverError);
+    commonUtil.showToast(`${translate("Failed to fetch count sessions.")} ${serverError}`);
   }
 }
 
@@ -468,8 +476,9 @@ async function getInventoryCycleCount() {
     );
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
-    console.error("Error fetching all cycle count records:", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle count records", serverError);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count records.")} ${serverError}`);
     aggregatedSessionItems.value = [];
   }
 }
@@ -563,8 +572,9 @@ async function closeCycleCount() {
       throw resp;
     }
   } catch (error) {
-    console.error("Error closing cycle count:", error);
-    commonUtil.showToast(translate("Failed to close cycle count"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to close cycle count", serverError);
+    commonUtil.showToast(`${translate("Failed to close cycle count.")} ${serverError}`);
   }
 }
 

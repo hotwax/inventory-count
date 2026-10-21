@@ -79,7 +79,7 @@
 import { ref, computed } from "vue"
 import { IonButtons, IonChip, IonContent, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewWillLeave, onIonViewDidEnter } from "@ionic/vue";
 import { filterOutline, storefrontOutline } from "ionicons/icons";
-import { translate, commonUtil } from '@common'
+import { translate, commonUtil, logger } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import router from "@/router"
 import { loader } from '@/services/uiUtils';
@@ -200,8 +200,9 @@ async function getPendingCycleCounts() {
       if (pageIndex.value === 0) cycleCounts.value = [];
     }
   } catch (error) {
-    console.error("Failed to fetch Cycle Counts: ", error);
-    commonUtil.showToast("Failed to fetch Cycle Counts");
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle counts", serverError);
+    commonUtil.showToast(`${translate("Failed to fetch cycle counts.")} ${serverError}`);
   }
 }
 

@@ -7,7 +7,8 @@ import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, session: vi.fn(), create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn() }));
 vi.mock("@common", () => ({
   translate: (value: string) => value,
-  commonUtil: { showToast: state.toast, getOmsURL: () => "", getOMSInstanceName: () => "unit-only", getMaargURL: () => "", getToken: () => "", getProductIdentificationValue: () => "" },
+  commonUtil: { showToast: state.toast, getOmsURL: () => "", getOMSInstanceName: () => "unit-only", getMaargURL: () => "", getToken: () => "", getProductIdentificationValue: () => "", getErrorMessage: () => "" },
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() }
 }));
 vi.mock("@ionic/vue", async () => ({ ...await vi.importActual<any>("@ionic/vue"), onIonViewDidEnter: (fn: any) => { state.enter = fn; }, onIonViewDidLeave: (fn: any) => { state.leave = fn; } }));
 vi.mock("@common/core/workerFactory", () => ({ WorkerFactory: { createWorker: (...args: any[]) => state.create(...args) } }));

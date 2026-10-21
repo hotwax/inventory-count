@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { commonUtil, translate, useSolrSearch } from '@common'
+import { commonUtil, translate, useSolrSearch, logger } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
@@ -291,8 +291,9 @@ async function getInventoryCycleCount() {
 
     inventoryCountImport.value = sessionResp.data
   } catch (error) {
-    console.error(error)
-    commonUtil.showToast('Failed to fetch Count and Session details')
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error('Failed to fetch count and session details', serverError);
+    commonUtil.showToast(`${translate('Failed to fetch count and session details.')} ${serverError}`);
   }
 }
 
@@ -353,8 +354,9 @@ async function getProductBySearch(term: string) {
     searchedProducts.value = enrichedProducts
     if (products.length === 0) commonUtil.showToast(`No products found for "${term}"`)
   } catch (err) {
-    console.error('Failed to fetch products', err)
-    commonUtil.showToast('Something went wrong')
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Failed to fetch products', serverError);
+    commonUtil.showToast(`${translate('Failed to fetch products.')} ${serverError}`);
   } finally {
     isSearching.value = false
   }
@@ -441,7 +443,9 @@ async function addAllProductsToScanEvents() {
     }
     commonUtil.showToast(translate('Items Saved'))
   } catch (err) {
-    console.error('Error saving products:', err)
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Error saving products', serverError);
+    commonUtil.showToast(`${translate('Failed to save hand-counted items.')} ${serverError}`);
   }
 }
 

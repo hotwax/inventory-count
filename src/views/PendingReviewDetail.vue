@@ -495,7 +495,7 @@ import {
   businessOutline, personCircleOutline, ellipsisVerticalOutline
 } from "ionicons/icons";
 import { ref, computed, defineProps } from "vue";
-import { commonUtil, translate } from "@common";
+import { commonUtil, translate, logger } from "@common";
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
@@ -650,8 +650,10 @@ async function showEditImportItemsModal() {
       selectedSession.value.importItems = resp.data;
       isEditImportItemModalOpen.value = true;
     }
-  } catch {
-    commonUtil.showToast("Failed to load count details");
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to load count details", serverError);
+    commonUtil.showToast(`${translate("Failed to load count details.")} ${serverError}`);
   }
 }
 
@@ -714,8 +716,10 @@ async function saveEditImportItems() {
     }
 
     closeEditImportItemModal();
-  } catch {
-    commonUtil.showToast("Failed to update count");
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to update count", serverError);
+    commonUtil.showToast(`${translate("Failed to update count.")} ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -784,8 +788,10 @@ async function removeProductFromSession() {
     }
 
     closeSessionPopover();
-  } catch {
-    commonUtil.showToast("Failed to remove item");
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to remove item", serverError);
+    commonUtil.showToast(`${translate("Failed to remove item.")} ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -934,8 +940,10 @@ async function submitSingleProductReview(
 
     item.decisionOutcomeEnumId = outcome;
     submittedItemsCount.value++;
-  } catch {
-    commonUtil.showToast("Error submitting review");
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to submit review", serverError);
+    commonUtil.showToast(`${translate("Failed to submit review.")} ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -978,9 +986,11 @@ async function submitSelectedProductReviews(outcome: any) {
 
     selectedProductsReview.value = [];
 
-    commonUtil.showToast("Submitted successfully");
-  } catch {
-    commonUtil.showToast("Some items failed");
+    commonUtil.showToast(translate("Submitted successfully."));
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to submit selected product reviews", serverError);
+    commonUtil.showToast(`${translate("Failed to submit review.")} ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
@@ -997,8 +1007,10 @@ async function closeCycleCount() {
       actualCompletionDate: DateTime.now().toMillis(),
     });
     router.replace(`/closed/${props.workEffortId}`);
-  } catch {
-    commonUtil.showToast("Failed to close cycle count");
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to close cycle count", serverError);
+    commonUtil.showToast(`${translate("Failed to close cycle count.")} ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1058,7 +1070,9 @@ async function performBulkCloseAction() {
 
     await closeCycleCount();
   } catch (error: any) {
-    commonUtil.showToast("Bulk action failed");
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to execute bulk close action", serverError);
+    commonUtil.showToast(`${translate("Bulk action failed.")} ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();

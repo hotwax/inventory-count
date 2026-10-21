@@ -571,7 +571,7 @@ import { computed, ref, reactive, defineProps } from 'vue';
 import { IonAccordion, IonAccordionGroup, IonAlert, IonCheckbox, IonPage, IonHeader, IonToolbar, IonBackButton, IonTitle, IonContent, IonButton, IonButtons, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonBadge, IonFab, IonModal, IonFabButton, IonInput, IonNote, IonPopover, IonSegment, IonSegmentButton, IonLabel, IonList, IonListHeader, IonItem, IonItemGroup, IonThumbnail, IonSegmentContent, IonSegmentView, IonAvatar, IonSkeletonText, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import Image from '@/components/Image.vue'; 
 import { addCircleOutline, alertCircleOutline, checkmarkCircleOutline, checkmarkDoneOutline, closeOutline, personCircleOutline, removeCircleOutline, ellipsisVerticalOutline, hourglassOutline, gitBranchOutline } from 'ionicons/icons';
-import { commonUtil, translate } from '@common';
+import { commonUtil, translate, logger } from '@common';
 import { loader } from '@/services/uiUtils';
 import { waitForSessionTeardown } from '@/services/sessionSyncLifecycle';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
@@ -799,8 +799,9 @@ async function saveEditImportItems() {
 
     closeEditImportItemModal();
   } catch (err) {
-    console.error(err);
-    commonUtil.showToast("Failed to update count");
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to update count", serverError);
+    commonUtil.showToast(`${translate("Failed to update count.")} ${serverError}`);
   }
   loader.dismiss();
 }
@@ -973,8 +974,9 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
       throw resp.data;
     }
   } catch (error) {
-    commonUtil.showToast(translate("Failed to skip product"));
-    console.error("Error Skipping Product: ", error);
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to skip product", serverError);
+    commonUtil.showToast(`${translate("Failed to skip product.")} ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1019,7 +1021,6 @@ async function skipAllUndirectedItems() {
         }).then(resp => ({ resp, batch }))
       )
     );
-    let isAnyFailed = false;
     for (const result of results) {
       if (result.status === "fulfilled" && result.value.resp?.status === 200) {
         const batch = result.value.batch;
@@ -1030,15 +1031,21 @@ async function skipAllUndirectedItems() {
             productReview.decisionOutcomeEnumId = 'SKIPPED';
           }
         });
-      } else {
-        isAnyFailed = true;
-        console.error("Batch failed:", result);
       }
-      isAnyFailed ? commonUtil.showToast(translate("Something Went Wrong")) : commonUtil.showToast("Successfully skipped all products");
+    }
+
+    const failedResult: any = results.find((result: any) => result.status === "rejected" || result.value?.resp?.status !== 200);
+    if (failedResult) {
+      const serverError = commonUtil.getErrorMessage(failedResult.reason || failedResult.value?.resp?.data);
+      logger.error("Failed to skip some undirected items", serverError);
+      commonUtil.showToast(`${translate("Failed to skip all undirected items.")} ${serverError}`);
+    } else {
+      commonUtil.showToast(translate("Successfully skipped all products."));
     }
   } catch (err) {
-    console.error("Error while skipping all undirected items:", err);
-    commonUtil.showToast(translate("Failed to skip all undirected items"));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Error while skipping all undirected items", serverError);
+    commonUtil.showToast(`${translate("Failed to skip all undirected items.")} ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1191,8 +1198,9 @@ async function getCountSessions(productId: any) {
     }
   } catch (error) {
     sessions.value = [];
-    console.error("Error getting sessions for this product: ", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch count sessions", serverError);
+    commonUtil.showToast(`${translate("Failed to fetch count sessions.")} ${serverError}`);
   }
 }
 
@@ -1300,8 +1308,9 @@ async function markSelectedItemsOutOfStock() {
     }
     commonUtil.showToast(translate("Marked selected items as out of stock"));
   } catch (error) {
-    console.error("Error marking selected items out of stock", error);
-    commonUtil.showToast(translate("Failed to update selected items"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Error marking selected items out of stock", serverError);
+    commonUtil.showToast(`${translate("Failed to update selected items.")} ${serverError}`);
   }
 
   loader.dismiss();
@@ -1326,8 +1335,9 @@ async function markAsCompleted() {
       throw response;
     }
   } catch (error) {
-    console.error("Error Updating Cycle Count: ", error);
-      commonUtil.showToast(translate('Failed to send session for review'));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to send session for review", serverError);
+    commonUtil.showToast(`${translate('Failed to send session for review.')} ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1424,8 +1434,9 @@ async function addNewSession() {
     closeAddSessionModal()
 
   } catch (err) {
-    console.error(err)
-    commonUtil.showToast("Failed to create session")
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Failed to create session", serverError);
+    commonUtil.showToast(`${translate("Failed to create session.")} ${serverError}`);
   }
 }
 

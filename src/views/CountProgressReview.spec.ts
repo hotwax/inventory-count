@@ -6,7 +6,8 @@ import { finishSessionTeardown } from "@/services/sessionSyncLifecycle";
 const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, review: vi.fn(), sessions: vi.fn(), work: vi.fn(), facility: vi.fn(), toast: vi.fn() }));
 vi.mock("@common", () => ({
   translate: (value: string) => value,
-  commonUtil: { showToast: (...args: any[]) => state.toast(...args), getDateTimeWithOrdinalSuffix: () => "", getProductIdentificationValue: () => "" },
+  commonUtil: { showToast: (...args: any[]) => state.toast(...args), getDateTimeWithOrdinalSuffix: () => "", getProductIdentificationValue: () => "", getErrorMessage: () => "" },
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() }
 }));
 vi.mock("@ionic/vue", async () => ({
   ...await vi.importActual<any>("@ionic/vue"),
