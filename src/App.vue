@@ -17,7 +17,6 @@
             >
               <ion-item
                 button
-                router-direction="none"
                 :router-link="page.path"
                 :class="{ selected: selectedIndex === index }"
                 :data-testid="'app-menu-item-' + page.path.substring(1)"
