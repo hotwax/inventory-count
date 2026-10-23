@@ -18,7 +18,7 @@ vi.mock("@/services/uiUtils", () => ({ loader: { present: state.present, dismiss
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ hasPermission: () => true, getUserProfile: { username: "tester" } }) }));
 vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getStatusDescription: (id: string) => id, getProductIdentificationPref: {} }) }));
 vi.mock("@/composables/useInventoryCountRun", () => ({ useInventoryCountRun: () => ({
-  createSessionOnServer: state.createSession, getWorkEffort: state.work, getCycleCountSessions: state.sessions, getProductReviewDetailCount: () => Promise.resolve({ status: 200, data: { count: 30 } }), getCycleCount: state.review,
+  loadStatusDescription: () => Promise.resolve([]), createSessionOnServer: state.createSession, getWorkEffort: state.work, getCycleCountSessions: state.sessions, getProductReviewDetailCount: () => Promise.resolve({ status: 200, data: { count: 30 } }), getCycleCount: state.review,
 }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({ updateSessionItem: state.updateItems }) }));
 vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ prefetch: async () => {}, getById: () => Promise.resolve({}), getProductsOnFacility: state.facility }) }));
@@ -124,6 +124,10 @@ describe("Out-of-stock confirmation lifecycle", () => {
       inventoryCountImportId: "OOS1", items: [expect.objectContaining({ productId: "P14", quantity: 0 })]
     }));
     expect(wrapper.vm.uncountedItems.some((item: any) => item.productId === "P14")).toBe(false);
+    expect(wrapper.vm.workEffort.sessions).toEqual([
+      expect.objectContaining({ inventoryCountImportId: "S1" }),
+      expect.objectContaining({ inventoryCountImportId: "OOS1", statusId: "SESSION_SUBMITTED", uploadedByUserLogin: "tester" })
+    ]);
     expect(state.dismiss).toHaveBeenCalledOnce();
   });
 
