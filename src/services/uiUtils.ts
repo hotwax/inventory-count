@@ -1,24 +1,47 @@
 import { translate } from '@common'
 import { loadingController } from '@ionic/vue'
 
+let activeLoads = 0;
+let presentation: ReturnType<typeof loadingController.create> | null = null;
+
 const loader = {
-  value: null as any,
   present: async (message: string) => {
-    if (!loader.value) {
-      loader.value = await loadingController
+    activeLoads++;
+    // Concurrent callers share creation as well as the visible overlay.
+    if (!presentation) {
+      presentation = loadingController
         .create({
           message: translate(message),
           translucent: false,
           backdropDismiss: false
+        }).then(async overlay => {
+          await overlay.present();
+
+          return overlay;
         });
     }
-    loader.value.present();
-  },
-  dismiss: () => {
-    if (loader.value) {
-      loader.value.dismiss();
-      loader.value = null as any;
+    const current = presentation;
+    try {
+      await current;
+    } catch (error) {
+      if(presentation === current) {
+        activeLoads = 0;
+        presentation = null;
+      }
+      throw error;
     }
+  },
+  dismiss: async () => {
+    if(!activeLoads || --activeLoads) {
+      return;
+    }
+    const current = presentation;
+    const overlay = await current;
+    if(activeLoads || presentation !== current) {
+      return;
+    }
+    presentation = null;
+    await overlay?.dismiss();
   }
 }
 

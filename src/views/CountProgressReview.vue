@@ -182,7 +182,7 @@
                         </div>
                         </ion-item>
                         <ion-label slot="end" v-if="showQoh">
-                          {{ item.quantityOnHand || item.quantityOnHandTotal || '-' }}
+                          {{ item.quantityOnHand ?? item.quantityOnHandTotal ?? '-' }}
                           {{ translate("QoH") }}
                         </ion-label>
                         <ion-checkbox
@@ -234,7 +234,7 @@
                             </ion-label>
                           </ion-item>
                           <ion-label>
-                            {{ showQoh ? `${item.quantity || '-'}/${item.systemQuantityOnHand || '-'}` : item.quantity || '-' }}
+                            {{ showQoh ? `${item.quantity ?? '-'}/${item.systemQuantityOnHand ?? '-'}` : item.quantity ?? '-' }}
                             <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                           </ion-label>
                           <ion-label v-if="showQoh">
@@ -352,7 +352,7 @@
                           </ion-label>
                         </ion-item>
                         <ion-label>
-                          {{ showQoh ? `${item.quantity || '-'}/${item.systemQuantityOnHand || '-'}` : item.quantity || '-' }}
+                          {{ showQoh ? `${item.quantity ?? '-'}/${item.systemQuantityOnHand ?? '-'}` : item.quantity ?? '-' }}
                           <p>{{ translate(showQoh ? "counted/systemic" : "counted") }}</p>
                         </ion-label>
                         <ion-label v-if="showQoh">
@@ -511,22 +511,10 @@
       :header="translate('Mark selected items as Out of Stock')"
       :message="translate('This will set the counted quantity to 0 for all selected items. Do you want to continue?')"
       :buttons="[
-        {
-          text: translate('Cancel'),
-          role: 'cancel',
-          handler: () => {
-            isBulkOutOfStockConfirmOpen = false;
-          }
-        },
-        {
-          text: translate('Confirm'),
-          role: 'confirm',
-          handler: async () => {
-            await markSelectedItemsOutOfStock();
-            isBulkOutOfStockConfirmOpen = false;
-          }
-        }
+        { text: translate('Cancel'), role: 'cancel' },
+        { text: translate('Confirm'), role: 'confirm' }
       ]"
+      @did-dismiss="onBulkOutOfStockDismiss"
     />
     <ion-modal :is-open="isAddSessionModalOpen" @did-dismiss="isAddSessionModalOpen = false" :keep-contents-mounted="true" :backdrop-dismiss="false" data-testid="count-progress-add-session-modal">
           <ion-header data-testid="count-progress-add-session-header">
@@ -821,7 +809,7 @@ onIonViewDidEnter (async () => {
   allProducts.value = [];
   loadedItems.value = 0;
   // A session page that was just left may still be syncing its last counts.
-  await waitForSessionTeardown();
+  await Promise.all([waitForSessionTeardown(), useInventoryCountRun().loadStatusDescription()]);
   if (loadId !== reviewLoadId) return;
   if (await getWorkEffortDetails(loadId)) await getInventoryCycleCount(loadId);
   if (loadId === reviewLoadId) isLoading.value = false;
@@ -1213,6 +1201,12 @@ function openBulkOutOfStockConfirm() {
   isBulkOutOfStockConfirmOpen.value = true;
 }
 
+async function onBulkOutOfStockDismiss(event: CustomEvent) {
+  isBulkOutOfStockConfirmOpen.value = false;
+  // Finish the alert's focus/ARIA cleanup before presenting another overlay.
+  if (event.detail.role === 'confirm') await markSelectedItemsOutOfStock();
+}
+
 function handleOutOfStockCheck(ev: any, item: any) {
   const checked = ev.detail.checked;
 
@@ -1256,6 +1250,7 @@ async function markSelectedItemsOutOfStock() {
     }
 
     const inventoryCountImportId = resp.data.inventoryCountImportId;
+    workEffort.value.sessions = [...(workEffort.value.sessions || []), { ...newSession, inventoryCountImportId }];
     const batchSize = 250;
     const username = useUserProfile().getUserProfile.username;
 
@@ -1266,7 +1261,7 @@ async function markSelectedItemsOutOfStock() {
         inventoryCountImportId,
         productId: item.productId,
         quantity: 0,
-        systemQuantityOnHand: item.quantityOnHandTotal || item.quantityOnHand || 0,
+        systemQuantityOnHand: item.quantityOnHandTotal ?? item.quantityOnHand ?? 0,
         uploadedByUserLogin: username,
         uuid: uuidv4(),
         createdDate: DateTime.now().toMillis()
@@ -1302,9 +1297,9 @@ async function markSelectedItemsOutOfStock() {
   } catch (error) {
     console.error("Error marking selected items out of stock", error);
     commonUtil.showToast(translate("Failed to update selected items"));
+  } finally {
+    await loader.dismiss();
   }
-
-  loader.dismiss();
 }
 
 async function markAsCompleted() {
