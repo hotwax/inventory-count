@@ -438,7 +438,7 @@
 
 <script setup lang="ts">
 
-import { api, commonUtil, translate } from '@common';
+import { api, commonUtil, logger, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
 import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
@@ -569,8 +569,9 @@ const negateSingleScan = async (item: any) => {
     )
     commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
-    console.error(err)
-    commonUtil.showToast(translate('Failed to remove scan'))
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to remove scan')}. ${serverError}`);
   } finally {
     resetRemoveConfirm()
   }
@@ -839,8 +840,9 @@ async function searchProducts(queryString: string): Promise<any> {
     const products = resp?.data?.response?.docs || []
     return products;
   } catch (error) {
-    console.error("Error searching products:", error);
-    commonUtil.showToast(translate("Failed to search products. Please try again."));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to search products", error);
+    commonUtil.showToast(`${translate("Failed to search products. Please try again.")} ${serverError}`);
   }
   isSearching.value = false;
   return [];
@@ -902,8 +904,9 @@ async function saveMatchProduct() {
     commonUtil.showToast(translate("Product matched successfully"));
     closeMatchModal();
   } catch (err) {
-    console.error(err);
-    commonUtil.showToast(translate("Failed to match product"));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to match product")}. ${serverError}`);
   }
 }
 
@@ -950,8 +953,9 @@ async function logHandCountedItemVariances() {
       throw resp;
     }
   } catch (error) {
-    commonUtil.showToast(translate("Failed to log variance. Please try again."));
-    console.error("Error logging variance:", error);
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to log variance", error);
+    commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }
 
@@ -997,8 +1001,9 @@ async function logVariance() {
       throw resp;
     }
   } catch (error) {
-    commonUtil.showToast(translate("Failed to log variance. Please try again."));
-    console.error("Error logging variance:", error);
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to log variance", error);
+    commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }
 

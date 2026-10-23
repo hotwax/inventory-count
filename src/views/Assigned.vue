@@ -142,7 +142,7 @@
 import { computed, ref } from "vue";
 import { IonBadge, IonButton, IonButtons, IonChip, IonContent, IonFab, IonFabButton, IonHeader, IonIcon, IonItem, IonInfiniteScroll, IonInfiniteScrollContent, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRadio, IonRadioGroup, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave } from "@ionic/vue";
 import { filterOutline, storefrontOutline, closeOutline, saveOutline, addOutline } from "ionicons/icons";
-import { translate, commonUtil } from '@common'
+import { translate, commonUtil, logger } from '@common'
 import router from "@/router"
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun"
 import { loader } from "@/services/uiUtils";
@@ -275,8 +275,9 @@ async function updateFacilityOnCycleCount() {
       throw resp;
     }
   } catch (error) {
-    console.error("Error Updating Cycle Count: ", error);
-    commonUtil.showToast("Failed to Update Cycle Count");
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to Update Cycle Count", error);
+    commonUtil.showToast(`${translate("Failed to Update Cycle Count")}. ${serverError}`);
   }
   loader.dismiss();
   closeModal();
@@ -350,8 +351,9 @@ async function getAssignedCycleCounts() {
       if (pageIndex.value === 0) cycleCounts.value = [];
     }
   } catch (error) {
-    console.error("Failed to fetch Cycle Counts: ", error);
-    commonUtil.showToast("Failed to fetch Cycle Counts");
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle counts", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle counts")}. ${serverError}`);
   }
 }
 

@@ -135,8 +135,9 @@ export const useUserProfile = defineStore('userProfile', {
         commonUtil.showToast(translate("Time zone updated successfully"));
         return Promise.resolve(tzId)
       } catch(err) {
-        console.error('Error', err)
-        commonUtil.showToast(translate("Failed to update time zone"));
+        const serverError = commonUtil.getErrorMessage(err);
+        logger.error(err);
+        commonUtil.showToast(`${translate("Failed to update time zone")}. ${serverError}`);
         return Promise.reject('')
       }
     },

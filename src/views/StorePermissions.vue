@@ -485,8 +485,9 @@ async function saveSelectedSecurityGroups() {
 
     isSelectGroupsModalOpen.value = false;
   } catch (error) {
+    const serverError = commonUtil.getErrorMessage(error);
     logger.error(error);
-    commonUtil.showToast(translate("Something went wrong."));
+    commonUtil.showToast(`${translate("Failed to update security groups")}. ${serverError}`);
   }
 }
 
@@ -548,8 +549,9 @@ async function confirmRemoveGroupFromPermission() {
 
             await getActiveGroups(permissionId);
           } catch (error) {
+            const serverError = commonUtil.getErrorMessage(error);
             logger.error(error);
-            commonUtil.showToast(translate("Something went wrong."));
+            commonUtil.showToast(`${translate("Failed to remove security group.")} ${serverError}`);
           } finally {
             closeGroupActionsPopover();
           }

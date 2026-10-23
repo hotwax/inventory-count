@@ -203,7 +203,7 @@
 import { computed, ref, defineProps } from "vue";
 import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, IonCard, IonCardContent, IonContent, IonDatetime, IonDatetimeButton, IonHeader, IonIcon, IonItem, IonLabel, IonModal, IonNote, IonPage, IonProgressBar, IonList, IonTitle, IonToolbar, IonThumbnail, onIonViewDidEnter, IonSkeletonText } from "@ionic/vue";
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
-import { commonUtil, translate } from '@common'
+import { commonUtil, translate, logger } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { DateTime } from "luxon";
@@ -258,12 +258,17 @@ const productMaster = useProductMaster();
 const hydratedProductIds = new Set<string>();
 
 async function getWorkEffortDetails() {
-  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-  if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
-    workEffort.value = workEffortResp.data;
-  } else {
-    commonUtil.showToast(translate("Something Went Wrong"));
-    console.error("Error getting the Cycle Count Details", workEffortResp);
+  try {
+    const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (workEffortResp && workEffortResp.status === 200 && workEffortResp) {
+      workEffort.value = workEffortResp.data;
+    } else {
+      throw workEffortResp;
+    }
+  } catch (error) {
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle count details", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count details")}. ${serverError}`);
   }
 }
 
@@ -284,8 +289,9 @@ async function getCountSessions(productId: any) {
     }
   } catch (error) {
     sessions.value = [];
-    console.error("Error getting sessions for this product: ", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch count sessions", error);
+    commonUtil.showToast(`${translate("Failed to fetch count sessions")}. ${serverError}`);
   }
 }
 
@@ -329,8 +335,9 @@ async function getInventoryCycleCount() {
     );
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
-    console.error("Error fetching all cycle count records:", error);
-    commonUtil.showToast(translate("Something Went Wrong"));
+    const serverError = commonUtil.getErrorMessage(error);
+    logger.error("Failed to fetch cycle count records", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count records")}. ${serverError}`);
     aggregatedSessionItems.value = [];
   }
 }
