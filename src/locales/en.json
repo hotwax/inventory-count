@@ -570,6 +570,7 @@
   "This session is not available for counting.": "This session is not available for counting.",
   "Unsaved changes": "Unsaved changes",
   "Counted quantity": "Counted quantity",
+  "Qty": "Qty",
   "Enter a quantity of zero or more.": "Enter a quantity of zero or more.",
   "No assigned items in this view.": "No assigned items in this view.",
   "Failed to load assigned items.": "Failed to load assigned items.",

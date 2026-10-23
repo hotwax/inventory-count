@@ -1,5 +1,5 @@
 <template>
-  <section data-testid="directed-handcount">
+  <section class="handcount-screen" data-testid="directed-handcount">
     <ion-segment v-model="segment" data-testid="handcount-segment">
       <ion-segment-button value="assigned" data-testid="handcount-assigned-tab">
         <ion-label>{{ translate('Assigned') }} ({{ items.length }})</ion-label>
@@ -34,71 +34,89 @@
     <ion-item v-if="!loading && !mutable && !error" data-testid="handcount-readonly">
       <ion-label>{{ translate('This session is not available for counting.') }}</ion-label>
     </ion-item>
-    <ion-list v-if="!loading && !error" data-testid="handcount-list">
-      <ion-item v-for="item in visibleItems.slice(0, visibleLimit)" :key="item.productId" :data-testid="'handcount-row-' + item.productId">
-        <div class="handcount-row">
-          <div class="handcount-product">
-            <ion-thumbnail v-if="item.product?.mainImageUrl">
-              <Image :src="item.product.mainImageUrl" />
-            </ion-thumbnail>
-            <ion-label>
-              <h2>{{ primaryLabel(item) }}</h2>
-              <p>{{ productMaster.secondaryId(item.product) }}</p>
-              <p v-if="drafts[item.productId]">
-                {{ translate('Unsaved changes') }}
-              </p>
-            </ion-label>
-          </div>
-          <div class="handcount-quantity">
-            <ion-button
-              fill="outline"
-              :disabled="!mutable || saving || Number(quantity(item)) <= 0"
-              :aria-label="translate('Decrease quantity')"
-              :data-testid="'handcount-decrease-' + item.productId"
-              @click="adjust(item, -1)"
-            >
-              <ion-icon slot="icon-only" :icon="removeOutline" />
-            </ion-button>
-            <ion-input
-              type="number"
-              min="0"
-              inputmode="numeric"
-              fill="outline"
-              :aria-label="translate('Counted quantity')"
-              :value="quantity(item)"
-              :disabled="!mutable || saving"
-              :class="{ 'ion-invalid': !valid(quantity(item)), 'ion-touched': !!drafts[item.productId] }"
-              :error-text="translate('Enter a quantity of zero or more.')"
-              :data-testid="'handcount-quantity-' + item.productId"
-              @ion-input="edit(item, $event.detail.value)"
-            />
-            <ion-button
-              fill="outline"
-              :disabled="!mutable || saving"
-              :aria-label="translate('Increase quantity')"
-              :data-testid="'handcount-increase-' + item.productId"
-              @click="adjust(item, 1)"
-            >
-              <ion-icon slot="icon-only" :icon="addOutline" />
-            </ion-button>
-          </div>
-        </div>
-      </ion-item>
-      <ion-item v-if="!visibleItems.length" data-testid="handcount-empty">
-        <ion-label>{{ translate('No assigned items in this view.') }}</ion-label>
-      </ion-item>
-    </ion-list>
-    <ion-infinite-scroll v-if="!loading && !error && visibleLimit < visibleItems.length" data-testid="handcount-more" @ion-infinite="loadMore">
-      <ion-infinite-scroll-content />
-    </ion-infinite-scroll>
+    <DynamicScroller
+      v-if="!loading && !error && visibleItems.length"
+      :key="segment + ':' + query"
+      :items="visibleItems"
+      key-field="productId"
+      :min-item-size="96"
+      :buffer="300"
+      class="virtual-list handcount-list"
+      data-testid="handcount-list"
+    >
+      <template #default="{ item, index, active: rowActive }">
+        <DynamicScrollerItem
+          :item="item"
+          :index="index"
+          :active="rowActive"
+          :size-dependencies="[!!drafts[item.productId], item.product, valid(quantity(item))]"
+        >
+          <ion-item :key="item.productId" :data-testid="'handcount-row-' + item.productId">
+            <div class="handcount-row">
+              <div class="handcount-product">
+                <ion-thumbnail v-if="item.product?.mainImageUrl">
+                  <Image :src="item.product.mainImageUrl" />
+                </ion-thumbnail>
+                <ion-label>
+                  <h2>{{ primaryLabel(item) }}</h2>
+                  <p>{{ productMaster.secondaryId(item.product) }}</p>
+                  <p v-if="drafts[item.productId]">
+                    {{ translate('Unsaved changes') }}
+                  </p>
+                </ion-label>
+              </div>
+              <div class="handcount-quantity">
+                <ion-button
+                  fill="outline"
+                  :disabled="!mutable || saving || Number(quantity(item)) <= 0"
+                  :aria-label="translate('Decrease quantity')"
+                  :data-testid="'handcount-decrease-' + item.productId"
+                  @click="adjust(item, -1)"
+                >
+                  <ion-icon slot="icon-only" :icon="removeOutline" />
+                </ion-button>
+                <ion-input
+                  type="number"
+                  min="0"
+                  inputmode="numeric"
+                  fill="outline"
+                  :label="translate('Qty')"
+                  label-placement="floating"
+                  :aria-label="translate('Counted quantity')"
+                  :value="quantity(item)"
+                  :disabled="!mutable || saving"
+                  :class="{ 'ion-invalid': !valid(quantity(item)), 'ion-touched': !!drafts[item.productId] }"
+                  :error-text="translate('Enter a quantity of zero or more.')"
+                  :data-testid="'handcount-quantity-' + item.productId"
+                  @ion-input="edit(item, $event.detail.value)"
+                />
+                <ion-button
+                  fill="outline"
+                  :disabled="!mutable || saving"
+                  :aria-label="translate('Increase quantity')"
+                  :data-testid="'handcount-increase-' + item.productId"
+                  @click="adjust(item, 1)"
+                >
+                  <ion-icon slot="icon-only" :icon="addOutline" />
+                </ion-button>
+              </div>
+            </div>
+          </ion-item>
+        </DynamicScrollerItem>
+      </template>
+    </DynamicScroller>
+    <ion-item v-if="!loading && !error && !visibleItems.length" data-testid="handcount-empty">
+      <ion-label>{{ translate('No assigned items in this view.') }}</ion-label>
+    </ion-item>
   </section>
 </template>
 
 <script setup lang="ts">
 import { commonUtil, translate } from "@common";
-import { IonButton, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonInput, IonItem, IonLabel, IonList, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonThumbnail, alertController } from "@ionic/vue";
+import { IonButton, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonThumbnail, alertController } from "@ionic/vue";
 import { addOutline, removeOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
+import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
@@ -113,12 +131,6 @@ const items = ref<any[]>([]);
 const drafts = ref<Record<string, { value: string; expectedQuantity: number }>>({});
 const segment = ref("uncounted");
 const query = ref("");
-const visibleLimit = ref(50);
-watch([segment, query], () => { visibleLimit.value = 50; });
-async function loadMore(event: any) {
-  visibleLimit.value += 50;
-  await event.target.complete();
-}
 const loading = ref(true);
 const saving = ref(false);
 const mutable = ref(false);
@@ -283,10 +295,14 @@ defineExpose({ confirmLeave });
 </script>
 
 <style scoped>
+.handcount-screen { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; }
+.handcount-screen > :not(.handcount-list) { flex-shrink: 0; }
+/* The shared keyboard handler sets this offset on the enclosing ion-content. */
+.handcount-list { flex: 1; min-height: 0; overflow-y: auto; margin-bottom: var(--keyboard-offset, 0px); }
 .handcount-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacer-sm); width: 100%; padding-block: var(--spacer-sm); }
 .handcount-product { display: flex; align-items: center; gap: var(--spacer-sm); flex: 1 1 16rem; min-width: 0; }
-.handcount-quantity { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+.handcount-quantity { display: flex; align-items: center; gap: var(--spacer-base); margin-left: auto; }
 .handcount-quantity ion-button { width: 56px; height: 56px; min-width: 56px; --padding-start: 12px; --padding-end: 12px; }
 .handcount-quantity ion-icon { font-size: 32px; }
-.handcount-quantity ion-input { flex: 0 0 88px; width: 88px; min-height: 56px; font-size: 1.25rem; text-align: center; --background: var(--ion-color-light); --padding-start: 12px; --padding-end: 12px; }
+.handcount-quantity ion-input { flex: 0 0 88px; width: 88px; }
 </style>

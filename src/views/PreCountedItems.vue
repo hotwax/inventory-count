@@ -10,8 +10,8 @@
         <ion-title data-testid="pre-counted-items-page-title">{{ translate(isDirected ? "Hand count" : "Add Hand Counted Items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
-      <main>
+    <ion-content class="ion-padding" :scroll-y="!isDirected">
+      <main :class="{ 'directed-handcount-main': isDirected }">
         <DirectedHandCount v-if="isDirected" ref="directedHandCount" :inventory-count-import-id="inventoryCountImportId" :active="directedActive" />
         <template v-else>
         <ion-card data-testid="pre-counted-items-search-card">
@@ -484,6 +484,7 @@ async function confirmGoBack() {
 </script>
 
 <style scoped>
+.directed-handcount-main { height: 100%; min-height: 0; }
 
 main {
   max-width: 768px;

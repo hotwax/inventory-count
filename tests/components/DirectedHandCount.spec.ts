@@ -1,5 +1,5 @@
 /* eslint-disable require-await -- Async mocks preserve the production service contracts. */
-import { IonButton, IonInfiniteScroll, IonInput, IonSearchbar, IonSegment } from "@ionic/vue";
+import { IonButton, IonInput, IonSearchbar, IonSegment } from "@ionic/vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,6 +27,13 @@ vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImpor
   } }),
   saveHandCountTotals: state.save
 }) }));
+// Layout is exercised on the physical iPad; this windowed stub tests draft ownership
+// when virtual rows unmount, while retaining real Ionic controls.
+vi.mock("vue-virtual-scroller", () => ({
+  DynamicScroller: { name: "DynamicScroller", props: ["items"], data: () => ({ start: 0 }),
+    template: "<div><slot v-for=\"(item, index) in items.slice(start, start + 50)\" :item=\"item\" :index=\"index\" :active=\"true\" /></div>" },
+  DynamicScrollerItem: { template: "<div><slot /></div>" }
+}));
 import DirectedHandCount from "@/components/DirectedHandCount.vue";
 
 enableAutoUnmount(afterEach);
@@ -99,15 +106,16 @@ describe("directed handcount screen", () => {
     expect(state.save).not.toHaveBeenCalled();
     expect(input(wrapper, "P1").props("value")).toBe("1");
   });
-  it("renders long lists progressively and searches beyond the rendered rows", async () => {
+  it("preserves a draft when its virtual row leaves the window and searches all assigned items", async () => {
     state.rows = Array.from({ length: 120 }, (_, index) => ({ productId: `P${index}`, quantity: 0 }));
     const wrapper = await screen();
-    expect(wrapper.findAllComponents(IonInput)).toHaveLength(50);
-    const complete = vi.fn();
-    wrapper.findComponent(IonInfiniteScroll).vm.$emit("ionInfinite", { target: { complete } }); await flushPromises();
-    expect(wrapper.findAllComponents(IonInput)).toHaveLength(100);
+    await wrapper.get("[data-testid=\"handcount-increase-P0\"]").trigger("click");
+    const scroller = wrapper.findComponent({ name: "DynamicScroller" });
+    await scroller.setData({ start: 100 });
+    expect(wrapper.find("[data-testid=\"handcount-row-P0\"]").exists()).toBe(false);
+    await scroller.setData({ start: 0 });
+    expect(input(wrapper, "P0").props("value")).toBe("1");
     wrapper.findComponent(IonSearchbar).vm.$emit("update:modelValue", "P119"); await flushPromises();
-    expect(wrapper.findAllComponents(IonInput)).toHaveLength(1);
     expect(input(wrapper, "P119").exists()).toBe(true);
   });
   it("blocks edits when another device owns the session", async () => {
