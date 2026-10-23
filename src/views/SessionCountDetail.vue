@@ -1187,7 +1187,10 @@ async function enterSession() {
         context: getAggregationContext()
       }
     })
-    if (isCurrentView(id)) isSessionReady.value = true;
+    if (isCurrentView(id)) {
+      isSessionReady.value = true;
+      focusScanner();
+    }
   } catch (error) {
     console.error(error);
     if(isCurrentView(id)) {
@@ -1348,7 +1351,6 @@ async function startSession(id = viewId) {
     throw err;
   }
 
-  if (isCurrentView(id)) focusScanner();
 }
 
 async function loadInventoryItemsWithProgress() {

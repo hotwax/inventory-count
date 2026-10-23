@@ -22,16 +22,15 @@ describe("waiting for session status changes", () => {
     expect(waited).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
   });
-  it("stops waiting for a hung status change at the deadline", async () => {
+  it("rejects at the deadline and allows a retry after the write settles", async () => {
     const hung = deferred();
     trackSessionStatusChange("S2", () => hung.promise);
-    let waited = false;
-    const waiting = waitForSessionStatusChanges("S2").then(() => { waited = true; });
-    await vi.advanceTimersByTimeAsync(STATUS_CHANGE_WAIT_MS - 1);
-    expect(waited).toBe(false);
-    await vi.advanceTimersByTimeAsync(1); await waiting;
-    expect(waited).toBe(true);
+    const waiting = expect(waitForSessionStatusChanges("S2")).rejects.toThrow("Session status change is still pending");
+    await vi.advanceTimersByTimeAsync(STATUS_CHANGE_WAIT_MS);
+    await waiting;
+    expect(vi.getTimerCount()).toBe(0);
     hung.resolve(); await flushPromises();
+    await expect(waitForSessionStatusChanges("S2")).resolves.toBeUndefined();
   });
   it("returns at once when nothing is pending for the session", async () => {
     await waitForSessionStatusChanges("S3");

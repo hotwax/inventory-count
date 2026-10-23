@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
+import { STATUS_CHANGE_WAIT_MS, waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 
 // Unit doubles at the worker/API boundary; this is submit and teardown ordering
 // coverage, not HotWax backend validation.
@@ -71,6 +71,17 @@ beforeEach(async () => {
 afterEach(async () => { state.leave(); await waitForSessionTeardown(); wrapper.unmount(); vi.useRealTimers(); });
 
 describe("session submission", () => {
+  it("focuses the scanner once entry is ready", async () => {
+    await vi.advanceTimersByTimeAsync(0);
+    state.leave(); await waitForSessionTeardown();
+    const setFocus = vi.fn();
+    await state.enter(); await flushPromises();
+    wrapper.vm.barcodeInput = { $el: { setFocus } };
+    await vi.advanceTimersByTimeAsync(0);
+    expect(setFocus).toHaveBeenCalledOnce();
+    expect(wrapper.vm.isScannerFocused).toBe(true);
+  });
+
   it("waits for the flush, blocks new scans and duplicate submits, then submits", async () => {
     const sync = deferred();
     state.flush.mockReturnValueOnce(sync.promise);
@@ -166,7 +177,7 @@ describe("async work that finishes after the user leaves", () => {
     state.update.mockReturnValueOnce(response.promise);
     const submit = wrapper.vm.confirmSubmit(); await flushPromises();
     expect(state.update).toHaveBeenCalledOnce();
-    // The re-entered visit loads the session before the submit commits.
+    // The re-entered visit waits for submission before loading server status.
     state.leave();
     const entering = state.enter(); await flushPromises();
     state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
@@ -192,6 +203,30 @@ describe("async work that finishes after the user leaves", () => {
     expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
     expect(wrapper.vm.isSessionMutable).toBe(false);
     expect(state.release).not.toHaveBeenCalled();
+    expect(state.replace).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])("keeps controls blocked after a submit timeout (fresh instance: %s)", async (freshInstance) => {
+    const response = deferred();
+    state.update.mockReturnValueOnce(response.promise);
+    const submit = wrapper.vm.confirmSubmit(); await flushPromises();
+    state.leave(); await waitForSessionTeardown();
+    if(freshInstance) {
+      wrapper.unmount();
+      wrapper = mount(SessionCountDetail, { props: { workEffortId: "W1", inventoryCountImportId: "S1", inventoryCountTypeId: "DIRECTED_COUNT" }, shallow: true });
+    }
+    const entering = state.enter(); await flushPromises();
+    await vi.advanceTimersByTimeAsync(STATUS_CHANGE_WAIT_MS); await entering;
+    expect(wrapper.vm.sessionLoadFailed).toBe(true);
+    expect(wrapper.vm.isSessionMutable).toBe(false);
+    expect(state.session).not.toHaveBeenCalled();
+    await expect(wrapper.vm.recordScannedCode("SKU-1")).resolves.toBe(false);
+    state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_SUBMITTED" } });
+    response.resolve({ status: 200 }); await submit;
+    await wrapper.vm.retrySessionLoad(); await flushPromises();
+    expect(wrapper.vm.sessionLoadFailed).toBe(false);
+    expect(wrapper.vm.inventoryCountImport.statusId).toBe("SESSION_SUBMITTED");
+    expect(wrapper.vm.isSessionMutable).toBe(false);
     expect(state.replace).not.toHaveBeenCalled();
   });
 

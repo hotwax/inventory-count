@@ -32,22 +32,18 @@ export function trackSessionStatusChange<T>(sessionId: string, work: () => Promi
   return task;
 }
 
-// The API client has no request timeout, so a hung status write must not keep a
-// re-entered page read-only forever. After this long the page reads server status anyway.
+// A timed-out write may still commit. Fail entry so controls stay blocked until
+// Retry can read server status after the pending write settles.
 export const STATUS_CHANGE_WAIT_MS = 15000;
 
 export async function waitForSessionStatusChanges(sessionId: string, timeoutMs = STATUS_CHANGE_WAIT_MS): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let expired = false;
-  const deadline = new Promise<void>(resolve => {
-    timer = setTimeout(() => {
-      expired = true;
-      resolve();
-    }, timeoutMs);
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Session status change is still pending")), timeoutMs);
   });
 
   try {
-    while(!expired && pendingStatusChanges.has(sessionId)) {
+    while(pendingStatusChanges.has(sessionId)) {
       await Promise.race([Promise.allSettled([...pendingStatusChanges.get(sessionId)!]), deadline]);
     }
   } finally {
