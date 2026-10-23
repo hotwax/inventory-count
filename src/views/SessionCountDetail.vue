@@ -997,10 +997,10 @@ function initializeListSubscriptions() {
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (unmatchedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (countedItems.value = items))
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (countedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (uncountedItems.value = items))
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (uncountedItems.value = items))
   )
   listSubscriptions.push(
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (undirectedItems.value = items))
@@ -1853,7 +1853,8 @@ const handleIndexedDBSearch = debounce(async () => {
   const results = await useInventoryCountImport().searchInventoryItemsByIdentifier(
     props.inventoryCountImportId,
     searchKeyword.value,
-    selectedSegment.value
+    selectedSegment.value,
+    isDirected.value
   )
   filteredItems.value = results
 }, 150)

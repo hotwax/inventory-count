@@ -55,6 +55,34 @@ async function screen() {
 async function select(wrapper: any, value: string) { wrapper.findComponent(IonSegment).vm.$emit("update:modelValue", value); await flushPromises(); }
 const input = (wrapper: any, id: string) => wrapper.findAllComponents(IonInput).find((x: any) => x.attributes("data-testid") === `handcount-quantity-${ id}`)!;
 describe("directed handcount screen", () => {
+  it("stages and saves an explicit zero, keeping it counted after re-entry", async () => {
+    const wrapper = await screen();
+    await wrapper.get("[data-testid=\"handcount-zero-P1\"]").trigger("click");
+    expect(input(wrapper, "P1").props("value")).toBe("0");
+    expect(wrapper.get("[data-testid=\"handcount-row-P1\"]").text()).toContain("Unsaved changes");
+    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 0, expectedQuantity: 0 }], "user");
+    expect(wrapper.find("[data-testid=\"handcount-row-P1\"]").exists()).toBe(false);
+    await select(wrapper, "counted");
+    expect(input(wrapper, "P1").props("value")).toBe("0");
+    state.rows[0].countedByUserLoginId = "user";
+    await wrapper.setProps({ active: false }); await wrapper.setProps({ active: true }); await flushPromises();
+    expect(input(wrapper, "P1").props("value")).toBe("0");
+  });
+  it("can undo a staged zero, edit it above zero, and retain it after a save failure", async () => {
+    const wrapper = await screen();
+    const zero = () => wrapper.get("[data-testid=\"handcount-zero-P1\"]");
+    await zero().trigger("click"); await zero().trigger("click");
+    expect(wrapper.text()).not.toContain("Unsaved changes");
+    input(wrapper, "P1").vm.$emit("ionInput", { detail: { value: "0" } }); await flushPromises();
+    expect(zero().attributes("aria-pressed")).toBe("true");
+    await wrapper.get("[data-testid=\"handcount-increase-P1\"]").trigger("click");
+    expect(zero().attributes("aria-pressed")).toBe("false");
+    await zero().trigger("click"); state.save.mockRejectedValueOnce(Error("offline"));
+    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    expect(zero().attributes("aria-pressed")).toBe("true");
+    expect(wrapper.text()).toContain("Unsaved changes");
+  });
   it("shares the list sort preference and retains drafts while changing it", async () => {
     filters.sort = "lastUpdated";
     const wrapper = await screen();
@@ -82,7 +110,7 @@ describe("directed handcount screen", () => {
     await select(wrapper, "counted"); await select(wrapper, "assigned");
     expect(input(wrapper, "P1").props("value")).toBe("1");
     await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
-    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 1, expectedQuantity: 0 }]);
+    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 1, expectedQuantity: 0 }], "user");
     await select(wrapper, "uncounted");
     expect(wrapper.find("[data-testid=\"handcount-empty\"]").exists()).toBe(true);
   });
@@ -91,7 +119,7 @@ describe("directed handcount screen", () => {
     expect(input(wrapper, "P2").props("value")).toBe("3");
     await wrapper.get("[data-testid=\"handcount-increase-P2\"]").trigger("click");
     await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
-    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P2", quantity: 4, expectedQuantity: 3 }]);
+    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P2", quantity: 4, expectedQuantity: 3 }], "user");
     await select(wrapper, "assigned");
     const minus = wrapper.findAllComponents(IonButton).find(x => x.attributes("data-testid") === "handcount-decrease-P1")!;
     expect(minus.props("disabled")).toBe(true);

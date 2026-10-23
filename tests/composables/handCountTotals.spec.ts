@@ -15,6 +15,7 @@ vi.mock("dexie", () => ({ liveQuery: (query: any) => {
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 
 const counts = useInventoryCountImport();
+const save = (sessionId: string, edits: Parameters<typeof counts.saveHandCountTotals>[1]) => counts.saveHandCountTotals(sessionId, edits, "counter");
 function table(rows: any[]) {
   return { where: (key: string) => ({ equals: (value: any) => {
     let selected = rows.filter(row => row[key] === value);
@@ -43,9 +44,28 @@ beforeEach(() => {
   state.scans = [];
   state.db = { inventoryCountRecords: table(state.records), scanEvents: { ...table(state.scans),
     bulkAdd: vi.fn(async (events: any[]) => state.scans.push(...events)) }, products: { bulkGet: async (ids: any[]) => ids.map(productId => ({ productId })) },
+  productInventory: { where: () => ({ anyOf: () => ({ toArray: async () => [] }) }) },
   transaction: async (_mode: any, _records: any, _scans: any, work: any) => work() };
 });
 describe("directed handcount totals", () => {
+  it("records zero without adding a unit and treats a repeated confirmation as a no-op", async () => {
+    const edits = [{ productId: "P2", expectedQuantity: 0, quantity: 0 }];
+    await save("S1", edits); await save("S1", edits);
+    expect(state.scans).toHaveLength(1);
+    expect(state.scans[0]).toMatchObject({ productId: "P2", quantity: 0, countedByUserLoginId: "counter" });
+    counts.getAssignedHandCountItems("S1");
+    expect((await state.query()).find((item: any) => item.productId === "P2")).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
+  it("includes confirmed zeros only for directed lists and keeps untouched items uncounted", async () => {
+    state.records[1].countedByUserLoginId = "counter";
+    state.records.push({ inventoryCountImportId: "S1", productId: "P4", quantity: 0, isRequested: "Y" });
+    counts.getCountedItems("S1", "assigned", true);
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P2", "P1"]);
+    counts.getUncountedItems("S1", "assigned", true);
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P4"]);
+    counts.getCountedItems("S1");
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P1"]);
+  });
   it("loads all assigned products in assigned order, including zero counts and pending scans", async () => {
     state.scans.push(
       { inventoryCountImportId: "S1", productId: "P1", quantity: 2, aggApplied: 0 },
@@ -64,29 +84,29 @@ describe("directed handcount totals", () => {
     expect((await state.query()).map((item: any) => item.productId)).toEqual(["P2", "P1"]);
   });
   it("saves a total of five over an existing three as two additional units", async () => {
-    await counts.saveHandCountTotals("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
+    await save("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
     expect(state.scans).toEqual([expect.objectContaining({ productId: "P1", scannedValue: "SKU1", quantity: 2, aggApplied: 0 })]);
   });
   it("reduces totals and includes earlier pending saves when calculating the next delta", async () => {
-    await counts.saveHandCountTotals("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
-    await counts.saveHandCountTotals("S1", [{ productId: "P1", expectedQuantity: 5, quantity: 0 }]);
+    await save("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
+    await save("S1", [{ productId: "P1", expectedQuantity: 5, quantity: 0 }]);
     expect(state.scans.map(scan => scan.quantity)).toEqual([2, -5]);
     counts.getAssignedHandCountItems("S1");
     expect((await state.query()).find((item: any) => item.productId === "P1").quantity).toBe(0);
   });
   it("rejects a repeated stale save instead of applying it twice", async () => {
     const edits = [{ productId: "P1", expectedQuantity: 3, quantity: 5 }];
-    await counts.saveHandCountTotals("S1", edits);
-    await expect(counts.saveHandCountTotals("S1", edits)).rejects.toThrow("Count changed");
+    await save("S1", edits);
+    await expect(save("S1", edits)).rejects.toThrow("Count changed");
     expect(state.scans).toHaveLength(1);
   });
   it.each([-1, NaN, Infinity])("rejects invalid quantity %s without saving any part of a batch", async quantity => {
-    await expect(counts.saveHandCountTotals("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 4 },
+    await expect(save("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 4 },
       { productId: "P2", expectedQuantity: 0, quantity }])).rejects.toThrow("Invalid");
     expect(state.db.scanEvents.bulkAdd).not.toHaveBeenCalled();
   });
   it("rejects products outside the directed assignment", async () => {
-    await expect(counts.saveHandCountTotals("S1", [{ productId: "P3", expectedQuantity: 8, quantity: 9 }])).rejects.toThrow("Invalid");
+    await expect(save("S1", [{ productId: "P3", expectedQuantity: 8, quantity: 9 }])).rejects.toThrow("Invalid");
   });
   it("keeps negative corrections when grouping the scanner counted list", async () => {
     state.records[0].quantity = -2;

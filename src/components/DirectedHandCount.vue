@@ -84,39 +84,51 @@
                   </p>
                 </ion-label>
               </div>
-              <div class="handcount-quantity">
+              <div class="handcount-controls">
+                <div class="handcount-quantity">
+                  <ion-button
+                    fill="outline"
+                    :disabled="!mutable || saving || Number(quantity(item)) <= 0"
+                    :aria-label="translate('Decrease quantity')"
+                    :data-testid="'handcount-decrease-' + item.productId"
+                    @click="adjust(item, -1)"
+                  >
+                    <ion-icon slot="icon-only" :icon="removeOutline" />
+                  </ion-button>
+                  <ion-input
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                    fill="outline"
+                    :label="translate('Qty')"
+                    label-placement="floating"
+                    :aria-label="translate('Counted quantity')"
+                    :value="quantity(item)"
+                    :disabled="!mutable || saving"
+                    :class="{ 'ion-invalid': !valid(quantity(item)), 'ion-touched': !!drafts[item.productId] }"
+                    :error-text="translate('Enter a quantity of zero or more.')"
+                    :data-testid="'handcount-quantity-' + item.productId"
+                    @ion-input="edit(item, $event.detail.value)"
+                  />
+                  <ion-button
+                    fill="outline"
+                    :disabled="!mutable || saving"
+                    :aria-label="translate('Increase quantity')"
+                    :data-testid="'handcount-increase-' + item.productId"
+                    @click="adjust(item, 1)"
+                  >
+                    <ion-icon slot="icon-only" :icon="addOutline" />
+                  </ion-button>
+                </div>
                 <ion-button
-                  fill="outline"
-                  :disabled="!mutable || saving || Number(quantity(item)) <= 0"
-                  :aria-label="translate('Decrease quantity')"
-                  :data-testid="'handcount-decrease-' + item.productId"
-                  @click="adjust(item, -1)"
+                  class="handcount-zero"
+                  :fill="notInStock(item) ? 'solid' : 'outline'"
+                  :aria-pressed="notInStock(item)"
+                  :disabled="!mutable || saving || (notInStock(item) && !drafts[item.productId])"
+                  :data-testid="'handcount-zero-' + item.productId"
+                  @click="toggleNotInStock(item)"
                 >
-                  <ion-icon slot="icon-only" :icon="removeOutline" />
-                </ion-button>
-                <ion-input
-                  type="number"
-                  min="0"
-                  inputmode="numeric"
-                  fill="outline"
-                  :label="translate('Qty')"
-                  label-placement="floating"
-                  :aria-label="translate('Counted quantity')"
-                  :value="quantity(item)"
-                  :disabled="!mutable || saving"
-                  :class="{ 'ion-invalid': !valid(quantity(item)), 'ion-touched': !!drafts[item.productId] }"
-                  :error-text="translate('Enter a quantity of zero or more.')"
-                  :data-testid="'handcount-quantity-' + item.productId"
-                  @ion-input="edit(item, $event.detail.value)"
-                />
-                <ion-button
-                  fill="outline"
-                  :disabled="!mutable || saving"
-                  :aria-label="translate('Increase quantity')"
-                  :data-testid="'handcount-increase-' + item.productId"
-                  @click="adjust(item, 1)"
-                >
-                  <ion-icon slot="icon-only" :icon="addOutline" />
+                  {{ translate('Not in stock') }}
                 </ion-button>
               </div>
             </div>
@@ -140,6 +152,7 @@ import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
+import { hasRecordedCount } from "@/services/inventoryCountRecord";
 import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 import { useProductStore } from "@/stores/productStore";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -166,13 +179,13 @@ const error = ref("");
 let subscription: { unsubscribe(): void } | undefined;
 let visit = 0;
 let sessionId = "";
-const uncountedCount = computed(() => items.value.filter(item => Number(item.quantity) === 0).length);
+const uncountedCount = computed(() => items.value.filter(item => !hasRecordedCount(item)).length);
 const visibleItems = computed(() => {
   const term = query.value.trim().toLowerCase();
 
   return items.value.filter(item => {
-    if(segment.value === "uncounted" && Number(item.quantity) !== 0) {return false;}
-    if(segment.value === "counted" && Number(item.quantity) <= 0) {return false;}
+    if(segment.value === "uncounted" && hasRecordedCount(item)) {return false;}
+    if(segment.value === "counted" && !hasRecordedCount(item)) {return false;}
 
     return !term || [primaryLabel(item), productMaster.secondaryId(item.product), item.product?.productName, item.productId,
       ...(item.product?.goodIdentifications || []).map((id: any) => id.value)]
@@ -186,10 +199,18 @@ const canSave = computed(() => mutable.value && !loading.value && !saving.value 
   Object.values(drafts.value).every(draft => valid(draft.value)));
 function edit(item: any, value: string | null | undefined) {
   const expectedQuantity = drafts.value[item.productId]?.expectedQuantity ?? Number(item.quantity || 0);
-  if(valid(value ?? "") && Number(value) === expectedQuantity) {delete drafts.value[item.productId];} else {drafts.value[item.productId] = { value: value ?? "", expectedQuantity };}
+  if(valid(value ?? "") && Number(value) === expectedQuantity && (Number(value) !== 0 || hasRecordedCount(item))) {delete drafts.value[item.productId];} else {drafts.value[item.productId] = { value: value ?? "", expectedQuantity };}
 }
 function adjust(item: any, amount: number) {
   edit(item, String(Math.max(0, (Number(quantity(item)) || 0) + amount)));
+}
+
+function notInStock(item: any) {
+  return valid(quantity(item)) && Number(quantity(item)) === 0 && (!!drafts.value[item.productId] || hasRecordedCount(item));
+}
+function toggleNotInStock(item: any) {
+  if(!mutable.value || saving.value) {return;}
+  if(drafts.value[item.productId] && notInStock(item)) {delete drafts.value[item.productId];} else {edit(item, "0");}
 }
 
 function stop() {
@@ -272,11 +293,11 @@ async function save(): Promise<boolean> {
       const { product } = await productMaster.getById(edit.productId);
       if(!product) {throw new Error("Product unavailable");}
     }
-    await counts.saveHandCountTotals(props.inventoryCountImportId, edits);
+    await counts.saveHandCountTotals(props.inventoryCountImportId, edits, userProfile.getUserProfile?.username);
     // Apply the saved totals immediately; liveQuery then reconciles the same local scan events.
     for(const edit of edits) {
       const item = items.value.find(item => item.productId === edit.productId);
-      if(item) {item.quantity = edit.quantity;}
+      if(item) {item.quantity = edit.quantity; item.countedByUserLoginId = userProfile.getUserProfile?.username;}
     }
     drafts.value = {};
     commonUtil.showToast(translate("Items Saved"));
@@ -336,10 +357,12 @@ defineExpose({ confirmLeave });
 .handcount-list { flex: 1; min-height: 0; overflow-y: auto; margin-bottom: var(--keyboard-offset, 0px); }
 .handcount-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacer-sm); width: 100%; padding-block: var(--spacer-sm); }
 .handcount-product { display: flex; align-items: center; gap: var(--spacer-sm); flex: 1 1 16rem; min-width: 0; }
+.handcount-controls { margin-left: auto; text-align: right; }
+.handcount-zero { min-height: 44px; }
 .handcount-quantity { display: flex; align-items: center; gap: var(--spacer-base); margin-left: auto; }
 /* Safari needs the native shadow button to opt out of double-tap zoom too. */
-.handcount-quantity ion-button,
-.handcount-quantity ion-button::part(native) { touch-action: manipulation; }
+.handcount-controls ion-button,
+.handcount-controls ion-button::part(native) { touch-action: manipulation; }
 .handcount-quantity ion-button { width: 56px; height: 56px; min-width: 56px; --padding-start: 12px; --padding-end: 12px; }
 .handcount-quantity ion-icon { font-size: 32px; }
 .handcount-quantity ion-input { flex: 0 0 88px; width: 88px; }
