@@ -3,15 +3,29 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="confirmGoBack" data-testid="pre-counted-items-back-btn">
+          <ion-button :disabled="confirmingBack" :aria-label="translate('Back')" data-testid="pre-counted-items-back-btn" @click="confirmGoBack">
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title data-testid="pre-counted-items-page-title">{{ translate("Add Hand Counted Items")}}</ion-title>
+        <ion-title data-testid="pre-counted-items-page-title">{{ translate(isDirected ? "Hand count" : "Add Hand Counted Items") }}</ion-title>
+        <HandCountSegments v-if="isDirected && wideHeader" slot="end" class="handcount-header-segments"
+          v-model="directedSegment"
+          :assigned-count="directedHandCount?.assignedCount ?? 0"
+          :uncounted-count="directedHandCount?.uncountedCount ?? 0"
+        />
+      </ion-toolbar>
+      <ion-toolbar v-if="isDirected && !wideHeader">
+        <HandCountSegments
+          v-model="directedSegment"
+          :assigned-count="directedHandCount?.assignedCount ?? 0"
+          :uncounted-count="directedHandCount?.uncountedCount ?? 0"
+        />
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
-      <main>
+    <ion-content class="ion-padding" :scroll-y="!isDirected">
+      <main :class="{ 'directed-handcount-main': isDirected }">
+        <DirectedHandCount v-if="isDirected" ref="directedHandCount" :inventory-count-import-id="inventoryCountImportId" :active="directedActive" />
+        <template v-else>
         <ion-card data-testid="pre-counted-items-search-card">
           <ion-card-header data-testid="pre-counted-items-search-header">
             <ion-card-title data-testid="pre-counted-items-search-title">
@@ -139,8 +153,19 @@
             </div>
           </ion-card>
         </ion-list>
+        </template>
       </main>
     </ion-content>
+    <ion-footer v-if="isDirected" data-testid="handcount-footer">
+      <ion-toolbar>
+        <ion-text slot="start" class="ion-padding-start" aria-live="polite" data-testid="handcount-save-status">
+          {{ directedDraftCount ? translate('Unsaved changes: {count}', { count: directedDraftCount }) : translate('No unsaved changes') }}
+        </ion-text>
+        <ion-button slot="end" class="ion-margin-end" :disabled="!directedHandCount?.canSave" data-testid="handcount-save-btn" @click="directedHandCount?.save()">
+          {{ directedDraftCount ? translate('Save changes: {count}', { count: directedDraftCount }) : translate('Save progress') }}
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
     <!-- Search Results Modal -->
     <ion-modal :is-open="isSearchResultsModalOpen" @didDismiss="closeSearchResultsModal" data-testid="pre-counted-items-results-modal">
       <ion-header data-testid="pre-counted-items-results-modal-header">
@@ -186,11 +211,14 @@ import { commonUtil, translate, useSolrSearch } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController, onIonViewDidEnter, onIonViewWillLeave
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
-import { ref, computed, onMounted, nextTick, defineProps } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, defineProps } from 'vue'
 import router from '@/router'
+import { onBeforeRouteLeave } from 'vue-router'
+import DirectedHandCount from '@/components/DirectedHandCount.vue'
+import HandCountSegments from '@/components/HandCountSegments.vue'
 import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader } from '@/services/uiUtils'
@@ -218,6 +246,28 @@ const props = defineProps({
   }
 })
 
+const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT')
+const directedHandCount = ref<InstanceType<typeof DirectedHandCount>>()
+const wideHeader = ref(false)
+let headerMedia: MediaQueryList | undefined
+const updateHeaderWidth = () => { wideHeader.value = !!headerMedia?.matches }
+onMounted(() => {
+  headerMedia = window.matchMedia('(min-width: 700px)')
+  updateHeaderWidth()
+  headerMedia.addEventListener('change', updateHeaderWidth)
+})
+onUnmounted(() => headerMedia?.removeEventListener('change', updateHeaderWidth))
+const directedSegment = computed({
+  get: () => directedHandCount.value?.segment ?? 'uncounted',
+  set: (value: string) => { if (directedHandCount.value) directedHandCount.value.segment = value }
+})
+const directedDraftCount = computed(() => directedHandCount.value?.draftCount ?? 0)
+const directedActive = ref(false)
+const confirmingBack = ref(false)
+onIonViewDidEnter(() => { directedActive.value = true })
+onIonViewWillLeave(() => { directedActive.value = false })
+onBeforeRouteLeave(async () => !isDirected.value || await directedHandCount.value?.confirmLeave())
+
 const workEffort = ref()
 const inventoryCountImport = ref()
 const searchedProductString = ref('')
@@ -235,6 +285,7 @@ const hasUnsavedProducts = computed(() =>
 )
 
 onMounted(async () => {
+  if (isDirected.value) return
   await loader.present('Loading...')
   await getInventoryCycleCount()
   loader.dismiss()
@@ -446,6 +497,18 @@ async function addAllProductsToScanEvents() {
 }
 
 async function confirmGoBack() {
+  if (isDirected.value) {
+    if(confirmingBack.value) {return}
+    confirmingBack.value = true
+    try {
+      // Safari restores the previous history entry's zoom before an async route
+      // guard finishes. Confirm while this page is still the current entry.
+      if(await directedHandCount.value?.confirmLeave()) {router.back()}
+    } finally {
+      confirmingBack.value = false
+    }
+    return
+  }
   if (products.value.length === 0 || !hasUnsavedProducts.value) {
     router.back()
     return
@@ -470,6 +533,9 @@ async function confirmGoBack() {
 </script>
 
 <style scoped>
+.directed-handcount-main { height: 100%; min-height: 0; max-width: 1120px; }
+[data-testid="handcount-save-btn"] { min-height: 44px; }
+.handcount-header-segments { width: min(65vw, 800px); min-height: 56px; margin-inline-end: var(--spacer-sm); }
 
 main {
   max-width: 768px;

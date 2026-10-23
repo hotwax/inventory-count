@@ -45,7 +45,7 @@
           </ion-item>
 
           <div class="events" data-testid="session-detail-events-list">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-events-scroller">
+          <DynamicScroller :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-events-scroller">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :data-testid="'session-detail-event-item-' + item.id">
@@ -64,7 +64,7 @@
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary" data-testid="session-detail-event-unagg-badge">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
+                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="`scan-event-action-${item.id}`" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>  
                 </ion-item>
@@ -670,7 +670,7 @@
           <div v-if="!events.length" class="empty-state ion-padding">
             <ion-label>{{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}</ion-label>
           </div>
-          <DynamicScroller v-else :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
+          <DynamicScroller v-else :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :data-testid="'session-detail-recent-event-' + item.id">
@@ -750,6 +750,7 @@
 import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
 import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkCircleOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, gitBranchOutline, helpCircleOutline, hourglassOutline, swapVerticalOutline, statsChartOutline, listOutline, scanOutline, keypadOutline, trashOutline } from 'ionicons/icons';
 import { ref, computed, defineProps, nextTick, watch, watchEffect, toRaw } from 'vue';
+import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
@@ -972,108 +973,8 @@ async function scrollToSegmentContent(event: MouseEvent) {
   })
 }
 
-function getIdentifierOptionDescription(type: string) {
-  const option = [
-    ...useProductStore().getProductIdentificationOptions,
-    ...useProductStore().getGoodIdentificationOptions
-  ].find((identifierOption: any) => identifierOption.goodIdentificationTypeId === type)
+const { getSessionItemPrimaryLabel, getSessionItemSecondaryLabel, getSessionItemFallbackMessage, getResolvedProductIdentifierValue } = useSessionItemDisplay();
 
-  return option?.description || type || translate('Preferred identifier')
-}
-
-function getResolvedProductIdentifierValue(product: any, type: string) {
-  if (!product || !type) return ''
-
-  const parsedGoodIds = Array.isArray(product.goodIdentifications)
-    ? product.goodIdentifications.map((goodIdentification: any) => {
-        if (typeof goodIdentification === 'string' && goodIdentification.includes('/')) {
-          const [identifierType, value] = goodIdentification.split('/', 2)
-          return { type: identifierType?.trim(), value: value?.trim() }
-        }
-        return goodIdentification
-      })
-    : []
-
-  const resolve = (identifierType: string) => {
-    if (!identifierType) return ''
-    if (['SKU', 'SHOPIFY_PROD_SKU'].includes(identifierType)) {
-      return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === 'SKU')?.value || ''
-    }
-    if (identifierType === 'internalName') return product.internalName || ''
-    if (identifierType === 'productId') return product.productId || ''
-    if (identifierType === 'parentProductName' || identifierType === 'groupName') return product.parentProductName || ''
-    if (identifierType === 'title') return product.title || ''
-    if (identifierType === 'primaryProductCategoryName') return product.primaryProductCategoryName || ''
-    return parsedGoodIds.find((goodIdentification: any) => goodIdentification.type === identifierType)?.value || ''
-  }
-
-  return resolve(type)
-}
-
-function getSessionItemPrimaryDisplay(item: any) {
-  const preferredIdentifierType = useProductStore().getPrimaryId
-  const preferredValue = getResolvedProductIdentifierValue(item?.product, preferredIdentifierType)
-
-  if (preferredValue) {
-    return {
-      value: preferredValue,
-      isFallback: false,
-      preferredDescription: getIdentifierOptionDescription(preferredIdentifierType),
-      fallbackDescription: ''
-    }
-  }
-
-  const fallbackCandidates = [
-    {
-      value: getResolvedProductIdentifierValue(item?.product, 'SKU'),
-      description: getIdentifierOptionDescription('SKU')
-    },
-    {
-      value: item?.internalName || item?.product?.internalName || '',
-      description: getIdentifierOptionDescription('internalName')
-    },
-    {
-      value: item?.productIdentifier || '',
-      description: translate('Imported identifier')
-    },
-    {
-      value: item?.productId || item?.product?.productId || '',
-      description: getIdentifierOptionDescription('productId')
-    }
-  ].find((candidate) => candidate.value && candidate.description !== getIdentifierOptionDescription(preferredIdentifierType))
-
-  return {
-    value: fallbackCandidates?.value || '-',
-    isFallback: Boolean(fallbackCandidates?.value),
-    preferredDescription: getIdentifierOptionDescription(preferredIdentifierType),
-    fallbackDescription: fallbackCandidates?.description || ''
-  }
-}
-
-function getSessionItemPrimaryLabel(item: any) {
-  return getSessionItemPrimaryDisplay(item).value
-}
-
-function getSessionItemFallbackMessage(item: any) {
-  const display = getSessionItemPrimaryDisplay(item)
-
-  if (!display.isFallback || !display.fallbackDescription) return ''
-
-  return translate('Preferred identifier {preferredIdentifier} is unavailable for this item. Showing {fallbackIdentifier} instead.', {
-    preferredIdentifier: display.preferredDescription,
-    fallbackIdentifier: display.fallbackDescription
-  })
-}
-
-function getSessionItemSecondaryLabel(item: any) {
-  const secondaryLabel = item?.secondaryId || useProductMaster().secondaryId(item?.product)
-  const primaryLabel = getSessionItemPrimaryLabel(item)
-
-  if (!secondaryLabel || secondaryLabel === primaryLabel) return ''
-
-  return secondaryLabel
-}
-  
 watchEffect(() => {
   const distinctProducts = new Set(countedItems.value.map(item => item.productId)).size
   stats.value = {
@@ -1106,10 +1007,10 @@ function initializeListSubscriptions() {
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (unmatchedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (countedItems.value = items))
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (countedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (uncountedItems.value = items))
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (uncountedItems.value = items))
   )
   listSubscriptions.push(
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (undirectedItems.value = items))
@@ -1975,7 +1876,8 @@ const handleIndexedDBSearch = debounce(async () => {
   const results = await useInventoryCountImport().searchInventoryItemsByIdentifier(
     props.inventoryCountImportId,
     searchKeyword.value,
-    selectedSegment.value
+    selectedSegment.value,
+    isDirected.value
   )
   filteredItems.value = results
 }, 150)
@@ -2064,7 +1966,7 @@ function closeImagePreview() {
 // Negate ScanEvent record
 function openScanActionMenu(item: any) {
   selectedScan.value = item
-  popoverTrigger.value = item.createdAt
+  popoverTrigger.value = `scan-event-action-${item.id}`
   showScanAction.value = true
 }
 

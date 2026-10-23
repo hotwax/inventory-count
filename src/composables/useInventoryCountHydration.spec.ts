@@ -31,6 +31,12 @@ beforeEach(() => {
 });
 
 describe("server item hydration after failed sync", () => {
+  it("retains the server counted-by marker so zero survives a cold reload", async () => {
+    await useInventoryCountImport().storeInventoryCountItems([
+      { inventoryCountImportId: "S1", uuid: "I2", productId: "P2", quantity: 0, countedByUserLoginId: "counter", lastUpdatedStamp: 20 }
+    ]);
+    expect(state.rows.find(row => row.uuid === "I2")).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
   it("preserves pending device quantities while refreshing acknowledged and new rows", async () => {
     await useInventoryCountImport().storeInventoryCountItems([
       { inventoryCountImportId: "S1", uuid: "I1", productId: "P1", quantity: 12, lastUpdatedStamp: 20 },
