@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ rows: [] as any[], save: vi.fn(), toast: vi.fn(), unsubscribe: vi.fn(),
   sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false, flush: vi.fn() }));
-vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { hasError: () => false, showToast: state.toast } }));
+vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { getOMSInstanceName: () => "demo", hasError: () => false, showToast: state.toast } }));
 vi.mock("@/components/Image.vue", () => ({ default: { template: "<img />" } }));
 vi.mock("@/composables/useHandCountSession", () => ({ useHandCountSession: () => {
   const mutable = ref(false);
@@ -48,6 +48,7 @@ import DirectedHandCount from "@/components/DirectedHandCount.vue";
 
 enableAutoUnmount(afterEach);
 beforeEach(() => {
+  localStorage.clear();
   vi.clearAllMocks(); state.flush.mockReset().mockResolvedValue(true); state.save.mockReset().mockResolvedValue(undefined);
   filters.sort = "assigned"; state.primaryId = "SKU";
   state.productAvailable = true; state.status = "SESSION_ASSIGNED"; state.lock = []; state.failLoad = false;
@@ -106,6 +107,28 @@ describe("directed handcount screen", () => {
     expect(wrapper.vm.draftCount).toBe(0);
     await wrapper.vm.save();
     expect(state.save).toHaveBeenCalledTimes(1);
+  });
+  it("restores unfinished quantities after remount and retains the original conflict baseline", async () => {
+    const first = await screen();
+    await select(first, "counted");
+    input(first, "P2").vm.$emit("ionInput", { detail: { value: "7" } });
+    await flushPromises(); first.unmount();
+    state.rows[1].quantity = 5;
+    const restored = await screen(); await select(restored, "counted");
+    expect(input(restored, "P2").props("value")).toBe("7");
+    await restored.vm.save();
+    expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P2", quantity: 7, expectedQuantity: 3 }], "user");
+    restored.unmount();
+    const saved = await screen();
+    expect(saved.vm.draftCount).toBe(0);
+  });
+  it("keeps a failed save through reload, including an explicit zero", async () => {
+    const first = await screen(); await toggleZero(first, "P1");
+    state.save.mockRejectedValueOnce(Error("offline"));
+    await first.vm.save(); first.unmount();
+    const restored = await screen();
+    expect(restored.vm.draftCount).toBe(1);
+    expect(restored.findComponent(IonCheckbox).props("checked")).toBe(true);
   });
   it("shares the list sort preference and retains drafts while changing it", async () => {
     filters.sort = "lastUpdated";

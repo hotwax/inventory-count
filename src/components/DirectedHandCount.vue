@@ -44,6 +44,11 @@
     <ion-item v-if="!loading && !mutable && !error" data-testid="handcount-readonly">
       <ion-label>{{ translate('This session is not available for counting.') }}</ion-label>
     </ion-item>
+    <ion-item v-if="storageFailed" lines="none" data-testid="handcount-draft-warning">
+      <ion-label color="warning">
+        {{ translate("Draft recovery is unavailable. Save your changes before leaving or reloading this page.") }}
+      </ion-label>
+    </ion-item>
     <DynamicScroller
       v-if="!loading && !error && visibleItems.length"
       :key="segment + ':' + query + ':' + sessionSort"
@@ -153,6 +158,7 @@ import { addOutline, removeOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import Image from "@/components/Image.vue";
+import { useHandCountDrafts } from "@/composables/useHandCountDrafts";
 import { useHandCountSession } from "@/composables/useHandCountSession";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
@@ -173,7 +179,8 @@ const sessionSort = computed({
 const { getSessionItemPrimaryLabel: primaryLabel, getSessionItemSecondaryLabel: secondaryLabel,
   getSessionItemFallbackMessage: fallbackMessage } = useSessionItemDisplay();
 const items = ref<any[]>([]);
-const drafts = ref<Record<string, { value: string; expectedQuantity: number }>>({});
+const { drafts, storageFailed } = useHandCountDrafts(() => [commonUtil.getOMSInstanceName(),
+  userProfile.getUserProfile?.username || "", props.inventoryCountImportId]);
 const segment = ref("uncounted");
 const query = ref("");
 const loading = ref(true);
@@ -340,7 +347,6 @@ watch(() => [props.active, props.inventoryCountImportId], () => {
   if(sessionId !== props.inventoryCountImportId) {
     sessionId = props.inventoryCountImportId;
     items.value = [];
-    drafts.value = {};
     segment.value = "uncounted";
     query.value = "";
   }
