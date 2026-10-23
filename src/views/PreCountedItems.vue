@@ -7,11 +7,13 @@
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
-        <ion-title data-testid="pre-counted-items-page-title">{{ translate("Add Hand Counted Items")}}</ion-title>
+        <ion-title data-testid="pre-counted-items-page-title">{{ translate(isDirected ? "Hand count" : "Add Hand Counted Items") }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
       <main>
+        <DirectedHandCount v-if="isDirected" ref="directedHandCount" :inventory-count-import-id="inventoryCountImportId" :active="directedActive" />
+        <template v-else>
         <ion-card data-testid="pre-counted-items-search-card">
           <ion-card-header data-testid="pre-counted-items-search-header">
             <ion-card-title data-testid="pre-counted-items-search-title">
@@ -139,6 +141,7 @@
             </div>
           </ion-card>
         </ion-list>
+        </template>
       </main>
     </ion-content>
     <!-- Search Results Modal -->
@@ -186,11 +189,13 @@ import { commonUtil, translate, useSolrSearch } from '@common'
 import {
   IonPage, IonToolbar, IonButtons, IonContent, IonHeader, IonSearchbar, IonList, IonItem,
   IonInput, IonLabel, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonFooter,
-  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController
+  IonTitle, IonThumbnail, IonIcon, IonProgressBar, IonRadio, IonModal, IonSkeletonText, IonRadioGroup, IonText, alertController, onIonViewDidEnter, onIonViewWillLeave
 } from '@ionic/vue'
 import { addCircleOutline, closeCircleOutline, removeCircleOutline, arrowBackOutline, closeOutline } from 'ionicons/icons'
 import { ref, computed, onMounted, nextTick, defineProps } from 'vue'
 import router from '@/router'
+import { onBeforeRouteLeave } from 'vue-router'
+import DirectedHandCount from '@/components/DirectedHandCount.vue'
 import { client } from '@common'
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport'
 import { loader } from '@/services/uiUtils'
@@ -218,6 +223,13 @@ const props = defineProps({
   }
 })
 
+const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT')
+const directedHandCount = ref<InstanceType<typeof DirectedHandCount>>()
+const directedActive = ref(false)
+onIonViewDidEnter(() => { directedActive.value = true })
+onIonViewWillLeave(() => { directedActive.value = false })
+onBeforeRouteLeave(async () => !isDirected.value || await directedHandCount.value?.confirmLeave())
+
 const workEffort = ref()
 const inventoryCountImport = ref()
 const searchedProductString = ref('')
@@ -235,6 +247,7 @@ const hasUnsavedProducts = computed(() =>
 )
 
 onMounted(async () => {
+  if (isDirected.value) return
   await loader.present('Loading...')
   await getInventoryCycleCount()
   loader.dismiss()
@@ -446,6 +459,7 @@ async function addAllProductsToScanEvents() {
 }
 
 async function confirmGoBack() {
+  if (isDirected.value) { router.back(); return }
   if (products.value.length === 0 || !hasUnsavedProducts.value) {
     router.back()
     return

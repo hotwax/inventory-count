@@ -563,5 +563,18 @@
   "Keyboard entry": "Keyboard entry",
   "Syncing count...": "Syncing count...",
   "Some counts have not synced. Check your connection and try again.": "Some counts have not synced. Check your connection and try again.",
-  "Could not sync and submit this session. Your counts are saved on this device. Please try again.": "Could not sync and submit this session. Your counts are saved on this device. Please try again."
+  "Could not sync and submit this session. Your counts are saved on this device. Please try again.": "Could not sync and submit this session. Your counts are saved on this device. Please try again.",
+  "Hand count": "Hand count",
+  "Search assigned products": "Search assigned products",
+  "Enter the total counted quantity for each item.": "Enter the total counted quantity for each item.",
+  "This session is not available for counting.": "This session is not available for counting.",
+  "Unsaved changes": "Unsaved changes",
+  "Counted quantity": "Counted quantity",
+  "Enter a quantity of zero or more.": "Enter a quantity of zero or more.",
+  "No assigned items in this view.": "No assigned items in this view.",
+  "Failed to load assigned items.": "Failed to load assigned items.",
+  "Could not save counts. Your edits are kept; check the session and try again.": "Could not save counts. Your edits are kept; check the session and try again.",
+  "You have unsaved quantity changes.": "You have unsaved quantity changes.",
+  "Retry": "Retry",
+  "Items Saved": "Items Saved"
 }

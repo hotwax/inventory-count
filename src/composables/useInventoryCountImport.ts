@@ -310,12 +310,60 @@ function currentMillis(): number {
       })), sortMode)
     });
 
+  // Handcount edits totals, including scans saved locally but not yet aggregated.
+  async function readAssignedHandCountItems(inventoryCountImportId: string) {
+    const records = await db.inventoryCountRecords.where('inventoryCountImportId').equals(inventoryCountImportId).toArray();
+    const items = groupByProductAndSum(records.filter(item => item.productId && item.isRequested !== 'N'));
+    const byProduct = new Map(items.map(item => [item.productId, item]));
+    const pending = await db.scanEvents.where('inventoryCountImportId').equals(inventoryCountImportId)
+      .and(event => event.aggApplied === 0).toArray();
+    for (const event of pending) {
+      const item = byProduct.get(event.productId);
+      if (item) item.quantity = Number(item.quantity || 0) + Number(event.quantity || 0);
+    }
+    return items;
+  }
+
+  const getAssignedHandCountItems = (inventoryCountImportId: string) => liveQuery(async () => {
+    const items = await readAssignedHandCountItems(inventoryCountImportId);
+    const products = await db.products.bulkGet(items.map(item => item.productId));
+    const byId = new Map(products.filter(Boolean).map(product => [product!.productId, product]));
+    return sortSessionItems(items.map(item => ({ ...item, product: byId.get(item.productId) })), 'assigned');
+  });
+
+  async function saveHandCountTotals(inventoryCountImportId: string, edits: {
+    productId: string; quantity: number; expectedQuantity: number;
+  }[]) {
+    // Atomically validate every row and enqueue deltas. A failed batch or repeated
+    // save cannot partially apply or silently overwrite a newer local count.
+    await db.transaction('rw', db.inventoryCountRecords, db.scanEvents, async () => {
+      const items = new Map((await readAssignedHandCountItems(inventoryCountImportId)).map(item => [item.productId, item]));
+      const seen = new Set<string>();
+      const events: ScanEvent[] = [];
+      for (const edit of edits) {
+        const item = items.get(edit.productId);
+        if (!item || seen.has(edit.productId) || !Number.isFinite(edit.quantity) || edit.quantity < 0) {
+          throw new Error('Invalid handcount quantity');
+        }
+        seen.add(edit.productId);
+        const current = Number(item.quantity || 0);
+        if (current !== edit.expectedQuantity) throw new Error('Count changed; refresh before saving');
+        const quantity = edit.quantity - current;
+        if (!quantity) continue;
+        events.push({ inventoryCountImportId, productId: edit.productId,
+          scannedValue: item.productIdentifier || edit.productId, quantity,
+          createdAt: currentMillis(), aggApplied: 0 });
+      }
+      if (events.length) await db.scanEvents.bulkAdd(events);
+    });
+  }
+
   const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId) && Number(item.quantity) > 0))
+        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
         .toArray()
 
       const grouped = groupByProductAndSum(items)
@@ -596,6 +644,8 @@ export function useInventoryCountImport() {
     createCycleCountFromProducts,
     discardSession,
     getCountedItems,
+    getAssignedHandCountItems,
+    saveHandCountTotals,
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,

@@ -39,7 +39,7 @@
           </ion-item>
 
           <div class="events" data-testid="session-detail-events-list">
-          <DynamicScroller :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-events-scroller">
+          <DynamicScroller :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-events-scroller">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :data-testid="'session-detail-event-item-' + item.id">
@@ -58,7 +58,7 @@
                   <ion-badge slot="end" v-if="item.aggApplied === 0" class="unagg-badge" color="primary" data-testid="session-detail-event-unagg-badge">
                     {{ translate('unaggregated') }}
                   </ion-badge>
-                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="item.createdAt" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
+                  <ion-button v-if="item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" :id="`scan-event-action-${item.id}`" @click="openScanActionMenu(item)" data-testid="session-detail-event-actions-btn">
                     <ion-icon slot="icon-only" :icon="ellipsisVerticalOutline" />
                   </ion-button>  
                 </ion-item>
@@ -664,7 +664,7 @@
           <div v-if="!events.length" class="empty-state ion-padding">
             <ion-label>{{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}</ion-label>
           </div>
-          <DynamicScroller v-else :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
+          <DynamicScroller v-else :items="events" key-field="id" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
             <template v-slot="{ item, index, active }">
               <DynamicScrollerItem :item="item" :index="index" :active="active">
                 <ion-item :data-testid="'session-detail-recent-event-' + item.id">
@@ -2041,7 +2041,7 @@ function closeImagePreview() {
 // Negate ScanEvent record
 function openScanActionMenu(item: any) {
   selectedScan.value = item
-  popoverTrigger.value = item.createdAt
+  popoverTrigger.value = `scan-event-action-${item.id}`
   showScanAction.value = true
 }
 
