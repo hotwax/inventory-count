@@ -302,6 +302,9 @@ defineExpose({ confirmLeave });
 .handcount-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacer-sm); width: 100%; padding-block: var(--spacer-sm); }
 .handcount-product { display: flex; align-items: center; gap: var(--spacer-sm); flex: 1 1 16rem; min-width: 0; }
 .handcount-quantity { display: flex; align-items: center; gap: var(--spacer-base); margin-left: auto; }
+/* Safari needs the native shadow button to opt out of double-tap zoom too. */
+.handcount-quantity ion-button,
+.handcount-quantity ion-button::part(native) { touch-action: manipulation; }
 .handcount-quantity ion-button { width: 56px; height: 56px; min-width: 56px; --padding-start: 12px; --padding-end: 12px; }
 .handcount-quantity ion-icon { font-size: 32px; }
 .handcount-quantity ion-input { flex: 0 0 88px; width: 88px; }
