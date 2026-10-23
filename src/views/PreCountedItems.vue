@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button @click="confirmGoBack" data-testid="pre-counted-items-back-btn">
+          <ion-button :disabled="confirmingBack" :aria-label="translate('Back')" data-testid="pre-counted-items-back-btn" @click="confirmGoBack">
             <ion-icon slot="icon-only" :icon="arrowBackOutline" />
           </ion-button>
         </ion-buttons>
@@ -263,6 +263,7 @@ const directedSegment = computed({
 })
 const directedDraftCount = computed(() => directedHandCount.value?.draftCount ?? 0)
 const directedActive = ref(false)
+const confirmingBack = ref(false)
 onIonViewDidEnter(() => { directedActive.value = true })
 onIonViewWillLeave(() => { directedActive.value = false })
 onBeforeRouteLeave(async () => !isDirected.value || await directedHandCount.value?.confirmLeave())
@@ -496,7 +497,18 @@ async function addAllProductsToScanEvents() {
 }
 
 async function confirmGoBack() {
-  if (isDirected.value) { router.back(); return }
+  if (isDirected.value) {
+    if(confirmingBack.value) {return}
+    confirmingBack.value = true
+    try {
+      // Safari restores the previous history entry's zoom before an async route
+      // guard finishes. Confirm while this page is still the current entry.
+      if(await directedHandCount.value?.confirmLeave()) {router.back()}
+    } finally {
+      confirmingBack.value = false
+    }
+    return
+  }
   if (products.value.length === 0 || !hasUnsavedProducts.value) {
     router.back()
     return
