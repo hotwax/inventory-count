@@ -570,8 +570,8 @@ const negateSingleScan = async (item: any) => {
     commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to remove scan', serverError);
-    commonUtil.showToast(`${translate('Failed to remove scan.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to remove scan')}. ${serverError}`);
   } finally {
     resetRemoveConfirm()
   }
@@ -841,7 +841,7 @@ async function searchProducts(queryString: string): Promise<any> {
     return products;
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to search products", serverError);
+    logger.error("Failed to search products", error);
     commonUtil.showToast(`${translate("Failed to search products. Please try again.")} ${serverError}`);
   }
   isSearching.value = false;
@@ -905,8 +905,8 @@ async function saveMatchProduct() {
     closeMatchModal();
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to match product", serverError);
-    commonUtil.showToast(`${translate("Failed to match product.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to match product")}. ${serverError}`);
   }
 }
 
@@ -954,7 +954,7 @@ async function logHandCountedItemVariances() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to log variance", serverError);
+    logger.error("Failed to log variance", error);
     commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }
@@ -1002,7 +1002,7 @@ async function logVariance() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to log variance", serverError);
+    logger.error("Failed to log variance", error);
     commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }

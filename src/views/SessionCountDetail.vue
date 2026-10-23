@@ -1172,8 +1172,8 @@ onIonViewDidEnter(async () => {
     })
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to load session details", serverError);
-    if (isCurrentView(id)) commonUtil.showToast(`${translate("Failed to load session details.")} ${serverError}`);
+    logger.error("Failed to load session details", error);
+    if (isCurrentView(id)) commonUtil.showToast(`${translate("Failed to load session details")}. ${serverError}`);
   }
 });
 
@@ -1277,8 +1277,8 @@ async function updateSessionOnServer() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to update session details", serverError);
-    commonUtil.showToast(`${translate("Failed to update session details.")} ${serverError}`);
+    logger.error(error);
+    commonUtil.showToast(`${translate("Failed to update session details")}. ${serverError}`);
   }
   isEditNewSessionModalOpen.value = false;
 }
@@ -1315,8 +1315,8 @@ async function startSession() {
     }    commonUtil.showToast('Session ready to start counting');
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to initialize session', serverError);
-    commonUtil.showToast(`${translate('Failed to initialize session.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to initialize session')}. ${serverError}`);
   }
 
   focusScanner();
@@ -1356,8 +1356,8 @@ async function loadInventoryItemsWithProgress() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to load session items', serverError);
-    commonUtil.showToast(`${translate('Failed to load session items.')} ${serverError}`);
+    logger.error('Failed to load session items', err);
+    commonUtil.showToast(`${translate('Failed to load session items')}. ${serverError}`);
   } finally {
     isLoadingItems.value = false
   }
@@ -1394,8 +1394,8 @@ async function recordScannedCode(code: string, quantity = 1) {
     return true;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to record scan', serverError);
-    commonUtil.showToast(`${translate('Failed to record scan.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to record scan')}. ${serverError}`);
     return false;
   }
 }
@@ -1513,8 +1513,8 @@ async function ensureSessionStarted() {
       inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
     } catch (err) {
       const serverError = commonUtil.getErrorMessage(err);
-      logger.error('Failed to start session', serverError);
-      commonUtil.showToast(`${translate('Failed to start session.')} ${serverError}`);
+      logger.error(err);
+      commonUtil.showToast(`${translate('Failed to start session')}. ${serverError}`);
       return false;
     }
   }
@@ -1680,7 +1680,7 @@ async function handleSessionLock(id = viewId) {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Error handling session lock', serverError);
+    logger.error('Error handling session lock', err);
     if (!isCurrentView(id)) return;
     sessionLocked.value = true;
     commonUtil.showToast(`${translate('Error while acquiring session lock.')} ${serverError}`);
@@ -1708,7 +1708,7 @@ async function releaseSessionLock() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Error releasing session lock', serverError);
+    logger.error('Error releasing session lock', err);
     commonUtil.showToast(`${translate('Error while releasing session lock.')} ${serverError}`);
   }
 }
@@ -1828,13 +1828,13 @@ async function saveMatchProduct() {
       closeMatchModal();
     } else {
       const serverError = commonUtil.getErrorMessage(result.error);
-      logger.error("Failed to match product", serverError);
-      commonUtil.showToast(`${translate("Failed to match product.")} ${serverError}`);
+      logger.error(result.error);
+      commonUtil.showToast(`${translate("Failed to match product")}. ${serverError}`);
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("An error occurred while matching product", serverError);
-    commonUtil.showToast(`${translate("An error occurred while matching product.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("An error occurred while matching product")}. ${serverError}`);
   }
 }
 
@@ -1909,7 +1909,7 @@ async function confirmSubmit() {
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Could not sync and submit this session", serverError);
+    logger.error(err);
     if (isCurrentView(id)) commonUtil.showToast(`${translate("Could not sync and submit this session. Your counts are saved on this device. Please try again.")} ${serverError}`);
   } finally {
     loader.dismiss()
@@ -1938,7 +1938,7 @@ async function confirmDiscard() {
     await router.push('/tabs/count')
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to discard session', serverError);
+    logger.error(err);
     if (isCurrentView(id)) commonUtil.showToast(`${translate('Failed to discard session.')} ${serverError}`);
   }
 }
@@ -1955,8 +1955,8 @@ async function reopen() {
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to reopen session', serverError);
-    if (isCurrentView(id)) commonUtil.showToast(`${translate('Failed to reopen session.')} ${serverError}`);
+    logger.error(err);
+    if (isCurrentView(id)) commonUtil.showToast(`${translate('Failed to reopen session')}. ${serverError}`);
   }
 }
 
@@ -2114,8 +2114,8 @@ async function negateSingleScan(item: any) {
     commonUtil.showToast(translate('Scan removed'))
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to remove scan', serverError);
-    commonUtil.showToast(`${translate('Failed to remove scan.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to remove scan')}. ${serverError}`);
   } finally {
     resetRemoveConfirm()
   }
@@ -2145,8 +2145,8 @@ async function negateAllScansOfSku(item: any) {
     commonUtil.showToast(translate('Removed all scans for') + ` ${sku}`)
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to remove scans', serverError);
-    commonUtil.showToast(`${translate('Failed to remove scans.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to remove scans')}. ${serverError}`);
   } finally {
     resetRemoveConfirm()
   }

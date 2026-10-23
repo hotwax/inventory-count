@@ -472,7 +472,7 @@ export const useProductStore = defineStore('productStore', {
         }
       } catch (err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error('Failed to update Store preference', serverError);
+        logger.error(err);
         commonUtil.showToast(`${translate('Failed to update Store preference.')} ${serverError}`);
       }
     },

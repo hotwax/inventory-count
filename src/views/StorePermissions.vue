@@ -486,8 +486,8 @@ async function saveSelectedSecurityGroups() {
     isSelectGroupsModalOpen.value = false;
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to update security groups", serverError);
-    commonUtil.showToast(`${translate("Failed to update security groups.")} ${serverError}`);
+    logger.error(error);
+    commonUtil.showToast(`${translate("Failed to update security groups")}. ${serverError}`);
   }
 }
 
@@ -550,7 +550,7 @@ async function confirmRemoveGroupFromPermission() {
             await getActiveGroups(permissionId);
           } catch (error) {
             const serverError = commonUtil.getErrorMessage(error);
-            logger.error("Failed to remove security group", serverError);
+            logger.error(error);
             commonUtil.showToast(`${translate("Failed to remove security group.")} ${serverError}`);
           } finally {
             closeGroupActionsPopover();

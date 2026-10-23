@@ -274,7 +274,7 @@ async function viewFile() {
     else throw resp.data;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to download uploaded cycle count file", serverError);
+    logger.error(err);
     commonUtil.showToast(`${translate("Failed to download uploaded cycle count file.")} ${serverError}`);
   }
   closeUploadPopover();
@@ -288,7 +288,7 @@ async function cancelUpload() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to cancel uploaded cycle count", serverError);
+    logger.error(err);
     commonUtil.showToast(`${translate("Failed to cancel uploaded cycle count.")} ${serverError}`);
   }
   closeUploadPopover();
@@ -381,8 +381,8 @@ async function save() {
     } else throw resp.data;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to upload the file", serverError);
-    commonUtil.showToast(`${translate("Failed to upload the file, please try again.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to upload the file, please try again")}. ${serverError}`);
   }
 }
 

@@ -364,7 +364,7 @@ async function exportCycleCounts() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to queue cycle counts export', serverError);
+    logger.error('Failed to queue cycle counts export', err);
     commonUtil.showToast(`${translate("Failed to request export. Please try again.")} ${serverError}`);
   } finally {
     loader.dismiss();

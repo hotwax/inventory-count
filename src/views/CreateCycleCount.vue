@@ -360,8 +360,8 @@ async function openFacetModal(facet: FacetFilterConfig) {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to fetch filter options', serverError);
-    commonUtil.showToast(`${translate('Failed to fetch filter options.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to fetch filter options')}. ${serverError}`);
   } finally {
     isFacetLoading.value = false;
   }
@@ -439,8 +439,8 @@ async function getProducts(isNewSearch = true) {
     if (token !== searchToken) return;
     // Surface the failure, an empty list otherwise reads as "no matching products"
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to fetch products', serverError);
-    commonUtil.showToast(`${translate('Failed to fetch products.')} ${serverError}`);
+    logger.error('Failed to fetch products', err);
+    commonUtil.showToast(`${translate('Failed to fetch products')}. ${serverError}`);
     if (isNewSearch) {
       products.value = [];
       totalProducts.value = 0;
@@ -567,8 +567,8 @@ async function selectAllMatches() {
     showItemsError.value = false;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to select all matching products', serverError);
-    commonUtil.showToast(`${translate('Failed to select all matching products.')} ${serverError}`);
+    logger.error('Failed to select all matching products', err);
+    commonUtil.showToast(`${translate('Failed to select all matching products')}. ${serverError}`);
   } finally {
     isSelectingAll.value = false;
   }
@@ -664,8 +664,8 @@ async function submitCycleCount(name: string) {
     commonUtil.showToast(translate('The cycle count has been created successfully'));
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to create count', serverError);
-    commonUtil.showToast(`${translate('Failed to create count, please try again.')} ${serverError}`);
+    logger.error('Failed to create count', err);
+    commonUtil.showToast(`${translate('Failed to create count, please try again')}. ${serverError}`);
   } finally {
     isSubmitting.value = false;
   }

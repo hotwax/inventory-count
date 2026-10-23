@@ -201,8 +201,8 @@ async function getPendingCycleCounts() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch cycle counts", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch cycle counts.")} ${serverError}`);
+    logger.error("Failed to fetch cycle counts", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle counts")}. ${serverError}`);
   }
 }
 

@@ -800,8 +800,8 @@ async function saveEditImportItems() {
     closeEditImportItemModal();
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to update count", serverError);
-    commonUtil.showToast(`${translate("Failed to update count.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to update count")}. ${serverError}`);
   }
   loader.dismiss();
 }
@@ -975,8 +975,8 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to skip product", serverError);
-    commonUtil.showToast(`${translate("Failed to skip product.")} ${serverError}`);
+    logger.error("Failed to skip product", error);
+    commonUtil.showToast(`${translate("Failed to skip product")}. ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1037,15 +1037,15 @@ async function skipAllUndirectedItems() {
     const failedResult: any = results.find((result: any) => result.status === "rejected" || result.value?.resp?.status !== 200);
     if (failedResult) {
       const serverError = commonUtil.getErrorMessage(failedResult.reason || failedResult.value?.resp?.data);
-      logger.error("Failed to skip some undirected items", serverError);
-      commonUtil.showToast(`${translate("Failed to skip all undirected items.")} ${serverError}`);
+      logger.error(failedResult.reason || failedResult.value?.resp?.data);
+      commonUtil.showToast(`${translate("Failed to skip all undirected items")}. ${serverError}`);
     } else {
-      commonUtil.showToast(translate("Successfully skipped all products."));
+      commonUtil.showToast(translate("Successfully skipped all products"));
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Error while skipping all undirected items", serverError);
-    commonUtil.showToast(`${translate("Failed to skip all undirected items.")} ${serverError}`);
+    logger.error("Error while skipping all undirected items", err);
+    commonUtil.showToast(`${translate("Failed to skip all undirected items")}. ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1199,8 +1199,8 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch count sessions", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch count sessions.")} ${serverError}`);
+    logger.error("Failed to fetch count sessions", error);
+    commonUtil.showToast(`${translate("Failed to fetch count sessions")}. ${serverError}`);
   }
 }
 
@@ -1309,8 +1309,8 @@ async function markSelectedItemsOutOfStock() {
     commonUtil.showToast(translate("Marked selected items as out of stock"));
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Error marking selected items out of stock", serverError);
-    commonUtil.showToast(`${translate("Failed to update selected items.")} ${serverError}`);
+    logger.error("Error marking selected items out of stock", error);
+    commonUtil.showToast(`${translate("Failed to update selected items")}. ${serverError}`);
   }
 
   loader.dismiss();
@@ -1336,8 +1336,8 @@ async function markAsCompleted() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to send session for review", serverError);
-    commonUtil.showToast(`${translate('Failed to send session for review.')} ${serverError}`);
+    logger.error("Failed to send session for review", error);
+    commonUtil.showToast(`${translate('Failed to send session for review')}. ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1435,8 +1435,8 @@ async function addNewSession() {
 
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to create session", serverError);
-    commonUtil.showToast(`${translate("Failed to create session.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to create session")}. ${serverError}`);
   }
 }
 

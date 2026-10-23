@@ -132,12 +132,12 @@ export const useUserProfile = defineStore('userProfile', {
         } else {
           throw resp;
         }
-        commonUtil.showToast(translate("Time zone updated successfully."));
+        commonUtil.showToast(translate("Time zone updated successfully"));
         return Promise.resolve(tzId)
       } catch(err) {
         const serverError = commonUtil.getErrorMessage(err);
-        logger.error('Failed to update time zone', serverError);
-        commonUtil.showToast(`${translate("Failed to update time zone.")} ${serverError}`);
+        logger.error(err);
+        commonUtil.showToast(`${translate("Failed to update time zone")}. ${serverError}`);
         return Promise.reject('')
       }
     },

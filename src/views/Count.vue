@@ -290,7 +290,7 @@ async function getCycleCounts(reset = false) {
     isScrollable.value = scrollable;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to load cycle counts', serverError);
+    logger.error('Failed to load cycle counts', err);
     commonUtil.showToast(`${translate('Failed to load cycle counts.')} ${serverError}`);
   } finally {
     isLoading.value = false;
@@ -407,8 +407,8 @@ async function addNewSession() {
     isAddSessionModalOpen.value = false
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Error creating session", serverError);
-    commonUtil.showToast(`${translate("Failed to create session.")} ${serverError}`);
+    logger.error("Error creating session", err);
+    commonUtil.showToast(`${translate("Failed to create session")}. ${serverError}`);
   }
 }
 
@@ -439,8 +439,8 @@ async function markInProgress(workEffortId) {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to activate cycle count', serverError);
-    commonUtil.showToast(`${translate('Failed to activate cycle count.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to activate cycle count')}. ${serverError}`);
   } finally {
     // Reset loading state
     loadingWorkEffortId.value = null;
@@ -479,7 +479,7 @@ async function forceRelease(session) {
             }
           } catch (err) {
             const serverError = commonUtil.getErrorMessage(err);
-            logger.error('Failed to release session lock', serverError);
+            logger.error(err);
             commonUtil.showToast(`${translate('Failed to release session lock.')} ${serverError}`);
           } finally {
             loader.dismiss();
@@ -518,7 +518,7 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     router.push(`/session-count-detail/${session.workEffortId}/${workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Error checking session lock before navigation', serverError);
+    logger.error('Error checking session lock before navigation', err);
     commonUtil.showToast(`${translate("Failed to check session lock. Please try again.")} ${serverError}`);
   }
 }

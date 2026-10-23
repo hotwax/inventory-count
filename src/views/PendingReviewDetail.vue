@@ -652,8 +652,8 @@ async function showEditImportItemsModal() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to load count details", serverError);
-    commonUtil.showToast(`${translate("Failed to load count details.")} ${serverError}`);
+    logger.error("Failed to load count details", err);
+    commonUtil.showToast(`${translate("Failed to load count details")}. ${serverError}`);
   }
 }
 
@@ -719,7 +719,7 @@ async function saveEditImportItems() {
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
     logger.error("Failed to update count", serverError);
-    commonUtil.showToast(`${translate("Failed to update count.")} ${serverError}`);
+    commonUtil.showToast(`${translate("Failed to update count")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -790,8 +790,8 @@ async function removeProductFromSession() {
     closeSessionPopover();
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to remove item", serverError);
-    commonUtil.showToast(`${translate("Failed to remove item.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to remove item")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -942,8 +942,8 @@ async function submitSingleProductReview(
     submittedItemsCount.value++;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to submit review", serverError);
-    commonUtil.showToast(`${translate("Failed to submit review.")} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate("Failed to submit review")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -989,8 +989,8 @@ async function submitSelectedProductReviews(outcome: any) {
     commonUtil.showToast(translate("Submitted successfully."));
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to submit selected product reviews", serverError);
-    commonUtil.showToast(`${translate("Failed to submit review.")} ${serverError}`);
+    logger.error("Failed to submit selected product reviews", err);
+    commonUtil.showToast(`${translate("Failed to submit review")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
@@ -1009,8 +1009,8 @@ async function closeCycleCount() {
     router.replace(`/closed/${props.workEffortId}`);
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to close cycle count", serverError);
-    commonUtil.showToast(`${translate("Failed to close cycle count.")} ${serverError}`);
+    logger.error("Failed to close cycle count", err);
+    commonUtil.showToast(`${translate("Failed to close cycle count")}. ${serverError}`);
   }
   loader.dismiss();
 }
@@ -1071,8 +1071,8 @@ async function performBulkCloseAction() {
     await closeCycleCount();
   } catch (error: any) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to execute bulk close action", serverError);
-    commonUtil.showToast(`${translate("Bulk action failed.")} ${serverError}`);
+    logger.error(error);
+    commonUtil.showToast(`${translate("Bulk action failed")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();

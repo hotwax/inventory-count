@@ -267,8 +267,8 @@ async function getWorkEffortDetails() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch cycle count details", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch cycle count details.")} ${serverError}`);
+    logger.error("Failed to fetch cycle count details", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count details")}. ${serverError}`);
   }
 }
 
@@ -290,8 +290,8 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch count sessions", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch count sessions.")} ${serverError}`);
+    logger.error("Failed to fetch count sessions", error);
+    commonUtil.showToast(`${translate("Failed to fetch count sessions")}. ${serverError}`);
   }
 }
 
@@ -336,8 +336,8 @@ async function getInventoryCycleCount() {
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch cycle count records", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch cycle count records.")} ${serverError}`);
+    logger.error("Failed to fetch cycle count records", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle count records")}. ${serverError}`);
     aggregatedSessionItems.value = [];
   }
 }

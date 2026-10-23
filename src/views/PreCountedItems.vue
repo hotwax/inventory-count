@@ -292,8 +292,8 @@ async function getInventoryCycleCount() {
     inventoryCountImport.value = sessionResp.data
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error('Failed to fetch count and session details', serverError);
-    commonUtil.showToast(`${translate('Failed to fetch count and session details.')} ${serverError}`);
+    logger.error(error);
+    commonUtil.showToast(`${translate('Failed to fetch count and session details')}. ${serverError}`);
   }
 }
 
@@ -355,8 +355,8 @@ async function getProductBySearch(term: string) {
     if (products.length === 0) commonUtil.showToast(`No products found for "${term}"`)
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to fetch products', serverError);
-    commonUtil.showToast(`${translate('Failed to fetch products.')} ${serverError}`);
+    logger.error(err);
+    commonUtil.showToast(`${translate('Failed to fetch products')}. ${serverError}`);
   } finally {
     isSearching.value = false
   }
@@ -444,8 +444,8 @@ async function addAllProductsToScanEvents() {
     commonUtil.showToast(translate('Items Saved'))
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Error saving products', serverError);
-    commonUtil.showToast(`${translate('Failed to save hand-counted items.')} ${serverError}`);
+    logger.error('Error saving products', err);
+    commonUtil.showToast(`${translate('Failed to save hand-counted items')}. ${serverError}`);
   }
 }
 

@@ -276,8 +276,8 @@ async function updateFacilityOnCycleCount() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to update cycle count", serverError);
-    commonUtil.showToast(`${translate("Failed to update cycle count.")} ${serverError}`);
+    logger.error("Failed to Update Cycle Count", error);
+    commonUtil.showToast(`${translate("Failed to Update Cycle Count")}. ${serverError}`);
   }
   loader.dismiss();
   closeModal();
@@ -352,8 +352,8 @@ async function getAssignedCycleCounts() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch cycle counts", serverError);
-    commonUtil.showToast(`${translate("Failed to fetch cycle counts.")} ${serverError}`);
+    logger.error("Failed to fetch cycle counts", error);
+    commonUtil.showToast(`${translate("Failed to fetch cycle counts")}. ${serverError}`);
   }
 }
 
