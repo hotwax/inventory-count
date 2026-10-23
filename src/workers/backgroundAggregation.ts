@@ -383,7 +383,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     for (const scan of scans) {
       const key = scan.productId || scan.scannedValue?.trim()
       if (!key) continue
-      grouped[key] = (grouped[key] || 0) + (scan.quantity || 1)
+      grouped[key] = (grouped[key] || 0) + (scan.quantity ?? 1)
     }
 
     let processed = 0
@@ -418,6 +418,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: (existing.quantity || 0) + quantity,
+          countedByUserLoginId: context.userLoginId,
           // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
@@ -432,6 +433,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           productIdentifier: scannedValue,
           productId: productId || null,
           quantity,
+          countedByUserLoginId: context.userLoginId,
           facilityId: context.facilityId,
           isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,

@@ -19,6 +19,7 @@ export interface ProductInventory {
 }
 
 export interface InventoryCountImportItem {
+  countedByUserLoginId?: string | null
   inventoryCountImportId: string
   productId: string | null
   uuid: string
@@ -39,6 +40,7 @@ export interface InventoryCountImportItem {
 }
 
 export interface ScanEvent {
+  countedByUserLoginId?: string | null
   id?: number
   scannedValue?: string,
   negatedScanEventId?: number | null,

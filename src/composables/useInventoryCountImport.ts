@@ -7,7 +7,7 @@ import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
 import { getUploadFileParamName } from '@/services/utils';
-import { needsInventoryCountSync } from '@/services/inventoryCountRecord';
+import { hasRecordedCount, needsInventoryCountSync } from '@/services/inventoryCountRecord';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -58,6 +58,7 @@ function currentMillis(): number {
         productIdentifier: item.productIdentifier || '',
         locationSeqId: item.locationSeqId || null,
         quantity: item.quantity || 0,
+        countedByUserLoginId: item.countedByUserLoginId || null,
         status: 'active',
         facilityId,
         createdAt: item.createdDate || currentMillis(),
@@ -84,7 +85,7 @@ function currentMillis(): number {
     }
   }
 
-  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
+  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string, includeConfirmedZero = false) {
     if (!keyword?.trim()) return []    
 
     const value = keyword.trim().toLowerCase()
@@ -93,11 +94,11 @@ function currentMillis(): number {
     let searchByProductIdQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
 
     if (segment === 'counted') {
-      tableQuery = tableQuery.and(item => item.quantity > 0)
-      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity > 0)
+      tableQuery = tableQuery.and(item => item.quantity > 0 || (includeConfirmedZero && hasRecordedCount(item)))
+      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity > 0 || (includeConfirmedZero && hasRecordedCount(item)))
     } else if (segment === 'uncounted') {
-      tableQuery = tableQuery.and(item => item.quantity === 0)
-      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity === 0)
+      tableQuery = tableQuery.and(item => item.quantity === 0 && !(includeConfirmedZero && hasRecordedCount(item)))
+      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity === 0 && !(includeConfirmedZero && hasRecordedCount(item)))
     } else if (segment === 'undirected') {
       tableQuery = tableQuery.and(item => item.isRequested === 'N')
       searchByProductIdQuery = searchByProductIdQuery.and(item => item.isRequested === 'N')
@@ -246,6 +247,7 @@ function currentMillis(): number {
         map.set(key, { ...item });
       } else {
         const existing = map.get(key);
+        existing.countedByUserLoginId ||= item.countedByUserLoginId;
         existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
         const existingSequence = Number(existing.importItemSeqId);
         const itemSequence = Number(item.importItemSeqId);
@@ -310,16 +312,69 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
+  // Handcount edits totals, including scans saved locally but not yet aggregated.
+  async function readAssignedHandCountItems(inventoryCountImportId: string) {
+    const records = await db.inventoryCountRecords.where('inventoryCountImportId').equals(inventoryCountImportId).toArray();
+    const items = groupByProductAndSum(records.filter(item => item.productId && item.isRequested !== 'N'));
+    const byProduct = new Map(items.map(item => [item.productId, item]));
+    const pending = await db.scanEvents.where('inventoryCountImportId').equals(inventoryCountImportId)
+      .and(event => event.aggApplied === 0).toArray();
+    for (const event of pending) {
+      const item = byProduct.get(event.productId);
+      if (item) {
+        item.quantity = Number(item.quantity || 0) + Number(event.quantity || 0);
+        item.countedByUserLoginId = event.countedByUserLoginId || item.countedByUserLoginId;
+        item.lastUpdatedAt = Math.max(Number(item.lastUpdatedAt || 0), Number(event.createdAt || 0));
+      }
+    }
+    return items;
+  }
+
+  const getAssignedHandCountItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') => liveQuery(async () => {
+    const items = await readAssignedHandCountItems(inventoryCountImportId);
+    const products = await db.products.bulkGet(items.map(item => item.productId));
+    const byId = new Map(products.filter(Boolean).map(product => [product!.productId, product]));
+    return sortSessionItems(items.map(item => ({ ...item, product: byId.get(item.productId) })), sortMode);
+  });
+
+  async function saveHandCountTotals(inventoryCountImportId: string, edits: {
+    productId: string; quantity: number; expectedQuantity: number;
+  }[], countedByUserLoginId: string) {
+    if (!countedByUserLoginId) throw new Error('Counter unavailable');
+    // Atomically validate every row and enqueue deltas. A failed batch or repeated
+    // save cannot partially apply or silently overwrite a newer local count.
+    await db.transaction('rw', db.inventoryCountRecords, db.scanEvents, async () => {
+      const items = new Map((await readAssignedHandCountItems(inventoryCountImportId)).map(item => [item.productId, item]));
+      const seen = new Set<string>();
+      const events: ScanEvent[] = [];
+      for (const edit of edits) {
+        const item = items.get(edit.productId);
+        if (!item || seen.has(edit.productId) || !Number.isFinite(edit.quantity) || edit.quantity < 0) {
+          throw new Error('Invalid handcount quantity');
+        }
+        seen.add(edit.productId);
+        const current = Number(item.quantity || 0);
+        if (current !== edit.expectedQuantity) throw new Error('Count changed; refresh before saving');
+        const quantity = edit.quantity - current;
+        if (!quantity && (edit.quantity !== 0 || hasRecordedCount(item))) continue;
+        events.push({ inventoryCountImportId, productId: edit.productId, countedByUserLoginId,
+          scannedValue: item.productIdentifier || edit.productId, quantity,
+          createdAt: currentMillis(), aggApplied: 0 });
+      }
+      if (events.length) await db.scanEvents.bulkAdd(events);
+    });
+  }
+
+  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned', includeConfirmedZero = false) =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
         .equals(inventoryCountImportId)
-        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId) && Number(item.quantity) > 0))
+        .filter(item => ((item.isRequested === 'Y' || item.isRequested === null) && Boolean(item.productId)))
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) > 0);
+      .filter(item => (Number(item.quantity) || 0) > 0 || (includeConfirmedZero && hasRecordedCount(item)));
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
@@ -330,7 +385,7 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
+  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned', includeConfirmedZero = false) =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -338,7 +393,7 @@ function currentMillis(): number {
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) === 0);
+      .filter(item => (Number(item.quantity) || 0) === 0 && !(includeConfirmedZero && hasRecordedCount(item)));
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
@@ -596,6 +651,8 @@ export function useInventoryCountImport() {
     createCycleCountFromProducts,
     discardSession,
     getCountedItems,
+    getAssignedHandCountItems,
+    saveHandCountTotals,
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,

@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, IonModal, IonPopover, IonButtons, IonMenuButton } from '@ionic/vue';
+import { IonButton, IonContent, IonHeader, IonIcon, IonItem, IonItemDivider, IonLabel, IonList, IonListHeader, IonNote,   IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, onIonViewDidEnter, onIonViewWillLeave, IonModal, IonPopover, IonButtons, IonMenuButton } from '@ionic/vue';
 import { cloudUploadOutline, ellipsisVerticalOutline, bookOutline, close, downloadOutline, openOutline } from "ionicons/icons";
 import { commonUtil, translate, logger } from '@common';
 import { onBeforeUnmount, ref } from "vue";
@@ -166,21 +166,24 @@ let countdownInterval = null;
 onIonViewDidEnter(async () => {
   resetDefaults();
 
-  await fetchSystemMessages();
-  await fetchJobExecutionTime();
-
+  // Register timers before awaiting requests so leaving can always stop them.
   startCountdownTimer();
 
   refreshInterval = setInterval(async () => {
     await fetchSystemMessages();
     await fetchJobExecutionTime();
   }, 15000);
+
+  await fetchSystemMessages();
+  await fetchJobExecutionTime();
 });
 
-onBeforeUnmount(() => {
+function stopTimers() {
   clearInterval(refreshInterval);
   clearInterval(countdownInterval);
-});
+}
+onIonViewWillLeave(stopTimers);
+onBeforeUnmount(stopTimers);
 
 async function fetchSystemMessages() {
   systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();

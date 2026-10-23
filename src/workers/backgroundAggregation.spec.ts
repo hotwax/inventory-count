@@ -67,6 +67,14 @@ beforeEach(async () => {
 afterEach(() => { state.api.stopScheduling(); vi.unstubAllGlobals(); });
 
 describe("final session flush", () => {
+  it("aggregates and syncs an explicit zero without changing it to one", async () => {
+    state.db.rows.inventoryCountRecords[0].quantity = 0;
+    state.db.rows.products.push({ productId: "P1" });
+    state.db.rows.scanEvents.push({ id: 1, inventoryCountImportId: "S1", productId: "P1", quantity: 0, aggApplied: 0, countedByUserLoginId: "counter" });
+    await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0, pendingRecords: 0 });
+    expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+    expect(state.request.mock.calls[0][0].data.items[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
   it("waits for acknowledgment before marking a record synced", async () => {
     const response = deferred();
     state.request.mockReturnValueOnce(response.promise);

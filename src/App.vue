@@ -17,7 +17,6 @@
             >
               <ion-item
                 button
-                router-direction="root"
                 :router-link="page.path"
                 :class="{ selected: selectedIndex === index }"
                 :data-testid="'app-menu-item-' + page.path.substring(1)"
@@ -57,12 +56,14 @@ import {
   loadingController
 } from '@ionic/vue';
 import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
-import { commonUtil, translate, logger, emitter } from "@common";
+import { commonUtil, translate, logger, emitter, useIosKeyboardScroll } from "@common";
 import { useProductStore } from '@/stores/productStore';
 import { Settings } from 'luxon';
 import { useUserProfile } from './stores/userProfileStore';
 import router from './router';
 import Actions from "@/authorization/actions";
+
+useIosKeyboardScroll({ scrollContainerSelector: '.count-dashboard, .virtual-list' });
 
 const userProfile = computed(() => useUserProfile().getUserProfile);
 const userToken = commonUtil.getToken();

@@ -119,7 +119,7 @@
                         </ion-item>
                       </div>
                         <ion-label class="stat" data-testid="assigned-detail-product-count-stat">
-                          <span data-testid="assigned-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="assigned-detail-product-system-qty">{{ item.systemQuantityOnHand || '-' }}</span>
+                          <span data-testid="assigned-detail-product-counted-qty">{{ item.quantity ?? '-' }}</span>/<span data-testid="assigned-detail-product-system-qty">{{ item.systemQuantityOnHand ?? '-' }}</span>
                           <p>{{ translate("counted/systemic") }}</p>
                         </ion-label>
                         <ion-label class="stat" data-testid="assigned-detail-product-variance-stat">

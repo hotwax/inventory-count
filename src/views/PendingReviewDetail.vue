@@ -718,7 +718,7 @@ async function saveEditImportItems() {
     closeEditImportItemModal();
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to update count", serverError);
+    logger.error("Failed to update count", err);
     commonUtil.showToast(`${translate("Failed to update count")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
