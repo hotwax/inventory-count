@@ -32,7 +32,7 @@ function memoryDb(records: any[]) {
           equalsIgnoreCase: (value: string) => collection(row => String(row[field]).toLowerCase() === value.toLowerCase()),
           anyOf: (values: any[]) => collection(row => values.some(value => JSON.stringify(key(row, field)) === JSON.stringify(value))),
         },
-      get: (id: string) => Promise.resolve(structuredClone(rows[name].find(row => row.productId === id))),
+      get: (id: any) => Promise.resolve(structuredClone(rows[name].find(row => Array.isArray(id) ? row.facilityId === id[0] && row.uuid === id[1] : row.productId === id))),
       put: (value: any) => {
         const i = rows[name].findIndex(row => row.uuid === value.uuid);
         if(i < 0) {rows[name].push(structuredClone(value));} else {rows[name][i] = structuredClone(value);}
@@ -47,7 +47,7 @@ function memoryDb(records: any[]) {
     };
   };
 
-  return { open: async () => {}, table, rows };
+  return { open: async () => {}, table, rows, transaction: async (...args: any[]) => args.at(-1)() };
 }
 const context = { omsInstance: "unit-only", facilityId: "F1", barcodeIdentification: "SKU" };
 const item = () => ({ inventoryCountImportId: "S1", uuid: "I1", productId: "P1", quantity: 12, facilityId: "F1", systemQuantityOnHand: 0, lastUpdatedAt: 10, lastSyncedAt: null });
@@ -130,5 +130,36 @@ describe("final session flush", () => {
     response.resolve({});
     // Queued behind the scheduled flush, so this settles it before teardown.
     await state.api.flushSession("S1", context);
+  });
+});
+
+
+describe("variance facility isolation", () => {
+  beforeEach(async () => {
+    await state.api.flushSession("unused", context); // Initialize the worker DB.
+    state.db.rows.varianceLogs = [
+      { id: 1, facilityId: "F1", scannedValue: "SKU-1", quantity: 2, aggApplied: 0 },
+      { id: 2, facilityId: "F2", scannedValue: "SKU-1", quantity: 7, aggApplied: 0 }
+    ];
+    state.db.rows.productIdentification.push({ productId: "P1", identKey: "SKU", value: "SKU-1" });
+    state.db.rows.inventoryAdjustments = [];
+  });
+
+  it("aggregates and resolves only the active facility's scans, including the same barcode", async () => {
+    await expect(state.api.aggregateVarianceLogs(context)).resolves.toBe(1);
+    expect(state.db.rows.inventoryAdjustments).toEqual([expect.objectContaining({ facilityId: "F1", quantity: 2, productId: "P1" })]);
+    expect(state.db.rows.varianceLogs[0]).toMatchObject({ aggApplied: 1, productId: "P1" });
+    expect(state.db.rows.varianceLogs[1]).toEqual({ id: 2, facilityId: "F2", scannedValue: "SKU-1", quantity: 7, aggApplied: 0 });
+    await state.api.aggregateVarianceLogs({ ...context, facilityId: "F2" });
+    expect(state.db.rows.inventoryAdjustments).toHaveLength(2);
+    expect(state.db.rows.inventoryAdjustments[1]).toMatchObject({ facilityId: "F2", quantity: 7 });
+  });
+
+  it("does not resolve or mark another facility's unmatched scans as aggregated", async () => {
+    state.db.rows.inventoryAdjustments.push({ uuid: "U1", facilityId: "F1", scannedValue: "SKU-1", quantity: 2 });
+    await state.api.matchUnmatchedInventoryAdjustment("U1", "P1", context);
+    expect(state.db.rows.varianceLogs[0]).toMatchObject({ productId: "P1", aggApplied: 1 });
+    expect(state.db.rows.varianceLogs[1]).toMatchObject({ aggApplied: 0 });
+    expect(state.db.rows.varianceLogs[1].productId).toBeUndefined();
   });
 });
