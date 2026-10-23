@@ -1,4 +1,13 @@
 {
+  "Save changes: {count}": "Save changes: {count}",
+  "No unsaved changes": "No unsaved changes",
+  "Unsaved changes: {count}": "Unsaved changes: {count}",
+  "Counted quantity: {product}": "Counted quantity: {product}",
+  "Increase quantity: {product}": "Increase quantity: {product}",
+  "Decrease quantity: {product}": "Decrease quantity: {product}",
+  "Not in stock: {product}": "Not in stock: {product}",
+  "Counted · 0": "Counted · 0",
+  "Product": "Product",
   "Not in stock": "Not in stock",
   "Preferred identifier": "Preferred identifier",
   "A count cannot have more than": "A count cannot have more than",

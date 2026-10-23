@@ -1,5 +1,5 @@
 /* eslint-disable require-await -- Async mocks preserve the production service contracts. */
-import { IonButton, IonInput, IonSearchbar, IonSegment, IonSelect } from "@ionic/vue";
+import { IonButton, IonCheckbox, IonInput, IonSearchbar, IonSelect } from "@ionic/vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,35 +52,43 @@ async function screen() {
 
   return wrapper;
 }
-async function select(wrapper: any, value: string) { wrapper.findComponent(IonSegment).vm.$emit("update:modelValue", value); await flushPromises(); }
+async function select(wrapper: any, value: string) { wrapper.vm.segment = value; await flushPromises(); }
 const input = (wrapper: any, id: string) => wrapper.findAllComponents(IonInput).find((x: any) => x.attributes("data-testid") === `handcount-quantity-${ id}`)!;
+async function toggleZero(wrapper: any, id: string) {
+  const checkbox = wrapper.findAllComponents(IonCheckbox).find((x: any) => x.attributes("data-testid") === `handcount-zero-${id}`)!;
+  checkbox.vm.$emit("ionChange", { detail: { checked: !checkbox.props("checked") } });
+  await flushPromises();
+}
 describe("directed handcount screen", () => {
   it("stages and saves an explicit zero, keeping it counted after re-entry", async () => {
     const wrapper = await screen();
-    await wrapper.get("[data-testid=\"handcount-zero-P1\"]").trigger("click");
+    await toggleZero(wrapper, "P1");
     expect(input(wrapper, "P1").props("value")).toBe("0");
     expect(wrapper.get("[data-testid=\"handcount-row-P1\"]").text()).toContain("Unsaved changes");
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    await wrapper.vm.save(); await flushPromises();
     expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 0, expectedQuantity: 0 }], "user");
     expect(wrapper.find("[data-testid=\"handcount-row-P1\"]").exists()).toBe(false);
     await select(wrapper, "counted");
     expect(input(wrapper, "P1").props("value")).toBe("0");
+    expect(wrapper.get("[data-testid=\"handcount-row-P1\"]").text()).toContain("Counted · 0");
+    expect(wrapper.findComponent(IonCheckbox).props("checked")).toBe(true);
+    expect(wrapper.findComponent(IonCheckbox).props("disabled")).toBe(true);
     state.rows[0].countedByUserLoginId = "user";
     await wrapper.setProps({ active: false }); await wrapper.setProps({ active: true }); await flushPromises();
     expect(input(wrapper, "P1").props("value")).toBe("0");
   });
   it("can undo a staged zero, edit it above zero, and retain it after a save failure", async () => {
     const wrapper = await screen();
-    const zero = () => wrapper.get("[data-testid=\"handcount-zero-P1\"]");
-    await zero().trigger("click"); await zero().trigger("click");
+    const zero = () => wrapper.findAllComponents(IonCheckbox).find(x => x.attributes("data-testid") === "handcount-zero-P1")!;
+    await toggleZero(wrapper, "P1"); await toggleZero(wrapper, "P1");
     expect(wrapper.text()).not.toContain("Unsaved changes");
     input(wrapper, "P1").vm.$emit("ionInput", { detail: { value: "0" } }); await flushPromises();
-    expect(zero().attributes("aria-pressed")).toBe("true");
+    expect(zero().props("checked")).toBe(true);
     await wrapper.get("[data-testid=\"handcount-increase-P1\"]").trigger("click");
-    expect(zero().attributes("aria-pressed")).toBe("false");
-    await zero().trigger("click"); state.save.mockRejectedValueOnce(Error("offline"));
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
-    expect(zero().attributes("aria-pressed")).toBe("true");
+    expect(zero().props("checked")).toBe(false);
+    await toggleZero(wrapper, "P1"); state.save.mockRejectedValueOnce(Error("offline"));
+    await wrapper.vm.save(); await flushPromises();
+    expect(zero().props("checked")).toBe(true);
     expect(wrapper.text()).toContain("Unsaved changes");
   });
   it("shares the list sort preference and retains drafts while changing it", async () => {
@@ -109,7 +117,7 @@ describe("directed handcount screen", () => {
     expect(wrapper.find("[data-testid=\"handcount-row-P1\"]").exists()).toBe(true);
     await select(wrapper, "counted"); await select(wrapper, "assigned");
     expect(input(wrapper, "P1").props("value")).toBe("1");
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    await wrapper.vm.save(); await flushPromises();
     expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 1, expectedQuantity: 0 }], "user");
     await select(wrapper, "uncounted");
     expect(wrapper.find("[data-testid=\"handcount-empty\"]").exists()).toBe(true);
@@ -118,7 +126,7 @@ describe("directed handcount screen", () => {
     const wrapper = await screen(); await select(wrapper, "counted");
     expect(input(wrapper, "P2").props("value")).toBe("3");
     await wrapper.get("[data-testid=\"handcount-increase-P2\"]").trigger("click");
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    await wrapper.vm.save(); await flushPromises();
     expect(state.save).toHaveBeenCalledWith("S1", [{ productId: "P2", quantity: 4, expectedQuantity: 3 }], "user");
     await select(wrapper, "assigned");
     const minus = wrapper.findAllComponents(IonButton).find(x => x.attributes("data-testid") === "handcount-decrease-P1")!;
@@ -128,12 +136,12 @@ describe("directed handcount screen", () => {
     const wrapper = await screen();
     for(const value of ["", "-1"]) {
       input(wrapper, "P1").vm.$emit("ionInput", { detail: { value } }); await flushPromises();
-      await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+      await wrapper.vm.save(); await flushPromises();
       expect(state.save).not.toHaveBeenCalled();
     }
     input(wrapper, "P1").vm.$emit("ionInput", { detail: { value: "2" } }); await flushPromises();
     state.save.mockRejectedValueOnce(Error("disk full"));
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    await wrapper.vm.save(); await flushPromises();
     expect(input(wrapper, "P1").props("value")).toBe("2");
     expect(wrapper.text()).toContain("Unsaved changes");
   });
@@ -152,7 +160,7 @@ describe("directed handcount screen", () => {
   it("keeps drafts if the product cannot be cached for aggregation", async () => {
     const wrapper = await screen(); state.productAvailable = false;
     await wrapper.get("[data-testid=\"handcount-increase-P1\"]").trigger("click");
-    await wrapper.get("[data-testid=\"handcount-save-btn\"]").trigger("click"); await flushPromises();
+    await wrapper.vm.save(); await flushPromises();
     expect(state.save).not.toHaveBeenCalled();
     expect(input(wrapper, "P1").props("value")).toBe("1");
   });
