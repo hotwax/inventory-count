@@ -54,6 +54,15 @@ describe("directed handcount totals", () => {
     counts.getAssignedHandCountItems("S1");
     expect((await state.query()).map((item: any) => [item.productId, item.quantity])).toEqual([["P2", 0], ["P1", 5]]);
   });
+  it("uses the shared alphabetical and last-updated orders, including pending saves", async () => {
+    counts.getAssignedHandCountItems("S1", "alphabetic");
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P1", "P2"]);
+    state.records[0].lastUpdatedAt = 20;
+    state.records[1].lastUpdatedAt = 10;
+    state.scans.push({ inventoryCountImportId: "S1", productId: "P2", quantity: 1, createdAt: 30, aggApplied: 0 });
+    counts.getAssignedHandCountItems("S1", "lastUpdated");
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P2", "P1"]);
+  });
   it("saves a total of five over an existing three as two additional units", async () => {
     await counts.saveHandCountTotals("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
     expect(state.scans).toEqual([expect.objectContaining({ productId: "P1", scannedValue: "SKU1", quantity: 2, aggApplied: 0 })]);

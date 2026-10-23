@@ -12,6 +12,20 @@
       </ion-segment-button>
     </ion-segment>
     <ion-searchbar v-model="query" :placeholder="translate('Search assigned products')" data-testid="handcount-search" />
+    <ion-item lines="none" data-testid="handcount-sort-item">
+      <ion-icon slot="start" :icon="swapVerticalOutline" />
+      <ion-select v-model="sessionSort" :label="translate('Sort by')" label-placement="start" interface="popover" data-testid="handcount-sort">
+        <ion-select-option value="assigned">
+          {{ translate('Assigned order') }}
+        </ion-select-option>
+        <ion-select-option value="alphabetic">
+          {{ translate('Alphabetical') }}
+        </ion-select-option>
+        <ion-select-option value="lastUpdated">
+          {{ translate('Last updated') }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
     <ion-item lines="none">
       <ion-label>
         <p>{{ translate('Enter the total counted quantity for each item.') }}</p>
@@ -36,7 +50,7 @@
     </ion-item>
     <DynamicScroller
       v-if="!loading && !error && visibleItems.length"
-      :key="segment + ':' + query"
+      :key="segment + ':' + query + ':' + sessionSort"
       :items="visibleItems"
       key-field="productId"
       :min-item-size="96"
@@ -59,7 +73,12 @@
                 </ion-thumbnail>
                 <ion-label>
                   <h2>{{ primaryLabel(item) }}</h2>
-                  <p>{{ productMaster.secondaryId(item.product) }}</p>
+                  <p v-if="fallbackMessage(item)">
+                    {{ fallbackMessage(item) }}
+                  </p>
+                  <p v-if="secondaryLabel(item)">
+                    {{ secondaryLabel(item) }}
+                  </p>
                   <p v-if="drafts[item.productId]">
                     {{ translate('Unsaved changes') }}
                   </p>
@@ -113,13 +132,14 @@
 
 <script setup lang="ts">
 import { commonUtil, translate } from "@common";
-import { IonButton, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonThumbnail, alertController } from "@ionic/vue";
-import { addOutline, removeOutline } from "ionicons/icons";
+import { IonButton, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSkeletonText, IonThumbnail, alertController } from "@ionic/vue";
+import { addOutline, removeOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import Image from "@/components/Image.vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
+import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
 import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 import { useProductStore } from "@/stores/productStore";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -127,6 +147,14 @@ import { useUserProfile } from "@/stores/userProfileStore";
 const props = defineProps<{ inventoryCountImportId: string; active: boolean }>();
 const counts = useInventoryCountImport();
 const productMaster = useProductMaster();
+const userProfile = useUserProfile();
+const productStore = useProductStore();
+const sessionSort = computed({
+  get: () => userProfile.getSessionDetailFilters?.sort || "assigned",
+  set: (value: string) => userProfile.updateUiFilter("sessionDetail", "sort", value)
+});
+const { getSessionItemPrimaryLabel: primaryLabel, getSessionItemSecondaryLabel: secondaryLabel,
+  getSessionItemFallbackMessage: fallbackMessage } = useSessionItemDisplay();
 const items = ref<any[]>([]);
 const drafts = ref<Record<string, { value: string; expectedQuantity: number }>>({});
 const segment = ref("uncounted");
@@ -139,7 +167,6 @@ let subscription: { unsubscribe(): void } | undefined;
 let visit = 0;
 let sessionId = "";
 const uncountedCount = computed(() => items.value.filter(item => Number(item.quantity) === 0).length);
-const primaryLabel = (item: any) => productMaster.primaryId(item.product) || item.productIdentifier || item.productId;
 const visibleItems = computed(() => {
   const term = query.value.trim().toLowerCase();
 
@@ -203,18 +230,7 @@ async function load() {
       if(id !== visit) {return;}
       if(response.data.length < pageSize) {break;}
     }
-    subscription = counts.getAssignedHandCountItems(props.inventoryCountImportId).subscribe({
-      next: (rows: any[]) => {
-        if(id !== visit) {return;}
-        items.value = rows;
-        loading.value = false;
-      },
-      error: () => {
-        if(id !== visit) {return;}
-        error.value = translate("Failed to load assigned items.");
-        loading.value = false;
-      }
-    });
+    subscribeToItems(id);
     const productIds = await counts.getSessionProductIds(props.inventoryCountImportId);
     if(id === visit && productIds.length) {void productMaster.prefetch(productIds).catch(() => undefined);}
   } catch {
@@ -224,6 +240,25 @@ async function load() {
     }
   }
 }
+function subscribeToItems(id: number) {
+  subscription?.unsubscribe();
+  subscription = counts.getAssignedHandCountItems(props.inventoryCountImportId, sessionSort.value).subscribe({
+    next: (rows: any[]) => {
+      if(id !== visit) {return;}
+      items.value = rows;
+      loading.value = false;
+    },
+    error: () => {
+      if(id !== visit) {return;}
+      error.value = translate("Failed to load assigned items.");
+      loading.value = false;
+    }
+  });
+}
+// Reorder the live list without rehydrating it or discarding unsaved quantities.
+watch([sessionSort, () => productStore.getPrimaryId], () => {
+  if(subscription && props.active) {subscribeToItems(visit);}
+});
 async function save(): Promise<boolean> {
   if(!canSave.value) {return false;}
   saving.value = true;

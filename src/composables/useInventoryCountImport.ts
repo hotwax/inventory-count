@@ -319,16 +319,19 @@ function currentMillis(): number {
       .and(event => event.aggApplied === 0).toArray();
     for (const event of pending) {
       const item = byProduct.get(event.productId);
-      if (item) item.quantity = Number(item.quantity || 0) + Number(event.quantity || 0);
+      if (item) {
+        item.quantity = Number(item.quantity || 0) + Number(event.quantity || 0);
+        item.lastUpdatedAt = Math.max(Number(item.lastUpdatedAt || 0), Number(event.createdAt || 0));
+      }
     }
     return items;
   }
 
-  const getAssignedHandCountItems = (inventoryCountImportId: string) => liveQuery(async () => {
+  const getAssignedHandCountItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') => liveQuery(async () => {
     const items = await readAssignedHandCountItems(inventoryCountImportId);
     const products = await db.products.bulkGet(items.map(item => item.productId));
     const byId = new Map(products.filter(Boolean).map(product => [product!.productId, product]));
-    return sortSessionItems(items.map(item => ({ ...item, product: byId.get(item.productId) })), 'assigned');
+    return sortSessionItems(items.map(item => ({ ...item, product: byId.get(item.productId) })), sortMode);
   });
 
   async function saveHandCountTotals(inventoryCountImportId: string, edits: {

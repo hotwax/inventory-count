@@ -1,15 +1,15 @@
 /* eslint-disable require-await -- Async mocks preserve the production service contracts. */
-import { IonButton, IonInput, IonSearchbar, IonSegment } from "@ionic/vue";
+import { IonButton, IonInput, IonSearchbar, IonSegment, IonSelect } from "@ionic/vue";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ rows: [] as any[], save: vi.fn(), toast: vi.fn(), unsubscribe: vi.fn(),
-  productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false }));
+  sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false }));
 vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { hasError: () => false, showToast: state.toast } }));
 vi.mock("@/components/Image.vue", () => ({ default: { template: "<img />" } }));
 vi.mock("@/services/sessionSyncLifecycle", () => ({ waitForSessionTeardown: async () => undefined }));
-vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" } }) }));
-vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1" }) }));
+vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getPrimaryId: state.primaryId, getProductIdentificationOptions: [], getGoodIdentificationOptions: [] }) }));
+vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1", getSessionDetailFilters: filters, updateUiFilter: (_page: string, _key: string, value: string) => { filters.sort = value; } }) }));
 vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ primaryId: (p: any) => p?.sku || "", secondaryId: () => "", prefetch: vi.fn(), getById: async (id: string) => ({ product: state.productAvailable ? { productId: id } : undefined }) }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({
   getInventoryCountImportSession: async () => ({ status: 200, data: { statusId: state.status } }),
@@ -20,7 +20,8 @@ vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImpor
     return { status: 200, data: [] };
   },
   storeInventoryCountItems: async () => undefined, getSessionProductIds: async () => [],
-  getAssignedHandCountItems: () => ({ subscribe: (listener: any) => {
+  getAssignedHandCountItems: (id: string, sort: string) => ({ subscribe: (listener: any) => {
+    state.subscribe(id, sort);
     listener.next(structuredClone(state.rows));
 
     return { unsubscribe: state.unsubscribe };
@@ -34,13 +35,17 @@ vi.mock("vue-virtual-scroller", () => ({
     template: "<div><slot v-for=\"(item, index) in items.slice(start, start + 50)\" :item=\"item\" :index=\"index\" :active=\"true\" /></div>" },
   DynamicScrollerItem: { template: "<div><slot /></div>" }
 }));
+import { reactive } from "vue";
+
+const filters = reactive({ sort: "assigned" });
 import DirectedHandCount from "@/components/DirectedHandCount.vue";
 
 enableAutoUnmount(afterEach);
 beforeEach(() => {
   vi.clearAllMocks(); state.save.mockReset().mockResolvedValue(undefined);
+  filters.sort = "assigned"; state.primaryId = "SKU";
   state.productAvailable = true; state.status = "SESSION_ASSIGNED"; state.lock = []; state.failLoad = false;
-  state.rows = [{ productId: "P1", quantity: 0, product: { sku: "BLUE-SHIRT" } }, { productId: "P2", quantity: 3, product: { sku: "BLACK-SHOES" } }];
+  state.rows = [{ productId: "P1", quantity: 0, product: { productId: "P1", internalName: "Blue shirt", goodIdentifications: [{ type: "SKU", value: "BLUE-SHIRT" }] } }, { productId: "P2", quantity: 3, product: { productId: "P2", goodIdentifications: [{ type: "SKU", value: "BLACK-SHOES" }] } }];
 });
 async function screen() {
   const wrapper = mount(DirectedHandCount, { props: { inventoryCountImportId: "S1", active: true } }); await flushPromises();
@@ -50,6 +55,23 @@ async function screen() {
 async function select(wrapper: any, value: string) { wrapper.findComponent(IonSegment).vm.$emit("update:modelValue", value); await flushPromises(); }
 const input = (wrapper: any, id: string) => wrapper.findAllComponents(IonInput).find((x: any) => x.attributes("data-testid") === `handcount-quantity-${ id}`)!;
 describe("directed handcount screen", () => {
+  it("shares the list sort preference and retains drafts while changing it", async () => {
+    filters.sort = "lastUpdated";
+    const wrapper = await screen();
+    expect(state.subscribe).toHaveBeenLastCalledWith("S1", "lastUpdated");
+    await wrapper.get("[data-testid=\"handcount-increase-P1\"]").trigger("click");
+    wrapper.findComponent(IonSelect).vm.$emit("update:modelValue", "alphabetic"); await flushPromises();
+    expect(filters.sort).toBe("alphabetic");
+    expect(state.subscribe).toHaveBeenLastCalledWith("S1", "alphabetic");
+    expect(input(wrapper, "P1").props("value")).toBe("1");
+  });
+  it("uses the configured primary identifier with the same fallback explanation as the scanner", async () => {
+    state.primaryId = "internalName";
+    const wrapper = await screen(); await select(wrapper, "assigned");
+    expect(wrapper.get("[data-testid=\"handcount-row-P1\"] h2").text()).toBe("Blue shirt");
+    expect(wrapper.get("[data-testid=\"handcount-row-P2\"] h2").text()).toBe("BLACK-SHOES");
+    expect(wrapper.get("[data-testid=\"handcount-row-P2\"]").text()).toContain("Preferred identifier");
+  });
   it("starts with remaining items, preserves edits across segments, and moves rows only after saving", async () => {
     const wrapper = await screen();
     expect(wrapper.find("[data-testid=\"handcount-row-P1\"]").exists()).toBe(true);
