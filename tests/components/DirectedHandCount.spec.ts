@@ -4,10 +4,16 @@ import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ rows: [] as any[], save: vi.fn(), toast: vi.fn(), unsubscribe: vi.fn(),
-  sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false }));
+  sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false, flush: vi.fn() }));
 vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { hasError: () => false, showToast: state.toast } }));
 vi.mock("@/components/Image.vue", () => ({ default: { template: "<img />" } }));
-vi.mock("@/services/sessionSyncLifecycle", () => ({ waitForSessionTeardown: async () => undefined }));
+vi.mock("@/composables/useHandCountSession", () => ({ useHandCountSession: () => {
+  const mutable = ref(false);
+
+  return { mutable, start: async () => { mutable.value = state.status === "SESSION_ASSIGNED" && !state.lock.length; },
+    stop: () => { mutable.value = false; }, checkMutable: async () => mutable.value && state.status === "SESSION_ASSIGNED" && !state.lock.length,
+    flush: state.flush };
+} }));
 vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getPrimaryId: state.primaryId, getProductIdentificationOptions: [], getGoodIdentificationOptions: [] }) }));
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1", getSessionDetailFilters: filters, updateUiFilter: (_page: string, _key: string, value: string) => { filters.sort = value; } }) }));
 vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ primaryId: (p: any) => p?.sku || "", secondaryId: () => "", prefetch: vi.fn(), getById: async (id: string) => ({ product: state.productAvailable ? { productId: id } : undefined }) }) }));
@@ -35,14 +41,14 @@ vi.mock("vue-virtual-scroller", () => ({
     template: "<div><slot v-for=\"(item, index) in items.slice(start, start + 50)\" :item=\"item\" :index=\"index\" :active=\"true\" /></div>" },
   DynamicScrollerItem: { template: "<div><slot /></div>" }
 }));
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 
 const filters = reactive({ sort: "assigned" });
 import DirectedHandCount from "@/components/DirectedHandCount.vue";
 
 enableAutoUnmount(afterEach);
 beforeEach(() => {
-  vi.clearAllMocks(); state.save.mockReset().mockResolvedValue(undefined);
+  vi.clearAllMocks(); state.flush.mockReset().mockResolvedValue(true); state.save.mockReset().mockResolvedValue(undefined);
   filters.sort = "assigned"; state.primaryId = "SKU";
   state.productAvailable = true; state.status = "SESSION_ASSIGNED"; state.lock = []; state.failLoad = false;
   state.rows = [{ productId: "P1", quantity: 0, product: { productId: "P1", internalName: "Blue shirt", goodIdentifications: [{ type: "SKU", value: "BLUE-SHIRT" }] } }, { productId: "P2", quantity: 3, product: { productId: "P2", goodIdentifications: [{ type: "SKU", value: "BLACK-SHOES" }] } }];
@@ -90,6 +96,16 @@ describe("directed handcount screen", () => {
     await wrapper.vm.save(); await flushPromises();
     expect(zero().props("checked")).toBe(true);
     expect(wrapper.text()).toContain("Unsaved changes");
+  });
+  it("reports a pending sync without replaying an already persisted edit", async () => {
+    const wrapper = await screen();
+    await toggleZero(wrapper, "P1");
+    state.flush.mockRejectedValueOnce(Error("offline"));
+    expect(await wrapper.vm.save()).toBe(true);
+    expect(state.toast).toHaveBeenLastCalledWith("Saved on this device. Waiting to sync.");
+    expect(wrapper.vm.draftCount).toBe(0);
+    await wrapper.vm.save();
+    expect(state.save).toHaveBeenCalledTimes(1);
   });
   it("shares the list sort preference and retains drafts while changing it", async () => {
     filters.sort = "lastUpdated";

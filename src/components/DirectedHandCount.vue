@@ -153,11 +153,11 @@ import { addOutline, removeOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import Image from "@/components/Image.vue";
+import { useHandCountSession } from "@/composables/useHandCountSession";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
 import { hasRecordedCount } from "@/services/inventoryCountRecord";
-import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 import { useProductStore } from "@/stores/productStore";
 import { useUserProfile } from "@/stores/userProfileStore";
 
@@ -178,7 +178,8 @@ const segment = ref("uncounted");
 const query = ref("");
 const loading = ref(true);
 const saving = ref(false);
-const mutable = ref(false);
+const session = useHandCountSession();
+const { mutable } = session;
 const error = ref("");
 let subscription: { unsubscribe(): void } | undefined;
 let visit = 0;
@@ -223,16 +224,7 @@ function stop() {
   visit++;
   subscription?.unsubscribe();
   subscription = undefined;
-}
-async function checkMutable() {
-  const response = await counts.getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId });
-  if(response?.status !== 200 || commonUtil.hasError(response)) {throw new Error("Session unavailable");}
-  const locks = await counts.getSessionLock({ inventoryCountImportId: props.inventoryCountImportId });
-  if(locks?.status !== 200 || commonUtil.hasError(locks)) {throw new Error("Session lock unavailable");}
-  const user = useUserProfile();
-
-  return response.data?.statusId === "SESSION_ASSIGNED" && !(locks.data?.entityValueList || []).some((lock: any) =>
-    lock.userId !== user.getUserProfile?.username || lock.deviceId !== user.getDeviceId);
+  session.stop();
 }
 async function load() {
   stop();
@@ -241,11 +233,8 @@ async function load() {
   error.value = "";
   mutable.value = false;
   try {
-    await waitForSessionTeardown();
+    await session.start(props.inventoryCountImportId);
     if(id !== visit) {return;}
-    const canEdit = await checkMutable();
-    if(id !== visit) {return;}
-    mutable.value = canEdit;
     // This also supports a direct link or a cold launch without the scanner page.
     const pageSize = 500;
     for(let pageIndex = 0; ; pageIndex++) {
@@ -262,6 +251,7 @@ async function load() {
     if(id === visit && productIds.length) {void productMaster.prefetch(productIds).catch(() => undefined);}
   } catch {
     if(id === visit) {
+      session.stop(false);
       error.value = translate("Failed to load assigned items.");
       loading.value = false;
     }
@@ -277,6 +267,7 @@ function subscribeToItems(id: number) {
     },
     error: () => {
       if(id !== visit) {return;}
+      session.stop(false);
       error.value = translate("Failed to load assigned items.");
       loading.value = false;
     }
@@ -290,7 +281,6 @@ async function save(): Promise<boolean> {
   if(!canSave.value) {return false;}
   saving.value = true;
   try {
-    if(!(await checkMutable())) {throw new Error("Session no longer available");}
     const edits = Object.entries(drafts.value).map(([productId, draft]) => ({ productId,
       quantity: Number(draft.value), expectedQuantity: draft.expectedQuantity }));
     // Aggregation resolves explicit product IDs through the product cache. Wait for
@@ -299,6 +289,7 @@ async function save(): Promise<boolean> {
       const { product } = await productMaster.getById(edit.productId);
       if(!product) {throw new Error("Product unavailable");}
     }
+    if(!(await session.checkMutable())) {throw new Error("Session no longer available");}
     await counts.saveHandCountTotals(props.inventoryCountImportId, edits, userProfile.getUserProfile?.username);
     // Apply the saved totals immediately; liveQuery then reconciles the same local scan events.
     for(const edit of edits) {
@@ -306,7 +297,10 @@ async function save(): Promise<boolean> {
       if(item) {item.quantity = edit.quantity; item.countedByUserLoginId = userProfile.getUserProfile?.username;}
     }
     drafts.value = {};
-    commonUtil.showToast(translate("Items Saved"));
+    // Local persistence succeeded. A sync failure must not replay the same delta.
+    let synced = false;
+    try { synced = await session.flush(); } catch { /* The scheduled worker retries pending records. */ }
+    commonUtil.showToast(synced ? translate("Items Saved") : translate("Saved on this device. Waiting to sync."));
 
     return true;
   } catch {
@@ -357,9 +351,9 @@ defineExpose({ confirmLeave, save, draftCount, canSave, segment, assignedCount, 
 </script>
 
 <style scoped>
-.handcount-screen { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; padding-bottom: var(--keyboard-offset, 0px); box-sizing: border-box; }
+.handcount-screen { display: flex; flex-direction: column; width: 100%; height: 100%; min-height: 0; box-sizing: border-box; }
 .handcount-screen > :not(.handcount-list) { flex-shrink: 0; }
-/* Keep virtual rows above the shared iOS keyboard offset. */
+/* ion-content already applies the shared keyboard offset to its inner viewport. */
 .handcount-list { flex: 1; min-height: 0; overflow-y: auto; }
 .handcount-search { display: flex; align-items: center; gap: var(--spacer-sm); }
 .handcount-search ion-searchbar { flex: 1; min-width: 0; }
