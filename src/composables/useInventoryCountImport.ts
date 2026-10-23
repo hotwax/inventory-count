@@ -1,10 +1,13 @@
 import { liveQuery } from 'dexie';
+import Papa from 'papaparse';
 import { useProductMaster } from './useProductMaster';
 import { api } from '@common';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
+import { getUploadFileParamName } from '@/services/utils';
+import { needsInventoryCountSync } from '@/services/inventoryCountRecord';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -68,8 +71,13 @@ function currentMillis(): number {
       // Dexie table name for inventory count items
       const table = db.table('inventoryCountRecords');
 
-      // Insert or update efficiently
-      await table.bulkPut(normalized);
+      // A failed sync can leave newer device quantities behind. Read and hydrate
+      // in one transaction so server data cannot overwrite those pending edits.
+      await db.transaction('rw', table, async () => {
+        const existing = await table.bulkGet(normalized.map((item: any) => [item.inventoryCountImportId, item.uuid]));
+        const acknowledged = normalized.filter((_: any, index: number) => !needsInventoryCountSync(existing[index]));
+        if (acknowledged.length) await table.bulkPut(acknowledged);
+      });
 
     } catch (err) {
       console.error('[IndexedDB] Failed to store batch', err);
@@ -458,6 +466,47 @@ const bulkUploadInventoryCounts = async (payload: any): Promise <any> => {
   });
 }
 
+/**
+ * Build the cycle count import CSV from the selected products and hand it to the bulk upload
+ * endpoint. Columns are the in-parameters of
+ * co.hotwax.cycleCount.InventoryCountServices.import#InventoryCount. productId is sent so the
+ * importer uses it directly instead of resolving the product through a GoodIdentification lookup,
+ * idType/idValue are kept alongside it so the stored file stays readable.
+ *
+ * The dates must already be formatted as MM-dd-yyyy HH:mm:ss in the facility time zone, that is
+ * how the importer parses them.
+ */
+const createCycleCountFromProducts = async (payload: {
+  countName: string;
+  purposeType: string;
+  facilityId: string;
+  startDate: string;
+  dueDate: string;
+  products: any[];
+}): Promise <any> => {
+  const rows = payload.products.map((product: any) => ({
+    countImportName: payload.countName,
+    purposeType: payload.purposeType,
+    facilityId: payload.facilityId,
+    productId: product.productId,
+    idType: "SKU",
+    idValue: product.internalName || product.sku || "",
+    estimatedStartDate: payload.startDate,
+    estimatedCompletionDate: payload.dueDate
+  }));
+
+  const fileName = `${(payload.countName || "CycleCount").trim().replace(/[^\w-]+/g, "_")}.csv`;
+  const blob = new Blob([Papa.unparse(rows)], { type: "text/csv;charset=utf-8;" });
+  const formData = new FormData();
+  formData.append(getUploadFileParamName(), blob, fileName);
+  formData.append("fileName", fileName.replace(".csv", ""));
+
+  return bulkUploadInventoryCounts({
+    data: formData,
+    headers: { "Content-Type": "multipart/form-data;" }
+  });
+}
+
 const cloneSession = async (payload: any): Promise <any> => {
   return api({
     url: `inventory-cycle-count/cycleCounts/sessions/${payload.inventoryCountImportId}/cloneDirectedCount`,
@@ -544,6 +593,7 @@ export function useInventoryCountImport() {
   return {
     bulkUploadInventoryCounts,
     cloneSession,
+    createCycleCountFromProducts,
     discardSession,
     getCountedItems,
     getInventoryCountImportByProductId,

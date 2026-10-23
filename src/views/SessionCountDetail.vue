@@ -6,6 +6,11 @@
           <ion-back-button default-href="/tabs/count" data-testid="session-detail-back-btn"></ion-back-button>
         </ion-buttons>
         <ion-title data-testid="session-detail-page-title">{{ translate("Session Count Detail") }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="router.push(`/count-progress-review/${props.workEffortId}`)" :aria-label="translate('Track progress')" data-testid="session-detail-track-progress-btn">
+            <ion-icon slot="icon-only" :icon="statsChartOutline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -79,7 +84,7 @@
         </div>
 
         <!-- Right Panel -->
-        <div class="count-dashboard">
+        <div ref="countDashboard" class="count-dashboard">
           <div class="header ion-padding" data-testid="session-detail-dashboard-header">
             <ion-item lines="none">
               <ion-label>
@@ -115,7 +120,7 @@
                   <ion-icon slot="start" :icon="exitOutline"></ion-icon>
                   {{ translate("Discard") }}
                 </ion-button>
-                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked" data-testid="session-detail-submit-btn">
+                <ion-button v-if="isSessionInProgress" color="success" fill="outline" @click="showSubmitAlert = true" :disabled="sessionLocked || isSubmitting" data-testid="session-detail-submit-btn">
                   <ion-icon slot="start" :icon="checkmarkDoneOutline"></ion-icon>
                   {{ translate("Submit") }}
                 </ion-button>
@@ -162,7 +167,7 @@
               </ion-item>
             </ion-card>
 
-            <ion-card data-testid="session-detail-stats-products-card">
+            <ion-card class="desktop-statistics-card" data-testid="session-detail-stats-products-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Products counted") }}</ion-card-title>
               </ion-card-header>
@@ -181,7 +186,7 @@
               </ion-list>
             </ion-card>
 
-            <ion-card data-testid="session-detail-stats-units-card">
+            <ion-card class="desktop-statistics-card" data-testid="session-detail-stats-units-card">
               <ion-card-header>
                 <ion-card-title class="overline">{{ translate("Units counted") }}</ion-card-title>
               </ion-card-header>
@@ -189,20 +194,57 @@
                 <p class="big-number" data-testid="session-detail-stats-units">{{ stats.totalUnits }}</p>
               </ion-card-content>
             </ion-card>
+
+            <ion-card class="mobile-statistics-card" data-testid="session-detail-mobile-stats-card">
+              <ion-card-header>
+                <ion-card-subtitle>{{ translate("Units counted") }}</ion-card-subtitle>
+                <ion-card-title data-testid="session-detail-mobile-stats-units">{{ stats.totalUnits }}</ion-card-title>
+              </ion-card-header>
+              <ion-list lines="none">
+                <ion-item>
+                  <ion-label>{{ translate("Products counted") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-products">{{ stats.productsCounted }}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>{{ translate("Pending match scans") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-pending-match">{{events.filter((event: any) => event.aggApplied === 0).length}}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>{{ translate("Unmatched scans") }}</ion-label>
+                  <ion-note slot="end" data-testid="session-detail-mobile-stats-unmatched">{{ stats.unmatched }}</ion-note>
+                </ion-item>
+              </ion-list>
+            </ion-card>
           </div>
 
-          <ion-segment v-model="selectedSegment" data-testid="session-detail-segment">
+          <ion-segment v-model="selectedSegment" @click="scrollToSegmentContent" data-testid="session-detail-segment">
             <ion-segment-button v-if="isDirected" value="uncounted" data-testid="session-detail-segment-uncounted-btn">
-              <ion-label>{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="hourglassOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Uncounted", { uncountedItemsLength: uncountedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ uncountedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button v-if="isDirected" value="undirected" data-testid="session-detail-segment-undirected-btn">
-              <ion-label>{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="gitBranchOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("UndirectedWithCount", { undirectedItemsLength: undirectedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ undirectedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button value="unmatched" data-testid="session-detail-segment-unmatched-btn">
-              <ion-label>{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="helpCircleOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Unmatched", { unmatchedItemsLength: unmatchedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ unmatchedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
             <ion-segment-button value="counted" data-testid="session-detail-segment-counted-btn">
-              <ion-label>{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</ion-label>
+              <ion-icon class="segment-mobile-icon" :icon="checkmarkCircleOutline" aria-hidden="true" />
+              <ion-label>
+                <span class="segment-desktop-label">{{ translate("Counted", { countedItemsLength: countedItems.length } ) }}</span>
+                <span class="segment-mobile-count" aria-hidden="true">{{ countedItems.length }}</span>
+              </ion-label>
             </ion-segment-button>
           </ion-segment>
 
@@ -224,7 +266,7 @@
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="30" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item :data-testid="'session-detail-uncounted-filtered-item-' + item.uuid">
+                      <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-uncounted-filtered-item-' + item.uuid" @click="openPendingItemCountSheet(item)">
                         <ion-thumbnail slot="start">
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-filtered-item-img"/>
                         </ion-thumbnail>
@@ -252,7 +294,7 @@
                 <DynamicScroller :items="uncountedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-uncounted-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item :data-testid="'session-detail-uncounted-item-' + item.uuid">
+                      <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-uncounted-item-' + item.uuid" @click="openPendingItemCountSheet(item)">
                         <ion-thumbnail slot="start">
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-uncounted-item-img"/>
                         </ion-thumbnail>
@@ -297,17 +339,17 @@
                   </ion-item>
                 </div>
                 <template v-if="filteredItems.length">
-                  <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-card-' + item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
-                    <ion-item>
-                      <ion-label data-testid="session-detail-undirected-filtered-item-label">
-                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
-                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
-                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
-                        <p data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
-                      </ion-label>
-                    </ion-item>
-                  </ion-card>
+                  <ion-item class="flat-list-item" v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-undirected-filtered-item-' + item.uuid">
+                    <ion-thumbnail slot="start">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-filtered-item-img"/>
+                    </ion-thumbnail>
+                    <ion-label data-testid="session-detail-undirected-filtered-item-label">
+                      <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                      <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                      <p>{{ getSessionItemSecondaryLabel(item) }}</p>
+                    </ion-label>
+                    <ion-note slot="end" data-testid="session-detail-undirected-filtered-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                  </ion-item>
                 </template>
 
                 <template v-else-if="searchKeyword && !filteredItems.length">
@@ -317,17 +359,17 @@
                 </template>
 
                 <template v-else>
-                  <ion-card v-for="item in undirectedItems" :key="item.uuid" :data-testid="'session-detail-undirected-card-' + item.uuid">
-                    <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
-                    <ion-item>
-                      <ion-label data-testid="session-detail-undirected-item-label">
-                        <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
-                        <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
-                        <p>{{ getSessionItemSecondaryLabel(item) }}</p>
-                        <p data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</p>
-                      </ion-label>
-                    </ion-item>
-                  </ion-card>
+                  <ion-item class="flat-list-item" v-for="item in undirectedItems" :key="item.uuid" :data-testid="'session-detail-undirected-item-' + item.uuid">
+                    <ion-thumbnail slot="start">
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-undirected-item-img"/>
+                    </ion-thumbnail>
+                    <ion-label data-testid="session-detail-undirected-item-label">
+                      <h2>{{ getSessionItemPrimaryLabel(item) }}</h2>
+                      <p v-if="getSessionItemFallbackMessage(item)">{{ getSessionItemFallbackMessage(item) }}</p>
+                      <p>{{ getSessionItemSecondaryLabel(item) }}</p>
+                    </ion-label>
+                    <ion-note slot="end" data-testid="session-detail-undirected-item-qty">{{ item.quantity }} {{ translate('Units') }}</ion-note>
+                  </ion-item>
                 </template>
               </template>
             </ion-segment-content>
@@ -354,7 +396,7 @@
                 </div>
               </template>
               <template v-if="filteredItems.length">
-                <ion-card v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-unmatched-filtered-card-' + item.uuid">
+                <ion-item-group class="unmatched-group" v-for="item in filteredItems" :key="item.uuid" :data-testid="'session-detail-unmatched-filtered-group-' + item.uuid">
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-filtered-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
@@ -392,7 +434,7 @@
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
-                </ion-card>
+                </ion-item-group>
               </template>
 
               <template v-else-if="searchKeyword && !filteredItems.length">
@@ -402,7 +444,7 @@
               </template>
 
               <template v-else>
-                <ion-card v-for="item in unmatchedItems" :key="item.uuid" :data-testid="'session-detail-unmatched-card-' + item.uuid">
+                <ion-item-group class="unmatched-group" v-for="item in unmatchedItems" :key="item.uuid" :data-testid="'session-detail-unmatched-group-' + item.uuid">
                   <ion-item>
                     <ion-label data-testid="session-detail-unmatched-item-label">
                       <h2>{{ item.productIdentifier }}</h2>
@@ -440,7 +482,7 @@
                     </ion-label>
                     <ion-icon :icon="chevronDownCircleOutline"></ion-icon>
                   </ion-item>
-                </ion-card>
+                </ion-item-group>
               </template>
             </ion-segment-content>
 
@@ -600,6 +642,58 @@
           <ion-img :src="largeImage" />
         </ion-content>
       </ion-modal>
+
+      <!-- Recent scans (mobile bottom sheet) -->
+      <ion-modal :is-open="isRecentScansOpen" :breakpoints="[0, 0.5, 0.9]" :initial-breakpoint="0.9" @didDismiss="isRecentScansOpen = false" data-testid="session-detail-recent-scans-modal">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title data-testid="session-detail-recent-scans-title">{{ translate("Recent scans") }}</ion-title>
+            <ion-note slot="end">{{ events.length }} {{ translate("scans") }}</ion-note>
+            <ion-buttons slot="end">
+              <ion-button @click="isRecentScansOpen = false" :aria-label="translate('Close')" data-testid="session-detail-recent-scans-close-btn">
+                <ion-icon slot="icon-only" :icon="closeOutline" />
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content data-testid="session-detail-recent-scans-content">
+          <ion-button expand="block" fill="outline" class="ion-margin-horizontal ion-margin-top" :disabled="!isSessionMutable" @click="goHandCountedFromSheet" data-testid="session-detail-recent-add-hand-counted">
+            {{ translate("Add hand-counted items") }}
+            <ion-icon slot="end" :icon="addOutline" />
+          </ion-button>
+          <div v-if="!events.length" class="empty-state ion-padding">
+            <ion-label>{{ translate("Items you scan or count will show on this list. Focus your scanner on the input field to begin.") }}</ion-label>
+          </div>
+          <DynamicScroller v-else :items="events" key-field="createdAt" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-recent-scans-scroller">
+            <template v-slot="{ item, index, active }">
+              <DynamicScrollerItem :item="item" :index="index" :active="active">
+                <ion-item :data-testid="'session-detail-recent-event-' + item.id">
+                  <div slot="start" class="img-preview">
+                    <ion-thumbnail>
+                      <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" />
+                    </ion-thumbnail>
+                    <ion-badge class="qty-badge" color="medium">{{ item.quantity }}</ion-badge>
+                  </div>
+                  <ion-label>
+                    {{ item.scannedValue }}
+                    <p>{{ timeAgo(item.createdAt) }}</p>
+                  </ion-label>
+                  <ion-button v-if="isSessionMutable && item.aggApplied === 1 && !negatedScanEventIds.has(item.id) && item.quantity > 0" fill="clear" color="medium" slot="end" @click="confirmRemoveScan(item)" :aria-label="translate('Remove scan')" data-testid="session-detail-recent-event-remove-btn">
+                    <ion-icon slot="icon-only" :icon="trashOutline" />
+                  </ion-button>
+                </ion-item>
+              </DynamicScrollerItem>
+            </template>
+          </DynamicScroller>
+        </ion-content>
+      </ion-modal>
+      <PendingItemCountSheet
+        :is-open="isPendingItemCountSheetOpen"
+        :item="pendingItemForCount"
+        :can-view-quantity-on-hand="showQoh"
+        :save-count="savePendingItemCount"
+        @close="isPendingItemCountSheetOpen = false"
+      />
       <ion-alert :is-open="showSubmitAlert" :header="translate('Complete session')" :message="translate('You’re about to complete this session in the cycle count and won’t be able to edit it again. After all sessions are completed, submit the cycle count for approval from the review cycle count page.')"
         :buttons="[
           { text: 'Cancel', role: 'cancel', handler: () => showSubmitAlert = false },
@@ -617,25 +711,57 @@
         data-testid="session-detail-discard-alert"/>
     </ion-content>
     <ion-alert :is-open="showRemoveConfirmAlert" :header="translate('Remove scan')" :message="removeConfirmMessage" :buttons="removeConfirmButtons" @didDismiss="resetRemoveConfirm" data-testid="session-detail-remove-confirm-alert"/>
+
+    <!-- Mobile action bar -->
+    <ion-footer class="mobile-action-bar" data-testid="session-detail-mobile-action-bar">
+      <ion-toolbar>
+        <ion-item v-if="isKeyboardEntryOpen && canCountOnMobile" lines="none" data-testid="session-detail-mobile-scan-item">
+          <ion-label position="stacked">{{ barcodeIdentifierDescription }}</ion-label>
+          <ion-input ref="mobileScanInput" v-model="scannedValue" placeholder="Scan or type a barcode" @keyup.enter="handleScan" data-testid="session-detail-mobile-scan-input"></ion-input>
+        </ion-item>
+        <div class="mobile-actions">
+          <ion-button fill="outline" class="icon-action" @click="openRecentScans" :aria-label="translate('Recent scans')" data-testid="session-detail-recent-scans-btn">
+            <ion-icon slot="icon-only" :icon="listOutline" />
+            <ion-badge v-if="events.length" color="primary" class="action-badge">{{ events.length }}</ion-badge>
+          </ion-button>
+          <ion-button class="scan-action" :disabled="!canCountOnMobile" @click="openCamera" data-testid="session-detail-scan-barcode-btn">
+            <ion-icon slot="start" :icon="scanOutline" />
+            {{ translate("Scan barcode") }}
+          </ion-button>
+          <ion-button fill="outline" class="icon-action" :color="isKeyboardEntryOpen ? 'primary' : undefined" :disabled="!canCountOnMobile" @click="toggleKeyboardEntry" :aria-label="translate('Keyboard entry')" data-testid="session-detail-keyboard-toggle-btn">
+            <ion-icon slot="icon-only" :icon="keypadOutline" />
+          </ion-button>
+        </div>
+      </ion-toolbar>
+    </ion-footer>
+
+    <CameraScanner :is-open="isCameraOpen" :pending-items="cameraPendingItems" :resolve-product="resolveProductForConfirm" :record-scan="onCameraScan" @close="isCameraOpen = false" />
   </ion-page>
 </template>
 
 
 <script setup lang="ts">
-import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
-import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, swapVerticalOutline } from 'ionicons/icons';
-import { ref, computed, defineProps, watch, watchEffect, toRaw } from 'vue';
+import { IonPopover, IonAlert, IonBackButton, IonButtons, IonBadge, IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonFooter, IonHeader, IonIcon, IonInput, IonImg, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonSegmentContent, IonSegmentView, IonThumbnail, IonTitle, IonToolbar, IonFab, IonFabButton, IonModal, IonRadio, IonRadioGroup, onIonViewDidEnter, onIonViewDidLeave } from '@ionic/vue';
+import { addOutline, chevronUpCircleOutline, chevronDownCircleOutline, searchOutline, barcodeOutline, checkmarkCircleOutline, checkmarkDoneOutline, exitOutline, pencilOutline, saveOutline, closeOutline, ellipsisVerticalOutline, gitBranchOutline, helpCircleOutline, hourglassOutline, swapVerticalOutline, statsChartOutline, listOutline, scanOutline, keypadOutline, trashOutline } from 'ionicons/icons';
+import { ref, computed, defineProps, nextTick, watch, watchEffect, toRaw } from 'vue';
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
 import { commonUtil, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
+import { loader } from '@/services/uiUtils';
+import { finishSessionTeardown, waitForSessionTeardown } from '@/services/sessionSyncLifecycle';
 import Image from "@/components/Image.vue";
 import router from '@/router';
 import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
+import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
+import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
+import { createCameraScanProductLookupContext } from '@/services/cameraScanProduct';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import ProgressBar from '@/components/ProgressBar.vue';
+import CameraScanner from '@/components/CameraScanner.vue';
+import PendingItemCountSheet, { type PendingItemCountSheetItem } from '@/components/PendingItemCountSheet.vue';
 import { useInventoryCountRun } from '@/composables/useInventoryCountRun';
 import { useProductStore } from '@/stores/productStore';
 import { debounce } from "lodash-es";
@@ -643,6 +769,9 @@ import defaultImage from "@/assets/images/defaultImage.png";
 import { DateTime } from 'luxon';
 import { from, Subscription } from 'rxjs';
 import { InventorySyncWorker } from '@/workers/backgroundAggregation';
+import Actions from "@/authorization/actions";
+import InventorySyncWorkerUrl from '@/workers/backgroundAggregation?worker&url';
+import { db } from '@/services/appInitializer';
 
 const props = defineProps<{
   workEffortId: string;
@@ -653,6 +782,7 @@ const props = defineProps<{
 const scannedValue = ref('');
 const events = ref<any[]>([]);
 const selectedSegment = ref('counted');
+const countDashboard = ref<HTMLElement | null>(null);
 const stats = ref({ productsCounted: 0, totalUnits: 0, unmatched: 0 });
 const totalUnitsCount = ref(0);
 const subscriptions: Subscription[] = [];
@@ -698,7 +828,7 @@ const popoverTrigger = ref('')
 let lockWorker: Remote<LockHeartbeatWorker> | null = null
 let lockLeaseSeconds = 300
 let lockGracePeriod = 300
-const showQoh = computed(() => useUserProfile().hasPermission('COMMON_ADMIN OR INV_COUNT_ADMIN OR INV_CNT_VIEW_QOH'));
+const showQoh = computed(() => useUserProfile().hasPermission(Actions.APP_INV_CNT_VIEW_QOH));
 const getGoodIdentificationOptions = computed(() => useProductStore().getGoodIdentificationOptions);
 const barcodeIdentifierPref = computed(() => useProductStore().getBarcodeIdentificationPref);
 const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions.value?.find((opt: any) => opt.goodIdentificationTypeId === barcodeIdentifierPref.value)?.description);
@@ -713,6 +843,14 @@ const negatedScanEventIds = computed(() => {
 const pageRef = ref(null);
 
 const isEditNewSessionModalOpen = ref(false);
+
+// Mobile scan surfaces
+const isCameraOpen = ref(false);
+const isRecentScansOpen = ref(false);
+const isKeyboardEntryOpen = ref(false);
+const mobileScanInput = ref();
+const isPendingItemCountSheetOpen = ref(false);
+const pendingItemForCount = ref<PendingItemCountSheetItem | null>(null);
 
 const areas = [
   { value: 'back_stock', label: 'Back stock' },
@@ -732,7 +870,25 @@ const countTypeLabel = computed(() =>
 );
 const isDirected = computed(() => props.inventoryCountTypeId === 'DIRECTED_COUNT');
 const isSessionInProgress = computed(() => inventoryCountImport.value?.statusId === 'SESSION_ASSIGNED');
-const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value);
+const isSubmitting = ref(false);
+// Each visit gets a new id. Async work started by a visit stops once the id
+// changes, so a late response cannot start workers, change the page or navigate.
+let viewId = 0;
+const isCurrentView = (id: number) => id === viewId;
+const isSessionMutable = computed(() => isSessionInProgress.value && !sessionLocked.value && !isSubmitting.value);
+// Mobile action bar shows for a not-yet-started (SESSION_CREATED) session too, so the user can start counting.
+const canCountOnMobile = computed(() =>
+  ['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId) && !sessionLocked.value && !isSubmitting.value
+);
+
+const cameraPendingItems = computed(() => {
+  if (!isDirected.value) return [];
+  return uncountedItems.value.map((item: any) => ({
+    primary: getSessionItemPrimaryLabel(item),
+    secondary: getSessionItemSecondaryLabel(item),
+    imageUrl: item.product?.mainImageUrl,
+  }));
+});
 
 const lastScannedEvent = computed(() => events.value[0]);
 
@@ -772,6 +928,7 @@ const scannerButtonLabel = computed(() => {
 
 const scannerButtonDisabled = computed(() =>
   sessionLocked.value
+  || isSubmitting.value
   || !['SESSION_CREATED', 'SESSION_ASSIGNED'].includes(inventoryCountImport.value?.statusId)
   || (isSessionInProgress.value && isScannerFocused.value)
 );
@@ -784,6 +941,25 @@ const sessionSort = computed({
 
 function updateSessionSort(value: string) {
   sessionSort.value = value
+}
+
+async function scrollToSegmentContent(event: MouseEvent) {
+  const dashboard = countDashboard.value
+  const segment = event.currentTarget as HTMLElement | null
+  if (!dashboard || !segment) return
+
+  await nextTick()
+
+  const dashboardBounds = dashboard.getBoundingClientRect()
+  const segmentBounds = segment.getBoundingClientRect()
+  const top = dashboard.scrollTop + segmentBounds.top - dashboardBounds.top - dashboard.clientTop
+  const reducedMotion = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  dashboard.scrollTo({
+    top: Math.max(0, top),
+    behavior: reducedMotion ? 'auto' : 'smooth'
+  })
 }
 
 function getIdentifierOptionDescription(type: string) {
@@ -941,11 +1117,20 @@ watch(selectedSegment, () => {
 })
 
 onIonViewDidEnter(async () => {
+  const id = ++viewId;
   try {
+    // A previous visit's worker may still be flushing; two workers must not
+    // aggregate the same scans.
+    await waitForSessionTeardown();
+    if (!isCurrentView(id)) return;
     await startSession();
-    await fetchWorkEffort();
+    if (!isCurrentView(id)) return;
+    await fetchWorkEffort(id);
+    if (!isCurrentView(id)) return;
     if (!['SESSION_SUBMITTED', 'SESSION_VOIDED'].includes(inventoryCountImport.value?.statusId)) {
-      await handleSessionLock();
+      await handleSessionLock(id);
+      // Leaving during the lock request must not start the sync worker below.
+      if (!isCurrentView(id)) return;
     }
 
     if (props.inventoryCountTypeId === 'DIRECTED_COUNT') selectedSegment.value = 'uncounted';
@@ -961,7 +1146,7 @@ onIonViewDidEnter(async () => {
     );
 
     // Start the background aggregation worker and schedule periodic aggregation
-    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL('@/workers/backgroundAggregation.ts', import.meta.url))
+    const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
     aggregationWorker = bgWorker.worker
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
@@ -976,52 +1161,59 @@ onIonViewDidEnter(async () => {
     aggregationWorker.onmessageerror = (err) => {
       console.error('[Worker Message Error]', err);
     };
-    // Run every 10 seconds
-    // const productIdentifications = import.meta.env.VITE_PRDT_IDENT ? JSON.parse(JSON.stringify(import.meta.env.VITE_PRDT_IDENT)) : []
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-
     aggregationWorker.postMessage({
       type: 'schedule',
       payload: {
         workEffortId: props.workEffortId,
         inventoryCountImportId: props.inventoryCountImportId,
         intervalMs: 8000,
-        context: {
-          omsUrl: commonUtil.getOmsURL(),
-          omsInstance: commonUtil.getOMSInstanceName(),
-          userLoginId: useUserProfile().getUserProfile?.username,
-          maargUrl: commonUtil.getMaargURL(),
-          token: commonUtil.getToken(),
-          barcodeIdentification: barcodeIdentification,
-          inventoryCountTypeId: props.inventoryCountTypeId,
-          facilityId: useProductStore().getCurrentFacility.facilityId
-        }
+        context: getAggregationContext()
       }
     })
   } catch (error) {
     console.error(error);
-    commonUtil.showToast("Failed to load session details");
+    if (isCurrentView(id)) commonUtil.showToast("Failed to load session details");
   }
 });
 
-onIonViewDidLeave(async () => {
+onIonViewDidLeave(() => {
+  viewId++
+  isCameraOpen.value = false
   clearListSubscriptions()
   subscriptions.forEach(subscription => subscription.unsubscribe());
   subscriptions.length = 0;
-
-  await finalizeAggregationAndSync();
-  await unscheduleWorker();
-  if (lockWorker) {
-    await lockWorker.stopHeartbeat()
-    lockWorker = null
-  }
   if (timerInterval) clearInterval(timerInterval);
+
+  // Ionic does not await leave hooks, so register the final flush synchronously;
+  // the next session entry and Track progress wait for it.
+  const worker = aggregationWorker
+  const workerApi = aggregationWorkerApi
+  const heartbeat = lockWorker
+  const inventoryCountImportId = props.inventoryCountImportId
+  const context = getAggregationContext()
+  aggregationWorker = null
+  aggregationWorkerApi = null
+  lockWorker = null
+
+  finishSessionTeardown(async () => {
+    try {
+      if (workerApi) {
+        await workerApi.stopScheduling()
+        await workerApi.flushSession(inventoryCountImportId, context)
+      }
+    } catch (err) {
+      console.warn('[Session] Final sync did not complete; counts remain pending on this device', err)
+    } finally {
+      worker?.terminate()
+      if (heartbeat) await heartbeat.stopHeartbeat()
+    }
+  })
 })
 
-async function fetchWorkEffort() {
+async function fetchWorkEffort(id = viewId) {
   try {
     const resp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-    if (resp?.status === 200) {
+    if (resp?.status === 200 && isCurrentView(id)) {
       workEffort.value = resp.data;
       updateTimer();
       timerInterval = setInterval(updateTimer, 1000);
@@ -1184,24 +1376,128 @@ async function focusScanner() {
   }, 0);
 }
 
-function handleScan() {
-  const value = scannedValue.value.trim();
-  if (!value) return;
+async function recordScannedCode(code: string, quantity = 1) {
+  console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
+  const value = (code || '').trim();
+  if (!value || isSubmitting.value) return false;
 
   try {
-    useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity: 1 });
-    events.value.unshift({ scannedValue: value, quantity: 1, createdAt: Date.now() });
+    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
     filteredItems.value = [];
     searchKeyword.value = '';
+    await playScanSuccessFeedback();
+    return true;
   } catch (err) {
     console.error(err);
     commonUtil.showToast('Failed to record scan');
-  } finally {
-    scannedValue.value = '';
+    return false;
   }
 }
 
-async function handleStartOrFocus() {
+function openPendingItemCountSheet(item: any) {
+  if (!isSessionMutable.value) return;
+
+  const productIdentifier = getResolvedProductIdentifierValue(item.product, barcodeIdentifierPref.value)
+    || item.productIdentifier
+    || item.productId;
+  if (!productIdentifier) {
+    commonUtil.showToast(translate('Unable to identify this product for counting'));
+    return;
+  }
+
+  pendingItemForCount.value = {
+    primary: getSessionItemPrimaryLabel(item),
+    secondary: getSessionItemSecondaryLabel(item),
+    imageUrl: item.product?.mainImageUrl,
+    productIdentifier,
+    quantityOnHand: item.inventory?.quantityOnHandTotal ?? item.systemQuantityOnHand ?? null,
+  };
+  isPendingItemCountSheetOpen.value = true;
+}
+
+async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
+  return recordScannedCode(item.productIdentifier, quantity);
+}
+
+async function handleScan() {
+  console.log(`[PROCESS LOG] 0. handleScan triggered (Hardware/Keyboard scanner)`);
+  prepareScanSuccessFeedback();
+  const value = scannedValue.value.trim();
+  if (!value) return;
+  scannedValue.value = '';
+  await recordScannedCode(value, 1);
+}
+
+// Camera scanner (web / @zxing) funnels into the same offline-first scan pipeline as the hardware scanner.
+async function onCameraScan(code: string, quantity: number) {
+  console.log(`[PROCESS LOG] 0. onCameraScan triggered (Camera) with code: ${code}`);
+
+  const saved = await recordScannedCode(code, quantity);
+  if (!saved) return { saved: false, savedScanCount: 0 };
+
+  const savedScanCount = await db.scanEvents
+    .where('inventoryCountImportId')
+    .equals(props.inventoryCountImportId)
+    .and((event: any) => event.scannedValue === code && Number(event.quantity) > 0)
+    .count();
+
+  return { saved: true, savedScanCount };
+}
+
+// Resolve a scanned barcode to product details for the camera "confirm each" sheet (best-effort, local-first).
+async function resolveProductForConfirm(code: string) {
+  try {
+    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
+    const context = createCameraScanProductLookupContext({
+      maargUrl: commonUtil.getMaargURL(),
+      token: commonUtil.getToken(),
+      barcodeIdentification,
+    });
+    const productId = await useProductMaster().findProductByIdentification(barcodeIdentification, code, context);
+    if (!productId) return null;
+    const { product } = await useProductMaster().getById(productId);
+    if (!product) return null;
+    const countedSoFar = [...countedItems.value, ...undirectedItems.value]
+      .filter((item: any) => item.productId === productId)
+      .reduce((sum: number, item: any) => sum + (Number(item.quantity) || 0), 0);
+    return {
+      primary: useProductMaster().primaryId(product) || product.productName || code,
+      secondary: useProductMaster().secondaryId(product),
+      imageUrl: product.mainImageUrl,
+      countedSoFar,
+    };
+  } catch (err) {
+    console.error('Product [Component: SessionCountDetail] - Failed to resolve product for confirmation', err);
+    return null;
+  }
+}
+
+async function openCamera() {
+  prepareScanSuccessFeedback();
+  if (!(await ensureSessionStarted())) return;
+  isCameraOpen.value = true;
+}
+
+function openRecentScans() {
+  isRecentScansOpen.value = true;
+}
+
+async function toggleKeyboardEntry() {
+  if (!isKeyboardEntryOpen.value) prepareScanSuccessFeedback();
+  if (!isKeyboardEntryOpen.value && !(await ensureSessionStarted())) return;
+  isKeyboardEntryOpen.value = !isKeyboardEntryOpen.value;
+  if (isKeyboardEntryOpen.value) {
+    setTimeout(() => { mobileScanInput.value?.$el?.setFocus?.(); }, 0);
+  }
+}
+
+function goHandCountedFromSheet() {
+  isRecentScansOpen.value = false;
+  router.push(`/add-hand-counted/${props.workEffortId}/${props.inventoryCountImportId}/${props.inventoryCountTypeId}`);
+}
+
+// Transition a SESSION_CREATED session to SESSION_ASSIGNED so counting can begin. Returns false on failure.
+async function ensureSessionStarted() {
   if (inventoryCountImport.value?.statusId === 'SESSION_CREATED') {
     try {
       await useInventoryCountImport().updateSession({
@@ -1212,15 +1508,22 @@ async function handleStartOrFocus() {
     } catch (err) {
       console.error(err);
       commonUtil.showToast('Failed to start session');
-      return;
+      return false;
     }
   }
+  return true;
+}
+
+async function handleStartOrFocus() {
+  prepareScanSuccessFeedback();
+  if (!(await ensureSessionStarted())) return;
   setTimeout(() => {
     focusScanner();
   }, 0);
 }
 
 function handleScannerFocus() {
+  prepareScanSuccessFeedback();
   isScannerFocused.value = true;
 }
 
@@ -1228,7 +1531,7 @@ function handleScannerBlur() {
   isScannerFocused.value = false;
 }
 
-async function handleSessionLock() {
+async function handleSessionLock(id = viewId) {
   try {
     const userId = useUserProfile().getUserProfile?.username;
     const inventoryCountImportId = props.inventoryCountImportId;
@@ -1240,6 +1543,7 @@ async function handleSessionLock() {
       deviceId: currentDeviceId,
       userId,
     });
+    if (!isCurrentView(id)) return;
     const existingLock = existingLockResp?.data?.entityValueList?.[0] || null;
     currentLock.value = existingLock;
 
@@ -1259,7 +1563,7 @@ async function handleSessionLock() {
       // Schedule heartbeat worker for existing lock
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1280,6 +1584,8 @@ async function handleSessionLock() {
       // Message listener
       if (worker) {
         worker.onmessage = async (event: any) => {
+          // A heartbeat message from an earlier visit must not navigate this page.
+          if (!isCurrentView(id)) return;
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
@@ -1294,7 +1600,7 @@ async function handleSessionLock() {
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
             commonUtil.showToast('Reacquiring lock...');
-            await handleSessionLock();
+            await handleSessionLock(id);
           }
         };
       }
@@ -1311,6 +1617,7 @@ async function handleSessionLock() {
       fromDate,
       thruDate: fromDate + (lockLeaseSeconds * 1000)
     });
+    if (!isCurrentView(id)) return;
 
     if (newLockResp?.status === 200) {
       currentLock.value = newLockResp.data;
@@ -1318,7 +1625,7 @@ async function handleSessionLock() {
 
       let worker: Worker | null = null;
       if (!lockWorker) {
-        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL('@/workers/lockHeartbeatWorker.ts', import.meta.url))
+        const workerConfig = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url))
         worker = workerConfig.worker
         lockWorker = workerConfig.api;
       }
@@ -1339,6 +1646,8 @@ async function handleSessionLock() {
       // Listen for messages
       if (worker) {
         worker.onmessage = async (event: any) => {
+          // A heartbeat message from an earlier visit must not navigate this page.
+          if (!isCurrentView(id)) return;
           const { type, thruDate } = event.data;
           if (type === 'heartbeatSuccess') {
             currentLock.value.thruDate = thruDate;
@@ -1353,7 +1662,7 @@ async function handleSessionLock() {
             router.push('/tabs/count');
           } else if (type === 'reacquireLock') {
             commonUtil.showToast('Reacquiring lock...');
-            await handleSessionLock();
+            await handleSessionLock(id);
           }
         };
       }
@@ -1364,6 +1673,7 @@ async function handleSessionLock() {
     }
   } catch (err) {
     console.error('Error handling session lock:', err);
+    if (!isCurrentView(id)) return;
     sessionLocked.value = true;
     commonUtil.showToast('Error while acquiring session lock.');
   }
@@ -1515,105 +1825,122 @@ async function saveMatchProduct() {
   }
 }
 
-async function finalizeAggregationAndSync() {
-  try {
-    if (!aggregationWorker) return;
-
-    const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
-
-    const context = {
-      omsUrl: commonUtil.getOmsURL(),
-      omsInstance: commonUtil.getOMSInstanceName(),
-      userLoginId: useUserProfile().getUserProfile?.username,
-      maargUrl: commonUtil.getMaargURL(),
-      token: commonUtil.getToken(),
-      barcodeIdentification,
-      inventoryCountTypeId: props.inventoryCountTypeId,
-      facilityId: useProductStore().getCurrentFacility.facilityId
-    };
-
-    aggregationWorker.postMessage({
-      type: 'aggregate',
-      payload: {
-        workEffortId: props.workEffortId,
-        inventoryCountImportId: props.inventoryCountImportId,
-        context
-      }
-    });
-
-    return;
-  } catch (err) {
-    console.error('[Session] Error during final aggregation:', err);
-    return 0;
-  }
+function getAggregationContext() {
+  return {
+    omsUrl: commonUtil.getOmsURL(),
+    omsInstance: commonUtil.getOMSInstanceName(),
+    userLoginId: useUserProfile().getUserProfile?.username,
+    maargUrl: commonUtil.getMaargURL(),
+    token: commonUtil.getToken(),
+    barcodeIdentification: useProductStore().getBarcodeIdentificationPref,
+    inventoryCountTypeId: props.inventoryCountTypeId,
+    facilityId: useProductStore().getCurrentFacility.facilityId
+  };
 }
 
-/** Stop background worker schedule and terminate */
-async function unscheduleWorker() {
+/** Resolves once the worker has aggregated and synced everything it can for this session. */
+async function finalizeAggregationAndSync() {
+  if (!aggregationWorkerApi) throw new Error('Count sync is not ready');
+  return aggregationWorkerApi.flushSession(props.inventoryCountImportId, getAggregationContext());
+}
+
+/**
+ * A status change from an earlier visit can land after a later visit loaded the
+ * session, so reload the status for whichever visit is current now.
+ */
+async function refreshSessionStatus() {
+  const id = viewId
   try {
-    if (aggregationWorker) {
-      console.log('[Session] Terminating background aggregation worker...');
-      aggregationWorker.terminate();
-      aggregationWorker = null;
-      aggregationWorkerApi = null;
-    }
+    const resp = await useInventoryCountImport().getInventoryCountImportSession({ inventoryCountImportId: props.inventoryCountImportId })
+    if (isCurrentView(id) && resp?.status === 200 && resp.data) inventoryCountImport.value = resp.data
   } catch (err) {
-    console.error('[Session] Failed to terminate worker:', err);
+    console.error('Failed to refresh session status', err)
   }
 }
 
 async function confirmSubmit() {
   showSubmitAlert.value = false
+  if (isSubmitting.value) return
+  if (unmatchedItems.value.length > 0) {
+    commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
+    return
+  }
+  isSubmitting.value = true
+  isCameraOpen.value = false
+  const id = viewId
   try {
-    if (unmatchedItems.value.length > 0) {
+    await loader.present('Syncing count...')
+    // Submit only after every scan and changed count has reached the server.
+    const result = await finalizeAggregationAndSync()
+    // The user left while syncing: do not submit on their behalf.
+    if (!isCurrentView(id)) return
+    if (result.unmatchedRecords > 0) {
       commonUtil.showToast(translate("Unmatched products should be resolved before submission"))
       return
     }
-    await finalizeAggregationAndSync()
+    if (result.pendingScans > 0 || result.pendingRecords > 0) {
+      commonUtil.showToast(translate("Some counts have not synced. Check your connection and try again."))
+      return
+    }
     await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_SUBMITTED'
     })
+    // Once the user has left, the lock and heartbeat may belong to a later visit.
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_SUBMITTED'
     await releaseSessionLock()
+    if (!isCurrentView(id)) return
     if (lockWorker) await lockWorker.stopHeartbeat()
     commonUtil.showToast('Session submitted successfully')
     router.replace(`/count-progress-review/${props.workEffortId}`)
   } catch (err) {
     console.error(err)
-    commonUtil.showToast('Failed to submit session')
+    if (isCurrentView(id)) commonUtil.showToast(translate("Could not sync and submit this session. Your counts are saved on this device. Please try again."))
+  } finally {
+    loader.dismiss()
+    isSubmitting.value = false
   }
 }
 
 async function confirmDiscard() {
   showDiscardAlert.value = false
+  const id = viewId
   try {
-    await finalizeAggregationAndSync()
+    // Best effort, as before: a failed sync must not prevent discarding.
+    await finalizeAggregationAndSync().catch((err) => console.warn('[Session] Sync before discard failed', err))
+    if (!isCurrentView(id)) return
     await useInventoryCountImport().updateSession({
       inventoryCountImportId: props.inventoryCountImportId,
       statusId: 'SESSION_VOIDED',
       fromDate: currentLock.value.fromDate
     })
+    if (!isCurrentView(id)) return refreshSessionStatus()
     inventoryCountImport.value.statusId = 'SESSION_VOIDED'
     await releaseSessionLock()
+    if (!isCurrentView(id)) return
     if (lockWorker) await lockWorker.stopHeartbeat()
     commonUtil.showToast('Session discarded')
     await router.push('/tabs/count')
   } catch (err) {
     console.error(err)
-    commonUtil.showToast('Failed to discard session')
+    if (isCurrentView(id)) commonUtil.showToast('Failed to discard session')
   }
 }
 
 async function reopen() {
+  const id = viewId
   try {
     await useInventoryCountImport().updateSession({ inventoryCountImportId: props.inventoryCountImportId, statusId: 'SESSION_ASSIGNED' });
+    // Starting a heartbeat after the user left would hold the lock with no page to release it.
+    if (!isCurrentView(id)) return refreshSessionStatus()
     commonUtil.showToast('Session reopened');
-    await handleSessionLock();
+    await handleSessionLock(id);
+    if (!isCurrentView(id)) return
     inventoryCountImport.value.statusId = 'SESSION_ASSIGNED';
   } catch (err) {
     console.error(err);
-    commonUtil.showToast('Failed to reopen session');
+    if (isCurrentView(id)) commonUtil.showToast('Failed to reopen session');
   }
 }
 
@@ -1904,6 +2231,10 @@ ion-card ion-item {
   flex: 0 1 305px;
 }
 
+.mobile-statistics-card {
+  display: none;
+}
+
 ion-segment {
   justify-content: start;
   border-bottom: 1px solid var(--ion-color-medium);
@@ -1911,6 +2242,17 @@ ion-segment {
 
 ion-segment-view {
   height: unset;
+  min-height: 100%;
+}
+
+/* Ionic wraps the search and list into separate rows on narrow screens. Keep those rows packed at the top. */
+ion-segment-content.cards {
+  align-content: flex-start;
+}
+
+.segment-mobile-icon,
+.segment-mobile-count {
+  display: none;
 }
 
 .search {
@@ -1938,9 +2280,21 @@ ion-segment-view {
   overflow-y: auto;
 }
 
-.virtual-list ion-item {
+.virtual-list ion-item,
+.flat-list-item,
+.unmatched-group {
   --min-height: 64px;
+  height: auto;
+  width: 100%;
   border-bottom: 1px solid var(--ion-color-light);
+}
+
+.virtual-list ion-item::part(native),
+.flat-list-item::part(native),
+.unmatched-group ion-item::part(native) {
+  align-items: flex-start;
+  padding-top: 8px;
+  height: auto;
 }
 
 .loading-overlay {
@@ -1978,6 +2332,82 @@ ion-segment-view {
   right: -1px;
   position: absolute;
   font-size: 10px;
+}
+
+.info-card,
+.empty-state {
+  width: 100%;
+  flex: 1 1 100%;
+}
+
+/* Mobile: single column, hide the desktop rail, stack the stat cards, show the action bar */
+@media (max-width: 991px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+
+  .count-events {
+    display: none;
+  }
+
+  .statistics {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .statistics ion-card {
+    align-self: stretch;
+    flex: 0 0 auto;
+  }
+
+  .desktop-statistics-card {
+    display: none;
+  }
+
+  .mobile-statistics-card {
+    display: block;
+  }
+
+  .search {
+    flex-wrap: wrap;
+  }
+
+  .segment-desktop-label {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .segment-mobile-icon,
+  .segment-mobile-count {
+    display: block;
+  }
+}
+
+@media (min-width: 992px) {
+  .mobile-action-bar {
+    display: none;
+  }
+}
+
+.mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacer-xs);
+  padding: var(--spacer-2xs) var(--spacer-xs);
+}
+
+.mobile-actions .scan-action {
+  flex: 1;
+}
+
+.icon-action {
+  position: relative;
+}
+
+.action-badge {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
 }
 
 </style>

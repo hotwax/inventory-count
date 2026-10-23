@@ -20,6 +20,33 @@ async function initDeviceId() {
   return deviceId;
 }
 
+const isAppCompatible = () => {
+  const currentVersion = useUserProfile().systemInformation?.instanceInfo?.componentRelease;
+  const requiredVersion = import.meta.env.VITE_MAARG_COMPATIBLE_VERSION;
+
+  if(!requiredVersion || !currentVersion) return true;
+
+  const currentParts = String(currentVersion).split('.');
+  const requiredParts = String(requiredVersion).split('.');
+
+  if(currentParts.length < 3) return true;
+
+  currentParts[0] = currentParts[0].replace("v", "")
+  requiredParts[0] = requiredParts[0].replace("v", "")
+
+  for(let i = 0; i < 3; i++) {
+    const current = Number(currentParts[i]) || 0;
+    const required = Number(requiredParts[i]) || 0;
+    if(current > required) return true;
+    if(current < required) return false;
+  }
+  return true;
+}
+
+const getUploadFileParamName = () => isAppCompatible() ? "contentFile" : "uploadedFile"
+
 export {
-  initDeviceId
-}  
+  getUploadFileParamName,
+  initDeviceId,
+  isAppCompatible
+}

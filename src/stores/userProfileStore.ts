@@ -3,12 +3,26 @@ import { api, client, commonUtil, cookieHelper, logger } from '@common';
 import { i18n, translate, useAuth } from '@common'
 import { DateTime, Settings } from 'luxon';
 import { useProductStore } from "./productStore";
+const checkPermission = (permissions: any[], permissionId: string): boolean => {
+  if (!permissionId) return true;
+  if (permissionId.includes(' OR ')) {
+    return permissionId.split(' OR ').some(p => checkPermission(permissions, p.trim()));
+  }
+  if (permissionId.includes(' AND ')) {
+    return permissionId.split(' AND ').every(p => checkPermission(permissions, p.trim()));
+  }
+  return permissions.includes(permissionId);
+};
 
 export const useUserProfile = defineStore('userProfile', {
   state: () => ({
     current: null as any,
     oms: null as any,
+    // The app version this deployment is pinned to. undefined = not resolved yet, "" = no version
+    // configured, "vX.Y.Z" = pinned. Resolved from the OMS by useAuth().fetchAppVersion() on Login.
+    appVersion: undefined as string | undefined,
     permissions: [] as any,
+    systemInformation: {} as any,
     localeOptions: import.meta.env.VITE_LOCALES ? JSON.parse(import.meta.env.VITE_LOCALES) : { "en-US": "English" },
     locale: 'en-US',
     timeZones: [],
@@ -57,6 +71,7 @@ export const useUserProfile = defineStore('userProfile', {
     getTimeZones: (state) => state.timeZones,
     getCurrentTimeZone: (state) => state.current.timeZone,
     getUserProfile: (state) => state.current,
+    getAppVersion: (state) => state.appVersion,
     getUserPermissions: (state) => state.permissions,
     getDeviceId: (state) => state.deviceId,
     getListPageFilters: (state) => (segment: string) => {
@@ -66,24 +81,7 @@ export const useUserProfile = defineStore('userProfile', {
     getDetailPageFilters: (state) => state.uiFilters.reviewDetail,
     getSessionDetailFilters: (state) => state.uiFilters.sessionDetail,
     hasPermission: (state: any) => (permissionId: string): boolean => {
-      const permissions = state.permissions;
-
-      if (!permissionId) {
-        return true;
-      }
-
-      // Handle OR/AND logic in permission string
-      if (permissionId.includes(' OR ')) {
-        const parts = permissionId.split(' OR ');
-        return parts.some((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      if (permissionId.includes(' AND ')) {
-        const parts = permissionId.split(' AND ');
-        return parts.every((part: string) => useUserProfile().hasPermission(part.trim()));
-      }
-
-      return permissions.includes(permissionId);
+      return checkPermission(state.permissions, permissionId);
     }
   },
 
@@ -120,7 +118,7 @@ export const useUserProfile = defineStore('userProfile', {
 
       try {
         // const appState = appContext.config.globalProperties.$store;
-        const userProfile = useUserProfile().getUserProfile;
+        const userProfile = this.getUserProfile;
 
         const resp = await api({
           url: "admin/user/profile",
@@ -168,6 +166,9 @@ export const useUserProfile = defineStore('userProfile', {
       return this.permissions;
     },
     /** Initialize after login */
+    setAppVersion(appVersion: string | undefined) {
+      this.appVersion = appVersion
+    },
     async setUserProfile(profile: any) {
       this.current = profile
     },
@@ -209,6 +210,7 @@ export const useUserProfile = defineStore('userProfile', {
       try {
         await this.fetchUserProfile()
         await this.fetchPermissions();
+        await this.fetchSystemInformation();
 
         this.oms = cookieHelper().get("oms") || '';
         
@@ -239,10 +241,26 @@ export const useUserProfile = defineStore('userProfile', {
       }
     },
 
+    async fetchSystemInformation() {
+      try {
+        const resp = await api({
+          url: "admin/maarg",
+          method: "GET",
+          baseURL: commonUtil.getMaargURL(),
+        });
+        if(commonUtil.hasError(resp)) throw resp.data;
+        this.systemInformation = resp.data
+      } catch(error: any) {
+        logger.error("Failed to fetch system information", error);
+      }
+    },
+
     async postLogout() {
       const { useProductStore } = await import('./productStore');
       useProductStore().$reset();
 
+      // appVersion is preserved across this reset by useAuth().logout() (it's deployment config, not
+      // session state), so a plain $reset() is fine here.
       this.$reset();
     },
 
@@ -252,7 +270,7 @@ export const useUserProfile = defineStore('userProfile', {
     async fetchPermissions() {
       const permissionId = import.meta.env.VITE_APP_PERMISSION_ID
       const serverPermissions = [] as string[]
-      const viewSize = 50
+      const viewSize = 200
       let viewIndex = 0
 
       try {

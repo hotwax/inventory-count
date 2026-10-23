@@ -3,6 +3,7 @@ import { api, client, commonUtil, logger, useEmbeddedAppStore } from '@common'
 import { useProductMaster } from '@/composables/useProductMaster'
 import { useUserProfile } from './userProfileStore'
 import { translate } from '@common'
+import Actions from "@/authorization/actions"
 
 export const useProductStore = defineStore('productStore', {
   state: () => ({
@@ -121,7 +122,7 @@ export const useProductStore = defineStore('productStore', {
     async fetchUserFacilities() {
       const userStore = useUserProfile();
       const partyId = userStore.getUserProfile?.partyId;
-      const isAdminUser = userStore.hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+      const isAdminUser = userStore.hasPermission(Actions.APP_INV_COUNT_ADMIN);
       const facilityGroupId = "" //Not used in cycle count, just kept the logic consistent with other apps, if needed in future
 
       let facilityIds: Array<string> = [];
@@ -185,32 +186,7 @@ export const useProductStore = defineStore('productStore', {
           }
         }
 
-        // 3. Shopify POS Location filtering (if embedded in POS)
-        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
-        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
-          let locationFacilityId: string | null = null;
-          try {
-            locationFacilityId = await this.fetchShopifyShopLocation({
-              shopifyLocationId,
-              pageSize: 1
-            });
-          } catch (error) {
-            logger.error(error);
-            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
-          }
-
-          if (locationFacilityId) {
-            facilityIds = facilityIds.filter((id: any) => id === locationFacilityId);
-          } else {
-            facilityIds = [];
-          }
-
-          if (!facilityIds.length) {
-            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
-          }
-        }
-
-        // 4. Fetch the final details for resolved facilities
+        // 3. Fetch the final details for resolved facilities
         let finalFilters: any = {};
         if (facilityIds.length) {
           finalFilters = {
@@ -240,7 +216,34 @@ export const useProductStore = defineStore('productStore', {
         }
 
         this.facilities = finalResp.data;
-        this.setCurrentFacility(finalResp.data[0]);
+        let selectedFacility = this.facilities[0];
+
+        // 3. Shopify POS Location filtering (if embedded in POS)
+        const shopifyLocationId = useEmbeddedAppStore().getPosLocationId;
+        if (commonUtil.isAppEmbedded() && shopifyLocationId) {
+          let locationFacilityId: string | null = null;
+          try {
+            locationFacilityId = await this.fetchShopifyShopLocation({
+              shopifyLocationId,
+              pageSize: 1
+            });
+          } catch (error) {
+            logger.error(error);
+            throw new Error(translate("Failed to fetch user facilities for Shopify POS location."));
+          }
+
+          if (locationFacilityId) {
+            selectedFacility = this.facilities.find((facility: any) => facility.facilityId === locationFacilityId);
+          } else {
+            selectedFacility = {};
+          }
+
+          if (!selectedFacility?.facilityId) {
+            throw new Error(translate("Unable to login. User is not associated with this location. Please contact the administrator."));
+          }
+        }
+
+        this.setCurrentFacility(selectedFacility);
 
       } catch (error: any) {
         return Promise.reject(error);
@@ -249,7 +252,7 @@ export const useProductStore = defineStore('productStore', {
 
     async fetchProductStores() {
       try {
-        const isAdminUser = useUserProfile().hasPermission("COMMON_ADMIN OR INV_COUNT_ADMIN");
+        const isAdminUser = useUserProfile().hasPermission(Actions.APP_INV_COUNT_ADMIN);
         const pageSize = 200;
         let productStoreFilters: any = {};
 
@@ -350,6 +353,9 @@ export const useProductStore = defineStore('productStore', {
         console.error('error', error)
       }
       this.currentProductStore = payload;
+      await this.getDxpIdentificationPref(this.currentProductStore?.productStoreId);
+      await this.getSettings(this.currentProductStore?.productStoreId);
+      await this.prepareProductIdentifierOptions();
     },
 
     /** ---------- Status Descriptions ---------- */
