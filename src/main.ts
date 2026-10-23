@@ -34,7 +34,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n, initialiseConfig } from '@common'
+import { createDxpI18n, initialiseConfig, supportsIosKeyboardScroll } from '@common'
 import localeMessages from '@/locales'
 
 const i18n = createDxpI18n(localeMessages)
@@ -42,6 +42,7 @@ const pinia = createPinia().use(piniaPluginPersistedstate);
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
+    scrollAssist: !supportsIosKeyboardScroll(),
     innerHTMLTemplatesEnabled: true
   })
   .use(pinia)
