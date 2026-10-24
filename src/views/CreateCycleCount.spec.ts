@@ -124,7 +124,7 @@ describe('CreateCycleCount', () => {
     const rows = wrapper.findAll('[data-testid^="create-count-product-row-"]');
     expect(rows).toHaveLength(20);
     expect(rows[0].text()).toContain('SKU-0');
-    expect(wrapper.find('[data-testid="create-count-empty-state"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="create-count-empty-state"]').isVisible()).toBe(false);
   });
 
   it('shows the filter prompt and no rows before any filter is applied', async () => {
