@@ -154,9 +154,18 @@ function quoteFacetValue(value: string): string {
   return `"${String(value).replace(/([\\"])/g, '\\$1')}"`;
 }
 
+/** Match the original tag used by the facet, not the analyzed words in the tags index. */
+function exactTagQuery(value: string): string {
+  // The terms parser splits on commas by default. Keep each tag, including commas, intact.
+  let separator = '\0';
+  while (value.includes(separator)) separator += '\0';
+  return quoteFacetValue(`{!terms f=tags method=docValuesTermsFilter separator=${quoteFacetValue(separator)}}${value}`);
+}
+
 export function useProductFacets() {
   return {
     fetchFacetOptions,
-    quoteFacetValue
+    quoteFacetValue,
+    exactTagQuery
   };
 }

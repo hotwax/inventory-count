@@ -12,7 +12,7 @@ vi.mock('@common', () => ({
 
 import { useProductFacets, PRODUCT_FACET_FILTERS, PRODUCT_FACET_BASE_FILTERS, FacetFilterConfig } from '@/composables/useProductFacets';
 
-const { fetchFacetOptions, quoteFacetValue } = useProductFacets();
+const { fetchFacetOptions, quoteFacetValue, exactTagQuery } = useProductFacets();
 
 /** Options are cached per field for the session, so each test uses its own field name */
 function config(field: string, extra: Partial<FacetFilterConfig> = {}): FacetFilterConfig {
@@ -203,5 +203,22 @@ describe('quoteFacetValue', () => {
   it('escapes embedded quotes and backslashes', () => {
     expect(quoteFacetValue('7" pipe')).toBe('"7\\" pipe"');
     expect(quoteFacetValue('a\\b')).toBe('"a\\\\b"');
+  });
+});
+
+describe('exactTagQuery', () => {
+  it.each(['new', 'New Release', 'Testing', 'testing', 'new,New Release', 'HC:Pre-Order', 'ボールドシャツ'])(
+    'preserves the whole tag and its case: %s', (value: string) => {
+      expect(exactTagQuery(value)).toBe(`"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}${value}"`);
+    }
+  );
+
+  it('escapes quotes and backslashes so a tag cannot inject a query', () => {
+    expect(exactTagQuery('new" OR *:*')).toBe('"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}new\\" OR *:*"');
+    expect(exactTagQuery('a\\b')).toBe('"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}a\\\\b"');
+  });
+
+  it('chooses a separator absent from the tag', () => {
+    expect(exactTagQuery('new\0New Release')).toBe('"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\0\\"}new\0New Release"');
   });
 });

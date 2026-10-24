@@ -234,7 +234,7 @@ const viewSize = Number(import.meta.env.VITE_VIEW_SIZE) || 20;
 const maxCountItems = Number(import.meta.env.VITE_MAX_COUNT_ITEMS) || DEFAULT_MAX_COUNT_ITEMS;
 
 const productStore = useProductStore();
-const { fetchFacetOptions, quoteFacetValue } = useProductFacets();
+const { fetchFacetOptions, quoteFacetValue, exactTagQuery } = useProductFacets();
 
 const countName = ref('');
 const purposeType = ref('DIRECTED_COUNT');
@@ -396,8 +396,8 @@ async function refreshProducts() {
 }
 
 /**
- * Facet selections as searchProducts filters. Values are phrase quoted, category names and
- * feature descriptions carry spaces and slashes and an unquoted slash starts a regex query.
+ * Tags use their original docValues, so a selected tag cannot match part of another tag.
+ * Other facet fields remain phrase quoted to protect spaces, slashes and query syntax.
  * searchProducts adds docType: PRODUCT and isVirtual: false itself.
  *
  * isVariant is indexed as the string "true"/"false", only variants are countable SKUs.
@@ -407,7 +407,9 @@ function buildFilters() {
   Object.keys(selectedFacetValues).forEach((field: string) => {
     const values = selectedFacetValues[field];
     if (!values.length) return;
-    filters[field] = { value: values.map(quoteFacetValue), op: 'OR' };
+    filters[field === 'tags' ? '_query_' : field] = {
+      value: values.map(field === 'tags' ? exactTagQuery : quoteFacetValue), op: 'OR'
+    };
   });
   return filters;
 }
