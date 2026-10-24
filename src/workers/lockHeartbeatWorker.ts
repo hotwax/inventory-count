@@ -47,7 +47,7 @@ async function startHeartbeat(payload: HeartbeatPayload) {
   heartbeatTimer = setInterval(() => {
     // fire-and-forget, errors handled inside performHeartbeat
     performHeartbeat()
-  }, 30000) // every 60 seconds
+  }, 30000) // every 30 seconds
 }
 
 function stopHeartbeat() {
@@ -154,7 +154,7 @@ async function performHeartbeat() {
     }
 
     // --- Extend lease on server ---
-    const newThruDate = activeLock.thruDate + leaseSeconds * 1000
+    const newThruDate = now + leaseSeconds * 1000
     const newHeartbeatAt = now
 
     // Deep clone lock before sending
