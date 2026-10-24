@@ -13,6 +13,7 @@ jobs:
       config-path: .github/labeler.yml
       app: hotwax/inventory-count
       appDir: inventory-count
+      reuseHostedVersions: true
       # AccxUI #240: shared iOS keyboard helpers (not yet included in a release tag).
       accxuiVersion: b7eab2bad76f328e0ce30a507ccfe2cbd05b7a8a
     secrets:
