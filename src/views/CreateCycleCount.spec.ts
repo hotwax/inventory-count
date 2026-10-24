@@ -35,7 +35,7 @@ vi.mock('@ionic/vue', async () => {
 
 vi.mock('@/composables/useProductFacets', async () => {
   const actual: any = await vi.importActual('@/composables/useProductFacets');
-  return { ...actual, useProductFacets: () => ({ fetchFacetOptions, quoteFacetValue: actual.useProductFacets().quoteFacetValue }) };
+  return { ...actual, useProductFacets: () => ({ ...actual.useProductFacets(), fetchFacetOptions }) };
 });
 
 vi.mock('@/composables/useInventoryCountImport', () => ({
@@ -102,6 +102,31 @@ describe('CreateCycleCount', () => {
     expect(searchProducts).not.toHaveBeenCalled();
   });
 
+  it('uses exact tag matches for searching, paging and selecting all matches', async () => {
+    searchProducts.mockResolvedValue({ products: makeProducts(20), total: 40 });
+    const wrapper = mountPage();
+    await flushPromises();
+    const vm = wrapper.vm as any;
+
+    await vm.openFacetModal(TAG_FACET);
+    await vm.applyFacetSelection(['new', 'New Release']);
+    await vm.loadMoreProducts({ target: { complete: vi.fn() } });
+    await vm.selectAllMatches();
+    await flushPromises();
+
+    expect(searchProducts.mock.calls.length).toBeGreaterThanOrEqual(3);
+    searchProducts.mock.calls.forEach(([request]: any[]) => {
+      expect(request.filters.tags).toBeUndefined();
+      expect(request.filters._query_).toEqual({
+        value: [
+          '"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}new"',
+          '"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}New Release"'
+        ],
+        op: 'OR'
+      });
+    });
+  });
+
   it('loads and renders the first page when a facet filter is applied', async () => {
     searchProducts.mockResolvedValue({ products: makeProducts(20), total: 500 });
     const wrapper = mountPage();
@@ -115,7 +140,7 @@ describe('CreateCycleCount', () => {
     expect(searchProducts).toHaveBeenCalledTimes(1);
     expect(searchProducts.mock.calls[0][0]).toMatchObject({
       viewIndex: 0,
-      filters: { tags: { value: ['"Shirts"'], op: 'OR' } }
+      filters: { _query_: { value: ['"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}Shirts"'], op: 'OR' } }
     });
     expect((wrapper.vm as any).products).toHaveLength(20);
     expect((wrapper.vm as any).totalProducts).toBe(500);
@@ -147,7 +172,10 @@ describe('CreateCycleCount', () => {
 
     expect(searchProducts.mock.calls[0][0].filters).toEqual({
       isVariant: { value: 'true' },
-      tags: { value: ['"COLOR/Red"', '"SIZE/Extra Large"'], op: 'OR' }
+      _query_: { value: [
+        '"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}COLOR/Red"',
+        '"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}SIZE/Extra Large"'
+      ], op: 'OR' }
     });
   });
 
@@ -314,7 +342,9 @@ describe('CreateCycleCount', () => {
     await flushPromises();
 
     expect(vm.getFacetChipLabel('tags')).toBe('COLOR/Red');
-    expect(searchProducts.mock.calls[0][0].filters.tags.value).toEqual(['"COLOR/Red"']);
+    expect(searchProducts.mock.calls[0][0].filters._query_.value).toEqual([
+      '"{!terms f=tags method=docValuesTermsFilter separator=\\"\0\\"}COLOR/Red"'
+    ]);
   });
 
   it('selects every loaded row and switches to the selected only view', async () => {
