@@ -13,7 +13,7 @@ jobs:
       config-path: .github/labeler.yml
       app: hotwax/inventory-count
       appDir: cycle-count
-      accxuiVersion: v1.3.0
+      accxuiVersion: 11f8a6b640bd4d2f8cd266b64f39d2b0bae063bd
     secrets:
       envPAT: ${{ secrets.envPAT }}
       HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
