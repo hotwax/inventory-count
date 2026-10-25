@@ -276,7 +276,8 @@ async function aggregateVarianceLogs(context: any) {
   isAggregating = true
   try {
     const varianceLogs = await db.table('varianceLogs')
-      .where({ aggApplied: 0 })
+      .where({ facilityId: context.facilityId })
+      .and((log: any) => log.aggApplied === 0)
       .toArray()
 
     if (!varianceLogs.length) {
@@ -346,6 +347,7 @@ async function aggregateVarianceLogs(context: any) {
       if (productId) {
         await db.table('varianceLogs')
           .where('scannedValue').equals(key)
+          .and((log: any) => log.facilityId === context.facilityId)
           .modify({
             productId,
             lastUpdatedAt: now
@@ -497,6 +499,7 @@ async function matchUnmatchedInventoryAdjustment(uuid: string, productId: string
       if (adjustment.scannedValue) {
         await db.table('varianceLogs')
           .where('scannedValue').equals(adjustment.scannedValue)
+          .and((log: any) => log.facilityId === facilityId)
           .modify({
             productId,
             aggApplied: 1,
