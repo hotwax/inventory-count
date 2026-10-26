@@ -14,8 +14,7 @@ jobs:
       app: hotwax/inventory-count
       appDir: inventory-count
       reuseHostedVersions: true
-      # AccxUI main with #240 (iOS keyboard helpers) and #261 (app version refresh on reload); not yet in a release tag.
-      accxuiVersion: 2f47797cadaa5c09b8b7a8554d9e65f7e65e7195
+      accxuiVersion: v1.12.0
     secrets:
       envPAT: ${{ secrets.envPAT }}
       HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
