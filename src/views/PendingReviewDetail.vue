@@ -652,7 +652,7 @@ async function showEditImportItemsModal() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to load count details", err);
+    logger.error(err);
     commonUtil.showToast(`${translate("Failed to load count details")}. ${serverError}`);
   }
 }
@@ -989,7 +989,7 @@ async function submitSelectedProductReviews(outcome: any) {
     commonUtil.showToast(translate("Submitted successfully."));
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to submit selected product reviews", err);
+    logger.error(err);
     commonUtil.showToast(`${translate("Failed to submit review")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
@@ -1009,7 +1009,7 @@ async function closeCycleCount() {
     router.replace(`/closed/${props.workEffortId}`);
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Failed to close cycle count", err);
+    logger.error(err);
     commonUtil.showToast(`${translate("Failed to close cycle count")}. ${serverError}`);
   }
   loader.dismiss();

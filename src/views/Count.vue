@@ -290,7 +290,7 @@ async function getCycleCounts(reset = false) {
     isScrollable.value = scrollable;
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to load cycle counts', err);
+    logger.error('Error loading cycle counts:', err);
     commonUtil.showToast(`${translate('Failed to load cycle counts.')} ${serverError}`);
   } finally {
     isLoading.value = false;
@@ -439,7 +439,7 @@ async function markInProgress(workEffortId) {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error(err);
+    logger.error('Error starting count:', err);
     commonUtil.showToast(`${translate('Failed to activate cycle count')}. ${serverError}`);
   } finally {
     // Reset loading state
@@ -479,7 +479,7 @@ async function forceRelease(session) {
             }
           } catch (err) {
             const serverError = commonUtil.getErrorMessage(err);
-            logger.error(err);
+            logger.error('Error releasing session lock:', err);
             commonUtil.showToast(`${translate('Failed to release session lock.')} ${serverError}`);
           } finally {
             loader.dismiss();

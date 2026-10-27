@@ -439,7 +439,7 @@ async function addProductInPreCountedItems(product: any) {
     products.value.unshift(productEntry)
     await setProductQoh(productEntry)
   } catch (err) {
-    console.error('Error adding product:', err)
+    logger.error('Error adding product:', err)
   }
   // Focus the quantity input for the newly added product as soon as it renders
   await focusFirstQuantityInput();
@@ -472,7 +472,7 @@ async function setProductQoh(product: any) {
 
     product.quantityOnHand = resp?.data?.qoh || 0
   } catch (err) {
-    console.error('Failed to fetch QOH:', err)
+    logger.error('Failed to fetch QOH:', err)
   }
 }
 

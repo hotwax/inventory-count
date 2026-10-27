@@ -841,7 +841,7 @@ async function searchProducts(queryString: string): Promise<any> {
     return products;
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to search products", error);
+    logger.error("Error searching products:", error);
     commonUtil.showToast(`${translate("Failed to search products. Please try again.")} ${serverError}`);
   }
   isSearching.value = false;
@@ -954,7 +954,7 @@ async function logHandCountedItemVariances() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to log variance", error);
+    logger.error("Error logging variance:", error);
     commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }
@@ -1002,7 +1002,7 @@ async function logVariance() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to log variance", error);
+    logger.error("Error logging variance:", error);
     commonUtil.showToast(`${translate("Failed to log variance. Please try again.")} ${serverError}`);
   }
 }
@@ -1068,7 +1068,7 @@ async function addProductInhandCountedItems(product: any) {
     await setProductQoh(product)
     handCountedProducts.value.push(product)
   } catch (err) {
-    console.error('Error adding product:', err)
+    logger.error('Error adding product:', err)
   }
   // Focus the quantity input for the newly added product as soon as it renders
   await focusQuantityInput(handCountedProducts.value.length - 1);
@@ -1084,7 +1084,7 @@ async function setProductQoh(product: any) {
 
     product.quantityOnHand = resp?.data?.qoh || 0
   } catch (err) {
-    console.error('Failed to fetch QOH:', err)
+    logger.error('Failed to fetch QOH:', err)
   }
 }
 

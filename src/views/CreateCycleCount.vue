@@ -664,7 +664,7 @@ async function submitCycleCount(name: string) {
     commonUtil.showToast(translate('The cycle count has been created successfully'));
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to create count', err);
+    logger.error(err);
     commonUtil.showToast(`${translate('Failed to create count, please try again')}. ${serverError}`);
   } finally {
     isSubmitting.value = false;

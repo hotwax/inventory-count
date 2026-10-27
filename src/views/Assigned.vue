@@ -276,7 +276,7 @@ async function updateFacilityOnCycleCount() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to Update Cycle Count", error);
+    logger.error("Error Updating Cycle Count: ", error);
     commonUtil.showToast(`${translate("Failed to Update Cycle Count")}. ${serverError}`);
   }
   loader.dismiss();

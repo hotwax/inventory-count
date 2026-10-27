@@ -1290,7 +1290,7 @@ async function loadInventoryItemsWithProgress() {
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
-    logger.error('Failed to load session items', err);
+    logger.error('Error loading items with progress', err);
     commonUtil.showToast(`${translate('Failed to load session items')}. ${serverError}`);
   } finally {
     isLoadingItems.value = false
@@ -1609,8 +1609,10 @@ async function handleSessionLock(id = viewId) {
       }
       isNewLockAcquired.value = true;
     } else {
+      const serverError = commonUtil.getErrorMessage(newLockResp);
+      logger.error('Failed to acquire lock:', newLockResp);
       sessionLocked.value = true;
-      commonUtil.showToast(translate('Failed to acquire lock.'));
+      commonUtil.showToast(`${translate('Failed to acquire lock.')} ${serverError}`);
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);

@@ -842,8 +842,8 @@ async function getWorkEffortDetails(loadId: number) {
     }
     return loadId === reviewLoadId;
   } else {
+    logger.error("Error getting the Cycle Count Details", workEffortResp);
     failLoad(loadId);
-    console.error("Error getting the Cycle Count Details", workEffortResp);
     return false;
   }
 }
@@ -927,7 +927,7 @@ async function loadDirectedCount(loadId: number) {
 
   } catch (error) {
     if (loadId !== reviewLoadId) return;
-    console.error("Error fetching all cycle count records (directed):", error);
+    logger.error("Error fetching all cycle count records (directed):", error);
     failLoad(loadId);
     countedItems.value = [];
     uncountedItems.value =[];
@@ -963,7 +963,7 @@ async function skipSingleProduct(productId: any, proposedVarianceQuantity: any, 
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to skip product", error);
+    logger.error("Error Skipping Product: ", error);
     commonUtil.showToast(`${translate("Failed to skip product")}. ${serverError}`);
   }
   loader.dismiss();
@@ -1009,6 +1009,7 @@ async function skipAllUndirectedItems() {
         }).then(resp => ({ resp, batch }))
       )
     );
+    let failedResult: any = null;
     for (const result of results) {
       if (result.status === "fulfilled" && result.value.resp?.status === 200) {
         const batch = result.value.batch;
@@ -1019,10 +1020,11 @@ async function skipAllUndirectedItems() {
             productReview.decisionOutcomeEnumId = 'SKIPPED';
           }
         });
+      } else if (!failedResult) {
+        failedResult = result;
       }
     }
 
-    const failedResult: any = results.find((result: any) => result.status === "rejected" || result.value?.resp?.status !== 200);
     if (failedResult) {
       const serverError = commonUtil.getErrorMessage(failedResult.reason || failedResult.value?.resp?.data);
       logger.error(failedResult.reason || failedResult.value?.resp?.data);
@@ -1095,7 +1097,7 @@ async function loadHardCount(loadId: number) {
     await getUncountedItems(loadId);
   } catch (error) {
     if (loadId !== reviewLoadId) return;
-    console.error("Error fetching all cycle count records (hard):", error);
+    logger.error("Error fetching all cycle count records (hard):", error);
     failLoad(loadId);
     countedItems.value = [];
     uncountedItems.value = [];
@@ -1158,7 +1160,7 @@ async function getUncountedItems(loadId: number) {
     }
   } catch (error) {
     if (loadId !== reviewLoadId) return;
-    console.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
+    logger.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
     failLoad(loadId);
     isLoadingUncounted.value = false;
     uncountedItems.value = [];
@@ -1187,7 +1189,7 @@ async function getCountSessions(productId: any) {
   } catch (error) {
     sessions.value = [];
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to fetch count sessions", error);
+    logger.error("Error getting sessions for this product:", error);
     commonUtil.showToast(`${translate("Failed to fetch count sessions")}. ${serverError}`);
   }
 }
@@ -1331,7 +1333,7 @@ async function markAsCompleted() {
     }
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
-    logger.error("Failed to send session for review", error);
+    logger.error("Error Updating Cycle Count: ", error);
     commonUtil.showToast(`${translate('Failed to send session for review')}. ${serverError}`);
   }
   loader.dismiss();
