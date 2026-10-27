@@ -820,10 +820,11 @@ onIonViewDidLeave(() => {
   reviewLoadId++;
 });
 
-function failLoad(loadId: number) {
+function failLoad(loadId: number, error?: any) {
   if (loadId !== reviewLoadId) return;
   hasLoadError.value = true;
-  commonUtil.showToast(translate("Something Went Wrong"));
+  const serverError = commonUtil.getErrorMessage(error);
+  commonUtil.showToast(`${translate("Something went wrong")}. ${serverError}`);
 }
 
 async function getWorkEffortDetails(loadId: number) {
@@ -838,12 +839,12 @@ async function getWorkEffortDetails(loadId: number) {
     if (resp?.status === 200 && resp.data) {
       totalItems.value = resp.data.count || 0;
     } else {
-      console.error("Error fetching total items:", resp);
+      logger.error("Error fetching total items:", resp);
     }
     return loadId === reviewLoadId;
   } else {
     logger.error("Error getting the Cycle Count Details", workEffortResp);
-    failLoad(loadId);
+    failLoad(loadId, workEffortResp);
     return false;
   }
 }
@@ -856,7 +857,7 @@ async function getInventoryCycleCount(loadId: number) {
       await loadHardCount(loadId);
     }
   } catch (error) {
-    console.error("Error fetching inventory cycle count:", error);
+    logger.error("Error fetching inventory cycle count:", error);
   }
 }
 
@@ -898,7 +899,7 @@ async function loadDirectedCount(loadId: number) {
             });
           }
         } catch (error) {
-          console.error("Error in Prefetch: ", error);
+          logger.error("Error in Prefetch: ", error);
         }
         if (loadId !== reviewLoadId) return;
 
@@ -928,7 +929,7 @@ async function loadDirectedCount(loadId: number) {
   } catch (error) {
     if (loadId !== reviewLoadId) return;
     logger.error("Error fetching all cycle count records (directed):", error);
-    failLoad(loadId);
+    failLoad(loadId, error);
     countedItems.value = [];
     uncountedItems.value =[];
     undirectedItems.value = [];
@@ -1083,7 +1084,7 @@ async function loadHardCount(loadId: number) {
             }
           }
         } catch (error) {
-          console.warn("Error in Prefetch: ", error);
+          logger.warn("Error in Prefetch: ", error);
         }
         if (loadId !== reviewLoadId) return;
       } else {
@@ -1098,7 +1099,7 @@ async function loadHardCount(loadId: number) {
   } catch (error) {
     if (loadId !== reviewLoadId) return;
     logger.error("Error fetching all cycle count records (hard):", error);
-    failLoad(loadId);
+    failLoad(loadId, error);
     countedItems.value = [];
     uncountedItems.value = [];
   }
@@ -1151,7 +1152,7 @@ async function getUncountedItems(loadId: number) {
             }
           }
         } catch (error) {
-          console.warn("Error in Prefetch: ", error);
+          logger.warn("Error in Prefetch: ", error);
         }
         if (loadId !== reviewLoadId) return;
       } else {
@@ -1161,7 +1162,7 @@ async function getUncountedItems(loadId: number) {
   } catch (error) {
     if (loadId !== reviewLoadId) return;
     logger.error(`Error Getting all products on facility: ${workEffort.value?.facilityId}`, error);
-    failLoad(loadId);
+    failLoad(loadId, error);
     isLoadingUncounted.value = false;
     uncountedItems.value = [];
   }
@@ -1295,7 +1296,7 @@ async function markSelectedItemsOutOfStock() {
           (item: any) => !successfulProductIds.has(item.productId)
         );
       } else {
-        console.error("Batch failed:", batchResp);
+        logger.error("Batch failed:", batchResp);
       }
     }
 
