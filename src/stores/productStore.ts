@@ -73,7 +73,7 @@ export const useProductStore = defineStore('productStore', {
           method: "POST",
           data: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF", settingValue: JSON.stringify(prefValue) }
         });
-      } catch(err) { console.error(err) }
+      } catch(err) { logger.error(err) }
       return prefValue;
     },
 
@@ -104,7 +104,7 @@ export const useProductStore = defineStore('productStore', {
       try {
         resp = await api({ url: `admin/productStores/${productStoreId}/settings`, method: "GET", params: { productStoreId, settingTypeEnumId: "PRDT_IDEN_PREF" } });
         if(resp.data[0]?.settingTypeEnumId) isSettingExists = true
-      } catch(err) { console.error(err) }
+      } catch(err) { logger.error(err) }
       if(!isSettingExists) {
         return Promise.reject({ code: "error", message: "product store setting is missing", serverResponse: resp.data })
       }
@@ -350,7 +350,7 @@ export const useProductStore = defineStore('productStore', {
           }
         });
       } catch (error) {
-        console.error('error', error)
+        logger.error('error', error)
       }
       this.currentProductStore = payload;
       await this.getDxpIdentificationPref(this.currentProductStore?.productStoreId);
@@ -380,7 +380,7 @@ export const useProductStore = defineStore('productStore', {
           productIdentificationPref
         )
       } catch (err) {
-        console.error('Failed to set identification pref:', err)
+        logger.error('Failed to set identification pref:', err)
       }
     },
 
@@ -497,7 +497,7 @@ export const useProductStore = defineStore('productStore', {
         console.warn('No valid identification settings returned for store:', productStoreId)
         return { primaryId: 'SKU', secondaryId: 'productId' }
       } catch (err) {
-        console.error('Failed to fetch product store settings:', err)
+        logger.error('Failed to fetch product store settings:', err)
         return { primaryId: 'SKU', secondaryId: 'productId' }
       }
     },
@@ -511,7 +511,7 @@ export const useProductStore = defineStore('productStore', {
         this.settings.productIdentifier.productIdentificationPref = { primaryId, secondaryId }
         console.info('[useProductStore] Loaded product identifier settings for', productStoreId)
       } catch (err) {
-        console.error('[useProductStore] Failed to load identifier settings:', err)
+        logger.error('[useProductStore] Failed to load identifier settings:', err)
       }
     },
 
@@ -527,7 +527,7 @@ export const useProductStore = defineStore('productStore', {
           if (matchedValue) return matchedValue
         }
       } catch (err) {
-        console.error(`[useProductStore] Failed to get identification for ${productId}/${type}`, err)
+        logger.error(`[useProductStore] Failed to get identification for ${productId}/${type}`, err)
       }
     },
 
@@ -573,7 +573,7 @@ export const useProductStore = defineStore('productStore', {
           }
         }
       } catch (error) {
-        console.error("Failed to resolve facility preference:", error);
+        logger.error("Failed to resolve facility preference:", error);
       }
       // In case app is not embedded and user has no facility preference on server
       this.currentFacility = this.facilities[0];
@@ -590,7 +590,7 @@ export const useProductStore = defineStore('productStore', {
         })
         this.currentFacility = payload
       } catch (error) {
-        console.error('Failed to set facility preference', error)
+        logger.error('Failed to set facility preference', error)
       }
     },
 

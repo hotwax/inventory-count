@@ -104,7 +104,7 @@ export const useUserProfile = defineStore('userProfile', {
         //   if(userContext.setUserLocale) await userContext.setUserLocale({ userId: userProfile.userId, newLocale })
         }
       } catch (error) {
-        console.error(error)
+        logger.error(error)
       } finally {
         i18n.global.locale = newLocale
         this.locale = newLocale
@@ -157,7 +157,7 @@ export const useUserProfile = defineStore('userProfile', {
         const timeZoneList = resp.data?.timeZones || [];
         this.timeZones = timeZoneList.filter((timeZone: any) => DateTime.local().setZone(timeZone.id).isValid);
       } catch(err) {
-        console.error('Error', err)
+        logger.error('Error', err)
       }
     },
     updateTimeZone(tzId: string) {
@@ -235,7 +235,7 @@ export const useUserProfile = defineStore('userProfile', {
             await initialize();
           }
         } catch(err) {
-          console.error(err)
+          logger.error(err)
         }
       } catch (error: any) {
         return Promise.reject(new Error(error));

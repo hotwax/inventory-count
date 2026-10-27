@@ -115,7 +115,7 @@ router.isReady().then(async () => {
       await initialize();
     }
   } catch (error) {
-    console.error('[IndexedDB] Failed to open CommonDB:', error)
+    logger.error('[IndexedDB] Failed to open CommonDB:', error)
   }
   app.mount('#app');
 });
