@@ -670,10 +670,10 @@ onIonViewDidEnter(async () => {
     }
   }
   aggregationWorker.onerror = (err) => {
-    console.error('[Worker Error]', err.message || err);
+    logger.error('[Worker Error]', err.message || err);
   };
   aggregationWorker.onmessageerror = (err) => {
-    console.error('[Worker Message Error]', err);
+    logger.error('[Worker Message Error]', err);
   };
   const barcodeIdentification = useProductStore().getBarcodeIdentificationPref;
 
@@ -712,7 +712,7 @@ async function unscheduleWorker() {
       aggregationWorkerApi = null;
     }
   } catch (err) {
-    console.error('[Session] Failed to terminate worker:', err);
+    logger.error('[Session] Failed to terminate worker:', err);
   }
 }
 

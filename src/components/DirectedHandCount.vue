@@ -152,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { commonUtil, translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { IonButton, IonCheckbox, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSkeletonText, IonText, IonThumbnail, alertController } from "@ionic/vue";
 import { addOutline, removeOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
@@ -310,8 +310,10 @@ async function save(): Promise<boolean> {
     commonUtil.showToast(synced ? translate("Items Saved") : translate("Saved on this device. Waiting to sync."));
 
     return true;
-  } catch {
-    commonUtil.showToast(translate("Could not save counts. Your edits are kept; check the session and try again."));
+  } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Error saving hand count totals:", err);
+    commonUtil.showToast(`${translate("Could not save counts. Your edits are kept; check the session and try again.")} ${serverError}`);
 
     return false;
   } finally {

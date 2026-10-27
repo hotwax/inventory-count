@@ -233,10 +233,10 @@ onIonViewDidEnter(async () => {
     if (resp?.status === 200) {
       totalItems.value = resp.data.count || 0
     } else {
-      console.error("Error fetching total items:", resp)
+      logger.error("Error fetching total items:", resp);
     }
   } catch (error) {
-    console.error("Error fetching total items:", error) 
+    logger.error("Error fetching total items:", error);
   }
 
   await getWorkEffortDetails();

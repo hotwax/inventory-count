@@ -117,7 +117,7 @@ import {
 } from '@ionic/vue';
 import { closeOutline, saveOutline } from "ionicons/icons";
 import { computed, onBeforeMount, ref, defineProps } from "vue";
-import { translate} from '@common'
+import { logger, translate } from '@common'
 import { DateTime } from 'luxon' 
 import { useUserProfile } from '@/stores/userProfileStore';
 
@@ -176,7 +176,7 @@ async function setUserTimeZone() {
   try {
     await useUserProfile().setDxpUserTimeZone(timeZoneId.value);
   } catch (error) {
-    console.error("Error Updating Time Zone: ", error);
+    logger.error("Error Updating Time Zone: ", error);
   }
   closeModal();
 }

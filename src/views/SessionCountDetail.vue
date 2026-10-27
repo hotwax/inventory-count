@@ -1074,10 +1074,10 @@ async function enterSession() {
       }
     }
     aggregationWorker.onerror = (err) => {
-      console.error('[Worker Error]', err.message || err);
+      logger.error('[Worker Error]', err.message || err);
     };
     aggregationWorker.onmessageerror = (err) => {
-      console.error('[Worker Message Error]', err);
+      logger.error('[Worker Message Error]', err);
     };
     aggregationWorker.postMessage({
       type: 'schedule',
@@ -1155,7 +1155,7 @@ async function fetchWorkEffort(id = viewId) {
       timerInterval = setInterval(updateTimer, 1000);
     }
   } catch (err) {
-    console.error('Failed to fetch work effort', err);
+    logger.error('Failed to fetch work effort', err);
   }
 }
 
@@ -1225,7 +1225,7 @@ async function startSession(id = viewId) {
     if (resp?.status === 200 && resp.data) {
       inventoryCountImport.value = resp.data;
     } else {
-      console.error("Session not Found");
+      logger.error("Session not Found");
       throw resp;
     }
 
@@ -1407,7 +1407,7 @@ async function resolveProductForConfirm(code: string) {
       countedSoFar,
     };
   } catch (err) {
-    console.error('Product [Component: SessionCountDetail] - Failed to resolve product for confirmation', err);
+    logger.error('Product [Component: SessionCountDetail] - Failed to resolve product for confirmation', err);
     return null;
   }
 }
@@ -1658,8 +1658,8 @@ async function getTotalItemCount() {
       totalItems.value = 0
     }
   } catch (err) {
-    console.error('Failed to fetch total item count', err)
-    totalItems.value = 0
+    logger.error('Failed to fetch total item count', err);
+    totalItems.value = 0;
   }
 }
 
@@ -1721,7 +1721,7 @@ async function getProducts() {
       products.value = resp.data.response.docs.length ? resp.data.response.docs : []
     }
   } catch (err) {
-    console.error('Failed to fetch products', err)
+    logger.error('Failed to fetch products', err);
   } finally {
     isLoading.value = false
   }
