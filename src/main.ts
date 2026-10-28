@@ -34,16 +34,23 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
-import { createDxpI18n, initialiseConfig, supportsIosKeyboardScroll } from '@common'
+import { createDxpI18n, faroUtil, initialiseConfig, logger, supportsIosKeyboardScroll } from '@common'
 import localeMessages from '@/locales'
 
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
+
+faroUtil.initialiseFaro()
+
 const app = createApp(App)
   .use(IonicVue, {
     mode: 'md',
     scrollAssist: !supportsIosKeyboardScroll(),
     innerHTMLTemplatesEnabled: true
+  })
+  .use(logger, {
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL,
+    afterHooks: [faroUtil.faroLoggerHook]
   })
   .use(pinia)
   .use(router)
@@ -115,7 +122,7 @@ router.isReady().then(async () => {
       await initialize();
     }
   } catch (error) {
-    console.error('[IndexedDB] Failed to open CommonDB:', error)
+    logger.error('[IndexedDB] Failed to open CommonDB:', error)
   }
   app.mount('#app');
 });

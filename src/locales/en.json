@@ -591,5 +591,16 @@
   "Could not save counts. Your edits are kept; check the session and try again.": "Could not save counts. Your edits are kept; check the session and try again.",
   "You have unsaved quantity changes.": "You have unsaved quantity changes.",
   "Retry": "Retry",
-  "Items Saved": "Items Saved"
+  "Items Saved": "Items Saved",
+  "View logs": "View logs",
+  "Logs": "Logs",
+  "Errors": "Errors",
+  "Clear logs": "Clear logs",
+  "Clear": "Clear",
+  "Copy these logs": "Copy these logs",
+  "Logs copied to the clipboard.": "Logs copied to the clipboard.",
+  "Download logs": "Download logs",
+  "Logs could not be downloaded.": "Logs could not be downloaded.",
+  "No logs recorded yet.": "No logs recorded yet.",
+  "This removes every stored log entry on this device.": "This removes every stored log entry on this device."
 }
