@@ -11,6 +11,12 @@
       <template v-if="isLoading">
         <ProgressBar :total-items="totalItems" :loaded-items="loadedItems" />
       </template>
+      <template v-else-if="reviewLoadFailed">
+        <ion-item data-testid="pending-review-detail-load-error">
+          <ion-label>{{ translate("Could not load count totals. Retry before reviewing.") }}</ion-label>
+          <ion-button slot="end" @click="retryReview">{{ translate("Retry") }}</ion-button>
+        </ion-item>
+      </template>
       <template v-else-if="workEffort">
         <div class="header">
           <ion-card data-testid="pending-review-detail-info-card">
@@ -143,7 +149,7 @@
                       </div>
 
                       <ion-label class="stat" data-testid="pending-review-detail-item-count-stat">
-                        <span data-testid="pending-review-detail-item-count-val">{{ item.quantity || '-' }}/{{ item.systemQuantityOnHand || '-' }}</span>
+                        <span data-testid="pending-review-detail-item-count-val">{{ item.quantity ?? '-' }}/{{ item.systemQuantityOnHand ?? '-' }}</span>
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
 
@@ -499,6 +505,7 @@ import { commonUtil, translate } from "@common";
 import router from "@/router";
 import { DateTime } from "luxon";
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
+import { useInventoryCountReview } from "@/composables/useInventoryCountReview";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useProductStore } from "@/stores/productStore";
@@ -521,6 +528,7 @@ const selectedProductsReview = ref<any[]>([]);
 const sessions = ref();
 
 const isLoading = ref(false);
+const reviewLoadFailed = ref(false);
 const isEditImportItemModalOpen = ref(false);
 const isSessionPopoverOpen = ref(false);
 const sessionPopoverEvent = ref<Event | null>(null);
@@ -689,7 +697,7 @@ async function saveEditImportItems() {
     );
 
     parent.quantity = headerTotal;
-    parent.proposedVarianceQuantity = headerTotal - parent.quantityOnHand;
+    parent.proposedVarianceQuantity = headerTotal - (parent.systemQuantityOnHand ?? 0);
 
     const listIndex = filteredSessionItems.value.findIndex(
       sessionItem => sessionItem.productId === parent.productId
@@ -750,7 +758,7 @@ async function removeProductFromSession() {
       );
 
       parent.quantity = newTotal;
-      parent.proposedVarianceQuantity = newTotal - parent.quantityOnHand;
+      parent.proposedVarianceQuantity = newTotal - (parent.systemQuantityOnHand ?? 0);
 
       const aggregatedIndex = aggregatedSessionItems.value.findIndex(
         (item) => item.productId === parent.productId
@@ -800,31 +808,15 @@ async function getWorkEffortDetails() {
 }
 
 async function getInventoryCycleCount() {
-  let pageIndex = 0;
-  let pageSize = totalItems.value > 5000 ? 500 : 250;
-  let hasMore = true;
-
+  reviewLoadFailed.value = false;
+  aggregatedSessionItems.value = [];
+  filteredSessionItems.value = [];
+  selectedProductsReview.value = [];
   try {
-    while (hasMore) {
-      const resp = await useInventoryCountRun().getCycleCount({
-        workEffortId: props.workEffortId,
-        pageSize,
-        pageIndex,
-      });
-
-      if (!resp?.data?.length) break;
-
-      aggregatedSessionItems.value.push(...resp.data);
-
-      loadedItems.value = aggregatedSessionItems.value.length;
-
-      if (resp.data.length < pageSize) {
-        hasMore = false;
-        break;
-      }
-      pageIndex++;
-    }
-
+    const result = await useInventoryCountReview().load(props.workEffortId!);
+    aggregatedSessionItems.value = result.items;
+    totalItems.value = result.items.length;
+    loadedItems.value = result.items.length;
     if (aggregatedSessionItems.value.length) {
       const minTimes = aggregatedSessionItems.value.map((item) => item.minLastUpdatedAt);
       const maxTimes = aggregatedSessionItems.value.map((item) => item.maxLastUpdatedAt);
@@ -841,9 +833,16 @@ async function getInventoryCycleCount() {
     );
     scheduleProductHydration(aggregatedSessionItems.value);
   } catch {
+    reviewLoadFailed.value = true;
     aggregatedSessionItems.value = [];
     filteredSessionItems.value = [];
   }
+}
+
+async function retryReview() {
+  isLoading.value = true;
+  await getInventoryCycleCount();
+  isLoading.value = false;
 }
 
 function scheduleProductHydration(items: any[]) {
@@ -928,14 +927,12 @@ async function submitSingleProductReview(
       },
     ];
 
-    await useInventoryCountRun().submitProductReview({
-      inventoryCountProductsList: body,
-    });
+    await useInventoryCountReview().submit(body);
 
     item.decisionOutcomeEnumId = outcome;
     submittedItemsCount.value++;
   } catch {
-    commonUtil.showToast("Error submitting review");
+    commonUtil.showToast(translate("Review could not be submitted. Refresh the count and try again."));
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
@@ -961,9 +958,7 @@ async function submitSelectedProductReviews(outcome: any) {
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
 
-      await useInventoryCountRun().submitProductReview({
-        inventoryCountProductsList: batch,
-      });
+      await useInventoryCountReview().submit(batch);
 
       const processedIds = batch.map((batch) => batch.productId);
 
@@ -980,7 +975,7 @@ async function submitSelectedProductReviews(outcome: any) {
 
     commonUtil.showToast("Submitted successfully");
   } catch {
-    commonUtil.showToast("Some items failed");
+    commonUtil.showToast(translate("Review could not be submitted. Refresh the count and try again."));
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 
@@ -989,6 +984,7 @@ async function submitSelectedProductReviews(outcome: any) {
 
 /* CLOSE CYCLE COUNT */
 async function closeCycleCount() {
+  if (reviewLoadFailed.value) return;
   await loader.present("Closing Cycle Count...");
   try {
     await useInventoryCountRun().updateWorkEffort({
@@ -1043,9 +1039,7 @@ async function performBulkCloseAction() {
     for (let i = 0; i < itemsToProcess.length; i += batchSize) {
       const batch = itemsToProcess.slice(i, i + batchSize);
 
-      await useInventoryCountRun().submitProductReview({
-        inventoryCountProductsList: batch,
-      });
+      await useInventoryCountReview().submit(batch);
 
       const ids = batch.map((batch) => batch.productId);
 
@@ -1058,7 +1052,7 @@ async function performBulkCloseAction() {
 
     await closeCycleCount();
   } catch (error: any) {
-    commonUtil.showToast("Bulk action failed");
+    commonUtil.showToast(translate("Review could not be submitted. Refresh the count and try again."));
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
   loader.dismiss();
