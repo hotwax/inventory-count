@@ -16,4 +16,4 @@ jobs:
     secrets:
       envPAT: ${{ secrets.envPAT }}
       DEV_FIREBASE_SERVICE_ACCOUNT: ${{ secrets.DEV_FIREBASE_SERVICE_ACCOUNT }}
-      SHOPIFY_SHOP_CONFIG: ${{ secrets.SHOPIFY_SHOP_CONFIG }}
+      SHOPIFY_SHOP_CONFIG: ${{ secrets.DEV_SHOPIFY_SHOP_CONFIG }}

@@ -18,3 +18,4 @@ jobs:
     secrets:
       envPAT: ${{ secrets.envPAT }}
       UAT_FIREBASE_SERVICE_ACCOUNT: ${{ secrets.UAT_FIREBASE_SERVICE_ACCOUNT }}
+      SHOPIFY_SHOP_CONFIG: ${{ secrets.DEV_SHOPIFY_SHOP_CONFIG }}
