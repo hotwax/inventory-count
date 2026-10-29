@@ -410,7 +410,7 @@
         </ion-buttons>
 
         <ion-buttons slot="end">
-          <ion-button :disabled="isLoading" fill="outline" color="dark" size="small" @click="handleCloseClick" data-testid="pending-review-detail-footer-close-btn">
+          <ion-button :disabled="isLoading || reviewLoadFailed" fill="outline" color="dark" size="small" @click="handleCloseClick" data-testid="pending-review-detail-footer-close-btn">
             {{ translate("Close") }}
           </ion-button>
         </ion-buttons>
@@ -1000,6 +1000,7 @@ async function closeCycleCount() {
 }
 
 function handleCloseClick() {
+  if (isLoading.value || reviewLoadFailed.value) return;
   if (!openItems.value.length) {
     isCloseAlertOpen.value = true;
   } else {
