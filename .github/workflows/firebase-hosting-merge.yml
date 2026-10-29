@@ -15,5 +15,5 @@ jobs:
       appDir: inventory-count
     secrets:
       envPAT: ${{ secrets.envPAT }}
-      HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
-      SHOPIFY_SHOP_CONFIG: ${{ secrets.SHOPIFY_SHOP_CONFIG }}
+      DEV_FIREBASE_SERVICE_ACCOUNT: ${{ secrets.DEV_FIREBASE_SERVICE_ACCOUNT }}
+      SHOPIFY_SHOP_CONFIG: ${{ secrets.DEV_SHOPIFY_SHOP_CONFIG }}

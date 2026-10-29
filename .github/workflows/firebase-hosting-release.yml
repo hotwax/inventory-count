@@ -17,4 +17,5 @@ jobs:
       accxuiVersion: v1.12.0
     secrets:
       envPAT: ${{ secrets.envPAT }}
-      HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
+      UAT_FIREBASE_SERVICE_ACCOUNT: ${{ secrets.UAT_FIREBASE_SERVICE_ACCOUNT }}
+      SHOPIFY_SHOP_CONFIG: ${{ secrets.DEV_SHOPIFY_SHOP_CONFIG }}
