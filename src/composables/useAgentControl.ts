@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { api, commonUtil, useAuth } from '@common';
+import { api, commonUtil, logger, useAuth } from '@common';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { db } from '@/services/appInitializer';
 
@@ -58,11 +58,11 @@ async function getOrCreateDeviceId(facilityId: string): Promise<string | null> {
             await db?.appPreferences.put({ "key": "deviceId", "value": deviceId });
             return deviceId;
         } else {
-            console.error('[AgentControl] Failed to get device ID:', resp?.data);
+            logger.error('[AgentControl] Failed to get device ID:', resp?.data);
             return null;
         }
     } catch (error) {
-        console.error('[AgentControl] Error getting device ID:', error);
+        logger.error('[AgentControl] Error getting device ID:', error);
         throw error;
     }
 }
@@ -87,14 +87,14 @@ async function fetchInstructions(deviceId: string, facilityId: string): Promise<
 
         if (resp && !commonUtil.hasError(resp)) {
             const instructions = resp.data.instructions || [];
-            console.log(`[AgentControl] Fetched ${instructions.length} instructions`);
+            logger.log(`[AgentControl] Fetched ${instructions.length} instructions`);
             return instructions;
         } else {
-            console.error('[AgentControl] Failed to fetch instructions:', resp?.data);
+            logger.error('[AgentControl] Failed to fetch instructions:', resp?.data);
             return [];
         }
     } catch (error) {
-        console.error('[AgentControl] Error fetching instructions:', error);
+        logger.error('[AgentControl] Error fetching instructions:', error);
         return [];
     }
 }
@@ -116,14 +116,14 @@ async function acknowledgeInstruction(agentCtrlInstructionId: string, deviceId: 
         });
 
         if (resp && !commonUtil.hasError(resp)) {
-            console.log(`[AgentControl] Acknowledged instruction ${agentCtrlInstructionId}`);
+            logger.log(`[AgentControl] Acknowledged instruction ${agentCtrlInstructionId}`);
             return resp.data.success;
         } else {
-            console.error('[AgentControl] Failed to acknowledge instruction:', resp?.data);
+            logger.error('[AgentControl] Failed to acknowledge instruction:', resp?.data);
             return false;
         }
     } catch (error) {
-        console.error('[AgentControl] Error acknowledging instruction:', error);
+        logger.error('[AgentControl] Error acknowledging instruction:', error);
         return false;
     }
 }
@@ -145,9 +145,9 @@ async function handleClearIndexedDB(): Promise<void> {
         await db.transaction("rw", db.scanEvents, async () => {
             await db.scanEvents.clear();
         });
-        console.log('[AgentControl] IndexedDB cleared');
+        logger.log('[AgentControl] IndexedDB cleared');
     } catch (error) {
-        console.error('[AgentControl] Error clearing IndexedDB:', error);
+        logger.error('[AgentControl] Error clearing IndexedDB:', error);
         throw error;
     }
 }
@@ -161,9 +161,9 @@ async function handleClearCache(): Promise<void> {
         localStorage.clear();
         sessionStorage.clear();
         handleClearIndexedDB();
-        console.log('[AgentControl] Local cache cleared (deviceId preserved in IndexedDB)');
+        logger.log('[AgentControl] Local cache cleared (deviceId preserved in IndexedDB)');
     } catch (error) {
-        console.error('[AgentControl] Error clearing cache:', error);
+        logger.error('[AgentControl] Error clearing cache:', error);
         throw error;
     }
 }
@@ -174,9 +174,9 @@ async function handleClearCache(): Promise<void> {
 async function handleLogoutUser(): Promise<void> {
     try {
         await useAuth().logout({ isUserUnauthorised: false });
-        console.log('[AgentControl] User logged out');
+        logger.log('[AgentControl] User logged out');
     } catch (error) {
-        console.error('[AgentControl] Error logging out user:', error);
+        logger.error('[AgentControl] Error logging out user:', error);
         throw error;
     }
 }
@@ -188,12 +188,12 @@ async function handleAddSolrFilter(payloadJson?: string): Promise<void> {
     try {
         if (payloadJson) {
             const payload = JSON.parse(payloadJson);
-            console.log('[AgentControl] Solr filter payload:', payload);
+            logger.log('[AgentControl] Solr filter payload:', payload);
             // TODO: Implement Solr filter logic
         }
-        console.log('[AgentControl] Add Solr filter - not yet implemented');
+        logger.log('[AgentControl] Add Solr filter - not yet implemented');
     } catch (error) {
-        console.error('[AgentControl] Error adding Solr filter:', error);
+        logger.error('[AgentControl] Error adding Solr filter:', error);
         throw error;
     }
 }
@@ -203,7 +203,7 @@ async function handleAddSolrFilter(payloadJson?: string): Promise<void> {
  */
 async function executeInstruction(instruction: any, deviceId: string): Promise<boolean> {
     try {
-        console.log(`[AgentControl] Executing instruction: ${instruction.instructionTypeEnumId}`);
+        logger.log(`[AgentControl] Executing instruction: ${instruction.instructionTypeEnumId}`);
 
         switch (instruction.instructionTypeEnumId) {
             case InstructionTypes.CLEAR_IDX_DB:
@@ -223,21 +223,21 @@ async function executeInstruction(instruction: any, deviceId: string): Promise<b
                 break;
 
             default:
-                console.warn(`[AgentControl] Unknown instruction type: ${instruction.instructionTypeEnumId}`);
+                logger.warn(`[AgentControl] Unknown instruction type: ${instruction.instructionTypeEnumId}`);
                 return false;
         }
 
         const acknowledged = await acknowledgeInstruction(instruction.agentCtrlInstructionId, deviceId);
 
         if (acknowledged) {
-            console.log(`[AgentControl] Successfully executed and acknowledged: ${instruction.instructionTypeEnumId}`);
+            logger.log(`[AgentControl] Successfully executed and acknowledged: ${instruction.instructionTypeEnumId}`);
         } else {
-            console.warn(`[AgentControl] Executed but failed to acknowledge: ${instruction.instructionTypeEnumId}`);
+            logger.warn(`[AgentControl] Executed but failed to acknowledge: ${instruction.instructionTypeEnumId}`);
         }
 
         return true;
     } catch (error) {
-        console.error(`[AgentControl] Error executing instruction ${instruction.instructionTypeEnumId}:`, error);
+        logger.error(`[AgentControl] Error executing instruction ${instruction.instructionTypeEnumId}:`, error);
         return false;
     }
 }
@@ -250,19 +250,19 @@ async function fetchAndExecuteInstructions(deviceId: string, facilityId: string)
         const instructions = await fetchInstructions(deviceId, facilityId);
 
         if (instructions.length === 0) {
-            console.log('[AgentControl] No pending instructions');
+            logger.log('[AgentControl] No pending instructions');
             return;
         }
 
-        console.log(`[AgentControl] Executing ${instructions.length} instruction(s)...`);
+        logger.log(`[AgentControl] Executing ${instructions.length} instruction(s)...`);
 
         for (const instruction of instructions) {
             await executeInstruction(instruction, deviceId);
         }
 
-        console.log('[AgentControl] Finished executing all instructions');
+        logger.log('[AgentControl] Finished executing all instructions');
     } catch (error) {
-        console.error('[AgentControl] Error in fetchAndExecuteInstructions:', error);
+        logger.error('[AgentControl] Error in fetchAndExecuteInstructions:', error);
         throw error;
     }
 }
@@ -273,22 +273,22 @@ async function fetchAndExecuteInstructions(deviceId: string, facilityId: string)
  */
 async function initializeAgentControl(facilityId: string): Promise<void> {
     try {
-        console.log('[AgentControl] Initializing agent control system...');
+        logger.log('[AgentControl] Initializing agent control system...');
 
         // Always get/register device ID (creates ExecutionAgent record if needed)
         const deviceId = await getOrCreateDeviceId(facilityId);
 
         if (!deviceId) {
-            console.error('[AgentControl] Failed to get device ID, aborting initialization');
+            logger.error('[AgentControl] Failed to get device ID, aborting initialization');
             return;
         }
 
         // Always check for and execute pending instructions
         await fetchAndExecuteInstructions(deviceId, facilityId);
 
-        console.log('[AgentControl] Agent control system initialized successfully');
+        logger.log('[AgentControl] Agent control system initialized successfully');
     } catch (error) {
-        console.error('[AgentControl] Error initializing agent control:', error);
+        logger.error('[AgentControl] Error initializing agent control:', error);
         throw error;
     }
 }
@@ -303,7 +303,7 @@ export function useAgentControl() {
      */
     async function initialize(facilityId?: string): Promise<boolean> {
         if (isInitializing.value) {
-            console.warn('[useAgentControl] Initialization already in progress');
+            logger.warn('[useAgentControl] Initialization already in progress');
             return false;
         }
 
@@ -324,7 +324,7 @@ export function useAgentControl() {
 
             return true;
         } catch (error) {
-            console.error('[useAgentControl] Initialization failed:', error);
+            logger.error('[useAgentControl] Initialization failed:', error);
             lastError.value = error as Error;
             isInitialized.value = false;
             return false;
@@ -354,7 +354,7 @@ export function useAgentControl() {
 
             return id;
         } catch (error) {
-            console.error('[useAgentControl] Device registration failed:', error);
+            logger.error('[useAgentControl] Device registration failed:', error);
             lastError.value = error as Error;
             return null;
         }
@@ -384,7 +384,7 @@ export function useAgentControl() {
             await fetchAndExecuteInstructions(id, targetFacilityId);
             return true;
         } catch (error) {
-            console.error('[useAgentControl] Failed to fetch instructions:', error);
+            logger.error('[useAgentControl] Failed to fetch instructions:', error);
             lastError.value = error as Error;
             return false;
         }
@@ -409,7 +409,7 @@ export function useAgentControl() {
             const pref = await db?.appPreferences.get("deviceId");
             return pref?.value || null;
         } catch (error) {
-            console.error('[useAgentControl] Error getting stored device ID:', error);
+            logger.error('[useAgentControl] Error getting stored device ID:', error);
             return null;
         }
     }

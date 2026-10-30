@@ -1,5 +1,6 @@
 import { expose } from 'comlink'
 import workerRemoteApi from '@common/core/workerRemoteApi'
+import { logger } from '@common'
 
 export interface LockHeartbeatWorker {
   startHeartbeat: (payload: HeartbeatPayload) => void | Promise<void>
@@ -127,7 +128,7 @@ async function performHeartbeat() {
 
       activeLock = resp?.entityValueList?.[0] || null
     } catch (err: any) {
-      console.error('[LockHeartbeatWorker] Active lock check failed:', err)
+      logger.error('[LockHeartbeatWorker] Active lock check failed:', err)
       self.postMessage({
         type: 'heartbeatError',
         error: err?.message ?? String(err)
@@ -177,7 +178,7 @@ async function performHeartbeat() {
 
     self.postMessage({ type: 'heartbeatSuccess', thruDate: newThruDate })
   } catch (err: any) {
-    console.error('[LockHeartbeatWorker] Heartbeat error:', err)
+    logger.error('[LockHeartbeatWorker] Heartbeat error:', err)
     self.postMessage({
       type: 'heartbeatError',
       error: err?.message ?? String(err)

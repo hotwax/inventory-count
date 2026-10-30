@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie';
 import Papa from 'papaparse';
 import { useProductMaster } from './useProductMaster';
-import { api } from '@common';
+import { api, logger } from '@common';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
@@ -81,7 +81,7 @@ function currentMillis(): number {
       });
 
     } catch (err) {
-      console.error('[IndexedDB] Failed to store batch', err);
+      logger.error('[IndexedDB] Failed to store batch', err);
     }
   }
 
@@ -158,7 +158,7 @@ function currentMillis(): number {
 
       return records || [];
     } catch (err) {
-      console.error('Error fetching inventory records from IndexedDB:', err);
+      logger.error('Error fetching inventory records from IndexedDB:', err);
       return [];
     }
   }
@@ -172,7 +172,7 @@ function currentMillis(): number {
 
       return count;
     } catch (err) {
-      console.error('Error counting inventory records from IndexedDB:', err);
+      logger.error('Error counting inventory records from IndexedDB:', err);
       return 0;
     }
   }
@@ -188,7 +188,7 @@ function currentMillis(): number {
 
     return record || null;
   } catch (err) {
-    console.error('Failed to check direction status', err);
+    logger.error('Failed to check direction status', err);
     return null;
   }
 }
@@ -221,7 +221,7 @@ function currentMillis(): number {
 
       return ordered;
     } catch (err) {
-      console.error("Error fetching ordered productIds:", err);
+      logger.error("Error fetching ordered productIds:", err);
       return [];
     }
   }
@@ -485,7 +485,7 @@ async function discardSession(inventoryCountImportId: string): Promise<void> {
       }
     })
   } catch (err) {
-    console.error(`useInventoryCountImport Failed to discard session ${inventoryCountImportId}`, err)
+    logger.error(`useInventoryCountImport Failed to discard session ${inventoryCountImportId}`, err)
     throw err
   }
 }
@@ -500,7 +500,7 @@ async function submitSession(inventoryCountImportId: string): Promise<void> {
       }
     })
   } catch (err) {
-    console.error(`useInventoryCountImport Failed to submit InventoryCountImport ${inventoryCountImportId}`, err)
+    logger.error(`useInventoryCountImport Failed to submit InventoryCountImport ${inventoryCountImportId}`, err)
     throw err
   }
 }

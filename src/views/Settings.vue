@@ -238,7 +238,7 @@
 <script setup lang="ts">
 import { IonAvatar, IonBadge, IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonImg, IonItem, IonItemDivider, IonLabel, IonList, IonMenuButton, IonModal, IonNote, IonPage, IonSelect, IonSelectOption, IonTitle, IonToolbar, alertController } from "@ionic/vue";
 import { computed, onMounted, ref } from "vue";
-import { commonUtil, translate } from "@common"
+import { commonUtil, logger, translate } from "@common"
 import { bluetoothOutline, closeOutline, medicalOutline, openOutline, shieldCheckmarkOutline, trashOutline } from "ionicons/icons"
 import { useAuth } from "@common";
 import router from "@/router";
@@ -372,8 +372,9 @@ async function confirmClearLocalInventoryData() {
             });
             commonUtil.showToast(translate("Local inventory data cleared."));
           } catch (error) {
-            console.error("Failed to clear local inventory data:", error);
-            commonUtil.showToast(translate("Failed to clear local inventory data."));
+            const serverError = commonUtil.getErrorMessage(error);
+            logger.error("Failed to clear local inventory data:", error);
+            commonUtil.showToast(`${translate("Failed to clear local inventory data.")} ${serverError}`);
           }
         }
       }

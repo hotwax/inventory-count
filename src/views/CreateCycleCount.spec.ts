@@ -17,7 +17,8 @@ vi.mock('@common', () => ({
   logger: { error: vi.fn(), info: vi.fn() },
   commonUtil: {
     hasError: (resp: any) => !!resp?.data?.errors,
-    showToast: (...args: any[]) => showToast(...args)
+    showToast: (...args: any[]) => showToast(...args),
+    getErrorMessage: () => ""
   },
   useSolrSearch: () => ({ searchProducts }),
   api: vi.fn()
