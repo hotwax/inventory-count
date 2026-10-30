@@ -8,9 +8,10 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [ {
-        "source": "/v5.0.0/**",
-        "destination": "/v5.0.0/index.html"
+      "rewrites": [
+      {
+        "source": "/v5.4.1/**",
+        "destination": "/v5.4.1/index.html"
       },
       {
         "source": "**",
@@ -43,9 +44,9 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [ {
-        "source": "/v5.0.0/**",
-        "destination": "/v5.0.0/index.html"
+      "rewrites": [{
+        "source": "/v5.4.1/**",
+        "destination": "/v5.4.1/index.html"
       },
       {
         "source": "**",
@@ -78,9 +79,9 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [ {
-        "source": "/v5.0.0/**",
-        "destination": "/v5.0.0/index.html"
+      "rewrites": [{
+        "source": "/v5.4.1/**",
+        "destination": "/v5.4.1/index.html"
       },
       {
         "source": "**",
