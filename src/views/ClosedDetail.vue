@@ -115,7 +115,7 @@
                         </ion-item>
                       </div>
                       <ion-label class="stat" data-testid="closed-detail-product-count-stat">
-                        <span data-testid="closed-detail-product-counted-qty">{{ item.quantity ?? '-' }}</span>/<span data-testid="closed-detail-product-system-qty">{{ item.systemQuantity ?? '-' }}</span>
+                        <span data-testid="closed-detail-product-counted-qty">{{ item.quantity || '-' }}</span>/<span data-testid="closed-detail-product-system-qty">{{ item.systemQuantity || '-' }}</span>
                         <p>{{ translate("counted/systemic") }}</p>
                       </ion-label>
                       <ion-label class="stat" data-testid="closed-detail-product-variance-stat">
@@ -205,7 +205,6 @@ import { IonAccordion, IonAccordionGroup, IonAvatar, IonBackButton, IonBadge, Io
 import { calendarClearOutline, businessOutline, personCircleOutline } from "ionicons/icons";
 import { commonUtil, translate } from '@common'
 import { useInventoryCountRun } from "@/composables/useInventoryCountRun";
-import { useInventoryCountReview } from "@/composables/useInventoryCountReview";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { DateTime } from "luxon";
 import { useProductStore } from "@/stores/productStore";
@@ -291,13 +290,32 @@ async function getCountSessions(productId: any) {
 }
 
 async function getInventoryCycleCount() {
-  aggregatedSessionItems.value = [];
-  filteredSessionItems.value = [];
+  let pageIndex = 0;
+  let pageSize = 250;
+  if (totalItems.value > 5000) {
+    pageSize = 500;
+  }
+  let hasMore = true;
   try {
-    const result = await useInventoryCountReview().load(props.workEffortId!);
-    aggregatedSessionItems.value = result.items;
-    totalItems.value = result.items.length;
-    loadedItems.value = result.items.length;
+    while (hasMore) {
+      const resp = await useInventoryCountRun().getCycleCount({
+        workEffortId: props.workEffortId,
+        pageSize,
+        pageIndex,
+      });
+      if (resp && resp.status === 200 && resp.data?.length) {
+        aggregatedSessionItems.value.push(...resp.data);
+        if (resp.data.length < pageSize) {
+          hasMore = false;
+        } else {
+          pageIndex++;
+        }
+      } else {
+        hasMore = false;
+      }
+      loadedItems.value = aggregatedSessionItems.value.length;
+
+    }
     if (aggregatedSessionItems.value.length > 0) {
       const minTimes = aggregatedSessionItems.value.map(i => i.minLastUpdatedAt);
       const maxTimes = aggregatedSessionItems.value.map(i => i.maxLastUpdatedAt);
