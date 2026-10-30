@@ -120,7 +120,8 @@
         <ion-note slot="end" data-testid="create-count-selected-note">{{ selectedRowsCount }} {{ translate("selected") }}</ion-note>
       </ion-item>
 
-      <ion-list v-if="visibleProducts.length" data-testid="create-count-product-list">
+      <!-- Keep these siblings mounted while Ionic presents and dismisses the inline modal. -->
+      <ion-list v-show="visibleProducts.length" data-testid="create-count-product-list">
         <div v-for="product in visibleProducts" :key="product.productId" class="list-item selectable-row" :class="{ 'selected-row': isProductSelected(product) }" @click="toggleSelection(product)" :data-testid="'create-count-product-row-' + product.productId">
           <ion-item lines="none">
             <ion-checkbox slot="start" :checked="isProductSelected(product)" @click.stop @ionChange="toggleSelection(product)" :data-testid="'create-count-product-checkbox-' + product.productId" />
@@ -150,7 +151,7 @@
           <ion-infinite-scroll-content loading-spinner="crescent" :loading-text="translate('Loading more items...')" />
         </ion-infinite-scroll>
       </ion-list>
-      <div v-else class="empty-state" data-testid="create-count-empty-state">
+      <div v-show="!visibleProducts.length" class="empty-state" data-testid="create-count-empty-state">
         <ion-spinner v-if="isFetching" color="secondary" name="crescent" />
         <p v-else>
           {{ isFilterApplied ? translate("No records found") : translate("Please select filters to view items") }}
