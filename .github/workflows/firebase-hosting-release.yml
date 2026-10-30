@@ -14,7 +14,7 @@ jobs:
       app: hotwax/inventory-count
       appDir: inventory-count
       reuseHostedVersions: true
-      accxuiVersion: v1.12.0
+      accxuiVersion: v1.13.1
     secrets:
       envPAT: ${{ secrets.envPAT }}
       HOTWAX_PUBLIC_SECRET: ${{ secrets.HOTWAX_PUBLIC_SECRET }}
