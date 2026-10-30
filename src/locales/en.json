@@ -1,4 +1,6 @@
 {
+  "Could not load count totals. Retry before reviewing.": "Could not load count totals. Retry before reviewing.",
+  "Review could not be submitted. Refresh the count and try again.": "Review could not be submitted. Refresh the count and try again.",
   "Saved on this device. Waiting to sync.": "Saved on this device. Waiting to sync.",
   "Save changes: {count}": "Save changes: {count}",
   "No unsaved changes": "No unsaved changes",
