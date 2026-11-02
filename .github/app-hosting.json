@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "workflow": "manage-app-hosting.yml",
+  "stateBranch": "app-hosting-state",
+  "environments": ["uat", "prod"]
+}

@@ -1,0 +1,52 @@
+name: Manage app hosting
+run-name: '${{ inputs.operation }} ${{ inputs.environment }} ${{ inputs.action }} ${{ inputs.version }} [${{ inputs.request_id }}]'
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Operation phase
+        required: true
+        type: choice
+        options: [inventory, plan, execute]
+      environment:
+        description: Hosting environment
+        required: true
+        type: choice
+        options: [uat, prod]
+      request_id:
+        description: Unique request UUID from Release Management
+        required: true
+        type: string
+      action:
+        description: publish, default, remove, rebuild or replace (blank for inventory)
+        type: string
+      version:
+        description: Published vX.Y.Z version; comma-separated list for publish and replace (blank for rebuild)
+        type: string
+      default_version:
+        description: Default (root) version for replace; must be one of the listed versions
+        type: string
+      plan_sha:
+        description: Reviewed plan Git blob SHA (execute only)
+        type: string
+      confirmation:
+        description: Confirmation from the reviewed plan
+        type: string
+permissions:
+  contents: write
+  actions: read
+jobs:
+  hosting:
+    # Production also needs APP_HOSTING_PROD_ENABLED=true; the shared workflow refuses it otherwise.
+    uses: hotwax/accxui/.github/workflows/common-app-hosting.yml@main
+    with:
+      operation: ${{ inputs.operation }}
+      environment: ${{ inputs.environment }}
+      request_id: ${{ inputs.request_id }}
+      action: ${{ inputs.action }}
+      version: ${{ inputs.version }}
+      default_version: ${{ inputs.default_version }}
+      plan_sha: ${{ inputs.plan_sha }}
+      confirmation: ${{ inputs.confirmation }}
+      tools_ref: main
+    secrets: inherit
