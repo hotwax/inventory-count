@@ -824,27 +824,31 @@ function failLoad(loadId: number, error?: any) {
   if (loadId !== reviewLoadId) return;
   hasLoadError.value = true;
   const serverError = commonUtil.getErrorMessage(error);
-  commonUtil.showToast(`${translate("Something went wrong")}. ${serverError}`);
+  commonUtil.showToast(`${translate("Failed to load cycle count review")}. ${serverError}`);
 }
 
 async function getWorkEffortDetails(loadId: number) {
-  const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
-  if (workEffortResp?.status === 200 && workEffortResp.data) {
-    workEffort.value = workEffortResp.data;
-    const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId, pageNoLimit: true });
-    if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
-      workEffort.value.sessions = sessionsResp.data;
-    }
-    const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId});
-    if (resp?.status === 200 && resp.data) {
-      totalItems.value = resp.data.count || 0;
+  try {
+    const workEffortResp = await useInventoryCountRun().getWorkEffort({ workEffortId: props.workEffortId });
+    if (workEffortResp?.status === 200 && workEffortResp.data) {
+      workEffort.value = workEffortResp.data;
+      const sessionsResp = await useInventoryCountRun().getCycleCountSessions({ workEffortId: props.workEffortId, pageNoLimit: true });
+      if (sessionsResp?.status === 200 && sessionsResp.data?.length) {
+        workEffort.value.sessions = sessionsResp.data;
+      }
+      const resp = await useInventoryCountRun().getProductReviewDetailCount({workEffortId: props.workEffortId});
+      if (resp?.status === 200 && resp.data) {
+        totalItems.value = resp.data.count || 0;
+      } else {
+        logger.error("Error fetching total items:", resp);
+      }
+      return loadId === reviewLoadId;
     } else {
-      logger.error("Error fetching total items:", resp);
+      throw workEffortResp;
     }
-    return loadId === reviewLoadId;
-  } else {
-    logger.error("Error getting the Cycle Count Details", workEffortResp);
-    failLoad(loadId, workEffortResp);
+  } catch (error) {
+    logger.error("Error getting the Cycle Count Details", error);
+    failLoad(loadId, error);
     return false;
   }
 }

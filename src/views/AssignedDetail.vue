@@ -350,7 +350,7 @@ async function handleChange(ev: any, currentField: string) {
   } catch (error) {
     const serverError = commonUtil.getErrorMessage(error);
     logger.error(`Failed to update ${currentField} on cycle count`, error);
-    commonUtil.showToast(`${translate("Failed to update cycle count")}. ${serverError}`);
+    commonUtil.showToast(`${translate("Failed to update: {currentField} on cycle count", { currentField })}. ${serverError}`);
   }
 }
 

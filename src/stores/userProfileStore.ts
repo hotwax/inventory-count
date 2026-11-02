@@ -238,7 +238,7 @@ export const useUserProfile = defineStore('userProfile', {
           logger.error(err)
         }
       } catch (error: any) {
-        return Promise.reject(new Error(error));
+        return Promise.reject(error);
       }
     },
 

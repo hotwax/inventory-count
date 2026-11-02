@@ -1609,10 +1609,7 @@ async function handleSessionLock(id = viewId) {
       }
       isNewLockAcquired.value = true;
     } else {
-      const serverError = commonUtil.getErrorMessage(newLockResp);
-      logger.error('Failed to acquire lock:', newLockResp);
-      sessionLocked.value = true;
-      commonUtil.showToast(`${translate('Failed to acquire lock.')} ${serverError}`);
+      throw newLockResp;
     }
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
@@ -1862,7 +1859,7 @@ async function confirmDiscard() {
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
-    if (isCurrentView(id)) commonUtil.showToast(`${translate('Failed to discard session.')} ${serverError}`);
+    if (isCurrentView(id)) commonUtil.showToast(`${translate('Failed to discard session')}. ${serverError}`);
   }
 }
 

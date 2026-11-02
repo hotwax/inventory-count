@@ -986,11 +986,11 @@ async function submitSelectedProductReviews(outcome: any) {
 
     selectedProductsReview.value = [];
 
-    commonUtil.showToast(translate("Submitted successfully."));
+    commonUtil.showToast(translate("Submitted successfully"));
   } catch (err) {
     const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
-    commonUtil.showToast(`${translate("Failed to submit review")}. ${serverError}`);
+    commonUtil.showToast(`${translate("Some items failed")}. ${serverError}`);
   }
   aggregatedSessionItems.value = [...aggregatedSessionItems.value];
 

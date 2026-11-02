@@ -1,6 +1,6 @@
 import { expose } from 'comlink'
 import workerRemoteApi from '@common/core/workerRemoteApi'
-import { logger } from '@common'
+import logger from '@common/core/logger'
 
 export interface LockHeartbeatWorker {
   startHeartbeat: (payload: HeartbeatPayload) => void | Promise<void>
