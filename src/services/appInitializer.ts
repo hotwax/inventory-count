@@ -40,7 +40,7 @@ export async function initialize() {
   // Initialize agent control system using composable
   // Note: This should only run once per session, not on every page refresh
   const agentControl = useAgentControl();
-  const facilityId = useProductStore().getCurrentFacility.facilityId;
+  const facilityId = useProductStore().getCurrentFacility?.facilityId;
 
   if (facilityId) {
     // Run agent control initialization in background
