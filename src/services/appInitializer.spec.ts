@@ -26,7 +26,7 @@ vi.mock("@/services/commonDatabase", () => ({
   })
 }));
 
-import { initialize } from "@/services/appInitializer";
+import { initialize, startAgentControl } from "@/services/appInitializer";
 
 beforeEach(() => {
   agentInitialize.mockClear();
@@ -49,5 +49,23 @@ describe("app initializer", () => {
     await initialize();
 
     expect(agentInitialize).toHaveBeenCalledWith("FAC_1");
+  });
+});
+
+describe("starting agent control after login", () => {
+  it("does nothing while no facility is selected", () => {
+    productStore.getCurrentFacility = null;
+
+    startAgentControl();
+
+    expect(agentInitialize).not.toHaveBeenCalled();
+  });
+
+  it("starts agent control for the facility selected at login", () => {
+    productStore.getCurrentFacility = { facilityId: "FAC_2" };
+
+    startAgentControl();
+
+    expect(agentInitialize).toHaveBeenCalledWith("FAC_2");
   });
 });

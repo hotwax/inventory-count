@@ -217,7 +217,7 @@ export const useUserProfile = defineStore('userProfile', {
         
         const productStore = useProductStore();
         const { useInventoryCountRun } = await import('@/composables/useInventoryCountRun');
-        const { db, initialize } = await import('@/services/appInitializer');
+        const { db, initialize, startAgentControl } = await import('@/services/appInitializer');
         
         await productStore.fetchUserFacilities();
         await productStore.fetchFacilityPreference();
@@ -233,6 +233,10 @@ export const useUserProfile = defineStore('userProfile', {
         try {
           if(!db) {
             await initialize();
+          } else {
+            // The database was already opened on the login screen, where no facility was known yet
+            // and agent control was skipped. The facility is loaded now, so start it.
+            startAgentControl();
           }
         } catch(err) {
           logger.error(err)
