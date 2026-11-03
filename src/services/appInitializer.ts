@@ -37,19 +37,28 @@ export async function initialize() {
   await initializeDeviceId();
   await useProductMaster().init();
 
-  // Initialize agent control system using composable
   // Note: This should only run once per session, not on every page refresh
-  const agentControl = useAgentControl();
-  const facilityId = useProductStore().getCurrentFacility.facilityId;
+  startAgentControl();
+}
 
-  if (facilityId) {
-    // Run agent control initialization in background
-    agentControl.initialize(facilityId).catch((error: unknown) => {
-      logger.error('[AppInit] Agent control initialization failed:', error);
-    });
-  } else {
-    logger.warn('[AppInit] No facilityId available, skipping agent control initialization');
+/**
+ * Start the agent control system for the selected facility, in the background.
+ *
+ * It needs a facility, which is only known after login. On the login screen initialize() has no
+ * facility yet and skips this, so postLogin() calls it again once the facilities are loaded.
+ */
+export function startAgentControl() {
+  const facilityId = useProductStore().getCurrentFacility?.facilityId;
+
+  if(!facilityId) {
+    logger.warn("[AppInit] No facilityId available, skipping agent control initialization");
+
+    return;
   }
+
+  useAgentControl().initialize(facilityId).catch((error: unknown) => {
+    logger.error("[AppInit] Agent control initialization failed:", error);
+  });
 }
 
 async function initializeDeviceId() {
