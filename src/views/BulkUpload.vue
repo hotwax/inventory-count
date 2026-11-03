@@ -276,8 +276,9 @@ async function viewFile() {
     if (!commonUtil.hasError(resp)) downloadCsv(resp.data.csvData, extractFilename(selectedSystemMessage.value.messageText));
     else throw resp.data;
   } catch (err) {
-    commonUtil.showToast(translate("Failed to download uploaded cycle count file."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
+    commonUtil.showToast(`${translate("Failed to download uploaded cycle count file.")} ${serverError}`);
   }
   closeUploadPopover();
 }
@@ -289,8 +290,9 @@ async function cancelUpload() {
       systemMessages.value = await useInventoryCountRun().getCycleCntImportSystemMessages();
     }
   } catch (err) {
-    commonUtil.showToast(translate("Failed to cancel uploaded cycle count."));
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
+    commonUtil.showToast(`${translate("Failed to cancel uploaded cycle count.")} ${serverError}`);
   }
   closeUploadPopover();
 }
@@ -381,8 +383,9 @@ async function save() {
       commonUtil.showToast(translate("The cycle counts file uploaded successfully."));
     } else throw resp.data;
   } catch (err) {
+    const serverError = commonUtil.getErrorMessage(err);
     logger.error(err);
-    commonUtil.showToast(translate("Failed to upload the file, please try again"));
+    commonUtil.showToast(`${translate("Failed to upload the file, please try again")}. ${serverError}`);
   }
 }
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ rows: [] as any[], save: vi.fn(), toast: vi.fn(), unsubscribe: vi.fn(),
   sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false, flush: vi.fn() }));
-vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { getOMSInstanceName: () => "demo", hasError: () => false, showToast: state.toast } }));
+vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { getOMSInstanceName: () => "demo", hasError: () => false, showToast: state.toast, getErrorMessage: () => "" }, logger: { error: vi.fn() } }));
 vi.mock("@/components/Image.vue", () => ({ default: { template: "<img />" } }));
 vi.mock("@/composables/useHandCountSession", () => ({ useHandCountSession: () => {
   const mutable = ref(false);

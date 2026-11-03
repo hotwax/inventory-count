@@ -154,7 +154,7 @@
 import { IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonTitle, IonContent, IonFooter, IonItem, IonLabel, IonText, IonThumbnail, IonSegment, IonSegmentButton, IonList, IonListHeader, IonBadge, IonProgressBar, IonPopover } from '@ionic/vue';
 import { closeOutline, flash, flashOutline, videocamOffOutline, addOutline, removeOutline } from 'ionicons/icons';
 import { ref, computed, watch, onBeforeUnmount } from 'vue';
-import { translate } from '@common';
+import { logger, translate } from '@common';
 import Image from '@/components/Image.vue';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import type { IScannerControls } from '@zxing/browser';
@@ -255,7 +255,7 @@ async function startCamera() {
     detectTorch();
   } catch (err) {
     if (generation !== cameraGeneration) return;
-    console.error('Camera [Component: CameraScanner] - Failed to start', err);
+    logger.error('Camera [Component: CameraScanner] - Failed to start', err);
     cameraError.value = true;
   }
 }

@@ -173,7 +173,7 @@
 <script setup>
 import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonContent, IonHeader, IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonItemGroup, IonLabel, IonList, IonNote, IonPage, IonTitle, IonToolbar, onIonViewDidEnter, IonButtons, IonModal, IonFab, IonFabButton, IonListHeader, IonRadioGroup, IonRadio, IonRefresher, IonRefresherContent, IonInput, alertController } from '@ionic/vue';
 import { addCircleOutline, closeOutline, checkmarkDoneOutline } from 'ionicons/icons';
-import { translate, commonUtil } from '@common';
+import { translate, commonUtil, logger } from '@common';
 import { computed, ref } from "vue";
 import router from '@/router';
 import { loader } from "@/services/uiUtils";
@@ -289,8 +289,9 @@ async function getCycleCounts(reset = false) {
 
     isScrollable.value = scrollable;
   } catch (err) {
-    console.error('Error loading cycle counts:', err);
-    commonUtil.showToast(translate('Failed to load cycle counts.'));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Error loading cycle counts:', err);
+    commonUtil.showToast(`${translate('Failed to load cycle counts.')} ${serverError}`);
   } finally {
     isLoading.value = false;
   }
@@ -380,9 +381,7 @@ async function addNewSession() {
     }
 
     if (resp?.status !== 200) {
-      commonUtil.showToast("Something Went Wrong!")
-      console.error(resp)
-      return
+      throw resp;
     }
 
     // --- Update UI ---
@@ -407,8 +406,9 @@ async function addNewSession() {
     selectedArea.value = areas[0].value
     isAddSessionModalOpen.value = false
   } catch (err) {
-    console.error("Error creating session:", err)
-    commonUtil.showToast("Something Went Wrong!")
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error("Error creating session", err);
+    commonUtil.showToast(`${translate("Failed to create session")}. ${serverError}`);
   }
 }
 
@@ -435,11 +435,12 @@ async function markInProgress(workEffortId) {
         router.push(`/session-count-detail/${workEffortId}/${updatedCount.workEffortPurposeTypeId}/${firstSession.inventoryCountImportId}`);
       }
     } else {
-      commonUtil.showToast(translate('Failed to activate cycle count'));
+      throw response;
     }
   } catch (err) {
-    console.error('Error starting count:', err);
-    commonUtil.showToast(translate('Failed to activate cycle count'));
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Error starting count:', err);
+    commonUtil.showToast(`${translate('Failed to activate cycle count')}. ${serverError}`);
   } finally {
     // Reset loading state
     loadingWorkEffortId.value = null;
@@ -474,11 +475,12 @@ async function forceRelease(session) {
               // Remove lock locally so UI refreshes
               session.lock = {}
             } else {
-              commonUtil.showToast(translate('Failed to release session lock.'))
+              throw resp;
             }
           } catch (err) {
-            console.error('Error releasing session lock:', err)
-            commonUtil.showToast(translate('Something went wrong while releasing session.'))
+            const serverError = commonUtil.getErrorMessage(err);
+            logger.error('Error releasing session lock:', err);
+            commonUtil.showToast(`${translate('Failed to release session lock.')} ${serverError}`);
           } finally {
             loader.dismiss();
           }
@@ -515,8 +517,9 @@ async function checkAndNavigateToSession(session, workEffortPurposeTypeId) {
     //Safe to navigate
     router.push(`/session-count-detail/${session.workEffortId}/${workEffortPurposeTypeId}/${session.inventoryCountImportId}`);
   } catch (err) {
-    console.error('Error checking session lock before navigation:', err);
-    commonUtil.showToast("Failed to check session lock. Please try again.");
+    const serverError = commonUtil.getErrorMessage(err);
+    logger.error('Error checking session lock before navigation', err);
+    commonUtil.showToast(`${translate("Failed to check session lock. Please try again.")} ${serverError}`);
   }
 }
 

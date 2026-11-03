@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { liveQuery } from 'dexie'
-import { api, useSolrSearch } from '@common';
+import { api, logger, useSolrSearch } from '@common';
 import workerRemoteApi from '@common/core/workerRemoteApi';
 
 import { db } from '@/services/appInitializer';
@@ -91,7 +91,7 @@ const getById = async (productId: string, opts?: { refresh?: boolean }) => {
       }
     }
   } catch (err) {
-    console.error("Solr fetch or upsert failed in getById:", err)
+    logger.error("Solr fetch or upsert failed in getById:", err)
   }
   return { product: product || undefined, status: product ? 'stale' as const : 'miss' as const }
 }
@@ -122,7 +122,7 @@ const prefetch = async (productIds: string[]) => {
   for (let i = 0; i < idsToFetch.length; i += 750) {
     const docs = await getByIds(idsToFetch.slice(i, i + 750))
     if (docs.length) {
-      upsertFromApi(docs).catch(err => console.error("upsert failed", err))
+      upsertFromApi(docs).catch(err => logger.error("upsert failed", err))
     }
   }
 }
@@ -207,7 +207,7 @@ async function findProductByIdentification(idType: string, value: string, contex
 
     return null
   } catch (err) {
-    console.warn('Solr lookup failed for', value, err)
+    logger.warn('Solr lookup failed for', value, err)
     return null
   }
 }
