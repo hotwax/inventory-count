@@ -444,7 +444,7 @@ import { useProductStore } from '@/stores/productStore';
 import { IonContent, IonFab, IonFabButton, IonHeader, IonInput, IonItem, IonPage, IonTitle, IonToolbar, IonLabel, IonButton, IonRadioGroup, IonRadio, IonThumbnail, IonSearchbar, IonCard, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonSegment, IonSegmentButton, IonSpinner, IonText, onIonViewDidEnter, onIonViewDidLeave, IonIcon, IonModal, IonButtons, IonFooter, IonBadge, IonSkeletonText, IonList, alertController, IonPopover, IonAlert } from '@ionic/vue';
 import { addCircleOutline, closeOutline, removeCircleOutline, barcodeOutline, ellipsisVerticalOutline, searchOutline, chevronUpCircleOutline, chevronDownCircleOutline, closeCircleOutline, trashOutline, refreshOutline, saveOutline, checkmarkCircleOutline, helpCircleOutline } from 'ionicons/icons';
 import { useProductMaster } from '@/composables/useProductMaster';
-import { computed, ref, nextTick } from 'vue';
+import { computed, ref, nextTick, watch } from 'vue';
 import Image from '@/components/Image.vue';
 import { useUserProfile } from '@/stores/userProfileStore';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
@@ -619,6 +619,14 @@ const barcodeIdentifierDescription = computed(() => getGoodIdentificationOptions
 
 /* Manual/Pre-Counted Items Logic */
 const handCountedProducts = ref<any[]>([]);
+
+// Ionic caches this page. Drop facility-specific screen state immediately on switch.
+watch(() => currentFacility.value.facilityId, () => {
+  events.value = [];
+  inventoryAdjustments.value = [];
+  unmatchedItems.value = [];
+  handCountedProducts.value = [];
+}, { flush: 'sync' });
 const manualCountSearchBar = ref();
 const quantityInputRefs = ref<any>({});
 const hasProductWithZeroQuantity = computed(() =>
@@ -644,19 +652,23 @@ const totalVarianceProducts = computed(() => {
   return new Set([...manualProductIds]).size;
 });
 
+let varianceVisit = 0;
 onIonViewDidEnter(async () => {
+  const visit = ++varianceVisit;
+  const facilityId = currentFacility.value.facilityId;
   await getVarianceReasonEnums();
+  if (visit !== varianceVisit || facilityId !== currentFacility.value.facilityId) return;
 
   subscriptions.push(
-    from(useProductMaster().getVarianceLogs()).subscribe((items: any) => (events.value = items))
+    from(useProductMaster().getVarianceLogs(facilityId)).subscribe((items: any) => (events.value = items))
   )
 
   subscriptions.push(
-    from(useProductMaster().getInventoryAdjustments()).subscribe((items: any) => (inventoryAdjustments.value = items))
+    from(useProductMaster().getInventoryAdjustments(facilityId)).subscribe((items: any) => (inventoryAdjustments.value = items))
   )
 
   subscriptions.push(
-    from(useProductMaster().getUnmatchedInventoryAdjustments()).subscribe((items: any) => (unmatchedItems.value = items))
+    from(useProductMaster().getUnmatchedInventoryAdjustments(facilityId)).subscribe((items: any) => (unmatchedItems.value = items))
   )
 
   const bgWorker = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url))
@@ -688,18 +700,17 @@ onIonViewDidEnter(async () => {
         maargUrl: commonUtil.getMaargURL(),
         token: commonUtil.getToken(),
         barcodeIdentification: barcodeIdentification,
-        facilityId: useProductStore().getCurrentFacility.facilityId
+        facilityId
       }
     }
   })
 });
 
 onIonViewDidLeave(async () => {
-  subscriptions.forEach(subscription => subscription.unsubscribe());
+  varianceVisit++;
+  subscriptions.splice(0).forEach(subscription => subscription.unsubscribe());
 
   await unscheduleWorker();
-
-  // useProductMaster().clearVarianceLogsAndAdjustments();
 
 })
 
@@ -919,6 +930,7 @@ async function logHandCountedItemVariances() {
     commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
+  const facilityId = currentFacility.value.facilityId;
   try {
 
     const reasonEnumId = optedVarianceReasonForHandCounted.value;
@@ -928,7 +940,7 @@ async function logHandCountedItemVariances() {
         return {
           inventoryItemId: item.inventoryItemId,
           productId: item.productId,
-          facilityId: currentFacility.value.facilityId,
+          facilityId,
           reasonEnumId,
           quantity: negateVariancesForHandCounted.value ? item.countedQuantity * (-1) : item.countedQuantity,
           comments: "Variance Logged from Cycle Count App"
@@ -946,6 +958,7 @@ async function logHandCountedItemVariances() {
     
     if (resp?.status === 200) {
       commonUtil.showToast(translate("Variance logged successfully."));
+      if (facilityId !== currentFacility.value.facilityId) return;
       handCountedProducts.value = []
       optedActionForHandCounted.value = 'add'
       optedVarianceReasonForHandCounted.value = null
@@ -968,6 +981,7 @@ async function logVariance() {
     commonUtil.showToast(translate("Please select a variance reason."));
     return;
   }
+  const facilityId = currentFacility.value.facilityId;
   try {
 
     const reasonEnumId = optedVarianceReason.value;
@@ -977,7 +991,7 @@ async function logVariance() {
         return {
           inventoryItemId: item.inventoryItemId,
           productId: item.productId,
-          facilityId: currentFacility.value.facilityId,
+          facilityId: item.facilityId,
           reasonEnumId,
           quantity: negateVariances.value ? item.quantity * (-1) : item.quantity,
           comments: "Variance Logged from Cycle Count App"
@@ -996,7 +1010,7 @@ async function logVariance() {
     if (resp?.status === 200) {
       commonUtil.showToast(translate("Variance logged successfully."));
       // Clear the VarianceLogs table and the InventoryAdjustmentTables here
-      useProductMaster().clearVarianceLogsAndAdjustments();
+      await useProductMaster().clearVarianceLogsAndAdjustments(facilityId);
     } else {
       throw resp;
     }
@@ -1059,6 +1073,7 @@ async function handleEnterKey() {
 }
 
 async function addProductInhandCountedItems(product: any) {
+  const facilityId = currentFacility.value.facilityId;
   searchedProductString.value = ''
   searchedProducts.value = []
   isSearchResultsModalOpen.value = false  
@@ -1066,6 +1081,7 @@ async function addProductInhandCountedItems(product: any) {
   try {
     product.countedQuantity = 0;
     await setProductQoh(product)
+    if (facilityId !== currentFacility.value.facilityId) return;
     handCountedProducts.value.push(product)
   } catch (err) {
     logger.error('Error adding product:', err)
@@ -1145,7 +1161,7 @@ async function confirmClearAll() {
       {
         text: translate("Clear data"),
         handler: async () => {
-          await useProductMaster().clearVarianceLogsAndAdjustments();
+          await useProductMaster().clearVarianceLogsAndAdjustments(currentFacility.value.facilityId);
           commonUtil.showToast(translate("All records cleared"));
         }
       }

@@ -527,9 +527,10 @@ const addVarianceLog = async (scannedValue: string, quantity = 1, facilityId: st
   await db.varianceLogs.add(varianceLog)
 }
 
-const getVarianceLogs = () =>
+const getVarianceLogs = (facilityId: string) =>
   liveQuery(async () => {    
     const varLogs = await db.varianceLogs
+      .where('facilityId').equals(facilityId)
       .reverse()
       .sortBy('createdAt');
 
@@ -546,9 +547,10 @@ const getVarianceLogs = () =>
     return enriched || [];
   });
 
-const getInventoryAdjustments = () => 
+const getInventoryAdjustments = (facilityId: string) =>
   liveQuery(async () => {
     const adjusments = await db.inventoryAdjustments
+      .where('facilityId').equals(facilityId)
       .reverse()
       .sortBy('createdAt');
 
@@ -565,9 +567,10 @@ const getInventoryAdjustments = () =>
     return enriched || [];
   });
 
-const getUnmatchedInventoryAdjustments = () => 
+const getUnmatchedInventoryAdjustments = (facilityId: string) =>
   liveQuery(async () => {
     const adjusments = await db.inventoryAdjustments
+      .where('facilityId').equals(facilityId)
       .reverse()
       .sortBy('createdAt');
 
@@ -577,25 +580,18 @@ const getUnmatchedInventoryAdjustments = () =>
     return unmatched || [];
   });
 
-const clearVarianceLogsAndAdjustments = async () => {
-  await db.varianceLogs.clear();
-  await db.inventoryAdjustments.clear();
+const clearVarianceLogsAndAdjustments = async (facilityId: string) => {
+  await db.transaction('rw', db.varianceLogs, db.inventoryAdjustments, async () => {
+    await db.varianceLogs.where('facilityId').equals(facilityId).delete();
+    await db.inventoryAdjustments.where('facilityId').equals(facilityId).delete();
+  });
 }
 
 const removeInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
   await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
     await db.inventoryAdjustments.delete([facilityId, uuid]);
     if (scannedValue) {
-      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
-    }
-  });
-}
-
-const removeUnmatchedInventoryAdjustment = async (facilityId: string, uuid: string, scannedValue: string) => {
-  await db.transaction('rw', db.inventoryAdjustments, db.varianceLogs, async () => {
-    await db.inventoryAdjustments.delete([facilityId, uuid]);
-    if (scannedValue) {
-      await db.varianceLogs.where('scannedValue').equals(scannedValue).delete();
+      await db.varianceLogs.where('scannedValue').equals(scannedValue).and(log => log.facilityId === facilityId).delete();
     }
   });
 }
@@ -631,6 +627,6 @@ export function useProductMaster() {
     getUnmatchedInventoryAdjustments,
     clearVarianceLogsAndAdjustments,
     removeInventoryAdjustment,
-    removeUnmatchedInventoryAdjustment
+    removeUnmatchedInventoryAdjustment: removeInventoryAdjustment
   }
 }
