@@ -193,7 +193,10 @@ export function useInventoryCountRun() {
         }
       });
 
-      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (commonUtil.hasError(resp)) {
+        throw resp?.data;
+      }
+      if (resp?.data?.cycleCounts?.length > 0) {
         const fetched = resp?.data.cycleCounts;
         const totalCount = resp?.data.cycleCountsCount || 0;
 
@@ -205,9 +208,8 @@ export function useInventoryCountRun() {
         total = totalCount;
         isScrollable = workEfforts.length < totalCount;
       } else {
-        isScrollable = params.pageIndex > 0 ? false : true;
+        isScrollable = false;
         workEfforts = [];
-        throw resp?.data;
       }
     } catch (err) {
       logger.error('Error fetching work efforts:', err);
@@ -253,14 +255,16 @@ export function useInventoryCountRun() {
         params
       });
 
-      if (!commonUtil.hasError(resp) && resp?.data?.cycleCounts?.length > 0) {
+      if (commonUtil.hasError(resp)) {
+        throw resp?.data;
+      }
+      if (resp?.data?.cycleCounts?.length > 0) {
         cycleCounts = resp?.data.cycleCounts;
         total = resp?.data.cycleCountsCount || 0;
         isScrollable = cycleCounts.length < total;
       } else {
-        isScrollable = params.pageIndex > 0 ? false : true;
+        isScrollable = false;
         cycleCounts = [];
-        throw resp?.data;
       }
     } catch (err) {
       logger.error('Error fetching cycle counts:', err);
