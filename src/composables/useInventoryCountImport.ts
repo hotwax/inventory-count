@@ -8,6 +8,7 @@ import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
 import { getUploadFileParamName } from '@/services/utils';
 import { hasRecordedCount, needsInventoryCountSync } from '@/services/inventoryCountRecord';
+import { summarizeLocalSession } from "@/services/handCountDiagnostics";
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -328,6 +329,16 @@ function currentMillis(): number {
       }
     }
     return items;
+  }
+
+  // Read-only snapshot of what this device holds for a session, for diagnostics. It reads the two
+  // tables readAssignedHandCountItems adds up, so a duplicate record or an unmerged scan event shows here.
+  async function getLocalSessionSummary(inventoryCountImportId: string) {
+    const records = await db.inventoryCountRecords.where("inventoryCountImportId").equals(inventoryCountImportId).toArray();
+    const pending = await db.scanEvents.where("inventoryCountImportId").equals(inventoryCountImportId)
+      .and(event => event.aggApplied === 0).toArray();
+
+    return summarizeLocalSession(records, pending, needsInventoryCountSync);
   }
 
   const getAssignedHandCountItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') => liveQuery(async () => {
@@ -653,6 +664,7 @@ export function useInventoryCountImport() {
     getCountedItems,
     getAssignedHandCountItems,
     saveHandCountTotals,
+    getLocalSessionSummary,
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,

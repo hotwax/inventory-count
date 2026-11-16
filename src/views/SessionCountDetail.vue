@@ -763,6 +763,7 @@ import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
+import { relayWorkerDiagnostic } from "@/services/handCountDiagnostics";
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { createCameraScanProductLookupContext } from '@/services/cameraScanProduct';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -1069,6 +1070,7 @@ async function enterSession() {
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
       const { type, count } = event.data
+      if(relayWorkerDiagnostic(event.data, props.inventoryCountImportId)) {return;}
       if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
       }

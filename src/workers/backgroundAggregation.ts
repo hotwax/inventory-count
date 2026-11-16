@@ -4,6 +4,21 @@ import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
 import { needsInventoryCountSync } from "@/services/inventoryCountRecord";
 
+/**
+ * A worker has no app logger and its console never reaches Faro, so diagnostics are posted to the
+ * page, which relays them (see relayWorkerDiagnostic). Never let this throw into the sync path.
+ */
+function report(name: string, data: Record<string, any> = {}, severity: "info" | "warn" = "info") {
+  try { self.postMessage({ type: "diagnostic", name, data, severity }) } catch { /* diagnostics must not break syncing */ }
+}
+
+function describeError(error: any) {
+  return {
+    message: String(error?.message ?? error ?? "unknown error").slice(0, 300),
+    status: error?.response?.status ?? error?.status ?? ""
+  }
+}
+
 // DB instance for worker (created once)
 let db: any = null;
 let dbInitialized = false;
@@ -461,6 +476,7 @@ async function aggregate(inventoryCountImportId: string, context: any) {
     return processed
   } catch (err) {
     console.error('Aggregation failed', err)
+    report("aggregate_failed", { inventoryCountImportId, ...describeError(err) }, "warn")
     return 0
   } finally {
     isAggregating = false
@@ -668,9 +684,15 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
         lastSyncedAt: now,
         lastSyncedBatchId: `batch-${now}`
       })
+    report("sync_ok", {
+      inventoryCountImportId, items: syncable.length, blocked: blocked.length,
+      // productId:quantity of the first lines sent, to compare with what the server stores
+      sent: syncable.slice(0, 20).map((item: any) => `${item.productId}:${Number(item.quantity || 0)}`)
+    })
     return syncable.length
   } catch (err) {
     console.error('sync error', err)
+    report("sync_failed", { inventoryCountImportId, ...describeError(err) }, "warn")
     return 0
   } finally {
     isSyncing = false

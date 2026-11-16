@@ -32,6 +32,7 @@ import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { useProductStore } from "./stores/productStore";
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
 import { createDxpI18n, faroUtil, initialiseConfig, logger, supportsIosKeyboardScroll } from '@common'
@@ -40,7 +41,13 @@ import localeMessages from '@/locales'
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
 
-faroUtil.initialiseFaro()
+// Read on every signal, so a facility or device change is picked up. Both stores exist once pinia is installed.
+faroUtil.initialiseFaro({
+  getContext: () => ({
+    facilityId: useProductStore().getCurrentFacility?.facilityId,
+    deviceId: useUserProfile().getDeviceId
+  })
+})
 
 const app = createApp(App)
   .use(IonicVue, {
