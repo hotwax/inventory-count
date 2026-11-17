@@ -164,6 +164,20 @@ function currentMillis(): number {
     }
   }
 
+  /**
+   * Earlier releases stored an uncounted item on the device as 0. Now 0 is a count, so a synced 0 that
+   * nobody recorded on this device is likely one of those and must be replaced from the server.
+   */
+  async function hasUnconfirmedZeroRecords(inventoryCountImportId: string): Promise<boolean> {
+    const count = await db.inventoryCountRecords
+      .where('inventoryCountImportId')
+      .equals(inventoryCountImportId)
+      .filter(item => item.quantity === 0 && !item.countedByUserLoginId && !needsInventoryCountSync(item))
+      .count();
+
+    return count > 0;
+  }
+
   async function getInventoryCountImportItemsCount(inventoryCountImportId: string): Promise<number> {
     try {
       const count = await db.inventoryCountRecords
@@ -663,6 +677,7 @@ export function useInventoryCountImport() {
     getInventoryCountImportItems,
     getInventoryCountImportItemsByProductIds,
     getInventoryCountImportItemsCount,
+    hasUnconfirmedZeroRecords,
     getInventoryCountImportSession,
     getScanEvents,
     getServiceJobDetail,

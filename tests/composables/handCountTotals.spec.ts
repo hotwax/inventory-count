@@ -29,7 +29,8 @@ function table(rows: any[]) {
 
       return query;
     },
-    toArray: async () => structuredClone(selected) };
+    toArray: async () => structuredClone(selected),
+    count: async () => selected.length };
 
     return query;
   } }) };
@@ -55,6 +56,14 @@ describe("directed handcount totals", () => {
     expect(state.scans[0]).toMatchObject({ productId: "P2", quantity: 0, countedByUserLoginId: "counter" });
     counts.getAssignedHandCountItems("S1");
     expect((await state.query()).find((item: any) => item.productId === "P2")).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
+  it("flags a synced zero with no counter as stale data from an earlier release", async () => {
+    state.records[1].quantity = 0; state.records[1].lastSyncedAt = 10;
+    expect(await counts.hasUnconfirmedZeroRecords("S1")).toBe(true);
+    state.records[1].countedByUserLoginId = "counter";
+    expect(await counts.hasUnconfirmedZeroRecords("S1")).toBe(false);
+    state.records[1].countedByUserLoginId = null; state.records[1].lastUpdatedAt = 20;
+    expect(await counts.hasUnconfirmedZeroRecords("S1")).toBe(false);
   });
   it("lists an entered zero as counted and an empty quantity as uncounted", async () => {
     state.records[1].quantity = 0;
