@@ -30,7 +30,7 @@ import './theme/variables.css';
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import { createPinia } from 'pinia';
+import { createPinia, getActivePinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { useProductStore } from "./stores/productStore";
 import { useUserProfile } from './stores/userProfileStore';
@@ -41,12 +41,13 @@ import localeMessages from '@/locales'
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
 
-// Read on every signal, so a facility or device change is picked up. Both stores exist once pinia is installed.
+// Read on every signal, so a facility or device change is picked up. Faro loads asynchronously, but a signal sent
+// before pinia is installed below must not create a store early, so it goes out without this context.
 faroUtil.initialiseFaro({
-  getContext: () => ({
+  getContext: () => getActivePinia() ? {
     facilityId: useProductStore().getCurrentFacility?.facilityId,
     deviceId: useUserProfile().getDeviceId
-  })
+  } : {}
 })
 
 const app = createApp(App)

@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ locks: [] as any[], acquire: vi.fn(), workers: [] as any[], status: "SESSION_ASSIGNED",
-  heartbeat: vi.fn(), flush: vi.fn(), session: vi.fn() }));
+  heartbeat: vi.fn(), flush: vi.fn(), session: vi.fn(), relay: vi.fn() }));
 vi.mock("@common", () => ({ commonUtil: { hasError: (r: any) => !!r.data?.errors,
   getOmsURL: () => "", getOMSInstanceName: () => "test", getMaargURL: () => "", getToken: () => "" } }));
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1" }) }));
@@ -18,6 +18,8 @@ vi.mock("@common/core/workerFactory", () => ({ WorkerFactory: { createWorker: ()
 
   return result;
 } } }));
+vi.mock("@/services/handCountDiagnostics", async () => ({ ...await vi.importActual<any>("@/services/handCountDiagnostics"),
+  relayWorkerDiagnostic: (...args: any[]) => state.relay(...args) }));
 import { useHandCountSession } from "@/composables/useHandCountSession";
 import { waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 
@@ -48,6 +50,14 @@ describe("direct handcount session ownership", () => {
     expect(await session.flush()).toBe(true);
     expect(state.flush).toHaveBeenCalledWith("S1", expect.objectContaining({ facilityId: "F1", inventoryCountTypeId: "DIRECTED_COUNT" }));
     session.stop(); await waitForSessionTeardown();
+  });
+  it("attributes a sync worker's diagnostics to its own session after another session opens", async () => {
+    state.locks = [owned()]; const session = useHandCountSession(); await session.start("S1");
+    const firstSync = state.workers[1];
+    const second = session.start("S2");
+    firstSync.worker.onmessage({ data: { type: "diagnostic", name: "sync_ok" } });
+    expect(state.relay).toHaveBeenCalledWith(expect.objectContaining({ name: "sync_ok" }), "S1");
+    await second; session.stop(); await waitForSessionTeardown();
   });
   it("resumes an owned lock and flushes before terminating workers on leave", async () => {
     state.locks = [owned()]; const session = useHandCountSession(); await session.start("S1");

@@ -127,8 +127,9 @@ export function useHandCountSession() {
     if(current !== revision || lost) {return;}
     sync = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url));
     // The worker has no logger: it posts diagnostics here to reach Faro. Comlink answers by message id, so this does not interfere.
-    sync.worker.onmessage = event => { relayWorkerDiagnostic(event.data, sessionId); };
-    sync.worker.onerror = event => { void reportDiagnostic("worker_crashed", { sessionId, message: errorMessage(event?.message) }, "warn"); };
+    // Use this worker's own session: the shared sessionId moves on when another session opens while this worker is still flushing.
+    sync.worker.onmessage = event => { relayWorkerDiagnostic(event.data, inventoryCountImportId); };
+    sync.worker.onerror = event => { void reportDiagnostic("worker_crashed", { sessionId: inventoryCountImportId, message: errorMessage(event?.message) }, "warn"); };
     sync.worker.postMessage({ type: "schedule", payload: { inventoryCountImportId, intervalMs: 8000, context: context() } });
     mutable.value = true;
   }
