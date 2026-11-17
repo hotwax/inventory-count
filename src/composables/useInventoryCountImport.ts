@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie';
 import Papa from 'papaparse';
 import { useProductMaster } from './useProductMaster';
-import { api } from '@common';
+import { api, logger } from '@common';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
@@ -16,7 +16,14 @@ interface RecordScanParams {
   productIdentifier: string;
   quantity: number;
   locationSeqId?: string | null;
+  /** Logged with the count change: which screen or action recorded it. Plain scanner scans pass none and are not logged. */
+  source?: string;
 }
+
+// Faro sends each log argument as String(arg), so count logs are single key=value strings.
+const MAX_LOGGED_ITEMS = 20;
+const listItems = (items: any[] = [], describe: (item: any) => string) =>
+  items.slice(0, MAX_LOGGED_ITEMS).map(describe).join(",") + (items.length > MAX_LOGGED_ITEMS ? `,+${items.length - MAX_LOGGED_ITEMS} more` : "");
 
 type SessionSortMode = 'assigned' | 'alphabetic' | 'lastUpdated';
 
@@ -40,6 +47,20 @@ function currentMillis(): number {
       aggApplied: 0
     };
     await db.scanEvents.add(event);
+    if (params.negatedScanEventId || params.source) {
+      logger.info(`Count change source=${params.source || "remove_scan"} sessionId=${params.inventoryCountImportId} ` +
+        `product=${params.productId || params.productIdentifier} quantity=${params.quantity} negates=${params.negatedScanEventId ?? ""}`);
+    }
+  }
+
+  /** One line describing what this device holds for a session: duplicate records or unmerged scans make hand count totals wrong. */
+  async function describeLocalSession(inventoryCountImportId: string) {
+    const records = await db.inventoryCountRecords.where('inventoryCountImportId').equals(inventoryCountImportId).toArray();
+    const pendingScans = await db.scanEvents.where('inventoryCountImportId').equals(inventoryCountImportId)
+      .and(event => event.aggApplied === 0).count();
+    const products = new Set(records.map(record => record.productId).filter(Boolean)).size;
+
+    return `records=${records.length} products=${products} unsyncedRecords=${records.filter(needsInventoryCountSync).length} pendingScans=${pendingScans}`;
   }
 
   async function storeInventoryCountItems(items: any[]) {
@@ -342,7 +363,7 @@ function currentMillis(): number {
 
   async function saveHandCountTotals(inventoryCountImportId: string, edits: {
     productId: string; quantity: number; expectedQuantity: number;
-  }[], countedByUserLoginId: string) {
+  }[], countedByUserLoginId: string, source = 'handcount') {
     if (!countedByUserLoginId) throw new Error('Counter unavailable');
     // Atomically validate every row and enqueue deltas. A failed batch or repeated
     // save cannot partially apply or silently overwrite a newer local count.
@@ -367,6 +388,8 @@ function currentMillis(): number {
       }
       if (events.length) await db.scanEvents.bulkAdd(events);
     });
+    logger.info(`Count change source=${source} sessionId=${inventoryCountImportId} ` +
+      `edits=${listItems(edits, edit => `${edit.productId}:${edit.expectedQuantity}>${edit.quantity}`)}`);
   }
 
   const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
@@ -582,20 +605,28 @@ const getSessionItemsByImportId = async (params: any): Promise<any> => {
   });
 }
 
-const updateSessionItem = async (params: any): Promise<any> => {
-  return await api({
+// Writes counts straight to the server (Track progress, review and out-of-stock), so log what was sent and the outcome.
+const updateSessionItem = async (params: any, source = 'session_item_update'): Promise<any> => {
+  const resp = await api({
     url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/items`,
     method: 'PUT',
     data: params
   });
+  logger.info(`Count change source=${source} sessionId=${params.inventoryCountImportId} status=${resp?.status} ` +
+    `items=${listItems(params.items, (item: any) => `${item.productId}:${item.quantity ?? "null"}`)}`);
+
+  return resp;
 }
 
-const deleteSessionItem = async (params: any): Promise<any> => {
-  return await api({
+const deleteSessionItem = async (params: any, source = 'session_item_delete'): Promise<any> => {
+  const resp = await api({
     url: `inventory-cycle-count/cycleCounts/sessions/${params.inventoryCountImportId}/items`,
     method: 'DELETE',
     data: params.data
   });
+  logger.info(`Count change source=${source} sessionId=${params.inventoryCountImportId} status=${resp?.status} data=${JSON.stringify(params.data ?? null).slice(0, 500)}`);
+
+  return resp;
 }
 
 const getSessionLock = async (payload: any): Promise<any> => {
@@ -658,6 +689,7 @@ export function useInventoryCountImport() {
     getAssignedHandCountItems,
     saveHandCountTotals,
     readAssignedHandCountItems,
+    describeLocalSession,
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,

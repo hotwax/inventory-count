@@ -769,7 +769,7 @@ async function saveEditImportItems() {
         ...selectedSession.value.importItems[0],
         quantity: total
       }],
-    });
+    }, 'track_progress_edit');
 
     // update session count
     selectedSession.value.counted = total;
@@ -1273,7 +1273,7 @@ async function markSelectedItemsOutOfStock() {
       const batchResp = await useInventoryCountImport().updateSessionItem({
         inventoryCountImportId,
         items: batchPayload
-      });
+      }, 'mark_out_of_stock');
 
       if (batchResp?.status === 200) {
         const successfulProductIds = new Set(batchPayload.map((p: any) => p.productId));
