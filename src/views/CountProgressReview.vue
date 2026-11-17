@@ -871,10 +871,12 @@ async function loadDirectedCount() {
         }
 
         const directedItems = resp.data.filter((item: any) => !item.isRequested || item.isRequested !== 'N');
-        const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
+        // An undirected product whose scans were all removed has no quantity: it was never counted, so leave it out.
+        const undirected = resp.data.filter((item: any) => item.isRequested === 'N' && item.quantity !== null && item.quantity !== undefined);
         undirectedItems.value.push(...undirected);
         directedItems.forEach((item: any) => {
-          if (item.quantity >= 0) countedItems.value.push(item);
+          // An item without a quantity is uncounted; `null >= 0` is true in JavaScript, so check it explicitly.
+          if (item.quantity !== null && item.quantity !== undefined && item.quantity >= 0) countedItems.value.push(item);
           else uncountedItems.value.push(item);
         })
         if (resp.data.length < pageSize) {
@@ -1014,7 +1016,8 @@ async function loadHardCount() {
         pageIndex,
       });
       if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data);
+        // Products whose scans were all removed come back without a quantity: they stay uncounted.
+        countedItems.value.push(...resp.data.filter((item: any) => item.quantity !== null && item.quantity !== undefined));
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {

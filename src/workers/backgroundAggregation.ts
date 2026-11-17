@@ -612,7 +612,10 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       uuid: item.uuid,
       productId: item.productId,
       productIdentifier: item.productIdentifier,
-      quantity: Number(item.quantity || 0),
+      // The device holds an uncounted item (including one whose scans were all removed) as 0.
+      // Send it as empty, which is how the server marks an uncounted item; zero stock is recorded
+      // through "Mark out of stock", not by this sync.
+      quantity: Number(item.quantity) > 0 ? Number(item.quantity) : null,
       lastScanAt: item.lastScanAt,
       lastUpdatedAt: item.lastUpdatedAt || Date.now(),
       isRequested: item.isRequested,
