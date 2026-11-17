@@ -692,7 +692,8 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
     report("sync_ok", {
       inventoryCountImportId, items: syncable.length, blocked: blocked.length,
       // productId:quantity of the first lines sent, to compare with what the server stores
-      sent: syncable.slice(0, 20).map((item: any) => `${item.productId}:${Number(item.quantity || 0)}`)
+      // the quantity as sent, so an item synced as empty (uncounted) shows as null rather than 0
+      sent: items.slice(0, 20).map((item: any) => `${item.productId}:${item.quantity}`)
     })
     return syncable.length
   } catch (err) {
