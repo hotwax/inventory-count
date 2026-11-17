@@ -509,7 +509,7 @@
                 <DynamicScroller :items="filteredItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-filtered-scroller">
                   <template v-slot="{ item, index, active }">
                     <DynamicScrollerItem :item="item" :index="index" :active="active">
-                      <ion-item :data-testid="'session-detail-counted-filtered-item-' + item.uuid">
+                      <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-counted-filtered-item-' + item.uuid" @click="openCountedItemEditor(item)">
                         <ion-thumbnail slot="start">
                           <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-filtered-item-img"/>
                         </ion-thumbnail>
@@ -538,7 +538,7 @@
                 <DynamicScroller :items="countedItems" key-field="uuid" :buffer="60" class="virtual-list" :min-item-size="64" :emit-update="true" data-testid="session-detail-counted-scroller">
                 <template v-slot="{ item, index, active }">
                   <DynamicScrollerItem :item="item" :index="index" :active="active">
-                    <ion-item :data-testid="'session-detail-counted-item-' + item.uuid">
+                    <ion-item button :disabled="!isSessionMutable" :data-testid="'session-detail-counted-item-' + item.uuid" @click="openCountedItemEditor(item)">
                       <ion-thumbnail slot="start">
                         <Image :src="item.product?.mainImageUrl || defaultImage" :key="item.product?.mainImageUrl" data-testid="session-detail-counted-item-img"/>
                       </ion-thumbnail>
@@ -1008,10 +1008,10 @@ function initializeListSubscriptions() {
     from(useInventoryCountImport().getUnmatchedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (unmatchedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (countedItems.value = items))
+    from(useInventoryCountImport().getCountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (countedItems.value = items))
   )
   listSubscriptions.push(
-    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value, isDirected.value)).subscribe((items: any) => (uncountedItems.value = items))
+    from(useInventoryCountImport().getUncountedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (uncountedItems.value = items))
   )
   listSubscriptions.push(
     from(useInventoryCountImport().getUndirectedItems(props.inventoryCountImportId, sessionSort.value)).subscribe((items: any) => (undirectedItems.value = items))
@@ -1353,8 +1353,41 @@ function openPendingItemCountSheet(item: any) {
   isPendingItemCountSheetOpen.value = true;
 }
 
+// Tapping a counted item edits its total. Read the total with unaggregated scans so the change is applied to the latest count.
+async function openCountedItemEditor(item: any) {
+  if (!isSessionMutable.value || !item.productId) return;
+  try {
+    const current = (await useInventoryCountImport().readAssignedHandCountItems(props.inventoryCountImportId))
+      .find((record: any) => record.productId === item.productId);
+    if (!current) throw new Error('Counted item unavailable');
+    pendingItemForCount.value = {
+      primary: getSessionItemPrimaryLabel(item),
+      secondary: getSessionItemSecondaryLabel(item),
+      imageUrl: item.product?.mainImageUrl,
+      productIdentifier: item.productId,
+      quantityOnHand: item.inventory?.quantityOnHandTotal ?? item.systemQuantityOnHand ?? null,
+      productId: item.productId,
+      currentQuantity: Number(current.quantity || 0),
+    };
+    isPendingItemCountSheetOpen.value = true;
+  } catch (err) {
+    console.error(err);
+    commonUtil.showToast(translate('Unable to edit this count'));
+  }
+}
+
 async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
-  return recordScannedCode(item.productIdentifier, quantity);
+  if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity);
+  // A new total is saved as the difference from the current count. An entered zero stays counted.
+  try {
+    await useInventoryCountImport().saveHandCountTotals(props.inventoryCountImportId,
+      [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username);
+    return true;
+  } catch (err) {
+    console.error(err);
+    commonUtil.showToast(translate('Could not save the count. Reopen the item and try again.'));
+    return false;
+  }
 }
 
 async function handleScan() {
@@ -1878,8 +1911,7 @@ const handleIndexedDBSearch = debounce(async () => {
   const results = await useInventoryCountImport().searchInventoryItemsByIdentifier(
     props.inventoryCountImportId,
     searchKeyword.value,
-    selectedSegment.value,
-    isDirected.value
+    selectedSegment.value
   )
   filteredItems.value = results
 }, 150)

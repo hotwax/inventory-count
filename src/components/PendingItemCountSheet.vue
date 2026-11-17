@@ -11,7 +11,7 @@
   >
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ translate("Count item") }}</ion-title>
+        <ion-title>{{ isEditing ? translate("Edit count") : translate("Count item") }}</ion-title>
         <ion-buttons slot="end">
           <ion-button @click="close" :aria-label="translate('Close')">{{ translate("Close") }}</ion-button>
         </ion-buttons>
@@ -36,7 +36,7 @@
           ref="quantityInput"
           autofocus
           type="number"
-          min="1"
+          :min="isEditing ? 0 : 1"
           inputmode="numeric"
           @ionInput="quantity = $event.detail.value"
           data-testid="pending-item-count-sheet-input"
@@ -78,6 +78,9 @@ export interface PendingItemCountSheetItem {
   imageUrl?: string;
   productIdentifier: string;
   quantityOnHand?: number | null;
+  /** Set when editing a counted item: the sheet then saves a new total, and zero is allowed. */
+  currentQuantity?: number | null;
+  productId?: string;
 }
 
 const props = withDefaults(defineProps<{
@@ -95,10 +98,12 @@ const sheetModal = ref<any>(null);
 const quantityInput = ref<any>(null);
 const quantity = ref('1');
 const isSaving = ref(false);
-const isQuantityValid = computed(() => Number.isFinite(Number(quantity.value)) && Number(quantity.value) > 0);
+const isEditing = computed(() => props.item?.currentQuantity !== undefined && props.item?.currentQuantity !== null);
+const isQuantityValid = computed(() => String(quantity.value ?? '').trim() !== '' && Number.isFinite(Number(quantity.value))
+  && (isEditing.value ? Number(quantity.value) >= 0 : Number(quantity.value) > 0));
 
 watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) quantity.value = '1';
+  if (isOpen) quantity.value = isEditing.value ? String(props.item?.currentQuantity) : '1';
 });
 
 function close() {
