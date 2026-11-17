@@ -98,7 +98,6 @@
   "Count the remaining requested items to finish this count.": "Count the remaining requested items to finish this count.",
   "Counted": "Counted ({countedItemsLength})",
   "Counted Items": "Counted Items",
-  "Counted as 0. Mark out of stock to confirm.": "Counted as 0. Mark out of stock to confirm.",
   "Counted/systemic": "Counted/systemic",
   "Counts": "Counts",
   "Create count": "Create count",
@@ -603,5 +602,8 @@
   "Download logs": "Download logs",
   "Logs could not be downloaded.": "Logs could not be downloaded.",
   "No logs recorded yet.": "No logs recorded yet.",
-  "This removes every stored log entry on this device.": "This removes every stored log entry on this device."
+  "This removes every stored log entry on this device.": "This removes every stored log entry on this device.",
+  "Edit count": "Edit count",
+  "Unable to edit this count": "Unable to edit this count",
+  "Could not save the count. Reopen the item and try again.": "Could not save the count. Reopen the item and try again."
 }
