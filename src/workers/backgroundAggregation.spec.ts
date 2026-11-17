@@ -75,6 +75,21 @@ describe("final session flush", () => {
     expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
     expect(state.request.mock.calls[0][0].data.items[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
   });
+  it("returns an item to uncounted when its scans are removed back to zero", async () => {
+    Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 1, countedByUserLoginId: "counter" });
+    state.db.rows.products.push({ productId: "P1" });
+    state.db.rows.scanEvents.push({ id: 2, inventoryCountImportId: "S1", productId: "P1", quantity: -1, negatedScanEventId: 1, aggApplied: 0 });
+    await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0, pendingRecords: 0 });
+    expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: null });
+    expect(state.request.mock.calls[0][0].data.items[0]).toMatchObject({ quantity: 0, countedByUserLoginId: null });
+  });
+  it("keeps a typed zero counted when it lowers a scanned quantity", async () => {
+    Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 3, countedByUserLoginId: "counter" });
+    state.db.rows.products.push({ productId: "P1" });
+    state.db.rows.scanEvents.push({ id: 2, inventoryCountImportId: "S1", productId: "P1", quantity: -3, aggApplied: 0, countedByUserLoginId: "counter" });
+    await state.api.flushSession("S1", { ...context, userLoginId: "counter" });
+    expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
   it("waits for acknowledgment before marking a record synced", async () => {
     const response = deferred();
     state.request.mockReturnValueOnce(response.promise);

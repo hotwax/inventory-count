@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
-import { needsInventoryCountSync } from "@/services/inventoryCountRecord";
+import { hasRecordedCount, needsInventoryCountSync } from "@/services/inventoryCountRecord";
 
 // DB instance for worker (created once)
 let db: any = null;
@@ -379,17 +379,20 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       return 0
     }
 
-    const grouped: Record<string, number> = {}
+    // removalOnly: every event for the key undoes an earlier scan.
+    const grouped: Record<string, { quantity: number, removalOnly: boolean }> = {}
     for (const scan of scans) {
       const key = scan.productId || scan.scannedValue?.trim()
       if (!key) continue
-      grouped[key] = (grouped[key] || 0) + (scan.quantity ?? 1)
+      grouped[key] ??= { quantity: 0, removalOnly: true }
+      grouped[key].quantity += scan.quantity ?? 1
+      if (!scan.negatedScanEventId) grouped[key].removalOnly = false
     }
 
     let processed = 0
     const now = Date.now()
 
-    for (const [scannedValue, quantity] of Object.entries(grouped)) {
+    for (const [scannedValue, { quantity, removalOnly }] of Object.entries(grouped)) {
       let productId: any = null
       const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
       if (identification) {
@@ -415,10 +418,12 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       // if (productId) ensureProductStored(productId, context);
 
       if (existing) {
+        const nextQuantity = (existing.quantity || 0) + quantity
         await db.table('inventoryCountRecords').put({
           ...existing,
-          quantity: (existing.quantity || 0) + quantity,
-          countedByUserLoginId: context.userLoginId,
+          quantity: nextQuantity,
+          // Removing scans back to zero returns the item to uncounted; only an entered zero is a recorded count.
+          countedByUserLoginId: (!removalOnly || nextQuantity > 0) ? context.userLoginId : null,
           // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
@@ -638,7 +643,8 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       lastUpdatedAt: item.lastUpdatedAt || Date.now(),
       isRequested: item.isRequested,
       createdDate: item.createdAt || Date.now(),
-      countedByUserLoginId: context.userLoginId,
+      // Null clears the server's counter so a removed-to-zero item stays uncounted after reload.
+      countedByUserLoginId: hasRecordedCount(item) ? context.userLoginId : null,
       ...(item.systemQuantityOnHand !== undefined &&
         item.systemQuantityOnHand !== null && {
         systemQuantityOnHand: item.systemQuantityOnHand
