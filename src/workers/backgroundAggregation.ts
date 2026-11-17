@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import workerRemoteApi from '@common/core/workerRemoteApi';
 import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
-import { hasRecordedCount, needsInventoryCountSync } from "@/services/inventoryCountRecord";
+import { hasRecordedCount, needsInventoryCountSync, toCountedQuantity } from "@/services/inventoryCountRecord";
 
 // DB instance for worker (created once)
 let db: any = null;
@@ -379,20 +379,20 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       return 0
     }
 
-    // removalOnly: every event for the key undoes an earlier scan.
-    const grouped: Record<string, { quantity: number, removalOnly: boolean }> = {}
-    for (const scan of scans) {
+    // lastWasRemoval: the newest event for the key undid an earlier scan. Ids follow the order events were recorded.
+    const grouped: Record<string, { quantity: number, lastWasRemoval: boolean }> = {}
+    for (const scan of [...scans].sort((a: any, b: any) => a.id - b.id)) {
       const key = scan.productId || scan.scannedValue?.trim()
       if (!key) continue
-      grouped[key] ??= { quantity: 0, removalOnly: true }
+      grouped[key] ??= { quantity: 0, lastWasRemoval: false }
       grouped[key].quantity += scan.quantity ?? 1
-      if (!scan.negatedScanEventId) grouped[key].removalOnly = false
+      grouped[key].lastWasRemoval = !!scan.negatedScanEventId
     }
 
     let processed = 0
     const now = Date.now()
 
-    for (const [scannedValue, { quantity, removalOnly }] of Object.entries(grouped)) {
+    for (const [scannedValue, { quantity, lastWasRemoval }] of Object.entries(grouped)) {
       let productId: any = null
       const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
       if (identification) {
@@ -418,12 +418,11 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       // if (productId) ensureProductStored(productId, context);
 
       if (existing) {
-        const nextQuantity = (existing.quantity || 0) + quantity
+        const nextQuantity = toCountedQuantity((existing.quantity || 0) + quantity, lastWasRemoval)
         await db.table('inventoryCountRecords').put({
           ...existing,
           quantity: nextQuantity,
-          // Removing scans back to zero returns the item to uncounted; only an entered zero is a recorded count.
-          countedByUserLoginId: (!removalOnly || nextQuantity > 0) ? context.userLoginId : null,
+          countedByUserLoginId: nextQuantity === null ? null : context.userLoginId,
           // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
           lastScanAt: now,
           lastUpdatedAt: now, // mark updated
@@ -437,8 +436,8 @@ async function aggregate(inventoryCountImportId: string, context: any) {
           uuid: uuidv4(),
           productIdentifier: scannedValue,
           productId: productId || null,
-          quantity,
-          countedByUserLoginId: context.userLoginId,
+          quantity: toCountedQuantity(quantity, lastWasRemoval),
+          countedByUserLoginId: toCountedQuantity(quantity, lastWasRemoval) === null ? null : context.userLoginId,
           facilityId: context.facilityId,
           isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
           createdAt: now,
@@ -638,12 +637,12 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
       uuid: item.uuid,
       productId: item.productId,
       productIdentifier: item.productIdentifier,
-      quantity: Number(item.quantity || 0),
+      // Null tells the server the item is uncounted again; zero is a real count.
+      quantity: hasRecordedCount(item) ? Number(item.quantity) : null,
       lastScanAt: item.lastScanAt,
       lastUpdatedAt: item.lastUpdatedAt || Date.now(),
       isRequested: item.isRequested,
       createdDate: item.createdAt || Date.now(),
-      // Null clears the server's counter so a removed-to-zero item stays uncounted after reload.
       countedByUserLoginId: hasRecordedCount(item) ? context.userLoginId : null,
       ...(item.systemQuantityOnHand !== undefined &&
         item.systemQuantityOnHand !== null && {
