@@ -8,13 +8,14 @@
   },
   "versions": [
     "v5.4.2",
-    "v5.4.1"
+    "v5.4.1",
+    "v5.2.3"
   ],
   "defaultVersion": "v5.2.3",
   "configuredEnvironment": "AppEnvProd",
   "defaultSource": "Hosting manifest",
-  "checkedAt": "2026-11-17T13:51:12.343Z",
-  "deployedAt": "2026-11-17T13:48:10.203Z",
-  "release": "sites/inventorycount/channels/live/releases/1794923290203000",
-  "fileCount": 181
+  "checkedAt": "2026-11-17T13:54:35.398Z",
+  "deployedAt": "2026-11-17T13:54:33.303Z",
+  "release": "sites/inventorycount/channels/live/releases/1794923673303000",
+  "fileCount": 238
 }
