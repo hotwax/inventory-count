@@ -6,8 +6,78 @@
   "action": "publish",
   "version": "v5.2.3",
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "completed",
   "createdAt": "2026-11-17T13:51:08.474Z",
   "steps": [],
-  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44096793474"
+  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44096793474",
+  "plan": {
+    "schemaVersion": 1,
+    "id": "154610cf-2db4-4ab2-8bd0-18b84940cfed",
+    "repo": "hotwax/inventory-count",
+    "actor": "ravilodhi",
+    "toolsSha": "d1afc7f3a2868d9562420db21f104912c1d7769e",
+    "action": "publish",
+    "environment": "prod",
+    "version": "v5.2.3",
+    "targetDefault": null,
+    "build": [
+      "v5.2.3"
+    ],
+    "added": [
+      "v5.2.3"
+    ],
+    "replaced": [],
+    "removed": [],
+    "retained": [
+      "v5.4.2",
+      "v5.4.1",
+      "v5.2.3"
+    ],
+    "previousDefault": "v5.2.3",
+    "nextDefault": "v5.2.3",
+    "rootChanges": false,
+    "confirmation": "PUBLISH TO PRODUCTION",
+    "app": {
+      "id": "inventory-count",
+      "repo": "hotwax/inventory-count",
+      "name": "inventory-count"
+    },
+    "target": {
+      "project": "digital-commerce-71eb8",
+      "site": "inventorycount",
+      "environment": "prod",
+      "origin": "https://inventorycount.web.app"
+    },
+    "baseFingerprint": "2289683ce9ee2ae012f3e0b61ac09f01d0ec51fe517012484bed5065ae2e71da",
+    "baseRelease": "sites/inventorycount/channels/live/releases/1794923290203000",
+    "sources": [
+      {
+        "version": "v5.2.3",
+        "appCommit": "be23618f663caf3c267a5af229509eae809cff81",
+        "frameworkCommit": "2e091b8f2e48468963e588c78c71f674f25b9325",
+        "frameworkPin": "v1.3.2",
+        "appId": "CYCLE_COUNT",
+        "config": {
+          "appId": "CYCLE_COUNT",
+          "environmentTypeId": "AppEnvDev",
+          "buildVersion": ""
+        }
+      }
+    ],
+    "sourceCommits": [
+      {
+        "version": "v5.2.3",
+        "appCommit": "be23618f663caf3c267a5af229509eae809cff81",
+        "frameworkCommit": "2e091b8f2e48468963e588c78c71f674f25b9325",
+        "frameworkPin": "v1.3.2",
+        "appId": "CYCLE_COUNT"
+      }
+    ],
+    "createdAt": "2026-11-17T13:51:14.777Z",
+    "expiresAt": "2026-11-17T14:51:14.777Z",
+    "writable": true,
+    "warnings": [],
+    "planSha": "40a055354ba69a1c2baa9183dc50a2b839b1f76b"
+  },
+  "finishedAt": "2026-11-17T13:51:18.153Z"
 }
