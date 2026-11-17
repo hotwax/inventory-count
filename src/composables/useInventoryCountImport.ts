@@ -7,7 +7,7 @@ import { db } from '@/services/appInitializer'
 import { ScanEvent } from '@/services/commonDatabase'
 import { useProductStore } from '@/stores/productStore';
 import { getUploadFileParamName } from '@/services/utils';
-import { hasRecordedCount, needsInventoryCountSync } from '@/services/inventoryCountRecord';
+import { hasRecordedCount, needsInventoryCountSync, toCountedQuantity } from '@/services/inventoryCountRecord';
 
 interface RecordScanParams {
   inventoryCountImportId: string;
@@ -57,7 +57,8 @@ function currentMillis(): number {
         isRequested: item.isRequested || 'Y',
         productIdentifier: item.productIdentifier || '',
         locationSeqId: item.locationSeqId || null,
-        quantity: item.quantity || 0,
+        // The server omits the quantity of an uncounted item; keep it empty rather than zero.
+        quantity: item.quantity ?? null,
         countedByUserLoginId: item.countedByUserLoginId || null,
         status: 'active',
         facilityId,
@@ -85,7 +86,7 @@ function currentMillis(): number {
     }
   }
 
-  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string, includeConfirmedZero = false) {
+  async function searchInventoryItemsByIdentifier(inventoryCountImportId: string, keyword: string, segment: string) {
     if (!keyword?.trim()) return []    
 
     const value = keyword.trim().toLowerCase()
@@ -94,11 +95,11 @@ function currentMillis(): number {
     let searchByProductIdQuery = db.table('inventoryCountRecords').where('inventoryCountImportId').equals(inventoryCountImportId)
 
     if (segment === 'counted') {
-      tableQuery = tableQuery.and(item => item.quantity > 0 || (includeConfirmedZero && hasRecordedCount(item)))
-      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity > 0 || (includeConfirmedZero && hasRecordedCount(item)))
+      tableQuery = tableQuery.and(item => hasRecordedCount(item))
+      searchByProductIdQuery = searchByProductIdQuery.and(item => hasRecordedCount(item))
     } else if (segment === 'uncounted') {
-      tableQuery = tableQuery.and(item => item.quantity === 0 && !(includeConfirmedZero && hasRecordedCount(item)))
-      searchByProductIdQuery = searchByProductIdQuery.and(item => item.quantity === 0 && !(includeConfirmedZero && hasRecordedCount(item)))
+      tableQuery = tableQuery.and(item => !hasRecordedCount(item))
+      searchByProductIdQuery = searchByProductIdQuery.and(item => !hasRecordedCount(item))
     } else if (segment === 'undirected') {
       tableQuery = tableQuery.and(item => item.isRequested === 'N')
       searchByProductIdQuery = searchByProductIdQuery.and(item => item.isRequested === 'N')
@@ -248,7 +249,9 @@ function currentMillis(): number {
       } else {
         const existing = map.get(key);
         existing.countedByUserLoginId ||= item.countedByUserLoginId;
-        existing.quantity = (Number(existing.quantity) || 0) + (Number(item.quantity) || 0);
+        existing.quantity = hasRecordedCount(existing) || hasRecordedCount(item)
+          ? (Number(existing.quantity) || 0) + (Number(item.quantity) || 0)
+          : null;
         const existingSequence = Number(existing.importItemSeqId);
         const itemSequence = Number(item.importItemSeqId);
         const existingSortSequence = Number.isFinite(existingSequence) ? existingSequence : Number.MAX_SAFE_INTEGER;
@@ -322,7 +325,7 @@ function currentMillis(): number {
     for (const event of pending) {
       const item = byProduct.get(event.productId);
       if (item) {
-        item.quantity = Number(item.quantity || 0) + Number(event.quantity || 0);
+        item.quantity = toCountedQuantity(Number(item.quantity || 0) + Number(event.quantity ?? 1), !!event.negatedScanEventId);
         item.countedByUserLoginId = event.countedByUserLoginId || item.countedByUserLoginId;
         item.lastUpdatedAt = Math.max(Number(item.lastUpdatedAt || 0), Number(event.createdAt || 0));
       }
@@ -356,6 +359,7 @@ function currentMillis(): number {
         const current = Number(item.quantity || 0);
         if (current !== edit.expectedQuantity) throw new Error('Count changed; refresh before saving');
         const quantity = edit.quantity - current;
+        // An entered zero on an uncounted item is saved so the item becomes counted at zero.
         if (!quantity && (edit.quantity !== 0 || hasRecordedCount(item))) continue;
         events.push({ inventoryCountImportId, productId: edit.productId, countedByUserLoginId,
           scannedValue: item.productIdentifier || edit.productId, quantity,
@@ -365,7 +369,7 @@ function currentMillis(): number {
     });
   }
 
-  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned', includeConfirmedZero = false) =>
+  const getCountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -374,7 +378,7 @@ function currentMillis(): number {
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) > 0 || (includeConfirmedZero && hasRecordedCount(item)));
+      .filter(item => hasRecordedCount(item));
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
@@ -385,7 +389,7 @@ function currentMillis(): number {
       })), sortMode)
     });
 
-  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned', includeConfirmedZero = false) =>
+  const getUncountedItems = (inventoryCountImportId: string, sortMode: SessionSortMode = 'assigned') =>
     liveQuery(async () => {  
       const items = await db.inventoryCountRecords
         .where('inventoryCountImportId')
@@ -393,7 +397,7 @@ function currentMillis(): number {
         .toArray()
 
       const grouped = groupByProductAndSum(items)
-      .filter(item => (Number(item.quantity) || 0) === 0 && !(includeConfirmedZero && hasRecordedCount(item)));
+      .filter(item => !hasRecordedCount(item));
 
       const productIds = grouped.map(item => item.productId);
       const products = await db.products.bulkGet(productIds)
@@ -653,6 +657,7 @@ export function useInventoryCountImport() {
     getCountedItems,
     getAssignedHandCountItems,
     saveHandCountTotals,
+    readAssignedHandCountItems,
     getInventoryCountImportByProductId,
     getInventoryCountImportItemCount,
     getInventoryCountImportItems,
