@@ -177,6 +177,7 @@
                           <ion-label data-testid="count-progress-uncounted-label">
                             <h2 data-testid="count-progress-uncounted-primary-id">{{ useProductMaster().primaryId(item.product) }}</h2>
                             <p data-testid="count-progress-uncounted-secondary-id">{{ useProductMaster().secondaryId(item.product) }}</p>
+                            <p v-if="needsOutOfStockConfirmation(item)" data-testid="count-progress-uncounted-zero-note">{{ translate("Counted as 0. Mark out of stock to confirm.") }}</p>
                           </ion-label>
                           <div class="oos-checkbox">
                         </div>
@@ -809,6 +810,9 @@ onIonViewDidEnter (async () => {
   undirectedItems.value = [];
   allProducts.value = [];
   loadedItems.value = 0;
+  // Confirmations and selections from an earlier visit may no longer match the counts.
+  confirmedOutOfStockProductIds = new Set();
+  for (const key in outOfStockSelections) delete outOfStockSelections[key];
   // A session page that was just left may still be syncing its last counts.
   await Promise.all([waitForSessionTeardown(), useInventoryCountRun().loadStatusDescription()]);
   if (loadId !== reviewLoadId) return;
@@ -854,6 +858,14 @@ async function getWorkEffortDetails(loadId: number) {
 }
 
 async function getInventoryCycleCount(loadId: number) {
+  try {
+    await loadConfirmedOutOfStockProductIds(loadId);
+  } catch (error) {
+    console.error("Error fetching out-of-stock confirmations:", error);
+    failLoad(loadId);
+    return;
+  }
+  if (loadId !== reviewLoadId) return;
   try {
     if (workEffort.value?.workEffortPurposeTypeId === 'DIRECTED_COUNT') {
       await loadDirectedCount(loadId);
@@ -911,7 +923,7 @@ async function loadDirectedCount(loadId: number) {
         const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
         undirectedItems.value.push(...undirected);
         directedItems.forEach((item: any) => {
-          if (item.quantity >= 0) countedItems.value.push(item);
+          if (item.quantity >= 0 && !needsOutOfStockConfirmation(item)) countedItems.value.push(item);
           else uncountedItems.value.push(item);
         })
         if (resp.data.length < pageSize) {
@@ -1061,7 +1073,10 @@ async function loadHardCount(loadId: number) {
       });
       if (loadId !== reviewLoadId) return;
       if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data);
+        resp.data.forEach((item: any) => {
+          if (needsOutOfStockConfirmation(item)) uncountedItems.value.push(item);
+          else countedItems.value.push(item);
+        });
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {
@@ -1080,9 +1095,9 @@ async function loadHardCount(loadId: number) {
               const { product } = await useProductMaster().getById(productId as any);
               if (!product) continue;
 
-              countedItems.value
-              .filter(item => item.productId === productId)
-              .forEach(item => {
+              resp.data
+              .filter((item: any) => item.productId === productId)
+              .forEach((item: any) => {
                 item.product = product;
               });
             }
@@ -1115,7 +1130,8 @@ async function getUncountedItems(loadId: number) {
     let pageIndex = 0;
     const pageSize = 500;
     let hasMore = true;
-    const countedSet = new Set(countedItems.value.map(item => item.productId));
+    // Zeros awaiting confirmation are already listed; do not add their facility rows again.
+    const countedSet = new Set([...countedItems.value, ...uncountedItems.value].map(item => item.productId));
     allProducts.value = [];
 
     while (hasMore) {
@@ -1197,6 +1213,46 @@ async function getCountSessions(productId: any) {
     logger.error("Error getting sessions for this product:", error);
     commonUtil.showToast(`${translate("Failed to fetch count sessions")}. ${serverError}`);
   }
+}
+
+// Products whose zero was confirmed through the out-of-stock action below.
+let confirmedOutOfStockProductIds = new Set<string>();
+
+// Sessions written by markSelectedItemsOutOfStock, including names used by earlier releases.
+function isOutOfStockSession(session: any) {
+  return /^(Auto )?OOS /.test(session.countImportName || '');
+}
+
+function toMillis(value: any) {
+  return typeof value === 'number' ? value : DateTime.fromISO(value || '').toMillis();
+}
+
+// The review response has no confirmation marker, so read the out-of-stock sessions.
+// A session started after a confirmation can zero the product again, so that confirmation is stale.
+async function loadConfirmedOutOfStockProductIds(loadId: number) {
+  const sessions = (workEffort.value?.sessions ?? []).filter((session: any) => session.statusId !== 'SESSION_VOIDED');
+  const latestCountSession = Math.max(0, ...sessions.filter((session: any) => !isOutOfStockSession(session))
+    .map((session: any) => toMillis(session.createdDate) || 0));
+  const confirmationSessions = sessions.filter((session: any) => isOutOfStockSession(session) && !(toMillis(session.createdDate) < latestCountSession));
+  const productIds = new Set<string>();
+  const pageSize = 500;
+
+  for (const session of confirmationSessions) {
+    for (let pageIndex = 0; ; pageIndex++) {
+      const resp = await useInventoryCountImport().getSessionItemsByImportId({ inventoryCountImportId: session.inventoryCountImportId, pageIndex, pageSize });
+      if (loadId !== reviewLoadId) return;
+      if (resp?.status !== 200 || !Array.isArray(resp.data)) throw resp;
+      resp.data.forEach((item: any) => item.productId && productIds.add(item.productId));
+      if (resp.data.length < pageSize) break;
+    }
+  }
+  confirmedOutOfStockProductIds = productIds;
+}
+
+// A saved zero, from a removed scan or an explicit entry, still needs the out-of-stock confirmation.
+function needsOutOfStockConfirmation(item: any) {
+  return item.quantity !== null && item.quantity !== undefined && Number(item.quantity) === 0
+    && !confirmedOutOfStockProductIds.has(item.productId);
 }
 
 const outOfStockSelections = reactive<Record<string, boolean>>({});
