@@ -10,7 +10,7 @@
   "defaultVersion": "v5.2.3",
   "configuredEnvironment": "AppEnvProd",
   "defaultSource": "Compiled build metadata",
-  "checkedAt": "2026-11-17T12:59:02.217Z",
+  "checkedAt": "2026-11-17T14:18:45.373Z",
   "deployedAt": "2026-11-04T08:56:33.264Z",
   "release": "sites/inventorycount-uat/channels/live/releases/1793782593264000",
   "fileCount": 61
