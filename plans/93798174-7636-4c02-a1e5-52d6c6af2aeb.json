@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "93798174-7636-4c02-a1e5-52d6c6af2aeb",
+  "repo": "hotwax/inventory-count",
+  "actor": "ravilodhi",
+  "toolsSha": "d1afc7f3a2868d9562420db21f104912c1d7769e",
+  "action": "default",
+  "environment": "prod",
+  "version": "v5.4.2",
+  "targetDefault": null,
+  "build": [
+    "v5.4.2"
+  ],
+  "added": [],
+  "replaced": [],
+  "removed": [],
+  "retained": [
+    "v5.4.2",
+    "v5.4.1",
+    "v5.2.3"
+  ],
+  "previousDefault": "v5.2.3",
+  "nextDefault": "v5.4.2",
+  "rootChanges": true,
+  "confirmation": "PUBLISH TO PRODUCTION",
+  "app": {
+    "id": "inventory-count",
+    "repo": "hotwax/inventory-count",
+    "name": "inventory-count"
+  },
+  "target": {
+    "project": "digital-commerce-71eb8",
+    "site": "inventorycount",
+    "environment": "prod",
+    "origin": "https://inventorycount.web.app"
+  },
+  "baseFingerprint": "b7928ce564ff37ebaf58e0a496ddc97dec9c19dea10000872202c2e1c0c2eee0",
+  "baseRelease": "sites/inventorycount/channels/live/releases/1794923673303000",
+  "sources": [
+    {
+      "version": "v5.4.2",
+      "appCommit": "1c58fe9bde4937e16809f19763a8283cdc81c24c",
+      "frameworkCommit": "70e0ac342680cadd6117832300189e075f953c6d",
+      "frameworkPin": "v1.13.1",
+      "appId": "CYCLE_COUNT",
+      "config": {
+        "appId": "CYCLE_COUNT",
+        "environmentTypeId": "AppEnvDev",
+        "buildVersion": ""
+      }
+    }
+  ],
+  "sourceCommits": [
+    {
+      "version": "v5.4.2",
+      "appCommit": "1c58fe9bde4937e16809f19763a8283cdc81c24c",
+      "frameworkCommit": "70e0ac342680cadd6117832300189e075f953c6d",
+      "frameworkPin": "v1.13.1",
+      "appId": "CYCLE_COUNT"
+    }
+  ],
+  "createdAt": "2026-11-17T14:21:17.292Z",
+  "expiresAt": "2026-11-17T15:21:17.292Z",
+  "writable": true,
+  "warnings": [
+    "Users of the main URL receive this rebuilt Default. Pinned releases remain hosted."
+  ]
+}
