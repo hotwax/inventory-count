@@ -1,8 +1,7 @@
-import { commonUtil } from "@common";
+import { commonUtil, logger } from "@common";
 import { WorkerFactory } from "@common/core/workerFactory";
 import { ref } from "vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
-import { errorMessage, relayWorkerDiagnostic, reportDiagnostic } from "@/services/handCountDiagnostics";
 import { finishSessionTeardown, waitForSessionTeardown } from "@/services/sessionSyncLifecycle";
 import { useProductStore } from "@/stores/productStore";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -29,8 +28,6 @@ export function useHandCountSession() {
     barcodeIdentification: products.getBarcodeIdentificationPref, inventoryCountTypeId: "DIRECTED_COUNT"
   });
   const ok = (response: any) => response?.status === 200 && !commonUtil.hasError(response);
-  const lockOwnerData = (locks: any[]) => ({ sessionId, thisDeviceId: user.getDeviceId, lockCount: locks.length,
-    owners: locks.map((value: any) => `${value.userId}@${value.deviceId}`) });
   const owned = (value: any) => value.userId === user.getUserProfile?.username && value.deviceId === user.getDeviceId;
 
   function stop(flushPending = true) {
@@ -64,18 +61,13 @@ export function useHandCountSession() {
     if(current !== revision) {return;}
     const session = await counts.getInventoryCountImportSession({ inventoryCountImportId });
     if(!ok(session)) {throw new Error("Session unavailable");}
-    if(current !== revision) {return;}
-    if(session.data?.statusId !== "SESSION_ASSIGNED") {
-      void reportDiagnostic("session_not_editable", { sessionId, statusId: session.data?.statusId });
-
-      return;
-    }
+    if(current !== revision || session.data?.statusId !== "SESSION_ASSIGNED") {return;}
     const response = await counts.getSessionLock({ inventoryCountImportId });
     if(!ok(response)) {throw new Error("Session lock unavailable");}
     if(current !== revision) {return;}
     const locks = response.data?.entityValueList || [];
     if(locks.some((value: any) => !owned(value))) {
-      void reportDiagnostic("lock_held_elsewhere", lockOwnerData(locks), "warn");
+      logger.warn(`Handcount session locked elsewhere sessionId=${inventoryCountImportId} owners=${locks.map((value: any) => `${value.userId}@${value.deviceId}`).join(",")}`);
 
       return;
     }
@@ -90,17 +82,12 @@ export function useHandCountSession() {
       const persisted = await counts.getSessionLock({ inventoryCountImportId });
       if(!ok(persisted)) {throw new Error("Session lock unavailable");}
       const activeLocks = persisted.data?.entityValueList || [];
-      if(activeLocks.some((value: any) => !owned(value))) {
-        void reportDiagnostic("lock_held_elsewhere", lockOwnerData(activeLocks), "warn");
-
-        return;
-      }
+      if(activeLocks.some((value: any) => !owned(value))) {return;}
       acquired = activeLocks.find((value: any) => String(value.fromDate) === String(result.data?.fromDate));
     }
     if(current !== revision) {return;}
     if(!acquired || !owned(acquired)) {throw new Error("Session lock unavailable");}
     lock = acquired;
-    void reportDiagnostic("lock_acquired", { sessionId, deviceId: user.getDeviceId, thruDate: acquired.thruDate });
     const lease = WorkerFactory.createWorker<LockHeartbeatWorker>(new URL(LockHeartbeatWorkerUrl, import.meta.url));
     heartbeat = lease;
     let lost = false;
@@ -110,33 +97,27 @@ export function useHandCountSession() {
         lock.thruDate = event.data.thruDate;
       } else if(["lockForceReleased", "lockExpired", "reacquireLock", "heartbeatError"].includes(event.data.type)) {
         lost = true;
-        void reportDiagnostic("lock_lost", { sessionId, reason: event.data.type, deviceId: user.getDeviceId }, "warn");
+        logger.warn(`Handcount lock lost sessionId=${inventoryCountImportId} reason=${event.data.type}`);
         stop(false); // Fail closed; retry/re-entry obtains a fresh lease and preserves drafts.
       }
     };
-    lease.worker.onerror = () => {
-      if(current === revision) {
-        lost = true;
-        void reportDiagnostic("lock_lost", { sessionId, reason: "heartbeatWorkerError", deviceId: user.getDeviceId }, "warn");
-        stop(false);
-      }
-    };
+    lease.worker.onerror = () => { if(current === revision) {lost = true; stop(false);} };
     await lease.api.startHeartbeat({ inventoryCountImportId, lock: JSON.parse(JSON.stringify(acquired)),
       leaseSeconds: 300, gracePeriod: 0, maargUrl: commonUtil.getMaargURL(), token: commonUtil.getToken() || "",
       userId: user.getUserProfile?.username, deviceId: user.getDeviceId });
     if(current !== revision || lost) {return;}
     sync = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url));
-    // The worker has no logger: it posts diagnostics here to reach Faro. Comlink answers by message id, so this does not interfere.
-    // Use this worker's own session: the shared sessionId moves on when another session opens while this worker is still flushing.
-    sync.worker.onmessage = event => { relayWorkerDiagnostic(event.data, inventoryCountImportId); };
-    sync.worker.onerror = event => { void reportDiagnostic("worker_crashed", { sessionId: inventoryCountImportId, message: errorMessage(event?.message) }, "warn"); };
+    // The worker posts log lines because it has no logger. Comlink answers by message id, so this does not interfere.
+    sync.worker.onmessage = event => {
+      if(event.data?.type === "log") {logger[event.data.level === "warn" ? "warn" : "info"](event.data.message);}
+    };
+    sync.worker.onerror = event => { logger.error(`Handcount sync worker crashed sessionId=${inventoryCountImportId} error=${event?.message}`); };
     sync.worker.postMessage({ type: "schedule", payload: { inventoryCountImportId, intervalMs: 8000, context: context() } });
     mutable.value = true;
   }
 
   async function checkMutable() {
     if(!mutable.value || !lock || new Date(lock.thruDate).getTime() <= Date.now()) {
-      void reportDiagnostic("not_mutable", { sessionId, reason: !mutable.value ? "not_started" : !lock ? "no_lock" : "lease_expired" }, "warn");
       stop(false);
 
       return false;
@@ -149,8 +130,7 @@ export function useHandCountSession() {
       locks.length > 0 && locks.every(owned) && locks.some((value: any) => value.fromDate === lock?.fromDate);
     if(current !== revision) {return false;}
     if(!allowed) {
-      void reportDiagnostic("not_mutable", { sessionId, reason: "server_check_failed", statusId: session.data?.statusId,
-        lockCount: locks.length, ownedByThisDevice: locks.filter(owned).length }, "warn");
+      logger.warn(`Handcount session no longer editable sessionId=${sessionId} status=${session.data?.statusId} locks=${locks.length} ownedHere=${locks.filter(owned).length}`);
       stop(false);
     }
 
@@ -161,7 +141,9 @@ export function useHandCountSession() {
     if(!sync || !mutable.value) {throw new Error("Session sync unavailable");}
     const result = await sync.api.flushSession(sessionId, context());
     const clean = !result.pendingScans && !result.pendingRecords && !result.unmatchedRecords;
-    void reportDiagnostic("flush", { sessionId, ...result, clean }, clean ? "info" : "warn");
+    if(!clean) {
+      logger.warn(`Handcount sync incomplete sessionId=${sessionId} pendingScans=${result.pendingScans} pendingRecords=${result.pendingRecords} unmatched=${result.unmatchedRecords}`);
+    }
 
     return clean;
   }

@@ -152,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { commonUtil, translate } from "@common";
+import { commonUtil, logger, translate } from "@common";
 import { IonButton, IonCheckbox, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSkeletonText, IonText, IonThumbnail, alertController } from "@ionic/vue";
 import { addOutline, removeOutline, swapVerticalOutline } from "ionicons/icons";
 import { computed, onUnmounted, ref, watch } from "vue";
@@ -163,7 +163,6 @@ import { useHandCountSession } from "@/composables/useHandCountSession";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
 import { useProductMaster } from "@/composables/useProductMaster";
 import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
-import { describeEdits, errorMessage, localStateSeverity, reportDiagnostic } from "@/services/handCountDiagnostics";
 import { hasRecordedCount } from "@/services/inventoryCountRecord";
 import { useProductStore } from "@/stores/productStore";
 import { useUserProfile } from "@/stores/userProfileStore";
@@ -228,14 +227,6 @@ function toggleNotInStock(item: any) {
   if(drafts.value[item.productId] && notInStock(item)) {delete drafts.value[item.productId];} else {edit(item, "0");}
 }
 
-/** What this device holds locally for the session: the two tables the screen adds up. See handCountDiagnostics. */
-async function reportLocalState(trigger: string, extra: Record<string, any> = {}) {
-  try {
-    const summary = await counts.getLocalSessionSummary(props.inventoryCountImportId);
-    void reportDiagnostic("local_state", { sessionId: props.inventoryCountImportId, trigger, ...extra, ...summary }, localStateSeverity(summary));
-  } catch { /* diagnostics only */ }
-}
-
 function stop() {
   visit++;
   subscription?.unsubscribe();
@@ -253,19 +244,17 @@ async function load() {
     if(id !== visit) {return;}
     // This also supports a direct link or a cold launch without the scanner page.
     const pageSize = 500;
-    let serverItems = 0;
     for(let pageIndex = 0; ; pageIndex++) {
       const response = await counts.getSessionItemsByImportId({ inventoryCountImportId: props.inventoryCountImportId,
         facilityId: useProductStore().getCurrentFacility.facilityId, pageIndex, pageSize });
       if(id !== visit) {return;}
       if(response?.status !== 200 || !Array.isArray(response.data) || commonUtil.hasError(response)) {throw new Error("Session items unavailable");}
-      serverItems += response.data.length;
       await counts.storeInventoryCountItems(response.data);
       if(id !== visit) {return;}
       if(response.data.length < pageSize) {break;}
     }
+    logger.info(`Handcount loaded sessionId=${props.inventoryCountImportId} ${await counts.describeLocalSession(props.inventoryCountImportId)}`);
     subscribeToItems(id);
-    void reportLocalState("load", { serverItems });
     const productIds = await counts.getSessionProductIds(props.inventoryCountImportId);
     if(id === visit && productIds.length) {void productMaster.prefetch(productIds).catch(() => undefined);}
   } catch {
@@ -315,19 +304,19 @@ async function save(): Promise<boolean> {
       const item = items.value.find(item => item.productId === edit.productId);
       if(item) {item.quantity = edit.quantity; item.countedByUserLoginId = userProfile.getUserProfile?.username;}
     }
-    void reportDiagnostic("save", { sessionId: props.inventoryCountImportId, editCount: edits.length, edits: describeEdits(edits) });
     drafts.value = {};
     // Local persistence succeeded. A sync failure must not replay the same delta.
     let synced = false;
-    try { synced = await session.flush(); } catch (error) {
-      void reportDiagnostic("flush_failed", { sessionId: props.inventoryCountImportId, message: errorMessage(error) }, "warn");
+    try { synced = await session.flush(); } catch(error) {
+      // The scheduled worker retries pending records.
+      logger.warn(`Handcount sync after save failed sessionId=${props.inventoryCountImportId} error=${String(error)}`);
     }
-    void reportLocalState("save", { synced });
+    logger.info(`Handcount saved sessionId=${props.inventoryCountImportId} synced=${synced} ${await counts.describeLocalSession(props.inventoryCountImportId)}`);
     commonUtil.showToast(synced ? translate("Items Saved") : translate("Saved on this device. Waiting to sync."));
 
     return true;
-  } catch (error) {
-    void reportDiagnostic("save_failed", { sessionId: props.inventoryCountImportId, draftCount: draftCount.value, message: errorMessage(error) }, "warn");
+  } catch(error) {
+    logger.error(`Handcount save failed sessionId=${props.inventoryCountImportId} drafts=${draftCount.value} error=${String(error)}`);
     commonUtil.showToast(translate("Could not save counts. Your edits are kept; check the session and try again."));
 
     return false;

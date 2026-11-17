@@ -753,7 +753,7 @@ import { ref, computed, defineProps, nextTick, watch, watchEffect, toRaw } from 
 import { useSessionItemDisplay } from "@/composables/useSessionItemDisplay";
 import { useProductMaster } from '@/composables/useProductMaster';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
-import { commonUtil, translate } from '@common';
+import { commonUtil, logger, translate } from '@common';
 import { WorkerFactory } from '@common/core/workerFactory';
 import { loader } from '@/services/uiUtils';
 import { finishSessionTeardown, waitForSessionTeardown, trackSessionStatusChange, waitForSessionStatusChanges } from '@/services/sessionSyncLifecycle';
@@ -763,7 +763,6 @@ import type { Remote } from 'comlink'
 import type { LockHeartbeatWorker } from '@/workers/lockHeartbeatWorker';
 import LockHeartbeatWorkerUrl from '@/workers/lockHeartbeatWorker?worker&url';
 import { useUserProfile } from '@/stores/userProfileStore';
-import { relayWorkerDiagnostic } from "@/services/handCountDiagnostics";
 import { playScanSuccessFeedback, prepareScanSuccessFeedback } from '@/services/scanFeedback';
 import { createCameraScanProductLookupContext } from '@/services/cameraScanProduct';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -1070,8 +1069,9 @@ async function enterSession() {
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
       const { type, count } = event.data
-      if(relayWorkerDiagnostic(event.data, props.inventoryCountImportId)) {return;}
-      if (type === 'aggregationComplete') {
+      if (type === 'log') {
+        logger[event.data.level === 'warn' ? 'warn' : 'info'](event.data.message)
+      } else if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
       }
     }
@@ -1314,13 +1314,13 @@ async function focusScanner() {
   }, 0);
 }
 
-async function recordScannedCode(code: string, quantity = 1) {
+async function recordScannedCode(code: string, quantity = 1, source?: string) {
   console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
   if (!value || !isSessionMutable.value) return false;
 
   try {
-    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
+    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity, source });
     filteredItems.value = [];
     searchKeyword.value = '';
     await playScanSuccessFeedback();
@@ -1377,11 +1377,11 @@ async function openCountedItemEditor(item: any) {
 }
 
 async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
-  if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity);
+  if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity, 'count_sheet');
   // A new total is saved as the difference from the current count. An entered zero stays counted.
   try {
     await useInventoryCountImport().saveHandCountTotals(props.inventoryCountImportId,
-      [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username);
+      [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username, 'edit_sheet');
     return true;
   } catch (err) {
     console.error(err);
@@ -2051,7 +2051,8 @@ async function negateSingleScan(item: any) {
       productIdentifier: item.scannedValue,
       productId: item.productId,
       negatedScanEventId: item.id,
-      quantity: -Math.abs(item.quantity || 1)
+      quantity: -Math.abs(item.quantity || 1),
+      source: 'remove_scan'
     })
 
     commonUtil.showToast(translate('Scan removed'))
@@ -2081,7 +2082,8 @@ async function negateAllScansOfSku(item: any) {
         productIdentifier: scan.scannedValue,
         productId: scan.productId,
         negatedScanEventId: scan.id,
-        quantity: -Math.abs(scan.quantity || 1)
+        quantity: -Math.abs(scan.quantity || 1),
+        source: 'remove_all_scans'
       })
     }
     commonUtil.showToast(translate('Removed all scans for') + ` ${sku}`)

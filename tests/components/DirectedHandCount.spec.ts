@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ rows: [] as any[], save: vi.fn(), toast: vi.fn(), unsubscribe: vi.fn(),
   sort: "assigned", primaryId: "SKU", subscribe: vi.fn(), productAvailable: true, status: "SESSION_ASSIGNED", lock: [] as any[], failLoad: false, flush: vi.fn() }));
-vi.mock("@common", () => ({ translate: (key: string) => key, commonUtil: { getOMSInstanceName: () => "demo", hasError: () => false, showToast: state.toast } }));
+vi.mock("@common", () => ({ translate: (key: string) => key, logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, commonUtil: { getOMSInstanceName: () => "demo", hasError: () => false, showToast: state.toast } }));
 vi.mock("@/components/Image.vue", () => ({ default: { template: "<img />" } }));
 vi.mock("@/composables/useHandCountSession", () => ({ useHandCountSession: () => {
   const mutable = ref(false);
@@ -18,6 +18,7 @@ vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFa
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1", getSessionDetailFilters: filters, updateUiFilter: (_page: string, _key: string, value: string) => { filters.sort = value; } }) }));
 vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ primaryId: (p: any) => p?.sku || "", secondaryId: () => "", prefetch: vi.fn(), getById: async (id: string) => ({ product: state.productAvailable ? { productId: id } : undefined }) }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({
+  describeLocalSession: async () => "records=0",
   getInventoryCountImportSession: async () => ({ status: 200, data: { statusId: state.status } }),
   getSessionLock: async () => ({ status: 200, data: { entityValueList: state.lock } }),
   getSessionItemsByImportId: async () => {
