@@ -1233,7 +1233,9 @@ async function startSession(id = viewId) {
     // Load InventoryCountImportItem records into IndexedDB
     const sessionItemsCount = await useInventoryCountImport().getInventoryCountImportItemsCount(props.inventoryCountImportId);
 
-    if (!sessionItemsCount || totalItems.value !== sessionItemsCount) {
+    // Also reload when the device still holds uncounted items saved as 0 by an earlier release.
+    if (!sessionItemsCount || totalItems.value !== sessionItemsCount
+      || await useInventoryCountImport().hasUnconfirmedZeroRecords(props.inventoryCountImportId)) {
       console.log("[Session] No local records found, fetching from backend...");
       await loadInventoryItemsWithProgress();
     } else {
@@ -1353,10 +1355,15 @@ function openPendingItemCountSheet(item: any) {
   isPendingItemCountSheetOpen.value = true;
 }
 
-// Tapping a counted item edits its total. Read the total with unaggregated scans so the change is applied to the latest count.
+// Tapping a counted item edits its total. Scanner scans carry no product id until the worker matches them,
+// so let the worker aggregate first; otherwise the sheet shows a stale total and the saved difference overcounts.
+let isOpeningCountedItemEditor = false;
 async function openCountedItemEditor(item: any) {
-  if (!isSessionMutable.value || !item.productId) return;
+  if (!isSessionMutable.value || !item.productId || isOpeningCountedItemEditor) return;
+  isOpeningCountedItemEditor = true;
   try {
+    await loader.present(translate('Syncing count...'));
+    await finalizeAggregationAndSync();
     const current = (await useInventoryCountImport().readAssignedHandCountItems(props.inventoryCountImportId))
       .find((record: any) => record.productId === item.productId);
     if (!current) throw new Error('Counted item unavailable');
@@ -1373,13 +1380,18 @@ async function openCountedItemEditor(item: any) {
   } catch (err) {
     console.error(err);
     commonUtil.showToast(translate('Unable to edit this count'));
+  } finally {
+    loader.dismiss();
+    isOpeningCountedItemEditor = false;
   }
 }
 
 async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
   if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity, 'count_sheet');
   // A new total is saved as the difference from the current count. An entered zero stays counted.
+  // Aggregate scans made since the sheet opened, so the count check rejects the save instead of overcounting.
   try {
+    await finalizeAggregationAndSync();
     await useInventoryCountImport().saveHandCountTotals(props.inventoryCountImportId,
       [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username, 'edit_sheet');
     return true;
