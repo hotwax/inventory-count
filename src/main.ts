@@ -57,7 +57,9 @@ const app = createApp(App)
     innerHTMLTemplatesEnabled: true
   })
   .use(logger, {
-    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL,
+    // Count changes and sync results are logged at info, and a line below the logger's level never reaches Faro.
+    // Builds have used "error", so the level is info unless a build asks for the more verbose debug.
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL === 'debug' ? 'debug' : 'info',
     afterHooks: [faroUtil.faroLoggerHook]
   })
   .use(pinia)
