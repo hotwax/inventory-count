@@ -6,8 +6,28 @@
   "action": "",
   "version": null,
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "completed",
   "createdAt": "2026-11-17T13:01:50.127Z",
   "steps": [],
-  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44088600554"
+  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44088600554",
+  "hosting": {
+    "available": true,
+    "target": {
+      "project": "digital-commerce-71eb8",
+      "site": "inventorycount",
+      "environment": "prod",
+      "origin": "https://inventorycount.web.app"
+    },
+    "versions": [
+      "v5.4.1"
+    ],
+    "defaultVersion": "v5.2.3",
+    "configuredEnvironment": "AppEnvProd",
+    "defaultSource": "Compiled build metadata",
+    "checkedAt": "2026-11-17T13:01:54.572Z",
+    "deployedAt": "2026-10-30T07:24:43.758Z",
+    "release": "sites/inventorycount/channels/live/releases/1793345083758000",
+    "fileCount": 118
+  },
+  "finishedAt": "2026-11-17T13:01:55.816Z"
 }
