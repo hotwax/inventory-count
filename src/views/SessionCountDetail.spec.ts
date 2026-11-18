@@ -355,6 +355,6 @@ describe("counted item edits and stale device zeros", () => {
     expect(wrapper.vm.pendingItemForCount).toMatchObject({ productId: "P1", currentQuantity: 5 });
     await expect(wrapper.vm.savePendingItemCount(wrapper.vm.pendingItemForCount, 7)).resolves.toBe(true);
     expect(state.order).toEqual(["flush", "read", "flush", "save"]);
-    expect(state.saveTotals).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 7, expectedQuantity: 5 }], "unit-only");
+    expect(state.saveTotals).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 7, expectedQuantity: 5 }], "unit-only", "edit_sheet");
   });
 });
