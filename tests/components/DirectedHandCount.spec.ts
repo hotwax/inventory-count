@@ -52,7 +52,7 @@ beforeEach(() => {
   vi.clearAllMocks(); state.flush.mockReset().mockResolvedValue(true); state.save.mockReset().mockResolvedValue(undefined);
   filters.sort = "assigned"; state.primaryId = "SKU";
   state.productAvailable = true; state.status = "SESSION_ASSIGNED"; state.lock = []; state.failLoad = false;
-  state.rows = [{ productId: "P1", quantity: 0, product: { productId: "P1", internalName: "Blue shirt", goodIdentifications: [{ type: "SKU", value: "BLUE-SHIRT" }] } }, { productId: "P2", quantity: 3, product: { productId: "P2", goodIdentifications: [{ type: "SKU", value: "BLACK-SHOES" }] } }];
+  state.rows = [{ productId: "P1", quantity: null, product: { productId: "P1", internalName: "Blue shirt", goodIdentifications: [{ type: "SKU", value: "BLUE-SHIRT" }] } }, { productId: "P2", quantity: 3, product: { productId: "P2", goodIdentifications: [{ type: "SKU", value: "BLACK-SHOES" }] } }];
 });
 async function screen() {
   const wrapper = mount(DirectedHandCount, { props: { inventoryCountImportId: "S1", active: true } }); await flushPromises();
@@ -80,7 +80,7 @@ describe("directed handcount screen", () => {
     expect(wrapper.get("[data-testid=\"handcount-row-P1\"]").text()).toContain("Counted · 0");
     expect(wrapper.findComponent(IonCheckbox).props("checked")).toBe(true);
     expect(wrapper.findComponent(IonCheckbox).props("disabled")).toBe(true);
-    state.rows[0].countedByUserLoginId = "user";
+    state.rows[0].quantity = 0;
     await wrapper.setProps({ active: false }); await wrapper.setProps({ active: true }); await flushPromises();
     expect(input(wrapper, "P1").props("value")).toBe("0");
   });
@@ -204,7 +204,7 @@ describe("directed handcount screen", () => {
     expect(input(wrapper, "P1").props("value")).toBe("1");
   });
   it("preserves a draft when its virtual row leaves the window and searches all assigned items", async () => {
-    state.rows = Array.from({ length: 120 }, (_, index) => ({ productId: `P${index}`, quantity: 0 }));
+    state.rows = Array.from({ length: 120 }, (_, index) => ({ productId: `P${index}`, quantity: null }));
     const wrapper = await screen();
     await wrapper.get("[data-testid=\"handcount-increase-P0\"]").trigger("click");
     const scroller = wrapper.findComponent({ name: "DynamicScroller" });
