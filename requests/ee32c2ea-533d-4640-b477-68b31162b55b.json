@@ -6,8 +6,58 @@
   "action": "publish",
   "version": "v5.4.3",
   "actor": "ravilodhi",
-  "status": "running",
+  "status": "completed",
   "createdAt": "2026-11-18T13:07:07.309Z",
-  "steps": [],
-  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44310391015"
+  "steps": [
+    {
+      "message": "Checking out v5.4.3",
+      "at": "2026-11-18T13:07:12.365Z"
+    },
+    {
+      "message": "Installing pinned dependencies for v5.4.3",
+      "at": "2026-11-18T13:07:14.296Z"
+    },
+    {
+      "message": "Building v5.4.3 version URL",
+      "at": "2026-11-18T13:07:33.215Z"
+    },
+    {
+      "message": "Uploading 63 built files",
+      "at": "2026-11-18T13:08:08.102Z"
+    },
+    {
+      "message": "Publishing verified Firebase deployment",
+      "at": "2026-11-18T13:08:27.310Z"
+    }
+  ],
+  "runUrl": "https://github.com/hotwax/inventory-count/actions/runs/44310391015",
+  "deployment": {
+    "release": "sites/inventorycount/channels/live/releases/1795007307323000",
+    "version": "sites/inventorycount/versions/421b5692242c2956",
+    "previousVersion": "sites/inventorycount/versions/3e719140aa95c23a",
+    "files": 328
+  },
+  "hosting": {
+    "available": true,
+    "target": {
+      "project": "digital-commerce-71eb8",
+      "site": "inventorycount",
+      "environment": "prod",
+      "origin": "https://inventorycount.web.app"
+    },
+    "versions": [
+      "v5.4.3",
+      "v5.4.2",
+      "v5.4.1",
+      "v5.2.3"
+    ],
+    "defaultVersion": "v5.4.2",
+    "configuredEnvironment": "AppEnvProd",
+    "defaultSource": "Hosting manifest",
+    "checkedAt": "2026-11-18T13:08:31.294Z",
+    "deployedAt": "2026-11-18T13:08:27.323Z",
+    "release": "sites/inventorycount/channels/live/releases/1795007307323000",
+    "fileCount": 328
+  },
+  "finishedAt": "2026-11-18T13:08:32.783Z"
 }
