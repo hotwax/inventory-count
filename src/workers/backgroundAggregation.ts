@@ -414,19 +414,11 @@ async function aggregate(inventoryCountImportId: string, context: any) {
             productId = product.productId
           }
         }
-        // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
-        // if (!productId) {
-        //   const product = await getById(scannedValue, context)
-        //   productId = product?.productId || null
-        // }
-
         const existing = await db.table('inventoryCountRecords')
           .where('inventoryCountImportId')
           .equals(inventoryCountImportId)
           .and((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
           .first()
-
-        // if (productId) ensureProductStored(productId, context);
 
         if (existing) {
           const nextQuantity = toCountedQuantity((existing.quantity || 0) + quantity, lastWasRemoval)
@@ -434,7 +426,6 @@ async function aggregate(inventoryCountImportId: string, context: any) {
             ...existing,
             quantity: nextQuantity,
             countedByUserLoginId: nextQuantity === null ? null : context.userLoginId,
-            // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
             lastScanAt: now,
             lastUpdatedAt: now, // mark updated
             productId: existing.productId || productId,
