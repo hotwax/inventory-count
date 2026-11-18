@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import { commonUtil } from '@common'
 import { db } from '@/services/appInitializer';
 import { useUserProfile } from '@/stores/userProfileStore';
 
@@ -20,27 +21,12 @@ async function initDeviceId() {
   return deviceId;
 }
 
+// A missing or non-semver version (e.g. an instance on a custom branch) is treated as compatible
 const isAppCompatible = () => {
   const currentVersion = useUserProfile().systemInformation?.instanceInfo?.componentRelease;
   const requiredVersion = import.meta.env.VITE_MAARG_COMPATIBLE_VERSION;
 
-  if(!requiredVersion || !currentVersion) return true;
-
-  const currentParts = String(currentVersion).split('.');
-  const requiredParts = String(requiredVersion).split('.');
-
-  if(currentParts.length < 3) return true;
-
-  currentParts[0] = currentParts[0].replace("v", "")
-  requiredParts[0] = requiredParts[0].replace("v", "")
-
-  for(let i = 0; i < 3; i++) {
-    const current = Number(currentParts[i]) || 0;
-    const required = Number(requiredParts[i]) || 0;
-    if(current > required) return true;
-    if(current < required) return false;
-  }
-  return true;
+  return commonUtil.isVersionGreaterOrEqual(requiredVersion, currentVersion);
 }
 
 const getUploadFileParamName = () => isAppCompatible() ? "contentFile" : "uploadedFile"
