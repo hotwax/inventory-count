@@ -14,7 +14,7 @@
   "defaultVersion": "v5.4.2",
   "configuredEnvironment": "AppEnvProd",
   "defaultSource": "Hosting manifest",
-  "checkedAt": "2026-11-17T14:24:33.006Z",
+  "checkedAt": "2026-11-18T13:00:49.070Z",
   "deployedAt": "2026-11-17T14:24:29.741Z",
   "release": "sites/inventorycount/channels/live/releases/1794925469741000",
   "fileCount": 267
