@@ -30,8 +30,9 @@ import './theme/variables.css';
 /* vue virtual scroller css */
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 
-import { createPinia } from 'pinia';
+import { createPinia, getActivePinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { useProductStore } from "./stores/productStore";
 import { useUserProfile } from './stores/userProfileStore';
 import { db, initialize } from '@/services/appInitializer'
 import { createDxpI18n, faroUtil, initialiseConfig, logger, supportsIosKeyboardScroll } from '@common'
@@ -40,7 +41,14 @@ import localeMessages from '@/locales'
 const i18n = createDxpI18n(localeMessages)
 const pinia = createPinia().use(piniaPluginPersistedstate);
 
-faroUtil.initialiseFaro()
+// Read on every signal, so a facility or device change is picked up. Faro loads asynchronously, but a signal sent
+// before pinia is installed below must not create a store early, so it goes out without this context.
+faroUtil.initialiseFaro({
+  getContext: () => getActivePinia() ? {
+    facilityId: useProductStore().getCurrentFacility?.facilityId,
+    deviceId: useUserProfile().getDeviceId
+  } : {}
+})
 
 const app = createApp(App)
   .use(IonicVue, {
@@ -49,7 +57,9 @@ const app = createApp(App)
     innerHTMLTemplatesEnabled: true
   })
   .use(logger, {
-    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL,
+    // Count changes and sync results are logged at info, and a line below the logger's level never reaches Faro.
+    // Builds have used "error", so the level is info unless a build asks for the more verbose debug.
+    level: import.meta.env.VITE_DEFAULT_LOG_LEVEL === 'debug' ? 'debug' : 'info',
     afterHooks: [faroUtil.faroLoggerHook]
   })
   .use(pinia)

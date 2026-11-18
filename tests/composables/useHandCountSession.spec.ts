@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ locks: [] as any[], acquire: vi.fn(), workers: [] as any[], status: "SESSION_ASSIGNED",
   heartbeat: vi.fn(), flush: vi.fn(), session: vi.fn() }));
-vi.mock("@common", () => ({ commonUtil: { hasError: (r: any) => !!r.data?.errors,
+vi.mock("@common", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, commonUtil: { hasError: (r: any) => !!r.data?.errors,
   getOmsURL: () => "", getOMSInstanceName: () => "test", getMaargURL: () => "", getToken: () => "" } }));
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ getUserProfile: { username: "user" }, getDeviceId: "D1" }) }));
 vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getBarcodeIdentificationPref: "SKU" }) }));

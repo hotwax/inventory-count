@@ -150,12 +150,18 @@ const getExportedCycleCountsFileData = async (payload: any): Promise<any> => {
   });
 };
 
+// Accepting or rejecting a counted quantity decides what reaches inventory, so log each decision.
 const submitProductReview = async (payload: any): Promise<any> => {
-  return api({
+  const resp = await api({
     url: `inventory-cycle-count/cycleCounts/submit`,
     method: "post",
     data: payload
   })
+  const products = payload?.inventoryCountProductsList || [];
+  logger.info(`Count review decision status=${resp?.status} products=${products.length} decisions=` +
+    products.slice(0, 20).map((item: any) => `${item.productId}:${item.decisionOutcomeEnumId}:counted=${item.countedQuantity ?? "?"}:variance=${item.varianceQuantity ?? "?"}`).join(","));
+
+  return resp
 }
 
 const getCycleCountStatusDesc = async (): Promise<any> => {

@@ -482,6 +482,7 @@ async function addPreCountedItemInScanEvents(product: any) {
     productId: product.productId,
     productIdentifier: await useProductStore().getProductIdentificationValue(product.productId, useProductStore().getProductIdentificationPref.primaryId),
     quantity: product.countedQuantity,
+    source: 'pre_counted',
   })
   product.saved = true
 }

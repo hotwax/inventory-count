@@ -1,4 +1,4 @@
-import { commonUtil } from "@common";
+import { commonUtil, logger } from "@common";
 import { WorkerFactory } from "@common/core/workerFactory";
 import { ref } from "vue";
 import { useInventoryCountImport } from "@/composables/useInventoryCountImport";
@@ -66,7 +66,11 @@ export function useHandCountSession() {
     if(!ok(response)) {throw new Error("Session lock unavailable");}
     if(current !== revision) {return;}
     const locks = response.data?.entityValueList || [];
-    if(locks.some((value: any) => !owned(value))) {return;}
+    if(locks.some((value: any) => !owned(value))) {
+      logger.warn(`Handcount session locked elsewhere sessionId=${inventoryCountImportId} owners=${locks.map((value: any) => `${value.userId}@${value.deviceId}`).join(",")}`);
+
+      return;
+    }
     let acquired = locks[0];
     if(!acquired) {
       const fromDate = Date.now();
@@ -93,6 +97,7 @@ export function useHandCountSession() {
         lock.thruDate = event.data.thruDate;
       } else if(["lockForceReleased", "lockExpired", "reacquireLock", "heartbeatError"].includes(event.data.type)) {
         lost = true;
+        logger.warn(`Handcount lock lost sessionId=${inventoryCountImportId} reason=${event.data.type}`);
         stop(false); // Fail closed; retry/re-entry obtains a fresh lease and preserves drafts.
       }
     };
@@ -102,6 +107,11 @@ export function useHandCountSession() {
       userId: user.getUserProfile?.username, deviceId: user.getDeviceId });
     if(current !== revision || lost) {return;}
     sync = WorkerFactory.createWorker<InventorySyncWorker>(new URL(InventorySyncWorkerUrl, import.meta.url));
+    // The worker posts log lines because it has no logger. Comlink answers by message id, so this does not interfere.
+    sync.worker.onmessage = event => {
+      if(event.data?.type === "log") {logger[event.data.level === "warn" ? "warn" : "info"](event.data.message);}
+    };
+    sync.worker.onerror = event => { logger.error(`Handcount sync worker crashed sessionId=${inventoryCountImportId} error=${event?.message}`); };
     sync.worker.postMessage({ type: "schedule", payload: { inventoryCountImportId, intervalMs: 8000, context: context() } });
     mutable.value = true;
   }
@@ -119,7 +129,10 @@ export function useHandCountSession() {
     const allowed = ok(session) && ok(response) && session.data?.statusId === "SESSION_ASSIGNED" &&
       locks.length > 0 && locks.every(owned) && locks.some((value: any) => value.fromDate === lock?.fromDate);
     if(current !== revision) {return false;}
-    if(!allowed) {stop(false);}
+    if(!allowed) {
+      logger.warn(`Handcount session no longer editable sessionId=${sessionId} status=${session.data?.statusId} locks=${locks.length} ownedHere=${locks.filter(owned).length}`);
+      stop(false);
+    }
 
     return allowed;
   }
@@ -127,8 +140,12 @@ export function useHandCountSession() {
   async function flush() {
     if(!sync || !mutable.value) {throw new Error("Session sync unavailable");}
     const result = await sync.api.flushSession(sessionId, context());
+    const clean = !result.pendingScans && !result.pendingRecords && !result.unmatchedRecords;
+    if(!clean) {
+      logger.warn(`Handcount sync incomplete sessionId=${sessionId} pendingScans=${result.pendingScans} pendingRecords=${result.pendingRecords} unmatched=${result.unmatchedRecords}`);
+    }
 
-    return !result.pendingScans && !result.pendingRecords && !result.unmatchedRecords;
+    return clean;
   }
 
   return { mutable, start, stop, checkMutable, flush };

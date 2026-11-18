@@ -4,6 +4,11 @@ import { expose } from 'comlink';
 import { createCommonDB } from "@/services/commonDatabase";
 import { hasRecordedCount, needsInventoryCountSync, toCountedQuantity } from "@/services/inventoryCountRecord";
 
+// A worker has no app logger and its console never reaches Faro, so it posts log lines for the page to log.
+function log(level: "info" | "warn", message: string) {
+  try { self.postMessage({ type: "log", level, message }) } catch { /* logging must not break syncing */ }
+}
+
 // DB instance for worker (created once)
 let db: any = null;
 let dbInitialized = false;
@@ -463,8 +468,9 @@ async function aggregate(inventoryCountImportId: string, context: any) {
       .modify({ aggApplied: 1 })
 
     return processed
-  } catch (err) {
+  } catch (err: any) {
     console.error('Aggregation failed', err)
+    log("warn", `Count aggregation failed sessionId=${inventoryCountImportId} error=${err?.message ?? err}`)
     return 0
   } finally {
     isAggregating = false
@@ -673,9 +679,13 @@ async function syncToServer(inventoryCountImportId: string, context: any) {
         lastSyncedAt: now,
         lastSyncedBatchId: `batch-${now}`
       })
+    // As sent, so an item synced as empty (uncounted) shows as null rather than 0.
+    log("info", `Count sync sessionId=${inventoryCountImportId} items=${items.length} blocked=${blocked.length} sent=` +
+      items.slice(0, 20).map((item: any) => `${item.productId || item.productIdentifier}:${item.quantity}`).join(","))
     return syncable.length
-  } catch (err) {
+  } catch (err: any) {
     console.error('sync error', err)
+    log("warn", `Count sync failed sessionId=${inventoryCountImportId} status=${err?.response?.status ?? err?.status ?? ""} error=${err?.message ?? err}`)
     return 0
   } finally {
     isSyncing = false

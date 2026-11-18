@@ -74,6 +74,7 @@ describe("final session flush", () => {
     await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0, pendingRecords: 0 });
     expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
     expect(state.request.mock.calls[0][0].data.items[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+    expect(self.postMessage).toHaveBeenCalledWith({ type: "log", level: "info", message: "Count sync sessionId=S1 items=1 blocked=0 sent=P1:0" });
   });
   it("leaves an item uncounted, and syncs an empty quantity, when its scans are removed back to zero", async () => {
     Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: 1, countedByUserLoginId: "counter" });
@@ -82,6 +83,7 @@ describe("final session flush", () => {
     await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0, pendingRecords: 0 });
     expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: null, countedByUserLoginId: null });
     expect(state.request.mock.calls[0][0].data.items[0]).toMatchObject({ quantity: null, countedByUserLoginId: null });
+    expect(self.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "log", message: expect.stringContaining("sent=P1:null") }));
   });
   it("leaves an item uncounted when a scan and its removal reach the worker together", async () => {
     Object.assign(state.db.rows.inventoryCountRecords[0], { quantity: null });
