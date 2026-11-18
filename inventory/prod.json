@@ -7,6 +7,7 @@
     "origin": "https://inventorycount.web.app"
   },
   "versions": [
+    "v5.4.3",
     "v5.4.2",
     "v5.4.1",
     "v5.2.3"
@@ -14,8 +15,8 @@
   "defaultVersion": "v5.4.2",
   "configuredEnvironment": "AppEnvProd",
   "defaultSource": "Hosting manifest",
-  "checkedAt": "2026-11-18T13:03:32.890Z",
-  "deployedAt": "2026-11-17T14:24:29.741Z",
-  "release": "sites/inventorycount/channels/live/releases/1794925469741000",
-  "fileCount": 267
+  "checkedAt": "2026-11-18T13:08:31.294Z",
+  "deployedAt": "2026-11-18T13:08:27.323Z",
+  "release": "sites/inventorycount/channels/live/releases/1795007307323000",
+  "fileCount": 328
 }
