@@ -275,91 +275,102 @@ async function aggregateVarianceLogs(context: any) {
   if (isAggregating) return 0
   isAggregating = true
   try {
-    const varianceLogs = await db.table('varianceLogs')
+    const pending = await db.table("varianceLogs")
       .where({ aggApplied: 0 })
       .toArray()
 
-    if (!varianceLogs.length) {
+    if (!pending.length) {
       return 0
     }
 
-    const grouped: Record<string, number> = {}
-    for (const scan of varianceLogs) {
-      const key = scan.scannedValue?.trim()
-      if (!key) continue
-      grouped[key] = (grouped[key] || 0) + scan.quantity
-    }
-    let processed = 0
-    const now = Date.now()
-    for (const [key, quantity] of Object.entries(grouped)) {
+    const findAdjustment = (productId: any, key: string) => db.table("inventoryAdjustments")
+      .where({ facilityId: context.facilityId })
+      .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
+      .first()
+
+    // Product and stock lookups call the server, which would end an IndexedDB transaction, so they run before it.
+    const lookups: Record<string, { productId: any, stock: any }> = {}
+    for (const key of new Set<string>(pending.map((log: any) => log.scannedValue?.trim()).filter(Boolean))) {
       let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
       if (!productId) {
         const product = await getById(key, context)
         productId = product?.productId || null
       }
+      let stock = productId ? await getProductStock(productId, context) : null
+      const existing = await findAdjustment(productId, key)
+      if (existing?.productId && stock === null) {
+        stock = await getProductStock(existing.productId, context)
+        console.info("Refreshed stock for", existing.productId)
+      }
+      lookups[key] = { productId, stock }
+    }
 
-      let stock = null;
-      if (productId) {
-        try {
-          stock = await getProductStock(productId, context)
-        } catch (error) {
-          console.error('Error fetching stock', error)
-        }
+    // One transaction: adding the logs to the adjustments and marking them applied commit together, as in aggregate().
+    // A worker stopped part-way keeps nothing, and a second worker or tab waits for this one instead of adding the same logs again.
+    return await db.transaction("rw", [db.table("varianceLogs"), db.table("inventoryAdjustments")], async () => {
+      const pendingIds = new Set(pending.map((log: any) => log.id))
+      // Only the logs that no other worker applied while the lookups ran.
+      const varianceLogs = await db.table("varianceLogs")
+        .where({ aggApplied: 0 })
+        .and((log: any) => pendingIds.has(log.id))
+        .toArray()
+
+      const grouped: Record<string, number> = {}
+      for (const log of varianceLogs) {
+        const key = log.scannedValue?.trim()
+        if (!key) continue
+        grouped[key] = (grouped[key] || 0) + log.quantity
       }
 
-      // Upsert by productId and facilityId in the inventoryAdjustments table here
-      const inventoryAdjustment = await db.table('inventoryAdjustments')
-        .where({ facilityId: context.facilityId })
-        .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
-        .first()
+      let processed = 0
+      const now = Date.now()
+      for (const [key, quantity] of Object.entries(grouped)) {
+        let { productId } = lookups[key] ?? { productId: null }
+        const stock = lookups[key]?.stock ?? null
+        const inventoryAdjustment = await findAdjustment(productId, key)
 
-      if (inventoryAdjustment) {
-        productId = inventoryAdjustment.productId;
-        if (productId && stock === null) {
-          try {
-            stock = await getProductStock(productId, context)
-            console.info("Refreshed stock for", productId)
-          } catch (error) {
-            console.error('Error fetching stock', error)
-          }
-        }
-        await db.table('inventoryAdjustments').put({
-          ...inventoryAdjustment,
-          quantity: inventoryAdjustment.quantity + quantity,
-          atp: stock?.atp,
-          qoh: stock?.qoh,
-          lastUpdatedAt: now
-        })
-      } else {
-        await db.table('inventoryAdjustments').add({
-          uuid: uuidv4(),
-          scannedValue: key,
-          productId,
-          facilityId: context.facilityId,
-          quantity,
-          atp: stock?.atp,
-          qoh: stock?.qoh,
-          lastUpdatedAt: now
-        })
-      }
-      processed++;
-      if (productId) {
-        await db.table('varianceLogs')
-          .where('scannedValue').equals(key)
-          .modify({
-            productId,
+        if (inventoryAdjustment) {
+          productId = inventoryAdjustment.productId
+          await db.table("inventoryAdjustments").put({
+            ...inventoryAdjustment,
+            quantity: inventoryAdjustment.quantity + quantity,
+            atp: stock?.atp,
+            qoh: stock?.qoh,
             lastUpdatedAt: now
           })
+        } else {
+          await db.table("inventoryAdjustments").add({
+            uuid: uuidv4(),
+            scannedValue: key,
+            productId,
+            facilityId: context.facilityId,
+            quantity,
+            atp: stock?.atp,
+            qoh: stock?.qoh,
+            lastUpdatedAt: now
+          })
+        }
+        processed++
+        if (productId) {
+          await db.table("varianceLogs")
+            .where("scannedValue").equals(key)
+            .modify({
+              productId,
+              lastUpdatedAt: now
+            })
+        }
       }
-    }
-    await db.table('varianceLogs')
-      .where('id')
-      .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
-      .modify({ aggApplied: 1 })
-    return processed;
+
+      await db.table("varianceLogs")
+        .where("id")
+        .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
+        .modify({ aggApplied: 1 })
+
+      return processed
+    })
   } catch (error) {
-    console.error('Error aggregating variance logs:', error)
-    return 0;
+    console.error("Error aggregating variance logs:", error)
+    return 0
   } finally {
     isAggregating = false
   }
