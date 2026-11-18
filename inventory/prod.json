@@ -12,11 +12,11 @@
     "v5.4.1",
     "v5.2.3"
   ],
-  "defaultVersion": "v5.4.2",
+  "defaultVersion": "v5.4.3",
   "configuredEnvironment": "AppEnvProd",
   "defaultSource": "Hosting manifest",
-  "checkedAt": "2026-11-18T13:10:20.857Z",
-  "deployedAt": "2026-11-18T13:08:27.323Z",
-  "release": "sites/inventorycount/channels/live/releases/1795007307323000",
-  "fileCount": 328
+  "checkedAt": "2026-11-18T13:13:43.436Z",
+  "deployedAt": "2026-11-18T13:13:41.231Z",
+  "release": "sites/inventorycount/channels/live/releases/1795007621231000",
+  "fileCount": 351
 }
