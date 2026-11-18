@@ -280,91 +280,102 @@ async function aggregateVarianceLogs(context: any) {
   if (isAggregating) return 0
   isAggregating = true
   try {
-    const varianceLogs = await db.table('varianceLogs')
+    const pending = await db.table("varianceLogs")
       .where({ aggApplied: 0 })
       .toArray()
 
-    if (!varianceLogs.length) {
+    if (!pending.length) {
       return 0
     }
 
-    const grouped: Record<string, number> = {}
-    for (const scan of varianceLogs) {
-      const key = scan.scannedValue?.trim()
-      if (!key) continue
-      grouped[key] = (grouped[key] || 0) + scan.quantity
-    }
-    let processed = 0
-    const now = Date.now()
-    for (const [key, quantity] of Object.entries(grouped)) {
+    const findAdjustment = (productId: any, key: string) => db.table("inventoryAdjustments")
+      .where({ facilityId: context.facilityId })
+      .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
+      .first()
+
+    // Product and stock lookups call the server, which would end an IndexedDB transaction, so they run before it.
+    const lookups: Record<string, { productId: any, stock: any }> = {}
+    for (const key of new Set<string>(pending.map((log: any) => log.scannedValue?.trim()).filter(Boolean))) {
       let productId = await findProductByIdentification(context.barcodeIdentification, key, context)
       if (!productId) {
         const product = await getById(key, context)
         productId = product?.productId || null
       }
+      let stock = productId ? await getProductStock(productId, context) : null
+      const existing = await findAdjustment(productId, key)
+      if (existing?.productId && stock === null) {
+        stock = await getProductStock(existing.productId, context)
+        console.info("Refreshed stock for", existing.productId)
+      }
+      lookups[key] = { productId, stock }
+    }
 
-      let stock = null;
-      if (productId) {
-        try {
-          stock = await getProductStock(productId, context)
-        } catch (error) {
-          console.error('Error fetching stock', error)
-        }
+    // One transaction: adding the logs to the adjustments and marking them applied commit together, as in aggregate().
+    // A worker stopped part-way keeps nothing, and a second worker or tab waits for this one instead of adding the same logs again.
+    return await db.transaction("rw", [db.table("varianceLogs"), db.table("inventoryAdjustments")], async () => {
+      const pendingIds = new Set(pending.map((log: any) => log.id))
+      // Only the logs that no other worker applied while the lookups ran.
+      const varianceLogs = await db.table("varianceLogs")
+        .where({ aggApplied: 0 })
+        .and((log: any) => pendingIds.has(log.id))
+        .toArray()
+
+      const grouped: Record<string, number> = {}
+      for (const log of varianceLogs) {
+        const key = log.scannedValue?.trim()
+        if (!key) continue
+        grouped[key] = (grouped[key] || 0) + log.quantity
       }
 
-      // Upsert by productId and facilityId in the inventoryAdjustments table here
-      const inventoryAdjustment = await db.table('inventoryAdjustments')
-        .where({ facilityId: context.facilityId })
-        .and((item: any) => (productId && item.productId === productId) || item.scannedValue === key)
-        .first()
+      let processed = 0
+      const now = Date.now()
+      for (const [key, quantity] of Object.entries(grouped)) {
+        let { productId } = lookups[key] ?? { productId: null }
+        const stock = lookups[key]?.stock ?? null
+        const inventoryAdjustment = await findAdjustment(productId, key)
 
-      if (inventoryAdjustment) {
-        productId = inventoryAdjustment.productId;
-        if (productId && stock === null) {
-          try {
-            stock = await getProductStock(productId, context)
-            console.info("Refreshed stock for", productId)
-          } catch (error) {
-            console.error('Error fetching stock', error)
-          }
-        }
-        await db.table('inventoryAdjustments').put({
-          ...inventoryAdjustment,
-          quantity: inventoryAdjustment.quantity + quantity,
-          atp: stock?.atp,
-          qoh: stock?.qoh,
-          lastUpdatedAt: now
-        })
-      } else {
-        await db.table('inventoryAdjustments').add({
-          uuid: uuidv4(),
-          scannedValue: key,
-          productId,
-          facilityId: context.facilityId,
-          quantity,
-          atp: stock?.atp,
-          qoh: stock?.qoh,
-          lastUpdatedAt: now
-        })
-      }
-      processed++;
-      if (productId) {
-        await db.table('varianceLogs')
-          .where('scannedValue').equals(key)
-          .modify({
-            productId,
+        if (inventoryAdjustment) {
+          productId = inventoryAdjustment.productId
+          await db.table("inventoryAdjustments").put({
+            ...inventoryAdjustment,
+            quantity: inventoryAdjustment.quantity + quantity,
+            atp: stock?.atp,
+            qoh: stock?.qoh,
             lastUpdatedAt: now
           })
+        } else {
+          await db.table("inventoryAdjustments").add({
+            uuid: uuidv4(),
+            scannedValue: key,
+            productId,
+            facilityId: context.facilityId,
+            quantity,
+            atp: stock?.atp,
+            qoh: stock?.qoh,
+            lastUpdatedAt: now
+          })
+        }
+        processed++
+        if (productId) {
+          await db.table("varianceLogs")
+            .where("scannedValue").equals(key)
+            .modify({
+              productId,
+              lastUpdatedAt: now
+            })
+        }
       }
-    }
-    await db.table('varianceLogs')
-      .where('id')
-      .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
-      .modify({ aggApplied: 1 })
-    return processed;
+
+      await db.table("varianceLogs")
+        .where("id")
+        .anyOf(varianceLogs.map((varianceLog: any) => varianceLog.id))
+        .modify({ aggApplied: 1 })
+
+      return processed
+    })
   } catch (error) {
-    console.error('Error aggregating variance logs:', error)
-    return 0;
+    console.error("Error aggregating variance logs:", error)
+    return 0
   } finally {
     isAggregating = false
   }
@@ -375,99 +386,106 @@ async function aggregate(inventoryCountImportId: string, context: any) {
   if (isAggregating) return 0
   isAggregating = true
   try {
-    const scans = await db.table('scanEvents')
-      .where({ inventoryCountImportId })
-      .and((scanEvent: any) => scanEvent.aggApplied === 0)
-      .toArray()
+    // One transaction: reading the waiting scans, adding them to the records and marking them applied commit together.
+    // A worker stopped part-way (page reload, Safari suspending the app, a screen stopping its worker) keeps nothing,
+    // and a second worker or tab waits for this one to commit instead of adding the same scans again.
+    const tables = ["scanEvents", "inventoryCountRecords", "productIdentification", "products"].map(name => db.table(name))
 
-    if (!scans.length) {
-      return 0
-    }
+    return await db.transaction("rw", tables, async () => {
+      const scans = await db.table('scanEvents')
+        .where({ inventoryCountImportId })
+        .and((scanEvent: any) => scanEvent.aggApplied === 0)
+        .toArray()
 
-    // lastWasRemoval: the newest event for the key undid an earlier scan. Ids follow the order events were recorded.
-    const grouped: Record<string, { quantity: number, lastWasRemoval: boolean }> = {}
-    for (const scan of [...scans].sort((a: any, b: any) => a.id - b.id)) {
-      const key = scan.productId || scan.scannedValue?.trim()
-      if (!key) continue
-      grouped[key] ??= { quantity: 0, lastWasRemoval: false }
-      grouped[key].quantity += scan.quantity ?? 1
-      grouped[key].lastWasRemoval = !!scan.negatedScanEventId
-    }
+      if (!scans.length) {
+        return 0
+      }
 
-    let processed = 0
-    const now = Date.now()
+      // lastWasRemoval: the newest event for the key undid an earlier scan. Ids follow the order events were recorded.
+      const grouped: Record<string, { quantity: number, lastWasRemoval: boolean }> = {}
+      for (const scan of [...scans].sort((a: any, b: any) => a.id - b.id)) {
+        const key = scan.productId || scan.scannedValue?.trim()
+        if (!key) continue
+        grouped[key] ??= { quantity: 0, lastWasRemoval: false }
+        grouped[key].quantity += scan.quantity ?? 1
+        grouped[key].lastWasRemoval = !!scan.negatedScanEventId
+      }
 
-    for (const [scannedValue, { quantity, lastWasRemoval }] of Object.entries(grouped)) {
-      let productId: any = null
-      const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
-      if (identification) {
-        productId = identification.productId
-      } else {
-        const product = await db.table('products').get(scannedValue)
-        if (product) {
-          productId = product.productId
+      let processed = 0
+      const now = Date.now()
+
+      for (const [scannedValue, { quantity, lastWasRemoval }] of Object.entries(grouped)) {
+        let productId: any = null
+        const identification = await db.table('productIdentification').where('value').equalsIgnoreCase(scannedValue).and((item: any) => item.identKey === context.barcodeIdentification).first()
+        if (identification) {
+          productId = identification.productId
+        } else {
+          const product = await db.table('products').get(scannedValue)
+          if (product) {
+            productId = product.productId
+          }
         }
+        // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
+        // if (!productId) {
+        //   const product = await getById(scannedValue, context)
+        //   productId = product?.productId || null
+        // }
+
+        const existing = await db.table('inventoryCountRecords')
+          .where('inventoryCountImportId')
+          .equals(inventoryCountImportId)
+          .and((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
+          .first()
+
+        // if (productId) ensureProductStored(productId, context);
+
+        if (existing) {
+          const nextQuantity = toCountedQuantity((existing.quantity || 0) + quantity, lastWasRemoval)
+          await db.table('inventoryCountRecords').put({
+            ...existing,
+            quantity: nextQuantity,
+            countedByUserLoginId: nextQuantity === null ? null : context.userLoginId,
+            // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
+            lastScanAt: now,
+            lastUpdatedAt: now, // mark updated
+            productId: existing.productId || productId,
+            facilityId: context.facilityId,
+            isRequested: existing.isRequested ?? 'Y'
+          })
+        } else {
+          await db.table('inventoryCountRecords').add({
+            inventoryCountImportId,
+            uuid: uuidv4(),
+            productIdentifier: scannedValue,
+            productId: productId || null,
+            quantity: toCountedQuantity(quantity, lastWasRemoval),
+            countedByUserLoginId: toCountedQuantity(quantity, lastWasRemoval) === null ? null : context.userLoginId,
+            facilityId: context.facilityId,
+            isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
+            createdAt: now,
+            lastScanAt: now,
+            lastUpdatedAt: now // new record, so same as createdAt
+          })
+        }
+        if (productId) {
+          await db.table('scanEvents')
+            .where({ inventoryCountImportId })
+            .and((scanEvent: any) => scanEvent.scannedValue === scannedValue)
+            .modify({
+              productId,
+              lastUpdatedAt: now
+            });
+        }
+        processed++
       }
-      // let productId = await findProductByIdentification(context.barcodeIdentification, scannedValue, context)
-      // if (!productId) {
-      //   const product = await getById(scannedValue, context)
-      //   productId = product?.productId || null
-      // }
 
-      const existing = await db.table('inventoryCountRecords')
-        .where('inventoryCountImportId')
-        .equals(inventoryCountImportId)
-        .and((item: any) => (productId && item.productId === productId) || item.productIdentifier === scannedValue)
-        .first()
+      await db.table('scanEvents')
+        .where('id')
+        .anyOf(scans.map((scanEvent: any) => scanEvent.id))
+        .modify({ aggApplied: 1 })
 
-      // if (productId) ensureProductStored(productId, context);
-
-      if (existing) {
-        const nextQuantity = toCountedQuantity((existing.quantity || 0) + quantity, lastWasRemoval)
-        await db.table('inventoryCountRecords').put({
-          ...existing,
-          quantity: nextQuantity,
-          countedByUserLoginId: nextQuantity === null ? null : context.userLoginId,
-          // TODO: Check if needed; if not set undirected and unmatched products could be identified: productIdentifier: scannedValue,
-          lastScanAt: now,
-          lastUpdatedAt: now, // mark updated
-          productId: existing.productId || productId,
-          facilityId: context.facilityId,
-          isRequested: existing.isRequested ?? 'Y'
-        })
-      } else {
-        await db.table('inventoryCountRecords').add({
-          inventoryCountImportId,
-          uuid: uuidv4(),
-          productIdentifier: scannedValue,
-          productId: productId || null,
-          quantity: toCountedQuantity(quantity, lastWasRemoval),
-          countedByUserLoginId: toCountedQuantity(quantity, lastWasRemoval) === null ? null : context.userLoginId,
-          facilityId: context.facilityId,
-          isRequested: (context.inventoryCountTypeId === 'HARD_COUNT') ? 'Y' : 'N',
-          createdAt: now,
-          lastScanAt: now,
-          lastUpdatedAt: now // new record, so same as createdAt
-        })
-      }
-      if (productId) {
-        await db.table('scanEvents')
-          .where({ inventoryCountImportId })
-          .and((scanEvent: any) => scanEvent.scannedValue === scannedValue)
-          .modify({
-            productId,
-            lastUpdatedAt: now
-          });
-      }
-      processed++
-    }
-
-    await db.table('scanEvents')
-      .where('id')
-      .anyOf(scans.map((scanEvent: any) => scanEvent.id))
-      .modify({ aggApplied: 1 })
-
-    return processed
+      return processed
+    })
   } catch (err: any) {
     console.error('Aggregation failed', err)
     log("warn", `Count aggregation failed sessionId=${inventoryCountImportId} error=${err?.message ?? err}`)
