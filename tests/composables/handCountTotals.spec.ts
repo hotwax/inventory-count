@@ -37,7 +37,7 @@ function table(rows: any[]) {
 beforeEach(() => {
   state.records = [
     { inventoryCountImportId: "S1", productId: "P1", quantity: 3, isRequested: "Y", importItemSeqId: "2", productIdentifier: "SKU1" },
-    { inventoryCountImportId: "S1", productId: "P2", quantity: 0, isRequested: "Y", importItemSeqId: "1", productIdentifier: "SKU2" },
+    { inventoryCountImportId: "S1", productId: "P2", quantity: null, isRequested: "Y", importItemSeqId: "1", productIdentifier: "SKU2" },
     { inventoryCountImportId: "S1", productId: "P3", quantity: 8, isRequested: "N" },
     { inventoryCountImportId: "S2", productId: "P1", quantity: 99, isRequested: "Y" }
   ];
@@ -56,15 +56,18 @@ describe("directed handcount totals", () => {
     counts.getAssignedHandCountItems("S1");
     expect((await state.query()).find((item: any) => item.productId === "P2")).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
   });
-  it("includes confirmed zeros only for directed lists and keeps untouched items uncounted", async () => {
-    state.records[1].countedByUserLoginId = "counter";
-    state.records.push({ inventoryCountImportId: "S1", productId: "P4", quantity: 0, isRequested: "Y" });
-    counts.getCountedItems("S1", "assigned", true);
-    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P2", "P1"]);
-    counts.getUncountedItems("S1", "assigned", true);
-    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P4"]);
+  it("lists an entered zero as counted and an empty quantity as uncounted", async () => {
+    state.records[1].quantity = 0;
+    state.records.push({ inventoryCountImportId: "S1", productId: "P4", quantity: null, isRequested: "Y" });
     counts.getCountedItems("S1");
-    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P1"]);
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P2", "P1"]);
+    counts.getUncountedItems("S1");
+    expect((await state.query()).map((item: any) => item.productId)).toEqual(["P4"]);
+  });
+  it("leaves an item uncounted when a pending removal takes it back to zero", async () => {
+    state.scans.push({ inventoryCountImportId: "S1", productId: "P1", quantity: -3, negatedScanEventId: 9, aggApplied: 0 });
+    counts.getAssignedHandCountItems("S1");
+    expect((await state.query()).find((item: any) => item.productId === "P1").quantity).toBeNull();
   });
   it("loads all assigned products in assigned order, including zero counts and pending scans", async () => {
     state.scans.push(
@@ -72,7 +75,7 @@ describe("directed handcount totals", () => {
       { inventoryCountImportId: "S1", productId: "P1", quantity: 100, aggApplied: 1 }
     );
     counts.getAssignedHandCountItems("S1");
-    expect((await state.query()).map((item: any) => [item.productId, item.quantity])).toEqual([["P2", 0], ["P1", 5]]);
+    expect((await state.query()).map((item: any) => [item.productId, item.quantity])).toEqual([["P2", null], ["P1", 5]]);
   });
   it("uses the shared alphabetical and last-updated orders, including pending saves", async () => {
     counts.getAssignedHandCountItems("S1", "alphabetic");

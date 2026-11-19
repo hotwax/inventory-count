@@ -663,5 +663,8 @@
   "Failed to remove scans": "Failed to remove scans",
   "Failed to update security groups": "Failed to update security groups",
   "Failed to remove security group.": "Failed to remove security group.",
-  "Failed to search products. Please try again.": "Failed to search products. Please try again."
+  "Failed to search products. Please try again.": "Failed to search products. Please try again.",
+  "Edit count": "Edit count",
+  "Unable to edit this count": "Unable to edit this count",
+  "Could not save the count. Reopen the item and try again.": "Could not save the count. Reopen the item and try again."
 }

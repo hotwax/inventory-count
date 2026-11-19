@@ -572,6 +572,7 @@ import { useUserProfile } from '@/stores/userProfileStore';
 import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { useInventoryCountImport } from '@/composables/useInventoryCountImport';
+import { hasRecordedCount } from '@/services/inventoryCountRecord';
 
 import SmartFilterSortBar from "@/components/SmartFilterSortBar.vue";
 import router from '@/router'
@@ -911,7 +912,8 @@ async function loadDirectedCount(loadId: number) {
         const undirected = resp.data.filter((item: any) => item.isRequested === 'N');
         undirectedItems.value.push(...undirected);
         directedItems.forEach((item: any) => {
-          if (item.quantity >= 0) countedItems.value.push(item);
+          // `null >= 0` is true in JavaScript, so test for an empty quantity explicitly.
+          if (hasRecordedCount(item) && item.quantity >= 0) countedItems.value.push(item);
           else uncountedItems.value.push(item);
         })
         if (resp.data.length < pageSize) {
@@ -1061,7 +1063,8 @@ async function loadHardCount(loadId: number) {
       });
       if (loadId !== reviewLoadId) return;
       if (resp?.status === 200 && resp.data?.length) {
-        countedItems.value.push(...resp.data);
+        // Scans removed back to zero leave an empty quantity; those products stay uncounted.
+        countedItems.value.push(...resp.data.filter((item: any) => hasRecordedCount(item)));
         if (resp.data.length < pageSize) {
           hasMore = false;
         } else {
