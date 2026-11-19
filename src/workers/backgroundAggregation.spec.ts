@@ -147,6 +147,31 @@ describe("final session flush", () => {
     await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0 });
     expect(state.db.rows.inventoryCountRecords[0].quantity).toBe(15);
   });
+  it("keeps nothing from a variance batch the worker could not finish, so the next run adds it once", async () => {
+    state.db.rows.products.push({ productId: "P1", updatedAt: Date.now() });
+    state.db.rows.inventoryAdjustments = [{ uuid: "A1", scannedValue: "P1", productId: "P1", facilityId: "F1", quantity: 5 }];
+    state.db.rows.varianceLogs = [{ id: 1, scannedValue: "P1", facilityId: "F1", quantity: 2, aggApplied: 0 }];
+    // Opens the worker's database, as the Variance screen's schedule message does before its first run.
+    await state.api.flushSession("S1", context);
+    // The worker stops after adding the logs to the adjustment but before marking them applied.
+    const table = state.db.table;
+    state.db.table = (name: string) => {
+      const real = table(name);
+      if(name !== "varianceLogs") {return real;}
+
+      return { ...real, where: (field: any) => field === "id"
+        ? { anyOf: () => ({ modify: () => Promise.reject(new Error("worker stopped")) }) }
+        : real.where(field) };
+    };
+    await state.api.aggregateVarianceLogs(context);
+    expect(state.db.rows.inventoryAdjustments[0].quantity).toBe(5);
+    expect(state.db.rows.varianceLogs[0].aggApplied).toBe(0);
+
+    state.db.table = table;
+    await expect(state.api.aggregateVarianceLogs(context)).resolves.toBe(1);
+    expect(state.db.rows.inventoryAdjustments[0].quantity).toBe(7);
+    expect(state.db.rows.varianceLogs[0].aggApplied).toBe(1);
+  });
   it("waits for acknowledgment before marking a record synced", async () => {
     const response = deferred();
     state.request.mockReturnValueOnce(response.promise);
