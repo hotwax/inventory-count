@@ -86,7 +86,7 @@
                 </ion-item>
 
                 <!-- Locked by another user -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile.username" :data-testid="'count-session-item-locked-' + session.inventoryCountImportId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId !== useUserProfile().getUserProfile?.username" :data-testid="'count-session-item-locked-' + session.inventoryCountImportId">
                   <ion-label data-testid="count-session-locked-label">
                     <span data-testid="count-session-locked-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
                     <p data-testid="count-session-locked-msg">{{ translate("Session already active for") }} {{ session.lock?.userId }}</p>
@@ -98,7 +98,7 @@
                 </ion-item>
 
               <!-- Locked by same user, same device -->
-              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`" :data-testid="'count-session-item-active-' + session.inventoryCountImportId">
+              <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile?.username && session.lock?.deviceId === currentDeviceId" :detail="true" button :router-link="`/session-count-detail/${session.workEffortId}/${count.workEffortPurposeTypeId}/${session.inventoryCountImportId}`" :data-testid="'count-session-item-active-' + session.inventoryCountImportId">
                 <ion-label data-testid="count-session-active-label">
                   <span data-testid="count-session-active-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
                   <p data-testid="count-session-active-msg">{{ translate("Session already active for this device") }}</p>
@@ -107,7 +107,7 @@
               </ion-item>
 
                 <!-- Locked by same user, different device -->
-                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile.username && session.lock?.deviceId !== currentDeviceId" :data-testid="'count-session-item-active-other-device-' + session.inventoryCountImportId">
+                <ion-item v-else-if="session.lock?.userId && session.lock?.userId === useUserProfile().getUserProfile?.username && session.lock?.deviceId !== currentDeviceId" :data-testid="'count-session-item-active-other-device-' + session.inventoryCountImportId">
                   <ion-label data-testid="count-session-active-other-device-label">
                     <span data-testid="count-session-active-other-device-name">{{ session.countImportName }} {{ session.facilityAreaId }}</span>
                     <p data-testid="count-session-active-other-device-msg">{{ translate("Session already active on another device") }}</p>
