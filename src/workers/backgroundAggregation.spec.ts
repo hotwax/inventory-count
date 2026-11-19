@@ -47,7 +47,19 @@ function memoryDb(records: any[]) {
     };
   };
 
-  return { open: async () => {}, table, rows };
+  // Like IndexedDB: a transaction that throws keeps none of its writes.
+  const transaction = async (_mode: string, ...args: any[]) => {
+    const work = args.pop();
+    const before = structuredClone(rows);
+    try {
+      return await work();
+    } catch (error) {
+      Object.keys(rows).forEach(name => { rows[name] = before[name]; });
+      throw error;
+    }
+  };
+
+  return { open: async () => {}, table, transaction, rows };
 }
 const context = { omsInstance: "unit-only", facilityId: "F1", barcodeIdentification: "SKU" };
 const item = () => ({ inventoryCountImportId: "S1", uuid: "I1", productId: "P1", quantity: 12, facilityId: "F1", systemQuantityOnHand: 0, lastUpdatedAt: 10, lastSyncedAt: null });
@@ -113,6 +125,27 @@ describe("final session flush", () => {
     state.db.rows.scanEvents.push({ id: 2, inventoryCountImportId: "S1", productId: "P1", quantity: -3, aggApplied: 0, countedByUserLoginId: "counter" });
     await state.api.flushSession("S1", { ...context, userLoginId: "counter" });
     expect(state.db.rows.inventoryCountRecords[0]).toMatchObject({ quantity: 0, countedByUserLoginId: "counter" });
+  });
+  it("keeps nothing from a scan batch the worker could not finish, so the next run adds it once", async () => {
+    state.db.rows.products.push({ productId: "P1" });
+    state.db.rows.scanEvents.push({ id: 1, inventoryCountImportId: "S1", productId: "P1", quantity: 3, aggApplied: 0, countedByUserLoginId: "counter" });
+    // The worker stops after adding the scans to the record but before marking them applied.
+    const table = state.db.table;
+    state.db.table = (name: string) => {
+      const real = table(name);
+      if(name !== "scanEvents") {return real;}
+
+      return { ...real, where: (field: any) => field === "id"
+        ? { anyOf: () => ({ modify: () => Promise.reject(new Error("worker stopped")) }) }
+        : real.where(field) };
+    };
+    await state.api.flushSession("S1", { ...context, userLoginId: "counter" });
+    expect(state.db.rows.inventoryCountRecords[0].quantity).toBe(12);
+    expect(state.db.rows.scanEvents[0].aggApplied).toBe(0);
+
+    state.db.table = table;
+    await expect(state.api.flushSession("S1", { ...context, userLoginId: "counter" })).resolves.toMatchObject({ pendingScans: 0 });
+    expect(state.db.rows.inventoryCountRecords[0].quantity).toBe(15);
   });
   it("waits for acknowledgment before marking a record synced", async () => {
     const response = deferred();
