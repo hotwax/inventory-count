@@ -253,6 +253,7 @@ async function load() {
       if(id !== visit) {return;}
       if(response.data.length < pageSize) {break;}
     }
+    logger.info(`Handcount loaded sessionId=${props.inventoryCountImportId} ${await counts.describeLocalSession(props.inventoryCountImportId)}`);
     subscribeToItems(id);
     const productIds = await counts.getSessionProductIds(props.inventoryCountImportId);
     if(id === visit && productIds.length) {void productMaster.prefetch(productIds).catch(() => undefined);}
@@ -306,14 +307,17 @@ async function save(): Promise<boolean> {
     drafts.value = {};
     // Local persistence succeeded. A sync failure must not replay the same delta.
     let synced = false;
-    try { synced = await session.flush(); } catch { /* The scheduled worker retries pending records. */ }
+    try { synced = await session.flush(); } catch(error) {
+      // The scheduled worker retries pending records.
+      logger.warn(`Handcount sync after save failed sessionId=${props.inventoryCountImportId} error=${String(error)}`);
+    }
+    logger.info(`Handcount saved sessionId=${props.inventoryCountImportId} synced=${synced} ${await counts.describeLocalSession(props.inventoryCountImportId)}`);
     commonUtil.showToast(synced ? translate("Items Saved") : translate("Saved on this device. Waiting to sync."));
 
     return true;
-  } catch (err) {
-    const serverError = commonUtil.getErrorMessage(err);
-    logger.error("Error saving hand count totals:", err);
-    commonUtil.showToast(`${translate("Could not save counts. Your edits are kept; check the session and try again.")} ${serverError}`);
+  } catch(error) {
+    logger.error(`Handcount save failed sessionId=${props.inventoryCountImportId} drafts=${draftCount.value} error=${String(error)}`);
+    commonUtil.showToast(`${translate("Could not save counts. Your edits are kept; check the session and try again.")} ${commonUtil.getErrorMessage(error)}`);
 
     return false;
   } finally {

@@ -1069,7 +1069,9 @@ async function enterSession() {
     aggregationWorkerApi = bgWorker.api
     aggregationWorker.onmessage = (event) => {
       const { type, count } = event.data
-      if (type === 'aggregationComplete') {
+      if (type === 'log') {
+        logger[event.data.level === 'warn' ? 'warn' : 'info'](event.data.message)
+      } else if (type === 'aggregationComplete') {
         console.info(`Aggregated ${count} products from scans`)
       }
     }
@@ -1315,13 +1317,13 @@ async function focusScanner() {
   }, 0);
 }
 
-async function recordScannedCode(code: string, quantity = 1) {
+async function recordScannedCode(code: string, quantity = 1, source?: string) {
   console.log(`[PROCESS LOG] 1. recordScannedCode called with code: ${code}, quantity: ${quantity}`);
   const value = (code || '').trim();
   if (!value || !isSessionMutable.value) return false;
 
   try {
-    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity });
+    await useInventoryCountImport().recordScan({ inventoryCountImportId: props.inventoryCountImportId, productIdentifier: value, quantity, source });
     filteredItems.value = [];
     searchKeyword.value = '';
     await playScanSuccessFeedback();
@@ -1379,11 +1381,11 @@ async function openCountedItemEditor(item: any) {
 }
 
 async function savePendingItemCount(item: PendingItemCountSheetItem, quantity: number) {
-  if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity);
+  if (item.currentQuantity === undefined || item.currentQuantity === null) return recordScannedCode(item.productIdentifier, quantity, 'count_sheet');
   // A new total is saved as the difference from the current count. An entered zero stays counted.
   try {
     await useInventoryCountImport().saveHandCountTotals(props.inventoryCountImportId,
-      [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username);
+      [{ productId: item.productId!, quantity, expectedQuantity: item.currentQuantity }], userProfile.getUserProfile?.username, 'edit_sheet');
     return true;
   } catch (err) {
     console.error(err);
@@ -2062,7 +2064,8 @@ async function negateSingleScan(item: any) {
       productIdentifier: item.scannedValue,
       productId: item.productId,
       negatedScanEventId: item.id,
-      quantity: -Math.abs(item.quantity || 1)
+      quantity: -Math.abs(item.quantity || 1),
+      source: 'remove_scan'
     })
 
     commonUtil.showToast(translate('Scan removed'))
@@ -2093,7 +2096,8 @@ async function negateAllScansOfSku(item: any) {
         productIdentifier: scan.scannedValue,
         productId: scan.productId,
         negatedScanEventId: scan.id,
-        quantity: -Math.abs(scan.quantity || 1)
+        quantity: -Math.abs(scan.quantity || 1),
+        source: 'remove_all_scans'
       })
     }
     commonUtil.showToast(translate('Removed all scans for') + ` ${sku}`)

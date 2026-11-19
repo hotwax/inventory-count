@@ -1,8 +1,8 @@
 /* eslint-disable require-await -- Async mocks preserve the production service contracts. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ records: [] as any[], scans: [] as any[], query: null as any, db: null as any }));
-vi.mock("@common", () => ({ api: vi.fn() }));
+const state = vi.hoisted(() => ({ records: [] as any[], scans: [] as any[], query: null as any, db: null as any, log: vi.fn() }));
+vi.mock("@common", () => ({ api: vi.fn(), logger: { info: (...args: any[]) => state.log(...args), warn: vi.fn(), error: vi.fn() } }));
 vi.mock("@/services/appInitializer", () => ({ get db() { return state.db; } }));
 vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ primaryId: () => "" }) }));
 vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({}) }));
@@ -88,6 +88,7 @@ describe("directed handcount totals", () => {
   });
   it("saves a total of five over an existing three as two additional units", async () => {
     await save("S1", [{ productId: "P1", expectedQuantity: 3, quantity: 5 }]);
+    expect(state.log).toHaveBeenCalledWith("Count change source=handcount sessionId=S1 edits=P1:3>5");
     expect(state.scans).toEqual([expect.objectContaining({ productId: "P1", scannedValue: "SKU1", quantity: 2, aggApplied: 0 })]);
   });
   it("reduces totals and includes earlier pending saves when calculating the next delta", async () => {

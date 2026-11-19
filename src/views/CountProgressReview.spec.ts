@@ -123,7 +123,7 @@ describe("Out-of-stock confirmation lifecycle", () => {
     expect(state.createSession).toHaveBeenCalledOnce();
     expect(state.updateItems).toHaveBeenCalledWith(expect.objectContaining({
       inventoryCountImportId: "OOS1", items: [expect.objectContaining({ productId: "P14", quantity: 0 })]
-    }));
+    }), "mark_out_of_stock");
     expect(wrapper.vm.uncountedItems.some((item: any) => item.productId === "P14")).toBe(false);
     expect(wrapper.vm.workEffort.sessions).toEqual([
       expect.objectContaining({ inventoryCountImportId: "S1" }),

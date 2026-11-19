@@ -668,7 +668,7 @@ async function saveEditImportItems() {
         ...selectedSession.value.importItems[0],
         quantity: newTotal
       }],
-    });
+    }, 'review_edit');
 
     selectedSession.value.counted = newTotal;
 
@@ -738,7 +738,7 @@ async function removeProductFromSession() {
     await useInventoryCountImport().deleteSessionItem({
       inventoryCountImportId: selectedSession.value.inventoryCountImportId,
       data: resp.data,
-    });
+    }, 'review_delete_session');
 
     const parent = selectedProductCountReview.value;
     const removedSessionId = selectedSession.value.inventoryCountImportId;
