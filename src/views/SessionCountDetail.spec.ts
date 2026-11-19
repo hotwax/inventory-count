@@ -4,7 +4,7 @@ import { STATUS_CHANGE_WAIT_MS, waitForSessionTeardown } from "@/services/sessio
 
 // Unit doubles at the worker/API boundary; this is submit and teardown ordering
 // coverage, not HotWax backend validation.
-const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, session: vi.fn(), create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn() }));
+const state = vi.hoisted(() => ({ enter: null as any, leave: null as any, session: vi.fn(), create: vi.fn(), aggs: [] as any[], heartbeats: [] as any[], order: [] as string[], flush: vi.fn(), stop: vi.fn(), update: vi.fn(), lock: vi.fn(), release: vi.fn(), replace: vi.fn(), push: vi.fn(), toast: vi.fn(), zeros: vi.fn(), items: vi.fn(), store: vi.fn(), read: vi.fn(), saveTotals: vi.fn() }));
 vi.mock("@common", () => ({
   translate: (value: string) => value,
   commonUtil: { showToast: state.toast, getOmsURL: () => "", getOMSInstanceName: () => "unit-only", getMaargURL: () => "", getToken: () => "", getProductIdentificationValue: () => "", getErrorMessage: () => "" },
@@ -14,17 +14,19 @@ vi.mock("@ionic/vue", async () => ({ ...await vi.importActual<any>("@ionic/vue")
 vi.mock("@common/core/workerFactory", () => ({ WorkerFactory: { createWorker: (...args: any[]) => state.create(...args) } }));
 vi.mock("@/router", () => ({ default: { replace: state.replace, push: state.push } }));
 vi.mock("@/services/uiUtils", () => ({ loader: { present: vi.fn(), dismiss: vi.fn() } }));
-vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getProductIdentificationPref: {}, getGoodIdentificationOptions: [], getBarcodeIdentificationPref: "SKU" }) }));
+vi.mock("@/stores/productStore", () => ({ useProductStore: () => ({ getCurrentFacility: { facilityId: "F1" }, getProductIdentificationPref: {}, getGoodIdentificationOptions: [], getProductIdentificationOptions: [], getBarcodeIdentificationPref: "SKU" }) }));
 vi.mock("@/stores/userProfileStore", () => ({ useUserProfile: () => ({ hasPermission: () => true, getUserProfile: { username: "unit-only" }, getDeviceId: "unit-device" }) }));
 vi.mock("@/composables/useInventoryCountImport", () => ({ useInventoryCountImport: () => ({
   updateSession: state.update, releaseSession: state.release, getSessionLock: state.lock,
   getInventoryCountImportSession: state.session,
   getInventoryCountImportItemCount: () => Promise.resolve({ status: 200, data: { count: 1 } }), getInventoryCountImportItemsCount: () => Promise.resolve(1),
+  hasUnconfirmedZeroRecords: state.zeros, getSessionItemsByImportId: state.items, storeInventoryCountItems: state.store,
+  readAssignedHandCountItems: state.read, saveHandCountTotals: state.saveTotals,
   getSessionProductIds: () => Promise.resolve([]), getUnmatchedItems: () => Promise.resolve([]), getCountedItems: () => Promise.resolve([]), getUncountedItems: () => Promise.resolve([]),
   getUndirectedItems: () => Promise.resolve([]), getScanEvents: () => Promise.resolve([]), getTotalCountedUnits: () => Promise.resolve(0), recordScan: vi.fn()
 }) }));
 vi.mock("@/composables/useInventoryCountRun", () => ({ useInventoryCountRun: () => ({ getWorkEffort: () => Promise.resolve({ status: 200, data: { workEffortId: "W1" } }) }) }));
-vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({}) }));
+vi.mock("@/composables/useProductMaster", () => ({ useProductMaster: () => ({ primaryId: () => "", secondaryId: () => "" }) }));
 vi.mock("@/services/appInitializer", () => ({ db: {} }));
 vi.mock("@/services/scanFeedback", () => ({ playScanSuccessFeedback: vi.fn(), prepareScanSuccessFeedback: vi.fn() }));
 vi.mock("@/services/cameraScanProduct", () => ({ createCameraScanProductLookupContext: vi.fn() }));
@@ -46,7 +48,8 @@ function deferred() {
 beforeEach(async () => {
   vi.useFakeTimers();
   vi.clearAllMocks();
-  [state.flush, state.stop, state.update, state.lock, state.release, state.session].forEach(mock => mock.mockReset());
+  [state.flush, state.stop, state.update, state.lock, state.release, state.session, state.zeros, state.items, state.store, state.read, state.saveTotals].forEach(mock => mock.mockReset());
+  state.zeros.mockResolvedValue(false); state.items.mockResolvedValue({ status: 200, data: [] }); state.store.mockResolvedValue(undefined);
   state.session.mockResolvedValue({ status: 200, data: { statusId: "SESSION_ASSIGNED" } });
   state.flush.mockResolvedValue(complete); state.stop.mockResolvedValue(undefined); state.update.mockResolvedValue({ status: 200 });
   state.lock.mockResolvedValue(ownLock); state.release.mockResolvedValue({ status: 200 });
@@ -330,5 +333,28 @@ describe("retrying a failed session load", () => {
     expect(failedHeartbeat.api.stopHeartbeat).toHaveBeenCalledOnce();
     expect(state.heartbeats[state.heartbeats.length - 1]).not.toBe(failedHeartbeat);
     expect(wrapper.vm.isSessionMutable).toBe(true);
+  });
+});
+
+describe("counted item edits and stale device zeros", () => {
+  it("reloads session items when the device still holds uncounted items saved as 0", async () => {
+    state.leave(); await waitForSessionTeardown();
+    state.zeros.mockResolvedValue(true);
+    state.items.mockResolvedValue({ status: 200, data: [{ productId: "P1", uuid: "U1" }] });
+    await state.enter(); await flushPromises();
+    expect(state.zeros).toHaveBeenCalledWith("S1");
+    expect(state.store).toHaveBeenCalledWith([{ productId: "P1", uuid: "U1" }]);
+  });
+  it("aggregates pending scans before showing the current total and again before saving the new one", async () => {
+    state.read.mockImplementation(async () => { state.order.push("read"); return [{ productId: "P1", quantity: 5 }]; });
+    state.flush.mockImplementation(async () => { state.order.push("flush"); return complete; });
+    state.saveTotals.mockImplementation(async () => { state.order.push("save"); });
+    state.order.length = 0;
+    await wrapper.vm.openCountedItemEditor({ productId: "P1" });
+    expect(state.order).toEqual(["flush", "read"]);
+    expect(wrapper.vm.pendingItemForCount).toMatchObject({ productId: "P1", currentQuantity: 5 });
+    await expect(wrapper.vm.savePendingItemCount(wrapper.vm.pendingItemForCount, 7)).resolves.toBe(true);
+    expect(state.order).toEqual(["flush", "read", "flush", "save"]);
+    expect(state.saveTotals).toHaveBeenCalledWith("S1", [{ productId: "P1", quantity: 7, expectedQuantity: 5 }], "unit-only");
   });
 });
