@@ -284,8 +284,10 @@ async function getCountSessions(productId: any) {
 
     if (resp && resp.status && resp.data && resp.data.length) {
       sessions.value = resp.data;
-    } else {
+    } else if (commonUtil.hasError(resp)) {
       throw resp.data;
+    } else {
+      sessions.value = [];
     }
   } catch (error) {
     sessions.value = [];
